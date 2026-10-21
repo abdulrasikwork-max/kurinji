@@ -1,0 +1,25 @@
+# Secrets and local machine files: never commit these
+.env
+backend/.env
+android/local.properties
+*.jks
+*.keystore
+
+# Build output / IDE
+backend/target/
+android/.gradle/
+android/build/
+android/app/build/
+android/.kotlin/
+android/app/release/
+*.apk
+*.aab
+.idea/
+*.iml
+.vscode/
+*.log
+
+# OS files
+Thumbs.db
+desktop.ini
+.DS_Store

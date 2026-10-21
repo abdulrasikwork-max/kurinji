@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_sm">8dp</dimen>
+    <dimen name="space_md">16dp</dimen>
+    <dimen name="space_lg">24dp</dimen>
+    <dimen name="space_xl">32dp</dimen>
+    <dimen name="screen_padding">20dp</dimen>
+    <dimen name="section_spacing">28dp</dimen>
+
+    <dimen name="min_touch_target">48dp</dimen>
+    <dimen name="icon_size">24dp</dimen>
+    <dimen name="icon_size_small">14dp</dimen>
+    <dimen name="icon_circle_size">48dp</dimen>
+    <dimen name="icon_circle_size_small">40dp</dimen>
+    <dimen name="brand_tile_size">44dp</dimen>
+    <dimen name="brand_tile_padding">8dp</dimen>
+    <dimen name="logo_size_splash">104dp</dimen>
+    <dimen name="illustration_size">104dp</dimen>
+    <dimen name="avatar_size">72dp</dimen>
+    <dimen name="menu_row_min_height">56dp</dimen>
+    <dimen name="button_height">56dp</dimen>
+
+    <dimen name="radius_card">20dp</dimen>
+    <dimen name="radius_button">14dp</dimen>
+    <dimen name="stroke_hairline">1dp</dimen>
+
+    <dimen name="chip_padding_horizontal">10dp</dimen>
+    <dimen name="chip_padding_vertical">4dp</dimen>
+    <dimen name="onboarding_dot_size">8dp</dimen>
+</resources>

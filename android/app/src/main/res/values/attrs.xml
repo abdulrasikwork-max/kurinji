@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme attributes: layouts say ?attr/colorSafe instead of hard-coding a colour. -->
+    <attr name="colorSafe" format="color" />
+    <attr name="colorSafeContainer" format="color" />
+    <attr name="colorOnSafeContainer" format="color" />
+    <attr name="colorCaution" format="color" />
+    <attr name="colorCautionContainer" format="color" />
+    <attr name="colorOnCautionContainer" format="color" />
+    <attr name="colorHero" format="color" />
+    <attr name="colorOnHero" format="color" />
+    <attr name="colorOnHeroVariant" format="color" />
+    <attr name="colorHeroAccent" format="color" />
+
+    <!-- Which badge a StatusBadgeView (or a SectionHeaderView) shows. -->
+    <attr name="badgeStatus" format="enum">
+        <enum name="none" value="-1" />
+        <enum name="available" value="0" />
+        <enum name="preview" value="1" />
+        <enum name="comingSoon" value="2" />
+        <enum name="safe" value="3" />
+        <enum name="caution" value="4" />
+        <enum name="concern" value="5" />
+        <enum name="sample" value="6" />
+    </attr>
+
+    <declare-styleable name="StatusBadgeView">
+        <attr name="badgeStatus" />
+    </declare-styleable>
+
+    <declare-styleable name="SectionHeaderView">
+        <attr name="sectionTitle" format="string" />
+        <attr name="badgeStatus" />
+    </declare-styleable>
+
+    <declare-styleable name="NoticeView">
+        <attr name="noticeType" format="enum">
+            <enum name="info" value="0" />
+            <enum name="warning" value="1" />
+        </attr>
+        <attr name="noticeText" format="string" />
+    </declare-styleable>
+
+    <declare-styleable name="EmptyStateView">
+        <attr name="emptyIcon" format="reference" />
+        <attr name="emptyTitle" format="string" />
+        <attr name="emptyMessage" format="string" />
+    </declare-styleable>
+</resources>

@@ -1,0 +1,16 @@
+# latitude,longitude,geohash7 - shared with android/app/src/test/resources/geohash-vectors.csv (must stay identical).
+# Anchors from published references: u4pruyd (57.64911,10.40744), ezs42 (42.6,-5.6), dr5reg (New York), gcpuv (London).
+57.64911,10.40744,u4pruyd
+42.6,-5.6,ezs42e4
+12.9716,77.5946,tdr1v9q
+28.6139,77.209,ttnfucj
+19.076,72.8777,te7ud2e
+-33.8688,151.2093,r3gx2f7
+40.7128,-74.006,dr5regw
+0.0,0.0,s000000
+-0.000001,-0.000001,7zzzzzz
+89.99,179.99,zzzzzy0
+-89.99,-179.99,000001z
+51.5007,-0.1246,gcpuvpm
+13.0827,80.2707,tf346te
+22.5726,88.3639,tunb6v0

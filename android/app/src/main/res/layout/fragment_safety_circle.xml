@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/screen_padding">
+
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:noticeText="@string/safety_circle_notice"
+                app:noticeType="info" />
+
+            <!-- Phase 4D: opt-in for automatic SMS alerts (off by default; SEND_SMS asked only when switched on) -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.SafeSphere.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_lg">
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/autoSmsSwitch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/auto_sms_label"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:text="@string/auto_sms_body"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+                    <TextView
+                        android:id="@+id/autoSmsStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:accessibilityLiveRegion="polite"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:text="@string/auto_sms_preview_label"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+                    <TextView
+                        android:id="@+id/autoSmsPreview"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                        android:textIsSelectable="true" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:id="@+id/errorNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:accessibilityLiveRegion="polite"
+                android:visibility="gone"
+                app:noticeText="@string/error_unknown"
+                app:noticeType="warning" />
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:indeterminate="true" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/contactList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:nestedScrollingEnabled="false"
+                android:visibility="gone"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <!-- Shown only when the circle is empty. It does not claim anyone is notified. -->
+            <com.safesphere.app.core.ui.components.EmptyStateView
+                android:id="@+id/emptyState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:visibility="gone"
+                app:emptyIcon="@drawable/ic_group"
+                app:emptyMessage="@string/safety_circle_empty_message"
+                app:emptyTitle="@string/safety_circle_empty_title" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Always visible, so adding a person is one tap away -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/screen_padding">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addContactButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/action_add_trusted_contact"
+            app:icon="@drawable/ic_add"
+            app:iconGravity="textStart" />
+    </FrameLayout>
+</LinearLayout>

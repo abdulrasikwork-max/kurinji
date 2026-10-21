@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 5: evidence capture on the active SOS screen. Large targets; status in words, never by colour alone. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <com.safesphere.app.core.ui.components.SectionHeaderView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/section_spacing"
+        android:layout_marginBottom="@dimen/space_sm"
+        app:sectionTitle="@string/section_evidence" />
+
+    <com.safesphere.app.core.ui.components.NoticeView
+        android:id="@+id/evidenceNotice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:noticeText="@string/evidence_card_intro"
+        app:noticeType="info" />
+
+    <TextView
+        android:id="@+id/evidenceRecordingStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:accessibilityLiveRegion="polite"
+        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/evidenceHints"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+        android:visibility="gone" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/evidenceRecordButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:minHeight="64dp"
+        android:text="@string/action_record_audio" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/evidencePhotoButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/space_xs"
+            android:layout_weight="1"
+            android:minHeight="56dp"
+            android:text="@string/action_take_photo" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/evidenceVideoButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_xs"
+            android:layout_weight="1"
+            android:minHeight="56dp"
+            android:text="@string/action_record_video" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/evidenceSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:accessibilityLiveRegion="polite"
+        android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/evidenceOpenVaultButton"
+        style="@style/Widget.SafeSphere.Button.Text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/action_open_evidence_vault" />
+</LinearLayout>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/space_xs"
+    android:layout_marginBottom="@dimen/space_xs"
+    android:clickable="true"
+    android:focusable="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="@dimen/space_md">
+
+        <!-- Initials in a tinted circle (colours set by the theme through the style) -->
+        <TextView
+            android:id="@+id/initials"
+            android:layout_width="@dimen/icon_circle_size"
+            android:layout_height="@dimen/icon_circle_size"
+            android:background="@drawable/bg_icon_circle"
+            android:backgroundTint="?attr/colorPrimaryContainer"
+            android:gravity="center"
+            android:importantForAccessibility="no"
+            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
+            android:textColor="?attr/colorOnPrimaryContainer" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_md"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/contactName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <TextView
+                android:id="@+id/contactDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+            <!-- ChipGroup is used only because it wraps its children onto a new line when space runs out -->
+            <com.google.android.material.chip.ChipGroup
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                app:chipSpacingHorizontal="@dimen/space_sm"
+                app:chipSpacingVertical="@dimen/space_xs">
+
+                <com.safesphere.app.core.ui.components.StatusBadgeView
+                    android:id="@+id/primaryBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <com.safesphere.app.core.ui.components.StatusBadgeView
+                    android:id="@+id/priorityBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <com.safesphere.app.core.ui.components.StatusBadgeView
+                    android:id="@+id/disabledBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.chip.ChipGroup>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/menuButton"
+                android:layout_width="@dimen/min_touch_target"
+                android:layout_height="@dimen/min_touch_target"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_more_vert"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/enabledSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/min_touch_target" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

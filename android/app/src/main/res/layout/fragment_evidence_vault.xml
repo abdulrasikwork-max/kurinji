@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 5: the person's Evidence Vault (one emergency, or all of their evidence). Secondary screen.
+     Locked (vaultLockedPanel) until the phone's screen lock is confirmed; only then is vaultContent shown. -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <LinearLayout
+            android:id="@+id/vaultLockedPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/vault_locked_title"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/vault_locked_message"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/vaultUnlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:minHeight="56dp"
+                android:text="@string/action_unlock_vault" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/vaultContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/vaultUnprotected"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/space_md"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.safesphere.app.core.ui.components.NoticeView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:noticeText="@string/vault_no_screen_lock"
+                    app:noticeType="warning" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/vaultSetScreenLock"
+                    style="@style/Widget.SafeSphere.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/action_set_screen_lock" />
+            </LinearLayout>
+
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:noticeText="@string/vault_intro"
+                app:noticeType="info" />
+
+            <TextView
+                android:id="@+id/vaultCustody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:accessibilityLiveRegion="polite"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/vaultCustodyAnchor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:visibility="gone" />
+
+            <com.safesphere.app.core.ui.components.SectionHeaderView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_spacing"
+                android:layout_marginBottom="@dimen/space_sm"
+                app:sectionTitle="@string/section_evidence_items" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/vaultList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                android:id="@+id/vaultEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/vault_empty"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/vaultRefresh"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/action_refresh" />
+
+            <!-- Restore on a new phone (recovery passphrase, docs/PHASE5.md §11). -->
+            <com.safesphere.app.core.ui.components.SectionHeaderView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_spacing"
+                android:layout_marginBottom="@dimen/space_sm"
+                app:sectionTitle="@string/section_recovery" />
+
+            <TextView
+                android:id="@+id/recoveryStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:accessibilityLiveRegion="polite"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <TextView
+                android:id="@+id/recoveryLastFetched"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/recoverySetUp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:minHeight="56dp"
+                android:text="@string/action_recovery_set_up"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/recoveryRestore"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:minHeight="56dp"
+                android:text="@string/action_recovery_restore"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/recoveryChange"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/action_recovery_change"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/recoveryForgot"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/action_recovery_forgot"
+                android:visibility="gone" />
+
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                app:noticeText="@string/vault_privacy_note"
+                app:noticeType="info" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

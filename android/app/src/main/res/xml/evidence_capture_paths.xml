@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 5: the ONLY folder the FileProvider can expose: the private staging folder for camera-app captures. The vault
+     itself (files/evidence) and everything else stay unreachable. -->
+<paths>
+    <files-path
+        name="evidence_capture"
+        path="evidence-capture/" />
+</paths>

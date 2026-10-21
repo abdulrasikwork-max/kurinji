@@ -1,0 +1,11 @@
+# Copy this file to local.properties (which is git-ignored) and adjust. Android Studio creates
+# local.properties automatically with sdk.dir; just add the api.base.url line to it.
+#
+# sdk.dir=C\:\\Users\\you\\AppData\\Local\\Android\\Sdk
+#
+# URL of the Spring Boot backend, ending with a slash.
+#   Android EMULATOR:  http://10.0.2.2:8080/      (10.0.2.2 = your computer; this is the default)
+#   Real phone on Wi-Fi: http://<your-PC-LAN-IP>:8080/   (also add that IP to the debug network config)
+# Never put passwords, tokens or API keys that must stay secret into the Android app:
+# anything shipped in an APK can be extracted.
+api.base.url=http://10.0.2.2:8080/

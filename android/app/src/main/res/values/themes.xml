@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- SafeSphere theme: Material 3 underneath, branded on top. Follows the system light/dark setting. -->
+    <style name="Base.Theme.SafeSphere" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Material colour roles -->
+        <item name="colorPrimary">@color/ss_primary</item>
+        <item name="colorOnPrimary">@color/ss_on_primary</item>
+        <item name="colorPrimaryContainer">@color/ss_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/ss_on_primary_container</item>
+        <item name="colorSecondary">@color/ss_secondary</item>
+        <item name="colorOnSecondary">@color/ss_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/ss_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/ss_on_secondary_container</item>
+        <item name="colorSurface">@color/ss_surface</item>
+        <item name="colorOnSurface">@color/ss_on_surface</item>
+        <item name="colorSurfaceVariant">@color/ss_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/ss_on_surface_variant</item>
+        <item name="colorOutline">@color/ss_outline</item>
+        <item name="colorOutlineVariant">@color/ss_outline_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/ss_surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/ss_surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/ss_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/ss_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/ss_surface_container_highest</item>
+        <item name="android:colorBackground">@color/ss_surface</item>
+        <item name="colorOnBackground">@color/ss_on_surface</item>
+
+        <!-- Red is reserved for emergency UI, so it lives in the "error" roles. -->
+        <item name="colorError">@color/ss_emergency</item>
+        <item name="colorOnError">@color/ss_on_emergency</item>
+        <item name="colorErrorContainer">@color/ss_emergency_container</item>
+        <item name="colorOnErrorContainer">@color/ss_on_emergency_container</item>
+
+        <!-- SafeSphere status and hero colours (see attrs.xml) -->
+        <item name="colorSafe">@color/ss_safe</item>
+        <item name="colorSafeContainer">@color/ss_safe_container</item>
+        <item name="colorOnSafeContainer">@color/ss_on_safe_container</item>
+        <item name="colorCaution">@color/ss_caution</item>
+        <item name="colorCautionContainer">@color/ss_caution_container</item>
+        <item name="colorOnCautionContainer">@color/ss_on_caution_container</item>
+        <item name="colorHero">@color/hero_background</item>
+        <item name="colorOnHero">@color/hero_on</item>
+        <item name="colorOnHeroVariant">@color/hero_on_variant</item>
+        <item name="colorHeroAccent">@color/hero_accent</item>
+
+        <!-- Make every default Material component use the SafeSphere style. -->
+        <item name="materialButtonStyle">@style/Widget.SafeSphere.Button.Primary</item>
+        <item name="textInputStyle">@style/Widget.SafeSphere.TextInputLayout</item>
+        <item name="materialCardViewStyle">@style/Widget.SafeSphere.Card</item>
+        <item name="bottomNavigationStyle">@style/Widget.SafeSphere.BottomNavigation</item>
+    </style>
+
+    <style name="Theme.SafeSphere" parent="Base.Theme.SafeSphere" />
+
+    <!-- Shown by the system while the process starts. Navy, so it flows straight into our splash. -->
+    <style name="Theme.SafeSphere.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_mark</item>
+        <item name="postSplashScreenTheme">@style/Theme.SafeSphere</item>
+    </style>
+
+</resources>

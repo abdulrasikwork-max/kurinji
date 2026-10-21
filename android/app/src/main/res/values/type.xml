@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        SafeSphere type scale. The system font is used on purpose (no extra dependency);
+        hierarchy comes from size, weight (regular / medium only) and colour.
+    -->
+
+    <!-- Screen title: one per screen -->
+    <style name="TextAppearance.SafeSphere.ScreenTitle" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:textSize">28sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <!-- Section title: groups of cards -->
+    <style name="TextAppearance.SafeSphere.SectionTitle" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">18sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- Primary information inside a card -->
+    <style name="TextAppearance.SafeSphere.CardTitle" parent="TextAppearance.Material3.TitleSmall">
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- Body text -->
+    <style name="TextAppearance.SafeSphere.Body" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- Secondary / supporting text -->
+    <style name="TextAppearance.SafeSphere.Caption" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- Small label above a heading -->
+    <style name="TextAppearance.SafeSphere.Overline" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.1</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- Status labels and badges -->
+    <style name="TextAppearance.SafeSphere.StatusLabel" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- Buttons -->
+    <style name="TextAppearance.SafeSphere.Button" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <!-- On the dark navy "hero" panels -->
+    <style name="TextAppearance.SafeSphere.Hero.Status" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:textSize">32sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textColor">?attr/colorOnHero</item>
+    </style>
+
+    <style name="TextAppearance.SafeSphere.Hero.Title" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">17sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">?attr/colorOnHero</item>
+    </style>
+
+    <style name="TextAppearance.SafeSphere.Hero.Body" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">?attr/colorOnHeroVariant</item>
+    </style>
+
+    <style name="TextAppearance.SafeSphere.Hero.Overline" parent="TextAppearance.SafeSphere.Overline">
+        <item name="android:textColor">?attr/colorOnHeroVariant</item>
+    </style>
+</resources>

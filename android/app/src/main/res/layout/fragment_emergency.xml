@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Seven panels; EmergencyFragment shows exactly one of them for the current EmergencyUiState. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Loading -->
+    <FrameLayout
+        android:id="@+id/loadingPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true" />
+    </FrameLayout>
+
+    <!-- IDLE: explain, then Start SOS -->
+    <ScrollView
+        android:id="@+id/idlePanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="@dimen/screen_padding">
+
+            <ImageView
+                android:layout_width="@dimen/illustration_size"
+                android:layout_height="@dimen/illustration_size"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_shield_alert"
+                app:tint="?attr/colorError" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:accessibilityHeading="true"
+                android:gravity="center"
+                android:text="@string/emergency_idle_title"
+                android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:gravity="center"
+                android:text="@string/emergency_idle_body"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                app:noticeText="@string/emergency_limits_notice"
+                app:noticeType="warning" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/startButton"
+                style="@style/Widget.SafeSphere.Button.Emergency"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:text="@string/action_start_sos" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/historyButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/action_view_emergency_history" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- COUNTDOWN: big number and a big CANCEL -->
+    <LinearLayout
+        android:id="@+id/countdownPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/emergency_countdown_label"
+            android:textAppearance="@style/TextAppearance.SafeSphere.SectionTitle" />
+
+        <TextView
+            android:id="@+id/countdownNumber"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_marginTop="@dimen/space_lg"
+            android:accessibilityLiveRegion="polite"
+            android:background="@drawable/bg_icon_circle"
+            android:backgroundTint="?attr/colorErrorContainer"
+            android:gravity="center"
+            android:textColor="?attr/colorOnErrorContainer"
+            android:textSize="96sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cancelCountdownButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xl"
+            android:minHeight="72dp"
+            android:text="@string/action_cancel_caps" />
+    </LinearLayout>
+
+    <!-- STARTING: recording on the server -->
+    <LinearLayout
+        android:id="@+id/startingPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding"
+        android:visibility="gone">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminate="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="@string/emergency_starting_message"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+    </LinearLayout>
+
+    <!-- ACTIVE -->
+    <ScrollView
+        android:id="@+id/activePanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/screen_padding">
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.SafeSphere.Card.Emergency"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_lg">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:accessibilityHeading="true"
+                        android:text="@string/emergency_active_title"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle"
+                        android:textColor="?attr/colorOnError" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:text="@string/emergency_active_message"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
+                        android:textColor="?attr/colorOnError" />
+
+                    <TextView
+                        android:id="@+id/activeStartedAt"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                        android:textColor="?attr/colorOnError" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Phase 4D, level 4: a user-tapped dial prompt. The app never calls by itself. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/callEmergencyButton"
+                style="@style/Widget.SafeSphere.Button.Emergency"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:minHeight="64dp"
+                android:text="@string/action_call_emergency_number" />
+
+            <!-- Honest statement of who has (not) been told: set at runtime from the Safety Circle alert state -->
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:id="@+id/circleNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:accessibilityLiveRegion="polite"
+                app:noticeText="@string/emergency_active_notice"
+                app:noticeType="warning" />
+
+            <!-- Shown when the server could not be reached and the emergency came from the phone's own record -->
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:id="@+id/restoredOfflineNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:visibility="gone"
+                app:noticeText="@string/emergency_restored_offline"
+                app:noticeType="warning" />
+
+            <!-- Phase 4A: location saved to the person's own emergency record -->
+            <com.safesphere.app.core.ui.components.SectionHeaderView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_spacing"
+                android:layout_marginBottom="@dimen/space_sm"
+                app:sectionTitle="@string/section_your_location" />
+
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:id="@+id/locationNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:accessibilityLiveRegion="polite"
+                app:noticeText="@string/location_card_searching"
+                app:noticeType="info" />
+
+            <TextView
+                android:id="@+id/locationDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
+                android:textIsSelectable="true"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/locationSavedAt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/locationHints"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/locationActionButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:minHeight="56dp"
+                android:visibility="gone" />
+
+            <!-- Phase 5: audio / photo / video evidence, encrypted on the phone and uploaded to the person's vault -->
+            <include
+                android:id="@+id/evidenceCard"
+                layout="@layout/view_evidence_card" />
+
+            <com.safesphere.app.core.ui.components.SectionHeaderView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_spacing"
+                android:layout_marginBottom="@dimen/space_sm"
+                app:sectionTitle="@string/section_your_safety_circle" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/circleList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                android:id="@+id/circleEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/emergency_circle_empty"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:id="@+id/activeErrorNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:accessibilityLiveRegion="polite"
+                android:visibility="gone"
+                app:noticeText="@string/error_unknown"
+                app:noticeType="warning" />
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/endProgress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:indeterminate="true"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/safeButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:minHeight="72dp"
+                android:text="@string/action_im_safe" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/falseAlarmButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/action_false_alarm" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- ENDED (RESOLVED or CANCELLED) -->
+    <LinearLayout
+        android:id="@+id/endedPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="@dimen/illustration_size"
+            android:layout_height="@dimen/illustration_size"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_check_circle"
+            app:tint="?attr/colorSafe" />
+
+        <TextView
+            android:id="@+id/endedTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:accessibilityHeading="true"
+            android:gravity="center"
+            android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle" />
+
+        <TextView
+            android:id="@+id/endedMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:gravity="center"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/doneButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xl"
+            android:text="@string/action_done" />
+    </LinearLayout>
+
+    <!-- START FAILED -->
+    <LinearLayout
+        android:id="@+id/failedPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="@dimen/illustration_size"
+            android:layout_height="@dimen/illustration_size"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_warning"
+            app:tint="?attr/colorCaution" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:accessibilityHeading="true"
+            android:gravity="center"
+            android:text="@string/emergency_failed_title"
+            android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle" />
+
+        <TextView
+            android:id="@+id/failedMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:gravity="center"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:gravity="center"
+            android:text="@string/emergency_failed_body"
+            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+        <!-- Phase 4D: one tap to the dialer when the emergency could not even be recorded (no level 4 is recorded) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/failedCallButton"
+            style="@style/Widget.SafeSphere.Button.Emergency"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:minHeight="64dp"
+            android:text="@string/action_call_emergency_number" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/retryButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:text="@string/action_retry" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dismissFailureButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/action_dismiss" />
+    </LinearLayout>
+</FrameLayout>

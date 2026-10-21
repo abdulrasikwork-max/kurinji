@@ -1,0 +1,15 @@
+# Gradle / Android Studio
+.gradle/
+build/
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Secrets and machine-specific files: never commit these
+local.properties
+*.jks
+*.keystore
+google-services.json
+.env

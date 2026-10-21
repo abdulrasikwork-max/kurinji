@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/screen_padding"
+        android:paddingTop="@dimen/space_md"
+        android:paddingEnd="@dimen/screen_padding"
+        android:paddingBottom="@dimen/space_lg">
+
+        <!-- 1. Header: brand and profile shortcut -->
+        <LinearLayout
+            android:id="@+id/homeHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                style="@style/Widget.SafeSphere.BrandTile"
+                android:layout_width="@dimen/brand_tile_size"
+                android:layout_height="@dimen/brand_tile_size" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_sm"
+                android:layout_weight="1"
+                android:text="@string/app_name"
+                android:textAppearance="@style/TextAppearance.SafeSphere.SectionTitle" />
+
+            <ImageButton
+                android:id="@+id/profileButton"
+                android:layout_width="@dimen/min_touch_target"
+                android:layout_height="@dimen/min_touch_target"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_open_profile"
+                android:src="@drawable/ic_person_outline"
+                app:tint="?attr/colorOnSurface" />
+        </LinearLayout>
+
+        <!-- Greeting -->
+        <LinearLayout
+            android:id="@+id/greetingBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/greeting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:accessibilityHeading="true"
+                android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:text="@string/tagline_your_safety"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+        </LinearLayout>
+
+        <!-- Phase 4B: a running emergency or Safe Walk, so the person is led back to it (hidden otherwise) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/activeEmergencyBanner"
+            style="@style/Widget.SafeSphere.Card.Emergency"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:clickable="true"
+            android:contentDescription="@string/cd_home_emergency_banner"
+            android:focusable="true"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:importantForAccessibility="no"
+                android:minHeight="56dp"
+                android:padding="@dimen/space_md"
+                android:text="@string/home_emergency_banner"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
+                android:textColor="?attr/colorOnError" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/activeWalkBanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:clickable="true"
+            android:focusable="true"
+            android:minHeight="56dp"
+            android:visibility="gone"
+            app:noticeText="@string/home_walk_banner"
+            app:noticeType="info" />
+
+        <!-- 2. Status card: only facts this phone knows (an SOS, a Safe Walk or neither), never "safe".
+             Hidden during an SOS: the red banner above is the one emergency element. -->
+        <com.safesphere.app.core.ui.components.SafetyStatusCardView
+            android:id="@+id/statusCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg" />
+
+        <!-- 3. Quick actions: SOS, then Safe Walk, Check-in and Safety Circle -->
+        <LinearLayout
+            android:id="@+id/quickActionsSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_spacing"
+            android:orientation="vertical">
+
+            <com.safesphere.app.core.ui.components.SectionHeaderView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/space_md"
+                app:badgeStatus="none"
+                app:sectionTitle="@string/section_quick_actions" />
+
+            <!-- Red: emergency UI. The badge says the countdown can be cancelled; the description says when the
+                 Safety Circle is texted (only with automatic SMS switched on, Phase 4D). -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/sosTile"
+                style="@style/Widget.SafeSphere.Card.Emergency"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/space_xs"
+                android:clickable="true"
+                android:contentDescription="@string/cd_sos_tile"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:minHeight="96dp"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/space_md">
+
+                    <ImageView
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:background="@drawable/bg_icon_circle"
+                        android:backgroundTint="?attr/colorOnError"
+                        android:importantForAccessibility="no"
+                        android:padding="14dp"
+                        android:src="@drawable/ic_shield_alert"
+                        app:tint="?attr/colorError" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_md"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/feature_sos_title"
+                            android:textAppearance="@style/TextAppearance.SafeSphere.Hero.Status"
+                            android:textColor="?attr/colorOnError" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/sos_subtitle"
+                            android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                            android:textColor="?attr/colorOnError" />
+
+                        <!-- Under the subtitle, not beside it: beside it, the badge took the title's width on
+                             small screens and large text (at 320 dp and 2.0x text, "SOS" disappeared). -->
+                        <TextView
+                            style="@style/Widget.SafeSphere.Badge.OnEmergency"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:text="@string/sos_badge_countdown" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/quickActions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:spanCount="3" />
+        </LinearLayout>
+
+        <!-- 4. Nearby Safety: opens Community Safety (Phase 6). Home itself asks for no location. -->
+        <LinearLayout
+            android:id="@+id/nearbySection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_spacing"
+            android:orientation="vertical">
+
+            <com.safesphere.app.core.ui.components.SectionHeaderView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/space_md"
+                app:badgeStatus="available"
+                app:sectionTitle="@string/section_nearby" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/nearbyCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:contentDescription="@string/cd_nearby_card"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_md">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/nearby_overline"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Overline" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/nearby_message"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <!-- 5. Your Safety Journey: timeline preview -->
+        <LinearLayout
+            android:id="@+id/journeySection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_spacing"
+            android:orientation="vertical">
+
+            <com.safesphere.app.core.ui.components.SectionHeaderView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/space_md"
+                app:badgeStatus="preview"
+                app:sectionTitle="@string/section_journey" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/timeline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:paddingTop="@dimen/space_sm"
+                    android:paddingBottom="@dimen/space_sm"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <!-- 6. Privacy reassurance and the preview-mode notice -->
+        <LinearLayout
+            android:id="@+id/footerSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_spacing"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:minHeight="@dimen/min_touch_target"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="@dimen/icon_size"
+                    android:layout_height="@dimen/icon_size"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_lock"
+                    app:tint="?attr/colorPrimary" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_sm"
+                    android:layout_weight="1"
+                    android:text="@string/privacy_reassurance"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

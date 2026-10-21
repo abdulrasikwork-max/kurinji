@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/splashFragment">
+
+    <!-- Used from Profile > Log out: clears the whole back stack and shows Login. -->
+    <action
+        android:id="@+id/action_global_to_login"
+        app:destination="@id/loginFragment"
+        app:popUpTo="@id/nav_graph"
+        app:popUpToInclusive="true" />
+
+    <!-- Startup -->
+    <fragment
+        android:id="@+id/splashFragment"
+        android:name="com.safesphere.app.feature.splash.ui.SplashFragment"
+        android:label="@string/app_name"
+        tools:layout="@layout/fragment_splash">
+        <action
+            android:id="@+id/action_splash_to_onboarding"
+            app:enterAnim="@anim/fade_in"
+            app:exitAnim="@anim/fade_out"
+            app:destination="@id/onboardingFragment"
+            app:popUpTo="@id/splashFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_splash_to_home"
+            app:enterAnim="@anim/fade_in"
+            app:exitAnim="@anim/fade_out"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/splashFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_splash_to_login"
+            app:enterAnim="@anim/fade_in"
+            app:exitAnim="@anim/fade_out"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/splashFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/onboardingFragment"
+        android:name="com.safesphere.app.feature.onboarding.ui.OnboardingFragment"
+        android:label="@string/app_name"
+        tools:layout="@layout/fragment_onboarding">
+        <action
+            android:id="@+id/action_onboarding_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/onboardingFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- Authentication UI (Phase 1 preview only) -->
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.safesphere.app.feature.auth.ui.LoginFragment"
+        android:label="@string/action_log_in"
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_login_to_register"
+            app:destination="@id/registerFragment" />
+        <action
+            android:id="@+id/action_login_to_forgot_password"
+            app:destination="@id/forgotPasswordFragment" />
+        <action
+            android:id="@+id/action_login_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registerFragment"
+        android:name="com.safesphere.app.feature.auth.ui.RegisterFragment"
+        android:label="@string/title_register"
+        tools:layout="@layout/fragment_register">
+        <action
+            android:id="@+id/action_register_to_home"
+            app:destination="@id/homeFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/forgotPasswordFragment"
+        android:name="com.safesphere.app.feature.auth.ui.ForgotPasswordFragment"
+        android:label="@string/title_forgot_password"
+        tools:layout="@layout/fragment_forgot_password" />
+
+    <!-- Main area: the four bottom-navigation tabs -->
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.safesphere.app.feature.home.ui.HomeFragment"
+        android:label="@string/nav_home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/safetyFragment"
+        android:name="com.safesphere.app.feature.safety.ui.SafetyFragment"
+        android:label="@string/nav_safety"
+        tools:layout="@layout/fragment_safety">
+        <action
+            android:id="@+id/action_safety_to_settings"
+            app:destination="@id/settingsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/communityFragment"
+        android:name="com.safesphere.app.feature.community.ui.CommunityFragment"
+        android:label="@string/nav_community"
+        tools:layout="@layout/fragment_community" />
+
+    <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.safesphere.app.feature.profile.ui.ProfileFragment"
+        android:label="@string/nav_profile"
+        tools:layout="@layout/fragment_profile">
+        <action
+            android:id="@+id/action_profile_to_settings"
+            app:destination="@id/settingsFragment" />
+        <action
+            android:id="@+id/action_profile_to_about"
+            app:destination="@id/aboutFragment" />
+        <action
+            android:id="@+id/action_profile_to_privacy_policy"
+            app:destination="@id/privacyPolicyFragment" />
+        <action
+            android:id="@+id/action_profile_to_moderation"
+            app:destination="@id/moderationFragment" />
+    </fragment>
+
+    <!-- Phase 7: moderator screens (secondary; the server checks the role on every call) -->
+    <fragment
+        android:id="@+id/moderationFragment"
+        android:name="com.safesphere.app.feature.moderation.ui.ModerationFragment"
+        android:label="@string/title_moderation"
+        tools:layout="@layout/fragment_moderation">
+        <action
+            android:id="@+id/action_moderation_to_case"
+            app:destination="@id/moderationCaseFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/moderationCaseFragment"
+        android:name="com.safesphere.app.feature.moderation.ui.ModerationCaseFragment"
+        android:label="@string/title_moderation_case"
+        tools:layout="@layout/fragment_moderation_case">
+        <argument
+            android:name="caseId"
+            app:argType="string" />
+    </fragment>
+
+    <!-- Phase 3: Safety Circle and emergency (all secondary screens: toolbar with back arrow, no bottom bar) -->
+    <fragment
+        android:id="@+id/safetyCircleFragment"
+        android:name="com.safesphere.app.feature.safetycircle.ui.SafetyCircleFragment"
+        android:label="@string/title_safety_circle"
+        tools:layout="@layout/fragment_safety_circle" />
+
+    <fragment
+        android:id="@+id/contactFormFragment"
+        android:name="com.safesphere.app.feature.safetycircle.ui.ContactFormFragment"
+        android:label="@string/title_contact_form"
+        tools:layout="@layout/fragment_contact_form">
+        <!-- -1 means "add a new contact"; any other value is the id of the contact being edited -->
+        <argument
+            android:name="contactId"
+            android:defaultValue="-1L"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/emergencyFragment"
+        android:name="com.safesphere.app.feature.emergency.ui.EmergencyFragment"
+        android:label="@string/title_emergency"
+        tools:layout="@layout/fragment_emergency" />
+
+    <fragment
+        android:id="@+id/emergencyHistoryFragment"
+        android:name="com.safesphere.app.feature.emergency.ui.EmergencyHistoryFragment"
+        android:label="@string/title_emergency_history"
+        tools:layout="@layout/fragment_emergency_history" />
+
+    <!-- Phase 4D: one emergency's Emergency Context Packet (owner view) -->
+    <fragment
+        android:id="@+id/emergencyDetailFragment"
+        android:name="com.safesphere.app.feature.emergency.ui.EmergencyDetailFragment"
+        android:label="@string/title_emergency_details"
+        tools:layout="@layout/fragment_emergency_detail">
+        <argument
+            android:name="emergencyId"
+            app:argType="long" />
+    </fragment>
+
+    <!-- Phase 5: the Evidence Vault of one emergency (-1 = all of the person's evidence) -->
+    <fragment
+        android:id="@+id/evidenceVaultFragment"
+        android:name="com.safesphere.app.feature.evidence.ui.EvidenceVaultFragment"
+        android:label="@string/title_evidence_vault"
+        tools:layout="@layout/fragment_evidence_vault">
+        <argument
+            android:name="emergencyId"
+            android:defaultValue="-1L"
+            app:argType="long" />
+    </fragment>
+
+    <!-- Phase 4B: Safe Walk (secondary screen) -->
+    <fragment
+        android:id="@+id/safeWalkFragment"
+        android:name="com.safesphere.app.feature.safewalk.ui.SafeWalkFragment"
+        android:label="@string/title_safe_walk"
+        tools:layout="@layout/fragment_safe_walk" />
+
+    <!-- Secondary screens -->
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.safesphere.app.feature.settings.ui.SettingsFragment"
+        android:label="@string/title_settings"
+        tools:layout="@layout/fragment_settings">
+        <action
+            android:id="@+id/action_settings_to_about"
+            app:destination="@id/aboutFragment" />
+        <action
+            android:id="@+id/action_settings_to_terms"
+            app:destination="@id/termsFragment" />
+        <action
+            android:id="@+id/action_settings_to_privacy_policy"
+            app:destination="@id/privacyPolicyFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/aboutFragment"
+        android:name="com.safesphere.app.feature.settings.ui.info.AboutFragment"
+        android:label="@string/title_about"
+        tools:layout="@layout/fragment_info_page" />
+
+    <fragment
+        android:id="@+id/termsFragment"
+        android:name="com.safesphere.app.feature.settings.ui.info.TermsFragment"
+        android:label="@string/title_terms"
+        tools:layout="@layout/fragment_info_page" />
+
+    <fragment
+        android:id="@+id/privacyPolicyFragment"
+        android:name="com.safesphere.app.feature.settings.ui.info.PrivacyPolicyFragment"
+        android:label="@string/title_privacy_policy"
+        tools:layout="@layout/fragment_info_page" />
+</navigation>

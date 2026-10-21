@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One Safety Circle contact on the SOS screen: who, what they have been told (Phase 4D), and "Text" (SMS app). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/menu_row_min_height"
+    android:orientation="horizontal"
+    android:paddingTop="@dimen/space_sm"
+    android:paddingBottom="@dimen/space_sm">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/memberName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+        <TextView
+            android:id="@+id/memberDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <TextView
+            android:id="@+id/memberAlertStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <com.safesphere.app.core.ui.components.StatusBadgeView
+        android:id="@+id/memberPrimary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_sm" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/memberTextButton"
+        style="@style/Widget.SafeSphere.Button.Text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_xs"
+        android:minHeight="48dp"
+        android:text="@string/action_text_contact"
+        android:visibility="gone" />
+</LinearLayout>

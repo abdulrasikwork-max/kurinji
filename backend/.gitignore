@@ -1,0 +1,10 @@
+target/
+.env
+*.log
+.idea/
+*.iml
+.vscode/
+sql/backups/
+evidence-store/
+vault-keys/
+*.pem

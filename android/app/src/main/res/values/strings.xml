@@ -1,0 +1,968 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand -->
+    <string name="app_name">SafeSphere</string>
+    <string name="app_tagline">Safety, connected.</string>
+    <string name="tagline_your_safety">Your safety, connected.</string>
+
+    <!-- Badges: Available = works today, Preview = shows the design only, Coming soon = not built yet -->
+    <string name="badge_available">Available</string>
+    <string name="badge_preview">Preview</string>
+    <string name="coming_soon">Coming soon</string>
+    <string name="badge_soon">Soon</string>
+    <string name="badge_sample">Sample</string>
+    <string name="badge_safe">Safe</string>
+    <string name="badge_caution">Caution</string>
+    <string name="badge_concern">Concern</string>
+
+    <!-- Navigation titles -->
+    <string name="nav_home">Home</string>
+    <string name="nav_safety">Safety</string>
+    <string name="nav_community">Community</string>
+    <string name="nav_profile">Profile</string>
+    <string name="title_register">Create account</string>
+    <string name="title_forgot_password">Reset password</string>
+    <string name="title_settings">Settings</string>
+    <string name="title_about">About SafeSphere</string>
+    <string name="title_terms">Terms</string>
+    <string name="title_privacy_policy">Privacy Policy</string>
+
+    <!-- Common actions -->
+    <string name="action_next">Next</string>
+    <string name="action_back">Back</string>
+    <string name="action_skip">Skip</string>
+    <string name="action_get_started">Get started</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_got_it">Got it</string>
+    <string name="action_log_out">Log out</string>
+
+    <!-- Accessibility descriptions -->
+    <string name="cd_app_logo">SafeSphere logo</string>
+    <string name="cd_open_profile">Open profile</string>
+    <string name="cd_profile_photo_placeholder">Profile photo placeholder</string>
+    <string name="cd_menu_item_coming_soon">%1$s, coming soon</string>
+    <string name="cd_onboarding_page">Page %1$d of %2$d</string>
+    <string name="cd_status_card">Right now: %1$s. %2$s %3$s</string>
+    <string name="cd_feature_row">%1$s. %2$s. %3$s.</string>
+    <string name="cd_quick_action">%1$s. Coming soon.</string>
+    <string name="cd_sos_tile">SOS. Emergency help. Starts a five second countdown you can cancel. SafeSphere texts your Safety Circle only if you switched on automatic SMS. Tap to open.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_connected_title">Stay Connected</string>
+    <string name="onboarding_connected_body">SafeSphere is being built to help you stay connected with people you trust during situations that may feel unsafe.</string>
+    <string name="onboarding_aware_title">Stay Aware</string>
+    <string name="onboarding_aware_body">In future versions, SafeSphere will bring together safety insights, safe journeys and community safety information to help you make informed choices.</string>
+    <string name="onboarding_safe_title">Stay Safe</string>
+    <string name="onboarding_safe_body">Later, SafeSphere will offer emergency assistance and trusted-contact communication. These features are not available in this version yet.</string>
+
+    <!-- Authentication (UI preview only) -->
+    <string name="label_email">Email</string>
+    <string name="label_password">Password</string>
+    <string name="label_full_name">Full name</string>
+    <string name="label_confirm_password">Confirm password</string>
+
+    <string name="login_subtitle">Log in to continue to SafeSphere.</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_log_in">Log in</string>
+    <string name="action_forgot_password">Forgot password?</string>
+    <string name="login_no_account">New to SafeSphere?</string>
+    <string name="action_create_an_account">Create an account</string>
+
+    <string name="register_title">Create your account</string>
+    <string name="register_subtitle">Create your SafeSphere account. Your password is sent securely to the server and never stored on this device.</string>
+    <string name="action_create_account">Create account</string>
+    <string name="register_have_account">Already have an account?</string>
+
+    <string name="forgot_title">Forgot your password?</string>
+    <string name="forgot_subtitle">Enter the email address you registered with.</string>
+    <string name="action_request_reset">Request reset link</string>
+    <string name="forgot_preview_notice">Password reset is not available yet, and no email was sent. It will be added in a later phase.</string>
+
+    <string name="error_field_required">This field is required</string>
+    <string name="error_invalid_email">Enter a valid email address</string>
+    <string name="error_name_too_short">Enter your full name</string>
+    <string name="error_password_too_short">Use at least %1$d characters</string>
+    <string name="error_passwords_do_not_match">Passwords do not match</string>
+
+    <!-- Problems reported by the server or the network -->
+    <string name="error_invalid_credentials">Invalid email or password.</string>
+    <string name="error_email_taken">An account with this email already exists. Try logging in instead.</string>
+    <string name="error_validation">Please check your details and try again.</string>
+    <string name="error_no_connection">Unable to connect to server. Check your connection and try again.</string>
+    <string name="error_server">Something went wrong on our side. Please try again in a moment.</string>
+    <string name="error_unknown">Something went wrong. Please try again.</string>
+    <string name="error_too_many_attempts">Too many attempts. Please wait and try again later.</string>
+    <string name="error_auth_too_many">Too many attempts. Please wait a few minutes and try again.</string>
+    <string name="error_forbidden">You are not allowed to do this.</string>
+    <string name="error_session_expired">Your session has expired. Please log in again.</string>
+    <string name="session_expired_title">Session expired</string>
+
+    <!-- Features (shared by Home, Safety Center and Profile) -->
+    <string name="feature_sos_title">SOS</string>
+    <string name="feature_sos_description">Start an emergency session; your Safety Circle is texted if you switched on automatic SMS</string>
+    <string name="feature_safe_walk_title">Safe Walk</string>
+    <string name="feature_safe_walk_description">Regular check-ins while you travel, plus checks for unusual stops and leaving your route.</string>
+    <string name="feature_check_in_title">Check-in</string>
+    <string name="feature_safety_circle_title">Safety Circle</string>
+    <string name="feature_safety_circle_description">Your trusted people</string>
+    <string name="feature_emergency_history_title">Emergency History</string>
+    <string name="feature_emergency_history_description">A record of your emergency sessions</string>
+    <string name="feature_safety_settings_title">Safety Settings</string>
+    <string name="feature_safety_settings_description">Manage safety and privacy preferences</string>
+
+    <!-- Home: Safety Command Center -->
+    <string name="greeting_morning">Good morning</string>
+    <string name="greeting_afternoon">Good afternoon</string>
+    <string name="greeting_evening">Good evening</string>
+    <string name="greeting_with_name">%1$s, %2$s</string>
+    <!-- Home status card: only facts this phone knows (an SOS, a Safe Walk, or neither). It never says a place or a
+         person is safe (docs/PHASE8_DESIGN.md §6.4); HomeTextsTest checks every string Home shows. -->
+    <string name="status_overline">Right now</string>
+    <string name="status_checking_label">Checking</string>
+    <string name="status_checking_headline">Looking for an active SOS or Safe Walk.</string>
+    <string name="status_checking_detail">This can take a moment after the app starts.</string>
+    <string name="status_idle_label">Nothing running</string>
+    <string name="status_idle_headline">No SOS or Safe Walk is running on this phone.</string>
+    <string name="status_idle_detail">Home does not check your surroundings. Start a Safe Walk or SOS whenever you need it.</string>
+    <string name="status_walk_label">Safe Walk on</string>
+    <string name="status_walk_headline">Your check-ins are running.</string>
+    <string name="status_walk_detail">If you miss a check-in, SafeSphere first asks whether you are OK.</string>
+    <string name="status_missed_label">Check-in missed</string>
+    <string name="status_missed_headline">Open Safe Walk to answer.</string>
+    <string name="status_missed_detail">Tell SafeSphere you are OK, or start SOS if you need help.</string>
+    <string name="section_quick_actions">Quick actions</string>
+    <string name="sos_subtitle">Emergency help</string>
+    <string name="sos_badge_countdown">5 s to cancel</string>
+    <string name="section_nearby">Nearby Safety</string>
+    <string name="nearby_overline">Your area</string>
+    <string name="nearby_message">See what people report around you, and the nearest safe places.</string>
+    <string name="cd_nearby_card">Nearby Safety. Opens Community Safety.</string>
+    <string name="section_journey">Your Safety Journey</string>
+    <string name="journey_checkin_description">Check in regularly during a Safe Walk.</string>
+    <string name="journey_walk_description">Start a Safe Walk from Quick actions.</string>
+    <string name="journey_emergency_title">Emergency status</string>
+    <string name="journey_emergency_description">Alerts and their status will appear here.</string>
+    <string name="privacy_reassurance">Your safety data stays under your control.</string>
+
+    <!-- Safety Center -->
+    <string name="safety_center_title">Safety Center</string>
+    <string name="safety_center_subtitle">Everything you\'ll use to stay safe, in one place.</string>
+    <string name="safety_center_notice">Your Safety Circle, a manual SOS session and Safe Walk check-ins are available. Your location is saved to your own records. Your Safety Circle is texted only if you switch on automatic SMS. SafeSphere never contacts emergency services: in an emergency, call 112 or your local emergency number.</string>
+
+    <!-- Community Safety -->
+    <string name="community_title">Community Safety</string>
+    <string name="community_subtitle">What people notice about places around you, and safe places to head for.</string>
+    <string name="community_privacy_notice">Anonymous and approximate. Nobody sees who shared a signal. Your exact location never leaves your phone: a report is placed in a block of about 150 m, shown only to about 1 km until someone else confirms it, appears after a short random delay and fades on its own.</string>
+    <string name="community_not_verified">Signals are shared by people and are not verified. In danger, use SOS or call 112.</string>
+    <string name="section_around_you">Around you</string>
+    <string name="section_your_reports">Your reports and answers</string>
+    <string name="empty_reports_title">Nothing shared yet</string>
+    <string name="empty_reports_message">What you report or answer appears here, only for you. You can withdraw it at any time.</string>
+    <string name="community_locating">Finding your area…</string>
+    <string name="community_loading">Looking at your area…</string>
+    <string name="community_permission_title">Location is needed to show your area</string>
+    <string name="community_permission_rationale">SafeSphere turns your location into an area of about 1 km on this phone and asks only for signals there. It is used while this screen is open and is never stored.</string>
+    <string name="community_location_off">Location is switched off. Turn it on to see your area.</string>
+    <string name="community_location_unsupported">Location is not available on this phone.</string>
+    <string name="community_no_fix">Your location could not be found right now. Try again outdoors or near a window.</string>
+    <string name="community_brief_empty">Nothing has been reported around you recently.</string>
+    <string name="community_brief">Around you: %1$s.</string>
+    <plurals name="brief_incidents">
+        <item quantity="one">%d recent concern</item>
+        <item quantity="other">%d recent concerns</item>
+    </plurals>
+    <plurals name="brief_conditions">
+        <item quantity="one">%d place to take care</item>
+        <item quantity="other">%d places to take care</item>
+    </plurals>
+    <plurals name="brief_havens">
+        <item quantity="one">%d safe place</item>
+        <item quantity="other">%d safe places</item>
+    </plurals>
+    <string name="community_nearest_haven">Nearest safe place: %1$s.</string>
+    <string name="community_approximate_location">You allowed approximate location only, so distances are rough. Reporting needs precise location.</string>
+    <string name="radar_north">N</string>
+    <string name="radar_m">%1$d m</string>
+    <string name="radar_km">%1$d km</string>
+    <string name="radar_legend">▲ concern   ■ take care   ● safe place   (soft circle = placed only to about 1 km)</string>
+    <string name="cd_radar">Safety radar. %1$s Details are in the list below.</string>
+    <string name="cd_area_signal">%1$s. %2$s. %3$s.</string>
+    <string name="group_incident">Concern</string>
+    <string name="group_condition">Take care</string>
+    <string name="group_haven">Safe place</string>
+    <string name="signal_harassment">Harassment happened here</string>
+    <string name="signal_following">Someone was followed here</string>
+    <string name="signal_theft">Theft or snatching here</string>
+    <string name="signal_poor_lighting">Poor lighting</string>
+    <string name="signal_isolated">Isolated stretch</string>
+    <string name="signal_unsafe_crossing">Unsafe crossing</string>
+    <string name="signal_broken_path">Broken or blocked path</string>
+    <string name="signal_well_lit">Well lit and busy</string>
+    <string name="signal_open_late">Open late, with staff</string>
+    <string name="signal_help_point">Help point (security or police booth)</string>
+    <string name="signal_distance">About %1$s away</string>
+    <string name="signal_area_precision">placed only to about 1 km</string>
+    <string name="support_single">Reported once</string>
+    <string name="support_several">Seen by a few people</string>
+    <string name="support_many">Seen by many people</string>
+    <string name="freshness_today">today</string>
+    <string name="freshness_week">this week</string>
+    <string name="freshness_earlier">earlier</string>
+    <string name="signal_disputed">Some people say this has changed.</string>
+    <string name="your_kind_report">You reported this</string>
+    <string name="your_kind_confirm">You said you saw this too</string>
+    <string name="your_kind_no_longer">You said this is no longer true</string>
+    <string name="my_status_pending">appears soon</string>
+    <string name="my_status_live">shown to people nearby</string>
+    <string name="my_status_not_shown">not shown at the moment</string>
+    <string name="my_contribution_line">%1$s · %2$s</string>
+    <string name="action_report_here">Report something here</string>
+    <string name="action_saw_this_too">I saw this too</string>
+    <string name="action_no_longer_true">No longer true</string>
+    <string name="action_withdraw">Withdraw</string>
+    <string name="action_try_again">Try again</string>
+    <string name="action_share_anonymously">Share anonymously</string>
+    <string name="category_choice">%1$s: %2$s</string>
+    <string name="report_choose_title">What is it like here?</string>
+    <string name="report_confirm_message">This is shared without your name, for a block of about 150 m where you are now. Others see it only to about 1 km until someone confirms it. If the same thing was already reported in a block right next to yours, your report is added to it, and your reports then show it as something you saw too. It appears after a short random delay and fades on its own. Describe the place, never a person.</string>
+    <string name="answer_confirm_message">You are saying you saw this here too. Your answer is anonymous and counts once.</string>
+    <string name="answer_no_longer_message">You are saying this is no longer true here (for example the light was repaired). Your answer is anonymous and counts once.</string>
+    <string name="withdraw_title">Withdraw this?</string>
+    <string name="withdraw_message">It will no longer count. If nobody else supports it, the signal is deleted.</string>
+    <plurals name="community_recorded">
+        <item quantity="one">Thank you. It counts within about %d minute.</item>
+        <item quantity="other">Thank you. It counts within about %d minutes.</item>
+    </plurals>
+    <string name="community_saved_offline">No connection. Your report is saved on this phone and will be sent when you open this screen online (within 24 hours).</string>
+    <plurals name="community_outbox_sent">
+        <item quantity="one">%d saved report was sent.</item>
+        <item quantity="other">%d saved reports were sent.</item>
+    </plurals>
+    <plurals name="community_pending">
+        <item quantity="one">%d report is waiting for a connection.</item>
+        <item quantity="other">%d reports are waiting for a connection.</item>
+    </plurals>
+    <string name="community_withdrawn">Withdrawn.</string>
+    <string name="community_needs_precise">Reporting needs precise location, so the report lands in the right block. You can allow it in Settings.</string>
+    <string name="community_location_rough">Your location is too rough right now to place a report. Try again in a moment, outdoors if you can.</string>
+
+    <!-- Phase 7: confidence, flags, paused contributions, appeals (trust is never shown as a score) -->
+    <string name="confidence_low">Not yet confirmed</string>
+    <string name="confidence_moderate">Confirmed by people nearby</string>
+    <string name="confidence_high">Strongly confirmed</string>
+    <string name="action_why_confidence">How sure is this?</string>
+    <string name="action_flag">Report a problem</string>
+    <string name="why_title">How sure is this?</string>
+    <string name="why_reason_single">One person has reported this so far.</string>
+    <string name="why_reason_confirmed">Independent people nearby said the same.</string>
+    <string name="why_reason_established">Some of them have a good record of reports that others confirmed.</string>
+    <string name="why_reason_linked">Some support came from accounts that keep acting together, so it was counted once.</string>
+    <string name="why_reason_disputed">Someone said this has changed.</string>
+    <string name="why_footer">SafeSphere counts independent people, not accounts, and never shows who they are. Signals are not verified. In danger, use SOS or call 112.</string>
+    <string name="flag_choose_title">What is wrong with it?</string>
+    <string name="flag_reason_false">It is not true</string>
+    <string name="flag_reason_targets">It is aimed at a person, home or business</string>
+    <string name="flag_reason_spam">It looks like spam or fake reports</string>
+    <string name="flag_confirm_title">Flag this for review?</string>
+    <string name="flag_confirm_message">Moderators will look at it. Nobody else sees your flag, and moderators do not see who you are. If the place has simply changed, use No longer true instead.</string>
+    <string name="action_flag_confirm">Flag</string>
+    <string name="community_flagged">Thank you. Moderators will look at it.</string>
+    <string name="your_flag">You flagged this for review</string>
+    <string name="my_status_under_review">being reviewed by moderators</string>
+    <string name="community_paused">A moderator has paused your community reports until %1$s (%2$s). You can still see signals, and SOS, Safe Walk and your Safety Circle work as usual.</string>
+    <string name="community_paused_short">Your community reports are paused for now. SOS and every other safety feature work as usual.</string>
+    <string name="community_appeal_open">You asked for a review. A different moderator will look at it.</string>
+    <string name="community_appeal_upheld">A different moderator reviewed it, and the pause stays.</string>
+    <string name="action_ask_review">Ask for a review</string>
+    <string name="community_appeal_sent">Review requested. A different moderator will decide.</string>
+    <string name="paused_reason_false">reports that were not true</string>
+    <string name="paused_reason_targets">reports aimed at a person or home</string>
+    <string name="paused_reason_spam">spam or coordinated reports</string>
+    <string name="paused_reason_other">a moderator\'s decision</string>
+
+    <!-- Phase 7: moderator screens (people appear only as case pseudonyms; no names, e-mails or ids) -->
+    <string name="title_moderation">Moderation</string>
+    <string name="title_moderation_case">Review case</string>
+    <string name="profile_moderation_title">Moderation</string>
+    <string name="profile_moderation_description">Review flagged signals and appeals</string>
+    <string name="moderation_intro">Cases about places, never about people. Contributors appear only under a name valid for one case. Every decision is recorded.</string>
+    <string name="moderation_not_allowed">This account cannot moderate. If you were a moderator, an administrator has changed your role.</string>
+    <string name="section_open_cases">Open cases</string>
+    <string name="section_open_appeals">Appeals</string>
+    <string name="moderation_no_cases">No open cases.</string>
+    <string name="moderation_no_appeals">No open appeals.</string>
+    <string name="case_origin_flags">Flagged by people nearby</string>
+    <string name="case_origin_rereported">Removed signal reported again</string>
+    <string name="case_origin_coordination">Backed by accounts that act together</string>
+    <string name="case_line">%1$s · %2$s · opened %3$s</string>
+    <plurals name="case_flags">
+        <item quantity="one">%d flag</item>
+        <item quantity="other">%d flags</item>
+    </plurals>
+    <string name="case_you_took_part">You took part in this signal. Another moderator must review it.</string>
+    <string name="case_hidden">Hidden for review</string>
+    <string name="case_removed">Removed</string>
+    <string name="case_visible">Visible to people nearby</string>
+    <string name="case_closed">This case is closed (%1$s).</string>
+    <string name="case_outcome_dismissed">dismissed</string>
+    <string name="case_outcome_removed">removed</string>
+    <string name="case_place">Block %1$s (area %2$s)</string>
+    <string name="case_counts">Independent people backing it: %1$d. Saying it has changed: %2$d.</string>
+    <string name="case_flag_counts">Flags: %1$s</string>
+    <string name="section_participants">People in this case</string>
+    <string name="participant_line">%1$s · %2$s · %3$s</string>
+    <string name="participant_not_counting">not counting</string>
+    <string name="participant_group">acts with group %1$s</string>
+    <string name="participant_ref">Person %1$s</string>
+    <string name="cd_pause_participant">Pause %1$s</string>
+    <string name="role_report">Reported it</string>
+    <string name="role_confirm">Confirmed it</string>
+    <string name="role_no_longer">Said it has changed</string>
+    <string name="role_flag">Flagged: %1$s</string>
+    <string name="tier_restricted">paused</string>
+    <string name="tier_limited">limited record</string>
+    <string name="tier_standard">standard</string>
+    <string name="tier_trusted">good record</string>
+    <string name="age_new">new account</string>
+    <string name="age_recent">under 30 days</string>
+    <string name="age_established">over 30 days</string>
+    <string name="action_restrict">Pause</string>
+    <string name="action_quarantine">Hide for review</string>
+    <string name="action_keep_signal">Keep it</string>
+    <string name="action_remove_signal">Remove</string>
+    <string name="moderation_choose_reason">Why?</string>
+    <string name="moderation_choose_days">For how long?</string>
+    <plurals name="moderation_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <string name="moderation_confirm_title">Record this decision?</string>
+    <string name="moderation_confirm_restrict">This person will not be able to report, confirm or flag for %1$s. They can still see signals and use SOS and every safety feature. They can ask another moderator to review it.</string>
+    <string name="moderation_confirm_remove">The signal is hidden and its reports are deleted. A report aimed at someone or spam counts against its reporters.</string>
+    <string name="moderation_confirm_dismiss">The signal stays visible and these flags are closed.</string>
+    <string name="moderation_confirm_quarantine">The signal is hidden from everyone until this case is decided.</string>
+    <string name="action_record">Record</string>
+    <string name="moderation_decided">Decision recorded.</string>
+    <string name="reason_false">Not true</string>
+    <string name="reason_targets">Aimed at a person, home or business</string>
+    <string name="reason_spam">Spam or coordinated</string>
+    <string name="reason_duplicate">Duplicate</string>
+    <string name="reason_no_violation">Nothing wrong</string>
+    <string name="reason_needs_review">Needs a closer look</string>
+    <string name="appeal_line">%1$s · paused until %2$s</string>
+    <string name="appeal_details">%1$s · current record: %2$s · strikes: %3$d</string>
+    <string name="appeal_own_decision">You made this decision, so another moderator must review it.</string>
+    <string name="action_uphold">Keep the pause</string>
+    <string name="action_overturn">Lift the pause</string>
+    <string name="appeal_confirm_overturn">The pause ends now and its strike is removed. The decision is recorded with your account.</string>
+    <string name="appeal_confirm_uphold">The pause stays until its end date. The decision is recorded with your account.</string>
+    <string name="appeal_decided_upheld">The pause stays.</string>
+    <string name="appeal_decided_overturned">The pause was lifted.</string>
+    <string name="moderation_signal_reasons">Why the system rates it so: %1$s</string>
+    <!-- Phase 9C: the coordination pattern behind a case (moderators only). Bands, never counts; never an accusation. -->
+    <string name="coordination_heading">Pattern behind this signal:</string>
+    <string name="coordination_linked_group">All of its support comes from accounts that keep backing the same things, so they count as one person.</string>
+    <string name="coordination_support_core">The people backing it keep backing each other\'s reports in several parts of town, and nobody else backs those places.</string>
+    <string name="coordination_exclusive_pair">Two accounts keep backing the same places across town, and nobody else backs those places.</string>
+    <string name="coordination_size_two">Group: 2 accounts.</string>
+    <string name="coordination_size_small">Group: 3 to 5 accounts.</string>
+    <string name="coordination_size_large">Group: 6 or more accounts.</string>
+    <string name="coordination_places_few">Places only this group backs: 2 to 4.</string>
+    <string name="coordination_places_several">Places only this group backs: 5 to 9.</string>
+    <string name="coordination_places_many">Places only this group backs: 10 or more.</string>
+    <string name="coordination_guidance">Backing each other is not proof that a report is false: friends, a household or a hostel can look like this. Look at the place and the reasons.</string>
+    <string name="coordination_gone">The pattern that opened this case is no longer present.</string>
+    <string name="coordination_confirm_dismiss">The signal stays visible. The people backing it now will count as separate people for this place. Their other places are not affected.</string>
+    <string name="coordination_group_members">Others in this group</string>
+    <string name="coordination_member_role">In the same group, not behind this place</string>
+    <string name="coordination_pause_group">Pause everyone in this group</string>
+    <string name="coordination_confirm_pause_group">Every account in this group will not be able to report, confirm or flag for %1$s. People who only flagged this place are not included. They can all still see signals and use SOS and every safety feature, and each of them can ask another moderator to review it. Backing each other is not proof on its own.</string>
+
+    <!-- Safety Profile -->
+    <string name="profile_title">Safety Profile</string>
+    <string name="profile_name_fallback">Not signed in</string>
+    <string name="profile_email_fallback">No email available</string>
+    <string name="profile_status_signed_in">Signed in</string>
+    <string name="section_your_safety">Your safety</string>
+    <string name="section_privacy_app">Privacy and app</string>
+    <string name="profile_emergency_prefs_title">Emergency Preferences</string>
+    <string name="profile_emergency_prefs_description">How and when your alerts are sent</string>
+    <string name="profile_activity_title">My Safety Activity</string>
+    <string name="profile_activity_description">Your check-ins and walks</string>
+    <string name="profile_contributions_title">My Community Contributions</string>
+    <string name="profile_contributions_description">Reports you have shared and confirmed</string>
+    <string name="profile_privacy_title">Privacy &amp; Security</string>
+    <string name="profile_privacy_description">How SafeSphere treats your data</string>
+    <string name="profile_settings_title">Settings</string>
+    <string name="profile_settings_description">App preferences</string>
+    <string name="profile_about_title">About SafeSphere</string>
+    <string name="profile_about_description">Version and project information</string>
+    <string name="logout_dialog_title">Log out?</string>
+    <string name="logout_dialog_message">This ends the preview session on this device and returns you to the login screen.</string>
+
+    <!-- Dialogs for features that do not exist yet -->
+    <string name="dialog_coming_title">%1$s is coming later</string>
+    <string name="dialog_coming_message">This feature is not built yet. It will arrive in a later phase of SafeSphere.</string>
+
+    <!-- Settings -->
+    <string name="settings_section_account">Account</string>
+    <string name="settings_section_safety">Safety</string>
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_section_application">Application</string>
+    <string name="settings_profile">Profile</string>
+    <string name="settings_change_password">Change password</string>
+    <string name="settings_emergency">Emergency settings</string>
+    <string name="settings_safety_circle">Safety Circle</string>
+    <string name="settings_checkin">Check-in settings</string>
+    <string name="settings_privacy_settings">Privacy settings</string>
+    <string name="settings_data_permissions">Data permissions</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_about">About SafeSphere</string>
+    <string name="settings_terms">Terms</string>
+    <string name="settings_privacy_policy">Privacy Policy</string>
+
+    <!-- Information pages -->
+    <string name="about_body">SafeSphere is a privacy-focused women\'s safety platform being built in phases as a final-year project.
+
+This build has real accounts, a Safety Circle, a manual SOS session and Safe Walk with check-ins. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. During an active SOS you can record audio, photos or video as evidence: only when you tap, always with a visible notification, encrypted on your phone at once and uploaded to your private Evidence Vault. SafeSphere never contacts emergency services and never records in the background on its own.
+
+Suggested recovery passphrases use the EFF Large Wordlist by the Electronic Frontier Foundation (CC BY 3.0). Passphrases are checked against the 10k-most-common password list from the SecLists project (MIT licence).</string>
+    <string name="about_version_format">Version %1$s</string>
+    <string name="terms_body">These terms are a placeholder for the Phase 1 prototype. Final terms of use will be written and reviewed before SafeSphere is released to the public.</string>
+    <string name="privacy_policy_body">This is a placeholder for the current prototype, not a final policy.
+
+In this build SafeSphere sends your name, email and password to the SafeSphere server to create and check your account. The server stores your name and email, and only a one-way hash of your password. This device stores your name, email and a sign-in token so you stay signed in.
+
+Location: only while an emergency is active, and only if you allow it, your phone\'s location (with its accuracy and the battery level) is saved to your own emergency record on the SafeSphere server. Only you can see the saved points; the only place your location goes beyond that is a map link in the Safety Circle SMS, and only if you switch on automatic SMS or send it yourself (see below). Points that are waiting to be uploaded are kept in memory, not stored on the phone. Location points are deleted together with the emergency record and your account.
+
+Safe Walk: the server stores the walk (optional destination text you type, check-in times, missed check-ins) and only the LATEST location of your phone during the walk, which replaces the previous one. No route or track is kept. Nobody is contacted unless you switch on automatic SMS (see below).
+
+Stop and route checks (if switched on): the destination text you type is looked up with your phone\'s map service (Google on most phones) and its coordinates are stored with the walk. Your phone compares its position with the direct route in memory only; no movement history is stored on the phone or the server. When a walk ends normally, its destination coordinates and last location are deleted from the server; if it ended in an emergency they are kept with that walk.
+
+Safety Circle SMS (only if you switch on automatic SMS, or when you tap Text yourself): your phone sends an SMS to your enabled contacts with your name, the time, what happened and a map link to your last location. To work without internet, your enabled contacts\' names and numbers are kept on this phone (deleted when you log out). The server records only that a message was sent, to which contact and its status; never the number or the text. Tapping Call 112 opens your phone\'s dialer; SafeSphere records that it was opened, not whether you called.
+
+Evidence Vault (only during an active SOS, only when you tap): audio from your microphone, or a photo or video taken with your phone\'s own camera app. Each item is encrypted on this phone right away with its own key, which is protected by your phone\'s secure hardware; the unencrypted file is deleted. The SafeSphere server receives only the encrypted file, its size, two fingerprints (SHA-256), the capture times and a chain-of-custody log; it cannot open the evidence. If the server offers a vault recovery key, a copy of each item\'s key is sealed for it, so the evidence can still be recovered if your phone is lost; that recovery key is kept offline by the SafeSphere operator, not on the server. If you set up a recovery passphrase, the server also stores a copy of each item\'s key locked with a key that only your passphrase opens; the passphrase itself never leaves your phone, so SafeSphere cannot read it or reset it (someone holding the server\'s data could try to guess a weak passphrase, which is why short or common ones are refused). The server records when that locked copy was last fetched. No location, file name or device details are sent with evidence. You can delete evidence everywhere with your password once the emergency has ended. The camera app you use may keep its own copy; check its settings.
+SafeSphere does not read your phone\'s contacts or your messages.
+
+A complete privacy policy will be published before any feature that handles more personal data is released.</string>
+
+    <!-- ===== Phase 3: shared ===== -->
+    <string name="badge_primary">Primary</string>
+    <string name="badge_disabled">Disabled</string>
+    <string name="badge_open">Open</string>
+    <string name="cd_quick_action_open">%1$s. Opens this screen.</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_save">Save</string>
+    <string name="action_done">Done</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_dismiss">Not now</string>
+    <string name="error_invalid_phone">Enter a valid phone number</string>
+    <string name="error_selection_required">Please choose an option</string>
+    <string name="error_not_found">This item no longer exists.</string>
+    <string name="error_conflict">That conflicts with existing data. Please try again.</string>
+    <string name="title_safety_circle">Safety Circle</string>
+    <string name="title_contact_form">Trusted contact</string>
+    <string name="title_emergency">Emergency SOS</string>
+    <string name="title_emergency_history">Emergency History</string>
+
+    <!-- ===== Safety Circle ===== -->
+    <string name="safety_circle_notice">Your Safety Circle is saved to your SafeSphere account. The people in it are texted only if you switch on automatic SMS below, or when you text them yourself.</string>
+    <string name="safety_circle_empty_title">Your trusted people</string>
+    <string name="safety_circle_empty_message">Add people you trust so they can become part of your emergency response network.</string>
+    <string name="action_add_trusted_contact">Add Trusted Contact</string>
+    <string name="contact_form_add_title">Add trusted contact</string>
+    <string name="contact_form_edit_title">Edit trusted contact</string>
+    <string name="label_contact_name">Name</string>
+    <string name="label_phone">Phone number</string>
+    <string name="label_email_optional">Email (optional)</string>
+    <string name="label_relationship">Relationship</string>
+    <string name="label_priority">Priority</string>
+    <string name="label_primary_contact">Primary contact</string>
+    <string name="hint_primary_contact">Only one person can be primary. Choosing a new one replaces the old one.</string>
+    <string name="label_contact_enabled">Enabled</string>
+    <string name="action_remove_from_circle">Remove from Safety Circle</string>
+    <string name="delete_contact_title">Remove this person?</string>
+    <string name="delete_contact_message">Remove %1$s from your Safety Circle?</string>
+    <string name="this_person">this person</string>
+    <string name="contact_details_format">%1$s · %2$s</string>
+    <string name="contact_priority_format">Priority %1$d</string>
+    <string name="cd_contact_enabled">Enable %1$s</string>
+    <string name="cd_contact_menu">More options for %1$s</string>
+    <string name="relationship_family">Family</string>
+    <string name="relationship_partner">Partner</string>
+    <string name="relationship_friend">Friend</string>
+    <string name="relationship_colleague">Colleague</string>
+    <string name="relationship_neighbor">Neighbor</string>
+    <string name="relationship_other">Other</string>
+    <string name="priority_1">1 · Contact first</string>
+    <string name="priority_2">2 · High</string>
+    <string name="priority_3">3 · Normal</string>
+    <string name="priority_4">4 · Low</string>
+    <string name="priority_5">5 · Last</string>
+
+    <!-- ===== Emergency SOS ===== -->
+    <string name="emergency_idle_title">Emergency SOS</string>
+    <string name="emergency_idle_body">Starts a five second countdown. If you do not cancel it, SafeSphere records an emergency session on your account.</string>
+    <string name="emergency_limits_notice">During SOS, SafeSphere asks for your location and saves it to your own emergency record. If you switched on automatic SMS (Safety Circle screen), your Safety Circle is texted with a map link; otherwise you can text them yourself. SafeSphere never calls emergency services, and records audio, photos or video only when you tap to do so. In an emergency, call 112 or your local emergency number.</string>
+    <string name="action_start_sos">Start SOS</string>
+    <string name="action_view_emergency_history">View emergency history</string>
+    <string name="emergency_countdown_label">Starting emergency in</string>
+    <string name="cd_countdown_seconds">Starting emergency in %1$d seconds</string>
+    <string name="action_cancel_caps">CANCEL</string>
+    <string name="emergency_starting_message">Recording your emergency…</string>
+    <string name="emergency_active_title">Emergency mode activated</string>
+    <string name="emergency_active_message">Your emergency session is active.</string>
+    <string name="emergency_active_notice">Checking whether your Safety Circle can be texted…</string>
+    <string name="section_your_safety_circle">Your Safety Circle</string>
+    <string name="emergency_circle_empty">You have no enabled contacts in your Safety Circle.</string>
+    <string name="action_im_safe">I\'m safe — end emergency</string>
+    <string name="action_false_alarm">False alarm — cancel</string>
+    <string name="emergency_ended_resolved_title">Marked as safe</string>
+    <string name="emergency_ended_resolved_message">Your emergency session has ended and was saved to your history.</string>
+    <string name="emergency_ended_cancelled_title">Emergency cancelled</string>
+    <string name="emergency_ended_cancelled_message">The session was marked as a false alarm and saved to your history.</string>
+    <string name="emergency_failed_title">Could not record the emergency</string>
+    <string name="emergency_failed_body">If you are in danger, call 112 or your local emergency number now.</string>
+    <string name="emergency_started_at">Started: %1$s</string>
+    <string name="emergency_ended_at">Ended: %1$s</string>
+    <string name="emergency_status_active">Active</string>
+    <string name="emergency_status_cancelled">Cancelled</string>
+    <string name="emergency_status_resolved">Resolved</string>
+    <string name="trigger_manual">Manual SOS</string>
+    <string name="trigger_shake">Shake</string>
+    <string name="trigger_voice">Voice</string>
+    <string name="trigger_duress_pin">Duress PIN</string>
+    <string name="cd_emergency_event">%1$s. Started %2$s. Status: %3$s.</string>
+    <string name="emergency_history_intro">Your emergency sessions, newest first. Only you can see them.</string>
+    <string name="emergency_history_empty_title">No emergencies recorded</string>
+    <string name="emergency_history_empty_message">When you use SOS, the session appears here.</string>
+
+    <!-- ===== Phase 4A: emergency location ===== -->
+    <string name="section_your_location">Your location</string>
+    <string name="emergency_restored_offline">You are offline. This is the active emergency saved on this phone; it may already have been ended on another device.</string>
+    <string name="location_card_permission_needed">Your location is not being saved. Allow location so your position is stored with this emergency record and a map link can be included in your Safety Circle\'s SMS.</string>
+    <string name="location_card_permission_blocked">Location is blocked for SafeSphere. To save your position with this emergency, allow Location in the app\'s Settings.</string>
+    <string name="location_card_location_off">Your phone\'s location is turned off, so your position cannot be saved.</string>
+    <string name="location_card_services_unavailable">Location is not available on this phone (Google Play services are missing or out of date).</string>
+    <string name="location_card_searching">Finding your location…</string>
+    <string name="location_card_unavailable">Location is temporarily unavailable. SafeSphere keeps trying.</string>
+    <string name="location_card_saving">Saving your location to your emergency record…</string>
+    <string name="location_card_saved">Your location is being saved to your emergency record. Only your Safety Circle\'s SMS (if automatic SMS is on) contains a map link to it.</string>
+    <string name="location_card_offline">No connection. Your location is kept on this phone for now and saved when you are back online.</string>
+    <string name="location_card_uploads_stopped">Your location is no longer being saved for this emergency.</string>
+    <string name="location_card_signed_out">You were signed out, so your location is no longer being saved. Sign in again.</string>
+    <string name="location_details">%1$s, %2$s · ±%3$d m</string>
+    <string name="location_details_no_accuracy">%1$s, %2$s</string>
+    <string name="location_saved_at">Last saved: %1$s</string>
+    <string name="location_not_saved_yet">Not saved to the server yet.</string>
+    <plurals name="location_pending_count">
+        <item quantity="one">%1$d point waiting to upload.</item>
+        <item quantity="other">%1$d points waiting to upload.</item>
+    </plurals>
+    <string name="location_hint_approximate">Only approximate location is allowed, so your position may be off by a few hundred metres.</string>
+    <string name="location_hint_low_accuracy">Low accuracy right now. Moving near a window or outdoors can help.</string>
+    <string name="location_hint_rejected">Some points could not be saved. Check that the phone\'s date and time are set automatically.</string>
+    <string name="location_hint_keep_app_open">Keep SafeSphere open: with the screen off or another app in front, location may pause.</string>
+    <string name="action_allow_location">Allow location</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="action_turn_on_location">Turn on location</string>
+
+    <!-- ===== Phase 4B: Safe Walk ===== -->
+    <string name="title_safe_walk">Safe Walk</string>
+    <string name="safe_walk_setup_title">Start a Safe Walk</string>
+    <string name="safe_walk_setup_body">SafeSphere asks you to check in at regular times while you are on your way. Tap “I\'m OK” each time, and “I\'ve arrived” when you get there.</string>
+    <string name="safe_walk_destination_hint">Where are you going? (optional)</string>
+    <string name="safe_walk_interval_label">Check in every</string>
+    <string name="safe_walk_interval_option">%1$d min</string>
+    <string name="safe_walk_limits_notice">If you miss a check-in, SafeSphere alerts you on this phone. If you switched on automatic SMS (Safety Circle screen) and still do not answer, your Safety Circle is texted. This only works while your phone is on. If you are in danger, use SOS or call 112.</string>
+    <string name="action_start_safe_walk">Start Safe Walk</string>
+    <string name="safe_walk_active_title">Safe Walk active</string>
+    <string name="safe_walk_to">To: %1$s</string>
+    <string name="safe_walk_every">Check-in every %1$d minutes</string>
+    <string name="safe_walk_due_soon">Check-in due soon. Tap “I\'m OK” to check in.</string>
+    <string name="safe_walk_missed">You missed a check-in. Are you OK? Tap “I\'m OK” now.</string>
+    <string name="safe_walk_no_response_title">No response to your check-in</string>
+    <string name="safe_walk_no_response_body">Your Safety Circle is not texted automatically (automatic SMS is off). If you need help, tap SOS or call 112. If you are fine, tap “I\'m OK”.</string>
+    <string name="safe_walk_until_check_in">until your next check-in</string>
+    <string name="safe_walk_overdue">since your check-in was due</string>
+    <string name="cd_safe_walk_countdown">Time to your next check-in: %1$d minutes %2$d seconds</string>
+    <string name="cd_safe_walk_overdue">Check-in overdue by %1$d minutes %2$d seconds</string>
+    <string name="action_check_in">I\'m OK — check in</string>
+    <string name="action_arrived">I\'ve arrived</string>
+    <string name="action_walk_sos">SOS</string>
+    <string name="action_cancel_walk">Cancel walk</string>
+    <string name="action_keep_walking">Keep walking</string>
+    <string name="safe_walk_confirm_arrived">End this Safe Walk? You will not be asked to check in any more.</string>
+    <string name="safe_walk_confirm_cancel">Cancel this Safe Walk? You will not be asked to check in any more.</string>
+    <string name="safe_walk_location_saved">Last location saved: %1$s (only the latest one is kept)</string>
+    <string name="safe_walk_hint_no_location">Location is not shared with this walk.</string>
+    <string name="safe_walk_hint_keep_open">Keep SafeSphere open: without its background notification, check-in reminders may not reach you.</string>
+    <string name="safe_walk_hint_notifications_off">Notifications are off, so check-in reminders only appear while SafeSphere is open.</string>
+    <string name="safe_walk_hint_offline">No connection. Your check-ins count on this phone and are sent when you are back online.</string>
+    <string name="safe_walk_hint_restored_offline">You are offline. This walk was restored from this phone.</string>
+    <string name="safe_walk_ended_completed_title">You have arrived</string>
+    <string name="safe_walk_ended_completed_message">Glad you got there. Your Safe Walk has ended.</string>
+    <string name="safe_walk_ended_cancelled_title">Safe Walk cancelled</string>
+    <string name="safe_walk_ended_cancelled_message">You will not be asked to check in any more.</string>
+    <string name="safe_walk_ended_emergency_title">Emergency started</string>
+    <string name="safe_walk_ended_emergency_message">Your Safe Walk ended because an emergency was started. Open SOS to see it.</string>
+    <string name="home_emergency_banner">Emergency active. Tap to open it.</string>
+    <string name="cd_home_emergency_banner">Emergency active. Opens the emergency screen.</string>
+    <string name="home_walk_banner">Safe Walk active. Tap to open it.</string>
+    <string name="home_walk_banner_overdue">Safe Walk: check-in missed. Tap to check in.</string>
+
+    <!-- Safe Walk notifications: generic text only (no destination, no location) -->
+    <string name="notification_channel_alerts_name">Safe Walk check-ins</string>
+    <string name="notification_channel_alerts_description">Reminders and missed check-ins during a Safe Walk.</string>
+    <string name="safe_walk_alert_public_title">SafeSphere needs your attention</string>
+    <string name="safe_walk_alert_due_soon_title">Check-in due soon</string>
+    <string name="safe_walk_alert_due_soon_text">Tap “I\'m OK” to check in.</string>
+    <string name="safe_walk_alert_missed_title">You missed a check-in</string>
+    <string name="safe_walk_alert_missed_text">Are you OK? Tap “I\'m OK” to check in.</string>
+    <string name="safe_walk_alert_no_response_title">No response to your check-in</string>
+    <string name="safe_walk_alert_no_response_text">Tap “I\'m OK” if you are fine. If you need help, open SafeSphere and tap SOS, or call 112.</string>
+    <string name="action_im_ok">I\'m OK</string>
+    <string name="safe_walk_notification_title">Safe Walk active</string>
+    <string name="safe_walk_notification_active">SafeSphere will ask you to check in.</string>
+    <string name="safe_walk_notification_missed">Check-in missed. Open SafeSphere to check in.</string>
+    <string name="safe_walk_notification_concern">SafeSphere asked if you are OK. Open it to answer.</string>
+    <string name="safe_walk_notification_arrived">Looks like you have arrived. Open SafeSphere to finish.</string>
+    <string name="safe_walk_alert_concern_title">Are you OK?</string>
+    <string name="safe_walk_alert_off_route_text">You seem to have left your route. Tap “I\'m OK” if you are fine.</string>
+    <string name="safe_walk_alert_stopped_text">You have not moved for a while. Tap “I\'m OK” if you are fine.</string>
+    <string name="safe_walk_alert_battery_title">Battery very low</string>
+    <string name="safe_walk_alert_battery_text">If your phone switches off, SafeSphere cannot check on you. Charge it if you can, or finish your walk and tell someone where you are.</string>
+
+    <!-- Phase 4D: Safety Circle communication, level 4, Emergency Context Packet -->
+    <string name="emergency_number" translatable="false">112</string>
+    <string name="action_call_emergency_number">Call 112</string>
+    <string name="dialer_unavailable">This device cannot open a phone dialer. Use another phone to call 112.</string>
+    <string name="sms_app_unavailable">No SMS app was found on this device.</string>
+    <string name="action_text_contact">Text</string>
+    <string name="cd_text_contact">Open the SMS app with a message for %1$s</string>
+    <string name="action_text_my_circle">Text my Safety Circle</string>
+    <string name="text_my_circle_title">Who should get the message?</string>
+    <string name="emergency_circle_auto_notice">Your Safety Circle is texted automatically from this phone (SMS). “Sent” means the message left your phone; it does not mean it was received. SafeSphere does not contact emergency services: use Call 112.</string>
+    <string name="emergency_circle_manual_notice">Your Safety Circle has NOT been told automatically (automatic SMS is off). Tap Text next to a contact to send them a ready message yourself, or call 112.</string>
+    <string name="circle_status_will_text">Will be texted automatically</string>
+    <string name="circle_status_not_notified">Not notified</string>
+    <string name="circle_status_sending">SMS sending…</string>
+    <string name="circle_status_sent">SMS sent %1$s · delivery not confirmed</string>
+    <string name="circle_status_delivered">SMS delivered %1$s</string>
+    <string name="circle_status_failed">SMS failed %1$s · tap Text to send it yourself</string>
+    <string name="circle_status_composer">SMS app opened %1$s · check that you sent it</string>
+    <string name="circle_walk_all_clear">Your Safety Circle was told that you are OK.</string>
+    <string name="circle_walk_sending">Texting your Safety Circle…</string>
+    <string name="circle_walk_sent">Your Safety Circle was texted (%1$d). Delivery is not confirmed.</string>
+    <string name="circle_walk_delivered">Your Safety Circle was texted and the network reported delivery (%1$d).</string>
+    <string name="circle_walk_failed">The SMS to your Safety Circle failed (%1$d). Tap “Text my Safety Circle” to send it yourself.</string>
+    <string name="circle_walk_composer">The SMS app was opened for your Safety Circle. Check that the message was sent.</string>
+    <string name="circle_walk_will_text">If you do not answer, your Safety Circle will be texted automatically.</string>
+    <string name="circle_walk_not_notified">Your Safety Circle will not be told automatically (automatic SMS is off).</string>
+    <string name="safe_walk_no_response_body_auto">Your Safety Circle is being texted that you did not answer. If you need help, tap SOS or call 112. If you are fine, tap “I\'m OK” and they will be told.</string>
+    <string name="auto_sms_label">Text my Safety Circle automatically</string>
+    <string name="auto_sms_body">If you start SOS, or do not answer a Safe Walk check, this phone sends an SMS to your enabled contacts with your name, the time, what happened and a map link to your last location. It also tells them when you are OK again. SMS works without internet; standard SMS charges may apply. Nothing is sent to anyone else.</string>
+    <string name="auto_sms_preview_label">What they receive (example):</string>
+    <string name="auto_sms_status_not_supported">This device cannot send SMS, so automatic alerts are not available.</string>
+    <string name="auto_sms_status_off">Off. Nobody is texted automatically. You can still text your contacts yourself from the SOS and Safe Walk screens.</string>
+    <string name="auto_sms_status_permission">SMS permission is off, so nothing will be sent. Switch this off and on again to allow it.</string>
+    <string name="auto_sms_status_no_contacts">On, but you have no enabled contacts to text.</string>
+    <string name="auto_sms_status_on">On. %1$d contact(s) will receive an SMS from this phone. “Sent” does not mean received.</string>
+    <string name="auto_sms_permission_title">Allow SafeSphere to send SMS?</string>
+    <string name="auto_sms_permission_rationale">SafeSphere needs the SMS permission to text your Safety Circle by itself when you start SOS or do not answer a Safe Walk check. It only texts your enabled contacts and never reads your messages.</string>
+    <string name="auto_sms_permission_denied">SMS permission was not given. Automatic alerts stay off.</string>
+    <string name="title_emergency_details">Emergency details</string>
+    <string name="section_last_location">Last saved location</string>
+    <string name="section_what_happened">What happened</string>
+    <string name="action_open_in_maps">Open in maps</string>
+    <string name="detail_status">Status: %1$s</string>
+    <string name="detail_highest_level">Highest level reached: %1$d</string>
+    <string name="detail_walk_destination">Started during a Safe Walk to: %1$s</string>
+    <plurals name="detail_location">
+        <item quantity="one">Saved %1$s (%2$d point saved in total).</item>
+        <item quantity="other">Saved %1$s (%2$d points saved in total).</item>
+    </plurals>
+    <string name="detail_no_location">No location was saved for this emergency.</string>
+    <string name="detail_nothing_recorded">Nothing else was recorded.</string>
+    <string name="detail_escalation_line">%1$s · Level %2$d · %3$s</string>
+    <string name="detail_alert_line">%1$s · %2$s · %3$s · %4$s</string>
+    <string name="detail_unknown_contact">Removed contact</string>
+    <string name="emergency_detail_note">“Sent” means an SMS left the phone, not that it was received. “SMS app opened” means you were shown the message; SafeSphere cannot know whether you sent it. “Dialer opened” does not mean a call was made.</string>
+    <string name="reason_checked_in">Checked in</string>
+    <string name="reason_check_in_missed">Check-in missed</string>
+    <string name="reason_no_response">No response</string>
+    <string name="reason_sos_confirmed">SOS started</string>
+    <string name="reason_route_deviation">Left the route</string>
+    <string name="reason_unexpected_stop">Stopped for a long time</string>
+    <string name="reason_dial_prompt">Dialer opened for 112</string>
+    <string name="reason_other">Other</string>
+    <string name="alert_kind_walk_no_response">Safe Walk: no answer</string>
+    <string name="alert_kind_sos_started">SOS started</string>
+    <string name="alert_kind_sos_location">SOS location</string>
+    <string name="alert_kind_all_clear">All clear</string>
+    <string name="alert_kind_sos_resolved">SOS resolved</string>
+    <string name="alert_kind_sos_cancelled">SOS cancelled (false alarm)</string>
+    <string name="alert_status_delivered">delivered</string>
+    <string name="alert_status_sent_auto">sent automatically (not confirmed)</string>
+    <string name="alert_status_sent">sent (not confirmed)</string>
+    <string name="alert_status_failed">failed</string>
+    <string name="alert_status_composer">SMS app opened</string>
+
+    <!-- Safe Walk: stop and route checks, battery (Phase 4C) -->
+    <string name="safe_walk_movement_checks_label">Watch for unusual stops and route changes</string>
+    <string name="safe_walk_movement_checks_body">If you stay in one place for a long time, or clearly leave the area around the direct route to your destination, SafeSphere asks “Are you OK?”. No answer counts like a missed check-in. To find your destination, the text you type is looked up with your phone\'s map service.</string>
+    <string name="safe_walk_off_route">You seem to have left the area around your route. Are you OK? Tap “I\'m OK”.</string>
+    <string name="safe_walk_stopped">You have not moved for a while. Are you OK? Tap “I\'m OK”.</string>
+    <string name="safe_walk_no_response_concern_title">No answer to “Are you OK?”</string>
+    <string name="safe_walk_arrived_hint">You seem to be at your destination. Tap “I\'ve arrived” to finish your walk.</string>
+    <string name="safe_walk_movement_off">Stop and route checks are off for this walk.</string>
+    <string name="safe_walk_movement_needs_location">Stop and route checks need location access.</string>
+    <string name="safe_walk_movement_waiting_gps">Waiting for a GPS position…</string>
+    <string name="safe_walk_movement_weak_gps">GPS signal is weak: stop and route checks are paused until it improves.</string>
+    <string name="safe_walk_movement_destination">Destination found: %1$s</string>
+    <string name="safe_walk_movement_route_on">Route check on: the area around the straight line to your destination.</string>
+    <string name="safe_walk_movement_route_on_distance">Route check on · about %1$s to go (straight line).</string>
+    <string name="safe_walk_movement_stops_only">Watching for unusual stops. Type a destination next time to add a route check.</string>
+    <string name="safe_walk_movement_not_found">That destination could not be found on the map, so only stops are watched.</string>
+    <string name="safe_walk_movement_lookup_unavailable">The map lookup was not available, so only stops are watched.</string>
+    <string name="safe_walk_movement_resumes_online">Watching for unusual stops. Any route check resumes when SafeSphere is back online.</string>
+    <string name="safe_walk_battery_low">Battery low (%1$s). Location is checked less often to save power. Charge your phone if you can.</string>
+    <string name="safe_walk_battery_critical">Battery very low (%1$s). If your phone switches off, SafeSphere cannot check on you. Your latest location is saved to this walk if possible.</string>
+    <string name="action_movement_checks_off">Turn off stop and route checks</string>
+    <string name="action_movement_checks_on">Turn on stop and route checks</string>
+    <string name="distance_km">%1$.1f km</string>
+    <string name="distance_m">%1$d m</string>
+    <string name="battery_percent">%1$d%%</string>
+
+    <!-- Tracking notification (never contains the location itself) -->
+    <string name="notification_channel_tracking_name">Emergency location</string>
+    <string name="notification_channel_tracking_description">Shown while SafeSphere saves your location during an active emergency.</string>
+    <string name="tracking_notification_title">Emergency active</string>
+    <string name="tracking_notification_public_title">SafeSphere is running</string>
+    <string name="tracking_notification_starting">Starting…</string>
+    <string name="tracking_notification_searching">Finding your location to save it to your emergency record.</string>
+    <string name="tracking_notification_saving">Your location is being saved to your emergency record.</string>
+    <string name="tracking_notification_offline">No connection. Your location will be saved when you are back online.</string>
+    <string name="tracking_notification_location_off">Location is turned off on this phone.</string>
+
+    <!-- ===== Phase 5: Emergency Evidence Vault ===== -->
+    <string name="recording_notification_title">Recording audio evidence</string>
+    <string name="recording_notification_text">SafeSphere is recording audio. Each part is encrypted on this phone. Open the app to stop.</string>
+
+    <string name="section_evidence">Evidence</string>
+    <string name="section_evidence_items">Evidence items</string>
+    <string name="title_evidence_vault">Evidence Vault</string>
+    <string name="evidence_card_intro">Record audio, a photo or a video as evidence. It is encrypted on this phone right away and uploaded to your private vault. Recording only happens while you choose, with a notification and Android\'s microphone indicator.</string>
+    <string name="evidence_card_recording">Audio is being recorded. Each 30-second part is encrypted and saved as soon as it ends.</string>
+    <plurals name="evidence_recording_status">
+        <item quantity="one">Recording %1$s · %2$d part saved</item>
+        <item quantity="other">Recording %1$s · %2$d parts saved</item>
+    </plurals>
+    <string name="evidence_summary_none">No evidence for this emergency yet.</string>
+    <string name="evidence_summary">On this phone (encrypted): %1$d · Verified in your vault: %2$d · Waiting to upload: %3$d</string>
+    <string name="evidence_summary_uploading">Uploading now.</string>
+    <string name="action_record_audio">Record audio</string>
+    <string name="action_stop_recording">Stop recording</string>
+    <string name="action_take_photo">Photo</string>
+    <string name="action_record_video">Video</string>
+    <string name="action_open_evidence_vault">Open Evidence Vault</string>
+    <string name="evidence_recording_started">Recording started. Tap Stop recording to end it.</string>
+    <string name="evidence_photo_sealed">Photo encrypted and saved. Some camera apps also keep their own copy in the Gallery: check there if that matters to you.</string>
+    <string name="evidence_video_sealed">Video encrypted and saved. Some camera apps also keep their own copy in the Gallery: check there if that matters to you.</string>
+    <string name="evidence_camera_unavailable">No camera app is available on this phone.</string>
+    <string name="evidence_microphone_denied">SafeSphere needs microphone access to record audio evidence. Nothing was recorded.</string>
+    <string name="evidence_microphone_blocked">Microphone access is turned off for SafeSphere. Allow it in Settings to record audio evidence.</string>
+    <string name="evidence_refused_signed_out">Sign in to record evidence.</string>
+    <string name="evidence_refused_no_emergency">Evidence can only be recorded during an active emergency.</string>
+    <string name="evidence_hint_keep_open">Keep SafeSphere open: Android did not allow recording to continue with the screen off.</string>
+    <string name="evidence_hint_start_failed">The microphone could not be started (another app may be using it). Nothing was recorded.</string>
+    <string name="evidence_hint_max_duration">Recording stopped after 60 minutes. Tap Record audio to continue.</string>
+    <string name="evidence_hint_storage_low">The phone is almost out of storage, so recording stopped. Saved parts are kept.</string>
+    <string name="evidence_hint_microphone_lost">Recording stopped: the microphone became unavailable. Saved parts are kept.</string>
+    <string name="evidence_hint_save_failed">Recording stopped: the phone could not save the audio. Saved parts are kept.</string>
+    <string name="evidence_hint_offline">No connection. Evidence is safe on this phone (encrypted) and will upload when you are back online.</string>
+    <string name="evidence_hint_no_escrow">This server has no operator recovery key: unless you set up a recovery passphrase in the Evidence Vault, uploaded evidence can only be opened on this phone.</string>
+
+    <string name="vault_intro">Only you can see this. Evidence is encrypted on your phone; the server stores it but cannot open it. \"Verified\" means the server checked that every byte arrived unchanged.</string>
+    <string name="vault_privacy_note">Anyone who can unlock this phone and open SafeSphere can view the evidence here. Screenshots are blocked on this screen, and the evidence is decrypted only while you view it.</string>
+    <string name="vault_empty">No evidence yet.</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_more">More</string>
+    <string name="action_close">Close</string>
+    <string name="action_play_pause">Play / pause</string>
+    <string name="action_open_evidence">Open</string>
+    <string name="action_verify_evidence">Check integrity</string>
+    <string name="action_remove_from_phone">Remove from this phone</string>
+    <string name="action_download_evidence">Bring back to this phone</string>
+    <string name="action_delete_evidence">Delete everywhere</string>
+    <string name="cd_open_evidence">Open %1$s</string>
+    <string name="cd_evidence_photo">Evidence photo</string>
+    <string name="cd_evidence_video">Evidence video</string>
+    <string name="evidence_row_title">%1$s · %2$s</string>
+    <string name="evidence_row_recoverable">recoverable if this phone is lost</string>
+    <string name="evidence_kind_audio">Audio</string>
+    <string name="evidence_kind_photo">Photo</string>
+    <string name="evidence_kind_video">Video</string>
+    <string name="evidence_kind_unknown">Evidence</string>
+    <string name="evidence_status_on_phone">Encrypted on this phone · not uploaded yet</string>
+    <string name="evidence_status_uploading">Uploading · %1$d%%</string>
+    <string name="evidence_status_verified">Verified in your vault · also on this phone</string>
+    <string name="evidence_status_only_in_vault">Verified in your vault · removed from this phone</string>
+    <string name="evidence_status_refused">Kept on this phone · the server did not accept it</string>
+    <string name="evidence_status_deleted">Deleted everywhere</string>
+    <string name="evidence_status_other_phone">In your vault · recorded on another phone, cannot be opened here</string>
+    <plurals name="vault_custody_intact">
+        <item quantity="one">Chain of custody intact · %1$d recorded step · checked %2$s</item>
+        <item quantity="other">Chain of custody intact · %1$d recorded steps · checked %2$s</item>
+    </plurals>
+    <string name="vault_custody_broken">Warning: the chain of custody does not verify. The record of what happened to this evidence may have been changed.</string>
+    <string name="vault_custody_unavailable">The chain of custody could not be checked (no connection).</string>
+    <string name="vault_verify_failed">This file is damaged: it no longer matches its fingerprint.</string>
+    <string name="vault_open_failed">This evidence could not be opened.</string>
+    <string name="vault_key_unavailable">The key for this item is not available on this phone.</string>
+    <string name="vault_action_done">Done.</string>
+    <string name="vault_action_not_possible">This is not possible for this item right now.</string>
+    <string name="vault_remove_title">Remove from this phone?</string>
+    <string name="vault_remove_message">The verified copy stays in your vault and can be brought back to this phone later.</string>
+    <string name="vault_delete_title">Delete everywhere?</string>
+    <string name="vault_delete_message">This permanently deletes the evidence from your vault and this phone, including the recovery copy of its key. A record that it existed and was deleted stays in the chain of custody. Enter your password to confirm. Not possible while the emergency is active or in the 24 hours after it ended. Wrong passwords are recorded, and several in a row lock deleting for a while.</string>
+    <string name="vault_locked_title">Your Evidence Vault is locked</string>
+    <string name="vault_locked_message">Confirm it is you with this phone\'s screen lock (PIN, pattern, password or fingerprint) to see your evidence. Recording and uploading evidence do not need this.</string>
+    <string name="action_unlock_vault">Unlock vault</string>
+    <string name="vault_unlock_title">Open your Evidence Vault</string>
+    <string name="vault_unlock_subtitle">Confirm with your screen lock</string>
+    <string name="vault_no_screen_lock">This phone has no screen lock, so the vault cannot be locked: anyone holding this phone can open it. Set a screen lock (PIN, pattern or password) to protect your evidence.</string>
+    <string name="action_set_screen_lock">Set a screen lock</string>
+    <string name="action_retry_upload">Try uploading again</string>
+    <string name="evidence_status_damaged_in_vault">Vault copy failed its check · not on this phone</string>
+    <string name="vault_copy_damaged_kept">Not removed: the vault copy failed its check just now. Your copy on this phone was kept and is being uploaded again.</string>
+    <string name="vault_integrity_title">Integrity check</string>
+    <string name="vault_integrity_phone_ok">On this phone: intact. The file matches the fingerprint recorded when it was saved.</string>
+    <string name="vault_integrity_phone_damaged">On this phone: DAMAGED. The file no longer matches its fingerprint.</string>
+    <string name="vault_integrity_vault_ok">In your vault: intact. The server re-checked every byte just now.</string>
+    <string name="vault_integrity_vault_damaged_repairing">In your vault: the stored copy failed the check. It is being uploaded again from this phone.</string>
+    <string name="vault_integrity_vault_damaged">In your vault: the stored copy failed the check, and this phone has no intact copy to repair it.</string>
+    <string name="vault_integrity_vault_not_uploaded">In your vault: not verified yet (still waiting or uploading).</string>
+    <string name="vault_integrity_vault_unavailable">In your vault: could not be checked right now (no connection).</string>
+    <string name="vault_custody_anchor_first">This phone now remembers this record, so it will notice if it is ever rewritten.</string>
+    <string name="vault_custody_anchor_match">Unchanged since this phone first checked it (%1$s).</string>
+    <string name="vault_custody_anchor_changed">Warning: this record has changed since this phone checked it (%1$s). Entries this phone saw are missing or different.</string>
+    <string name="vault_audio_length">Length %1$s</string>
+    <string name="detail_no_evidence">No evidence was saved to the vault for this emergency.</string>
+    <plurals name="detail_evidence">
+        <item quantity="one">%1$d evidence item in the vault (%2$d verified).</item>
+        <item quantity="other">%1$d evidence items in the vault (%2$d verified).</item>
+    </plurals>
+
+    <!-- Restore on a new phone (recovery passphrase, docs/PHASE5.md §11) -->
+    <string name="section_recovery">Restore on a new phone</string>
+    <string name="recovery_status_off">Off. If this phone is lost, your vault evidence can only be opened here (or by the SafeSphere operator\'s offline recovery key, if this server has one). Set up a recovery passphrase to open it yourself on a new phone.</string>
+    <string name="recovery_status_on">On since %1$s. Vault items you can restore on a new phone with your passphrase: %2$d of %3$d.</string>
+    <string name="recovery_status_on_elsewhere">A recovery passphrase is set up for your account, but this phone does not have your recovery key yet. Enter your passphrase to restore your vault evidence here.</string>
+    <string name="recovery_status_unavailable">Could not check your recovery passphrase (no connection).</string>
+    <string name="recovery_last_fetched">Your recovery data was last fetched from the server on %1$s. If that was not you, change your passphrase and your account password.</string>
+    <string name="action_recovery_set_up">Set up a recovery passphrase</string>
+    <string name="action_recovery_restore">Restore my evidence here</string>
+    <string name="action_recovery_change">Change passphrase</string>
+    <string name="action_recovery_forgot">Forgot your passphrase?</string>
+    <string name="action_recovery_use_suggestion">Use this</string>
+    <string name="action_recovery_another_suggestion">Another one</string>
+    <string name="recovery_suggestion_label">Suggested (five random words, very hard to guess):</string>
+    <string name="label_recovery_current">Current recovery passphrase</string>
+    <string name="label_recovery_passphrase">Recovery passphrase</string>
+    <string name="label_recovery_confirm">Repeat the recovery passphrase</string>
+    <string name="recovery_set_up_title">Set up a recovery passphrase</string>
+    <string name="recovery_set_up_message">With this passphrase you can open your vault evidence on a new phone. It never leaves this phone: SafeSphere cannot see it and cannot reset it. If you forget it and lose this phone, your evidence cannot be opened this way. Keep it somewhere only you can reach. It must be different from your account password. Your account password confirms the change.</string>
+    <string name="recovery_change_title">Change your recovery passphrase</string>
+    <string name="recovery_change_message">Enter your current passphrase, then the new one. Your account password confirms the change. Evidence stays the same; only the passphrase that unlocks it changes.</string>
+    <string name="recovery_forgot_title">Set a new passphrase</string>
+    <string name="recovery_forgot_message">This phone still holds your recovery key, so you can choose a new passphrase without the old one. Your account password confirms the change. The old passphrase stops working.</string>
+    <string name="recovery_restore_title">Restore your evidence</string>
+    <string name="recovery_restore_message">Enter your recovery passphrase and your account password. Your evidence keys are opened on this phone; the evidence itself is downloaded only when you bring an item back to this phone.</string>
+    <string name="recovery_done">Your recovery passphrase is saved. Earlier vault items are being protected in the background.</string>
+    <string name="recovery_changed">Your recovery passphrase was changed.</string>
+    <plurals name="recovery_restored">
+        <item quantity="one">%1$d item restored. Tap \"Bring back to this phone\" to download and open it.</item>
+        <item quantity="other">%1$d items restored. Tap \"Bring back to this phone\" to download and open them.</item>
+    </plurals>
+    <plurals name="recovery_unreadable">
+        <item quantity="one">%1$d item could not be opened with your recovery key.</item>
+        <item quantity="other">%1$d items could not be opened with your recovery key.</item>
+    </plurals>
+    <string name="recovery_wrong_passphrase">That passphrase does not open your recovery key. Check it and try again.</string>
+    <string name="recovery_not_set_up">No recovery passphrase is set up for this account.</string>
+    <string name="recovery_already_set_up">A recovery passphrase was already set up (perhaps on another phone). Restore with it instead.</string>
+    <string name="recovery_no_key_on_phone">This phone does not hold your recovery key, so the passphrase cannot be replaced from here. Use a phone where it was set up or restored.</string>
+    <string name="recovery_local_failure">This phone\'s secure key storage did not respond. Nothing was changed.</string>
+    <string name="recovery_problem_too_short">Use at least 15 characters. Several random words are easiest to remember.</string>
+    <string name="recovery_problem_personal">Do not use your name or email address in the passphrase.</string>
+    <string name="recovery_problem_same_as_password">The passphrase must be different from your account password (the server sees that password when you log in).</string>
+    <string name="recovery_problem_common">This passphrase is too common or too repetitive to protect your evidence.</string>
+    <string name="recovery_problem_mismatch">The two passphrases are not the same.</string>
+    <string name="recovery_password_required">Enter your account password.</string>
+
+    <!-- Phase 8: Safety Intelligence ("area picture"). Never says a place is safe; the app cannot know that. -->
+    <string name="outlook_no_information">No community information here yet. That does not mean it is safe or unsafe.</string>
+    <string name="outlook_little_information">Little community information here.</string>
+    <string name="outlook_no_confirmed_concerns">No confirmed concerns have been reported here recently.</string>
+    <string name="outlook_take_care">Take care: people nearby have confirmed concerns.</string>
+    <string name="outlook_take_extra_care">Take extra care: recent confirmed concerns nearby.</string>
+    <string name="picture_information">How much is known here: %1$s</string>
+    <string name="information_none">nothing yet</string>
+    <string name="information_little">little</string>
+    <string name="information_some">some</string>
+    <string name="information_more">a fair amount</string>
+    <string name="picture_confirmed">Confirmed: %1$s</string>
+    <string name="picture_reason_incident_today">Something happened today that people nearby confirmed.</string>
+    <string name="picture_reason_incident_week">Something happened this week that people nearby confirmed.</string>
+    <string name="picture_reason_condition">People nearby confirmed conditions of these places.</string>
+    <string name="picture_reason_may_have_changed">Some of these reports are older. The place may have changed.</string>
+    <string name="picture_reason_conflicting">People disagree about some of these places.</string>
+    <string name="picture_reason_recurring">Concerns were confirmed here repeatedly in recent months.</string>
+    <string name="picture_reason_unconfirmed">There are also reports nobody has confirmed yet.</string>
+    <string name="picture_reason_safe_places">Places to go for help are known nearby.</string>
+    <string name="picture_reason_little_information">Few people have shared anything about this area.</string>
+    <string name="picture_where_here">Strongest concern: in your area.</string>
+    <string name="picture_where">Strongest concern: %1$s, about %2$s away.</string>
+    <string name="picture_night_first">After dark, lighting and isolated stretches are listed first.</string>
+    <string name="picture_footer">Based on community reports only. It cannot tell you that a place is safe. In danger, use SOS or call 112.</string>
+    <string name="cd_picture">Area picture. %1$s</string>
+    <string name="radar_legend_cells">Hatched = nothing known · dotted = little known · amber outline = confirmed concerns</string>
+    <string name="radar_legend_two_lines" translatable="false">%1$s\n%2$s</string>
+    <string name="compass_n">north</string>
+    <string name="compass_ne">north-east</string>
+    <string name="compass_e">east</string>
+    <string name="compass_se">south-east</string>
+    <string name="compass_s">south</string>
+    <string name="compass_sw">south-west</string>
+    <string name="compass_w">west</string>
+    <string name="compass_nw">north-west</string>
+
+    <!-- Phase 8D: "Check the way" on the Safe Walk set-up screen. Never says the way is safe. -->
+    <string name="action_check_the_way">Check the way</string>
+    <string name="way_intro">See what people have shared about places around the way. SafeSphere is asked only about the wider area (about 5 km), never your route. The place you type is looked up with your phone\'s map service, as when you start a walk.</string>
+    <string name="way_checking">Checking the way…</string>
+    <string name="way_needs_destination">Type where you are going first.</string>
+    <string name="way_not_found">That place could not be found, so the way cannot be checked.</string>
+    <string name="way_unavailable">The map service could not be reached, so the way cannot be checked.</string>
+    <string name="way_no_permission">Your location is needed to check the way.</string>
+    <string name="way_no_fix">Your location could not be found just now. Try again in the open.</string>
+    <string name="way_too_long">This walk is too long to check here.</string>
+    <string name="way_incomplete">The way could not be checked completely here, so nothing is shown. Open Community to see what is around you.</string>
+    <string name="way_found">Checked towards: %1$s</string>
+    <string name="way_concerns">Confirmed along the way: %1$s</string>
+    <string name="way_no_concerns">No confirmed concerns have been reported along the way recently.</string>
+    <string name="way_incident_today">Something that happened today was confirmed by people near the way.</string>
+    <string name="way_coverage_mostly_unknown">Little is known about most of the way.</string>
+    <string name="way_coverage_partly_known">Little is known about parts of the way.</string>
+    <string name="way_coverage_mostly_known">People have shared something about most of the way.</string>
+    <string name="way_unconfirmed">There are also reports nobody has confirmed yet.</string>
+    <string name="way_recurring">Concerns were confirmed repeatedly near the way in recent months.</string>
+    <string name="way_conflicting">People disagree about some places near the way.</string>
+    <plurals name="way_havens">
+        <item quantity="one">A place to go for help is known near the way.</item>
+        <item quantity="other">Places to go for help are known near the way.</item>
+    </plurals>
+    <string name="way_footer">Checked around a straight line, not your exact route. It cannot tell you that the way is safe, and it does not change your walk or its check-ins.</string>
+</resources>

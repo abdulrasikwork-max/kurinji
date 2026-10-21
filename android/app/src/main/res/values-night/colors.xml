@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ss_primary">#3DD6C6</color>
+    <color name="ss_on_primary">#062B2A</color>
+    <color name="ss_primary_container">#0F4A4C</color>
+    <color name="ss_on_primary_container">#BFF3EE</color>
+    <color name="ss_secondary">#A9BFD6</color>
+    <color name="ss_on_secondary">#13283C</color>
+    <color name="ss_secondary_container">#24384C</color>
+    <color name="ss_on_secondary_container">#D5E3F1</color>
+
+    <color name="ss_surface">#0B1726</color>
+    <color name="ss_on_surface">#E6EDF4</color>
+    <color name="ss_surface_variant">#2A3D52</color>
+    <color name="ss_on_surface_variant">#B4C2D1</color>
+    <color name="ss_outline">#7F92A6</color>
+    <color name="ss_outline_variant">#2C4157</color>
+    <color name="ss_surface_container_lowest">#08111C</color>
+    <color name="ss_surface_container_low">#0F1E2F</color>
+    <color name="ss_surface_container">#132538</color>
+    <color name="ss_surface_container_high">#1A2F45</color>
+    <color name="ss_surface_container_highest">#213850</color>
+
+    <color name="ss_emergency">#FF6B6B</color>
+    <color name="ss_on_emergency">#4A0505</color>
+    <color name="ss_emergency_container">#7A1A1A</color>
+    <color name="ss_on_emergency_container">#FFDADA</color>
+
+    <color name="ss_safe">#5BD694</color>
+    <color name="ss_safe_container">#123D2A</color>
+    <color name="ss_on_safe_container">#C9F5DB</color>
+    <color name="ss_caution">#F5B544</color>
+    <color name="ss_caution_container">#43300A</color>
+    <color name="ss_on_caution_container">#FFE3A8</color>
+
+    <!-- Slightly lighter than the page so hero panels stay visible in dark mode -->
+    <color name="hero_background">#12293F</color>
+</resources>

@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <LinearLayout
+            android:id="@+id/headerBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:accessibilityHeading="true"
+                android:text="@string/community_title"
+                android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:text="@string/community_subtitle"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                app:noticeText="@string/community_privacy_notice"
+                app:noticeType="info" />
+
+            <!-- Phase 7: shown only while a moderator has paused this person's community reports -->
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:id="@+id/standingNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:accessibilityLiveRegion="polite"
+                android:visibility="gone"
+                app:noticeType="warning" />
+
+            <Button
+                android:id="@+id/appealButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/action_ask_review"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Around you: radar + calm summary + nearby signals -->
+        <LinearLayout
+            android:id="@+id/areaSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:orientation="vertical">
+
+            <com.safesphere.app.core.ui.components.SectionHeaderView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/space_md"
+                app:badgeStatus="available"
+                app:sectionTitle="@string/section_around_you" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_md">
+
+                    <!-- Phase 8: the area picture (codes from the server, words from the app). One item for TalkBack. -->
+                    <LinearLayout
+                        android:id="@+id/pictureBlock"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="@dimen/space_md"
+                        android:accessibilityLiveRegion="polite"
+                        android:focusable="true"
+                        android:importantForAccessibility="yes"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <com.safesphere.app.core.ui.components.NoticeView
+                            android:id="@+id/pictureNotice"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:importantForAccessibility="noHideDescendants"
+                            app:noticeType="info" />
+
+                        <TextView
+                            android:id="@+id/pictureFooter"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_xs"
+                            android:importantForAccessibility="no"
+                            android:text="@string/picture_footer"
+                            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+                    </LinearLayout>
+
+                    <com.safesphere.app.feature.community.ui.SafetyRadarView
+                        android:id="@+id/radar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:focusable="true" />
+
+                    <TextView
+                        android:id="@+id/radarLegend"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:gravity="center_horizontal"
+                        android:importantForAccessibility="no"
+                        android:text="@string/radar_legend"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+                    <ProgressBar
+                        android:id="@+id/areaProgress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/areaStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:accessibilityLiveRegion="polite"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+                    <TextView
+                        android:id="@+id/areaHint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                        android:visibility="gone" />
+
+                    <Button
+                        android:id="@+id/areaActionButton"
+                        style="@style/Widget.SafeSphere.Button.Secondary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/signalList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        </LinearLayout>
+
+        <!-- Share: report something about this place -->
+        <LinearLayout
+            android:id="@+id/reportSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_spacing"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/reportButton"
+                style="@style/Widget.SafeSphere.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/action_report_here" />
+
+            <TextView
+                android:id="@+id/pendingReports"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:visibility="gone" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/community_not_verified"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+        </LinearLayout>
+
+        <!-- Only the person sees this list -->
+        <LinearLayout
+            android:id="@+id/yourReportsSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_spacing"
+            android:orientation="vertical">
+
+            <com.safesphere.app.core.ui.components.SectionHeaderView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/space_md"
+                app:sectionTitle="@string/section_your_reports" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/myList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/myEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <com.safesphere.app.core.ui.components.EmptyStateView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:emptyIcon="@drawable/ic_community_outline"
+                    app:emptyMessage="@string/empty_reports_message"
+                    app:emptyTitle="@string/empty_reports_title" />
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

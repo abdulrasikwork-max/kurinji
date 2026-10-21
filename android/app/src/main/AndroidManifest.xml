@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Phase 2: talk to the SafeSphere backend. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+        Phase 4A/4B. Each runtime permission is requested in context (when an emergency is active or a Safe Walk
+        starts), never at launch. 4B adds no new permission.
+        - Location (precise or approximate): saved with the person's own emergency record only.
+        - POST_NOTIFICATIONS (Android 13+): the ongoing "location is being saved" notification.
+        - FOREGROUND_SERVICE(_LOCATION): keeps location updates running with the screen off during an emergency.
+        - ACCESS_NETWORK_STATE: knows when the phone is offline, to upload saved points when it is back online.
+        Deliberately NOT requested: ACCESS_BACKGROUND_LOCATION, CAMERA, CALL_PHONE, READ_SMS / RECEIVE_SMS.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!--
+        Phase 4D. SEND_SMS is asked ONLY when the person switches on "Text my Safety Circle automatically", with a
+        reason; without it the app opens the SMS app instead (the person sends). Google Play restricts this permission:
+        a release needs the Permissions Declaration with the "Physical safety/emergency alerts to send SMS" use case.
+        "Call 112" uses ACTION_DIAL (the person presses call), so no calling permission is needed.
+        Telephony is optional: tablets without SMS can still install the app.
+    -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+
+    <!--
+        Phase 5 (Evidence Vault). RECORD_AUDIO is asked only when the person taps "Record audio" during an ACTIVE
+        emergency; recording is always visible (the tracking notification says "Recording audio" and Android shows its
+        microphone indicator), never automatic, never hidden. FOREGROUND_SERVICE_MICROPHONE lets the one tracking
+        service keep recording with the screen off (Android 14+).
+        Photos and videos are taken by the phone's own camera app into a private file this app hands out (FileProvider
+        below), so SafeSphere needs NO camera permission. Note: never declare CAMERA here: an app that declares it but
+        has not been granted it may not use the camera-app intents at all (Android throws a SecurityException).
+    -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Phase 5 hardening: the vault screen asks for the phone's own screen lock (BiometricPrompt with PIN/pattern/
+         password fallback). A normal install-time permission: no prompt; the app never sees a fingerprint or PIN. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
+    <application
+        android:name=".SafeSphereApp"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.SafeSphere">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.SafeSphere.Starting"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Started only from a visible screen during an active emergency; not reachable by other apps.
+             "microphone" only while the person records audio evidence (Phase 5). -->
+        <service
+            android:name=".core.tracking.SafetyTrackingService"
+            android:exported="false"
+            android:foregroundServiceType="location|microphone" />
+
+        <!-- Phase 5: hands the camera app ONE private, write-only-for-this-capture file (no camera permission needed).
+             Not exported; access is granted per capture with a temporary URI permission. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.evidence"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/evidence_capture_paths" />
+        </provider>
+
+        <!-- Phase 5 hardening: resumes evidence uploads when the network is back, even after the app process was
+             killed. Only the system's JobScheduler can bind it (BIND_JOB_SERVICE); not reachable by other apps. -->
+        <service
+            android:name=".feature.evidence.session.EvidenceUploadJobService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <!-- Phase 4B: the "I'm OK" button on a Safe Walk check-in notification. Only our own PendingIntent reaches it. -->
+        <receiver
+            android:name=".feature.safewalk.session.CheckInActionReceiver"
+            android:exported="false" />
+
+        <!-- Phase 4D: "sent" / "delivered" results of SMS the app sent itself. Only our own PendingIntents reach it. -->
+        <receiver
+            android:name=".core.sms.SmsResultReceiver"
+            android:exported="false" />
+
+    </application>
+
+</manifest>

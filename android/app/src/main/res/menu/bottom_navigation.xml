@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Item ids intentionally match the destination ids in nav_graph.xml.
+     Each icon is a selector: outline when idle, filled when selected. -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/homeFragment"
+        android:icon="@drawable/selector_nav_home"
+        android:title="@string/nav_home" />
+    <item
+        android:id="@+id/safetyFragment"
+        android:icon="@drawable/selector_nav_safety"
+        android:title="@string/nav_safety" />
+    <item
+        android:id="@+id/communityFragment"
+        android:icon="@drawable/selector_nav_community"
+        android:title="@string/nav_community" />
+    <item
+        android:id="@+id/profileFragment"
+        android:icon="@drawable/selector_nav_profile"
+        android:title="@string/nav_profile" />
+</menu>
