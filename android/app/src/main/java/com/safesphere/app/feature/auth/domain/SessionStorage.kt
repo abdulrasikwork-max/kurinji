@@ -24,4 +24,14 @@ interface SessionStorage {
         clear()
         return current
     }
+
+    /**
+     * Phase 10A.4: saves [replacement] only while the saved token is still [oldToken] (a renewal must never bring back a
+     * session that was signed out or replaced meanwhile). True when saved. Implementations should make it atomic.
+     */
+    suspend fun replaceToken(oldToken: String, replacement: AuthSession): Boolean {
+        if (session.first()?.token != oldToken) return false
+        save(replacement)
+        return true
+    }
 }

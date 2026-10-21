@@ -18,6 +18,8 @@ import com.safesphere.app.feature.account.domain.AccountRepository
 import com.safesphere.app.feature.account.domain.PendingDeletion
 import com.safesphere.app.feature.account.domain.PendingDeletionStore
 import com.safesphere.app.feature.account.session.AccountDataWiper
+import com.safesphere.app.feature.account.session.SessionRenewer
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.withContext
 import com.safesphere.app.core.tracking.CompositeTrackingNoticeSource
 import com.safesphere.app.core.tracking.TrackingNoticeSource
@@ -393,6 +395,16 @@ class AppContainer(context: Context) {
                 if (end.reason == SessionEndReason.ACCOUNT_DELETED) accountDataWiper.wipe(end.userId)
             }
         }
+        // Phase 10A.4: keep the token from running out, above all during an SOS or a Safe Walk.
+        SessionRenewer(
+            scope = applicationScope,
+            token = sessionStorage.session.map { it?.token },
+            safetyRunning = combine(
+                emergencyLocationSharing.state.map { it.emergencyId != null && !it.signedOut },
+                safeWalk.state.map { it.isActive }
+            ) { sos, walk -> sos || walk },
+            renew = accountRepository::renewToken
+        )
         // Remember a pending deletion apart from the session, so the Login screen can still offer the local clean-up.
         applicationScope.launch {
             sessionStorage.session.map { it?.user }.distinctUntilChanged().collect { user ->

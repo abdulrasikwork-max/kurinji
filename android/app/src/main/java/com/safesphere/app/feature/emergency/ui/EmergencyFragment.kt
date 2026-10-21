@@ -170,6 +170,43 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         val failure = state.failure
         binding.activeErrorNotice.isVisible = failure != null
         if (failure != null) binding.activeErrorNotice.setMessage(failure.toMessage(requireContext()))
+
+        if (state.passwordNeededFor != null && endPasswordDialog == null) askPasswordToEnd()
+    }
+
+    private var endPasswordDialog: androidx.appcompat.app.AlertDialog? = null
+
+    /** Phase 10A.4: this SOS was started on another phone; ending it here needs the account password. */
+    private fun askPasswordToEnd() {
+        val context = requireContext()
+        val field = com.google.android.material.textfield.TextInputEditText(context).apply {
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val layout = com.google.android.material.textfield.TextInputLayout(context).apply {
+            hint = getString(R.string.label_password)
+            endIconMode = com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
+            addView(field)
+            val padding = resources.getDimensionPixelSize(R.dimen.space_lg)
+            setPadding(padding, 0, padding, 0)
+        }
+        endPasswordDialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.emergency_end_elsewhere_title)
+            .setMessage(R.string.emergency_end_elsewhere_message)
+            .setView(layout)
+            .setNegativeButton(R.string.action_cancel) { _, _ -> viewModel.onEndPasswordDismissed() }
+            .setPositiveButton(R.string.emergency_end_elsewhere_action) { _, _ ->
+                val password = field.text?.toString().orEmpty()
+                field.setText("")
+                if (password.isEmpty()) viewModel.onEndPasswordDismissed() else viewModel.onEndWithPassword(password)
+            }
+            .setOnCancelListener { viewModel.onEndPasswordDismissed() }
+            .setOnDismissListener { endPasswordDialog = null }
+            .create()
+            .also {
+                it.window?.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                    android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                it.show()
+            }
     }
 
     /** Phase 4D: who has been told what, honestly, and "Text" per contact (the person sends it from the SMS app). */
@@ -206,7 +243,12 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
     private fun renderEnded(state: EmergencyUiState.Ended) {
         val resolved = state.event.status == EmergencyStatus.RESOLVED
         binding.endedTitle.setText(if (resolved) R.string.emergency_ended_resolved_title else R.string.emergency_ended_cancelled_title)
-        binding.endedMessage.setText(if (resolved) R.string.emergency_ended_resolved_message else R.string.emergency_ended_cancelled_message)
+        binding.endedMessage.setText(when {
+            // Phase 10A.4: ended from another phone (with the account password); this phone did not say "I'm safe".
+            state.event.endedElsewhere -> R.string.emergency_ended_elsewhere_message
+            resolved -> R.string.emergency_ended_resolved_message
+            else -> R.string.emergency_ended_cancelled_message
+        })
     }
 
     // ---- location -------------------------------------------------------------------------------

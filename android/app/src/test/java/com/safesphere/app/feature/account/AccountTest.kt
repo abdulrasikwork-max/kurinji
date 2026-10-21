@@ -244,6 +244,9 @@ class AccountTest {
             DeletionScheduledDto("2026-10-22T10:00:00Z", "2026-10-29T10:00:00Z")
 
         override suspend fun cancelDeletion(body: PasswordConfirmationDto) = Unit
+
+        var renewOutcome: () -> AuthResponseDto = { FakeAuthApi.authResponse("renewed-token") }
+        override suspend fun renewToken(): AuthResponseDto = renewOutcome()
     }
 
     private class FakeAccountRepository : AccountRepository {
@@ -267,6 +270,8 @@ class AccountTest {
             calls++
             return result ?: ApiResult.Success(Unit)
         }
+
+        override suspend fun renewToken(): ApiResult<Unit> = ApiResult.Success(Unit)
     }
 
     private class FakePendingDeletionStore(initial: PendingDeletion?) : PendingDeletionStore {

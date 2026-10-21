@@ -748,3 +748,28 @@ tombstone (`Deleted account`, `erased-<id>@erased.invalid`, `erased_at` set) so 
 address can be registered again at once. Config: `app.account.password-failures` (5), `.password-failure-window`
 (15m), `.deletion-grace` (7d, at least 1d), `.deletion-protection` (24h), `.deletion-batch` (20),
 `.deletion-interval` (PT15M), `.deletion-job-enabled` (true; tests false).
+
+---
+
+# Phase 10A.4 (session continuity, V17, docs/PHASE10.md §11)
+
+## Token claims
+Login and register start a sign-in: every token now carries `sid` (a random id of that sign-in) and `auth_time` (epoch
+seconds when the password was typed). Renewals keep both; a password change keeps the caller's `sid` and resets
+`auth_time`. They are read by the server only; the phone reads nothing but `exp`.
+
+## Renew: `POST /api/users/me/token` (no body)
+`200 { accessToken, tokenType, expiresInSeconds, user }` (as login) for the SAME sign-in. Granted while `auth_time` is
+younger than `app.account.session-max-age` (30d, at least 1d) and **always while an emergency or a Safe Walk is
+ACTIVE**; otherwise `409 "Please sign in again on this phone."` (the current token keeps working until it expires).
+`401` for a revoked, disabled or deleted account's token (the account check), as everywhere.
+
+## Ending an ACTIVE emergency: `PUT /api/emergencies/{id}/resolve|cancel` `{ "password": "..." }` (body optional)
+The emergency remembers the sign-in that started it (only while ACTIVE). That sign-in sends no body, as before. **Any
+other sign-in** must send the account password:
+- no password → `403 "This SOS was started on another phone. Enter your account password to end it here."`;
+- wrong → `409 "Password is incorrect"` (shared 5/15 min limit with the account endpoints → `429`);
+- right → `200`, and the emergency answer now has `"endedElsewhere": true` (also in history and `GET /{id}`).
+Order of checks: not yours → `404`; already ended → `409`; then the password. Emergencies started by an older token
+without `sid` keep the old rule. Every emergency answer has `endedElsewhere` (false unless ended this way); the session
+id is never returned.

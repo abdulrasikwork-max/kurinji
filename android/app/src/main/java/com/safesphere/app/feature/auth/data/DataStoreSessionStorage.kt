@@ -41,14 +41,28 @@ class DataStoreSessionStorage(context: Context) : SessionStorage {
         .map(::read)
 
     override suspend fun save(session: AuthSession) {
+        dataStore.edit { preferences -> write(preferences, session) }
+    }
+
+    /** One atomic edit: the old token is compared and the new session written in the same DataStore transaction. */
+    override suspend fun replaceToken(oldToken: String, replacement: AuthSession): Boolean {
+        var replaced = false
         dataStore.edit { preferences ->
-            preferences[KEY_TOKEN] = session.token
-            preferences[KEY_USER_ID] = session.user.id
-            preferences[KEY_USER_NAME] = session.user.name
-            preferences[KEY_USER_EMAIL] = session.user.email
-            preferences.putOrRemove(KEY_DELETION_REQUESTED, session.user.deletionRequestedAt)
-            preferences.putOrRemove(KEY_DELETION_DUE, session.user.deletionDueAt)
+            if (preferences[KEY_TOKEN] == oldToken) {
+                write(preferences, replacement)
+                replaced = true
+            }
         }
+        return replaced
+    }
+
+    private fun write(preferences: MutablePreferences, session: AuthSession) {
+        preferences[KEY_TOKEN] = session.token
+        preferences[KEY_USER_ID] = session.user.id
+        preferences[KEY_USER_NAME] = session.user.name
+        preferences[KEY_USER_EMAIL] = session.user.email
+        preferences.putOrRemove(KEY_DELETION_REQUESTED, session.user.deletionRequestedAt)
+        preferences.putOrRemove(KEY_DELETION_DUE, session.user.deletionDueAt)
     }
 
     override suspend fun clear() {

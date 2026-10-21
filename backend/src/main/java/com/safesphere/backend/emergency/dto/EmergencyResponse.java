@@ -8,7 +8,8 @@ import java.time.ZoneOffset;
 
 /**
  * What the API returns about an emergency. endedAt is null while it is still ACTIVE; journeyId is the Safe Walk
- * it was started from (Phase 4B), or null.
+ * it was started from (Phase 4B), or null. endedElsewhere (Phase 10A.4): it was ended from another sign-in than the one
+ * that started it (that needed the account password). The session id itself is never returned.
  */
 public record EmergencyResponse(
         Long id,
@@ -16,7 +17,8 @@ public record EmergencyResponse(
         TriggerType triggerType,
         Instant startedAt,
         Instant endedAt,
-        Long journeyId
+        Long journeyId,
+        boolean endedElsewhere
 ) {
 
     public static EmergencyResponse from(EmergencyEvent event) {
@@ -26,7 +28,8 @@ public record EmergencyResponse(
                 event.getTriggerType(),
                 event.getStartedAt().toInstant(ZoneOffset.UTC),
                 event.getEndedAt() == null ? null : event.getEndedAt().toInstant(ZoneOffset.UTC),
-                event.getJourneyId()
+                event.getJourneyId(),
+                event.isEndedElsewhere()
         );
     }
 }

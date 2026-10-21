@@ -47,7 +47,7 @@ Final-year B.Tech IT team project: the student must be able to explain every imp
 | **7** | **Verification, Trust + Moderation** | **Implemented, compiled, tested 2026-10-20** (backend 261 / Android 403 tests, V13 on MySQL, live API 58/58), **emulator-verified (API 37)** incl. moderator screens: `docs/PHASE7.md` §10. TalkBack/dark mode **not verified**; **Galaxy A23 deferred** |
 | **8** | **Safety Intelligence Engine** (area picture, pattern memory, "Check the way"; full route planner NOT built) | **Implemented, compiled, tested 2026-10-21** (backend 316 / Android 431 tests, V14 on MySQL, live API 22/22, **emulator-verified (API 37)**): `docs/PHASE8.md`, design `docs/PHASE8_DESIGN.md`. TalkBack **not verified**; real phone **not verified**; real pattern episode on MySQL **not verified** |
 | **9** | **AI/ML** ("evidence before AI", `docs/PHASE9_DESIGN.md`) | **In progress.** 9C.0 (Phase 7 COORDINATION reopen fix) implemented, tested, **live-verified on MySQL**; **9A attack simulation implemented, compiled, tested 2026-10-21** (test code only); **9C coordination check implemented, compiled, tested 2026-10-21** (coord-1 in **SHADOW** by default, no withdrawal lock for COORDINATION cases, moderator pattern texts); **9C.1 S15 Option B, 9C.2 group members + whole-group pause, 9C.3 two guard fixes implemented, compiled, tested 2026-10-21** (backend 388 / Android 450, lint 0 errors / 87 warnings; **live ACTIVE check on MySQL 25/25**; **emulator (API 37) moderator screens PASS**; TalkBack speech, dark-mode colours and the A23 **not verified**): `docs/PHASE9.md` §9–§16. **9C complete: accepted by the user on 2026-10-21.** **9D implemented, compiled, tested 2026-10-21, awaiting the user's review** (`docs/PHASE9.md` §18–§26): neighbour join (active), havens-alone cap = active rules **rules-1.1**, rules-2 in **SHADOW only** (not promoted: no real-world evidence); backend 423 / Android 452, lint 0 errors / 87 warnings, **live MySQL 19/19**, **emulator (API 37) PASS**; TalkBack, the A23 and real-world rates **not verified**. **9B implemented, compiled, tested 2026-10-21; complete: accepted by the user on 2026-10-21, frozen** (`docs/PHASE9.md` §27–§34): V15 weekly system-wide outcome counters (after commit, best effort) + `moderation_cases.coordination_rule`, weekly snapshot, ADMIN-only `GET /api/admin/evaluation`; backend 453 / Android 454, lint 0 errors / 87 warnings, **V15 dry run 19/19 + applied on MySQL, live MySQL 21/21**; nothing user-visible; real-world rates **not verified** (no deployment). **No learned model** (gates G1–G3 not met) |
-| **10** | **Foundation (10A) + RISE "Proof" (10B–10D)** (`docs/PHASE10_DESIGN.md`) | **10A implemented, compiled, tested, verified 2026-10-22** (`docs/PHASE10.md`): honesty/identity/language pass, V16 + `ActiveAccountCheck` + password change with revocation, coercion-aware account deletion; backend 466 / Android 480 tests, lint 0 errors / 85 warnings, **V16 dry run 13/13 + applied, live MySQL 23/23, emulator (API 37) PASS**; TalkBack, onboarding pages on a device and the real phone **not verified**. 10B–10D: planned, not started |
+| **10** | **Foundation (10A) + RISE "Proof" (10B–10D)** (`docs/PHASE10_DESIGN.md`) | **10A implemented, compiled, tested, verified 2026-10-22** (`docs/PHASE10.md`): honesty/identity/language pass, V16 + `ActiveAccountCheck` + password change with revocation, coercion-aware account deletion; backend 466 / Android 480 tests, lint 0 errors / 85 warnings, **V16 dry run 13/13 + applied, live MySQL 23/23, emulator (API 37) PASS**; TalkBack, onboarding pages on a device and the real phone **not verified**. **10A.4 session continuity** (token renewal, password to end an SOS from another sign-in, V17) **implemented, compiled, tested, verified 2026-10-22**: backend 473 / Android 487, lint 0 errors / 85 warnings, **V17 dry run 7/7 + applied, live MySQL 9/9, emulator PASS** (`PHASE10.md` §11). 10B–10D: planned, not started |
 | 12 | Verified Nearby Assistance | Not started (11 not yet defined) |
 
 **Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
@@ -92,8 +92,9 @@ people see may read a counter (`EvaluationIsolationTest`). Next: see `docs/HANDO
 
 **10A is in the repository** (V16, `account` package, `security/ActiveAccountCheck`, Android `feature/account`,
 `core/network/SessionEnder`, rebuilt Settings/Profile/Safety Center/Home/onboarding). Deviations from the design
-(D1–D12), the SAFE audit (A1–A16) and the deferred "session continuity" step (token expiry during an SOS, a second
-session ending an SOS): `docs/PHASE10.md`. Phase 9 stays frozen. 10B (RISE "Proof", Android only) only when briefed.
+(D1–D16), the SAFE audit (A1–A16): `docs/PHASE10.md`. **10A.4** closed A4/A5 (token renewal; another sign-in needs
+the password to end an SOS). Still deferred: token encryption on the phone (A14), password reset (A6, needs e-mail).
+Phase 9 stays frozen. 10B (RISE "Proof", Android only) only when briefed.
 
 ---
 
@@ -186,6 +187,12 @@ cd android
   sign-out). On a 401 `account_deleted`, `AppContainer` runs `AccountDataWiper` (= `EvidenceVault.forgetAccount` +
   `RecoveryKeyStore.remove`; a sign-out clears the rest anyway); after the date with no session, Login offers "Remove its
   data from this phone". `HonestyTextsTest` guards onboarding/settings honesty, identity lines, "no avoid", summary order.
+  **10A.4:** `SessionRenewer` (app scope; every 10 min during an SOS/walk, hourly otherwise, at once when one starts)
+  renews when < 12 h are left (`TokenRenewalPolicy`, reads `exp` only) via `RemoteAccountRepository.renewToken`, saved
+  with `SessionStorage.replaceToken` (atomic, only over the same old token). SOS screen: a 403 while ending ⇒
+  `EmergencyUiState.Active.passwordNeededFor` ⇒ FLAG_SECURE password prompt ⇒ `onEndWithPassword` (never re-asks by
+  itself); `onScreenVisible` re-checks the SOS and, if it was ended elsewhere, stops location sharing and shows
+  `emergency_ended_elsewhere_message` WITHOUT sending the Safety Circle a "resolved" SMS.
 - **UI helpers:** `ViewBindingFragment`, `collectWhenStarted`, `Motion.revealInSequence`; components in `core/ui/components`
   (`StatusBadgeView` + `BadgeStatus`, `NoticeView`, `SectionHeaderView`, `EmptyStateView`, `SafetyStatusCardView`, `FeatureListAdapter`).
 - **Emergency (Phase 3):** `EmergencyUiState` = Loading → Idle → Countdown(5..1) → Starting → Active → Ended(RESOLVED/CANCELLED),
@@ -352,6 +359,10 @@ cd android
   logout = client clears its session. **Phase 10A:** after a password change tokens carry `cca` (credentials stamp = µs of
   `users.credentials_changed_at`); `security/ActiveAccountCheck` (inside the decoder, after exp/iss) refuses a token whose
   account is missing/erased/disabled or whose stamp differs (exact equality) → 401 with an RFC 6750 `error_description`.
+  **10A.4:** tokens carry `sid` (random sign-in id) and `auth_time` (`CurrentUser.sessionId/authTime`); `POST
+  /api/users/me/token` renews for the same sign-in (≤ `app.account.session-max-age` 30d since the password, always during
+  an ACTIVE SOS/walk). `EmergencyEvent.startedSession` (only while ACTIVE): another sign-in ends an SOS only with the
+  password (`account/service/PasswordGuard`, shared limit) and sets `ended_elsewhere`.
 - **Account (Phase 10A, `account` package):** `AccountService` (password change refused during an ACTIVE SOS or Safe
   Walk; deletion request refused while ACTIVE / < 24 h after an emergency, 7-day grace; cancel with password; 5 wrong
   passwords / 15 min shared → 429, in memory; wrong password = 409), `AccountDeletionJob` (`@Scheduled`, 15 min) →
@@ -398,7 +409,9 @@ cd android
 
 | V16 | `users.credentials_changed_at`, `deletion_requested_at`, `deletion_due_at`, `erased_at` | CHECKs: deletion pair both-or-none, due > requested, erased ⇒ disabled, ⇒ no pending deletion, ⇒ role USER, ⇒ email `erased-%@erased.invalid`; index on `deletion_due_at`. Dry run 13/13, applied on MySQL 8.0 (2026-10-22) |
 
-Conventions: never edit an applied migration; next file is **V17**; snake_case; `DATETIME(6)` stored in UTC; constraint
+| V17 | `emergency_events.started_session`, `ended_elsewhere` | session id CHAR(36) binary, lower-case UUID CHECK; only while ACTIVE (CHECK); ended_elsewhere only when not ACTIVE (CHECK). Dry run 7/7, applied on MySQL 8.0 (2026-10-22) |
+
+Conventions: never edit an applied migration; next file is **V18**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.
 
 ---
@@ -479,6 +492,9 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
   {password}` → 204; `/me`, login, register and password-change `user` add `deletionRequestedAt`, `deletionDueAt`; every
   authenticated endpoint can answer 401 with `WWW-Authenticate: Bearer error="invalid_token",
   error_description="credentials_changed|account_deleted|account_unavailable"`. Config `app.account.*`.
+- Phase 10A.4 (V17): tokens carry `sid` + `auth_time`; `POST /api/users/me/token` → 200 renewed token (409 after 30
+  days unless an SOS/walk is ACTIVE); `PUT /api/emergencies/{id}/resolve|cancel` optional `{password}`: from another
+  sign-in than the starter 403 without it, 409 wrong, 200 right; emergency answers add `endedElsewhere`.
 
 ---
 
@@ -665,4 +681,7 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
 | Accounts named in the moderation audit log are anonymised, not deleted (CHECK-enforced tombstone) (Phase 10A) | The audit trail survives; the person's data does not |
 | Wrong passwords on account endpoints answer 409, not 401 (Phase 10A) | A 401 means "signed out" on the phone |
 | The phone removes a deleted account's evidence only on the server's `account_deleted` answer or the person's tap | A sign-out must never destroy evidence; a cancelled or postponed deletion must never wipe a living account |
+| Token renewal for the same sign-in, always during an SOS/walk, else ≤ 30 days since the password (10A.4) | A long SOS never loses its server connection; renewal is safe because a password change revokes every token |
+| Another sign-in ends an ACTIVE SOS only with the password, and the record says so (10A.4) | Nobody can silently end someone's SOS; a lost starting phone does not trap the person in an endless SOS |
+| No automatic "resolved" SMS when an SOS was ended from another phone (10A.4) | Only the person on a phone can say they are OK |
 | Only working rows on every screen; no "Coming soon" anywhere; tab "Nearby"; summary leads with safe places; no "avoid" (Phase 10A) | Honesty is the product's claim; places, not people; going out, not staying away (`HonestyTextsTest`) |

@@ -32,5 +32,7 @@ data class EmergencyEvent(
     val status: EmergencyStatus,
     val trigger: EmergencyTrigger,
     val startedAt: Instant,
-    val endedAt: Instant?
+    val endedAt: Instant?,
+    /** Phase 10A.4: ended from another sign-in than the one that started it (that needed the account password). */
+    val endedElsewhere: Boolean = false
 )

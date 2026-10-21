@@ -4,52 +4,47 @@ import com.safesphere.backend.account.dto.AccountDtos.DeletionScheduled;
 import com.safesphere.backend.auth.dto.AuthResponse;
 import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
-import com.safesphere.backend.common.exception.TooManyAttemptsException;
 import com.safesphere.backend.common.exception.UnauthorizedException;
 import com.safesphere.backend.config.AccountProperties;
 import com.safesphere.backend.emergency.entity.EmergencyStatus;
 import com.safesphere.backend.emergency.repository.EmergencyEventRepository;
 import com.safesphere.backend.journey.entity.JourneyStatus;
 import com.safesphere.backend.journey.repository.SafeJourneyRepository;
-import com.safesphere.backend.security.AttemptLimiter;
 import com.safesphere.backend.security.JwtService;
 import com.safesphere.backend.user.dto.UserResponse;
 import com.safesphere.backend.user.entity.User;
 import com.safesphere.backend.user.repository.UserRepository;
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Phase 10A: the account's own security actions. Each one needs the account's current password, and wrong passwords
- * for all three together are limited to [AccountProperties.passwordFailures] per window (429), in memory, per account.
+ * Phase 10A: the account's own security actions. Each one needs the account's current password ([PasswordGuard]:
+ * wrong passwords for all of them together are limited, 429; a wrong one answers 409, never 401).
  *
  *  - change password: the new hash and a new credentials stamp; every OTHER session ends on its next request
- *    (ActiveAccountCheck); the caller gets a fresh token in the answer. Refused while an SOS or a Safe Walk is running:
- *    a second session (for example someone who knows the password) must not be able to cut a running safety session
- *    off from the server.
+ *    (ActiveAccountCheck); the caller gets a fresh token for the SAME sign-in (its session id is kept). Refused while an
+ *    SOS or a Safe Walk is running: a second session (for example someone who knows the password) must not be able to
+ *    cut a running safety session off from the server.
+ *  - renew the token (10A.4): a fresh 24 h token for the same sign-in, without the password, while the sign-in is
+ *    younger than app.account.session-max-age (30 days) or ALWAYS while an SOS or a Safe Walk is running (a long
+ *    emergency must never lose its server connection because a token ran out). Revocation (password change,
+ *    disabling, deletion) still ends a renewed token, so renewal does not weaken it.
  *  - request deletion: never immediate. Refused while an emergency is ACTIVE or within 24 h after one ended (the evidence
  *    deletion rule: whoever forced "I'm safe" cannot force the evidence away on the spot). Then a grace period (7 days)
  *    in which everything keeps working and the phone shows a banner; repeated requests do not move the date.
  *  - cancel deletion: only with the password. Signing in does NOT cancel: a deletion the person wants must not be undone
  *    by signing in on another phone, and one they did not want (forced, or made by someone who knows the password) is
  *    visible in the banner and undone deliberately.
- *
- * Wrong passwords answer 409 with "Password is incorrect" (the evidence deletion convention), never 401: a 401 would
- * make the phone sign out.
  */
 @Service
 public class AccountService {
-
-    static final String WRONG_PASSWORD = "Password is incorrect";
-    static final String TOO_MANY = "Too many wrong passwords. Please wait a few minutes and try again.";
-
-    private static final int BCRYPT_MAX_PASSWORD_BYTES = 72;
 
     private final UserRepository users;
     private final PasswordEncoder passwordEncoder;
@@ -58,11 +53,11 @@ public class AccountService {
     private final SafeJourneyRepository journeys;
     private final AccountProperties properties;
     private final Clock clock;
-    private final AttemptLimiter failures;
+    private final PasswordGuard passwords;
 
     public AccountService(UserRepository users, PasswordEncoder passwordEncoder, JwtService jwtService,
                           EmergencyEventRepository emergencies, SafeJourneyRepository journeys,
-                          AccountProperties properties, Clock clock) {
+                          AccountProperties properties, Clock clock, PasswordGuard passwords) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -70,19 +65,18 @@ public class AccountService {
         this.journeys = journeys;
         this.properties = properties;
         this.clock = clock;
-        this.failures = new AttemptLimiter(properties.passwordFailures(), properties.passwordFailureWindow(),
-                properties.maxTrackedKeys(), clock);
+        this.passwords = passwords;
     }
 
+    /** [sessionId] = the caller's sign-in (kept in the new token); null for an old token (a new id is made). */
     @Transactional
-    public AuthResponse changePassword(long userId, String currentPassword, String newPassword) {
+    public AuthResponse changePassword(long userId, String sessionId, String currentPassword, String newPassword) {
         User user = locked(userId);
-        if (emergencies.existsByUserIdAndStatus(userId, EmergencyStatus.ACTIVE)
-                || journeys.existsByUserIdAndStatus(userId, JourneyStatus.ACTIVE)) {
+        if (safetySessionRunning(userId)) {
             throw new ConflictException("You can change your password once your SOS or Safe Walk has ended.");
         }
-        requirePassword(user, currentPassword);
-        if (tooLong(newPassword)) {
+        passwords.require(user, currentPassword);
+        if (PasswordGuard.tooLong(newPassword)) {
             throw new InvalidRequestException("Password must be at most 72 bytes long");
         }
         if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
@@ -90,8 +84,25 @@ public class AccountService {
         }
         user.changePassword(passwordEncoder.encode(newPassword), now());
         users.saveAndFlush(user);
-        JwtService.IssuedToken token = jwtService.issueToken(user);
-        return AuthResponse.bearer(token.value(), token.expiresInSeconds(), UserResponse.from(user));
+        String session = sessionId != null ? sessionId : UUID.randomUUID().toString();
+        return response(user, jwtService.issueToken(user, session, clock.instant()));
+    }
+
+    /**
+     * Phase 10A.4: a fresh token for the caller's sign-in. 409 when the sign-in is older than the maximum session age
+     * and no SOS or Safe Walk is running: the current token keeps working until it expires, then the person signs in.
+     */
+    @Transactional(readOnly = true)
+    public AuthResponse renewToken(long userId, String sessionId, Instant authTime) {
+        User user = users.findById(userId)
+                .filter(u -> u.isEnabled() && !u.isErased())
+                .orElseThrow(() -> new UnauthorizedException("Account is not available"));
+        boolean fresh = !authTime.plus(properties.sessionMaxAge()).isBefore(clock.instant());
+        if (!fresh && !safetySessionRunning(userId)) {
+            throw new ConflictException("Please sign in again on this phone.");
+        }
+        String session = sessionId != null ? sessionId : UUID.randomUUID().toString();
+        return response(user, jwtService.issueToken(user, session, authTime));
     }
 
     @Transactional
@@ -106,7 +117,7 @@ public class AccountService {
             throw new ConflictException("Your account can be deleted " + hours(properties.deletionProtection())
                     + " after your last emergency ended.");
         }
-        requirePassword(user, password);
+        passwords.require(user, password);
         if (user.getDeletionDueAt() == null) {
             user.requestDeletion(now, now.plus(properties.deletionGrace()));
             users.saveAndFlush(user);
@@ -119,7 +130,7 @@ public class AccountService {
     @Transactional
     public void cancelDeletion(long userId, String password) {
         User user = locked(userId);
-        requirePassword(user, password);
+        passwords.require(user, password);
         if (user.getDeletionDueAt() != null) {
             user.cancelDeletion();
             users.saveAndFlush(user);
@@ -128,10 +139,15 @@ public class AccountService {
 
     /** Forgets finished limiter windows (called by the account deletion job). */
     public void evictExpired() {
-        failures.evictExpired();
+        passwords.evictExpired();
     }
 
     // ---- helpers -------------------------------------------------------------------------------------------
+
+    private boolean safetySessionRunning(long userId) {
+        return emergencies.existsByUserIdAndStatus(userId, EmergencyStatus.ACTIVE)
+                || journeys.existsByUserIdAndStatus(userId, JourneyStatus.ACTIVE);
+    }
 
     private User locked(long userId) {
         // The token was checked a moment ago (ActiveAccountCheck); a row gone since then is a signed-out caller.
@@ -140,19 +156,8 @@ public class AccountService {
                 .orElseThrow(() -> new UnauthorizedException("Account is not available"));
     }
 
-    /** 429 before any comparison while over the limit; a wrong password is counted, a right one resets the count. */
-    private void requirePassword(User user, String password) {
-        String key = String.valueOf(user.getId());
-        if (failures.isBlocked(key)) throw new TooManyAttemptsException(TOO_MANY);
-        if (password == null || tooLong(password) || !passwordEncoder.matches(password, user.getPasswordHash())) {
-            failures.record(key);
-            throw new ConflictException(WRONG_PASSWORD);
-        }
-        failures.reset(key);
-    }
-
-    private static boolean tooLong(String password) {
-        return password.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_PASSWORD_BYTES;
+    private static AuthResponse response(User user, JwtService.IssuedToken token) {
+        return AuthResponse.bearer(token.value(), token.expiresInSeconds(), UserResponse.from(user));
     }
 
     private LocalDateTime now() {

@@ -79,10 +79,13 @@ tricks. Policies change often: re-check the current Android and Google Play docu
 ## What Phase 10A adds (account security and deletion)
 
 - **No new permission.** Settings links to the phone's own app-details and notification pages (system intents).
-- **Sessions:** tokens still last 24 h with no refresh. A password change ends every other phone's session on its next
-  request. **Known limitation (DEFERRED, `PHASE10.md` §9):** a token that expires during a long SOS signs the phone out
-  and stops location sharing; SMS and the 112 prompt keep working on the phone. A token renewal step is recommended
-  before RISE relies on SAFE.
+- **Sessions:** tokens last 24 h. A password change ends every other phone's session on its next request.
+  **10A.4:** while the app process runs, the phone renews its token when less than 12 h are left (every 10 minutes
+  during an SOS or Safe Walk, when the foreground service keeps the process alive; hourly otherwise), and the server
+  always allows that during an SOS or walk. If the process was killed and the app is not opened for 24 h, the token
+  still expires (no background job wakes the app for it; deliberate: no new job or alarm).
+- **Ending an SOS from another phone** needs the account password; the starting phone notices when its SOS screen is
+  next visible.
 - **Deletion and the phone:** the phone can remove a deleted account's evidence only when it hears the server's
   `account_deleted` answer (needs a still-valid token) or when the person taps "Remove its data from this phone" on
   Login after the date. Uninstalling the app removes everything anyway.

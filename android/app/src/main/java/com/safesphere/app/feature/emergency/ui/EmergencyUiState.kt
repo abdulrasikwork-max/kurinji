@@ -4,6 +4,9 @@ import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.feature.emergency.domain.EmergencyEvent
 import com.safesphere.app.feature.safetycircle.domain.SafetyContact
 
+/** How the person wants to end the SOS: "I'm safe" (RESOLVE) or "False alarm" (CANCEL). */
+enum class EndAction { RESOLVE, CANCEL }
+
 /**
  * The emergency state model shown on the SOS screen.
  *
@@ -36,7 +39,12 @@ sealed interface EmergencyUiState {
         val circle: List<SafetyContact>,
         val isEnding: Boolean = false,
         val failure: ApiResult.Failure? = null,
-        val restoredOffline: Boolean = false
+        val restoredOffline: Boolean = false,
+        /**
+         * Phase 10A.4: this SOS was started on another phone, so ending it here needs the account password; the screen
+         * asks for it and then calls [EmergencyViewModel.onEndWithPassword]. Null = nothing to ask.
+         */
+        val passwordNeededFor: EndAction? = null
     ) : EmergencyUiState
 
     /** The emergency finished. event.status says whether it was RESOLVED or CANCELLED. */

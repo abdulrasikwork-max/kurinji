@@ -206,6 +206,7 @@ class EmergencyViewModel(
     /** The screen became visible again (for example back from Settings): permission or GPS may have changed. */
     fun onScreenVisible() {
         locationSharing.refresh()
+        recheckActiveEmergency()
     }
 
     // ---- internals ------------------------------------------------------------------------------
@@ -240,27 +241,67 @@ class EmergencyViewModel(
         }
     }
 
-    private fun endActiveEmergency(resolve: Boolean) {
+    /** Phase 10A.4: the person typed the account password after "started on another phone". */
+    fun onEndWithPassword(password: String) {
+        val current = _uiState.value as? EmergencyUiState.Active ?: return
+        val action = current.passwordNeededFor ?: return
+        if (password.isEmpty()) return
+        endActiveEmergency(resolve = action == EndAction.RESOLVE, password = password)
+    }
+
+    /** The password prompt was closed without a password: the SOS stays active. */
+    fun onEndPasswordDismissed() {
+        val current = _uiState.value as? EmergencyUiState.Active ?: return
+        _uiState.value = current.copy(passwordNeededFor = null)
+    }
+
+    private fun endActiveEmergency(resolve: Boolean, password: String? = null) {
         val current = _uiState.value as? EmergencyUiState.Active ?: return
         if (current.isEnding) return
-        _uiState.value = current.copy(isEnding = true, failure = null)
+        _uiState.value = current.copy(isEnding = true, failure = null, passwordNeededFor = null)
 
         viewModelScope.launch {
             val result = if (resolve) {
-                emergencyRepository.resolve(current.event.id)
+                emergencyRepository.resolve(current.event.id, password)
             } else {
-                emergencyRepository.cancel(current.event.id)
+                emergencyRepository.cancel(current.event.id, password)
             }
-            when (result) {
-                is ApiResult.Success -> {
+            when {
+                result is ApiResult.Success -> {
                     forgetActive()
                     circleAlerts?.onEmergencyEnded(current.event.id, resolved = resolve)
                     _uiState.value = EmergencyUiState.Ended(result.data)
                 }
-                is ApiResult.Failure -> {
-                    reportIfSessionExpired(result)
-                    _uiState.value = current.copy(isEnding = false, failure = result)
+                // Phase 10A.4: started on another phone: ask for the account password (once per tap).
+                result is ApiResult.Failure && result.error == ApiError.FORBIDDEN && password == null -> {
+                    _uiState.value = current.copy(isEnding = false, passwordNeededFor =
+                        if (resolve) EndAction.RESOLVE else EndAction.CANCEL)
                 }
+                result is ApiResult.Failure -> {
+                    reportIfSessionExpired(result)
+                    // Never ask again by itself after a wrong password: the person taps "I'm safe" again.
+                    _uiState.value = current.copy(isEnding = false, failure = result, passwordNeededFor = null)
+                }
+            }
+        }
+    }
+
+    /**
+     * Phase 10A.4: the SOS may have been ended from another sign-in (with the account password) while this screen was
+     * away. If so, this phone stops sharing its location and shows that it was ended elsewhere. It does NOT send the
+     * Safety Circle the "resolved" message: nobody on this phone said they are OK.
+     */
+    private fun recheckActiveEmergency() {
+        val current = _uiState.value as? EmergencyUiState.Active ?: return
+        if (current.isEnding || current.restoredOffline) return
+        viewModelScope.launch {
+            val result = emergencyRepository.getHistory()
+            if (result !is ApiResult.Success) return@launch
+            val now = result.data.firstOrNull { it.id == current.event.id } ?: return@launch
+            val still = _uiState.value as? EmergencyUiState.Active ?: return@launch
+            if (now.status != EmergencyStatus.ACTIVE && still.event.id == now.id && !still.isEnding) {
+                forgetActive()
+                _uiState.value = EmergencyUiState.Ended(now)
             }
         }
     }

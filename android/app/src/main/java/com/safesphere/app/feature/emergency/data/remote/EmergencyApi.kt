@@ -16,10 +16,10 @@ interface EmergencyApi {
     suspend fun getHistory(): List<EmergencyEventDto>
 
     @PUT("api/emergencies/{id}/cancel")
-    suspend fun cancel(@Path("id") id: Long): EmergencyEventDto
+    suspend fun cancel(@Path("id") id: Long, @Body body: EndEmergencyRequestDto): EmergencyEventDto
 
     @PUT("api/emergencies/{id}/resolve")
-    suspend fun resolve(@Path("id") id: Long): EmergencyEventDto
+    suspend fun resolve(@Path("id") id: Long, @Body body: EndEmergencyRequestDto): EmergencyEventDto
 
     /** Phase 4A: stores 1..50 location points with the person's own emergency (owner only). */
     @POST("api/emergencies/{id}/locations")

@@ -31,7 +31,14 @@ public class AccountController {
     /** 200 with a fresh token for this phone; every other session of the account ends. */
     @PutMapping("/password")
     public AuthResponse changePassword(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ChangePasswordRequest request) {
-        return service.changePassword(CurrentUser.id(jwt), request.currentPassword(), request.newPassword());
+        return service.changePassword(CurrentUser.id(jwt), CurrentUser.sessionId(jwt), request.currentPassword(),
+                request.newPassword());
+    }
+
+    /** Phase 10A.4: 200 with a fresh 24 h token for this sign-in (always allowed during an SOS or Safe Walk). */
+    @PostMapping("/token")
+    public AuthResponse renewToken(@AuthenticationPrincipal Jwt jwt) {
+        return service.renewToken(CurrentUser.id(jwt), CurrentUser.sessionId(jwt), CurrentUser.authTime(jwt));
     }
 
     @PostMapping("/deletion")

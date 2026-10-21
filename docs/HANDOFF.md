@@ -1,4 +1,13 @@
-# Handoff: Phase 10A complete (updated 2026-10-22); Phase 9 complete and frozen
+# Handoff: Phase 10A + 10A.4 complete (updated 2026-10-22); Phase 9 complete and frozen
+
+**Phase 10A.4 "session continuity" implemented, compiled, tested and verified 2026-10-22** (the user's brief;
+`docs/PHASE10.md` §11): token renewal (`POST /api/users/me/token`, always granted during an SOS or Safe Walk; the phone's
+`SessionRenewer` renews below 12 h left) and the rule that another sign-in needs the account password to end an
+ACTIVE SOS (V17 `started_session` only while ACTIVE, `ended_elsewhere`; password prompt on the SOS screen; the starting
+phone re-checks when its SOS screen is visible). Backend **473/0** (2 skipped), Android **487/0**, lint **0 / 85**, V17
+dry run **7/7** and applied (dev DB **v17**, next **V18**), live MySQL **9/9**, emulator PASS. Not verified: a renewal
+on a device, TalkBack, real phone. All test accounts deleted; backend and emulator stopped; `adb reverse` removed.
+**Next:** the user's review of 10A/10A.4; still deferred: token encryption (A14), password reset (A6).
 
 **Phase 10A implemented, compiled, tested and verified 2026-10-22** (`docs/PHASE10.md`, design `docs/PHASE10_DESIGN.md`):
 - 10A.1 honesty / identity / language: onboarding rewritten ("Safety that expands your world"), Settings, Profile,

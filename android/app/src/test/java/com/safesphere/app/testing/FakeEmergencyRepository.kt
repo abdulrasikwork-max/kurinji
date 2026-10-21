@@ -29,13 +29,19 @@ class FakeEmergencyRepository : EmergencyRepository {
 
     override suspend fun getHistory(): ApiResult<List<EmergencyEvent>> = historyResult
 
-    override suspend fun cancel(id: Long): ApiResult<EmergencyEvent> {
+    /** The password sent with the last cancel/resolve (Phase 10A.4; null = none). */
+    var lastEndPassword: String? = null
+        private set
+
+    override suspend fun cancel(id: Long, password: String?): ApiResult<EmergencyEvent> {
         cancelCalls++
+        lastEndPassword = password
         return cancelResult
     }
 
-    override suspend fun resolve(id: Long): ApiResult<EmergencyEvent> {
+    override suspend fun resolve(id: Long, password: String?): ApiResult<EmergencyEvent> {
         resolveCalls++
+        lastEndPassword = password
         return resolveResult
     }
 

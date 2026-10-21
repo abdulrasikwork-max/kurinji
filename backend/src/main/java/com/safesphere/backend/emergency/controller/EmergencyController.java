@@ -2,6 +2,8 @@ package com.safesphere.backend.emergency.controller;
 
 import com.safesphere.backend.emergency.dto.CreateEmergencyRequest;
 import com.safesphere.backend.emergency.dto.EmergencyResponse;
+import com.safesphere.backend.emergency.dto.EndEmergencyRequest;
+import com.safesphere.backend.emergency.entity.EmergencyStatus;
 import com.safesphere.backend.emergency.service.EmergencyService;
 import com.safesphere.backend.security.CurrentUser;
 import java.util.List;
@@ -32,7 +34,8 @@ public class EmergencyController {
     @ResponseStatus(HttpStatus.CREATED)
     public EmergencyResponse start(@AuthenticationPrincipal Jwt jwt,
                                    @RequestBody(required = false) CreateEmergencyRequest request) {
-        return service.start(CurrentUser.id(jwt), request == null ? null : request.triggerType());
+        return service.start(CurrentUser.id(jwt), request == null ? null : request.triggerType(),
+                CurrentUser.sessionId(jwt));
     }
 
     @GetMapping
@@ -45,14 +48,19 @@ public class EmergencyController {
         return service.get(CurrentUser.id(jwt), id);
     }
 
+    /** Phase 10A.4: from another sign-in than the one that started the SOS, the body must hold the password. */
     @PutMapping("/{id}/cancel")
-    public EmergencyResponse cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable long id) {
-        return service.cancel(CurrentUser.id(jwt), id);
+    public EmergencyResponse cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable long id,
+                                    @RequestBody(required = false) EndEmergencyRequest request) {
+        return service.end(CurrentUser.id(jwt), id, EmergencyStatus.CANCELLED, CurrentUser.sessionId(jwt),
+                request == null ? null : request.password());
     }
 
     @PutMapping("/{id}/resolve")
-    public EmergencyResponse resolve(@AuthenticationPrincipal Jwt jwt, @PathVariable long id) {
-        return service.resolve(CurrentUser.id(jwt), id);
+    public EmergencyResponse resolve(@AuthenticationPrincipal Jwt jwt, @PathVariable long id,
+                                     @RequestBody(required = false) EndEmergencyRequest request) {
+        return service.end(CurrentUser.id(jwt), id, EmergencyStatus.RESOLVED, CurrentUser.sessionId(jwt),
+                request == null ? null : request.password());
     }
 
     /** Phase 4D, level 4: the person tapped "Call 112" (the phone's dialer opened). Recorded once. */

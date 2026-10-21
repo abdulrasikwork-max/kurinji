@@ -68,6 +68,18 @@ class RemoteAccountRepository(
             }
         }
 
+    override suspend fun renewToken(): ApiResult<Unit> {
+        val old = sessionStorage.session.first()?.token ?: return ApiResult.Failure(ApiError.UNAUTHORIZED)
+        return when (val answer = handler.execute { api.renewToken() }) {
+            is ApiResult.Failure -> answer
+            is ApiResult.Success -> {
+                // Only if nothing changed meanwhile (a sign-out or a password change must win over a renewal).
+                sessionStorage.replaceToken(old, AuthSession(answer.data.accessToken, answer.data.user.toDomain()))
+                ApiResult.Success(Unit)
+            }
+        }
+    }
+
     private suspend fun updateUser(transform: (AuthSession) -> AuthSession) {
         val current = sessionStorage.session.first() ?: return
         sessionStorage.save(transform(current))

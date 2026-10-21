@@ -14,12 +14,19 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *                              waits at least this long after any emergency): the same 24 h as evidence deletion
  * @param deletionBatch         most accounts the deletion job handles per run
  * @param maxTrackedKeys        most accounts the in-memory limiter remembers at once (memory bound)
+ * @param sessionMaxAge         Phase 10A.4: how long after the password was typed a sign-in may still renew its token
+ *                              without an SOS or Safe Walk running (during one, renewal is always allowed)
  */
 @ConfigurationProperties(prefix = "app.account")
 public record AccountProperties(Integer passwordFailures, Duration passwordFailureWindow, Duration deletionGrace,
-                                Duration deletionProtection, Integer deletionBatch, Integer maxTrackedKeys) {
+                                Duration deletionProtection, Integer deletionBatch, Integer maxTrackedKeys,
+                                Duration sessionMaxAge) {
 
     public AccountProperties {
+        if (sessionMaxAge == null) sessionMaxAge = Duration.ofDays(30);
+        if (sessionMaxAge.compareTo(Duration.ofDays(1)) < 0) {
+            throw new IllegalStateException("app.account.session-max-age must be at least 1 day");
+        }
         if (passwordFailures == null) passwordFailures = 5;
         if (passwordFailureWindow == null) passwordFailureWindow = Duration.ofMinutes(15);
         if (deletionGrace == null) deletionGrace = Duration.ofDays(7);

@@ -3,6 +3,7 @@ package com.safesphere.app.feature.account.domain
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.feature.auth.domain.AuthUser
 import java.nio.charset.StandardCharsets
+import java.time.Duration
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 
@@ -15,6 +16,37 @@ interface AccountRepository {
     suspend fun requestDeletion(password: String): ApiResult<Instant>
 
     suspend fun cancelDeletion(password: String): ApiResult<Unit>
+
+    /** Phase 10A.4: replaces the saved token with a fresh one for the same sign-in (only if it is still the saved one). */
+    suspend fun renewToken(): ApiResult<Unit>
+}
+
+/**
+ * Phase 10A.4: when the phone renews its 24 h token. Pure: the token's own "exp" claim (read on the phone, nothing is
+ * verified here; the server checks every token) and the clock.
+ */
+object TokenRenewalPolicy {
+    /** Renew when less than this is left. 12 h: a token is renewed about twice a day while the app runs. */
+    val RENEW_WHEN_LEFT: java.time.Duration = java.time.Duration.ofHours(12)
+
+    /** How often to look: often while an SOS or Safe Walk runs (it must never run out), rarely otherwise. */
+    const val CHECK_EVERY_DURING_SAFETY_MILLIS = 10 * 60_000L
+    const val CHECK_EVERY_OTHERWISE_MILLIS = 60 * 60_000L
+
+    /** False when the expiry cannot be read (never renew in a loop over a token the phone cannot understand). */
+    fun due(expiresAt: Instant?, now: Instant): Boolean =
+        expiresAt != null && expiresAt.isAfter(now) && Duration.between(now, expiresAt) < RENEW_WHEN_LEFT
+
+    /** The "exp" claim of a JWT (epoch seconds), or null when it cannot be read. */
+    fun expiresAt(token: String): Instant? = try {
+        val payload = token.split('.').getOrNull(1) ?: return null
+        val json = String(java.util.Base64.getUrlDecoder().decode(payload), Charsets.UTF_8)
+        EXP.find(json)?.groupValues?.get(1)?.toLong()?.let(Instant::ofEpochSecond)
+    } catch (e: IllegalArgumentException) {
+        null
+    }
+
+    private val EXP = Regex("\"exp\"\\s*:\\s*(\\d+)")
 }
 
 /** What is wrong with a new password, checked on the phone before anything is sent (the server checks again). */

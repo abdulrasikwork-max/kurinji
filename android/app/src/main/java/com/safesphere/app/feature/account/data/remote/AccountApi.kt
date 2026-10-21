@@ -12,6 +12,13 @@ interface AccountApi {
     @PUT("api/users/me/password")
     suspend fun changePassword(@Body body: ChangePasswordRequestDto): AuthResponseDto
 
+    /**
+     * Phase 10A.4: a fresh 24 h token for this sign-in (same session). Always granted during an SOS or Safe Walk; 409
+     * when the sign-in is older than 30 days and nothing is running (the current token keeps working until it expires).
+     */
+    @POST("api/users/me/token")
+    suspend fun renewToken(): AuthResponseDto
+
     /** 202; deletion happens no earlier than [DeletionScheduledDto.deletionDueAt]. */
     @POST("api/users/me/deletion")
     suspend fun requestDeletion(@Body body: PasswordConfirmationDto): DeletionScheduledDto

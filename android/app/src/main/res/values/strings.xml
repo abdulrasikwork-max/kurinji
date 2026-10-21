@@ -562,6 +562,11 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="emergency_ended_resolved_message">Your emergency session has ended and was saved to your history.</string>
     <string name="emergency_ended_cancelled_title">Emergency cancelled</string>
     <string name="emergency_ended_cancelled_message">The session was marked as a false alarm and saved to your history.</string>
+    <!-- Phase 10A.4: only the phone that started an SOS ends it without the account password -->
+    <string name="emergency_end_elsewhere_title">Started on another phone</string>
+    <string name="emergency_end_elsewhere_message">This SOS was started on another phone. To end it here, enter your account password. The other phone will show that it was ended from here.</string>
+    <string name="emergency_end_elsewhere_action">End the SOS</string>
+    <string name="emergency_ended_elsewhere_message">This SOS was ended on a different phone than the one that started it, with the account password. It is saved to your history. If that was not you, someone else knows your password: change it in Account and security.</string>
     <string name="emergency_failed_title">Could not record the emergency</string>
     <string name="emergency_failed_body">If you are in danger, call 112 or your local emergency number now.</string>
     <string name="emergency_started_at">Started: %1$s</string>

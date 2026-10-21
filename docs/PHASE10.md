@@ -28,8 +28,8 @@ offline / app-killed / battery, auth and account security, notifications, access
 | A1 | A disabled or deleted account's token worked for up to 24 h on every endpoint except `/api/users/me` (only `UserService.getProfile` and `RoleAuthorization` looked at the account) | High: no way to cut off a stolen session | **Fixed in 10A** (`ActiveAccountCheck`) |
 | A2 | No password change and no session revocation: someone who learnt the password (a coercive partner) kept access for ever | High (coercive control is the main threat model) | **Fixed in 10A** (password change + credentials stamp) |
 | A3 | ANY 401 cleared the newest session, even a late 401 for an old token; `EmergencyLocationSharing` and `SafeWalkSession` stop on a cleared session. After a token swap a stale answer could sign the phone out in the middle of a walk | High once tokens can change | **Fixed in 10A** (`SessionStorage.clearIfToken`, `SessionEnder`) |
-| A4 | A token that expires during an SOS signs the phone out and stops location sharing (24 h tokens, no refresh). An SOS started 23 h after sign-in loses its server sync after 1 h; SMS and the 112 prompt keep working on the phone | **High** | **DEFERRED** to a dedicated hardening step (§9): needs token renewal, which is a design change (renewal is acceptable now that revocation exists). Documented, not hidden |
-| A5 | Anyone with the password can sign in elsewhere and cancel or resolve a person's ACTIVE SOS | Medium (coercion) | **DEFERRED** (multi-device policy; same step as A4). 10A at least makes the password changeable and refuses password change and deletion during an SOS |
+| A4 | A token that expires during an SOS signs the phone out and stops location sharing (24 h tokens, no refresh). An SOS started 23 h after sign-in loses its server sync after 1 h; SMS and the 112 prompt keep working on the phone | **High** | **Fixed in 10A.4** (§11): token renewal, always granted during an SOS or Safe Walk |
+| A5 | Anyone with the password can sign in elsewhere and cancel or resolve a person's ACTIVE SOS | Medium (coercion) | **Fixed in 10A.4** (§11): only the sign-in that started the SOS ends it without the password; another sign-in needs the password and the record shows it |
 | A6 | No password reset ("Forgot password" honestly says it is not available): whoever changes the password first owns the account; there is no e-mail channel | Medium | **DEFERRED** (needs an e-mail channel). The sign-out dialog now tells the person that someone else may know the password |
 | A7 | No account deletion (Play policy, DPDP Act 2023) | High for trust | **Fixed in 10A** (coercion-aware) |
 | A8 | Onboarding said "not available in this version yet"; 7 of 11 Settings rows "Coming soon" behind an "Available" badge; Profile "Coming soon" rows for screens that exist; Home timeline placeholder and a duplicate tile | High for trust ("honest app" is the product's claim) | **Fixed in 10A** |
@@ -235,6 +235,9 @@ and whenever less than 12 h remain (A4; acceptable now that revocation exists); 
 do to an ACTIVE SOS (A5; e.g. only the phone that started it ends it, or ending from elsewhere needs the password and
 is shown on the first phone); (3) token encryption on the phone (A14). Password reset (A6) waits for an e-mail channel.
 
+**Update 2026-10-22:** (1) and (2) are done as **10A.4** (§11, briefed by the user). (3) token encryption (A14) and (4)
+password reset (A6) remain DEFERRED.
+
 ## 10. Is SafeSphere becoming a coherent product, or accumulating features?
 
 Honest answer: **it is becoming coherent, with one over-built middle that must not grow further.**
@@ -249,7 +252,67 @@ Honest answer: **it is becoming coherent, with one over-built middle that must n
   the way, Safe Walk, Circle) and adds one mechanism (prediction vs. outcome). If 10B starts needing new server
   machinery beyond 10C's counters, stop and re-scope. No change of direction is needed today; §9 should come first.
 
-## 11. Viva notes (10A)
+## 11. 10A.4 Session continuity (2026-10-22, the user's brief: "do the session continuity step from §9")
+
+**Status: IMPLEMENTED, compiled, tested, VERIFIED on MySQL (live 9/9) and on the emulator (API 37).** Real phone and
+TalkBack NOT VERIFIED.
+
+### 11.1 What it does
+- **Every token names its sign-in.** Login/register create a random session id (`sid`) and record `auth_time` (when
+  the password was typed). Renewals keep both; a password change keeps the caller's `sid` and resets `auth_time`.
+- **Renewal: `POST /api/users/me/token`** → a fresh 24 h token for the same sign-in, no password. Granted while the
+  sign-in is younger than `app.account.session-max-age` (30 days) and **always while an SOS or Safe Walk is ACTIVE**
+  (otherwise 409 "Please sign in again on this phone."; the current token keeps working until it expires). A revoked,
+  disabled or deleted account's token cannot renew (the account check refuses it first). Renewal does not revoke the
+  old token; it just expires.
+- **Phone: `SessionRenewer`** (application scope) looks every 10 minutes during an SOS or Safe Walk (the foreground
+  service keeps the process alive) and hourly otherwise; an SOS or walk starting makes it look at once; it renews when
+  less than 12 h are left (`TokenRenewalPolicy`, reading the token's own `exp`; unreadable ⇒ never renew in a loop).
+  `SessionStorage.replaceToken` saves the new token only over the same old one (atomic in DataStore), so a renewal never
+  revives a session that was signed out or replaced meanwhile.
+- **Who may end an ACTIVE SOS.** The SOS remembers the starting sign-in (V17 `emergency_events.started_session`, kept
+  only while ACTIVE). That sign-in (also after renewals) resolves/cancels as before. **Any other sign-in must send the
+  account password** in the body: none ⇒ 403 "This SOS was started on another phone. Enter your account password to end
+  it here."; wrong ⇒ 409 (shared 5/15 min limit, 429); right ⇒ ended with `ended_elsewhere = true`, shown on both phones
+  and in the record. Legacy SOS rows / tokens without a session id keep the old rule.
+- **Phone: SOS screen.** A 403 while ending opens a password prompt (FLAG_SECURE); a wrong password shows the server's
+  "Password is incorrect" and does not ask again by itself; the ended screen says the SOS was ended on a different phone
+  and, if that was not the person, to change the password. When the SOS screen becomes visible, the phone re-checks its
+  SOS; if it ended elsewhere it stops location sharing and shows that. It does **not** send the Safety Circle the
+  "resolved" SMS in that case: nobody on this phone said they are OK.
+
+### 11.2 Deviations and decisions
+| # | Decision | Reason |
+|---|---|---|
+| D13 | Password required from another sign-in, not "only the starting phone may end it" | If the starting phone is lost or taken, the person must still be able to end their SOS from another phone; a password plus a visible record is the proportionate rule |
+| D14 | Renewal has a 30-day limit since the password was typed, waived during an SOS or walk | Bounds how long a stolen token can be kept alive by renewing, without ever risking a running emergency |
+| D15 | `started_session` is cleared when the SOS ends (CHECK-enforced) | Data minimisation: the session link is only needed while the SOS is ACTIVE |
+| D16 | No "resolved" SMS from the starting phone when the SOS was ended elsewhere | Only the person on a phone can say they are OK; a resolved message after someone else ended the SOS could be false reassurance |
+
+### 11.3 Verification (actual results)
+| Check | Result |
+|---|---|
+| `mvn test` | **473 tests, 0 failures, 2 skipped** (+7: `SessionContinuityApiIntegrationTest`) |
+| `gradlew testDebugUnitTest` | **487 tests, 0 failures** (+7: `SessionContinuityTest`) |
+| `assembleDebug` / `lintDebug` | OK / **0 errors, 85 warnings** (unchanged) |
+| V17 dry run (scratch `p10_emerg`, dropped) | **7/7**: 3 valid rows accepted; non-UUID and upper-case session ids rejected by the format CHECK, a session kept after the end by `session_active`, an ACTIVE row marked ended-elsewhere by `ended_elsewhere` |
+| V17 applied | Flyway "now at version v17"; dev DB at **v17**, next **V18** |
+| Live API on MySQL (real defaults) | **9/9 PASS** (S1–S9: claims; renewal keeps sid/auth_time; `started_session` stored while ACTIVE; 403 / 409 / 200 + `endedElsewhere` from another sign-in; session id cleared on MySQL; the starting phone's renewed token ends its own SOS without a password; a revoked sign-in cannot renew; the changing phone keeps its sid). Accounts removed in `finally` |
+| Emulator (API 37) | **PASS:** an SOS started by "another phone" (API) and opened on the emulator → "I'm safe" asks for the password (FLAG_SECURE dialog) → a wrong password shows "Password is incorrect" without re-asking → the right one ends it with the "ended on a different phone" text; MySQL: `RESOLVED`, `ended_elsewhere = 1`, `started_session` NULL. An SOS ended elsewhere while the phone was away: opening it, the phone checked, stopped and Home returned to "Nothing running" |
+
+**Not verified:** a renewal actually happening on a device (it needs a token with < 12 h left; covered by unit tests
+with virtual time and by the live API); TalkBack on the password prompt; real phone.
+
+### 11.4 Residual risks
+- The starting phone learns that its SOS was ended elsewhere only when its SOS screen becomes visible (or the app is
+  opened); until then Home's banner and location sharing continue (uploads are accepted for 15 minutes after the end).
+- Someone who knows the password can still end the SOS from another phone, but no longer silently: both phones and the
+  history show it, and the text tells the person to change the password.
+- A token can be renewed for up to 30 days after the password was typed without any SOS; revocation (password change)
+  still ends it at once.
+- The token is still unencrypted on the phone (A14); password reset still needs an e-mail channel (A6).
+
+## 12. Viva notes (10A, 10A.4)
 
 - *What is the credentials stamp?* A value stored with the account and copied into each token; changing the password
   changes it, so every older token stops matching. Revocation without refresh tokens or a token list; exact equality
@@ -264,3 +327,7 @@ Honest answer: **it is becoming coherent, with one over-built middle that must n
   person is not handled.
 - *What does the phone delete?* A sign-out keeps evidence (so an accidental log-out loses nothing); only the server's
   "account deleted" answer, or the person's tap after the date, removes it.
+- *(10A.4) How can a 24 h token survive a long SOS?* The phone renews it while it is still valid; the server always
+  allows that during an SOS or Safe Walk. Renewal is safe because a password change revokes every token anyway.
+- *(10A.4) Can someone else end my SOS?* Only the sign-in that started it ends it freely. Anyone else needs the account
+  password, and the SOS record and both phones then say it was ended on a different phone.
