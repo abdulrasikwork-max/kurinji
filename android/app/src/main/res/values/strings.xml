@@ -2,14 +2,14 @@
 <resources>
     <!-- Brand -->
     <string name="app_name">SafeSphere</string>
-    <string name="app_tagline">Safety, connected.</string>
-    <string name="tagline_your_safety">Your safety, connected.</string>
+    <!-- Phase 10A identity: "Safety that expands your world" (docs/PHASE10_DESIGN.md §2) -->
+    <string name="app_tagline">Safety that expands your world.</string>
+    <string name="tagline_your_safety">Safety that expands your world.</string>
 
     <!-- Badges: Available = works today, Preview = shows the design only, Coming soon = not built yet -->
     <string name="badge_available">Available</string>
     <string name="badge_preview">Preview</string>
     <string name="coming_soon">Coming soon</string>
-    <string name="badge_soon">Soon</string>
     <string name="badge_sample">Sample</string>
     <string name="badge_safe">Safe</string>
     <string name="badge_caution">Caution</string>
@@ -18,7 +18,8 @@
     <!-- Navigation titles -->
     <string name="nav_home">Home</string>
     <string name="nav_safety">Safety</string>
-    <string name="nav_community">Community</string>
+    <!-- Phase 10A: "Nearby", not "Community": it shows places, not people (there is no community feed) -->
+    <string name="nav_community">Nearby</string>
     <string name="nav_profile">Profile</string>
     <string name="title_register">Create account</string>
     <string name="title_forgot_password">Reset password</string>
@@ -44,16 +45,16 @@
     <string name="cd_onboarding_page">Page %1$d of %2$d</string>
     <string name="cd_status_card">Right now: %1$s. %2$s %3$s</string>
     <string name="cd_feature_row">%1$s. %2$s. %3$s.</string>
-    <string name="cd_quick_action">%1$s. Coming soon.</string>
     <string name="cd_sos_tile">SOS. Emergency help. Starts a five second countdown you can cancel. SafeSphere texts your Safety Circle only if you switched on automatic SMS. Tap to open.</string>
 
-    <!-- Onboarding -->
-    <string name="onboarding_connected_title">Stay Connected</string>
-    <string name="onboarding_connected_body">SafeSphere is being built to help you stay connected with people you trust during situations that may feel unsafe.</string>
-    <string name="onboarding_aware_title">Stay Aware</string>
-    <string name="onboarding_aware_body">In future versions, SafeSphere will bring together safety insights, safe journeys and community safety information to help you make informed choices.</string>
-    <string name="onboarding_safe_title">Stay Safe</string>
-    <string name="onboarding_safe_body">Later, SafeSphere will offer emergency assistance and trusted-contact communication. These features are not available in this version yet.</string>
+    <!-- Onboarding (Phase 10A: rewritten; it said nothing was available yet). Only what this build really does;
+         OnboardingTextsTest forbids "not available", "future", "later" and safety promises. -->
+    <string name="onboarding_connected_title">Go further, prepared</string>
+    <string name="onboarding_connected_body">SafeSphere is safety that expands your world: it helps you go where you want to go. Check the way before you go, and start a Safe Walk with check-ins if you want support on the way. Using support is a choice, never a weakness.</string>
+    <string name="onboarding_aware_title">Your people, your choice</string>
+    <string name="onboarding_aware_body">Choose the people you want to keep in the loop. SOS starts with a five second countdown you can cancel. Your Safety Circle is texted from your phone only if you switch on automatic SMS, and SafeSphere never contacts emergency services for you.</string>
+    <string name="onboarding_safe_title">Yours to control</string>
+    <string name="onboarding_safe_body">Nobody can use SafeSphere to track you. Your exact location never goes to Nearby, evidence is encrypted on your phone before it is uploaded, and you can change your password or delete your account at any time.</string>
 
     <!-- Authentication (UI preview only) -->
     <string name="label_email">Email</string>
@@ -96,19 +97,26 @@
     <string name="error_forbidden">You are not allowed to do this.</string>
     <string name="error_session_expired">Your session has expired. Please log in again.</string>
     <string name="session_expired_title">Session expired</string>
+    <!-- Phase 10A: why this phone was signed out (the server's reason) -->
+    <string name="session_password_changed_title">Password changed</string>
+    <string name="session_password_changed">The password of this account was changed, so this phone was signed out. Log in with the new password. If you did not change it, someone else knows your password: log in and change it again as soon as you can.</string>
+    <string name="session_account_deleted_title">Account deleted</string>
+    <string name="session_account_deleted">This account has been deleted. SafeSphere is removing its evidence and recovery key from this phone as well.</string>
+    <string name="session_account_unavailable">This account is switched off. Please contact the SafeSphere team.</string>
 
     <!-- Features (shared by Home, Safety Center and Profile) -->
     <string name="feature_sos_title">SOS</string>
     <string name="feature_sos_description">Start an emergency session; your Safety Circle is texted if you switched on automatic SMS</string>
     <string name="feature_safe_walk_title">Safe Walk</string>
     <string name="feature_safe_walk_description">Regular check-ins while you travel, plus checks for unusual stops and leaving your route.</string>
-    <string name="feature_check_in_title">Check-in</string>
     <string name="feature_safety_circle_title">Safety Circle</string>
-    <string name="feature_safety_circle_description">Your trusted people</string>
+    <string name="feature_safety_circle_description">People you choose to keep in the loop</string>
+    <string name="feature_evidence_vault_title">Evidence Vault</string>
+    <string name="feature_evidence_vault_description">Your encrypted evidence and recovery passphrase</string>
     <string name="feature_emergency_history_title">Emergency History</string>
     <string name="feature_emergency_history_description">A record of your emergency sessions</string>
-    <string name="feature_safety_settings_title">Safety Settings</string>
-    <string name="feature_safety_settings_description">Manage safety and privacy preferences</string>
+    <string name="feature_safety_settings_title">Settings</string>
+    <string name="feature_safety_settings_description">Account, privacy, permissions and notifications</string>
 
     <!-- Home: Safety Command Center -->
     <string name="greeting_morning">Good morning</string>
@@ -133,25 +141,22 @@
     <string name="section_quick_actions">Quick actions</string>
     <string name="sos_subtitle">Emergency help</string>
     <string name="sos_badge_countdown">5 s to cancel</string>
-    <string name="section_nearby">Nearby Safety</string>
+    <string name="section_nearby">Nearby</string>
     <string name="nearby_overline">Your area</string>
-    <string name="nearby_message">See what people report around you, and the nearest safe places.</string>
-    <string name="cd_nearby_card">Nearby Safety. Opens Community Safety.</string>
-    <string name="section_journey">Your Safety Journey</string>
-    <string name="journey_checkin_description">Check in regularly during a Safe Walk.</string>
-    <string name="journey_walk_description">Start a Safe Walk from Quick actions.</string>
-    <string name="journey_emergency_title">Emergency status</string>
-    <string name="journey_emergency_description">Alerts and their status will appear here.</string>
-    <string name="privacy_reassurance">Your safety data stays under your control.</string>
+    <string name="nearby_message">Find the nearest safe places to head for, and what people noticed around you.</string>
+    <string name="cd_nearby_card">Nearby. Opens Nearby.</string>
+    <string name="privacy_reassurance">Your safety data stays under your control. Nobody can use SafeSphere to track you.</string>
+    <!-- Phase 10A.3: Home banner while an account deletion is pending (opens Account) -->
+    <string name="cd_home_deletion_banner">%1$s Opens Account and security.</string>
 
     <!-- Safety Center -->
     <string name="safety_center_title">Safety Center</string>
-    <string name="safety_center_subtitle">Everything you\'ll use to stay safe, in one place.</string>
-    <string name="safety_center_notice">Your Safety Circle, a manual SOS session and Safe Walk check-ins are available. Your location is saved to your own records. Your Safety Circle is texted only if you switch on automatic SMS. SafeSphere never contacts emergency services: in an emergency, call 112 or your local emergency number.</string>
+    <string name="safety_center_subtitle">Your tools for going out prepared, and for when something goes wrong.</string>
+    <string name="safety_center_notice">SafeSphere never contacts emergency services: in an emergency, call 112 or your local emergency number. Your Safety Circle is texted from your phone only if you switch on automatic SMS. During SOS and Safe Walk your location is saved to your own records, and nobody else can look you up.</string>
 
-    <!-- Community Safety -->
-    <string name="community_title">Community Safety</string>
-    <string name="community_subtitle">What people notice about places around you, and safe places to head for.</string>
+    <!-- Community Safety (the "Nearby" tab since Phase 10A) -->
+    <string name="community_title">Nearby</string>
+    <string name="community_subtitle">Safe places to head for around you, and what people noticed about places.</string>
     <string name="community_privacy_notice">Anonymous and approximate. Nobody sees who shared a signal. Your exact location never leaves your phone: a report is placed in a block of about 150 m, shown only to about 1 km until someone else confirms it, appears after a short random delay and fades on its own.</string>
     <string name="community_not_verified">Signals are shared by people and are not verified. In danger, use SOS or call 112.</string>
     <string name="section_around_you">Around you</string>
@@ -385,53 +390,79 @@
     <string name="profile_status_signed_in">Signed in</string>
     <string name="section_your_safety">Your safety</string>
     <string name="section_privacy_app">Privacy and app</string>
-    <string name="profile_emergency_prefs_title">Emergency Preferences</string>
-    <string name="profile_emergency_prefs_description">How and when your alerts are sent</string>
-    <string name="profile_activity_title">My Safety Activity</string>
-    <string name="profile_activity_description">Your check-ins and walks</string>
-    <string name="profile_contributions_title">My Community Contributions</string>
-    <string name="profile_contributions_description">Reports you have shared and confirmed</string>
-    <string name="profile_privacy_title">Privacy &amp; Security</string>
-    <string name="profile_privacy_description">How SafeSphere treats your data</string>
+    <string name="profile_activity_title">Emergency History</string>
+    <string name="profile_activity_description">Your past SOS sessions and their details</string>
+    <string name="profile_contributions_title">Your Nearby reports</string>
+    <string name="profile_contributions_description">What you shared or confirmed about places; withdraw it at any time</string>
+    <string name="profile_account_title">Account and security</string>
+    <string name="profile_account_description">Change your password or delete your account</string>
+    <string name="profile_privacy_title">Privacy notice</string>
+    <string name="profile_privacy_description">What SafeSphere stores and who can see it</string>
     <string name="profile_settings_title">Settings</string>
-    <string name="profile_settings_description">App preferences</string>
+    <string name="profile_settings_description">Account, privacy, permissions and notifications</string>
     <string name="profile_about_title">About SafeSphere</string>
     <string name="profile_about_description">Version and project information</string>
     <string name="logout_dialog_title">Log out?</string>
-    <string name="logout_dialog_message">This ends the preview session on this device and returns you to the login screen.</string>
+    <string name="logout_dialog_message">This signs you out on this phone. Your evidence stays encrypted on this phone for when you sign in again; your Safety Circle copy for offline SMS and any unsent Nearby reports are removed.</string>
 
-    <!-- Dialogs for features that do not exist yet -->
-    <string name="dialog_coming_title">%1$s is coming later</string>
-    <string name="dialog_coming_message">This feature is not built yet. It will arrive in a later phase of SafeSphere.</string>
-
-    <!-- Settings -->
+    <!-- Settings (Phase 10A: only rows that work; SettingsHonestyTest) -->
     <string name="settings_section_account">Account</string>
     <string name="settings_section_safety">Safety</string>
     <string name="settings_section_privacy">Privacy</string>
     <string name="settings_section_application">Application</string>
-    <string name="settings_profile">Profile</string>
-    <string name="settings_change_password">Change password</string>
-    <string name="settings_emergency">Emergency settings</string>
-    <string name="settings_safety_circle">Safety Circle</string>
-    <string name="settings_checkin">Check-in settings</string>
-    <string name="settings_privacy_settings">Privacy settings</string>
-    <string name="settings_data_permissions">Data permissions</string>
-    <string name="settings_notifications">Notifications</string>
+    <string name="settings_account">Account and security</string>
+    <string name="settings_safety_circle">Safety Circle and automatic SMS</string>
+    <string name="settings_evidence_vault">Evidence Vault and recovery passphrase</string>
+    <string name="settings_emergency_history">Emergency History</string>
+    <string name="settings_app_permissions">App permissions (phone settings)</string>
+    <string name="settings_notifications">Notifications (phone settings)</string>
     <string name="settings_about">About SafeSphere</string>
     <string name="settings_terms">Terms</string>
-    <string name="settings_privacy_policy">Privacy Policy</string>
+    <string name="settings_privacy_policy">Privacy notice</string>
+
+    <!-- Phase 10A: Account and security -->
+    <string name="title_account">Account and security</string>
+    <string name="account_section_password">Change password</string>
+    <string name="account_password_explainer">Changing your password signs out every other phone that uses this account. This phone stays signed in. It is not possible while an SOS or a Safe Walk is running, so nobody can cut a running one off.</string>
+    <string name="label_current_password">Current password</string>
+    <string name="label_new_password">New password</string>
+    <string name="label_confirm_new_password">Confirm new password</string>
+    <string name="account_change_password">Change password</string>
+    <string name="account_password_changed">Password changed. Every other phone was signed out.</string>
+    <string name="account_password_too_long">Use at most 72 bytes (fewer characters if you use accents or other scripts).</string>
+    <string name="account_password_same">Choose a password different from your current one.</string>
+    <string name="account_password_required">Enter your password.</string>
+    <string name="account_section_delete">Delete account</string>
+    <string name="account_delete_explainer">Your account is deleted 7 days after you ask, not at once. Until then everything keeps working, SOS included, and you can cancel with your password. Asking is not possible during an emergency or within 24 hours after one. Everything your account holds on the server is deleted, including your Evidence Vault, your emergencies and walks, your Safety Circle and your Nearby reports; once it is gone it cannot be restored. Afterwards this phone removes the account\'s evidence and recovery key too.</string>
+    <string name="account_delete_button">Delete my account…</string>
+    <string name="account_delete_confirm_title">Delete your account?</string>
+    <string name="account_delete_confirm_message">Enter your password. Nothing is deleted for 7 days; you can cancel until then.</string>
+    <string name="account_delete_confirm_action">Ask to delete</string>
+    <string name="account_deletion_requested">Your account will be deleted on %1$s. You can cancel until then.</string>
+    <string name="account_deletion_cancelled">Deletion cancelled. Your account stays.</string>
+    <string name="account_cancel_deletion">Cancel deletion</string>
+    <string name="account_cancel_deletion_message">Enter your password to keep your account.</string>
+    <string name="account_deletion_pending">This account will be deleted on %1$s. Until then everything keeps working. If you did not ask for this, cancel it in Account and security.</string>
+    <string name="account_deletion_pending_requested">This account will be deleted on %1$s (asked on %2$s). Until then everything keeps working. If you did not ask for this, cancel it in Account and security.</string>
+    <string name="account_deletion_pending_soon">This account will be deleted soon (it was waiting until 24 hours after your last emergency). You can still cancel it in Account and security.</string>
+    <!-- Login, after a deleted account's date: its evidence may still be on this phone -->
+    <string name="login_deleted_account_notice">An account on this phone was due to be deleted. If it has been deleted, its evidence and recovery key may still be on this phone. If you cancelled the deletion, just log in instead.</string>
+    <string name="login_remove_deleted_account_data">Remove its data from this phone</string>
+    <string name="login_remove_deleted_account_confirm">This removes that account\'s evidence and recovery key from this phone. Do this only if the account was deleted: if it still exists, you would have to restore its evidence with the recovery passphrase.</string>
 
     <!-- Information pages -->
-    <string name="about_body">SafeSphere is a privacy-focused women\'s safety platform being built in phases as a final-year project.
+    <string name="about_body">SafeSphere: safety that expands your world. A privacy-focused safety app designed with women at the centre, built in phases as a final-year B.Tech project. Safe enough to live. Free enough to grow.
 
-This build has real accounts, a Safety Circle, a manual SOS session and Safe Walk with check-ins. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. During an active SOS you can record audio, photos or video as evidence: only when you tap, always with a visible notification, encrypted on your phone at once and uploaded to your private Evidence Vault. SafeSphere never contacts emergency services and never records in the background on its own.
+This build has real accounts (with password change and account deletion), a Safety Circle, a manual SOS session, Safe Walk with check-ins and movement checks, Nearby (anonymous place signals) and "Check the way". Nobody can use SafeSphere to track another person. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. During an active SOS you can record audio, photos or video as evidence: only when you tap, always with a visible notification, encrypted on your phone at once and uploaded to your private Evidence Vault. SafeSphere never contacts emergency services and never records in the background on its own.
 
 Suggested recovery passphrases use the EFF Large Wordlist by the Electronic Frontier Foundation (CC BY 3.0). Passphrases are checked against the 10k-most-common password list from the SecLists project (MIT licence).</string>
     <string name="about_version_format">Version %1$s</string>
-    <string name="terms_body">These terms are a placeholder for the Phase 1 prototype. Final terms of use will be written and reviewed before SafeSphere is released to the public.</string>
-    <string name="privacy_policy_body">This is a placeholder for the current prototype, not a final policy.
+    <string name="terms_body">SafeSphere is a student prototype, not a released product, and there are no final terms of use yet. It is not an emergency service: it never contacts the police, an ambulance or anyone else for you, and an SMS that was sent is not proof that it was delivered or read. In an emergency, call 112 or your local emergency number. Do not rely on SafeSphere as your only way to get help. Terms of use will be written and reviewed before any public release.</string>
+    <string name="privacy_policy_body">Privacy notice for this prototype build. It describes what this build actually does. It is written by the project team, is not legal advice and is not a final privacy policy.
 
-In this build SafeSphere sends your name, email and password to the SafeSphere server to create and check your account. The server stores your name and email, and only a one-way hash of your password. This device stores your name, email and a sign-in token so you stay signed in.
+Who can see your data: you, and the people who run the SafeSphere server (the project team). Nobody else can look you up, follow you or see where you are: SafeSphere has no family, partner or guardian mode, no location on request and no remote view, by design. SafeSphere has no advertising and no analytics, and does not read your phone\'s contacts or messages.
+
+Account: SafeSphere sends your name, email and password to the SafeSphere server to create and check your account. The server stores your name and email, and only a one-way hash of your password. This device stores your name, email and a sign-in token so you stay signed in (the token is not yet encrypted on the phone; a known limitation). Failed sign-ins are counted in the server\'s memory for 15 minutes only, never stored. Changing your password signs out every other phone. Asking to delete your account starts a 7-day wait; after it, everything your account holds on the server is deleted (see the end of this notice).
 
 Location: only while an emergency is active, and only if you allow it, your phone\'s location (with its accuracy and the battery level) is saved to your own emergency record on the SafeSphere server. Only you can see the saved points; the only place your location goes beyond that is a map link in the Safety Circle SMS, and only if you switch on automatic SMS or send it yourself (see below). Points that are waiting to be uploaded are kept in memory, not stored on the phone. Location points are deleted together with the emergency record and your account.
 
@@ -442,9 +473,18 @@ Stop and route checks (if switched on): the destination text you type is looked 
 Safety Circle SMS (only if you switch on automatic SMS, or when you tap Text yourself): your phone sends an SMS to your enabled contacts with your name, the time, what happened and a map link to your last location. To work without internet, your enabled contacts\' names and numbers are kept on this phone (deleted when you log out). The server records only that a message was sent, to which contact and its status; never the number or the text. Tapping Call 112 opens your phone\'s dialer; SafeSphere records that it was opened, not whether you called.
 
 Evidence Vault (only during an active SOS, only when you tap): audio from your microphone, or a photo or video taken with your phone\'s own camera app. Each item is encrypted on this phone right away with its own key, which is protected by your phone\'s secure hardware; the unencrypted file is deleted. The SafeSphere server receives only the encrypted file, its size, two fingerprints (SHA-256), the capture times and a chain-of-custody log; it cannot open the evidence. If the server offers a vault recovery key, a copy of each item\'s key is sealed for it, so the evidence can still be recovered if your phone is lost; that recovery key is kept offline by the SafeSphere operator, not on the server. If you set up a recovery passphrase, the server also stores a copy of each item\'s key locked with a key that only your passphrase opens; the passphrase itself never leaves your phone, so SafeSphere cannot read it or reset it (someone holding the server\'s data could try to guess a weak passphrase, which is why short or common ones are refused). The server records when that locked copy was last fetched. No location, file name or device details are sent with evidence. You can delete evidence everywhere with your password once the emergency has ended. The camera app you use may keep its own copy; check its settings.
-SafeSphere does not read your phone\'s contacts or your messages.
 
-A complete privacy policy will be published before any feature that handles more personal data is released.</string>
+Nearby (only when you open it): your phone turns one location fix into an area code of about 1 km to look at your area, and of about 150 m to report or answer. Your coordinates never leave the phone. A report says only the kind of place problem (or a safe place) and that block; it has no text, photo, name or time, and nobody is shown who shared it. It starts to count after a random delay, shows only to about 1 km until a second person confirms it, and is deleted at the end of its lifetime. You can see and withdraw your own reports in Nearby. Privately, the server keeps a few counters about how your reports turned out (never places or times); they halve every 90 days and are never shown, not even to you. If you flag a signal, a moderator sees only codes and a pseudonym valid for that one case. Moderation decisions are logged with reason codes for 365 days.
+
+Check the way (Safe Walk set-up): your phone asks for area summaries of a few regions of about 5 km; the server never receives your route or destination, and nothing is stored.
+
+Counts: once a week the server counts, system-wide, how the Nearby rules worked (no person, place or signal). Only an administrator can read them.
+
+Account deletion: you need your password; it is refused during an emergency and for 24 hours after one, and it waits 7 days (cancel with your password; signing in does not cancel it). Then the server deletes your account and everything it holds: emergencies and their locations, walks, Safety Circle, evidence files and records, recovery data and Nearby contributions. If you ever acted as a moderator, your account row stays as an anonymous, switched-off record so that the moderation log keeps who decided what; your name, email and safety data are still deleted. After the deletion, this phone removes the account\'s evidence and recovery key the next time it learns of it, or when you tap the button on the login screen.
+
+Retention in short: emergency locations, walks and evidence stay until you delete them or your account; walk destinations and last locations are deleted when a walk ends normally; Nearby signals expire on their own; moderation log 365 days; weekly counts 104 weeks.
+
+A complete privacy policy will be written and reviewed before any public release.</string>
 
     <!-- ===== Phase 3: shared ===== -->
     <string name="badge_primary">Primary</string>
@@ -469,7 +509,7 @@ A complete privacy policy will be published before any feature that handles more
     <!-- ===== Safety Circle ===== -->
     <string name="safety_circle_notice">Your Safety Circle is saved to your SafeSphere account. The people in it are texted only if you switch on automatic SMS below, or when you text them yourself.</string>
     <string name="safety_circle_empty_title">Your trusted people</string>
-    <string name="safety_circle_empty_message">Add people you trust so they can become part of your emergency response network.</string>
+    <string name="safety_circle_empty_message">People you choose to keep in the loop: when something goes wrong, and when you want them to know where you are going.</string>
     <string name="action_add_trusted_contact">Add Trusted Contact</string>
     <string name="contact_form_add_title">Add trusted contact</string>
     <string name="contact_form_edit_title">Edit trusted contact</string>
@@ -571,7 +611,7 @@ A complete privacy policy will be published before any feature that handles more
     <!-- ===== Phase 4B: Safe Walk ===== -->
     <string name="title_safe_walk">Safe Walk</string>
     <string name="safe_walk_setup_title">Start a Safe Walk</string>
-    <string name="safe_walk_setup_body">SafeSphere asks you to check in at regular times while you are on your way. Tap “I\'m OK” each time, and “I\'ve arrived” when you get there.</string>
+    <string name="safe_walk_setup_body">SafeSphere asks you to check in at regular times while you are on your way. Tap “I\'m OK” each time, and “I\'ve arrived” when you get there. Using support is a choice, not a weakness.</string>
     <string name="safe_walk_destination_hint">Where are you going? (optional)</string>
     <string name="safe_walk_interval_label">Check in every</string>
     <string name="safe_walk_interval_option">%1$d min</string>

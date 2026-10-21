@@ -1,6 +1,11 @@
 package com.safesphere.backend.config;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import com.safesphere.backend.security.ActiveAccountCheck;
+import com.safesphere.backend.user.repository.UserRepository;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
+import org.springframework.security.oauth2.jwt.Jwt;
 import java.nio.charset.StandardCharsets;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -40,12 +45,21 @@ public class JwtConfig {
     }
 
     @Bean
-    public JwtDecoder jwtDecoder(SecretKey jwtSecretKey, JwtProperties properties) {
+    public JwtDecoder jwtDecoder(SecretKey jwtSecretKey, JwtProperties properties, UserRepository users) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtSecretKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
-        // Default validators check expiry ("exp") and "nbf"; the issuer validator checks "iss".
-        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.issuer()));
+        // Default validators check expiry ("exp") and "nbf"; the issuer validator checks "iss". They run first, so the
+        // database is only asked about tokens this server really signed and that have not expired.
+        // Phase 10A: then the account check (exists, enabled, not erased, credentials stamp current).
+        OAuth2TokenValidator<Jwt> standard = JwtValidators.createDefaultWithIssuer(properties.issuer());
+        ActiveAccountCheck account = new ActiveAccountCheck(users);
+        // In order, not side by side (DelegatingOAuth2TokenValidator would run both): an expired token never reaches
+        // the database, and an expired token of a deleted account is "expired", not "deleted".
+        decoder.setJwtValidator(token -> {
+            OAuth2TokenValidatorResult first = standard.validate(token);
+            return first.hasErrors() ? first : account.validate(token);
+        });
         return decoder;
     }
 }

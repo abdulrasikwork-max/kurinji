@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.safesphere.app.AppContainer
+import com.safesphere.app.feature.account.domain.AccountPolicy
+import com.safesphere.app.feature.account.domain.DeletionNotice
+import java.time.Instant
 import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthRepository
 import com.safesphere.app.feature.auth.domain.AuthResult
@@ -69,6 +72,12 @@ class HomeViewModel(
 
     /** The name to greet, or null when only a generic greeting can be shown. */
     val displayName: Flow<String?> = authRepository.currentUser.map { it?.name }
+
+    /**
+     * Phase 10A.3: a pending account deletion (null = none). Shown on Home for the whole grace period, so a request
+     * made by someone else who knows the password, or one the person was forced to make, cannot go unnoticed.
+     */
+    val deletion: Flow<DeletionNotice?> = authRepository.currentUser.map { AccountPolicy.deletionNotice(it, Instant.now()) }
 
     private val _sessionExpired = MutableStateFlow(false)
 

@@ -112,6 +112,31 @@ class EvidenceVaultHardeningTest {
     }
 
     @Test
+    fun `forgetting a deleted account removes only its items, files and keys, also from the index backup`() = runTest {
+        stayOffline()
+        val vault = vault()
+        runCurrent()
+        val mine = vault.capture("deleted account's evidence".toByteArray())!!
+        session.value = bina
+        runCurrent()
+        val hers = vault.capture("other account's evidence".toByteArray(), user = OTHER_USER)!!
+        runCurrent()
+        assertEquals(2, vault.items.value.size)
+
+        vault.forgetAccount(USER)
+        runCurrent()
+
+        assertEquals(listOf(hers.clientRef), vault.items.value.map { it.clientRef })
+        assertFalse(files.vaultFile(mine.clientRef).exists())
+        assertTrue(files.vaultFile(hers.clientRef).exists())
+        // Neither the index nor its backup still holds the deleted account's sealed key.
+        for (file in listOf(files.indexFile, files.indexBackupFile)) {
+            if (file.exists()) assertFalse(file.name, file.readText().contains(mine.clientRef))
+        }
+        assertEquals(listOf(hers.clientRef), EvidenceIndexFile(files).read().map { it.clientRef })
+    }
+
+    @Test
     fun `while signed out nothing can be opened`() = runTest {
         stayOffline()
         val vault = vault()

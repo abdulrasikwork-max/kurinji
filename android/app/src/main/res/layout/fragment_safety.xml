@@ -32,14 +32,14 @@
                 android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
         </LinearLayout>
 
-        <!-- Warning style: nothing here is active yet, and what to do in a real emergency -->
+        <!-- What SafeSphere does and does not do in an emergency (never contacts emergency services) -->
         <com.safesphere.app.core.ui.components.NoticeView
             android:id="@+id/previewNotice"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_lg"
             app:noticeText="@string/safety_center_notice"
-            app:noticeType="warning" />
+            app:noticeType="info" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/featureList"

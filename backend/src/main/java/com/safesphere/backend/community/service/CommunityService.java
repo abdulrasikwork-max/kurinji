@@ -246,6 +246,28 @@ public class CommunityService {
         }
     }
 
+    /**
+     * Phase 10A.3 (account deletion): removes every contribution of [userId] the way a withdrawal does, including under
+     * review (the person is leaving; the case keeps its signal and the other people's flags), and deletes a signal left
+     * without any contribution unless a moderator removed it (its tombstone stays until its hold ends). Flags and the
+     * private standing are deleted by the account eraser itself. Returns the number of contributions removed.
+     */
+    @Transactional
+    public int eraseContributor(long userId) {
+        List<SignalContribution> own = contributions.findByUserId(userId);
+        if (own.isEmpty()) return 0;
+        Set<Long> touched = own.stream().map(SignalContribution::getSignalId).collect(Collectors.toSet());
+        contributions.deleteAll(own);
+        contributions.flush();
+        for (PlaceSignal signal : signals.findAllById(touched)) {
+            if (contributions.findBySignalId(signal.getId()).isEmpty() && signal.getModeration() != ModerationState.REMOVED) {
+                ending(List.of(signal), SignalEnd.WITHDRAWN);
+                deleteSignal(signal);
+            }
+        }
+        return own.size();
+    }
+
     // ---- Reading ---------------------------------------------------------------------------------------------
 
     /**

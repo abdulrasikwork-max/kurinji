@@ -36,6 +36,25 @@
             android:text="@string/login_subtitle"
             android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
+        <!-- Phase 10A.3: after an account's deletion date, its evidence may still be on this phone -->
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/deletedAccountNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:visibility="gone"
+            app:noticeText="@string/login_deleted_account_notice"
+            app:noticeType="info" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/removeDeletedAccountDataButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/login_remove_deleted_account_data"
+            android:visibility="gone" />
+
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/emailLayout"
             android:layout_width="match_parent"

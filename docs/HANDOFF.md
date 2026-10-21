@@ -1,4 +1,27 @@
-# Handoff: end of Phase 8, Phase 9 in progress (updated 2026-10-21, after 9B)
+# Handoff: Phase 10A complete (updated 2026-10-22); Phase 9 complete and frozen
+
+**Phase 10A implemented, compiled, tested and verified 2026-10-22** (`docs/PHASE10.md`, design `docs/PHASE10_DESIGN.md`):
+- 10A.1 honesty / identity / language: onboarding rewritten ("Safety that expands your world"), Settings, Profile,
+  Safety Center and Home without placeholders (timeline and duplicate tile removed, Evidence Vault reachable without an
+  SOS), tab "Nearby", summary leads with safe places, Circle and Safe Walk copy, accurate privacy notice, `feature/map`
+  removed.
+- 10A.2 account security: V16, `ActiveAccountCheck` (per-request account check + credentials-stamp revocation), password
+  change (refused during an ACTIVE SOS/walk), Android `SessionEnder` (a stale token's 401 never signs out a newer session).
+- 10A.3 coercion-aware deletion: password, refused during / 24 h after an emergency, 7-day grace with Home banner,
+  cancel needs the password, postponed by an emergency, evidence files before rows, audit-referenced accounts
+  anonymised, phone wipe on `account_deleted`.
+- **Results:** backend **466 tests, 0 failures, 2 skipped**; Android **480/0**; lint **0 errors / 85 warnings**; V16 dry run
+  **13/13**, applied (dev DB **v16**, next **V17**); live MySQL **23/23** (after a first attempt stopped by a script
+  fault, disclosed); emulator (API 37) PASS for the changed screens. **NOT VERIFIED:** TalkBack, dark mode, onboarding
+  pages on a device, real phone.
+- **State left:** backend and emulator stopped, `adb reverse` removed, the 10A debug build installed on the emulator
+  (signed out). Every account the checks created was deleted. A backup of `users` taken before V16 is in the session
+  scratchpad only (not in the repo).
+- **Next:** (1) the user's review of 10A; (2) recommended small "session continuity" step (`PHASE10.md` §9: token
+  renewal for long SOS, a policy for a second session ending an SOS, token encryption); (3) 10B RISE "Proof" only when
+  briefed. Phase 9 stays frozen.
+
+---
 
 **Phase 9B complete: implemented 2026-10-21, reviewed and accepted by the user on 2026-10-21, frozen**
 (`docs/PHASE9.md` §27–§34): weekly, system-wide
@@ -26,7 +49,7 @@ Read `CLAUDE.md` (permanent rules and architecture), then `docs/PHASE9.md` (Phas
 simulation and its findings, 9C) and `docs/PHASE9_DESIGN.md` (the Phase 9 design), then `docs/PHASE8.md` and
 `docs/PHASE8_DESIGN.md` (Safety Intelligence as built). Per-phase details are in
 `docs/PHASE4A–4D.md`, `docs/PHASE5.md`, `docs/PHASE6.md`, `docs/PHASE7.md`, `docs/TIMESTAMPS.md` and `docs/API.md`.
-Nothing is committed: the folder is **not a git repository**.
+The folder became a git repository on 2026-10-21 (`fbe530b`); Phase 10A is committed on `main` (not pushed).
 
 ## 1. Status
 

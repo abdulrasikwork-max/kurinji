@@ -25,4 +25,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from User u where u.id = :id")
     Optional<User> findByIdForUpdate(@Param("id") Long id);
+
+    /** Phase 10A.3: accounts whose deletion grace period is over, oldest first (the deletion job). */
+    @Query("select u.id from User u where u.deletionDueAt is not null and u.deletionDueAt <= :now "
+            + "order by u.deletionDueAt asc")
+    java.util.List<Long> findIdsDueForDeletion(@Param("now") java.time.LocalDateTime now,
+                                               org.springframework.data.domain.Pageable page);
 }

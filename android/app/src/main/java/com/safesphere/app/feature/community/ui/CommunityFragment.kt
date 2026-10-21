@@ -144,10 +144,9 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
                 val summary = if (brief.isEmpty) {
                     getString(R.string.community_brief_empty)
                 } else {
-                    val parts = mutableListOf<String>()
-                    if (brief.incidents > 0) parts += resources.getQuantityString(R.plurals.brief_incidents, brief.incidents, brief.incidents)
-                    if (brief.conditions > 0) parts += resources.getQuantityString(R.plurals.brief_conditions, brief.conditions, brief.conditions)
-                    if (brief.havens > 0) parts += resources.getQuantityString(R.plurals.brief_havens, brief.havens, brief.havens)
+                    val parts = CommunityTexts.briefParts(brief).map { (plural, count) ->
+                        resources.getQuantityString(plural, count, count)
+                    }
                     getString(R.string.community_brief, parts.joinToString(", "))
                 }
                 binding.areaStatus.text = summary

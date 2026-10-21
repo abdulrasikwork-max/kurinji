@@ -884,6 +884,37 @@ class EvidenceVault(
 
     suspend fun remoteItems(emergencyId: Long): ApiResult<List<RemoteEvidence>> = repository.list(emergencyId)
 
+    /**
+     * Phase 10A.3: the account [userId] was deleted on the server, so its evidence there is gone too. Removes its items
+     * from this phone: the encrypted files (and any download or viewing copy), their sealed keys in the index (the
+     * index is written twice so index.json.bak no longer holds them either) and its custody anchors. Items of other
+     * accounts on this phone are untouched. Never called for a living account (AccountDataWiper).
+     */
+    suspend fun forgetAccount(userId: Long) {
+        ready.join()
+        indexLock.withLock {
+            val gone = _items.value.filter { it.userId == userId }
+            withContext(io) {
+                for (item in gone) {
+                    files.vaultFile(item.clientRef).delete()
+                    files.downloadFile(item.clientRef).delete()
+                    PlaintextWipe.wipe(files.viewFile(item.clientRef, item.kind))
+                }
+            }
+            if (gone.isNotEmpty()) {
+                val kept = _items.value.filterNot { it.userId == userId }
+                writeIndex(kept)
+                writeIndex(kept)
+            }
+        }
+        anchorLock.withLock {
+            withContext(io) {
+                val anchors = readAnchors()
+                if (anchors.any { it.userId == userId }) writeAnchors(anchors.filterNot { it.userId == userId })
+            }
+        }
+    }
+
     // ---- index helpers ---------------------------------------------------------------------------------
 
     private suspend fun shredLocally(clientRef: String, deletedAt: Instant) {

@@ -10,6 +10,12 @@ import com.safesphere.app.core.validation.FormValidator
 import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthRepository
 import com.safesphere.app.feature.auth.domain.AuthResult
+import com.safesphere.app.feature.account.domain.PendingDeletion
+import java.time.Instant
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,10 +37,29 @@ data class LoginUiState(
  * Checks the form on the device first (same rules as Phase 1), then asks the backend through
  * [AuthRepository]. The password only lives inside this function call; it is never kept in state.
  */
-class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
+class LoginViewModel(
+    private val authRepository: AuthRepository,
+    private val pendingDeletion: Flow<PendingDeletion?> = flowOf(null),
+    private val removeAccountData: suspend (userId: Long) -> Boolean = { true },
+    private val now: () -> Instant = Instant::now
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
+
+    /**
+     * Phase 10A.3: an account on this phone was scheduled for deletion and its date has passed. Its evidence and
+     * recovery key may still be on this phone (a sign-out keeps them); the person can remove them here. Not shown
+     * before the date: until then the account exists and signing in shows the deletion banner instead.
+     */
+    val deletedAccountData: Flow<Boolean> = pendingDeletion.map { it != null && !it.dueAt.isAfter(now()) }
+
+    fun onRemoveDeletedAccountData() {
+        viewModelScope.launch {
+            val marker = pendingDeletion.first() ?: return@launch
+            removeAccountData(marker.userId)
+        }
+    }
 
     fun onLoginClicked(email: String, password: String) {
         if (_uiState.value.isLoading) return
@@ -62,7 +87,9 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
     companion object {
         fun factory(container: AppContainer) = viewModelFactory {
-            initializer { LoginViewModel(container.authRepository) }
+            initializer {
+                LoginViewModel(container.authRepository, container.pendingDeletion.pending, container.accountDataWiper::wipe)
+            }
         }
     }
 }

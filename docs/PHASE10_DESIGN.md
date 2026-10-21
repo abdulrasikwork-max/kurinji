@@ -5,7 +5,14 @@ changed. It replaces the first pass of the same day (committed as `fbe530b`). De
 user's briefs of 2026-10-21 ("full autonomy; design only", then "help women safely expand what they believe is possible
 for their own lives"). Implementation starts only after the user's go-ahead, in gated sub-phases 10A–10D (§30).
 
-Status of everything here: **planned**. Facts about the current product come from reading the repository. Citations
+**Status update 2026-10-22:** **10A is implemented, tested and verified on MySQL and the emulator** (results,
+deviations D1–D12, the SAFE audit and the security/privacy review: `docs/PHASE10.md`). The main deviations: revocation
+by an exact credentials stamp instead of `iat` (D1); a password change is **refused** during an active SOS or Safe Walk
+instead of swapping tokens mid-emergency (D3, R8 below is therefore partly superseded); cancel is
+`POST /api/users/me/deletion/cancel` (D4); anonymisation by audit references, not by role (D5); deletion postponed by
+an emergency during the grace period (D6). 10B–10D: still **planned**.
+
+Status of everything else here: **planned**. Facts about the current product come from reading the repository. Citations
 marked *(verify)* must be checked against the original paper before they go into the project report.
 
 ---
@@ -572,7 +579,8 @@ rise/  controller/RiseController   POST /api/rise/reflections · GET /api/rise/i
 | Receipt `user_id` | Server, ≤ 8 days | Yes | The only way to enforce one reflection per domain per week. Disclosed; hashing would be theatre because the server holds the key |
 | Exact time of a reflection | Nowhere | **No** | ISO week only, against correlation with Safe Walk (§18.2) |
 
-**V16 (10A) `V16__account_lifecycle.sql`** (unchanged):
+**V16 (10A) `V16__account_lifecycle.sql`** (the plan below; **as built** it also has `deletion_requested_at` and four
+more CHECKs, `PHASE10.md` §4 D7):
 ```sql
 ALTER TABLE users
     ADD COLUMN credentials_changed_at DATETIME(6) NULL,
@@ -619,7 +627,8 @@ CREATE TABLE rise_receipts (
 
 ## 17. API design
 
-**10A** (unchanged)
+**10A** (the plan; **as built**: wrong passwords answer 409, password change is refused during an SOS or Safe Walk,
+cancel is `POST /api/users/me/deletion/cancel` → 204: `docs/API.md` "Phase 10A endpoints", `PHASE10.md` §4)
 
 | Method | Path | Body → answer | Errors |
 |---|---|---|---|

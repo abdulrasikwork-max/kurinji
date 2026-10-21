@@ -22,6 +22,16 @@ import com.safesphere.app.feature.community.domain.SignalSupport
 /** Words for Phase 6 values. Status is always text (+ icon), never colour alone. */
 object CommunityTexts {
 
+    /**
+     * Phase 10A: the area summary leads with where you can go (safe places), then concerns, then places to take care.
+     * Only the order of the words changed; every count is still shown. Pairs of (plural resource, count), zeros left out.
+     */
+    fun briefParts(brief: CommunityPolicy.AreaBrief): List<Pair<Int, Int>> = listOf(
+        R.plurals.brief_havens to brief.havens,
+        R.plurals.brief_incidents to brief.incidents,
+        R.plurals.brief_conditions to brief.conditions
+    ).filter { it.second > 0 }
+
     @StringRes
     fun category(category: SignalCategory): Int = when (category) {
         SignalCategory.HARASSMENT -> R.string.signal_harassment

@@ -43,3 +43,16 @@ Status is never colour-only: each badge has a word, and most have an icon. Map m
    *Safe Walk on*, or *Check-in missed* (amber, warning icon). Until 2026-10-21 it was a Phase 1 "SAFE" sample.
 4. During an SOS the status card is hidden: the red banner is the one emergency element. `HomeTextsTest` scans every
    string Home shows for safety claims.
+
+## Identity and language (Phase 10A, `docs/PHASE10.md`)
+
+- **Product line:** *Safety that expands your world.* Philosophy (unchanged): *Safe enough to live. Free enough to grow.*
+  SAFE: *You deserve to feel safe.* The RISE line (*You decide what's for you.*) appears only once RISE exists.
+- **No placeholders:** no "Coming soon" row, tile or dialog anywhere; a feature that is not built is not shown.
+- **Places, not people:** the community tab is **Nearby**. Area summaries lead with safe places, then concerns, then
+  places to take care (order only, every count shown).
+- **Going out, not staying away:** no text tells people to avoid places or stay away (`HonestyTextsTest`).
+- **Support is a choice:** the Safety Circle is "people you choose to keep in the loop"; Safe Walk says "Using support is
+  a choice, not a weakness."
+- **Account warnings** (pending deletion) use the amber warning NoticeView with its icon, never red (red is emergency UI).
+- **Screens with passwords** (Account and security) are FLAG_SECURE.

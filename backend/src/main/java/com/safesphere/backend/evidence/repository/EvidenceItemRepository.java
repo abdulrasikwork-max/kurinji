@@ -44,6 +44,11 @@ public interface EvidenceItemRepository extends JpaRepository<EvidenceItem, Long
 
     List<EvidenceItem> findByStatus(EvidenceStatus status);
 
+    /** Phase 10A.3: storage keys of every file a person's evidence still has (account deletion removes them first). */
+    @Query("select i.storageKey from EvidenceItem i where i.storageKey is not null and i.emergencyId in "
+            + "(select e.id from EmergencyEvent e where e.userId = :userId)")
+    List<String> storageKeysOf(@Param("userId") Long userId);
+
     /** The person's items that a new phone can restore: in [status] (SEALED) and holding a recovery-wrapped key. */
     @Query("select i from EvidenceItem i where i.status = :status and i.recoveryWrappedKey is not null and i.emergencyId in "
             + "(select e.id from EmergencyEvent e where e.userId = :userId) order by i.id asc")

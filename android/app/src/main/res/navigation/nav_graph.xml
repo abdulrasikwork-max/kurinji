@@ -214,6 +214,13 @@
         android:label="@string/title_safe_walk"
         tools:layout="@layout/fragment_safe_walk" />
 
+    <!-- Phase 10A: Account and security (password change, account deletion) -->
+    <fragment
+        android:id="@+id/accountFragment"
+        android:name="com.safesphere.app.feature.account.ui.AccountFragment"
+        android:label="@string/title_account"
+        tools:layout="@layout/fragment_account" />
+
     <!-- Secondary screens -->
     <fragment
         android:id="@+id/settingsFragment"

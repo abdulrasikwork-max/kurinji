@@ -26,6 +26,10 @@ public interface EmergencyEventRepository extends JpaRepository<EmergencyEvent, 
 
     boolean existsByUserIdAndStatus(Long userId, EmergencyStatus status);
 
+    /** Phase 10A: when the person's most recent emergency ended (account deletion waits 24 h after it). */
+    @Query("select max(e.endedAt) from EmergencyEvent e where e.userId = :userId")
+    Optional<java.time.LocalDateTime> lastEndedAt(@Param("userId") Long userId);
+
     /** Newest first; capped at 50 entries so the history can never grow into a huge response. */
     List<EmergencyEvent> findTop50ByUserIdOrderByStartedAtDescIdDesc(Long userId);
 }

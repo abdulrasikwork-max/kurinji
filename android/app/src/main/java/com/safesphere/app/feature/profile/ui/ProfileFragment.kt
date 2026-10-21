@@ -14,12 +14,12 @@ import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.components.BadgeStatus
 import com.safesphere.app.core.ui.components.FeatureItem
 import com.safesphere.app.core.ui.components.FeatureListAdapter
-import com.safesphere.app.core.ui.showComingLaterDialog
+import androidx.navigation.navOptions
 import com.safesphere.app.databinding.FragmentProfileBinding
 
 /**
- * Safety Profile. Shows the signed-in user's name and email and offers Settings, Privacy, About and Log out;
- * the sections for the future safety features are Coming soon placeholders.
+ * Safety Profile. Shows the signed-in user's name and email, links the person's own records (Safety Circle, emergency
+ * history, Evidence Vault, Nearby reports) and offers Account and security, Privacy, Settings, About and Log out.
  */
 class ProfileFragment : ViewBindingFragment<FragmentProfileBinding>(FragmentProfileBinding::inflate) {
 
@@ -63,19 +63,40 @@ class ProfileFragment : ViewBindingFragment<FragmentProfileBinding>(FragmentProf
         binding.profileEmail.text = state.email ?: getString(R.string.profile_email_fallback)
     }
 
+    // Phase 10A: every row opens a screen that exists (the Coming-soon rows pointed at features that were built since).
     private fun safetyItems(): List<FeatureItem> = listOf(
         FeatureItem(
             R.drawable.ic_group, R.string.feature_safety_circle_title, R.string.feature_safety_circle_description,
             BadgeStatus.AVAILABLE
         ) { findNavController().navigate(R.id.safetyCircleFragment) },
-        comingSoon(R.drawable.ic_shield_outline, R.string.profile_emergency_prefs_title, R.string.profile_emergency_prefs_description),
-        comingSoon(R.drawable.ic_history, R.string.profile_activity_title, R.string.profile_activity_description),
-        comingSoon(R.drawable.ic_community_outline, R.string.profile_contributions_title, R.string.profile_contributions_description)
+        FeatureItem(
+            R.drawable.ic_history, R.string.profile_activity_title, R.string.profile_activity_description,
+            BadgeStatus.AVAILABLE
+        ) { findNavController().navigate(R.id.emergencyHistoryFragment) },
+        FeatureItem(
+            R.drawable.ic_lock, R.string.feature_evidence_vault_title, R.string.feature_evidence_vault_description,
+            BadgeStatus.AVAILABLE
+        ) { findNavController().navigate(R.id.evidenceVaultFragment) },
+        FeatureItem(
+            R.drawable.ic_community_outline, R.string.profile_contributions_title, R.string.profile_contributions_description,
+            BadgeStatus.AVAILABLE
+        ) {
+            // Same as tapping the Nearby tab ("Your reports and answers" is on that screen).
+            findNavController().navigate(R.id.communityFragment, null, navOptions {
+                launchSingleTop = true
+                restoreState = true
+                popUpTo(R.id.homeFragment) { saveState = true }
+            })
+        }
     )
 
     private fun appItems(): List<FeatureItem> {
         val navController = findNavController()
         return listOf(
+            FeatureItem(
+                R.drawable.ic_person_outline, R.string.profile_account_title, R.string.profile_account_description,
+                BadgeStatus.AVAILABLE
+            ) { navController.navigate(R.id.accountFragment) },
             FeatureItem(
                 R.drawable.ic_lock, R.string.profile_privacy_title, R.string.profile_privacy_description,
                 BadgeStatus.AVAILABLE
@@ -90,10 +111,6 @@ class ProfileFragment : ViewBindingFragment<FragmentProfileBinding>(FragmentProf
             ) { navController.navigate(R.id.action_profile_to_about) }
         )
     }
-
-    private fun comingSoon(iconRes: Int, titleRes: Int, descriptionRes: Int) = FeatureItem(
-        iconRes, titleRes, descriptionRes, BadgeStatus.COMING_SOON
-    ) { showComingLaterDialog(titleRes) }
 
     private fun confirmLogout() {
         MaterialAlertDialogBuilder(requireContext())

@@ -1,14 +1,21 @@
 # SafeSphere
 
-**Community-Driven Safety Intelligence & Emergency Response Platform**
-A privacy-focused personal safety platform (final-year B.Tech IT project). This repository holds the Android app and the Spring Boot backend.
+**Safety that expands your world.** *Safe enough to live. Free enough to grow.*
+A privacy-focused safety platform designed with women at the centre (final-year B.Tech IT project). This repository
+holds the Android app and the Spring Boot backend. Nobody can use SafeSphere to monitor another person: there is no
+family, partner or guardian mode and no location on request (a permanent product decision).
 
 ```
 SafeSphere/
 ├── android/   Kotlin Android app (XML views, MVVM, Navigation, Retrofit, DataStore)
 ├── backend/   Spring Boot REST API (Spring Security + JWT, JPA, Flyway, MySQL)
-└── docs/      API.md, PHASE2.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
+└── docs/      API.md, PHASE2.md … PHASE10.md, PHASE*_DESIGN.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md
 ```
+
+The status table below covers Phases 1–5; the current, complete status of every phase (6–10) is in `CLAUDE.md` §2
+and `docs/HANDOFF.md`. In short: Nearby place signals (6), trust and moderation (7), safety intelligence (8) and the
+Phase 9 evaluation layer are built; **Phase 10A** (honest app texts, password change with session revocation, and
+coercion-aware account deletion) is implemented and tested (`docs/PHASE10.md`); RISE (10B) is designed, not built.
 
 ## Status
 
@@ -24,7 +31,8 @@ SafeSphere/
 | 4C / 4D | Route/stop checks, battery policy; Safety Circle SMS (opt-in), Call 112 dial prompt, Emergency Context Packet | **Implemented, compiled and tested**: docs/PHASE4C.md, docs/PHASE4D.md |
 | 5 | Emergency Evidence Vault: user-started audio (30 s encrypted parts), photo / video via the camera app, on-phone encryption (Keystore), server-verified SHA-256 seal, hash-chained chain of custody, offline escrow recovery key, password-protected deletion | **Implemented, compiled, tested, emulator-verified**. Real-phone verification pending: docs/PHASE5.md |
 
-During an active SOS the phone's location can be saved to the person's **own** emergency record, and the person can choose to record evidence, which is encrypted on the phone before upload. SafeSphere never contacts emergency services itself. Push, AI, community reports and RISE are not built yet.
+During an active SOS the phone's location can be saved to the person's **own** emergency record, and the person can choose to record evidence, which is encrypted on the phone before upload. SafeSphere never contacts emergency services itself. Push notifications from the server, learned AI models and RISE
+are not built.
 
 ## Architecture
 
@@ -64,7 +72,7 @@ Details, flows and a viva-style explanation: **docs/PHASE2.md**. API reference: 
 | `DB_PASSWORD` | **yes** | MySQL password of the `safesphere` user |
 | `JWT_SECRET` | **yes** | Signs login tokens. At least 32 characters; the app refuses to start otherwise |
 | `DB_USERNAME` | no | Default `safesphere` |
-| `DB_URL` | no | Default `jdbc:mysql://localhost:3306/safesphere?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC` |
+| `DB_URL` | no | Default `jdbc:mysql://localhost:3306/safesphere?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true` (keep the time-zone settings, docs/TIMESTAMPS.md) |
 | `JWT_EXPIRATION` | no | Default `24h` |
 | `PORT` | no | Default `8080` |
 | `CORS_ALLOWED_ORIGINS` | no | Default empty (the Android app needs none) |

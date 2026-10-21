@@ -70,6 +70,13 @@ class RecoveryKeyStore(
         write(read().filterNot { it.userId == userId } + Entry(userId, rkVersion, sealed))
     }
 
+    /** Phase 10A.3: forgets [userId]'s recovery key on this phone (the account was deleted). */
+    @Synchronized
+    fun remove(userId: Long) {
+        val entries = read()
+        if (entries.any { it.userId == userId }) write(entries.filterNot { it.userId == userId })
+    }
+
     override fun wrapItemKey(userId: Long, clientRef: String, ciphertextSha256: String, itemKey: ByteArray): Pair<Int, ByteArray>? =
         withKey(userId) { version, rk -> version to RecoveryKeyCrypto.wrapItemKey(rk, itemKey, clientRef, ciphertextSha256, random) }
 

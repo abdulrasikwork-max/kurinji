@@ -3,7 +3,6 @@ package com.safesphere.app.feature.home.ui
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.safesphere.app.R
-import com.safesphere.app.core.ui.components.BadgeStatus
 import com.safesphere.app.core.ui.components.StatusCardContent
 import com.safesphere.app.core.ui.components.StatusTone
 
@@ -31,37 +30,17 @@ object HomeStatusCard {
     }
 }
 
-/**
- * A small action tile under the SOS tile. With a [destinationId] it opens that screen;
- * without one it is still a "coming soon" placeholder.
- */
+/** A small action tile under the SOS tile; each one opens a real screen (Phase 10A: no placeholders on Home). */
 data class QuickAction(
     @DrawableRes val iconRes: Int,
     @StringRes val titleRes: Int,
-    val destinationId: Int? = null
+    val destinationId: Int
 )
 
 object QuickActions {
+    // Phase 10A: one Safe Walk tile (check-ins are part of Safe Walk; a separate "Check-in" tile opened the same screen).
     val all = listOf(
-        // Phase 4B: check-ins are part of Safe Walk, so both tiles open it.
         QuickAction(R.drawable.ic_route, R.string.feature_safe_walk_title, R.id.safeWalkFragment),
-        QuickAction(R.drawable.ic_check_circle, R.string.feature_check_in_title, R.id.safeWalkFragment),
         QuickAction(R.drawable.ic_group, R.string.feature_safety_circle_title, R.id.safetyCircleFragment)
-    )
-}
-
-/** One row of the "Your Safety Journey" preview. Placeholder text only, no real data. */
-data class TimelineStep(
-    @DrawableRes val iconRes: Int,
-    @StringRes val titleRes: Int,
-    @StringRes val descriptionRes: Int,
-    val status: BadgeStatus
-)
-
-object TimelineSteps {
-    val all = listOf(
-        TimelineStep(R.drawable.ic_check_circle, R.string.feature_check_in_title, R.string.journey_checkin_description, BadgeStatus.AVAILABLE),
-        TimelineStep(R.drawable.ic_route, R.string.feature_safe_walk_title, R.string.journey_walk_description, BadgeStatus.AVAILABLE),
-        TimelineStep(R.drawable.ic_shield, R.string.journey_emergency_title, R.string.journey_emergency_description, BadgeStatus.COMING_SOON)
     )
 }

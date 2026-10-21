@@ -17,9 +17,14 @@ Philosophy: *"Safe enough to live. Free enough to grow."*
 - **SAFE** — *"You deserve to feel safe."* Emergency and personal safety, Safety Circle, emergency response,
   Safe Journey / Safe Walk, location and emergency intelligence, community safety reports, safety map, evidence
   protection, safety intelligence, AI-assisted safety.
-- **RISE** — *"You deserve the freedom to grow."* Women-centered positive community: Small Wins, Achievements,
-  Everyday Progress, Break the Box, Stories, support, healthy sharing.
+- **RISE** — *"You deserve the freedom to grow."* Redesigned in Phase 10 as **"Proof"** (`docs/PHASE10_DESIGN.md`): a
+  private, phone-only self-efficacy cycle (Doubt → Prepare → Try → Proof → Next); self-doubts are tested, safety concerns
+  are respected and never "disproven"; support is never ranked; gender and stereotypes are never named; collective proof
+  only as anonymous thresholded counts. Not built yet (10B). The original "Small Wins / Stories" community idea was
+  rejected (no audience, no shared text, no contact).
   **Not** LinkedIn-style networking. **Not** an Instagram-style popularity/influencer system (no likes, followers, feeds).
+- **Identity (Phase 10A):** *"Safety that expands your world."* **Nobody can use SafeSphere to monitor another person**
+  (no family/partner/guardian mode, no location on request, no remote view): a permanent product decision.
 - SAFE community features exist to produce **safety intelligence** (reports, locations, confirmations, verification), not engagement.
 - UI philosophy: **"Calm when everything is safe. Powerful when something goes wrong."**
 
@@ -42,7 +47,7 @@ Final-year B.Tech IT team project: the student must be able to explain every imp
 | **7** | **Verification, Trust + Moderation** | **Implemented, compiled, tested 2026-10-20** (backend 261 / Android 403 tests, V13 on MySQL, live API 58/58), **emulator-verified (API 37)** incl. moderator screens: `docs/PHASE7.md` §10. TalkBack/dark mode **not verified**; **Galaxy A23 deferred** |
 | **8** | **Safety Intelligence Engine** (area picture, pattern memory, "Check the way"; full route planner NOT built) | **Implemented, compiled, tested 2026-10-21** (backend 316 / Android 431 tests, V14 on MySQL, live API 22/22, **emulator-verified (API 37)**): `docs/PHASE8.md`, design `docs/PHASE8_DESIGN.md`. TalkBack **not verified**; real phone **not verified**; real pattern episode on MySQL **not verified** |
 | **9** | **AI/ML** ("evidence before AI", `docs/PHASE9_DESIGN.md`) | **In progress.** 9C.0 (Phase 7 COORDINATION reopen fix) implemented, tested, **live-verified on MySQL**; **9A attack simulation implemented, compiled, tested 2026-10-21** (test code only); **9C coordination check implemented, compiled, tested 2026-10-21** (coord-1 in **SHADOW** by default, no withdrawal lock for COORDINATION cases, moderator pattern texts); **9C.1 S15 Option B, 9C.2 group members + whole-group pause, 9C.3 two guard fixes implemented, compiled, tested 2026-10-21** (backend 388 / Android 450, lint 0 errors / 87 warnings; **live ACTIVE check on MySQL 25/25**; **emulator (API 37) moderator screens PASS**; TalkBack speech, dark-mode colours and the A23 **not verified**): `docs/PHASE9.md` §9–§16. **9C complete: accepted by the user on 2026-10-21.** **9D implemented, compiled, tested 2026-10-21, awaiting the user's review** (`docs/PHASE9.md` §18–§26): neighbour join (active), havens-alone cap = active rules **rules-1.1**, rules-2 in **SHADOW only** (not promoted: no real-world evidence); backend 423 / Android 452, lint 0 errors / 87 warnings, **live MySQL 19/19**, **emulator (API 37) PASS**; TalkBack, the A23 and real-world rates **not verified**. **9B implemented, compiled, tested 2026-10-21; complete: accepted by the user on 2026-10-21, frozen** (`docs/PHASE9.md` §27–§34): V15 weekly system-wide outcome counters (after commit, best effort) + `moderation_cases.coordination_rule`, weekly snapshot, ADMIN-only `GET /api/admin/evaluation`; backend 453 / Android 454, lint 0 errors / 87 warnings, **V15 dry run 19/19 + applied on MySQL, live MySQL 21/21**; nothing user-visible; real-world rates **not verified** (no deployment). **No learned model** (gates G1–G3 not met) |
-| 10 | RISE | Not started |
+| **10** | **Foundation (10A) + RISE "Proof" (10B–10D)** (`docs/PHASE10_DESIGN.md`) | **10A implemented, compiled, tested, verified 2026-10-22** (`docs/PHASE10.md`): honesty/identity/language pass, V16 + `ActiveAccountCheck` + password change with revocation, coercion-aware account deletion; backend 466 / Android 480 tests, lint 0 errors / 85 warnings, **V16 dry run 13/13 + applied, live MySQL 23/23, emulator (API 37) PASS**; TalkBack, onboarding pages on a device and the real phone **not verified**. 10B–10D: planned, not started |
 | 12 | Verified Nearby Assistance | Not started (11 not yet defined) |
 
 **Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
@@ -85,6 +90,11 @@ removed; 9D scenarios in `NeighbourJoinSimulationTest`). Promoting rules-2 (`app
 the user's decision, never a default. Phase 9B (`evaluation` package, V15) only COUNTS: nothing that decides what
 people see may read a counter (`EvaluationIsolationTest`). Next: see `docs/HANDOFF.md` §6.
 
+**10A is in the repository** (V16, `account` package, `security/ActiveAccountCheck`, Android `feature/account`,
+`core/network/SessionEnder`, rebuilt Settings/Profile/Safety Center/Home/onboarding). Deviations from the design
+(D1–D12), the SAFE audit (A1–A16) and the deferred "session continuity" step (token expiry during an SOS, a second
+session ending an SOS): `docs/PHASE10.md`. Phase 9 stays frozen. 10B (RISE "Proof", Android only) only when briefed.
+
 ---
 
 ## 3. Working rules (permanent)
@@ -124,7 +134,7 @@ Android lifecycle implications / security + privacy / likely viva questions*. No
 SafeSphere/
 ├── android/   Kotlin app — open THIS folder in Android Studio (has gradlew)
 ├── backend/   Spring Boot API — Maven (no mvnw wrapper; Maven is installed)
-├── docs/      API.md, PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
+├── docs/      API.md, PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
 └── README.md
 ```
 
@@ -154,16 +164,28 @@ cd android
   minSdk 26, compile/target 35. **No Compose. No Hilt** unless explicitly approved.
 - **Packages:** feature-first `feature/<name>/{domain,data,ui}`; shared code in `core/`, `navigation/`.
   Features: splash, onboarding, auth, home, safety, community, profile, settings, safetycircle, emergency, safewalk,
-  circlealert, evidence, moderation (Phase 7).
-  `feature/evidence` and `feature/map` are README-only placeholders.
+  circlealert, evidence, moderation (Phase 7), intelligence (Phase 8), account (Phase 10A).
+  (`feature/map` was removed in Phase 10A; it was an empty placeholder. No screen shows "Coming soon" any more.)
 - **DI:** manual `AppContainer` (composition root) via `Fragment.appContainer`; each ViewModel has `factory(container)`.
 - **Networking:** exactly **one** Retrofit instance; all APIs are created from it in `AppContainer`. `AuthInterceptor` adds the
   Bearer token to everything except `/api/auth/*`. **No HTTP logging interceptor** (bodies contain passwords).
 - **Errors:** Phase 3+ repositories use `core/network/ApiCallHandler` → `ApiResult<T>` (`Success` / `Failure(ApiError, message?)`).
-  401 clears the saved session; screens then call `showSessionExpiredDialog()` (→ Login). Only our own 409 messages reach
-  users; other errors use app strings (`ApiResult.Failure.toMessage()`). Auth keeps its own `RemoteAuthRepository` mapping.
-- **Session:** `DataStoreSessionStorage` (token + id/name/email; never the password). Splash routes Onboarding / Login / Home.
-  Token is **not encrypted** yet (known limitation). `allowBackup=false`.
+  A 401 goes through `core/network/SessionEnder` (Phase 10A): the session is cleared only if the rejected token is still
+  the saved one (`SessionStorage.clearIfToken`, atomic in DataStore; a late 401 for an old token never signs out a newer
+  session), the old token's 401 is ignored while a password change swaps tokens (`swapping`), and the reason from
+  `WWW-Authenticate` (`credentials_changed` / `account_deleted` / `account_unavailable`) is published (`ended`,
+  `lastReason`); screens then call `showSessionExpiredDialog()` (words follow the reason) (→ Login). Only our own 409
+  messages reach users; other errors use app strings (`ApiResult.Failure.toMessage()`). Auth keeps its own
+  `RemoteAuthRepository` mapping (its `refreshProfile` 401 also uses `SessionEnder`).
+- **Session:** `DataStoreSessionStorage` (token + id/name/email + a pending deletion's dates; never the password). Splash
+  routes Onboarding / Login / Home. Token is **not encrypted** yet (known limitation). `allowBackup=false`.
+- **Account (Phase 10A, `feature/account`, `docs/PHASE10.md`):** `AccountFragment` (FLAG_SECURE): change password
+  (`AccountPolicy` checks 8+ chars, ≤ 72 bytes, confirm, different; `RemoteAccountRepository` saves the NEW token inside
+  `SessionEnder.swapping`), request / cancel deletion (password dialogs). `AccountPolicy.deletionNotice` drives the amber
+  banner on Account and Home (opens Account). `PendingDeletionStore` (DataStore, account id + date only, survives
+  sign-out). On a 401 `account_deleted`, `AppContainer` runs `AccountDataWiper` (= `EvidenceVault.forgetAccount` +
+  `RecoveryKeyStore.remove`; a sign-out clears the rest anyway); after the date with no session, Login offers "Remove its
+  data from this phone". `HonestyTextsTest` guards onboarding/settings honesty, identity lines, "no avoid", summary order.
 - **UI helpers:** `ViewBindingFragment`, `collectWhenStarted`, `Motion.revealInSequence`; components in `core/ui/components`
   (`StatusBadgeView` + `BadgeStatus`, `NoticeView`, `SectionHeaderView`, `EmptyStateView`, `SafetyStatusCardView`, `FeatureListAdapter`).
 - **Emergency (Phase 3):** `EmergencyUiState` = Loading → Idle → Countdown(5..1) → Starting → Active → Ended(RESOLVED/CANCELLED),
@@ -292,7 +314,7 @@ cd android
   `Assessment.independentSupporters`, people linkage from `SignalVisibility.VisibleSet`); `AreaModelShadow` (from the
   job, at most hourly, read-only, logs counts only); `app.intelligence.rules-2-mode` OFF|SHADOW|ACTIVE, default SHADOW),
   `community` (Phase 6: `GeoCell`, pure `SignalPolicy`, `CommunityService`, in-memory `AreaQueryLimiter`,
-  `CommunityPurgeJob` = the only `@Scheduled` task, deletion only; `config/CommunityProperties`, `SchedulingConfig`;
+  `CommunityPurgeJob` = a `@Scheduled` task, deletion only (since Phase 10A the other one is `AccountDeletionJob`); `config/CommunityProperties`, `SchedulingConfig`;
   Phase 7: pure `TrustPolicy`, `Independence`, `FlagPolicy`, `TrustService`, private `ContributorStanding`, `SignalFlag`;
   Phase 9C: `SignalVisibility` = the ONE visibility definition (`CommunityService.visibleIn` delegates), pure
   `CoordinationPolicy` = coord-1 R1/R2; Phase 9D: `CommunityService.joinLoneReports` (first step of `purge`: a lone,
@@ -326,8 +348,16 @@ cd android
     `ResourceNotFoundException` 404, `ConflictException`/`EmailAlreadyUsedException` 409. `GlobalExceptionHandler` renders one
     JSON shape: `timestamp, status, error, message, path, fieldErrors?`. No stack traces or exception text to clients.
   - `spring.jpa.hibernate.ddl-auto=none`, `open-in-view=false`. **Flyway owns the schema.**
-- **JWT:** HS256, secret from env, issuer `https://safesphere.example`, `sub` = user id, **24 h, no refresh tokens, no
-  server-side logout** (deliberate decision; logout = client clears its session).
+- **JWT:** HS256, secret from env, issuer `https://safesphere.example`, `sub` = user id, **24 h, no refresh tokens**;
+  logout = client clears its session. **Phase 10A:** after a password change tokens carry `cca` (credentials stamp = µs of
+  `users.credentials_changed_at`); `security/ActiveAccountCheck` (inside the decoder, after exp/iss) refuses a token whose
+  account is missing/erased/disabled or whose stamp differs (exact equality) → 401 with an RFC 6750 `error_description`.
+- **Account (Phase 10A, `account` package):** `AccountService` (password change refused during an ACTIVE SOS or Safe
+  Walk; deletion request refused while ACTIVE / < 24 h after an emergency, 7-day grace; cancel with password; 5 wrong
+  passwords / 15 min shared → 429, in memory; wrong password = 409), `AccountDeletionJob` (`@Scheduled`, 15 min) →
+  `AccountEraser` (postpone if an emergency is recent; evidence files first; owned rows children-first + 
+  `CommunityService.eraseContributor`; delete the row, or anonymise it if the audit log names it as decider);
+  `AccountEraserCoverageTest` compares the eraser with every `REFERENCES users` in the migrations.
 - **Security:** stateless; `POST /api/auth/register|login` public, everything else authenticated. CSRF off (no cookies).
   CORS: no origins by default. BCrypt passwords (72-byte limit enforced). Login errors generic and timing-equalised.
 - **Tests:** `@SpringBootTest` + MockMvc, real JWT flow, H2 in MySQL mode with **Flyway disabled** and Hibernate `create-drop`
@@ -366,7 +396,9 @@ cd android
 
 | V15 | `evaluation_counters`, `moderation_cases.coordination_rule` | counters: PK (week_start, metric, dimension, model_version), `occurrences` ≥ 0; **no user/cell/signal/case column**; metric closed list (binary collation), dimension `^(-\|[A-Z_]+([.][A-Z_]+)?)$` case-sensitive (a geohash cannot be stored), version `^(-\|[a-z]+-[0-9]+([.][0-9]+)?)$`, week_start a Monday; 104-week retention in code. `coordination_rule` LINKED_GROUP/SUPPORT_CORE/EXCLUSIVE_PAIR, COORDINATION cases only, binary. Dry run 19/19 rejected, applied on MySQL 8.0 |
 
-Conventions: never edit an applied migration; next file is **V16**; snake_case; `DATETIME(6)` stored in UTC; constraint
+| V16 | `users.credentials_changed_at`, `deletion_requested_at`, `deletion_due_at`, `erased_at` | CHECKs: deletion pair both-or-none, due > requested, erased ⇒ disabled, ⇒ no pending deletion, ⇒ role USER, ⇒ email `erased-%@erased.invalid`; index on `deletion_due_at`. Dry run 13/13, applied on MySQL 8.0 (2026-10-22) |
+
+Conventions: never edit an applied migration; next file is **V17**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.
 
 ---
@@ -441,6 +473,12 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
   (true; false deletes the rows at the next clean-up), `app.evaluation.retention-weeks` (104, max 104). `POST /api/community/reports` answers as before; a lone report may later
   appear in `GET /api/community/mine` as `kind: CONFIRM` on the neighbouring signal's id. Config
   `app.intelligence.rules-2-mode` (SHADOW) and `.rules-2-shadow-interval` (1h; tests 0s).
+- Phase 10A (V16, `docs/API.md` "Phase 10A endpoints"): `PUT /api/users/me/password {currentPassword, newPassword}` → 200
+  fresh token (others revoked; 409 during ACTIVE SOS/walk; 409 wrong password; 429), `POST /api/users/me/deletion
+  {password}` → 202 `{deletionRequestedAt, deletionDueAt}` (409 ACTIVE / < 24 h), `POST /api/users/me/deletion/cancel
+  {password}` → 204; `/me`, login, register and password-change `user` add `deletionRequestedAt`, `deletionDueAt`; every
+  authenticated endpoint can answer 401 with `WWW-Authenticate: Bearer error="invalid_token",
+  error_description="credentials_changed|account_deleted|account_unavailable"`. Config `app.account.*`.
 
 ---
 
@@ -467,7 +505,7 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
 - No text claims a place or person is safe (Phase 8). The Home status card states facts only (`HomeStatus`: checking /
   nothing running / Safe Walk on / check-in missed; hidden during an SOS); `HomeTextsTest` scans every Home string.
 - Emergency UI: clear, fast, high contrast, low cognitive load, large touch targets, `keepScreenOn` while active.
-- Bottom nav: Home, Safety, Community, Profile. Phase 3+ screens are secondary destinations (toolbar + back, no bottom bar).
+- Bottom nav: Home, Safety, Nearby (the `communityFragment`; renamed in Phase 10A), Profile. Phase 3+ screens are secondary destinations (toolbar + back, no bottom bar).
 
 ---
 
@@ -620,3 +658,11 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
 | Pattern memory = one decaying number per ~1 km area and group, k-gated (3 episodes), reset on removal | Recurrence without history, people or times; forgets within ~8 months |
 | App-drawn radar cells, no heat map, no tiles | Unknown is visible (hatched), real precision, no third-party location leak |
 | "Check the way" computed on the phone from ~5 km region packs | Server never learns a route; only confirmed signals rank; unknown ≠ safe |
+| **No monitoring of a person by anyone else, permanently** (no family/partner/guardian mode, no location on request) | Safety the person controls expands their world; a monitoring feature would turn a safety tool into a control tool (Phase 10) |
+| Revocation by a credentials stamp in the token, exact equality, checked on every request (Phase 10A) | Ends stolen / old sessions and disabled accounts at once without refresh tokens; no clock or second-rounding issue (deviation from `iat`) |
+| Password change refused during an ACTIVE SOS or Safe Walk (Phase 10A) | Revocation would otherwise let anyone who knows the password cut a running safety session off the server |
+| Account deletion: password, refused during / 24 h after an emergency, 7-day grace with a Home banner, cancel needs the password, sign-in does not cancel, postponed by an emergency, files before rows (Phase 10A) | Coerced deletion is recoverable and visible; fresh evidence is protected; no ciphertext left without an owner |
+| Accounts named in the moderation audit log are anonymised, not deleted (CHECK-enforced tombstone) (Phase 10A) | The audit trail survives; the person's data does not |
+| Wrong passwords on account endpoints answer 409, not 401 (Phase 10A) | A 401 means "signed out" on the phone |
+| The phone removes a deleted account's evidence only on the server's `account_deleted` answer or the person's tap | A sign-out must never destroy evidence; a cancelled or postponed deletion must never wipe a living account |
+| Only working rows on every screen; no "Coming soon" anywhere; tab "Nearby"; summary leads with safe places; no "avoid" (Phase 10A) | Honesty is the product's claim; places, not people; going out, not staying away (`HonestyTextsTest`) |

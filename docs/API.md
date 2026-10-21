@@ -99,8 +99,11 @@ Returns the profile of the signed-in user.
 - **Success: 200 OK**
 
 ```json
-{ "id": 1, "name": "Asha Devi", "email": "asha@example.com", "createdAt": "2026-10-15T10:30:00Z" }
+{ "id": 1, "name": "Asha Devi", "email": "asha@example.com", "createdAt": "2026-10-15T10:30:00Z",
+  "deletionRequestedAt": null, "deletionDueAt": null }
 ```
+Phase 10A: `deletionRequestedAt` / `deletionDueAt` are set while an account deletion is pending (both or neither); the
+same `user` object is in the register, login and password-change answers. See "Phase 10A endpoints" at the end.
 
 - **Errors:** `401` token missing, malformed, expired, wrongly signed, or the account no longer exists:
 
@@ -692,3 +695,56 @@ start or a destination.
   shows no brief (a partial list could miss a concern).
 - `400 Cell must be a 5-character geohash`; `401`; `429` after 6 DIFFERENT regions or 20 downloads in 24 h per account
   (2 different regions for an account still in its 24 h community probation). The budget is in memory only.
+
+---
+
+# Phase 10A endpoints (account security and deletion, V16, docs/PHASE10.md)
+
+## Every authenticated endpoint: the account check
+
+After the signature, expiry and issuer, every token is checked against its account (one primary-key lookup,
+`ActiveAccountCheck`). It is refused with `401` when the account no longer exists or was erased, is disabled, or the
+token's credentials stamp (claim `cca`, present once the password was ever changed) is not the account's current one.
+Only for such an otherwise valid token the answer names the reason (RFC 6750), so the phone can explain the sign-out:
+
+```
+WWW-Authenticate: Bearer error="invalid_token", error_description="credentials_changed"   (password changed)
+WWW-Authenticate: Bearer error="invalid_token", error_description="account_deleted"       (deleted or erased)
+WWW-Authenticate: Bearer error="invalid_token", error_description="account_unavailable"   (disabled)
+```
+Missing, malformed, expired or forged tokens keep the plain `WWW-Authenticate: Bearer`. The JSON body is unchanged.
+Before Phase 10A a disabled or deleted account's token kept working for up to 24 h everywhere except `/api/users/me`.
+
+## Change password: `PUT /api/users/me/password` `{ "currentPassword": "...", "newPassword": "..." }`
+
+`200` with `{ accessToken, tokenType, expiresInSeconds, user }` (as login): the NEW token for this phone. Every other
+token of the account is refused from its next request (`credentials_changed`).
+- `400` new password not 8–72 characters, over 72 bytes, or the same as the current one;
+- `409 "Password is incorrect"` (409, not 401: a 401 would sign the phone out);
+- `409 "You can change your password once your SOS or Safe Walk has ended."` while an emergency or a Safe Walk is
+  ACTIVE (a second session must not be able to cut a running safety session off the server);
+- `429` after 5 wrong passwords in 15 minutes (shared with the two deletion endpoints; in memory, per account); `401`.
+
+## Request deletion: `POST /api/users/me/deletion` `{ "password": "..." }`
+
+`202 { "deletionRequestedAt": "2026-10-22T10:00:00Z", "deletionDueAt": "2026-10-29T10:00:00Z" }`. Nothing is deleted
+before `deletionDueAt` (`app.account.deletion-grace`, 7 days); everything keeps working until then; signing in does
+NOT cancel; a repeated request returns the same dates.
+- `409 "Your account cannot be deleted while an emergency is active."`;
+- `409 "Your account can be deleted 24 hours after your last emergency ended."` (`app.account.deletion-protection`);
+- `409 "Password is incorrect"`; `429`; `401`.
+
+## Cancel deletion: `POST /api/users/me/deletion/cancel` `{ "password": "..." }`
+
+`204`, idempotent (also when nothing is pending). `409 "Password is incorrect"`; `429`; `401`.
+
+## The deletion itself (no endpoint)
+
+`AccountDeletionJob` (every 15 min, `app.account.deletion-interval`) takes accounts whose `deletion_due_at` has
+passed. If an emergency is ACTIVE or ended less than 24 h ago, the date moves to 24 h after it (the banner then says
+"soon"). Otherwise the evidence ciphertext files are deleted first, then every owned row, then the account row; an
+account that the moderation audit log names as the deciding moderator is instead kept as an anonymous, disabled
+tombstone (`Deleted account`, `erased-<id>@erased.invalid`, `erased_at` set) so the log stays intact. Its e-mail
+address can be registered again at once. Config: `app.account.password-failures` (5), `.password-failure-window`
+(15m), `.deletion-grace` (7d, at least 1d), `.deletion-protection` (24h), `.deletion-batch` (20),
+`.deletion-interval` (PT15M), `.deletion-job-enabled` (true; tests false).

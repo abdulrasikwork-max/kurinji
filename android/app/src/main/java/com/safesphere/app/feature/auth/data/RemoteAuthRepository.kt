@@ -1,5 +1,6 @@
 package com.safesphere.app.feature.auth.data
 
+import com.safesphere.app.core.network.SessionEnder
 import com.safesphere.app.feature.auth.data.remote.AuthApi
 import com.safesphere.app.feature.auth.data.remote.AuthResponseDto
 import com.safesphere.app.feature.auth.data.remote.LoginRequestDto
@@ -24,7 +25,8 @@ import retrofit2.HttpException
  */
 class RemoteAuthRepository(
     private val api: AuthApi,
-    private val sessionStorage: SessionStorage
+    private val sessionStorage: SessionStorage,
+    private val sessionEnder: SessionEnder = SessionEnder(sessionStorage)
 ) : AuthRepository {
 
     override val currentUser: Flow<AuthUser?> = sessionStorage.session.map { it?.user }
@@ -39,14 +41,16 @@ class RemoteAuthRepository(
         val stored = sessionStorage.session.first() ?: return AuthResult.Failure(AuthError.UNAUTHORIZED)
         return try {
             val user = api.me().toDomain()
-            sessionStorage.save(stored.copy(user = user))
+            // Only if the session is still the one asked about (a password change may have replaced it meanwhile).
+            if (sessionStorage.session.first()?.token == stored.token) sessionStorage.save(stored.copy(user = user))
             AuthResult.Success(user)
         } catch (e: CancellationException) {
             throw e
         } catch (e: HttpException) {
             val error = errorForHttpCode(e.code(), unauthorizedMeans = AuthError.UNAUTHORIZED)
-            // The server no longer accepts this token (expired, or the account is gone): sign out locally.
-            if (error == AuthError.UNAUTHORIZED) sessionStorage.clear()
+            // The server no longer accepts this token (expired, password changed, account gone): sign out locally,
+            // but only if this token is still the saved one (Phase 10A, SessionEnder).
+            if (error == AuthError.UNAUTHORIZED) sessionEnder.onUnauthorized(e.response())
             AuthResult.Failure(error)
         } catch (e: IOException) {
             AuthResult.Failure(AuthError.NO_CONNECTION)

@@ -9,6 +9,16 @@ import com.safesphere.app.core.location.DestinationResolver
 import com.safesphere.app.core.location.GeocoderDestinationResolver
 import com.safesphere.app.core.location.LocationProvider
 import com.safesphere.app.core.network.ApiCallHandler
+import com.safesphere.app.core.network.SessionEndReason
+import com.safesphere.app.core.network.SessionEnder
+import com.safesphere.app.feature.account.data.DataStorePendingDeletionStore
+import com.safesphere.app.feature.account.data.RemoteAccountRepository
+import com.safesphere.app.feature.account.data.remote.AccountApi
+import com.safesphere.app.feature.account.domain.AccountRepository
+import com.safesphere.app.feature.account.domain.PendingDeletion
+import com.safesphere.app.feature.account.domain.PendingDeletionStore
+import com.safesphere.app.feature.account.session.AccountDataWiper
+import kotlinx.coroutines.withContext
 import com.safesphere.app.core.tracking.CompositeTrackingNoticeSource
 import com.safesphere.app.core.tracking.TrackingNoticeSource
 import com.safesphere.app.feature.safewalk.data.DataStoreActiveJourneyStore
@@ -123,10 +133,38 @@ class AppContainer(context: Context) {
     private val safetyContactApi: SafetyContactApi by lazy { retrofit.create(SafetyContactApi::class.java) }
     private val emergencyApi: EmergencyApi by lazy { retrofit.create(EmergencyApi::class.java) }
 
-    /** Turns backend answers into results and clears the session on a 401. Used by the Phase 3 repositories. */
-    private val apiCallHandler by lazy { ApiCallHandler(sessionStorage) }
+    /**
+     * Phase 10A: the ONE place that ends the session after a 401 (only if the rejected token is still the saved one)
+     * and says why (password changed, account deleted).
+     */
+    val sessionEnder: SessionEnder by lazy { SessionEnder(sessionStorage) }
 
-    val authRepository: AuthRepository by lazy { RemoteAuthRepository(authApi, sessionStorage) }
+    /** Turns backend answers into results and clears the session on a 401. Used by the Phase 3 repositories. */
+    private val apiCallHandler by lazy { ApiCallHandler(sessionEnder) }
+
+    val authRepository: AuthRepository by lazy { RemoteAuthRepository(authApi, sessionStorage, sessionEnder) }
+
+    // ---- Phase 10A: account security and deletion ------------------------------------------------
+
+    private val accountApi: AccountApi by lazy { retrofit.create(AccountApi::class.java) }
+
+    val accountRepository: AccountRepository by lazy {
+        RemoteAccountRepository(accountApi, apiCallHandler, sessionStorage, sessionEnder)
+    }
+
+    /** A pending deletion this phone knows about (account id + date only); survives a sign-out. */
+    val pendingDeletion: PendingDeletionStore by lazy { DataStorePendingDeletionStore(appContext) }
+
+    /** Removes a DELETED account's evidence and recovery key from this phone (a sign-out clears the rest). */
+    val accountDataWiper: AccountDataWiper by lazy {
+        AccountDataWiper(
+            parts = listOf(
+                { userId -> evidenceVault.forgetAccount(userId) },
+                { userId -> withContext(Dispatchers.IO) { recoveryKeyStore.remove(userId) } }
+            ),
+            pendingDeletion = pendingDeletion
+        )
+    }
 
     /** Phase 4D: every successful load also refreshes the offline copy used for SMS alerts. */
     val safetyCircleRepository: SafetyCircleRepository by lazy {
@@ -348,6 +386,20 @@ class AppContainer(context: Context) {
                         communityOutbox.clear() // unsent reports belong to the account that made them
                     }
                 }
+        }
+        // Phase 10A.3: the server said the account is deleted: remove what a sign-out keeps (evidence, recovery key).
+        applicationScope.launch {
+            sessionEnder.ended.collect { end ->
+                if (end.reason == SessionEndReason.ACCOUNT_DELETED) accountDataWiper.wipe(end.userId)
+            }
+        }
+        // Remember a pending deletion apart from the session, so the Login screen can still offer the local clean-up.
+        applicationScope.launch {
+            sessionStorage.session.map { it?.user }.distinctUntilChanged().collect { user ->
+                if (user == null) return@collect
+                val due = user.deletionDueAt
+                if (due != null) pendingDeletion.set(PendingDeletion(user.id, due)) else pendingDeletion.clear(user.id)
+            }
         }
     }
 

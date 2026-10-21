@@ -10,11 +10,13 @@ import retrofit2.HttpException
  * Runs one backend call and turns every outcome into an [ApiResult]. Used by every repository added
  * after Phase 2, so error handling is written once.
  *
- * Session expiry reuses the Phase 2 approach: on a 401 the saved session is cleared (exactly what
- * RemoteAuthRepository.refreshProfile does), and the screen then shows the "Session expired" dialog
- * and returns to Login.
+ * Session expiry reuses the Phase 2 approach: on a 401 the saved session is cleared, and the screen then shows the
+ * "Session expired" dialog and returns to Login. Since Phase 10A the clearing goes through [SessionEnder]: only when
+ * the rejected token is still the saved one, and with the server's reason (password changed, account deleted).
  */
-class ApiCallHandler(private val sessionStorage: SessionStorage) {
+class ApiCallHandler(private val sessionEnder: SessionEnder) {
+
+    constructor(sessionStorage: SessionStorage) : this(SessionEnder(sessionStorage))
 
     suspend fun <T> execute(call: suspend () -> T): ApiResult<T> =
         try {
@@ -31,7 +33,7 @@ class ApiCallHandler(private val sessionStorage: SessionStorage) {
 
     private suspend fun failureFor(e: HttpException): ApiResult.Failure {
         val error = apiErrorForHttpCode(e.code())
-        if (error == ApiError.UNAUTHORIZED) sessionStorage.clear()
+        if (error == ApiError.UNAUTHORIZED) sessionEnder.onUnauthorized(e.response())
         val message = if (error in SERVER_WORDED) readServerMessage(e) else null
         return ApiResult.Failure(error, message)
     }

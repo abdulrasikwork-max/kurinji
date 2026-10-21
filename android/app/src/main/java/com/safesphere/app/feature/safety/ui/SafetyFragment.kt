@@ -13,7 +13,8 @@ import com.safesphere.app.databinding.FragmentSafetyBinding
 
 /**
  * Safety Center: the safety tools, each honestly labelled. SOS, Safe Walk (with check-ins), Safety Circle,
- * Emergency History and Safety Settings are available.
+ * the Evidence Vault with its recovery passphrase (Phase 10A: reachable without an emergency), Emergency History
+ * and Settings are available.
  */
 class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafetyBinding::inflate) {
 
@@ -41,6 +42,10 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
             R.drawable.ic_group, R.string.feature_safety_circle_title, R.string.feature_safety_circle_description,
             BadgeStatus.AVAILABLE
         ) { findNavController().navigate(R.id.safetyCircleFragment) },
+        FeatureItem(
+            R.drawable.ic_lock, R.string.feature_evidence_vault_title, R.string.feature_evidence_vault_description,
+            BadgeStatus.AVAILABLE
+        ) { findNavController().navigate(R.id.evidenceVaultFragment) },
         FeatureItem(
             R.drawable.ic_history, R.string.feature_emergency_history_title, R.string.feature_emergency_history_description,
             BadgeStatus.AVAILABLE

@@ -103,6 +103,19 @@
             app:noticeText="@string/home_walk_banner"
             app:noticeType="info" />
 
+        <!-- Phase 10A.3: a pending account deletion, for the whole grace period (opens Account) -->
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/deletionBanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:clickable="true"
+            android:focusable="true"
+            android:minHeight="56dp"
+            android:visibility="gone"
+            app:noticeText="@string/account_deletion_pending_soon"
+            app:noticeType="warning" />
+
         <!-- 2. Status card: only facts this phone knows (an SOS, a Safe Walk or neither), never "safe".
              Hidden during an SOS: the red banner above is the one emergency element. -->
         <com.safesphere.app.core.ui.components.SafetyStatusCardView
@@ -111,7 +124,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_lg" />
 
-        <!-- 3. Quick actions: SOS, then Safe Walk, Check-in and Safety Circle -->
+        <!-- 3. Quick actions: SOS, then Safe Walk (with its check-ins) and Safety Circle -->
         <LinearLayout
             android:id="@+id/quickActionsSection"
             android:layout_width="match_parent"
@@ -196,7 +209,7 @@
                 android:layout_marginTop="@dimen/space_xs"
                 android:nestedScrollingEnabled="false"
                 app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                app:spanCount="3" />
+                app:spanCount="2" />
         </LinearLayout>
 
         <!-- 4. Nearby Safety: opens Community Safety (Phase 6). Home itself asks for no location. -->
@@ -244,37 +257,7 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-        <!-- 5. Your Safety Journey: timeline preview -->
-        <LinearLayout
-            android:id="@+id/journeySection"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/section_spacing"
-            android:orientation="vertical">
-
-            <com.safesphere.app.core.ui.components.SectionHeaderView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="@dimen/space_md"
-                app:badgeStatus="preview"
-                app:sectionTitle="@string/section_journey" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/timeline"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false"
-                    android:paddingTop="@dimen/space_sm"
-                    android:paddingBottom="@dimen/space_sm"
-                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-            </com.google.android.material.card.MaterialCardView>
-        </LinearLayout>
-
-        <!-- 6. Privacy reassurance and the preview-mode notice -->
+        <!-- 5. Privacy reassurance (Phase 10A: the Phase 1 "Your Safety Journey" timeline placeholder was removed) -->
         <LinearLayout
             android:id="@+id/footerSection"
             android:layout_width="match_parent"

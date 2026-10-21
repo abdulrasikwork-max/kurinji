@@ -12,13 +12,13 @@ import com.safesphere.app.core.ui.Motion
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog
-import com.safesphere.app.core.ui.showComingLaterDialog
 import com.safesphere.app.databinding.FragmentHomeBinding
+import com.safesphere.app.feature.account.ui.AccountTexts
 import java.time.LocalTime
 
 /**
- * Safety Command Center. SOS, Safe Walk / Check-in and Safety Circle open real screens, and a banner leads back
- * to a running emergency or walk (Phase 4B). The status card states only what this phone knows (an SOS, a Safe
+ * Safety Command Center. SOS, Safe Walk and Safety Circle open real screens, and a banner leads back
+ * to a running emergency or walk (Phase 4B), or to a pending account deletion (Phase 10A). The status card states only what this phone knows (an SOS, a Safe
  * Walk, or neither); it never says a place or a person is safe.
  */
 class HomeFragment : ViewBindingFragment<FragmentHomeBinding>(FragmentHomeBinding::inflate) {
@@ -28,14 +28,14 @@ class HomeFragment : ViewBindingFragment<FragmentHomeBinding>(FragmentHomeBindin
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // SOS now opens the manual SOS screen (countdown + recording). It still alerts nobody.
+        // SOS opens the SOS screen (cancellable countdown); the Safety Circle is texted only with automatic SMS on.
         binding.sosTile.setOnClickListener { findNavController().navigate(R.id.emergencyFragment) }
         binding.quickActions.adapter = QuickActionAdapter(QuickActions.all) { action ->
-            val destination = action.destinationId
-            if (destination != null) findNavController().navigate(destination) else showComingLaterDialog(action.titleRes)
+            findNavController().navigate(action.destinationId)
         }
-        binding.timeline.adapter = TimelineAdapter(TimelineSteps.all)
         binding.profileButton.setOnClickListener { findNavController().navigate(R.id.profileFragment) }
+        // Phase 10A.3: a pending account deletion is visible on Home for the whole grace period.
+        binding.deletionBanner.setOnClickListener { findNavController().navigate(R.id.accountFragment) }
 
         binding.activeEmergencyBanner.setOnClickListener { findNavController().navigate(R.id.emergencyFragment) }
         binding.activeWalkBanner.setOnClickListener { findNavController().navigate(R.id.safeWalkFragment) }
@@ -51,6 +51,14 @@ class HomeFragment : ViewBindingFragment<FragmentHomeBinding>(FragmentHomeBindin
         collectWhenStarted(viewModel.displayName, ::renderGreeting)
         collectWhenStarted(viewModel.activeSession, ::renderActiveSession)
         collectWhenStarted(viewModel.status, ::renderStatus)
+        collectWhenStarted(viewModel.deletion) { notice ->
+            binding.deletionBanner.isVisible = notice != null
+            if (notice != null) {
+                val text = AccountTexts.deletionBanner(requireContext(), notice)
+                binding.deletionBanner.setMessage(text)
+                binding.deletionBanner.contentDescription = getString(R.string.cd_home_deletion_banner, text)
+            }
+        }
         collectWhenStarted(viewModel.sessionExpired) { expired ->
             if (expired) {
                 viewModel.onSessionExpiredHandled()
@@ -63,8 +71,7 @@ class HomeFragment : ViewBindingFragment<FragmentHomeBinding>(FragmentHomeBindin
             Motion.revealInSequence(
                 listOf(
                     binding.homeHeader, binding.greetingBlock, binding.statusCard,
-                    binding.quickActionsSection, binding.nearbySection,
-                    binding.journeySection, binding.footerSection
+                    binding.quickActionsSection, binding.nearbySection, binding.footerSection
                 )
             )
         }

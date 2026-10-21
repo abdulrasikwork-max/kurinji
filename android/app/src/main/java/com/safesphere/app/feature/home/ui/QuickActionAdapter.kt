@@ -28,13 +28,8 @@ class QuickActionAdapter(
             tileIcon.setImageResource(action.iconRes)
             tileTitle.text = title
             // Short labels so they fit the narrow tile; the full meaning is in the content description.
-            if (action.destinationId != null) {
-                tileBadge.setStatus(BadgeStatus.AVAILABLE, R.string.badge_open)
-                root.contentDescription = root.context.getString(R.string.cd_quick_action_open, title)
-            } else {
-                tileBadge.setStatus(BadgeStatus.COMING_SOON, R.string.badge_soon)
-                root.contentDescription = root.context.getString(R.string.cd_quick_action, title)
-            }
+            tileBadge.setStatus(BadgeStatus.AVAILABLE, R.string.badge_open)
+            root.contentDescription = root.context.getString(R.string.cd_quick_action_open, title)
             root.setOnClickListener { onActionClick(action) }
         }
     }

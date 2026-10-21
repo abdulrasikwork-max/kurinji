@@ -523,7 +523,10 @@ class ModerationApiIntegrationTest {
         User user = users.findById(moderator.id()).orElseThrow();
         org.springframework.test.util.ReflectionTestUtils.setField(user, "enabled", false);
         users.save(user);
-        api.getAs(moderator, "/api/moderation/cases").andExpect(status().isForbidden());
+        // Phase 10A: refused even earlier now. The per-request account check (ActiveAccountCheck) rejects a disabled
+        // account's token on every endpoint (401); before Phase 10A only the role check refused it here (403).
+        api.getAs(moderator, "/api/moderation/cases").andExpect(status().isUnauthorized());
+        api.getAs(moderator, "/api/moderation/access").andExpect(status().isUnauthorized());
     }
 
     @Test

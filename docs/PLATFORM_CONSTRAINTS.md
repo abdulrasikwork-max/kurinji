@@ -76,6 +76,18 @@ tricks. Policies change often: re-check the current Android and Google Play docu
 | (Hardening) Auth-bound Keystore keys are invalidated when the screen lock is removed | Vault VIEWING gated by BiometricPrompt / device credential (Android 10+) or the Keyguard confirmation screen (8–9); the key stays non-auth-bound | It is an app gate: a rooted / compromised phone could bypass it. Without a screen lock there is nothing to ask (the vault warns) |
 | (Hardening) Overwriting files on flash | Plaintext staging / viewing files are zero-overwritten, flushed, then deleted | Best effort only (wear levelling); file-based encryption remains the real protection |
 
+## What Phase 10A adds (account security and deletion)
+
+- **No new permission.** Settings links to the phone's own app-details and notification pages (system intents).
+- **Sessions:** tokens still last 24 h with no refresh. A password change ends every other phone's session on its next
+  request. **Known limitation (DEFERRED, `PHASE10.md` §9):** a token that expires during a long SOS signs the phone out
+  and stops location sharing; SMS and the 112 prompt keep working on the phone. A token renewal step is recommended
+  before RISE relies on SAFE.
+- **Deletion and the phone:** the phone can remove a deleted account's evidence only when it hears the server's
+  `account_deleted` answer (needs a still-valid token) or when the person taps "Remove its data from this phone" on
+  Login after the date. Uninstalling the app removes everything anyway.
+- **FLAG_SECURE** on the Account screen: screenshots and the recents preview are blank there (by design).
+
 ## Constraints for later phases
 
 | Future feature | Constraint to plan for | Design direction (not implemented) |

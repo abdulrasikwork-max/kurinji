@@ -14,8 +14,8 @@ import org.springframework.stereotype.Service;
 /**
  * Creates login tokens. This is the ONLY place a JWT is built, so token rules live in one spot.
  *
- * A token contains: iss (who issued it), sub (the user id), iat (issued at) and exp (expires at).
- * It does not contain the password or the password hash. A JWT is signed, not encrypted: anyone
+ * A token contains: iss (who issued it), sub (the user id), iat (issued at) and exp (expires at), plus, once the
+ * password was changed, cca (the credentials stamp, Phase 10A). It does not contain the password or the password hash. A JWT is signed, not encrypted: anyone
  * holding it can read these claims, which is why nothing sensitive goes in.
  */
 @Service
@@ -37,15 +37,17 @@ public class JwtService {
 
     public IssuedToken issueToken(User user) {
         Instant now = Instant.now(clock);
-        JwtClaimsSet claims = JwtClaimsSet.builder()
+        JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
                 .issuer(properties.issuer())
                 .issuedAt(now)
                 .expiresAt(now.plus(properties.expiration()))
-                .subject(String.valueOf(user.getId()))
-                .build();
+                .subject(String.valueOf(user.getId()));
+        // Phase 10A: the credentials stamp at issue time; ActiveAccountCheck refuses the token once the stamp changes.
+        Long stamp = user.credentialsStamp();
+        if (stamp != null) claims.claim(ActiveAccountCheck.STAMP_CLAIM, stamp);
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
 
-        String token = jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(header, claims.build())).getTokenValue();
         return new IssuedToken(token, properties.expiration().toSeconds());
     }
 }

@@ -6,6 +6,7 @@ import android.view.inputmethod.EditorInfo
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.ui.ViewBindingFragment
@@ -40,7 +41,20 @@ class LoginFragment : ViewBindingFragment<FragmentLoginBinding>(FragmentLoginBin
             findNavController().navigate(R.id.action_login_to_register)
         }
 
+        binding.removeDeletedAccountDataButton.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.login_remove_deleted_account_data)
+                .setMessage(R.string.login_remove_deleted_account_confirm)
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton(R.string.action_remove) { _, _ -> viewModel.onRemoveDeletedAccountData() }
+                .show()
+        }
+
         collectWhenStarted(viewModel.uiState, ::render)
+        collectWhenStarted(viewModel.deletedAccountData) { show ->
+            binding.deletedAccountNotice.isVisible = show
+            binding.removeDeletedAccountDataButton.isVisible = show
+        }
     }
 
     private fun submit() {
