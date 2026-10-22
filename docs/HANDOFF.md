@@ -1,4 +1,20 @@
-# Handoff: Phase 11 (SOS without internet) + 10B (Rise "Proof") done (2026-10-22); Phase 9 frozen
+# Handoff: C1 session continuity done (2026-10-22); Phase 11 (SOS without internet) + 10B (Rise) done; Phase 9 frozen
+
+**C1 "session continuity" implemented, compiled, tested and verified 2026-10-22** (`docs/PHASE11.md` §8; the critical
+finding C1 of `docs/AUDIT_NEXT.md`): an expired access token is no longer a sign-out. V19 `device_sessions` + rotating
+refresh secrets (`POST /api/auth/refresh`, `/sign-out`, reuse detection, 60 s lost-answer grace, 90-day sliding idle
+limit); the phone refreshes after idle time, keeps every local safety record when a refresh is refused ("Sign in to
+sync"), and only a changed password / deleted / disabled account signs it out.
+- **Results:** backend **501/0** (2 skipped); Android **561/0**; lint **0 / 85**; V19 dry run **3/3 + 14/14**, applied
+  (dev DB **v19**, next **V20**); live MySQL **10/10** (L4 first failed on a script fault, disclosed); emulator (API 37,
+  2-minute tokens) **E1–E7 PASS**. Four bugs found on the emulator and fixed with regression tests (§8.4).
+- **NOT VERIFIED:** real phone (Galaxy A23), a 25-hour idle test on a device, TalkBack on the new banner/dialog.
+- **State left:** backend and emulator stopped, `adb reverse` removed, all C1 test accounts deleted (no device session
+  left in the dev DB); the C1 debug build is installed on the emulator (signed out). Nothing committed.
+- **Next (the user's plan):** (2) Ready Check + Test my SOS + launcher shortcut + Quick Settings tile; (3) automatic SMS
+  as a first-run choice; (4) Safe Walk starting locally; (5) SOS location retention; (6) product clean-up.
+
+---
 
 **Phase 11 + 10B implemented, compiled, tested and verified 2026-10-22** (full-autonomy brief; `docs/PHASE11.md`):
 - **SOS without internet:** every SOS starts on the phone (Safety Circle SMS and location work offline);

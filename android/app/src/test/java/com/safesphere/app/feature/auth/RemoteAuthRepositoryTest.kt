@@ -127,14 +127,15 @@ class RemoteAuthRepositoryTest {
     }
 
     @Test
-    fun `refreshProfile with a rejected token clears the session`() = runTest {
+    fun `C1 - refreshProfile with an expired token and no refresh secret keeps the session and asks for a sign-in`() = runTest {
         val storage = FakeSessionStorage(AuthSession("expired", AuthUser(7, "Asha", "asha@example.com")))
         api.meOutcome = { throw FakeAuthApi.httpError(401) }
 
         val result = RemoteAuthRepository(api, storage).refreshProfile()
 
         assertEquals(AuthError.UNAUTHORIZED, failureOf(result))
-        assertNull(storage.savedSession)
+        assertEquals("expired", storage.savedSession?.token)
+        assertEquals(true, storage.savedSession?.needsSignIn)
     }
 
     @Test

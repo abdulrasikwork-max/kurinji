@@ -38,6 +38,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(ApiError.of(ex.getStatus(), ex.getMessage(), request.getRequestURI()));
     }
 
+    /** Phase 11 C1: a refused refresh says why in WWW-Authenticate (as the per-request account check does). */
+    @ExceptionHandler(SessionRefusedException.class)
+    public ResponseEntity<ApiError> handleSessionRefused(SessionRefusedException ex, HttpServletRequest request) {
+        return ResponseEntity.status(ex.getStatus())
+                .header(HttpHeaders.WWW_AUTHENTICATE,
+                        "Bearer error=\"invalid_token\", error_description=\"" + ex.getReason() + "\"")
+                .body(ApiError.of(ex.getStatus(), ex.getMessage(), request.getRequestURI()));
+    }
+
     /** A database rule (for example the unique email) was broken. */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleDataIntegrity(HttpServletRequest request) {

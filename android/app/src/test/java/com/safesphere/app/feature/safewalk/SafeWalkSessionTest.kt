@@ -81,6 +81,45 @@ class SafeWalkSessionTest {
         runCurrent()
     }
 
+    // ---- Phase 11 C1: sign in to sync -------------------------------------------------------------
+
+    @Test
+    fun `C1 - sign in to sync keeps the walk, its check-ins and its record, and sends them after a new token`() = runTest {
+        val session = walking(intervalMinutes = 10)
+        server.unauthorized = true
+        sessionStorage.save(sessionStorage.savedSession!!.copy(needsSignIn = true))
+        runCurrent()
+
+        session.checkIn()
+        advance(Duration.ofMinutes(3))
+        assertTrue(session.state.value.isActive)
+        assertFalse(session.state.value.signedOut)
+        assertEquals(1L, store.record?.journeyId) // the phone's record of the walk stays
+        assertTrue(session.state.value.pendingSync >= 1)
+
+        // A restart while signed-in-to-sync recovers the walk from the phone.
+        val restarted = newSession()
+        restarted.recover()
+        runCurrent()
+        assertTrue(restarted.state.value.isActive)
+
+        // A new token (refresh or signing in again): the waiting check-in reaches the server.
+        server.unauthorized = false
+        val checkInsBefore = server.calls.count { it == "checkIn" }
+        sessionStorage.save(AuthSession("new-token", AuthUser(USER_ID, "Asha", "asha@example.com")))
+        runCurrent()
+        assertTrue(server.calls.count { it == "checkIn" } > checkInsBefore)
+        assertEquals(0, restarted.state.value.pendingSync)
+    }
+
+    @Test
+    fun `C1 - another account signing in on this phone ends the previous account's walk on the phone`() = runTest {
+        val session = walking()
+        sessionStorage.save(AuthSession("other", AuthUser(USER_ID + 1, "Bina", "bina@example.com")))
+        runCurrent()
+        assertFalse(session.state.value.isActive)
+    }
+
     // ---- start / complete / cancel ---------------------------------------------------------------
 
     @Test

@@ -1,6 +1,7 @@
 package com.safesphere.backend.config;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import com.safesphere.backend.auth.repository.DeviceSessionRepository;
 import com.safesphere.backend.security.ActiveAccountCheck;
 import com.safesphere.backend.user.repository.UserRepository;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
@@ -45,7 +46,8 @@ public class JwtConfig {
     }
 
     @Bean
-    public JwtDecoder jwtDecoder(SecretKey jwtSecretKey, JwtProperties properties, UserRepository users) {
+    public JwtDecoder jwtDecoder(SecretKey jwtSecretKey, JwtProperties properties, UserRepository users,
+                                 DeviceSessionRepository sessions) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtSecretKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
@@ -53,7 +55,8 @@ public class JwtConfig {
         // database is only asked about tokens this server really signed and that have not expired.
         // Phase 10A: then the account check (exists, enabled, not erased, credentials stamp current).
         OAuth2TokenValidator<Jwt> standard = JwtValidators.createDefaultWithIssuer(properties.issuer());
-        ActiveAccountCheck account = new ActiveAccountCheck(users);
+        // Phase 11 C1: also refuses a token whose device session ended (signed out there, or a refresh secret reused).
+        ActiveAccountCheck account = new ActiveAccountCheck(users, sessions);
         // In order, not side by side (DelegatingOAuth2TokenValidator would run both): an expired token never reaches
         // the database, and an expired token of a deleted account is "expired", not "deleted".
         decoder.setJwtValidator(token -> {

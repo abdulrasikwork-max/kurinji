@@ -1,5 +1,6 @@
 package com.safesphere.backend.account.service;
 
+import com.safesphere.backend.auth.service.DeviceSessionService;
 import com.safesphere.backend.config.AccountProperties;
 import com.safesphere.backend.evidence.service.EvidenceStorageReconciler;
 import com.safesphere.backend.user.repository.UserRepository;
@@ -33,11 +34,14 @@ public class AccountDeletionJob {
     private final AccountProperties properties;
     private final Clock clock;
     private final boolean enabled;
+    private final DeviceSessionService sessions;
 
     public AccountDeletionJob(UserRepository users, AccountEraser eraser, AccountService accounts,
                               EvidenceStorageReconciler reconciler, AccountProperties properties, Clock clock,
                               @org.springframework.beans.factory.annotation.Value(
-                                      "${app.account.deletion-job-enabled:true}") boolean enabled) {
+                                      "${app.account.deletion-job-enabled:true}") boolean enabled,
+                              DeviceSessionService sessions) {
+        this.sessions = sessions;
         this.users = users;
         this.eraser = eraser;
         this.accounts = accounts;
@@ -56,6 +60,11 @@ public class AccountDeletionJob {
     public Map<AccountEraser.Outcome, Integer> run() {
         Map<AccountEraser.Outcome, Integer> outcomes = new EnumMap<>(AccountEraser.Outcome.class);
         accounts.evictExpired();
+        try {
+            sessions.purge(); // Phase 11 C1: device sessions that ended long ago
+        } catch (RuntimeException e) {
+            log.warn("Device session clean-up failed ({}); trying again next run", e.getClass().getSimpleName());
+        }
         LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
         List<Long> due = users.findIdsDueForDeletion(now, PageRequest.of(0, properties.deletionBatch()));
         for (Long id : due) {

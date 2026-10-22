@@ -10,30 +10,43 @@ import retrofit2.HttpException
  * Runs one backend call and turns every outcome into an [ApiResult]. Used by every repository added
  * after Phase 2, so error handling is written once.
  *
- * Session expiry reuses the Phase 2 approach: on a 401 the saved session is cleared, and the screen then shows the
- * "Session expired" dialog and returns to Login. Since Phase 10A the clearing goes through [SessionEnder]: only when
- * the rejected token is still the saved one, and with the server's reason (password changed, account deleted).
+ * A 401 goes to [SessionEnder]. Phase 11 C1: an EXPIRED token is refreshed with the stored refresh secret and the call
+ * is sent ONCE more with the new token (never twice: a second 401 means "sign in to sync", so no loop is possible).
+ * If the server cannot be reached for the refresh, the call counts as offline (NO_CONNECTION). Only revocations
+ * (password changed, account deleted / disabled) still sign the phone out (Phase 10A); a refused refresh keeps the
+ * session and all local safety data and reports UNAUTHORIZED ("sign in to sync").
  */
 class ApiCallHandler(private val sessionEnder: SessionEnder) {
 
     constructor(sessionStorage: SessionStorage) : this(SessionEnder(sessionStorage))
 
-    suspend fun <T> execute(call: suspend () -> T): ApiResult<T> =
-        try {
-            ApiResult.Success(call())
+    suspend fun <T> execute(call: suspend () -> T): ApiResult<T> = attempt(call, afterRefresh = false)
+
+    private suspend fun <T> attempt(call: suspend () -> T, afterRefresh: Boolean): ApiResult<T> {
+        val failure = try {
+            return ApiResult.Success(call())
         } catch (e: CancellationException) {
             throw e // never swallow coroutine cancellation
         } catch (e: HttpException) {
-            failureFor(e)
+            e
         } catch (e: IOException) {
-            ApiResult.Failure(ApiError.NO_CONNECTION)
+            return ApiResult.Failure(ApiError.NO_CONNECTION)
         } catch (e: Exception) {
-            ApiResult.Failure(ApiError.UNKNOWN) // for example an unreadable response body
+            return ApiResult.Failure(ApiError.UNKNOWN) // for example an unreadable response body
         }
+        val error = apiErrorForHttpCode(failure.code())
+        if (error == ApiError.UNAUTHORIZED) {
+            when (sessionEnder.onUnauthorized(failure.response(), afterRefresh)) {
+                // A 401 is refused before the server does anything, so sending the same call again is safe.
+                UnauthorizedOutcome.RETRY -> return attempt(call, afterRefresh = true)
+                UnauthorizedOutcome.OFFLINE -> return ApiResult.Failure(ApiError.NO_CONNECTION)
+                else -> Unit
+            }
+        }
+        return failureFor(failure, error)
+    }
 
-    private suspend fun failureFor(e: HttpException): ApiResult.Failure {
-        val error = apiErrorForHttpCode(e.code())
-        if (error == ApiError.UNAUTHORIZED) sessionEnder.onUnauthorized(e.response())
+    private fun failureFor(e: HttpException, error: ApiError): ApiResult.Failure {
         val message = if (error in SERVER_WORDED) readServerMessage(e) else null
         return ApiResult.Failure(error, message)
     }

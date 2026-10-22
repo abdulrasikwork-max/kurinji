@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -82,10 +83,24 @@ class EmergencyLocationSharing(
     /** Phase 11: points of an SOS that ended before the server had it (memory only), sent once it has. */
     private val parked = HashMap<Long, List<EmergencyLocationPoint>>()
 
+    /** Phase 11 C1: counts session changes (new token, signed in again); uploads waiting for a sign-in wait for the next. */
+    private val sessionGeneration = MutableStateFlow(0)
+
     init {
-        // Logout or an expired token (ApiCallHandler clears the session on 401) ends the sharing at once.
+        // A real sign-out, or another account signing in on this phone, ends the sharing at once. Phase 11 C1: an
+        // expired token is not a sign-out (the session stays); a new token (refresh, signing in again) resends at once.
         scope.launch {
-            session.collect { if (it == null) onSignedOut() }
+            var lastUser: Long? = null
+            session.collect { current ->
+                val user = current?.user?.id
+                if (current == null || (lastUser != null && user != lastUser)) {
+                    onSignedOut()
+                } else {
+                    sessionGeneration.value++
+                    uploadSignal?.trySend(Unit)
+                }
+                lastUser = user
+            }
         }
     }
 
@@ -216,6 +231,7 @@ class EmergencyLocationSharing(
                 continue
             }
             val batch = pending.take(EmergencyLocationRepository.MAX_BATCH_SIZE)
+            val generation = sessionGeneration.value
             when (val result = repository.upload(emergencyId, batch)) {
                 is ApiResult.Success -> {
                     removeFromQueue(batch)
@@ -242,7 +258,10 @@ class EmergencyLocationSharing(
                                 uploadsStoppedMessage = if (result.error == ApiError.CONFLICT) result.message else null)
                         }
                     }
-                    ApiError.UNAUTHORIZED -> return // the session observer stops everything
+                    // Phase 11 C1: "sign in to sync" (the refresh was refused). Points stay queued (memory only) and
+                    // collection goes on; a real sign-out is handled by the session observer, which stops everything.
+                    // Waits for a new session (not for the next point: that would only ask the server again in vain).
+                    ApiError.UNAUTHORIZED -> sessionGeneration.first { it > generation }
                 }
             }
         }

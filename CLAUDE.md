@@ -49,7 +49,7 @@ Final-year B.Tech IT team project: the student must be able to explain every imp
 | **8** | **Safety Intelligence Engine** (area picture, pattern memory, "Check the way"; full route planner NOT built) | **Implemented, compiled, tested 2026-10-21** (backend 316 / Android 431 tests, V14 on MySQL, live API 22/22, **emulator-verified (API 37)**): `docs/PHASE8.md`, design `docs/PHASE8_DESIGN.md`. TalkBack **not verified**; real phone **not verified**; real pattern episode on MySQL **not verified** |
 | **9** | **AI/ML** ("evidence before AI", `docs/PHASE9_DESIGN.md`) | **In progress.** 9C.0 (Phase 7 COORDINATION reopen fix) implemented, tested, **live-verified on MySQL**; **9A attack simulation implemented, compiled, tested 2026-10-21** (test code only); **9C coordination check implemented, compiled, tested 2026-10-21** (coord-1 in **SHADOW** by default, no withdrawal lock for COORDINATION cases, moderator pattern texts); **9C.1 S15 Option B, 9C.2 group members + whole-group pause, 9C.3 two guard fixes implemented, compiled, tested 2026-10-21** (backend 388 / Android 450, lint 0 errors / 87 warnings; **live ACTIVE check on MySQL 25/25**; **emulator (API 37) moderator screens PASS**; TalkBack speech, dark-mode colours and the A23 **not verified**): `docs/PHASE9.md` §9–§16. **9C complete: accepted by the user on 2026-10-21.** **9D implemented, compiled, tested 2026-10-21, awaiting the user's review** (`docs/PHASE9.md` §18–§26): neighbour join (active), havens-alone cap = active rules **rules-1.1**, rules-2 in **SHADOW only** (not promoted: no real-world evidence); backend 423 / Android 452, lint 0 errors / 87 warnings, **live MySQL 19/19**, **emulator (API 37) PASS**; TalkBack, the A23 and real-world rates **not verified**. **9B implemented, compiled, tested 2026-10-21; complete: accepted by the user on 2026-10-21, frozen** (`docs/PHASE9.md` §27–§34): V15 weekly system-wide outcome counters (after commit, best effort) + `moderation_cases.coordination_rule`, weekly snapshot, ADMIN-only `GET /api/admin/evaluation`; backend 453 / Android 454, lint 0 errors / 87 warnings, **V15 dry run 19/19 + applied on MySQL, live MySQL 21/21**; nothing user-visible; real-world rates **not verified** (no deployment). **No learned model** (gates G1–G3 not met) |
 | **10** | **Foundation (10A) + RISE "Proof" (10B–10D)** (`docs/PHASE10_DESIGN.md`) | **10A implemented, compiled, tested, verified 2026-10-22** (`docs/PHASE10.md`): honesty/identity/language pass, V16 + `ActiveAccountCheck` + password change with revocation, coercion-aware account deletion; backend 466 / Android 480 tests, lint 0 errors / 85 warnings, **V16 dry run 13/13 + applied, live MySQL 23/23, emulator (API 37) PASS**; TalkBack, onboarding pages on a device and the real phone **not verified**. **10A.4 session continuity** (token renewal, password to end an SOS from another sign-in, V17) **implemented, compiled, tested, verified 2026-10-22**: backend 473 / Android 487, lint 0 errors / 85 warnings, **V17 dry run 7/7 + applied, live MySQL 9/9, emulator PASS** (`PHASE10.md` §11). 10B–10D: planned, not started. **10B Rise "Proof" implemented, compiled, tested, emulator-verified 2026-10-22** (Android only, nothing sent; `docs/PHASE11.md` §4); 10C (collective proof) not built; 10D (real phone, TalkBack) not done |
-| **11** | **SOS without internet** (`docs/PHASE11.md` §1–§3) | **Implemented, compiled, tested, verified 2026-10-22**: every SOS starts on the phone (SMS + location offline), `SosRecorder` records it later with a client reference (V18); backend 482 / Android 527, lint 0 / 85, **V18 dry run 10/10 + applied, live MySQL 12/12, emulator with the server down PASS**; real phone and TalkBack **not verified** |
+| **11** | **SOS without internet** (`docs/PHASE11.md` §1–§3) | **Implemented, compiled, tested, verified 2026-10-22**: every SOS starts on the phone (SMS + location offline), `SosRecorder` records it later with a client reference (V18); backend 482 / Android 527, lint 0 / 85, **V18 dry run 10/10 + applied, live MySQL 12/12, emulator with the server down PASS**; real phone and TalkBack **not verified**. **C1 session continuity (V19 device sessions + rotating refresh secrets; expired ≠ revoked) implemented, compiled, tested, verified 2026-10-22**: V19 dry run 3/3 + 14/14 and applied, live MySQL 10/10, emulator E1–E7 PASS; real phone and a 25 h idle test **not verified** (`docs/PHASE11.md` §8) |
 | 12 | Verified Nearby Assistance | Not started ("Circle Response" from `PHASE10_DESIGN.md` §32 stays a future proposal) |
 
 **Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
@@ -99,7 +99,10 @@ the password to end an SOS). Still deferred: token encryption on the phone (A14)
 Phase 9 stays frozen.
 
 **11 + 10B are in the repository** (V18, `emergency/session/SosRecorder`, `feature/rise`): `docs/PHASE11.md` (audit,
-decisions E1–E7 and R1–R10, verification). Next migration **V19**.
+decisions E1–E7 and R1–R10, verification). **C1 is in the repository** (V19 `device_sessions`, `auth` package
+`DeviceSessionService`/`RefreshSecrets`, Android `SessionRefresher`, `SessionEnder` expired ≠ revoked): `docs/PHASE11.md`
+§8 (decisions C1-1…C1-11). The product direction after the 2026-10-22 audit: `docs/AUDIT_NEXT.md` (safety foundation
+first; no entertainment/social layers). Next migration **V20**.
 
 ---
 
@@ -184,7 +187,16 @@ cd android
   messages reach users; other errors use app strings (`ApiResult.Failure.toMessage()`). Auth keeps its own
   `RemoteAuthRepository` mapping (its `refreshProfile` 401 also uses `SessionEnder`).
 - **Session:** `DataStoreSessionStorage` (token + id/name/email + a pending deletion's dates; never the password). Splash
-  routes Onboarding / Login / Home. Token is **not encrypted** yet (known limitation). `allowBackup=false`.
+  routes Onboarding / Login / Home. The 24 h access token is **not encrypted** yet (known limitation). `allowBackup=false`.
+  **C1 (`docs/PHASE11.md` §8):** `AuthSession.refreshToken` (sealed with Keystore alias `safesphere_session_v1`) and
+  `needsSignIn` ("sign in to sync"). **Expired ≠ revoked:** a 401 without a reason → `SessionRefresher` (single-flight,
+  NonCancellable, conditional atomic save) → `ApiCallHandler` retries ONCE; offline = NO_CONNECTION; refused or
+  `session_revoked` → `markNeedsSignIn` (NOTHING deleted: SOS, unsent endings, Circle copy, walk stay; SOS works; Home
+  banner + closable dialog, never on the SOS screen); `credentials_changed`/`account_deleted`/`account_unavailable` →
+  Phase 10A sign-out. Every session change that keeps the rest uses the atomic `SessionStorage.update`. Login to the
+  same account sends `previousRefreshToken` (hand-over incl. its ACTIVE SOS); another account → `onAccountSwitch`
+  clean-up first, never its secret. Logout ends the server session (best effort). `SessionRenewer` refreshes at start
+  after idle time and when due (last 12 h AND second half of the token's life).
 - **Account (Phase 10A, `feature/account`, `docs/PHASE10.md`):** `AccountFragment` (FLAG_SECURE): change password
   (`AccountPolicy` checks 8+ chars, ≤ 72 bytes, confirm, different; `RemoteAccountRepository` saves the NEW token inside
   `SessionEnder.swapping`), request / cancel deletion (password dialogs). `AccountPolicy.deletionNotice` drives the amber
@@ -377,8 +389,9 @@ cd android
     `ResourceNotFoundException` 404, `ConflictException`/`EmailAlreadyUsedException` 409. `GlobalExceptionHandler` renders one
     JSON shape: `timestamp, status, error, message, path, fieldErrors?`. No stack traces or exception text to clients.
   - `spring.jpa.hibernate.ddl-auto=none`, `open-in-view=false`. **Flyway owns the schema.**
-- **JWT:** HS256, secret from env, issuer `https://safesphere.example`, `sub` = user id, **24 h, no refresh tokens**;
-  logout = client clears its session. **Phase 10A:** after a password change tokens carry `cca` (credentials stamp = µs of
+- **JWT:** HS256, secret from env, issuer `https://safesphere.example`, `sub` = user id, **24 h**. **C1:** each sign-in is
+  a device session (V19) with a rotating refresh secret (`POST /api/auth/refresh`); logout ends it on the server
+  (`POST /api/auth/sign-out`) and clears the phone. **Phase 10A:** after a password change tokens carry `cca` (credentials stamp = µs of
   `users.credentials_changed_at`); `security/ActiveAccountCheck` (inside the decoder, after exp/iss) refuses a token whose
   account is missing/erased/disabled or whose stamp differs (exact equality) → 401 with an RFC 6750 `error_description`.
   **10A.4:** tokens carry `sid` (random sign-in id) and `auth_time` (`CurrentUser.sessionId/authTime`); `POST
@@ -435,7 +448,9 @@ cd android
 
 | V18 | `emergency_events.client_ref`, `started_offline` | Phase 11: phone reference (lower-case UUID, binary, `UNIQUE (user_id, client_ref)`), offline ⇒ reference (CHECK), `ended_at >= started_at` (CHECK). Dry run 10/10 (incl. the real rows), applied on MySQL 8.0 (2026-10-22) |
 
-Conventions: never edit an applied migration; next file is **V19**; snake_case; `DATETIME(6)` stored in UTC; constraint
+| V19 | `device_sessions` | C1: one row per sign-in (`session_id` = token `sid`, binary, UUID CHECK, unique), FK user cascade, `secret_hash` + `previous_secret_hash` lower-case hex SHA-256 (never the secret), rotation pair CHECK, `authenticated_at`, sliding `expires_at` > `last_used_at` ≥ `created_at`, revoked pair + reason CHECK (SIGNED_OUT, PASSWORD_CHANGED, REUSE_DETECTED, ACCOUNT_DISABLED, EXPIRED). Dry run 3/3 + 14/14, applied (2026-10-22) |
+
+Conventions: never edit an applied migration; next file is **V20**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.
 
 ---
@@ -524,6 +539,13 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
   RESOLVED|CANCELLED (ended offline, stored ended); `PUT …/resolve|cancel` optional `endedAt` (clamped `[start, now]`);
   answers add `startedOffline`; location grace for offline-started SOS also counts from the server's first record.
   Rise (10B) has NO endpoint.
+- C1 (V19, `API.md` "Phase 11 C1"): register/login/refresh return `refreshToken` (`<sid>.<secret>`);
+  `POST /api/auth/refresh {refreshToken}` (public) → new access token + rotated secret; replaced secret within 60 s =
+  lost answer, later = reuse → session ends; 401 reasons `session_revoked` | `account_deleted` | `account_unavailable`;
+  `POST /api/auth/sign-out {refreshToken}` → 204 always; login optional `previousRefreshToken` (same account: hand-over
+  incl. ACTIVE SOS); every endpoint refuses a `sid` whose session ended (`session_revoked`); password change ends the
+  other sessions; renewal/password change adopt pre-V19 sign-ins once. Config `app.account.refresh-idle-timeout` (90d),
+  `refresh-reuse-grace` (60s), `session-retention` (30d).
 
 ---
 
@@ -719,4 +741,6 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
 | Every SOS starts on the phone; the server is told later with a client reference (Phase 11) | SMS and GPS work without internet, the server does not; the emergency button must not depend on a round trip; one path for online and offline |
 | Phone times only for an SOS the server could not hear of, clamped; idempotency per person | Exact server times online; a true record offline; no cross-account oracle |
 | Rise phone-only, encrypted per account, no Home card, no notifications, no private incident note (10B) | Coercive control is the main threat model; a note of an incident is the most dangerous text to be found and is not evidence |
+| Device sessions with a rotating refresh secret (SHA-256 stored, 60 s lost-answer grace, later reuse ends the session, 90-day sliding idle limit) (C1) | An SOS after weeks unopened must reach the server without the password; copies are noticed; revocation stays immediate |
+| Expired ≠ revoked on the phone: a refused refresh is "sign in to sync" and deletes nothing (C1) | Authentication failing for sync must never destroy a running SOS, its ending or the offline Safety Circle copy |
 | Self-doubt vs. safety concern; support never ranked; stereotypes never named (10B, tested) | Worries lead to preparation, doubts to proof; support is strength; naming a stereotype repeats it |

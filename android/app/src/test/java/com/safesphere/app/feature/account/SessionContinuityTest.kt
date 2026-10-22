@@ -75,62 +75,141 @@ class SessionContinuityTest {
 
     // ---- SessionRenewer ----------------------------------------------------------------------------------------
 
+    /** Phase 11 C1: a session with a refresh secret is kept usable by refreshing (never by the old renewal). */
+    private fun withRefresh(expiresAt: Instant) = AuthSession(jwt(expiresAt), user, refreshToken = "refresh-1")
+
     @Test
-    fun `during an SOS the token is checked every 10 minutes and renewed before it runs out`() = runTest {
-        val token = MutableStateFlow<String?>(jwt(base.plus(Duration.ofHours(12)).plusSeconds(30 * 60)))
+    fun `during an SOS the token is checked every 10 minutes and refreshed before it runs out`() = runTest {
+        val session = MutableStateFlow<AuthSession?>(withRefresh(base.plus(Duration.ofHours(12)).plusSeconds(30 * 60)))
+        var refreshes = 0
         var renewals = 0
-        SessionRenewer(backgroundScope, token, MutableStateFlow(true), { renewals++; ApiResult.Success(Unit) }) {
-            base.plusMillis(testScheduler.currentTime)
-        }
+        SessionRenewer(backgroundScope, session, MutableStateFlow(true), { renewals++; ApiResult.Success(Unit) },
+            { refreshes++ }) { base.plusMillis(testScheduler.currentTime) }
         runCurrent()
-        assertEquals(0, renewals) // 12 h 30 min left
+        assertEquals(0, refreshes) // 12 h 30 min left
         advanceTimeBy(20 * 60_000L + 1)
         runCurrent()
-        assertEquals(0, renewals) // 12 h 10 min left at the 20-minute look
+        assertEquals(0, refreshes) // 12 h 10 min left at the 20-minute look
         advanceTimeBy(20 * 60_000L)
         runCurrent()
-        assertEquals(1, renewals) // exactly 12 h at the 30-minute look (not yet), 11 h 50 min at the 40-minute look
+        assertEquals(1, refreshes) // exactly 12 h at the 30-minute look (not yet), 11 h 50 min at the 40-minute look
+        assertEquals(0, renewals)
     }
 
     @Test
     fun `without an SOS or walk it looks hourly, and a new token restarts the clock`() = runTest {
-        val token = MutableStateFlow<String?>(jwt(base.plus(Duration.ofHours(12)).plusSeconds(30 * 60)))
-        var renewals = 0
-        SessionRenewer(backgroundScope, token, MutableStateFlow(false), {
-            renewals++
-            token.value = jwt(base.plusMillis(testScheduler.currentTime).plus(Duration.ofHours(24)))
-            ApiResult.Success(Unit)
+        val session = MutableStateFlow<AuthSession?>(withRefresh(base.plus(Duration.ofHours(12)).plusSeconds(30 * 60)))
+        var refreshes = 0
+        SessionRenewer(backgroundScope, session, MutableStateFlow(false), { ApiResult.Success(Unit) }, {
+            refreshes++
+            session.value = withRefresh(base.plusMillis(testScheduler.currentTime).plus(Duration.ofHours(24)))
         }) { base.plusMillis(testScheduler.currentTime) }
         runCurrent()
         advanceTimeBy(30 * 60_000L)
         runCurrent()
-        assertEquals(0, renewals) // not looked yet
+        assertEquals(0, refreshes) // not looked yet
         advanceTimeBy(30 * 60_000L + 1)
         runCurrent()
-        assertEquals(1, renewals) // the hourly look found 11 h 30 min left
+        assertEquals(1, refreshes) // the hourly look found 11 h 30 min left
         advanceTimeBy(3 * 60 * 60_000L)
         runCurrent()
-        assertEquals(1, renewals) // the fresh token has 21 h left
-        token.value = null
+        assertEquals(1, refreshes) // the fresh token has 21 h left
+        session.value = null
         runCurrent()
     }
 
     @Test
     fun `an SOS starting makes the renewer look at once`() = runTest {
-        val token = MutableStateFlow<String?>(jwt(base.plus(Duration.ofHours(2))))
+        val session = MutableStateFlow<AuthSession?>(withRefresh(base.plus(Duration.ofHours(2))))
         val sos = MutableStateFlow(false)
-        var renewals = 0
-        SessionRenewer(backgroundScope, token, sos, { renewals++; ApiResult.Failure(ApiError.NO_CONNECTION) }) {
+        var refreshes = 0
+        SessionRenewer(backgroundScope, session, sos, { ApiResult.Success(Unit) }, { refreshes++ }) {
             base.plusMillis(testScheduler.currentTime)
         }
         runCurrent()
-        assertEquals(1, renewals) // 2 h left: due at once; offline, so it failed
+        assertEquals(1, refreshes) // 2 h left: due at once; offline, so nothing changed
         sos.value = true
         runCurrent()
-        assertEquals(2, renewals) // the SOS restarted the look immediately
+        assertEquals(2, refreshes) // the SOS restarted the look immediately
         advanceTimeBy(10 * 60_000L + 1)
         runCurrent()
-        assertEquals(3, renewals) // and keeps trying every 10 minutes while offline
+        assertEquals(3, refreshes) // and keeps trying every 10 minutes while offline
+    }
+
+    @Test
+    fun `C1 - a short-lived token is due only in its second half, so a fresh one is never refreshed at once (emulator find)`() {
+        val issued = base
+        val shortLived = base.plusSeconds(120)
+        assertFalse(TokenRenewalPolicy.due(shortLived, base, issuedAt = issued))
+        assertFalse(TokenRenewalPolicy.due(shortLived, base.plusSeconds(59), issuedAt = issued))
+        assertTrue(TokenRenewalPolicy.due(shortLived, base.plusSeconds(61), issuedAt = issued))
+        // 24 h tokens keep the 12 h rule.
+        val day = base.plus(Duration.ofHours(24))
+        assertFalse(TokenRenewalPolicy.due(day, base.plus(Duration.ofHours(11)), issuedAt = issued))
+        assertTrue(TokenRenewalPolicy.due(day, base.plus(Duration.ofHours(13)), issuedAt = issued))
+        assertEquals(base, TokenRenewalPolicy.issuedAt(jwtIssued(base, base.plusSeconds(120))))
+    }
+
+    @Test
+    fun `C1 - with 2-minute tokens the renewer does not refresh in a loop (emulator find)`() = runTest {
+        fun fresh() = AuthSession(jwtIssued(base.plusMillis(testScheduler.currentTime),
+            base.plusMillis(testScheduler.currentTime).plusSeconds(120)), user, refreshToken = "r")
+        val session = MutableStateFlow<AuthSession?>(fresh())
+        var refreshes = 0
+        SessionRenewer(backgroundScope, session, MutableStateFlow(true), { ApiResult.Success(Unit) }, {
+            refreshes++
+            session.value = fresh() // each refresh issues a new 2-minute token
+        }) { base.plusMillis(testScheduler.currentTime) }
+        runCurrent()
+        assertEquals(0, refreshes) // a token issued just now is not refreshed at once
+        advanceTimeBy(30 * 60_000L)
+        runCurrent()
+        assertTrue("one refresh per look at most, never a loop (was $refreshes)", refreshes in 1..3)
+    }
+
+    @Test
+    fun `C1 - after days without the app the expired token is refreshed as soon as the app starts`() = runTest {
+        val session = MutableStateFlow<AuthSession?>(withRefresh(base.minus(Duration.ofDays(3))))
+        val refreshed = mutableListOf<String>()
+        SessionRenewer(backgroundScope, session, MutableStateFlow(false), { ApiResult.Success(Unit) },
+            { refreshed += it }) { base.plusMillis(testScheduler.currentTime) }
+        runCurrent()
+        assertEquals(listOf(session.value!!.token), refreshed)
+    }
+
+    @Test
+    fun `C1 - a sign-in from before C1 is renewed once to receive its refresh secret, then refreshed`() = runTest {
+        val legacy = AuthSession(jwt(base.plus(Duration.ofHours(20))), user, refreshToken = null)
+        val session = MutableStateFlow<AuthSession?>(legacy)
+        var renewals = 0
+        var refreshes = 0
+        SessionRenewer(backgroundScope, session, MutableStateFlow(false), {
+            renewals++
+            session.value = legacy.copy(refreshToken = "adopted") // the renewal's answer carried the secret
+            ApiResult.Success(Unit)
+        }, { refreshes++ }) { base.plusMillis(testScheduler.currentTime) }
+        runCurrent()
+        assertEquals(1, renewals)
+        advanceTimeBy(2 * 60 * 60_000L)
+        runCurrent()
+        assertEquals(1, renewals) // never again: it has a refresh secret now
+        assertEquals(0, refreshes) // 18 h left: nothing due yet
+    }
+
+    @Test
+    fun `C1 - nothing is tried while the session needs a sign-in, or for an expired sign-in without a secret`() = runTest {
+        val session = MutableStateFlow<AuthSession?>(withRefresh(base.minus(Duration.ofDays(1))).copy(needsSignIn = true))
+        var calls = 0
+        SessionRenewer(backgroundScope, session, MutableStateFlow(true), { calls++; ApiResult.Success(Unit) },
+            { calls++ }) { base.plusMillis(testScheduler.currentTime) }
+        runCurrent()
+        advanceTimeBy(60 * 60_000L)
+        runCurrent()
+        session.value = AuthSession(jwt(base.minus(Duration.ofDays(1))), user, refreshToken = null)
+        runCurrent()
+        advanceTimeBy(60 * 60_000L)
+        runCurrent()
+        assertEquals(0, calls)
     }
 
     // ---- RemoteAccountRepository.renewToken ------------------------------------------------------------------
@@ -227,6 +306,14 @@ class SessionContinuityTest {
         ).also { settle() }
 
     /** An unsigned token with only the claims the phone reads (the phone never verifies signatures). */
+    private fun jwtIssued(issuedAt: Instant, expiresAt: Instant): String {
+        val encoder = Base64.getUrlEncoder().withoutPadding()
+        val header = encoder.encodeToString("""{"alg":"HS256"}""".toByteArray())
+        val payload = encoder.encodeToString(
+            """{"sub":"7","iat":${issuedAt.epochSecond},"exp":${expiresAt.epochSecond}}""".toByteArray())
+        return "$header.$payload.signature"
+    }
+
     private fun jwt(expiresAt: Instant): String {
         val encoder = Base64.getUrlEncoder().withoutPadding()
         val header = encoder.encodeToString("""{"alg":"HS256"}""".toByteArray())

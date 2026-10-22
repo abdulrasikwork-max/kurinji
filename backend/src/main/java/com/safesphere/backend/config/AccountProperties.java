@@ -16,13 +16,29 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxTrackedKeys        most accounts the in-memory limiter remembers at once (memory bound)
  * @param sessionMaxAge         Phase 10A.4: how long after the password was typed a sign-in may still renew its token
  *                              without an SOS or Safe Walk running (during one, renewal is always allowed)
+ * @param refreshIdleTimeout    Phase 11 C1: a device session ends when its refresh secret was not used for this long
+ *                              (sliding: every refresh moves it). Long on purpose: an SOS after weeks unopened must
+ *                              still reach the server without the password
+ * @param refreshReuseGrace     Phase 11 C1: the secret just replaced is still accepted (and rotated again) for this
+ *                              long, for an answer lost on a poor connection; shown later, it ends the session (reuse)
+ * @param sessionRetention      Phase 11 C1: ended device sessions are deleted this long after they ended (kept a while
+ *                              so the access tokens of a revoked session are refused by name)
  */
 @ConfigurationProperties(prefix = "app.account")
 public record AccountProperties(Integer passwordFailures, Duration passwordFailureWindow, Duration deletionGrace,
                                 Duration deletionProtection, Integer deletionBatch, Integer maxTrackedKeys,
-                                Duration sessionMaxAge) {
+                                Duration sessionMaxAge, Duration refreshIdleTimeout, Duration refreshReuseGrace,
+                                Duration sessionRetention) {
 
     public AccountProperties {
+        if (refreshIdleTimeout == null) refreshIdleTimeout = Duration.ofDays(90);
+        if (refreshReuseGrace == null) refreshReuseGrace = Duration.ofSeconds(60);
+        if (sessionRetention == null) sessionRetention = Duration.ofDays(30);
+        if (refreshIdleTimeout.compareTo(Duration.ofDays(1)) < 0
+                || refreshReuseGrace.isNegative() || refreshReuseGrace.compareTo(Duration.ofMinutes(10)) > 0
+                || sessionRetention.compareTo(Duration.ofDays(2)) < 0) {
+            throw new IllegalStateException("app.account refresh/session values are invalid");
+        }
         if (sessionMaxAge == null) sessionMaxAge = Duration.ofDays(30);
         if (sessionMaxAge.compareTo(Duration.ofDays(1)) < 0) {
             throw new IllegalStateException("app.account.session-max-age must be at least 1 day");

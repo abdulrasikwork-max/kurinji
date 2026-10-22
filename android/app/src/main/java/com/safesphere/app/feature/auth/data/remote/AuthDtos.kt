@@ -10,8 +10,17 @@ data class RegisterRequestDto(val name: String, val email: String, val password:
     override fun toString() = "RegisterRequestDto(name=$name, email=<hidden>, password=<hidden>)"
 }
 
-data class LoginRequestDto(val email: String, val password: String) {
-    override fun toString() = "LoginRequestDto(email=<hidden>, password=<hidden>)"
+/**
+ * Phase 11 C1: [previousRefreshToken] = this phone's refresh token for the SAME account (signing in again after
+ * "sign in to sync"): the server ends that old sign-in and hands its running SOS to the new one. Never another account's.
+ */
+data class LoginRequestDto(val email: String, val password: String, val previousRefreshToken: String? = null) {
+    override fun toString() = "LoginRequestDto(email=<hidden>, password=<hidden>, previous=<hidden>)"
+}
+
+/** Phase 11 C1: body of /api/auth/refresh and /api/auth/sign-out. The token is a credential. */
+data class RefreshRequestDto(val refreshToken: String) {
+    override fun toString() = "RefreshRequestDto(<hidden>)"
 }
 
 /** Phase 10A: [deletionRequestedAt] / [deletionDueAt] (ISO-8601, UTC) while an account deletion is pending. */
@@ -41,12 +50,14 @@ data class UserDto(
     }
 }
 
+/** Phase 11 C1: [refreshToken] is set when the answer starts or rotates a device session; null = keep the one you have. */
 data class AuthResponseDto(
     val accessToken: String,
     val tokenType: String?,
     val expiresInSeconds: Long?,
-    val user: UserDto
+    val user: UserDto,
+    val refreshToken: String? = null
 ) {
-    // The token is a credential: keep it out of logs too.
-    override fun toString() = "AuthResponseDto(accessToken=<hidden>, user=$user)"
+    // The tokens are credentials: keep them out of logs too.
+    override fun toString() = "AuthResponseDto(accessToken=<hidden>, refreshToken=<hidden>, user=$user)"
 }

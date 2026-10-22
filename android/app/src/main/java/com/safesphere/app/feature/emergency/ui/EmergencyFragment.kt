@@ -162,6 +162,10 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
             R.string.emergency_started_at, EmergencyTimeFormatter.format(state.event.startedAt)
         )
         binding.restoredOfflineNotice.isVisible = state.restoredOffline
+        // Phase 11 C1 (found on the emulator): not "offline" when the server is reachable but needs a sign-in.
+        binding.restoredOfflineNotice.setMessage(getString(
+            if (signInNeeded()) R.string.emergency_restored_sign_in else R.string.emergency_restored_offline
+        ))
         // Phase 11: running on this phone only, until the server has recorded it.
         binding.notOnServerNotice.isVisible = state.notOnServerYet
         binding.notOnServerNotice.setMessage(getString(
@@ -247,6 +251,9 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         }
     }
 
+    /** Phase 11 C1: the server needs the password again ("sign in to sync"); the SOS works on this phone regardless. */
+    private fun signInNeeded(): Boolean = appContainer.currentSession.value?.needsSignIn == true
+
     private fun renderEnded(state: EmergencyUiState.Ended) {
         val resolved = state.event.status == EmergencyStatus.RESOLVED
         binding.endedTitle.setText(if (resolved) R.string.emergency_ended_resolved_title else R.string.emergency_ended_cancelled_title)
@@ -254,6 +261,9 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
             // Phase 10A.4: ended from another phone (with the account password); this phone did not say "I'm safe".
             state.event.endedElsewhere -> R.string.emergency_ended_elsewhere_message
             // Phase 11: ended on this phone while offline; the server is told when it can be reached.
+            // Phase 11 C1: or while the server needs a sign-in again; then it is told once the person signs in.
+            state.unsent != null && signInNeeded() ->
+                if (resolved) R.string.emergency_ended_unsent_sign_in_resolved else R.string.emergency_ended_unsent_sign_in_cancelled
             state.unsent != null && resolved -> R.string.emergency_ended_unsent_resolved
             state.unsent != null -> R.string.emergency_ended_unsent_cancelled
             resolved -> R.string.emergency_ended_resolved_message

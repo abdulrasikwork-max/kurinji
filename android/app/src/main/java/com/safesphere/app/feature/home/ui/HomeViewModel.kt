@@ -79,6 +79,9 @@ class HomeViewModel(
      */
     val deletion: Flow<DeletionNotice?> = authRepository.currentUser.map { AccountPolicy.deletionNotice(it, Instant.now()) }
 
+    /** Phase 11 C1: the server needs a sign-in again; nothing on the phone was deleted (Home shows a calm banner). */
+    val signInNeeded: Flow<Boolean> = authRepository.signInNeeded
+
     private val _sessionExpired = MutableStateFlow(false)
 
     /** True when the server rejected the saved token, so the person must log in again. */
@@ -138,7 +141,11 @@ class HomeViewModel(
     private fun refreshProfile() {
         viewModelScope.launch {
             val result = authRepository.refreshProfile()
-            if (result is AuthResult.Failure && result.error == AuthError.UNAUTHORIZED) {
+            // Phase 11 C1: an expired token was refreshed inside refreshProfile. Only a real sign-out (no session left)
+            // gets the dialog; "sign in to sync" is the calm banner ([signInNeeded]), and SOS keeps working.
+            if (result is AuthResult.Failure && result.error == AuthError.UNAUTHORIZED &&
+                authRepository.currentUser.first() == null
+            ) {
                 _sessionExpired.value = true
             }
         }

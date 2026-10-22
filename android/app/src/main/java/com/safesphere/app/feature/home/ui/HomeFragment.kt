@@ -36,6 +36,8 @@ class HomeFragment : ViewBindingFragment<FragmentHomeBinding>(FragmentHomeBindin
         binding.profileButton.setOnClickListener { findNavController().navigate(R.id.profileFragment) }
         // Phase 10A.3: a pending account deletion is visible on Home for the whole grace period.
         binding.deletionBanner.setOnClickListener { findNavController().navigate(R.id.accountFragment) }
+        // Phase 11 C1: "sign in to sync" (calm, not a forced dialog): SOS keeps working, only server sync waits.
+        binding.signInBanner.setOnClickListener { findNavController().navigate(R.id.action_global_to_login) }
 
         binding.activeEmergencyBanner.setOnClickListener { findNavController().navigate(R.id.emergencyFragment) }
         binding.activeWalkBanner.setOnClickListener { findNavController().navigate(R.id.safeWalkFragment) }
@@ -59,6 +61,7 @@ class HomeFragment : ViewBindingFragment<FragmentHomeBinding>(FragmentHomeBindin
                 binding.deletionBanner.contentDescription = getString(R.string.cd_home_deletion_banner, text)
             }
         }
+        collectWhenStarted(viewModel.signInNeeded) { needed -> binding.signInBanner.isVisible = needed }
         collectWhenStarted(viewModel.sessionExpired) { expired ->
             if (expired) {
                 viewModel.onSessionExpiredHandled()

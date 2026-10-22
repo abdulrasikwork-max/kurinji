@@ -20,9 +20,23 @@ data class AuthUser(
     override fun toString() = "AuthUser(id=$id, deletionPending=$deletionPending)"
 }
 
-/** What is remembered on the device between app launches: the token and basic profile data. */
-data class AuthSession(val token: String, val user: AuthUser) {
-    override fun toString() = "AuthSession(token=<hidden>, user=$user)"
+/**
+ * What is remembered on the device between app launches: the token and basic profile data.
+ *
+ * Phase 11 C1: [refreshToken] gets a new access token after the 24 h one expired, even after weeks without the app
+ * (stored encrypted with a Keystore key; null for a sign-in from before C1 until it is adopted). [needsSignIn]: the
+ * server no longer accepts this sign-in (refresh refused, or this phone's session ended). The person is NOT signed out:
+ * the account's safety data on this phone (a running SOS, unsent endings, the Safety Circle copy for offline SMS, a
+ * Safe Walk) stays, the SOS keeps working on the phone, and only server sync waits until they sign in again.
+ */
+data class AuthSession(
+    val token: String,
+    val user: AuthUser,
+    val refreshToken: String? = null,
+    val needsSignIn: Boolean = false
+) {
+    override fun toString() = "AuthSession(token=<hidden>, refresh=${if (refreshToken != null) "<hidden>" else "none"}, " +
+        "needsSignIn=$needsSignIn, user=$user)"
 }
 
 /** Everything that can go wrong, in app terms. The UI turns each one into a friendly message. */

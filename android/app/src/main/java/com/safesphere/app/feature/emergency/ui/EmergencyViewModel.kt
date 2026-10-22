@@ -148,7 +148,8 @@ class EmergencyViewModel(
                 }
                 is ApiResult.Failure -> {
                     reportIfSessionExpired(result)
-                    val record = if (result.isSessionExpired()) null else local
+                    // Phase 11 C1: "sign in to sync" keeps the session, so the SOS kept on this phone is still shown.
+                    val record = if (result.isSessionExpired() && currentUserId() == null) null else local
                     if (record != null) {
                         showActive(record.toEvent(), restoredOffline = true)
                     } else {
@@ -318,6 +319,10 @@ class EmergencyViewModel(
                 // Circle); the server is told later with the real time. Not with a password (another phone's SOS).
                 result is ApiResult.Failure && result.error in OFFLINE_ERRORS && password == null ->
                     endOnThisPhone(current, resolve)
+                // Phase 11 C1: "sign in to sync" (still this person's session): the "I'm safe" counts here too and is
+                // recorded once they sign in again (that sign-in takes over this phone's SOS, so no password is asked).
+                result is ApiResult.Failure && result.error == ApiError.UNAUTHORIZED && password == null &&
+                    currentUserId() != null -> endOnThisPhone(current, resolve)
                 result is ApiResult.Failure -> {
                     reportIfSessionExpired(result)
                     // Never ask again by itself after a wrong password: the person taps "I'm safe" again.
@@ -393,7 +398,8 @@ class EmergencyViewModel(
             is ApiResult.Success -> result.data.filter { it.isEnabled }
             is ApiResult.Failure -> {
                 reportIfSessionExpired(result)
-                if (result.isSessionExpired()) emptyList() else offlineCircle()
+                // Phase 11 C1: with "sign in to sync" the Safety Circle copy kept for offline SMS is still this person's.
+                if (result.isSessionExpired() && currentUserId() == null) emptyList() else offlineCircle()
             }
         }
         return EmergencyUiState.Active(event, circle, restoredOffline = restoredOffline)
@@ -407,8 +413,12 @@ class EmergencyViewModel(
         )
     }
 
-    private fun reportIfSessionExpired(result: ApiResult<*>) {
-        if (result.isSessionExpired()) _sessionExpired.value = true
+    /**
+     * Only a real sign-out (no session left) interrupts the SOS screen with a dialog. Phase 11 C1: "sign in to sync"
+     * never does; the SOS keeps working on the phone and Home shows a calm banner.
+     */
+    private suspend fun reportIfSessionExpired(result: ApiResult<*>) {
+        if (result.isSessionExpired() && currentUserId() == null) _sessionExpired.value = true
     }
 
     private fun ActiveEmergencyRecord.toEvent() = EmergencyEvent(

@@ -56,11 +56,14 @@ class FakeCircleAlertRepository : CircleAlertRepository {
     val reports = linkedMapOf<String, CircleDelivery>()
     val calls = mutableListOf<String>()
     var offline = false
+    /** Phase 11 C1: the server needs a sign-in ("sign in to sync"). */
+    var unauthorized = false
     var context: ApiResult<EmergencyContext> = ApiResult.Failure(ApiError.NOT_FOUND)
 
     override suspend fun report(target: AlertTarget, deliveries: List<CircleDelivery>): ApiResult<Unit> {
         calls += "report:${deliveries.size}"
         if (offline) return ApiResult.Failure(ApiError.NO_CONNECTION)
+        if (unauthorized) return ApiResult.Failure(ApiError.UNAUTHORIZED)
         deliveries.forEach { reports[it.clientRef] = it }
         return ApiResult.Success(Unit)
     }

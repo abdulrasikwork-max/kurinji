@@ -100,7 +100,7 @@ class AccountTest {
     }
 
     @Test
-    fun `a refused password change keeps the session, and a 401 for it ends the session`() = runTest {
+    fun `a refused password change keeps the session, and a 401 for it asks for a sign-in without deleting anything`() = runTest {
         val storage = FakeSessionStorage(AuthSession("old-token", user))
         val api = FakeAccountApi().apply { changeOutcome = { throw httpError(409, """{"message":"Password is incorrect"}""") } }
         val repository = repository(storage, api)
@@ -110,7 +110,9 @@ class AccountTest {
 
         api.changeOutcome = { throw httpError(401, "{}") }
         assertEquals(ApiResult.Failure(ApiError.UNAUTHORIZED), repository.changePassword("x", "new-password"))
-        assertNull(storage.savedSession)
+        // Phase 11 C1: an expired token is not a sign-out; with no refresh secret the phone asks for a sign-in.
+        assertEquals("old-token", storage.savedSession?.token)
+        assertTrue(storage.savedSession!!.needsSignIn)
     }
 
     @Test

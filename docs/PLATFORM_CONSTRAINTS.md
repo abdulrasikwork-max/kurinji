@@ -83,7 +83,10 @@ tricks. Policies change often: re-check the current Android and Google Play docu
   **10A.4:** while the app process runs, the phone renews its token when less than 12 h are left (every 10 minutes
   during an SOS or Safe Walk, when the foreground service keeps the process alive; hourly otherwise), and the server
   always allows that during an SOS or walk. If the process was killed and the app is not opened for 24 h, the token
-  still expires (no background job wakes the app for it; deliberate: no new job or alarm).
+  still expires (no background job wakes the app for it; deliberate: no new job or alarm). **Phase 11 C1:** that no
+  longer signs the phone out: at the next start (or the first refused request) the phone gets a new access token with
+  its Keystore-sealed refresh secret (up to 90 days idle); if that is refused it shows "Sign in to sync" and keeps every
+  local safety record, and the SOS keeps working on the phone (`docs/PHASE11.md` §8).
 - **Ending an SOS from another phone** needs the account password; the starting phone notices when its SOS screen is
   next visible.
 - **Deletion and the phone:** the phone can remove a deleted account's evidence only when it hears the server's

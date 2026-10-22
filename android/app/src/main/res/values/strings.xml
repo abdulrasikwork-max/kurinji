@@ -103,6 +103,14 @@
     <string name="session_account_deleted_title">Account deleted</string>
     <string name="session_account_deleted">This account has been deleted. SafeSphere is removing its evidence and recovery key from this phone as well.</string>
     <string name="session_account_unavailable">This account is switched off. Please contact the SafeSphere team.</string>
+    <!-- Phase 11 C1: the server needs a sign-in again, but nothing on this phone was deleted and SOS still works. -->
+    <string name="session_sign_in_to_sync_title">Sign in to sync</string>
+    <string name="session_sign_in_to_sync">SafeSphere needs your password again to reach your account. Your SOS, your Safety Circle texts and any Safe Walk keep working on this phone, and nothing has been deleted. Sign in when you can so it can save to your account again.</string>
+    <string name="session_sign_in_to_sync_revoked">This phone was signed out of your account on the server. Your SOS and Safety Circle texts keep working on this phone, and nothing has been deleted. Sign in again so SafeSphere can save to your account. If you did not sign out, change your password after signing in.</string>
+    <string name="action_sign_in">Sign in</string>
+    <string name="action_later">Later</string>
+    <string name="home_sign_in_banner">Sign in to sync. SOS works on this phone; your account is not being updated.</string>
+    <string name="cd_home_sign_in_banner">Sign in to sync. SOS works on this phone; your account is not being updated. Opens sign in.</string>
 
     <!-- Features (shared by Home, Safety Center and Profile) -->
     <string name="feature_sos_title">SOS</string>
@@ -590,6 +598,9 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- ===== Phase 4A: emergency location ===== -->
     <string name="section_your_location">Your location</string>
     <string name="emergency_restored_offline">You are offline. This is the active emergency saved on this phone; it may already have been ended on another device.</string>
+    <string name="emergency_restored_sign_in">SafeSphere needs you to sign in again before it can update your account. This is the emergency saved on this phone; it keeps running here, and your Safety Circle texts still work.</string>
+    <string name="emergency_ended_unsent_sign_in_resolved">Your SOS has ended on this phone. SafeSphere saves it to your history once you sign in again.</string>
+    <string name="emergency_ended_unsent_sign_in_cancelled">Marked as a false alarm on this phone. SafeSphere saves it to your history once you sign in again.</string>
     <!-- Phase 11: SOS without internet -->
     <string name="emergency_not_on_server_yet">Your SOS is running on this phone. SafeSphere\'s server has not been reached yet, so it keeps trying in the background. SMS to your Safety Circle needs no internet, and your location is collected and saved once the server is reached. Evidence recording opens once the server has your SOS. You can call 112 at any time.</string>
     <string name="location_card_waiting_for_server">Your location is being collected on this phone. It is saved to your emergency record once SafeSphere\'s server has your SOS.</string>

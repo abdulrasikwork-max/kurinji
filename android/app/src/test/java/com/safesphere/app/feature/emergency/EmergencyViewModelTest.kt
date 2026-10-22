@@ -173,6 +173,45 @@ class EmergencyViewModelTest {
     // ---- Phase 11: SOS without internet --------------------------------------------------------
 
     @Test
+    fun `C1 - with an expired session that needs a sign-in the SOS still starts on this phone, with no dialog`() = runTest {
+        emergencies.startResult = ApiResult.Failure(ApiError.UNAUTHORIZED) // refresh refused: "sign in to sync"
+        emergencies.historyResult = ApiResult.Failure(ApiError.UNAUTHORIZED)
+        val viewModel = idleViewModel()
+        viewModel.onStartSosClicked()
+        advanceTimeBy(5_000)
+        settle()
+
+        val local = viewModel.uiState.value as EmergencyUiState.Active
+        assertTrue(EmergencyIds.isLocal(local.event.id))
+        assertEquals(listOf(local.event.id), sharing.started) // location collection started
+        assertEquals(false, store.record?.onServer)            // kept for a restart
+        assertFalse(viewModel.sessionExpired.value)            // nothing interrupts the SOS screen
+
+        // "I'm safe" while the server needs a sign-in: it counts here and is kept to be recorded later.
+        viewModel.onImSafeClicked()
+        settle()
+        val ended = viewModel.uiState.value as EmergencyUiState.Ended
+        assertEquals(EmergencyStatus.RESOLVED, ended.event.status)
+        assertNotNull(ended.unsent)
+    }
+
+    @Test
+    fun `C1 - I'm safe on a recorded SOS while the server needs a sign-in is kept on the phone, not lost`() = runTest {
+        emergencies.historyResult = ApiResult.Success(listOf(event()))
+        emergencies.resolveResult = ApiResult.Failure(ApiError.UNAUTHORIZED)
+        val viewModel = viewModel()
+        settle()
+
+        viewModel.onImSafeClicked()
+        settle()
+
+        val ended = viewModel.uiState.value as EmergencyUiState.Ended
+        assertEquals(EmergencyStatus.RESOLVED, ended.event.status)
+        assertNotNull(ended.unsent) // recorded once the person signs in again (that sign-in takes over this SOS)
+        assertFalse(viewModel.sessionExpired.value)
+    }
+
+    @Test
     fun `without a connection the SOS still starts on this phone and is recorded once the server answers`() = runTest {
         emergencies.startResult = ApiResult.Failure(ApiError.NO_CONNECTION)
         val viewModel = idleViewModel()
@@ -390,15 +429,21 @@ class EmergencyViewModelTest {
     }
 
     @Test
-    fun `an expired session is reported`() = runTest {
+    fun `C1 - sign in to sync never interrupts the SOS screen, a real sign-out is reported`() = runTest {
         emergencies.historyResult = ApiResult.Failure(ApiError.UNAUTHORIZED)
 
-        val viewModel = viewModel()
+        // Still this person's session ("sign in to sync"): no dialog on the SOS screen.
+        val stillSignedIn = viewModel()
         settle()
+        assertFalse(stillSignedIn.sessionExpired.value)
 
-        assertTrue(viewModel.sessionExpired.value)
-        viewModel.onSessionExpiredHandled()
-        assertFalse(viewModel.sessionExpired.value)
+        // Signed out for real (password changed elsewhere, account deleted): reported as before.
+        signedInUserId = null
+        val signedOut = viewModel()
+        settle()
+        assertTrue(signedOut.sessionExpired.value)
+        signedOut.onSessionExpiredHandled()
+        assertFalse(signedOut.sessionExpired.value)
     }
 
     // ---- Phase 4A: location association and recovery ------------------------------------------

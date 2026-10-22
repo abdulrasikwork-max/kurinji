@@ -51,7 +51,7 @@ public class AccountEraser {
             "safety_contacts.user_id", "emergency_events.user_id", "safe_journeys.user_id",
             "evidence_custody_events.user_id", "evidence_recovery_envelopes.user_id", "evidence_recovery_failures.user_id",
             "signal_contributions.user_id", "contributor_standing.user_id", "signal_flags.user_id",
-            "moderation_actions.subject_user_id", "moderation_appeals.user_id");
+            "moderation_actions.subject_user_id", "moderation_appeals.user_id", "device_sessions.user_id");
 
     /** References that keep the account row (anonymised): the moderation audit trail of decisions this person took. */
     public static final Set<String> KEPT_REFERENCES = Set.of("moderation_actions.actor_id", "moderation_appeals.decided_by");
@@ -75,7 +75,9 @@ public class AccountEraser {
             "DELETE FROM safe_journeys WHERE user_id = ?",
             "DELETE FROM safety_contacts WHERE user_id = ?",
             "DELETE FROM signal_flags WHERE user_id = ?",
-            "DELETE FROM contributor_standing WHERE user_id = ?");
+            "DELETE FROM contributor_standing WHERE user_id = ?",
+            // Phase 11 C1: every sign-in ends (an anonymised tombstone keeps no session either).
+            "DELETE FROM device_sessions WHERE user_id = ?");
 
     /** Rows ABOUT the person in the moderation log; deleted with a deleted account (as the V13 cascades do). */
     private static final List<String> MODERATION_ABOUT = List.of(

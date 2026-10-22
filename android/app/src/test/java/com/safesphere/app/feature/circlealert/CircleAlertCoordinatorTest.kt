@@ -301,6 +301,42 @@ class CircleAlertCoordinatorTest {
     }
 
     @Test
+    fun `C1 - sign in to sync keeps the Circle copy and the opt-in, still texts, and reports once a new token arrives`() = runTest {
+        server.unauthorized = true
+        val alerts = optedIn()
+        sessionStorage.save(sessionStorage.savedSession!!.copy(needsSignIn = true))
+        runCurrent()
+        walkAt(CheckInPhase.ON_TRACK)
+        walkAt(CheckInPhase.NO_RESPONSE)
+        sms.sent.forEach { sms.emit(SmsResult(it.requestId, SmsOutcome.SENT)) }
+        advance(Duration.ofMinutes(10))
+
+        // The SMS went out (SMS needs no server) and nothing kept for offline texting was deleted.
+        assertEquals(2, sms.sent.size)
+        assertEquals(2, alerts.state.value.pendingReports) // waiting, not dropped
+        assertTrue(alerts.state.value.autoSms)
+        assertEquals(2, alerts.state.value.recipients.size)
+        assertEquals(2, store.snapshot?.recipients?.size)
+        assertTrue(server.reports.isEmpty())
+
+        // Signing in again (or a refresh) saves a new token: the waiting reports go out.
+        server.unauthorized = false
+        sessionStorage.save(AuthSession("new-token", AuthUser(USER_ID, "Asha", "asha@example.com")))
+        runCurrent()
+        assertEquals(2, server.reports.size)
+    }
+
+    @Test
+    fun `C1 - another account signing in on this phone gets none of the previous account's Circle copy`() = runTest {
+        val alerts = optedIn()
+        sessionStorage.save(AuthSession("other", AuthUser(USER_ID + 1, "Bina", "bina@example.com")))
+        runCurrent()
+        assertTrue(alerts.state.value.recipients.isEmpty())
+        assertFalse(alerts.state.value.autoSms)
+        assertNull(store.snapshot?.takeIf { it.userId == USER_ID })
+    }
+
+    @Test
     fun `logout forgets the opt-in, the cached numbers and the history`() = runTest {
         val alerts = optedIn()
         walkAt(CheckInPhase.ON_TRACK)

@@ -33,20 +33,41 @@ object TokenRenewalPolicy {
     const val CHECK_EVERY_DURING_SAFETY_MILLIS = 10 * 60_000L
     const val CHECK_EVERY_OTHERWISE_MILLIS = 60 * 60_000L
 
-    /** False when the expiry cannot be read (never renew in a loop over a token the phone cannot understand). */
-    fun due(expiresAt: Instant?, now: Instant): Boolean =
-        expiresAt != null && expiresAt.isAfter(now) && Duration.between(now, expiresAt) < RENEW_WHEN_LEFT
+    /**
+     * False when the expiry cannot be read (never renew in a loop over a token the phone cannot understand).
+     * Phase 11 C1 (found on the emulator with 2-minute test tokens): with [issuedAt] known, renewal is due only in the
+     * second half of the token's life as well, so a token whose whole life is under 12 h is not "due" again the moment
+     * it is issued (that renewed in a tight loop). 24 h tokens: unchanged (due with less than 12 h left).
+     */
+    fun due(expiresAt: Instant?, now: Instant, issuedAt: Instant? = null): Boolean {
+        if (expiresAt == null || !expiresAt.isAfter(now)) return false
+        val left = Duration.between(now, expiresAt)
+        val halfLife = issuedAt?.takeIf { it.isBefore(expiresAt) }?.let { Duration.between(it, expiresAt).dividedBy(2) }
+        val threshold = if (halfLife != null && halfLife < RENEW_WHEN_LEFT) halfLife else RENEW_WHEN_LEFT
+        return left < threshold
+    }
+
+    /** Phase 11 C1: the token has run out (or its expiry cannot be read): only a refresh can help. */
+    fun expired(expiresAt: Instant?, now: Instant): Boolean = expiresAt == null || !expiresAt.isAfter(now)
 
     /** The "exp" claim of a JWT (epoch seconds), or null when it cannot be read. */
-    fun expiresAt(token: String): Instant? = try {
-        val payload = token.split('.').getOrNull(1) ?: return null
-        val json = String(java.util.Base64.getUrlDecoder().decode(payload), Charsets.UTF_8)
-        EXP.find(json)?.groupValues?.get(1)?.toLong()?.let(Instant::ofEpochSecond)
+    fun expiresAt(token: String): Instant? = claim(token, EXP)
+
+    /** Phase 11 C1: the "iat" claim of a JWT (epoch seconds), or null when it cannot be read. */
+    fun issuedAt(token: String): Instant? = claim(token, IAT)
+
+    private fun claim(token: String, pattern: Regex): Instant? = try {
+        val payload = token.split('.').getOrNull(1)
+        if (payload == null) null else {
+            val json = String(java.util.Base64.getUrlDecoder().decode(payload), Charsets.UTF_8)
+            pattern.find(json)?.groupValues?.get(1)?.toLong()?.let(Instant::ofEpochSecond)
+        }
     } catch (e: IllegalArgumentException) {
         null
     }
 
     private val EXP = Regex("\"exp\"\\s*:\\s*(\\d+)")
+    private val IAT = Regex("\"iat\"\\s*:\\s*(\\d+)")
 }
 
 /** What is wrong with a new password, checked on the phone before anything is sent (the server checks again). */

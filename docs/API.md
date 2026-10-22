@@ -810,3 +810,43 @@ Every emergency answer adds `"startedOffline": true|false`. The reference itself
 For an emergency with `startedOffline: true`, the 15-minute upload grace counts from its end **or from when the server
 first stored it, whichever is later** (an SOS that started and ended offline reaches the server after its end; its
 points follow). Online emergencies keep the old rule. Point times must still lie between the start and the end.
+
+# Phase 11 C1 (session continuity: device sessions and refresh secrets, V19, docs/PHASE11.md §5)
+
+Why: the 24 h access token was renewed only while the app ran. After a day without the app the first request answered
+401, the phone signed out and wiped its running SOS and Safety Circle copy. Now every sign-in is a **device session**
+with a rotating **refresh token**; an expired access token is replaced without the password.
+
+## Sign-in answers
+`POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh` add `"refreshToken": "<sid>.<secret>"` (the
+access token's `sid` + 43 base64url characters, 256 random bits). Token renewal (`POST /api/users/me/token`) and password
+change (`PUT /api/users/me/password`) add `"refreshToken"` only when they create a session for a sign-in from before V19
+(once); otherwise `null` (the phone keeps the one it has). Only SHA-256 of the secret is stored.
+
+`POST /api/auth/login` accepts an optional `"previousRefreshToken"`: this phone's refresh token for the SAME account
+(signing in again after "sign in to sync"). If it is the current or just-replaced secret of a session of that account,
+that session ends (`SIGNED_OUT`) and an ACTIVE SOS it started moves to the new sign-in (ending it needs no password).
+Another account's token changes nothing.
+
+## Refresh: `POST /api/auth/refresh` `{ "refreshToken": "..." }` (public; the refresh token is the credential)
+- `200` like login: a new 24 h access token for the same `sid` and `auth_time`, and a NEW refresh token (the old one is
+  replaced). Works however long ago the access token expired.
+- The just-replaced token shown again within `app.account.refresh-reuse-grace` (60 s) is a lost answer: rotated once
+  more (`200`). Shown later it is **reuse**: the whole session ends (`REUSE_DETECTED`), and its access tokens too.
+- `401` + `WWW-Authenticate: Bearer error="invalid_token", error_description="..."`:
+  `session_revoked` (unknown, older or guessed secret, signed out, password changed elsewhere, reuse, idle longer than
+  `app.account.refresh-idle-timeout` = 90 days); `account_deleted`; `account_unavailable` (disabled). A wrong secret for a
+  real session id is refused without ending that session.
+- `400`: missing token.
+
+## Sign out: `POST /api/auth/sign-out` `{ "refreshToken": "..." }` (public)
+`204` always (reveals nothing). Ends the session if the token is its current or just-replaced secret.
+
+## Every authenticated endpoint
+A token whose `sid` names an ended device session is refused: `401` with `error_description="session_revoked"`.
+A `sid` without a session row (signed in before V19) is still accepted until it expires or is adopted.
+
+## Password change, deletion, disabling
+Password change ends every OTHER device session of the account (`PASSWORD_CHANGED`); the caller's continues. Account
+erasure deletes the account's sessions. A disabled account's refresh is refused (`ACCOUNT_DISABLED`).
+Ended sessions are deleted `app.account.session-retention` (30 days) after they ended.

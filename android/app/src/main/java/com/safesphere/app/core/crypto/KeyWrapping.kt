@@ -38,7 +38,10 @@ interface LocalKeyWrapper {
  * pocket during an emergency. The cost: whoever unlocks the phone and opens the app can play the evidence (the vault
  * screen says so). Wrapped value = 12-byte IV | ciphertext+tag.
  */
-class AndroidKeystoreKeyWrapper : LocalKeyWrapper {
+class AndroidKeystoreKeyWrapper(
+    /** Phase 11 C1: a separate key (alias [SESSION_ALIAS]) protects the refresh secret; evidence keeps [ALIAS]. */
+    private val alias: String = ALIAS
+) : LocalKeyWrapper {
 
     override fun wrap(itemKey: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORMATION)
@@ -59,7 +62,7 @@ class AndroidKeystoreKeyWrapper : LocalKeyWrapper {
 
     private fun existingKey(): SecretKey? {
         val store = KeyStore.getInstance(KEYSTORE).apply { load(null) }
-        return store.getKey(ALIAS, null) as? SecretKey
+        return store.getKey(alias, null) as? SecretKey
     }
 
     private fun create(): SecretKey {
@@ -74,7 +77,7 @@ class AndroidKeystoreKeyWrapper : LocalKeyWrapper {
     }
 
     private fun generate(strongBox: Boolean): SecretKey {
-        val spec = KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+        val spec = KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
             .setKeySize(256)
@@ -84,11 +87,12 @@ class AndroidKeystoreKeyWrapper : LocalKeyWrapper {
         return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE).apply { init(spec) }.generateKey()
     }
 
-    private companion object {
-        const val KEYSTORE = "AndroidKeyStore"
-        const val ALIAS = "safesphere_evidence_vault_v1"
-        const val TRANSFORMATION = "AES/GCM/NoPadding"
-        const val IV_BYTES = 12
+    companion object {
+        private const val KEYSTORE = "AndroidKeyStore"
+        private const val ALIAS = "safesphere_evidence_vault_v1"
+        const val SESSION_ALIAS = "safesphere_session_v1"
+        private const val TRANSFORMATION = "AES/GCM/NoPadding"
+        private const val IV_BYTES = 12
     }
 }
 

@@ -116,6 +116,20 @@
             app:noticeText="@string/account_deletion_pending_soon"
             app:noticeType="warning" />
 
+        <!-- Phase 11 C1: the server needs a sign-in again; nothing was deleted and SOS works (opens sign in) -->
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/signInBanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:clickable="true"
+            android:contentDescription="@string/cd_home_sign_in_banner"
+            android:focusable="true"
+            android:minHeight="56dp"
+            android:visibility="gone"
+            app:noticeText="@string/home_sign_in_banner"
+            app:noticeType="info" />
+
         <!-- 2. Status card: only facts this phone knows (an SOS, a Safe Walk or neither), never "safe".
              Hidden during an SOS: the red banner above is the one emergency element. -->
         <com.safesphere.app.core.ui.components.SafetyStatusCardView

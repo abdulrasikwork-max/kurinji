@@ -236,3 +236,88 @@ layouts and icons, `strings.xml` (SOS, Rise, privacy notice). Tests: `SosRecorde
   nobody is nudged towards risk.
 - *Why is a safety worry not answered with past proof?* Treating "is it safe?" as a confidence problem would teach people
   to ignore real warnings; worries lead to preparation, doubts lead to proof.
+
+---
+
+## 8. C1: session continuity (EXPIRED is not REVOKED), V19 — 2026-10-22
+
+**Status:** IMPLEMENTED, compiled, tested; **V19 dry run 17/17 on MySQL + applied (v19)**; **live API 10/10**;
+**emulator (API 37) VERIFIED** (E1–E7 below). **Real phone NOT VERIFIED**; a 25-hour idle test on a device NOT DONE.
+
+### 8.1 The problem (found in `docs/AUDIT_NEXT.md`, C1)
+The 24 h access token was renewed only while the app process ran. After a day without the app the first request got a
+401, `SessionEnder` signed the phone out, and the sign-out clean-up wiped the running SOS record, unsent endings, the
+Safety Circle copy for offline SMS and the Safe Walk record, then showed Login. An offline SOS started with such a token
+was wiped as soon as the connection returned. No test or emulator run could see it (every check ran within hours of
+signing in).
+
+### 8.2 What changed
+- **Backend (V19 `device_sessions`):** one row per sign-in (`session_id` = the tokens' `sid`), SHA-256 of the refresh
+  secret only, rotation on every refresh, previous hash + `rotated_at` for the lost-answer grace and reuse detection,
+  `authenticated_at` (= `auth_time`), sliding `expires_at`, `revoked_at`/`revoked_reason` (CHECK-ed closed list).
+  `POST /api/auth/refresh`, `POST /api/auth/sign-out`; login/register/refresh return `refreshToken`; renewal and password
+  change adopt pre-V19 sign-ins once; `ActiveAccountCheck` refuses tokens of ended sessions (`session_revoked`); password
+  change ends the other sessions; erasure deletes them; the deletion job purges ended ones; login with
+  `previousRefreshToken` hands the same phone's old sign-in (and its ACTIVE SOS) to the new one. `API.md` "Phase 11 C1".
+- **Android:** `AuthSession.refreshToken` (sealed with a separate Keystore key, `safesphere_session_v1`) and
+  `needsSignIn`; `SessionRefresher` (single-flight Mutex; NonCancellable call + conditional atomic save
+  `replaceAfterRefresh`); `SessionEnder`: no reason = refresh, refused = "sign in to sync" (`markNeedsSignIn`, nothing
+  deleted), `session_revoked` = "sign in to sync", `credentials_changed`/`account_deleted`/`account_unavailable` = the
+  Phase 10A sign-out; `ApiCallHandler` retries ONCE after a refresh and never refreshes twice for one call;
+  `SessionRenewer` refreshes at start after idle time and before expiry, adopts pre-C1 sign-ins; the holders
+  (`SosRecorder`, `EmergencyLocationSharing`, `CircleAlertCoordinator`, `SafeWalkSession`) keep their data on 401 and
+  resume on the next token, and forget everything only on a real sign-out or an account switch;
+  `RemoteAuthRepository`: same account = keep + hand over, another account = clean-up first (`onAccountSwitch`) and
+  never send the previous account's secret, sign-out ends the server session (best effort, 3 s); Home banner and a
+  closable "Sign in to sync" dialog; the SOS screen never gets a dialog for it and keeps a running SOS; "I'm safe" while
+  sign-in is needed is kept and recorded after signing in again.
+
+### 8.3 Decisions
+| # | Decision | Reason |
+|---|---|---|
+| C1-1 | Refresh secret per device session, rotated on every use, only its SHA-256 stored | Standard rotation; a DB leak gives nothing usable; 256 random bits need no slow hash |
+| C1-2 | The just-replaced secret is accepted once more for 60 s (lost answer), later it is reuse and ends the session | Lost answers are common on poor mobile networks; without a grace a network glitch would cost the person their sign-in. Reuse after the grace still ends a copied session (deviation from a strict "any replay revokes", stated) |
+| C1-3 | Wrong secret for a real session id: refused, session untouched | Someone who only knows a `sid` cannot sign another person out |
+| C1-4 | Idle timeout 90 days, sliding; the 30-day `session-max-age` rule stays for `/token` only | An SOS after weeks unopened must reach the server without the password; password change, sign-out, reuse and deletion still end a session at once |
+| C1-5 | Expired ≠ revoked on the phone: a refused refresh keeps every local safety record ("sign in to sync") | Authentication failing for sync must never destroy an SOS, its ending or the offline Circle copy |
+| C1-6 | Password change, deleted or disabled account still sign the phone out (Phase 10A) | Deliberate security events; unchanged rules |
+| C1-7 | Another account signing in: the previous account's local data is cleared before the new session is saved, and its secret is never sent with the new login | No cross-account leakage; the server never learns that two accounts share a phone |
+| C1-8 | Same-phone re-login hands over the old sign-in and its ACTIVE SOS (proof: the old refresh secret + the password just typed) | Otherwise "I'm safe" after re-signing would need the password (10A.4 "another sign-in" rule) and could be dropped |
+| C1-9 | Every session change that keeps the rest is ONE atomic storage update | Found on the emulator: a read-then-save wrote a replaced secret back over the rotated one (seen by the server as reuse) |
+| C1-10 | Renewal is due in the last 12 h AND in the second half of the token's life | Found on the emulator with 2-minute test tokens: every new token was "due" at once (tight refresh loop). 24 h tokens: unchanged |
+| C1-11 | The refresh secret is Keystore-encrypted; the 24 h access token stays plain in DataStore | A14 closed for the long-lived credential; the short-lived one is app-private and excluded from backups (stated) |
+
+### 8.4 Verification (actual results)
+| Check | Result |
+|---|---|
+| `mvn test` | **501 / 0 / 2 skipped**; `DeviceSessionApiIntegrationTest` 19 (refresh, rotation, lost-answer grace, reuse → revoke, older/guessed secrets, malformed, concurrent refreshes = one consistent row, sign-out, password change, disabled, deletion, two accounts, same-phone hand-over incl. SOS, another account's token ignored, pre-V19 adoption, idle expiry, purge, SHA-256 + `MessageDigest.isEqual`, raw secret never in the row); `AccountEraserCoverageTest` covers `device_sessions` |
+| Android unit tests | `SessionRefreshTest` (refresh + retry, storm = one refresh, no loop, offline, revoked, deleted, credentials changed, stale 401s, late answers, other account's answer, pre-C1 sign-in, same/other account login, sign-out, start-up refresh, toString, dialog rule, lost-update race); `SessionContinuityTest` (+5: refresh at start, adoption, nothing while sign-in needed, half-life rule, no loop with 2-minute tokens); holder tests (`SosRecorderTest` +2, `EmergencyLocationSharingTest` +2, `CircleAlertCoordinatorTest` +2, `SafeWalkSessionTest` +2, `EmergencyViewModelTest` +2); 6 older tests updated from "401 = sign-out" to the C1 rule |
+| V19 dry run (MySQL 8.0, scratch tables, dropped) | 3/3 valid rows accepted; 14/14 violations rejected by the intended constraint (format, hex, upper-case hex, rotation pair, previous hash, revoked pair, unknown and lower-case reason, time order ×2, duplicate id, unknown user, 2 UPDATEs); cascade removes only the deleted user's rows |
+| V19 applied | Flyway "now at version v19"; 7 CHECKs + `ON DELETE CASCADE` FK present |
+| Live API on MySQL (backend with 2-minute tokens, 5 s grace) | **10/10**: L1 hash only; L2 rotation + lost answer; L3 reuse → `REUSE_DETECTED`, newest secret and access token refused; L5 sign-out; L6 password change; L7 disabled; L8 same-phone hand-over, SOS ended without password, not "elsewhere"; L9 other account's token ignored; L10 constraints; L4 real expiry → plain 401 → refresh → SOS recorded. L4 first failed on a script fault (waited 130 s; Spring accepts 60 s clock skew), passed with 190 s |
+| Emulator (Medium_Phone_API_37.0, backend with 2-minute tokens) | **E1** sign-in, refresh secret stored sealed (raw token not in the file). **E2** app killed, token expired (192 s) → reopened to Home, refreshed (rotated). **E3** token expired + backend stopped → SOS started on the phone, force-stop + reopen kept it, backend back → recorded **once** (`started_offline=1`) after a refresh. **E4** session revoked on the server → no dialog on the SOS screen, "I'm safe" kept, Home banner "Sign in to sync", signing in through it → banner gone, SOS `RESOLVED`, `ended_elsewhere=0`. **E5** account switch → none of A's SOS on the phone. **E6** Log out → server session `SIGNED_OUT`. **E7** password changed on another sign-in → forced "Password changed" dialog, phone signed out |
+| Bugs found on the emulator and fixed (each with a regression test) | (1) a signed-out phone got the "Sign in to sync" wording (dialog now decides by whether a session exists); (2) lost update of the rotated secret by a read-then-save (atomic `SessionStorage.update`); (3) refresh loop with short-lived tokens (half-life rule); (4) SOS screen said "You are offline" when it needed a sign-in (honest wording). After the fixes the emulator ran several 2-minute token cycles with kills/relaunches: one session, rotated each time, never reuse-detected |
+
+### 8.5 Limitations (honest)
+- Real phone: NOT VERIFIED; a 25-hour idle test on the Galaxy A23 is the remaining acceptance check.
+- The 24 h access token itself is still unencrypted in DataStore (refresh secret is encrypted).
+- An SOS started by a sign-in that was later signed out (not handed over) still needs the password to end from a new
+  sign-in (10A.4 rule); an "I'm safe" kept on the phone for it is dropped on 403, and the SOS screen then shows the SOS
+  from the server so it can be ended with the password.
+- Home shows an SOS only from what the phone holds; an SOS the server has but the phone forgot (for example after an
+  account switch) appears when the SOS screen is opened.
+- Points collected before a process death are still lost (memory only, unchanged).
+- Refresh failures are not rate-limited (256-bit secrets cannot be guessed); a single-instance server.
+
+### 8.6 Totals (final run on the final code)
+Backend `mvn test` **501 / 0 failures / 2 skipped** (482 before C1); Android `testDebugUnitTest` **561 / 0 failures**
+(527 before); `assembleDebug` OK;
+`lintDebug` **0 errors / 85 warnings** (unchanged). Next migration **V20**.
+
+### 8.7 Viva notes
+- *Why not just make the access token last 90 days?* A bearer token that long cannot be rotated or noticed when copied;
+  a refresh secret is used rarely, rotated every time, and a copy shows up as reuse.
+- *What happens if the phone loses the answer of a refresh?* Within 60 s the old secret still works once; later it counts
+  as reuse and the session ends ("sign in to sync"), never deleting local safety data.
+- *Why does an expired token not sign the person out any more?* Expiry is a fact about a credential, not a decision to end
+  access; signing out destroyed the SOS that the person might need right then.

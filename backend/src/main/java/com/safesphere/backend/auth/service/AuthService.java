@@ -6,6 +6,7 @@ import com.safesphere.backend.auth.dto.RegisterRequest;
 import com.safesphere.backend.common.exception.EmailAlreadyUsedException;
 import com.safesphere.backend.common.exception.InvalidCredentialsException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
+import com.safesphere.backend.common.exception.SessionRefusedException;
 import com.safesphere.backend.security.JwtService;
 import com.safesphere.backend.user.dto.UserResponse;
 import com.safesphere.backend.user.entity.User;
@@ -37,13 +38,15 @@ public class AuthService {
     private final String timingHash;
 
     private final AuthThrottle throttle;
+    private final DeviceSessionService sessions;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
-                       AuthThrottle throttle) {
+                       AuthThrottle throttle, DeviceSessionService sessions) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.throttle = throttle;
+        this.sessions = sessions;
         this.timingHash = passwordEncoder.encode("timing-equaliser-not-a-real-password");
     }
 
@@ -81,7 +84,7 @@ public class AuthService {
      * Phase 7: refused with 429 (before any password check) while this account or this network address is over its
      * failure limit; unknown e-mails count like known ones, so the limit reveals nothing about which accounts exist.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse login(LoginRequest request, String clientAddress) {
         String email = normalizeEmail(request.email());
         throttle.checkSignIn(email, clientAddress);
@@ -97,12 +100,43 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
         throttle.signInSucceeded(email);
-        return toResponse(found.get());
+        AuthResponse response = toResponse(found.get());
+        if (request.previousRefreshToken() != null) {
+            // Phase 11 C1: the same phone signing in again takes over its old sign-in (and its running SOS).
+            String newSession = response.refreshToken().substring(0, response.refreshToken().indexOf('.'));
+            sessions.succeed(found.get().getId(), request.previousRefreshToken(), newSession);
+        }
+        return response;
     }
 
+    /**
+     * Phase 11 C1: a new access token (and a new refresh secret) for a device session, without the password. This is
+     * what keeps an SOS on a phone that was not opened for days connected to the server. A refusal is a 401 whose
+     * WWW-Authenticate says why; the refusal's own changes (for example a revocation after reuse) are already saved.
+     */
+    public AuthResponse refresh(String refreshToken) {
+        DeviceSessionService.RefreshOutcome outcome = sessions.refresh(refreshToken);
+        if (outcome instanceof DeviceSessionService.RefreshOutcome.Refused refused) {
+            throw new SessionRefusedException(refused.reason());
+        }
+        var refreshed = (DeviceSessionService.RefreshOutcome.Refreshed) outcome;
+        JwtService.IssuedToken token = jwtService.issueToken(refreshed.user(), refreshed.sessionId(),
+                refreshed.authenticatedAt());
+        return AuthResponse.bearer(token.value(), token.expiresInSeconds(), UserResponse.from(refreshed.user()),
+                refreshed.refreshToken());
+    }
+
+    /** Phase 11 C1: ends the caller's device session (idempotent, same answer whatever happened). */
+    public void signOut(String refreshToken) {
+        sessions.signOut(refreshToken);
+    }
+
+    /** A new sign-in: a device session, and an access token carrying its id. */
     private AuthResponse toResponse(User user) {
-        JwtService.IssuedToken token = jwtService.issueToken(user);
-        return AuthResponse.bearer(token.value(), token.expiresInSeconds(), UserResponse.from(user));
+        DeviceSessionService.Started session = sessions.start(user);
+        JwtService.IssuedToken token = jwtService.issueToken(user, session.sessionId(), session.authenticatedAt());
+        return AuthResponse.bearer(token.value(), token.expiresInSeconds(), UserResponse.from(user),
+                session.refreshToken());
     }
 
     private static String normalizeEmail(String email) {

@@ -8,7 +8,7 @@ import kotlinx.coroutines.test.runTest
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.HttpException
 import retrofit2.Response
@@ -30,11 +30,12 @@ class ApiCallHandlerTest {
     }
 
     @Test
-    fun `a 401 clears the saved session and reports UNAUTHORIZED`() = runTest {
+    fun `C1 - an expired 401 that cannot be refreshed keeps the session (sign in to sync) and reports UNAUTHORIZED`() = runTest {
         val result = handler.execute<Unit> { throw httpError(401) }
 
         assertEquals(ApiResult.Failure(ApiError.UNAUTHORIZED), result)
-        assertNull(storage.savedSession)
+        assertEquals("jwt", storage.savedSession?.token) // nothing deleted
+        assertTrue(storage.savedSession!!.needsSignIn)
     }
 
     @Test

@@ -176,18 +176,24 @@ class CircleAlertCoordinator(
     // ---- triggers ------------------------------------------------------------------------------
 
     private suspend fun onSession(session: AuthSession?) {
-        if (session == null) {
-            // Logout or expired token: forget everything kept for the previous person.
+        // Another account signed in on this phone (Phase 11 C1): nothing of the previous one may carry over.
+        val switched = session != null && snapshot != null && snapshot?.userId != session.user.id
+        if (session == null || switched) {
+            // A real sign-out: forget everything kept for the previous person. Phase 11 C1: an expired token is not a
+            // sign-out, so the Safety Circle copy for offline SMS stays while the person is asked to sign in to sync.
             snapshot = null
             personName = ""
             activeEmergency = null
             emergencyRecheck?.cancel()
             store.clear()
             _state.value = CircleAlertState(loaded = true, availability = smsSender.availability())
+        }
+        if (session == null) return
+        personName = session.user.name
+        if (snapshot?.userId == session.user.id) {
+            uploadSignal.trySend(Unit) // Phase 11 C1: a new token (refresh, signed in again): send waiting reports
             return
         }
-        personName = session.user.name
-        if (snapshot?.userId == session.user.id) return
         val stored = store.load()?.takeIf { it.userId == session.user.id }
         snapshot = stored ?: CircleAlertSnapshot(userId = session.user.id)
         publish()
@@ -343,7 +349,8 @@ class CircleAlertCoordinator(
                         withTimeoutOrNull(retryDelay) { uploadSignal.receive() }
                         retryDelay = (retryDelay * 2).coerceAtMost(MAX_RETRY_MILLIS)
                     }
-                    ApiError.UNAUTHORIZED -> uploadSignal.receive() // the session is gone; wait for the next one
+                    // "Sign in to sync" (Phase 11 C1): reports stay; the next session or token sends them.
+                    ApiError.UNAUTHORIZED -> uploadSignal.receive()
                     else -> removePending(batch) // rejected (e.g. the walk was deleted): retrying cannot help
                 }
             }

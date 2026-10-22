@@ -132,7 +132,16 @@ class SafeWalkSession(
                 if (online) commandSignal.trySend(Unit)
             }
         }
-        scope.launch { session.collect { if (it == null) onSignedOut() } }
+        scope.launch {
+            var lastUser: Long? = null
+            session.collect { current ->
+                val user = current?.user?.id
+                // A real sign-out, or another account signing in on this phone: the walk belongs to the previous one.
+                // Phase 11 C1: otherwise a session change is a new token (refresh, signing in again): resend what waits.
+                if (current == null || (lastUser != null && user != lastUser)) onSignedOut() else commandSignal.trySend(Unit)
+                lastUser = user
+            }
+        }
     }
 
     // ---- public API -----------------------------------------------------------------------------
@@ -191,7 +200,8 @@ class SafeWalkSession(
                 begin(active, dueAt, restoredOffline = false, setup)
             }
             is ApiResult.Failure -> {
-                if (result.error == ApiError.UNAUTHORIZED || record == null) return@withLock
+                // Offline, or (Phase 11 C1) "sign in to sync": the walk kept on this phone goes on.
+                if (record == null) return@withLock
                 begin(record.toJourney(), record.localDueAt, restoredOffline = true, WalkSetup(record.movementChecks, concern = record.concern))
             }
         }
@@ -473,7 +483,9 @@ class SafeWalkSession(
                     withTimeoutOrNull(retryDelay) { commandSignal.receive() }
                     retryDelay = (retryDelay * 2).coerceAtMost(MAX_RETRY_MILLIS)
                 }
-                result is ApiResult.Failure && result.error == ApiError.UNAUTHORIZED -> commands.clear()
+                // Phase 11 C1: the server needs a sign-in ("sign in to sync"); a real sign-out clears everything via
+                // the session observer. Keep the commands and wait for the next sign-in, token or connection.
+                result is ApiResult.Failure && result.error == ApiError.UNAUTHORIZED -> commandSignal.receive()
                 else -> {
                     commands.remove(command)
                     onCommandRejected(command, (result as ApiResult.Failure).error)

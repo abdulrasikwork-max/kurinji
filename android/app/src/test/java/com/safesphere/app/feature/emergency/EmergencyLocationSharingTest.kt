@@ -232,7 +232,40 @@ class EmergencyLocationSharingTest {
     }
 
     @Test
-    fun `logging out or an expired session stops sharing at once`() = runTest {
+    fun `C1 - sign in to sync keeps collecting, keeps the points, and sends them once a new token arrives`() = runTest {
+        repository.nextResults += ApiResult.Failure(ApiError.UNAUTHORIZED) // the refresh was refused
+        val sharing = started()
+        provider.emitFix(fix())
+        runCurrent()
+        provider.emitFix(fix(at = startedAt.plusSeconds(90)))
+        runCurrent()
+        advanceTimeBy(600_000)
+        runCurrent()
+
+        assertEquals(1, repository.uploads.size) // asked once, then waited for a sign-in (no request per point)
+        assertFalse(sharing.state.value.signedOut)
+        assertTrue(sharing.state.value.isTracking)
+        assertEquals(2, sharing.state.value.pendingCount)
+
+        // Signing in again (or a refresh) saves a new token: everything waiting goes out.
+        session.save(AuthSession("new-token", AuthUser(7, "Asha", "asha@example.com")))
+        runCurrent()
+        assertEquals(2, repository.uploads.size)
+        assertEquals(2, repository.uploads.last().second.size)
+        assertEquals(0, sharing.state.value.pendingCount)
+    }
+
+    @Test
+    fun `C1 - another account signing in on this phone stops the previous account's sharing`() = runTest {
+        val sharing = started()
+        session.save(AuthSession("other", AuthUser(8, "Bina", "bina@example.com")))
+        runCurrent()
+        assertTrue(sharing.state.value.signedOut)
+        assertFalse(sharing.state.value.isTracking)
+    }
+
+    @Test
+    fun `a real sign-out stops sharing at once`() = runTest {
         val sharing = started()
 
         session.clear()

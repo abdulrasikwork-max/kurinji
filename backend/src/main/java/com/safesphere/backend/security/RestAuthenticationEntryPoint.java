@@ -53,7 +53,8 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
                     String description = error.getDescription();
                     if (ActiveAccountCheck.ACCOUNT_DELETED.equals(description)
                             || ActiveAccountCheck.ACCOUNT_UNAVAILABLE.equals(description)
-                            || ActiveAccountCheck.CREDENTIALS_CHANGED.equals(description)) {
+                            || ActiveAccountCheck.CREDENTIALS_CHANGED.equals(description)
+                            || ActiveAccountCheck.SESSION_REVOKED.equals(description)) {
                         return description;
                     }
                 }

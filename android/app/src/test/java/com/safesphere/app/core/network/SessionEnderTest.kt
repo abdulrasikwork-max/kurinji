@@ -66,10 +66,12 @@ class SessionEnderTest {
     }
 
     @Test
-    fun `a 401 without an Authorization header keeps the Phase 2 meaning and clears the session`() = runTest {
+    fun `C1 - a 401 without a reason is an expiry, not a sign-out - without a refresh secret it means sign in to sync`() = runTest {
         val storage = FakeSessionStorage(AuthSession("t", user))
-        SessionEnder(storage).onUnauthorized(Response.error<Any>(401, "{}".toResponseBody(null)))
-        assertNull(storage.savedSession)
+        val outcome = SessionEnder(storage).onUnauthorized(Response.error<Any>(401, "{}".toResponseBody(null)))
+        assertEquals(UnauthorizedOutcome.SIGN_IN_NEEDED, outcome)
+        assertEquals("t", storage.savedSession?.token)
+        assertEquals(true, storage.savedSession?.needsSignIn)
     }
 
     @Test

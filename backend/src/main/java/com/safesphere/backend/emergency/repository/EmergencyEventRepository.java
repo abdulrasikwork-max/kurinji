@@ -33,6 +33,17 @@ public interface EmergencyEventRepository extends JpaRepository<EmergencyEvent, 
     @Query("select max(e.endedAt) from EmergencyEvent e where e.userId = :userId")
     Optional<java.time.LocalDateTime> lastEndedAt(@Param("userId") Long userId);
 
+    /**
+     * Phase 11 C1: the same phone signed in again (it proved it held the old sign-in's refresh secret): its ACTIVE SOS
+     * now belongs to the new sign-in, so ending it there needs no password (it is the same phone, not "another one").
+     */
+    @org.springframework.data.jpa.repository.Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update EmergencyEvent e set e.startedSession = :newSession where e.userId = :userId"
+            + " and e.status = com.safesphere.backend.emergency.entity.EmergencyStatus.ACTIVE"
+            + " and e.startedSession = :oldSession")
+    int moveStartedSession(@Param("userId") Long userId, @Param("oldSession") String oldSession,
+                           @Param("newSession") String newSession);
+
     /** Newest first; capped at 50 entries so the history can never grow into a huge response. */
     List<EmergencyEvent> findTop50ByUserIdOrderByStartedAtDescIdDesc(Long userId);
 }

@@ -19,4 +19,15 @@ interface AuthApi {
     /** Needs the JWT; AuthInterceptor adds the Authorization header. */
     @GET("api/users/me")
     suspend fun me(): UserDto
+
+    /**
+     * Phase 11 C1: a new access token and a NEW refresh token (the old one stops working). Public: the refresh token is
+     * the credential, so this works however long ago the access token expired. 401 + WWW-Authenticate reason if refused.
+     */
+    @POST("api/auth/refresh")
+    suspend fun refresh(@Body body: RefreshRequestDto): AuthResponseDto
+
+    /** Phase 11 C1: ends this phone's sign-in on the server. 204 whatever happened. */
+    @POST("api/auth/sign-out")
+    suspend fun signOut(@Body body: RefreshRequestDto)
 }

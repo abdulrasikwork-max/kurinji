@@ -54,14 +54,19 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun `a rejected token marks the session as expired`() = runTest {
-        val repository = FakeAuthRepository(FakeAuthRepository.DEFAULT_USER).apply {
+    fun `C1 - a rejected token only gives the dialog once the session is really gone`() = runTest {
+        // "Sign in to sync": the session (and the person) are still here, so Home shows its calm banner instead.
+        val stillThere = FakeAuthRepository(FakeAuthRepository.DEFAULT_USER).apply {
             refreshResult = FakeAuthRepository.failure(AuthError.UNAUTHORIZED)
         }
-        val viewModel = viewModel(repository)
-
+        val calm = viewModel(stillThere)
         advanceUntilIdle()
+        assertFalse(calm.sessionExpired.value)
 
+        // Signed out (password changed elsewhere, account deleted): the dialog, as before.
+        val gone = FakeAuthRepository(null).apply { refreshResult = FakeAuthRepository.failure(AuthError.UNAUTHORIZED) }
+        val viewModel = viewModel(gone)
+        advanceUntilIdle()
         assertTrue(viewModel.sessionExpired.value)
         viewModel.onSessionExpiredHandled()
         assertFalse(viewModel.sessionExpired.value)

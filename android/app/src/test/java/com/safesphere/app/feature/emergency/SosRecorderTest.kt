@@ -201,6 +201,50 @@ class SosRecorderTest {
     }
 
     @Test
+    fun `C1 - an expired session keeps the running SOS and its ending, and a new token records it exactly once`() = runTest {
+        server.startResult = ApiResult.Failure(ApiError.UNAUTHORIZED)
+        val session = MutableStateFlow<AuthSession?>(sessionFor(7).copy(needsSignIn = true))
+        val sos = sosRecorderForTest(server, store, session = session)
+        runCurrent()
+        val started = sos.startLocal(7)
+        settle()
+        sos.endLocally(resolved = true) // "I'm safe" while the server needs a sign-in
+        settle()
+        advanceTimeBy(600_000)
+        runCurrent()
+        // Nothing was thrown away: the ending waits on the phone (and in the store, for a restart).
+        assertEquals(started.clientRef, sos.state.value.unsent.single().clientRef)
+        assertEquals(started.clientRef, store.unsent.single().clientRef)
+
+        // A refresh (or signing in again) gives a usable token: recorded at once, as ended, with the same reference.
+        server.startResult = ApiResult.Success(event(id = 40, status = EmergencyStatus.RESOLVED))
+        session.value = sessionFor(7).copy(token = "refreshed")
+        settle()
+        assertTrue(sos.state.value.unsent.isEmpty())
+        assertEquals(setOf(started.clientRef), server.recordRequests.map { it.clientRef }.toSet())
+        assertNotNull(server.recordRequests.last().ended) // recorded as already ended: no second, running SOS
+        val calls = server.startCalls
+        advanceTimeBy(600_000)
+        runCurrent()
+        assertEquals(calls, server.startCalls) // and never sent again
+    }
+
+    @Test
+    fun `C1 - another account signing in on this phone never sees the previous account's SOS`() = runTest {
+        server.startResult = ApiResult.Failure(ApiError.NO_CONNECTION)
+        val session = MutableStateFlow<AuthSession?>(sessionFor(7))
+        val sos = sosRecorderForTest(server, store, session = session)
+        runCurrent()
+        sos.startLocal(7)
+        settle()
+        session.value = sessionFor(8) // account switch (its clean-up has already emptied the store)
+        settle()
+        assertNull(sos.state.value.current)
+        assertNull(sos.current(8))
+        assertNull(sos.current(7))
+    }
+
+    @Test
     fun `another person's records on the same phone are never sent with this person's session`() = runTest {
         store.unsent = listOf(ActiveEmergencyRecord(999, 30, Instant.parse("2026-10-15T09:00:00Z"),
             ended = LocalEnd(true, Instant.parse("2026-10-15T09:10:00Z"))))

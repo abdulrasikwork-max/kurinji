@@ -32,9 +32,11 @@ import com.safesphere.app.feature.safewalk.session.SafeWalkSession
 import kotlinx.coroutines.flow.first
 import com.safesphere.app.feature.auth.data.DataStoreSessionStorage
 import com.safesphere.app.feature.auth.data.RemoteAuthRepository
+import com.safesphere.app.feature.auth.data.SessionRefresher
 import com.safesphere.app.feature.auth.data.remote.AuthApi
 import com.safesphere.app.feature.auth.data.remote.AuthInterceptor
 import com.safesphere.app.feature.auth.domain.AuthRepository
+import com.safesphere.app.feature.auth.domain.AuthSession
 import com.safesphere.app.feature.auth.domain.SessionStorage
 import com.safesphere.app.feature.emergency.data.DataStoreActiveEmergencyStore
 import com.safesphere.app.feature.emergency.data.RemoteEmergencyLocationRepository
@@ -60,6 +62,7 @@ import com.safesphere.app.feature.circlealert.data.DataStoreCircleAlertStore
 import com.safesphere.app.feature.circlealert.data.RemoteCircleAlertRepository
 import com.safesphere.app.feature.circlealert.data.remote.CircleAlertApi
 import com.safesphere.app.feature.circlealert.domain.CircleAlertRepository
+import com.safesphere.app.feature.circlealert.domain.CircleAlertStore
 import com.safesphere.app.feature.circlealert.session.CircleAlertController
 import com.safesphere.app.feature.circlealert.session.CircleAlertCoordinator
 import com.safesphere.app.feature.safetycircle.data.remote.SafetyContactApi
@@ -97,8 +100,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -141,16 +147,39 @@ class AppContainer(context: Context) {
     private val safetyContactApi: SafetyContactApi by lazy { retrofit.create(SafetyContactApi::class.java) }
     private val emergencyApi: EmergencyApi by lazy { retrofit.create(EmergencyApi::class.java) }
 
-    /**
-     * Phase 10A: the ONE place that ends the session after a 401 (only if the rejected token is still the saved one)
-     * and says why (password changed, account deleted).
-     */
-    val sessionEnder: SessionEnder by lazy { SessionEnder(sessionStorage) }
+    /** Phase 11 C1: new access tokens from the stored refresh secret, one refresh at a time. */
+    private val sessionRefresher by lazy { SessionRefresher(sessionStorage, authApi) }
 
-    /** Turns backend answers into results and clears the session on a 401. Used by the Phase 3 repositories. */
+    /**
+     * Phase 10A: the ONE place that decides what a 401 means (only if the rejected token is still the saved one).
+     * Phase 11 C1: an expired token is refreshed; a refused refresh is "sign in to sync" (nothing deleted); only a
+     * changed password, a deleted or a disabled account signs the phone out.
+     */
+    val sessionEnder: SessionEnder by lazy { SessionEnder(sessionStorage, sessionRefresher) }
+
+    /** Phase 11 C1: the session as it is now (null = signed out), for decisions that cannot wait (the session dialog). */
+    val currentSession: StateFlow<AuthSession?> by lazy {
+        sessionStorage.session.stateIn(applicationScope, SharingStarted.Eagerly, null)
+    }
+
+    /** Turns backend answers into results; refreshes and retries once on an expired token. Used by the repositories. */
     private val apiCallHandler by lazy { ApiCallHandler(sessionEnder) }
 
-    val authRepository: AuthRepository by lazy { RemoteAuthRepository(authApi, sessionStorage, sessionEnder) }
+    val authRepository: AuthRepository by lazy {
+        RemoteAuthRepository(authApi, sessionStorage, sessionEnder, onAccountSwitch = { clearAccountScopedData() })
+    }
+
+    /**
+     * What a sign-out removes from this phone (the active SOS record incl. unsent endings, the Safe Walk record, the
+     * Safety Circle copy for offline SMS, unsent community reports). Phase 11 C1: also run, BEFORE the new session is
+     * saved, when another account signs in on this phone, so the new account never sees the previous one's data.
+     */
+    private suspend fun clearAccountScopedData() {
+        activeEmergencyStore.clearAll()
+        activeJourneyStore.clear()
+        communityOutbox.clear()
+        circleAlertStore.clear()
+    }
 
     // ---- Phase 10A: account security and deletion ------------------------------------------------
 
@@ -285,10 +314,13 @@ class AppContainer(context: Context) {
     /** The one holder for Safety Circle communication. Created with the container so it watches every walk. */
     val circleAlerts: CircleAlertController get() = circleAlertCoordinator
 
+    /** Phase 4D store (opt-in, Circle copy for offline SMS, alert memory); cleared by a sign-out or an account switch. */
+    private val circleAlertStore: CircleAlertStore by lazy { DataStoreCircleAlertStore(appContext) }
+
     private val circleAlertCoordinator: CircleAlertCoordinator by lazy {
         CircleAlertCoordinator(
             scope = applicationScope,
-            store = DataStoreCircleAlertStore(appContext),
+            store = circleAlertStore,
             repository = circleAlertRepository,
             smsSender = smsSender,
             walkState = safeWalk.state,
@@ -414,11 +446,14 @@ class AppContainer(context: Context) {
     val riseLock: RiseLock by lazy { RiseLock(applicationScope, sessionStorage.session.map { it?.user?.id }) }
 
     init {
+        currentSession // Phase 11 C1: start following the session now, so the dialog never reads a stale "null"
         evidenceVault // seal captures interrupted by a crash and resume uploads right away
         evidenceRecorder // watches the active emergency (stops recording when it ends)
         circleAlerts // start watching walks and emergencies right away (e.g. after a restart into a walk)
         sosRecorder // record an SOS that started or ended offline as soon as the server can be reached
-        // On logout (or an expired token) forget the active emergency / walk records kept on this phone.
+        // On a real sign-out (the person's own, a changed password, a deleted or disabled account) forget the active
+        // emergency / walk records kept on this phone. Phase 11 C1: an expired token is NOT a sign-out (the session stays,
+        // marked "sign in to sync" if the refresh is refused), so this never runs for it.
         applicationScope.launch {
             sessionStorage.session
                 .map { it == null }
@@ -437,15 +472,16 @@ class AppContainer(context: Context) {
                 if (end.reason == SessionEndReason.ACCOUNT_DELETED) accountDataWiper.wipe(end.userId)
             }
         }
-        // Phase 10A.4: keep the token from running out, above all during an SOS or a Safe Walk.
+        // Phase 10A.4 / 11 C1: keep the token usable (refresh at start after idle time, and before it runs out).
         SessionRenewer(
             scope = applicationScope,
-            token = sessionStorage.session.map { it?.token },
+            session = sessionStorage.session,
             safetyRunning = combine(
                 emergencyLocationSharing.state.map { it.emergencyId != null && !it.signedOut },
                 safeWalk.state.map { it.isActive }
             ) { sos, walk -> sos || walk },
-            renew = accountRepository::renewToken
+            renew = accountRepository::renewToken,
+            refresh = { token -> sessionEnder.refresh(token) }
         )
         // Remember a pending deletion apart from the session, so the Login screen can still offer the local clean-up.
         applicationScope.launch {

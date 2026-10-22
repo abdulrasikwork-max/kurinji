@@ -82,9 +82,13 @@ class FakeJourneyRepository(var serverNow: () -> Instant) : JourneyRepository {
     private class NotFound : RuntimeException()
     private class Conflict : RuntimeException()
 
+    /** Phase 11 C1: every call is refused because the server needs a sign-in ("sign in to sync"). */
+    var unauthorized = false
+
     private fun <T> call(name: String, block: () -> T): ApiResult<T> {
         calls += name
         if (offline) return ApiResult.Failure(ApiError.NO_CONNECTION)
+        if (unauthorized) return ApiResult.Failure(ApiError.UNAUTHORIZED)
         nextFailure?.let { nextFailure = null; return it }
         return try {
             ApiResult.Success(block())

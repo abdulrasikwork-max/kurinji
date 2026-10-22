@@ -34,4 +34,41 @@ interface SessionStorage {
         save(replacement)
         return true
     }
+
+    /**
+     * Phase 11 C1: saves the answer of a refresh only while the saved session still holds [usedRefreshToken] for the
+     * same account. A late answer for an old sign-in can never overwrite a newer one, and the access token and the
+     * rotated refresh secret are always written together. True when saved. Implementations should make it atomic.
+     */
+    suspend fun replaceAfterRefresh(usedRefreshToken: String, replacement: AuthSession): Boolean {
+        val current = session.first() ?: return false
+        if (current.refreshToken != usedRefreshToken || current.user.id != replacement.user.id) return false
+        save(replacement)
+        return true
+    }
+
+    /**
+     * Phase 11 C1: ONE atomic read-change-write of the saved session ([transform] gets what is saved NOW; null = signed
+     * out; returning null clears). Found on the emulator: reading the session, waiting for the network and then saving
+     * a copy wrote an already-replaced refresh secret back over the rotated one (the server then saw it as reuse).
+     * Every change that keeps the rest of the session (profile, deletion dates, a new access token) must use this.
+     * [transform] must be quick and pure. Implementations should make it atomic; this default is for simple fakes.
+     */
+    suspend fun update(transform: (AuthSession?) -> AuthSession?): AuthSession? {
+        val next = transform(session.first())
+        if (next == null) clear() else save(next)
+        return next
+    }
+
+    /**
+     * Phase 11 C1: marks the session "sign in to sync" while its token is still [token] (null = whatever is saved).
+     * Nothing is deleted. Returns the marked session (null = nothing marked: signed out or a newer sign-in).
+     */
+    suspend fun markNeedsSignIn(token: String?): AuthSession? {
+        val current = session.first() ?: return null
+        if (token != null && current.token != token) return null
+        val marked = current.copy(needsSignIn = true)
+        if (!current.needsSignIn) save(marked)
+        return marked
+    }
 }

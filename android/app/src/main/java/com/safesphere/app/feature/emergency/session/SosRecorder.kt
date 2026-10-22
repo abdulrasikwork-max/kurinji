@@ -91,9 +91,13 @@ class SosRecorder(
         }
         scope.launch {
             session.collect { session ->
+                val previous = signedInUser
                 signedInUser = session?.user?.id
-                // A sign-out clears the store (AppContainer); here the memory goes too.
-                if (session == null && loaded.isCompleted) _state.value = SosRecorderState(loaded = true)
+                // A sign-out clears the store (AppContainer); here the memory goes too. Phase 11 C1: so does another
+                // account signing in on this phone (its clean-up ran first). An expired token keeps everything: the
+                // session stays, and the SOS is recorded as soon as a refresh or a new sign-in gives a usable token.
+                val switched = previous != null && session != null && session.user.id != previous
+                if ((session == null || switched) && loaded.isCompleted) _state.value = SosRecorderState(loaded = true)
                 signal.trySend(Unit)
             }
         }

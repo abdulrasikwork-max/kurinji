@@ -2,6 +2,7 @@ package com.safesphere.backend.account.service;
 
 import com.safesphere.backend.account.dto.AccountDtos.DeletionScheduled;
 import com.safesphere.backend.auth.dto.AuthResponse;
+import com.safesphere.backend.auth.service.DeviceSessionService;
 import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.common.exception.UnauthorizedException;
@@ -54,10 +55,13 @@ public class AccountService {
     private final AccountProperties properties;
     private final Clock clock;
     private final PasswordGuard passwords;
+    private final DeviceSessionService sessions;
 
     public AccountService(UserRepository users, PasswordEncoder passwordEncoder, JwtService jwtService,
                           EmergencyEventRepository emergencies, SafeJourneyRepository journeys,
-                          AccountProperties properties, Clock clock, PasswordGuard passwords) {
+                          AccountProperties properties, Clock clock, PasswordGuard passwords,
+                          DeviceSessionService sessions) {
+        this.sessions = sessions;
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -85,14 +89,17 @@ public class AccountService {
         user.changePassword(passwordEncoder.encode(newPassword), now());
         users.saveAndFlush(user);
         String session = sessionId != null ? sessionId : UUID.randomUUID().toString();
-        return response(user, jwtService.issueToken(user, session, clock.instant()));
+        // Phase 11 C1: every other device session ends too (their refresh secrets stop working, not only their tokens).
+        sessions.passwordChanged(userId, sessionId);
+        String refreshToken = sessions.adoptIfMissing(userId, session, clock.instant());
+        return response(user, jwtService.issueToken(user, session, clock.instant()), refreshToken);
     }
 
     /**
      * Phase 10A.4: a fresh token for the caller's sign-in. 409 when the sign-in is older than the maximum session age
      * and no SOS or Safe Walk is running: the current token keeps working until it expires, then the person signs in.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public AuthResponse renewToken(long userId, String sessionId, Instant authTime) {
         User user = users.findById(userId)
                 .filter(u -> u.isEnabled() && !u.isErased())
@@ -102,7 +109,9 @@ public class AccountService {
             throw new ConflictException("Please sign in again on this phone.");
         }
         String session = sessionId != null ? sessionId : UUID.randomUUID().toString();
-        return response(user, jwtService.issueToken(user, session, authTime));
+        // Phase 11 C1: a sign-in from before device sessions gets one now (once), so it survives the token's expiry.
+        String refreshToken = sessions.adoptIfMissing(userId, sessionId, authTime);
+        return response(user, jwtService.issueToken(user, session, authTime), refreshToken);
     }
 
     @Transactional
@@ -156,8 +165,8 @@ public class AccountService {
                 .orElseThrow(() -> new UnauthorizedException("Account is not available"));
     }
 
-    private static AuthResponse response(User user, JwtService.IssuedToken token) {
-        return AuthResponse.bearer(token.value(), token.expiresInSeconds(), UserResponse.from(user));
+    private static AuthResponse response(User user, JwtService.IssuedToken token, String refreshToken) {
+        return AuthResponse.bearer(token.value(), token.expiresInSeconds(), UserResponse.from(user), refreshToken);
     }
 
     private LocalDateTime now() {

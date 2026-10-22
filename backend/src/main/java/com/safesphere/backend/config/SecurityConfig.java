@@ -25,6 +25,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  *
  *   POST /api/auth/register      public (rate-limited per network address, Phase 7)
  *   POST /api/auth/login         public (rate-limited per account and per network address, Phase 7)
+ *   POST /api/auth/refresh       public; the refresh secret in the body is the credential (Phase 11 C1)
+ *   POST /api/auth/sign-out      public; ends the device session whose refresh secret is in the body
  *   GET  /api/moderation/access  any valid JWT (tells the app whether to show moderation at all)
  *   /api/moderation/**           valid JWT + MODERATOR or ADMIN role read from the database (Phase 7)
  *   /api/admin/**                valid JWT + ADMIN role read from the database (Phase 7)
@@ -50,7 +52,9 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+                        // Phase 11 C1: refresh and sign-out carry their own credential (the refresh secret).
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login",
+                                "/api/auth/refresh", "/api/auth/sign-out").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/moderation/access").authenticated()
                         .requestMatchers("/api/moderation/**").access(roles.moderator())
