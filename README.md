@@ -1,0 +1,2 @@
+# kurinji
+android application
