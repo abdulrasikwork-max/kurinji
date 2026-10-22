@@ -20,7 +20,8 @@ Philosophy: *"Safe enough to live. Free enough to grow."*
 - **RISE** — *"You deserve the freedom to grow."* Redesigned in Phase 10 as **"Proof"** (`docs/PHASE10_DESIGN.md`): a
   private, phone-only self-efficacy cycle (Doubt → Prepare → Try → Proof → Next); self-doubts are tested, safety concerns
   are respected and never "disproven"; support is never ranked; gender and stereotypes are never named; collective proof
-  only as anonymous thresholded counts. Not built yet (10B). The original "Small Wins / Stories" community idea was
+  only as anonymous thresholded counts. **10B built 2026-10-22** (phone-only, `feature/rise`, `docs/PHASE11.md` §4);
+  10C collective proof not built (stoppable). The original "Small Wins / Stories" community idea was
   rejected (no audience, no shared text, no contact).
   **Not** LinkedIn-style networking. **Not** an Instagram-style popularity/influencer system (no likes, followers, feeds).
 - **Identity (Phase 10A):** *"Safety that expands your world."* **Nobody can use SafeSphere to monitor another person**
@@ -47,8 +48,9 @@ Final-year B.Tech IT team project: the student must be able to explain every imp
 | **7** | **Verification, Trust + Moderation** | **Implemented, compiled, tested 2026-10-20** (backend 261 / Android 403 tests, V13 on MySQL, live API 58/58), **emulator-verified (API 37)** incl. moderator screens: `docs/PHASE7.md` §10. TalkBack/dark mode **not verified**; **Galaxy A23 deferred** |
 | **8** | **Safety Intelligence Engine** (area picture, pattern memory, "Check the way"; full route planner NOT built) | **Implemented, compiled, tested 2026-10-21** (backend 316 / Android 431 tests, V14 on MySQL, live API 22/22, **emulator-verified (API 37)**): `docs/PHASE8.md`, design `docs/PHASE8_DESIGN.md`. TalkBack **not verified**; real phone **not verified**; real pattern episode on MySQL **not verified** |
 | **9** | **AI/ML** ("evidence before AI", `docs/PHASE9_DESIGN.md`) | **In progress.** 9C.0 (Phase 7 COORDINATION reopen fix) implemented, tested, **live-verified on MySQL**; **9A attack simulation implemented, compiled, tested 2026-10-21** (test code only); **9C coordination check implemented, compiled, tested 2026-10-21** (coord-1 in **SHADOW** by default, no withdrawal lock for COORDINATION cases, moderator pattern texts); **9C.1 S15 Option B, 9C.2 group members + whole-group pause, 9C.3 two guard fixes implemented, compiled, tested 2026-10-21** (backend 388 / Android 450, lint 0 errors / 87 warnings; **live ACTIVE check on MySQL 25/25**; **emulator (API 37) moderator screens PASS**; TalkBack speech, dark-mode colours and the A23 **not verified**): `docs/PHASE9.md` §9–§16. **9C complete: accepted by the user on 2026-10-21.** **9D implemented, compiled, tested 2026-10-21, awaiting the user's review** (`docs/PHASE9.md` §18–§26): neighbour join (active), havens-alone cap = active rules **rules-1.1**, rules-2 in **SHADOW only** (not promoted: no real-world evidence); backend 423 / Android 452, lint 0 errors / 87 warnings, **live MySQL 19/19**, **emulator (API 37) PASS**; TalkBack, the A23 and real-world rates **not verified**. **9B implemented, compiled, tested 2026-10-21; complete: accepted by the user on 2026-10-21, frozen** (`docs/PHASE9.md` §27–§34): V15 weekly system-wide outcome counters (after commit, best effort) + `moderation_cases.coordination_rule`, weekly snapshot, ADMIN-only `GET /api/admin/evaluation`; backend 453 / Android 454, lint 0 errors / 87 warnings, **V15 dry run 19/19 + applied on MySQL, live MySQL 21/21**; nothing user-visible; real-world rates **not verified** (no deployment). **No learned model** (gates G1–G3 not met) |
-| **10** | **Foundation (10A) + RISE "Proof" (10B–10D)** (`docs/PHASE10_DESIGN.md`) | **10A implemented, compiled, tested, verified 2026-10-22** (`docs/PHASE10.md`): honesty/identity/language pass, V16 + `ActiveAccountCheck` + password change with revocation, coercion-aware account deletion; backend 466 / Android 480 tests, lint 0 errors / 85 warnings, **V16 dry run 13/13 + applied, live MySQL 23/23, emulator (API 37) PASS**; TalkBack, onboarding pages on a device and the real phone **not verified**. **10A.4 session continuity** (token renewal, password to end an SOS from another sign-in, V17) **implemented, compiled, tested, verified 2026-10-22**: backend 473 / Android 487, lint 0 errors / 85 warnings, **V17 dry run 7/7 + applied, live MySQL 9/9, emulator PASS** (`PHASE10.md` §11). 10B–10D: planned, not started |
-| 12 | Verified Nearby Assistance | Not started (11 not yet defined) |
+| **10** | **Foundation (10A) + RISE "Proof" (10B–10D)** (`docs/PHASE10_DESIGN.md`) | **10A implemented, compiled, tested, verified 2026-10-22** (`docs/PHASE10.md`): honesty/identity/language pass, V16 + `ActiveAccountCheck` + password change with revocation, coercion-aware account deletion; backend 466 / Android 480 tests, lint 0 errors / 85 warnings, **V16 dry run 13/13 + applied, live MySQL 23/23, emulator (API 37) PASS**; TalkBack, onboarding pages on a device and the real phone **not verified**. **10A.4 session continuity** (token renewal, password to end an SOS from another sign-in, V17) **implemented, compiled, tested, verified 2026-10-22**: backend 473 / Android 487, lint 0 errors / 85 warnings, **V17 dry run 7/7 + applied, live MySQL 9/9, emulator PASS** (`PHASE10.md` §11). 10B–10D: planned, not started. **10B Rise "Proof" implemented, compiled, tested, emulator-verified 2026-10-22** (Android only, nothing sent; `docs/PHASE11.md` §4); 10C (collective proof) not built; 10D (real phone, TalkBack) not done |
+| **11** | **SOS without internet** (`docs/PHASE11.md` §1–§3) | **Implemented, compiled, tested, verified 2026-10-22**: every SOS starts on the phone (SMS + location offline), `SosRecorder` records it later with a client reference (V18); backend 482 / Android 527, lint 0 / 85, **V18 dry run 10/10 + applied, live MySQL 12/12, emulator with the server down PASS**; real phone and TalkBack **not verified** |
+| 12 | Verified Nearby Assistance | Not started ("Circle Response" from `PHASE10_DESIGN.md` §32 stays a future proposal) |
 
 **Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
 - **4A** — Location + permissions, notifications foundation, emergency location sharing, emergency/state recovery, battery + network readers.
@@ -94,7 +96,10 @@ people see may read a counter (`EvaluationIsolationTest`). Next: see `docs/HANDO
 `core/network/SessionEnder`, rebuilt Settings/Profile/Safety Center/Home/onboarding). Deviations from the design
 (D1–D16), the SAFE audit (A1–A16): `docs/PHASE10.md`. **10A.4** closed A4/A5 (token renewal; another sign-in needs
 the password to end an SOS). Still deferred: token encryption on the phone (A14), password reset (A6, needs e-mail).
-Phase 9 stays frozen. 10B (RISE "Proof", Android only) only when briefed.
+Phase 9 stays frozen.
+
+**11 + 10B are in the repository** (V18, `emergency/session/SosRecorder`, `feature/rise`): `docs/PHASE11.md` (audit,
+decisions E1–E7 and R1–R10, verification). Next migration **V19**.
 
 ---
 
@@ -135,7 +140,7 @@ Android lifecycle implications / security + privacy / likely viva questions*. No
 SafeSphere/
 ├── android/   Kotlin app — open THIS folder in Android Studio (has gradlew)
 ├── backend/   Spring Boot API — Maven (no mvnw wrapper; Maven is installed)
-├── docs/      API.md, PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
+├── docs/      API.md, PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
 └── README.md
 ```
 
@@ -165,7 +170,7 @@ cd android
   minSdk 26, compile/target 35. **No Compose. No Hilt** unless explicitly approved.
 - **Packages:** feature-first `feature/<name>/{domain,data,ui}`; shared code in `core/`, `navigation/`.
   Features: splash, onboarding, auth, home, safety, community, profile, settings, safetycircle, emergency, safewalk,
-  circlealert, evidence, moderation (Phase 7), intelligence (Phase 8), account (Phase 10A).
+  circlealert, evidence, moderation (Phase 7), intelligence (Phase 8), account (Phase 10A), rise (Phase 10B).
   (`feature/map` was removed in Phase 10A; it was an empty placeholder. No screen shows "Coming soon" any more.)
 - **DI:** manual `AppContainer` (composition root) via `Fragment.appContainer`; each ViewModel has `factory(container)`.
 - **Networking:** exactly **one** Retrofit instance; all APIs are created from it in `AppContainer`. `AuthInterceptor` adds the
@@ -201,6 +206,23 @@ cd android
   "Safety Circle communication" below). Home SOS tile badge: "5 s to cancel", under the subtitle (not beside the title: it
   squeezed "SOS" off 320 dp screens); its description says SafeSphere texts the
   Safety Circle only with automatic SMS switched on (was "No alerts yet" until 2026-10-21; `HomeTextsTest` guards it).
+- **SOS without internet (Phase 11, `docs/PHASE11.md`):** at the countdown's end `SosRecorder` (application scope, the
+  one holder) starts the SOS ON THE PHONE with a LOCAL id (negative, `EmergencyIds`, from a random `clientRef`); location
+  sharing and the Safety Circle start at once. It records it on the server with the same reference (idempotent; first
+  attempt without phone time, later ones with it; backoff 5→60 s, at once when online, after a restart too); the
+  server's id is then pushed to the `EmergencyRebinder`s (Circle first, then location: memory, deliveries, pending
+  reports, queued and parked points move). "I'm safe"/"False alarm" before the server has it, or when the end call has
+  no connection, go to `SosRecorderState.unsent` (≤ 5, `UnsentEndingsCodec`: numbers/UUID/flags) and are sent later
+  (created ended, or `endedAt`). "Call 112" before the server has it is remembered and recorded later. 409 on start =
+  join the server's ACTIVE SOS. Evidence only once on the server. Sign-out clears everything (`clearAll`). Tests with the
+  real recorder use `sosRecorderForTest` + `settle()` (background scope).
+- **Rise "Proof" (Phase 10B, `feature/rise`, `docs/PHASE11.md` §4):** phone-only; `RiseJournalHolder` (one encrypted
+  file per account, `EncryptedFileRiseStore`: AES-GCM per save, key wrapped by the Keystore `LocalKeyWrapper`, AAD
+  `SSRISE1|accountId`, `.bak`, Unreadable never silently empty), pure `GoalPolicy` / `ProofPolicy` (replay only for the
+  same self-doubt, never "wasn't OK"; a safety worry never gets a replay), `RiseLock` (optional screen-lock gate,
+  1 s grace across Rise screens), quiet mode, FLAG_SECURE on all Rise screens, tab "Rise". SAFE bridge = navigation
+  only; "Tell someone" = SMS app without a number. No network/notification/service/alarm (`RiseTextsTest` scans language
+  rules and isolation). `ScreenLockGate` lives in `core/ui`. Account deletion wipes Rise; sign-out keeps it.
 - **Emergency location (4A):** `EmergencyLocationSharing` (application scope, single-threaded main) is the one holder read by
   the SOS screen (`state`) and `SafetyTrackingService` (`notice`; null ⇒ service stops). Queue in memory only (newest 500),
   batches ≤ 50, backoff 5→60 s. `ActiveEmergencyStore` keeps `{userId, emergencyId, startedAt}` for offline recovery
@@ -411,7 +433,9 @@ cd android
 
 | V17 | `emergency_events.started_session`, `ended_elsewhere` | session id CHAR(36) binary, lower-case UUID CHECK; only while ACTIVE (CHECK); ended_elsewhere only when not ACTIVE (CHECK). Dry run 7/7, applied on MySQL 8.0 (2026-10-22) |
 
-Conventions: never edit an applied migration; next file is **V18**; snake_case; `DATETIME(6)` stored in UTC; constraint
+| V18 | `emergency_events.client_ref`, `started_offline` | Phase 11: phone reference (lower-case UUID, binary, `UNIQUE (user_id, client_ref)`), offline ⇒ reference (CHECK), `ended_at >= started_at` (CHECK). Dry run 10/10 (incl. the real rows), applied on MySQL 8.0 (2026-10-22) |
+
+Conventions: never edit an applied migration; next file is **V19**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.
 
 ---
@@ -495,6 +519,11 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
 - Phase 10A.4 (V17): tokens carry `sid` + `auth_time`; `POST /api/users/me/token` → 200 renewed token (409 after 30
   days unless an SOS/walk is ACTIVE); `PUT /api/emergencies/{id}/resolve|cancel` optional `{password}`: from another
   sign-in than the starter 403 without it, 409 wrong, 200 right; emergency answers add `endedElsewhere`.
+- Phase 11 (V18): `POST /api/emergencies` optional `clientRef` (same caller + reference ⇒ same emergency),
+  `startedAt` (offline start, clamped `[now − 24 h, now]`, marks `startedOffline`), `endedAt` + `outcome`
+  RESOLVED|CANCELLED (ended offline, stored ended); `PUT …/resolve|cancel` optional `endedAt` (clamped `[start, now]`);
+  answers add `startedOffline`; location grace for offline-started SOS also counts from the server's first record.
+  Rise (10B) has NO endpoint.
 
 ---
 
@@ -521,7 +550,7 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
 - No text claims a place or person is safe (Phase 8). The Home status card states facts only (`HomeStatus`: checking /
   nothing running / Safe Walk on / check-in missed; hidden during an SOS); `HomeTextsTest` scans every Home string.
 - Emergency UI: clear, fast, high contrast, low cognitive load, large touch targets, `keepScreenOn` while active.
-- Bottom nav: Home, Safety, Nearby (the `communityFragment`; renamed in Phase 10A), Profile. Phase 3+ screens are secondary destinations (toolbar + back, no bottom bar).
+- Bottom nav: Home, Safety, Nearby (the `communityFragment`; renamed in Phase 10A), Rise (Phase 10B), Profile. Phase 3+ screens are secondary destinations (toolbar + back, no bottom bar).
 
 ---
 
@@ -580,6 +609,8 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
 ## 12. Known limitations and gotchas
 
 - Safe Walk can only escalate while the phone is alive and the process runs; no server-side alert channel exists yet.
+- SOS without internet (Phase 11) needs a signed-in session on the phone; points collected before a process death are
+  lost (memory only); evidence recording waits for the server record; sign-out clears endings not yet sent.
 - OEM battery killers (Xiaomi, Oppo, Vivo, Samsung) may stop foreground services; recover on next app open; document it.
 - Platform `Geocoder` is unreliable — if a destination cannot be resolved, run the walk without deviation detection and say so.
 - Phone numbers are normalized but not country-aware (`9876543210` ≠ `+919876543210`).
@@ -685,3 +716,7 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
 | Another sign-in ends an ACTIVE SOS only with the password, and the record says so (10A.4) | Nobody can silently end someone's SOS; a lost starting phone does not trap the person in an endless SOS |
 | No automatic "resolved" SMS when an SOS was ended from another phone (10A.4) | Only the person on a phone can say they are OK |
 | Only working rows on every screen; no "Coming soon" anywhere; tab "Nearby"; summary leads with safe places; no "avoid" (Phase 10A) | Honesty is the product's claim; places, not people; going out, not staying away (`HonestyTextsTest`) |
+| Every SOS starts on the phone; the server is told later with a client reference (Phase 11) | SMS and GPS work without internet, the server does not; the emergency button must not depend on a round trip; one path for online and offline |
+| Phone times only for an SOS the server could not hear of, clamped; idempotency per person | Exact server times online; a true record offline; no cross-account oracle |
+| Rise phone-only, encrypted per account, no Home card, no notifications, no private incident note (10B) | Coercive control is the main threat model; a note of an incident is the most dangerous text to be found and is not evidence |
+| Self-doubt vs. safety concern; support never ranked; stereotypes never named (10B, tested) | Worries lead to preparation, doubts to proof; support is strength; naming a stereotype repeats it |

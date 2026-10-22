@@ -70,8 +70,13 @@ public class EmergencyLocationService {
                 .orElseThrow(() -> new ResourceNotFoundException(EMERGENCY_NOT_FOUND));
         LocalDateTime now = LocalDateTime.ofInstant(Instant.now(clock), ZoneOffset.UTC);
 
+        // Phase 11: for an SOS started offline the grace runs from the end, or from when the server first heard of it
+        // if that was later (one that also ended offline reaches the server after its end; its points come next).
+        LocalDateTime graceFrom = emergency.isStartedOffline() && emergency.getEndedAt() != null
+                && emergency.getCreatedAt().isAfter(emergency.getEndedAt())
+                ? emergency.getCreatedAt() : emergency.getEndedAt();
         if (emergency.getStatus() != EmergencyStatus.ACTIVE
-                && emergency.getEndedAt().plus(properties.uploadGrace()).isBefore(now)) {
+                && graceFrom.plus(properties.uploadGrace()).isBefore(now)) {
             throw new ConflictException("This emergency is no longer accepting locations");
         }
 

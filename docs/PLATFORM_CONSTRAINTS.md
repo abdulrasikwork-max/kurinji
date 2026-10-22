@@ -57,7 +57,7 @@ tricks. Policies change often: re-check the current Android and Google Play docu
 | Delivery PendingIntent must be mutable (system fills in the PDU) | Explicit intent to a non-exported receiver; sent intents immutable | — |
 | Calling needs `CALL_PHONE` (not wanted) | `ACTION_DIAL tel:112`: the dialer opens, the person presses call | The app cannot know whether a call was made (recorded as "dialer opened") |
 | `ACTION_SENDTO smsto:` with several numbers is not portable across SMS apps | One contact per composer (list on SOS screen, picker on Safe Walk) | — |
-| Phone may be offline for the server but have SMS | SMS needs no internet; contacts cached on the phone; server reports queued and persisted | — |
+| Phone may be offline for the server but have SMS | SMS needs no internet; contacts cached on the phone; server reports queued and persisted. **Phase 11:** the SOS itself starts on the phone (before Phase 11 an SOS without a server answer only showed "could not record"); `SosRecorder` records it later with a client reference | Needs a signed-in session; evidence waits for the server record; queued points are memory-only (`PHASE11.md` §3.7) |
 
 ## What Phase 5 adds (Evidence Vault)
 

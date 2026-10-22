@@ -49,6 +49,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import com.safesphere.app.testing.settle
+import com.safesphere.app.testing.sosRecorderForTest
 
 /** Phase 4D screens: honest status texts, the opt-in card, the SOS hooks, the details screen, contact sync. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -142,12 +144,12 @@ class CommunicationScreenTest {
             emergencyRepository = emergencies,
             safetyCircleRepository = FakeSafetyCircleRepository(listOf(contact(1, "Mum", primary = true))),
             locationSharing = FakeLocationSharingController(),
-            activeEmergencyStore = FakeActiveEmergencyStore(),
+            sos = sosRecorderForTest(emergencies, FakeActiveEmergencyStore()),
             currentUserId = { 7L },
             trackingServiceRunning = MutableStateFlow(false),
             circleAlerts = controller
         )
-        advanceUntilIdle()
+        settle()
         assertTrue(viewModel.uiState.value is EmergencyUiState.Active)
         assertTrue("active:9" in controller.calls)
 
@@ -156,7 +158,7 @@ class CommunicationScreenTest {
         assertEquals("text:SOS_STARTED", viewModel.composerTextFor())
 
         viewModel.onImSafeClicked()
-        advanceUntilIdle()
+        settle()
         assertTrue("ended:9:true" in controller.calls)
     }
 

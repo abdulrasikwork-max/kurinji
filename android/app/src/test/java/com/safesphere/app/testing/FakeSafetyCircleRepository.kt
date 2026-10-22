@@ -28,8 +28,12 @@ class FakeSafetyCircleRepository(initial: List<SafetyContact> = emptyList()) : S
     var lastDeletedId: Long? = null
         private set
 
+    /** A slow network (virtual time): lets tests see what happens while the contact list is loading. */
+    var contactsDelayMillis = 0L
+
     override suspend fun getContacts(): ApiResult<List<SafetyContact>> {
         getContactsCalls++
+        if (contactsDelayMillis > 0) kotlinx.coroutines.delay(contactsDelayMillis)
         return failure ?: ApiResult.Success(contacts.toList())
     }
 

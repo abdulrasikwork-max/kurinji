@@ -466,6 +466,8 @@ Account: SafeSphere sends your name, email and password to the SafeSphere server
 
 Location: only while an emergency is active, and only if you allow it, your phone\'s location (with its accuracy and the battery level) is saved to your own emergency record on the SafeSphere server. Only you can see the saved points; the only place your location goes beyond that is a map link in the Safety Circle SMS, and only if you switch on automatic SMS or send it yourself (see below). Points that are waiting to be uploaded are kept in memory, not stored on the phone. Location points are deleted together with the emergency record and your account.
 
+SOS without internet: an SOS starts on your phone at once, even without a connection, and is recorded on the server as soon as it can be reached. Until then the phone keeps only a random reference for the SOS, its start and end times and whether you tapped Call 112 (no location, no number); the server stores the reference and marks the times as your phone\'s. Signing out deletes what is still waiting.
+
 Safe Walk: the server stores the walk (optional destination text you type, check-in times, missed check-ins) and only the LATEST location of your phone during the walk, which replaces the previous one. No route or track is kept. Nobody is contacted unless you switch on automatic SMS (see below).
 
 Stop and route checks (if switched on): the destination text you type is looked up with your phone\'s map service (Google on most phones) and its coordinates are stored with the walk. Your phone compares its position with the direct route in memory only; no movement history is stored on the phone or the server. When a walk ends normally, its destination coordinates and last location are deleted from the server; if it ended in an emergency they are kept with that walk.
@@ -479,6 +481,8 @@ Nearby (only when you open it): your phone turns one location fix into an area c
 Check the way (Safe Walk set-up): your phone asks for area summaries of a few regions of about 5 km; the server never receives your route or destination, and nothing is stored.
 
 Counts: once a week the server counts, system-wide, how the Nearby rules worked (no person, place or signal). Only an administrator can read them.
+
+Rise: everything you write or choose in Rise (goals, steps, how you expected and how it went, dates) stays on this phone in a file encrypted with a key held by your phone\'s secure hardware, separately for each account. None of it is sent to the SafeSphere server or to anyone. Rise has no reminders or notifications. Signing out keeps it; Delete all Rise data, deleting your account, or uninstalling the app removes it.
 
 Account deletion: you need your password; it is refused during an emergency and for 24 hours after one, and it waits 7 days (cancel with your password; signing in does not cancel it). Then the server deletes your account and everything it holds: emergencies and their locations, walks, Safety Circle, evidence files and records, recovery data and Nearby contributions. If you ever acted as a moderator, your account row stays as an anonymous, switched-off record so that the moderation log keeps who decided what; your name, email and safety data are still deleted. After the deletion, this phone removes the account\'s evidence and recovery key the next time it learns of it, or when you tap the button on the login screen.
 
@@ -543,14 +547,14 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- ===== Emergency SOS ===== -->
     <string name="emergency_idle_title">Emergency SOS</string>
-    <string name="emergency_idle_body">Starts a five second countdown. If you do not cancel it, SafeSphere records an emergency session on your account.</string>
+    <string name="emergency_idle_body">Starts a five second countdown. If you do not cancel it, your SOS starts on this phone, even without internet, and is recorded on your account as soon as SafeSphere\'s server can be reached.</string>
     <string name="emergency_limits_notice">During SOS, SafeSphere asks for your location and saves it to your own emergency record. If you switched on automatic SMS (Safety Circle screen), your Safety Circle is texted with a map link; otherwise you can text them yourself. SafeSphere never calls emergency services, and records audio, photos or video only when you tap to do so. In an emergency, call 112 or your local emergency number.</string>
     <string name="action_start_sos">Start SOS</string>
     <string name="action_view_emergency_history">View emergency history</string>
     <string name="emergency_countdown_label">Starting emergency in</string>
     <string name="cd_countdown_seconds">Starting emergency in %1$d seconds</string>
     <string name="action_cancel_caps">CANCEL</string>
-    <string name="emergency_starting_message">Recording your emergency…</string>
+    <string name="emergency_starting_message">Starting your SOS…</string>
     <string name="emergency_active_title">Emergency mode activated</string>
     <string name="emergency_active_message">Your emergency session is active.</string>
     <string name="emergency_active_notice">Checking whether your Safety Circle can be texted…</string>
@@ -567,7 +571,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="emergency_end_elsewhere_message">This SOS was started on another phone. To end it here, enter your account password. The other phone will show that it was ended from here.</string>
     <string name="emergency_end_elsewhere_action">End the SOS</string>
     <string name="emergency_ended_elsewhere_message">This SOS was ended on a different phone than the one that started it, with the account password. It is saved to your history. If that was not you, someone else knows your password: change it in Account and security.</string>
-    <string name="emergency_failed_title">Could not record the emergency</string>
+    <string name="emergency_failed_title">Could not start the SOS</string>
     <string name="emergency_failed_body">If you are in danger, call 112 or your local emergency number now.</string>
     <string name="emergency_started_at">Started: %1$s</string>
     <string name="emergency_ended_at">Ended: %1$s</string>
@@ -586,6 +590,14 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- ===== Phase 4A: emergency location ===== -->
     <string name="section_your_location">Your location</string>
     <string name="emergency_restored_offline">You are offline. This is the active emergency saved on this phone; it may already have been ended on another device.</string>
+    <!-- Phase 11: SOS without internet -->
+    <string name="emergency_not_on_server_yet">Your SOS is running on this phone. SafeSphere\'s server has not been reached yet, so it keeps trying in the background. SMS to your Safety Circle needs no internet, and your location is collected and saved once the server is reached. Evidence recording opens once the server has your SOS. You can call 112 at any time.</string>
+    <string name="location_card_waiting_for_server">Your location is being collected on this phone. It is saved to your emergency record once SafeSphere\'s server has your SOS.</string>
+    <string name="emergency_not_on_server_refused">Your SOS is running on this phone, but SafeSphere\'s server did not accept it. Text your Safety Circle with the buttons below, or call 112.</string>
+    <string name="emergency_ended_unsent_resolved">Your SOS has ended on this phone. SafeSphere saves it to your history once its server can be reached.</string>
+    <string name="emergency_ended_unsent_cancelled">Marked as a false alarm on this phone. SafeSphere saves it to your history once its server can be reached.</string>
+    <string name="emergency_started_at_offline">Started: %1$s\nStarted without a connection (times from your phone)</string>
+    <string name="emergency_history_offline_description">%1$s. Started without a connection; the times are from your phone.</string>
     <string name="location_card_permission_needed">Your location is not being saved. Allow location so your position is stored with this emergency record and a map link can be included in your Safety Circle\'s SMS.</string>
     <string name="location_card_permission_blocked">Location is blocked for SafeSphere. To save your position with this emergency, allow Location in the app\'s Settings.</string>
     <string name="location_card_location_off">Your phone\'s location is turned off, so your position cannot be saved.</string>
@@ -1010,4 +1022,195 @@ A complete privacy policy will be written and reviewed before any public release
         <item quantity="other">Places to go for help are known near the way.</item>
     </plurals>
     <string name="way_footer">Checked around a straight line, not your exact route. It cannot tell you that the way is safe, and it does not change your walk or its check-ins.</string>
+
+    <!-- Phase 10B: Rise "Proof". Every rise_ string is scanned by RiseTextsTest (no gender, no opponent, no pressure,
+         no claims that something is safe, support never ranked). -->
+    <string name="nav_rise">Rise</string>
+    <string name="title_rise_goal">Goal</string>
+    <string name="title_rise_step">A step</string>
+    <string name="rise_title">Rise</string>
+    <string name="rise_tagline">You decide what\'s for you.</string>
+    <string name="rise_intro_title">Something you\'d like to try?</string>
+    <string name="rise_intro_body">Rise helps you try something you have been told, or have told yourself, is not for you. Before a step, say how you think it will go. Afterwards, say how it went. Over time, your own record answers your doubts.</string>
+    <string name="rise_intro_private">Everything in Rise stays on this phone, encrypted. It is never sent to SafeSphere\'s server or to anyone else. Signing out keeps it. Deleting Rise data, deleting your account or uninstalling the app removes it. If this phone is lost, Rise is lost with it.</string>
+    <string name="rise_intro_no_pressure">No reminders, no streaks, no scores. Not trying is always fine.</string>
+    <string name="rise_intro_start">Start</string>
+    <string name="rise_locked_title">Rise is locked</string>
+    <string name="rise_locked_body">Unlock it with this phone\'s screen lock.</string>
+    <string name="rise_unlock">Unlock</string>
+    <string name="rise_unlock_title">Unlock Rise</string>
+    <string name="rise_unlock_subtitle">Use this phone\'s screen lock</string>
+    <string name="rise_no_screen_lock">This phone has no screen lock, so Rise cannot be locked. Anyone who can open this phone can open Rise.</string>
+    <string name="rise_unreadable">Rise could not open its data on this phone. The file may be damaged, or the phone\'s key was reset. Nothing was sent anywhere.</string>
+    <string name="rise_start_fresh">Delete it and start again</string>
+    <string name="rise_empty_title">Is there something you\'d like to try that feels out of reach?</string>
+    <string name="rise_new_goal">Something to try</string>
+    <string name="rise_your_proof">Your proof</string>
+    <string name="rise_section_goals">What you are trying</string>
+    <string name="rise_section_aside">Put aside for now</string>
+    <string name="rise_goal_quiet">Goal %1$d · %2$s</string>
+    <plurals name="rise_goal_done_count">
+        <item quantity="one">Done once so far</item>
+        <item quantity="other">Done %d times so far</item>
+    </plurals>
+    <string name="rise_goal_not_done_yet">Not tried yet</string>
+    <string name="rise_settings_title">Rise settings</string>
+    <string name="rise_quiet_mode">Quiet mode: hide your words in lists</string>
+    <string name="rise_quiet_mode_hint">Lists show \"Goal 2 · Learn\" instead of what you wrote. Useful if other people look at this phone.</string>
+    <string name="rise_lock_setting">Keep Rise behind this phone\'s screen lock</string>
+    <string name="rise_delete_all">Delete all Rise data</string>
+    <string name="rise_delete_all_confirm_title">Delete all Rise data?</string>
+    <string name="rise_delete_all_confirm">Your goals and your proof are deleted from this phone. This cannot be undone.</string>
+    <string name="rise_delete">Delete</string>
+    <string name="rise_not_saved">Rise could not save this on the phone. Please try again.</string>
+
+    <string name="rise_domain_go">Go places</string>
+    <string name="rise_domain_learn">Learn</string>
+    <string name="rise_domain_work">Work and build</string>
+    <string name="rise_domain_lead">Lead and speak up</string>
+    <string name="rise_domain_move">Move</string>
+    <string name="rise_domain_money">Money of my own</string>
+    <string name="rise_domain_decide">My own decision</string>
+    <string name="rise_domain_be_me">Be myself</string>
+    <string name="rise_domain_other">Something else</string>
+
+    <string name="rise_editor_domain">What kind of thing is it?</string>
+    <string name="rise_editor_words">In your words (optional)</string>
+    <string name="rise_editor_words_hint">Keep it vague if you like.</string>
+    <string name="rise_editor_steps">Small steps, one per line</string>
+    <string name="rise_editor_steps_hint">Suggestions only: change any step, remove any step, or write your own.</string>
+    <string name="rise_editor_save">Save</string>
+    <string name="rise_editor_no_steps">Write at least one step.</string>
+    <string name="rise_editor_too_many">You have 20 goals already. Delete one first.</string>
+
+    <!-- Templates: about the activity only; never remove support as progress -->
+    <string name="rise_template_go_1">Look at the way there</string>
+    <string name="rise_template_go_2">Go once, at a time you choose, with any support you want</string>
+    <string name="rise_template_go_3">Go to the event, trip or class</string>
+    <string name="rise_template_learn_1">Try one beginner lesson</string>
+    <string name="rise_template_learn_2">Make one small thing</string>
+    <string name="rise_template_learn_3">Show it to someone you choose</string>
+    <string name="rise_template_work_1">Find one opening or idea that interests you</string>
+    <string name="rise_template_work_2">Ask someone who does it one question</string>
+    <string name="rise_template_work_3">Prepare</string>
+    <string name="rise_template_work_4">Apply or start</string>
+    <string name="rise_template_lead_1">Say one thing in a meeting or class</string>
+    <string name="rise_template_lead_2">Volunteer for one small task</string>
+    <string name="rise_template_lead_3">Present to people you know</string>
+    <string name="rise_template_move_1">Find a place or a group</string>
+    <string name="rise_template_move_2">Go once</string>
+    <string name="rise_template_move_3">Keep going if you want</string>
+    <string name="rise_template_money_1">Find out one thing (an account, a budget, a course)</string>
+    <string name="rise_template_money_2">Do the first step</string>
+    <string name="rise_template_money_3">Keep track your own way</string>
+    <string name="rise_template_decide_1">Write what you want</string>
+    <string name="rise_template_decide_2">Find out the facts</string>
+    <string name="rise_template_decide_3">Talk to someone you choose</string>
+    <string name="rise_template_decide_4">Decide</string>
+    <string name="rise_template_be_me_1">Something you\'d like to wear, say or choose for yourself, in a place you pick</string>
+
+    <string name="rise_step_trying">Trying now</string>
+    <string name="rise_step_prepare">Prepare and try</string>
+    <string name="rise_step_how">How did it go?</string>
+    <string name="rise_step_history">%1$s · %2$s</string>
+    <plurals name="rise_summary_unsure">
+        <item quantity="one">You weren\'t sure once.</item>
+        <item quantity="other">You weren\'t sure %d times.</item>
+    </plurals>
+    <plurals name="rise_summary_better">
+        <item quantity="one">%d went better than you expected.</item>
+        <item quantity="other">%d went better than you expected.</item>
+    </plurals>
+    <string name="rise_goal_set_aside">Put this aside for now</string>
+    <string name="rise_goal_bring_back">Bring it back</string>
+    <string name="rise_goal_delete">Delete this goal</string>
+    <string name="rise_goal_delete_confirm">This goal and its steps are deleted from this phone, with what is in your proof for it.</string>
+
+    <string name="rise_expect_question">How do you think this will go? (optional)</string>
+    <string name="rise_expect_cant">I don\'t think I can</string>
+    <string name="rise_expect_not_sure">I\'m not sure</string>
+    <string name="rise_expect_fine">Probably fine</string>
+    <string name="rise_expect_confident">I\'m confident</string>
+    <string name="rise_doubts_question">What\'s on your mind? (optional)</string>
+    <string name="rise_doubt_can_i">I\'m not sure I can do this</string>
+    <string name="rise_doubt_on_my_own">I\'m not sure I can do this on my own</string>
+    <string name="rise_doubt_not_for_me">It doesn\'t feel like it\'s for someone like me</string>
+    <string name="rise_doubt_others">I\'m worried what others will think or say</string>
+    <string name="rise_doubt_not_good_enough">I don\'t think I\'m good enough at this yet</string>
+    <string name="rise_doubt_never">I\'ve never done anything like this</string>
+    <string name="rise_concern_section">About the situation</string>
+    <string name="rise_concern">I\'m worried about my safety getting there or being there</string>
+    <string name="rise_concern_note">That worry is worth listening to. Preparing for real risk is part of doing this well. SafeSphere cannot tell you that a place is fine; these can help you prepare.</string>
+    <string name="rise_supports_question">What would help? Choose any, or none.</string>
+    <string name="rise_supports_note">Choosing support is part of doing something well.</string>
+    <string name="rise_support_with_someone">With someone</string>
+    <string name="rise_support_time">At a time I choose</string>
+    <string name="rise_support_way">A way I know</string>
+    <string name="rise_support_practise">Practise first</string>
+    <string name="rise_support_smaller">A smaller version</string>
+    <string name="rise_support_someone_knows">Someone knows where I am</string>
+    <string name="rise_prepare_section">Prepare with SafeSphere (optional)</string>
+    <string name="rise_safe_plan_way">Plan the way (Safe Walk set-up and Check the way)</string>
+    <string name="rise_safe_sos">Your SOS and Safety Circle</string>
+    <string name="rise_safe_sos_note">An SOS texts your Safety Circle by SMS only if automatic SMS is switched on, and it works without internet. Check your set-up before you go.</string>
+    <string name="rise_tell_someone">Tell someone (opens your SMS app)</string>
+    <string name="rise_try_it">I\'m going to try it</string>
+    <string name="rise_not_now">Not now</string>
+    <string name="rise_trying_note">Take your time. Rise does nothing while you try: no timer, no reminder. Come back whenever you like.</string>
+    <plurals name="rise_replay_times">
+        <item quantity="one">You\'ve felt this once before.</item>
+        <item quantity="other">You\'ve felt this %d times before.</item>
+    </plurals>
+    <plurals name="rise_replay_better">
+        <item quantity="one">%d went better than you expected.</item>
+        <item quantity="other">%d went better than you expected.</item>
+    </plurals>
+    <plurals name="rise_replay_as_expected">
+        <item quantity="one">%d went about as you expected.</item>
+        <item quantity="other">%d went about as you expected.</item>
+    </plurals>
+    <plurals name="rise_replay_harder">
+        <item quantity="one">%d was harder, and you did it.</item>
+        <item quantity="other">%d were harder, and you did each one.</item>
+    </plurals>
+    <plurals name="rise_replay_not_ahead">
+        <item quantity="one">%d time you decided not to go ahead. That was your call.</item>
+        <item quantity="other">%d times you decided not to go ahead. That was your call.</item>
+    </plurals>
+
+    <string name="rise_outcome_question">How did it go?</string>
+    <string name="rise_outcome_better">Better than I expected</string>
+    <string name="rise_outcome_as_expected">About as I expected</string>
+    <string name="rise_outcome_harder">Harder than I expected</string>
+    <string name="rise_outcome_not_ahead">I didn\'t go ahead</string>
+    <string name="rise_outcome_not_ok">Something happened that wasn\'t OK</string>
+    <string name="rise_first_question">This was a first for me</string>
+    <string name="rise_save_outcome">Save</string>
+    <string name="rise_after_proof">That\'s in your proof.</string>
+    <string name="rise_after_harder">Harder still counts. You did it.</string>
+    <string name="rise_after_not_ahead">That was your call.</string>
+    <string name="rise_next_title">What next? Any of these is fine.</string>
+    <string name="rise_next_again">Do it again</string>
+    <string name="rise_next_step">Next step</string>
+    <string name="rise_next_new">Something new</string>
+    <string name="rise_next_rest">Rest for now</string>
+    <string name="rise_not_ok_title">That wasn\'t your fault.</string>
+    <string name="rise_not_ok_body">Nothing about this goes into your proof. If you are in danger now, open SOS or call 112.</string>
+    <string name="rise_not_ok_sos">Open SOS</string>
+    <string name="rise_not_ok_tell">Tell someone you trust (SMS)</string>
+    <string name="rise_not_ok_report">Report a problem with a place (Nearby)</string>
+    <string name="rise_not_ok_aside">Put this goal aside for now</string>
+    <string name="rise_not_ok_close">Close</string>
+    <string name="rise_history_not_ok">Something wasn\'t OK. That wasn\'t your fault.</string>
+
+    <string name="rise_proof_empty">Steps you try and do are kept here, only on this phone.</string>
+    <string name="rise_proof_line">%1$s · %2$s</string>
+    <string name="rise_proof_expected">You thought: %1$s. It went: %2$s.</string>
+    <string name="rise_proof_no_expectation">It went: %1$s.</string>
+    <string name="rise_proof_first">A first</string>
+    <string name="rise_proof_with">With: %1$s</string>
+    <string name="rise_proof_step_quiet">A step in %1$s</string>
+    <string name="rise_sms_before">I\'m trying something new today.</string>
+    <string name="rise_sms_after">I did something today that I wasn\'t sure I could do.</string>
+    <string name="rise_sms_unavailable">No SMS app was found on this phone.</string>
 </resources>

@@ -10,12 +10,15 @@ import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
 import com.safesphere.app.feature.emergency.domain.ActiveEmergencyRecord
-import com.safesphere.app.feature.emergency.domain.ActiveEmergencyStore
 import com.safesphere.app.feature.emergency.domain.EmergencyEvent
+import com.safesphere.app.feature.emergency.domain.EmergencyIds
 import com.safesphere.app.feature.emergency.domain.EmergencyRepository
 import com.safesphere.app.feature.emergency.domain.EmergencyStatus
 import com.safesphere.app.feature.emergency.domain.EmergencyTrigger
 import com.safesphere.app.feature.emergency.location.LocationSharingController
+import com.safesphere.app.feature.emergency.session.SosRecorder
+import com.safesphere.app.feature.emergency.session.SosRecorderState
+import com.safesphere.app.feature.safetycircle.domain.Relationship
 import com.safesphere.app.feature.circlealert.domain.AlertTarget
 import com.safesphere.app.feature.circlealert.domain.CircleMessageKind
 import com.safesphere.app.feature.circlealert.domain.CircleRecipient
@@ -48,7 +51,8 @@ class EmergencyViewModel(
     private val emergencyRepository: EmergencyRepository,
     private val safetyCircleRepository: SafetyCircleRepository,
     private val locationSharing: LocationSharingController,
-    private val activeEmergencyStore: ActiveEmergencyStore,
+    /** Phase 11: starts every SOS on the phone and records it on the server when it can (the one holder). */
+    private val sos: SosRecorder,
     private val currentUserId: suspend () -> Long?,
     trackingServiceRunning: StateFlow<Boolean>,
     /** Phase 4B: the server ends an active Safe Walk when an SOS starts; this tells the phone's walk to stop. */
@@ -86,15 +90,52 @@ class EmergencyViewModel(
                 if (sharing.signedOut && _uiState.value is EmergencyUiState.Active) _sessionExpired.value = true
             }
         }
+        viewModelScope.launch { sos.state.collect(::onRecorderChanged) }
     }
 
     /**
-     * If an emergency is still ACTIVE (app was closed meanwhile), show it again. The server is asked first;
-     * if it cannot be reached, the record kept on the phone is used, so an offline restart does not
-     * silently show "no emergency".
+     * Phase 11: the server recorded (or refused) the SOS this screen shows with a local id, or was told how an SOS
+     * that ended offline ended. Only the screen's words change: the holders were already moved to the server's id.
+     */
+    private fun onRecorderChanged(recorder: SosRecorderState) {
+        when (val state = _uiState.value) {
+            is EmergencyUiState.Active -> {
+                if (!state.notOnServerYet) return
+                val bound = recorder.current?.takeIf { it.onServer && it.clientRef != null && it.clientRef == state.clientRef }
+                when {
+                    bound != null -> _uiState.value = state.copy(
+                        event = recorder.lastServerAnswer?.takeIf { it.id == bound.emergencyId }
+                            ?: state.event.copy(id = bound.emergencyId),
+                        recordRefused = false
+                    )
+                    recorder.refused && recorder.current?.clientRef == state.clientRef && !state.recordRefused ->
+                        _uiState.value = state.copy(recordRefused = true)
+                }
+            }
+            is EmergencyUiState.Ended -> {
+                val unsent = state.unsent ?: return
+                val stillWaiting = recorder.unsent.any { it.sameSos(unsent) }
+                if (!stillWaiting) _uiState.value = state.copy(unsent = null)
+            }
+            else -> Unit
+        }
+    }
+
+    private fun ActiveEmergencyRecord.sameSos(other: ActiveEmergencyRecord): Boolean =
+        if (clientRef != null) clientRef == other.clientRef else emergencyId == other.emergencyId
+
+    /**
+     * If an emergency is still ACTIVE (app was closed meanwhile), show it again. Phase 11: an SOS this phone started
+     * that the server has not recorded yet is shown first. Otherwise the server is asked; if it cannot be reached, the
+     * record kept on the phone is used, so an offline restart does not silently show "no emergency".
      */
     private fun restoreActiveEmergency() {
         viewModelScope.launch {
+            val local = currentUserId()?.let { sos.current(it) }
+            if (local != null && !local.onServer) {
+                showActive(local.toEvent(), clientRef = local.clientRef)
+                return@launch
+            }
             when (val result = emergencyRepository.getHistory()) {
                 is ApiResult.Success -> {
                     val active = result.data.firstOrNull { it.status == EmergencyStatus.ACTIVE }
@@ -107,7 +148,7 @@ class EmergencyViewModel(
                 }
                 is ApiResult.Failure -> {
                     reportIfSessionExpired(result)
-                    val record = if (result.isSessionExpired()) null else ownStoredRecord()
+                    val record = if (result.isSessionExpired()) null else local
                     if (record != null) {
                         showActive(record.toEvent(), restoredOffline = true)
                     } else {
@@ -163,7 +204,8 @@ class EmergencyViewModel(
     /** Level 4: the screen is opening the dialer with 112. Recorded for the active emergency (nothing is claimed). */
     fun onCallEmergencyNumberClicked() {
         val active = _uiState.value as? EmergencyUiState.Active ?: return
-        circleAlerts?.onDialPromptOpened(active.event.id)
+        // Phase 11: before the server has the SOS, the tap is remembered and recorded once it has.
+        if (active.notOnServerYet) sos.onDialPromptOpened() else circleAlerts?.onDialPromptOpened(active.event.id)
     }
 
     /** Text for the SMS app (sent by the person). Null when no emergency is active. */
@@ -211,34 +253,24 @@ class EmergencyViewModel(
 
     // ---- internals ------------------------------------------------------------------------------
 
+    /**
+     * Phase 11: the SOS starts ON THE PHONE at once; [SosRecorder] records it on the server now or as soon as the
+     * server can be reached (the same SOS, never a second one). Without a connection the Safety Circle is still texted
+     * (automatic SMS if switched on, otherwise the SMS app per contact) and location is still collected. If the server
+     * already has a running SOS (another phone), the recorder joins it and this screen then shows that one.
+     */
     private suspend fun startEmergency() {
         _uiState.value = EmergencyUiState.Starting
-        when (val result = emergencyRepository.start()) {
-            is ApiResult.Success -> {
-                onEmergencyStarted()
-                showActive(result.data)
-            }
-            is ApiResult.Failure -> {
-                if (result.error == ApiError.CONFLICT) {
-                    recoverExistingEmergency(result)
-                } else {
-                    reportIfSessionExpired(result)
-                    _uiState.value = EmergencyUiState.StartFailed(result)
-                }
-            }
+        val userId = currentUserId()
+        if (userId == null) {
+            // Signed out meanwhile: no account to keep the SOS under. Call 112 stays one tap away on this panel.
+            _sessionExpired.value = true
+            _uiState.value = EmergencyUiState.StartFailed(ApiResult.Failure(ApiError.UNAUTHORIZED))
+            return
         }
-    }
-
-    /** The server says an emergency is already active (for example started on another phone): show that one. */
-    private suspend fun recoverExistingEmergency(conflict: ApiResult.Failure) {
-        val history = emergencyRepository.getHistory()
-        val active = (history as? ApiResult.Success)?.data?.firstOrNull { it.status == EmergencyStatus.ACTIVE }
-        if (active != null) {
-            onEmergencyStarted()
-            showActive(active)
-        } else {
-            _uiState.value = EmergencyUiState.StartFailed(conflict)
-        }
+        val record = sos.startLocal(userId)
+        onEmergencyStarted()
+        showActive(record.toEvent(), clientRef = record.clientRef)
     }
 
     /** Phase 10A.4: the person typed the account password after "started on another phone". */
@@ -261,6 +293,11 @@ class EmergencyViewModel(
         _uiState.value = current.copy(isEnding = true, failure = null, passwordNeededFor = null)
 
         viewModelScope.launch {
+            // Phase 11: the server does not have this SOS yet: it ends here and is recorded later as ended.
+            if (current.notOnServerYet) {
+                endOnThisPhone(current, resolve)
+                return@launch
+            }
             val result = if (resolve) {
                 emergencyRepository.resolve(current.event.id, password)
             } else {
@@ -277,6 +314,10 @@ class EmergencyViewModel(
                     _uiState.value = current.copy(isEnding = false, passwordNeededFor =
                         if (resolve) EndAction.RESOLVE else EndAction.CANCEL)
                 }
+                // Phase 11: no connection: the person's "I'm safe" still counts on this phone (and for the Safety
+                // Circle); the server is told later with the real time. Not with a password (another phone's SOS).
+                result is ApiResult.Failure && result.error in OFFLINE_ERRORS && password == null ->
+                    endOnThisPhone(current, resolve)
                 result is ApiResult.Failure -> {
                     reportIfSessionExpired(result)
                     // Never ask again by itself after a wrong password: the person taps "I'm safe" again.
@@ -291,9 +332,23 @@ class EmergencyViewModel(
      * away. If so, this phone stops sharing its location and shows that it was ended elsewhere. It does NOT send the
      * Safety Circle the "resolved" message: nobody on this phone said they are OK.
      */
+    /** Phase 11: ends the SOS on this phone; [SosRecorder] tells the server later (it keeps the end time). */
+    private suspend fun endOnThisPhone(current: EmergencyUiState.Active, resolve: Boolean) {
+        val ended = sos.endLocally(resolve)
+        locationSharing.stop() // points of an SOS the server does not have yet are kept (in memory) until it has
+        circleAlerts?.onEmergencyEnded(current.event.id, resolved = resolve)
+        _uiState.value = EmergencyUiState.Ended(
+            current.event.copy(
+                status = if (resolve) EmergencyStatus.RESOLVED else EmergencyStatus.CANCELLED,
+                endedAt = ended?.ended?.at ?: java.time.Instant.now()
+            ),
+            unsent = ended
+        )
+    }
+
     private fun recheckActiveEmergency() {
         val current = _uiState.value as? EmergencyUiState.Active ?: return
-        if (current.isEnding || current.restoredOffline) return
+        if (current.isEnding || current.restoredOffline || current.notOnServerYet) return
         viewModelScope.launch {
             val result = emergencyRepository.getHistory()
             if (result !is ApiResult.Success) return@launch
@@ -307,37 +362,49 @@ class EmergencyViewModel(
     }
 
     /** Location saving starts first (it must not wait for the contact list), then the screen is shown. */
-    private suspend fun showActive(event: EmergencyEvent, restoredOffline: Boolean = false) {
-        locationSharing.start(event.id, event.startedAt)
-        circleAlerts?.onEmergencyActive(event.id, event.startedAt)
-        currentUserId()?.let { userId ->
-            activeEmergencyStore.save(ActiveEmergencyRecord(userId, event.id, event.startedAt))
-        }
-        _uiState.value = activeStateFor(event, restoredOffline)
+    private suspend fun showActive(event: EmergencyEvent, restoredOffline: Boolean = false, clientRef: String? = null) {
+        // Phase 11: if the server recorded this phone's SOS already, use its id. Checked right before the holders
+        // start (no suspension in between), so they can never be started with an id that was already moved.
+        val shown = sos.state.value.current
+            ?.takeIf { EmergencyIds.isLocal(event.id) && clientRef != null && it.clientRef == clientRef && it.onServer }
+            ?.let { bound -> sos.state.value.lastServerAnswer?.takeIf { it.id == bound.emergencyId } ?: event.copy(id = bound.emergencyId) }
+            ?: event
+        locationSharing.start(shown.id, shown.startedAt)
+        circleAlerts?.onEmergencyActive(shown.id, shown.startedAt)
+        if (!EmergencyIds.isLocal(shown.id)) currentUserId()?.let { userId -> sos.adopt(userId, shown) }
+        _uiState.value = activeStateFor(shown, restoredOffline).copy(clientRef = clientRef)
+        // The server may have recorded the SOS while the contact list was loading (found on the emulator): the
+        // recorder's change was seen before this screen state existed, so look at it again now.
+        onRecorderChanged(sos.state.value)
     }
 
     /** No emergency is active any more: stop location saving and drop the record kept on the phone. */
     private suspend fun forgetActive() {
         locationSharing.stop()
-        activeEmergencyStore.clear()
+        sos.forget()
     }
 
-    /** The stored record, but only if it belongs to the person signed in now. */
-    private suspend fun ownStoredRecord(): ActiveEmergencyRecord? {
-        val record = activeEmergencyStore.load() ?: return null
-        return record.takeIf { it.userId == currentUserId() }
-    }
-
-    /** Builds the Active state, including the enabled contacts to display (display only: nobody is contacted). */
+    /**
+     * Builds the Active state, including the enabled contacts to display (display only: nobody is contacted by this).
+     * Phase 11: without a connection the copy kept on the phone for SMS is shown, so "Text" works offline too.
+     */
     private suspend fun activeStateFor(event: EmergencyEvent, restoredOffline: Boolean): EmergencyUiState.Active {
         val circle = when (val result = safetyCircleRepository.getContacts()) {
             is ApiResult.Success -> result.data.filter { it.isEnabled }
             is ApiResult.Failure -> {
                 reportIfSessionExpired(result)
-                emptyList()
+                if (result.isSessionExpired()) emptyList() else offlineCircle()
             }
         }
         return EmergencyUiState.Active(event, circle, restoredOffline = restoredOffline)
+    }
+
+    /** The enabled contacts cached on the phone for SMS (name + number; the relationship is not kept there). */
+    private fun offlineCircle(): List<SafetyContact> = circleAlerts?.state?.value?.recipients.orEmpty().map {
+        SafetyContact(
+            id = it.contactId, name = it.name, phoneNumber = it.phoneNumber, email = null,
+            relationship = Relationship.OTHER, priority = 1, isPrimary = false, isEnabled = true
+        )
     }
 
     private fun reportIfSessionExpired(result: ApiResult<*>) {
@@ -356,13 +423,16 @@ class EmergencyViewModel(
         const val DEFAULT_COUNTDOWN_SECONDS = 5
         const val TICK_MILLIS = 1_000L
 
+        /** Ending the SOS while these come back is kept on the phone and told to the server later (Phase 11). */
+        private val OFFLINE_ERRORS = setOf(ApiError.NO_CONNECTION, ApiError.SERVER, ApiError.UNKNOWN)
+
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
                 EmergencyViewModel(
                     emergencyRepository = container.emergencyRepository,
                     safetyCircleRepository = container.safetyCircleRepository,
                     locationSharing = container.locationSharing,
-                    activeEmergencyStore = container.activeEmergencyStore,
+                    sos = container.sosRecorder,
                     currentUserId = { container.authRepository.currentUser.first()?.id },
                     trackingServiceRunning = container.trackingServiceRunning,
                     onEmergencyStarted = container.safeWalk::onEmergencyStarted,

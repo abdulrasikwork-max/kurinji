@@ -225,6 +225,17 @@
                 app:noticeText="@string/emergency_restored_offline"
                 app:noticeType="warning" />
 
+            <!-- Phase 11: the SOS runs on this phone; the server has not recorded it yet -->
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:id="@+id/notOnServerNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:accessibilityLiveRegion="polite"
+                android:visibility="gone"
+                app:noticeText="@string/emergency_not_on_server_yet"
+                app:noticeType="warning" />
+
             <!-- Phase 4A: location saved to the person's own emergency record -->
             <com.safesphere.app.core.ui.components.SectionHeaderView
                 android:layout_width="match_parent"

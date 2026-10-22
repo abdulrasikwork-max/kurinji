@@ -49,6 +49,14 @@ public class EmergencyEvent {
     @Column(name = "ended_elsewhere", nullable = false)
     private boolean endedElsewhere;
 
+    /** Phase 11 (V18): the phone's random reference for this SOS (re-sends return this row); null for older phones. */
+    @Column(name = "client_ref", length = 36, updatable = false)
+    private String clientRef;
+
+    /** Phase 11 (V18): the SOS began on a phone that could not reach the server; its times are the phone's. */
+    @Column(name = "started_offline", nullable = false, updatable = false)
+    private boolean startedOffline;
+
     @Column(name = "started_at", nullable = false, updatable = false)
     private LocalDateTime startedAt;
 
@@ -72,11 +80,22 @@ public class EmergencyEvent {
 
     /** Phase 10A.4: [startedSession] = the sign-in that starts it (null for a token without a session id). */
     public EmergencyEvent(Long userId, TriggerType triggerType, String startedSession) {
+        this(userId, triggerType, startedSession, LocalDateTime.now(ZoneOffset.UTC), null, false);
+    }
+
+    /**
+     * Phase 11: [startedAt] = UTC wall clock (the server's, or the phone's when [startedOffline], already clamped by
+     * the service); [clientRef] = the phone's reference for this SOS or null.
+     */
+    public EmergencyEvent(Long userId, TriggerType triggerType, String startedSession, LocalDateTime startedAt,
+                          String clientRef, boolean startedOffline) {
         this.userId = userId;
         this.triggerType = triggerType;
         this.startedSession = startedSession;
         this.status = EmergencyStatus.ACTIVE;
-        this.startedAt = LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS);
+        this.startedAt = startedAt.truncatedTo(ChronoUnit.MICROS);
+        this.clientRef = clientRef;
+        this.startedOffline = startedOffline;
     }
 
     /** Moves an ACTIVE emergency to CANCELLED or RESOLVED. The service checks it is still ACTIVE first. */
@@ -86,8 +105,14 @@ public class EmergencyEvent {
 
     /** Phase 10A.4: the session id is no longer needed once the emergency ended (V17 CHECK), so it is dropped. */
     public void end(EmergencyStatus finalStatus, boolean fromAnotherSignIn) {
+        end(finalStatus, fromAnotherSignIn, LocalDateTime.now(ZoneOffset.UTC));
+    }
+
+    /** Phase 11: [endedAt] = UTC wall clock, never before the start (V18 CHECK; the service clamps phone times). */
+    public void end(EmergencyStatus finalStatus, boolean fromAnotherSignIn, LocalDateTime endedAt) {
         this.status = finalStatus;
-        this.endedAt = LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS);
+        LocalDateTime end = endedAt.truncatedTo(ChronoUnit.MICROS);
+        this.endedAt = end.isBefore(startedAt) ? startedAt : end;
         this.endedElsewhere = fromAnotherSignIn;
         this.startedSession = null;
     }
@@ -144,5 +169,18 @@ public class EmergencyEvent {
 
     public LocalDateTime getEndedAt() {
         return endedAt;
+    }
+
+    /** When the server first stored this row (for an SOS started offline: when the phone reached the server). */
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public String getClientRef() {
+        return clientRef;
+    }
+
+    public boolean isStartedOffline() {
+        return startedOffline;
     }
 }

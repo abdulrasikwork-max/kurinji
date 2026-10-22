@@ -8,11 +8,12 @@ import com.safesphere.app.R
 /** Which screens show which parts of the shared app chrome (toolbar, bottom navigation). */
 object NavigationRules {
 
-    /** The four tabs. Bottom navigation is visible only on these. */
+    /** The five tabs (Rise since Phase 10B). Bottom navigation is visible only on these. */
     val bottomNavDestinations = setOf(
         R.id.homeFragment,
         R.id.safetyFragment,
         R.id.communityFragment,
+        R.id.riseFragment,
         R.id.profileFragment
     )
 
@@ -24,6 +25,7 @@ object NavigationRules {
         R.id.homeFragment,
         R.id.safetyFragment,
         R.id.communityFragment,
+        R.id.riseFragment,
         R.id.profileFragment
     )
 

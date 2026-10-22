@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 10B: one step: Prepare and try -> How did it go? -> proof and what next. Every choice is optional. -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <TextView
+            android:id="@+id/stepTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityHeading="true"
+            tools:targetApi="p"
+            android:textAppearance="@style/TextAppearance.SafeSphere.SectionTitle" />
+
+        <!-- ===== Prepare and try ===== -->
+        <LinearLayout
+            android:id="@+id/preparePanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:accessibilityHeading="true"
+                tools:targetApi="p"
+                android:text="@string/rise_expect_question"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/expectChips"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:singleSelection="true" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:accessibilityHeading="true"
+                tools:targetApi="p"
+                android:text="@string/rise_doubts_question"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/doubtChips"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <!-- The person's own record for the same doubt(s), read as one sentence -->
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:id="@+id/replayNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:accessibilityLiveRegion="polite"
+                android:visibility="gone"
+                app:noticeText="@string/rise_proof_empty"
+                app:noticeType="info" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:accessibilityHeading="true"
+                tools:targetApi="p"
+                android:text="@string/rise_concern_section"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/concernChip"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/rise_concern" />
+
+            <!-- SAFE preparation: always for "Go places"; for any step once the safety worry is picked -->
+            <LinearLayout
+                android:id="@+id/safePanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/concernNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="@string/rise_concern_note"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:accessibilityHeading="true"
+                    tools:targetApi="p"
+                    android:text="@string/rise_prepare_section"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/planWayButton"
+                    style="@style/Widget.SafeSphere.Button.Secondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/rise_safe_plan_way" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sosSetupButton"
+                    style="@style/Widget.SafeSphere.Button.Secondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/rise_safe_sos" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/rise_safe_sos_note"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:accessibilityHeading="true"
+                tools:targetApi="p"
+                android:text="@string/rise_supports_question"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rise_supports_note"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/supportChips"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/tellBeforeButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/rise_tell_someone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/tryButton"
+                style="@style/Widget.SafeSphere.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:text="@string/rise_try_it" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/notNowButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rise_not_now" />
+        </LinearLayout>
+
+        <!-- ===== Trying: how did it go? ===== -->
+        <LinearLayout
+            android:id="@+id/tryingPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:text="@string/rise_trying_note"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:accessibilityHeading="true"
+                tools:targetApi="p"
+                android:text="@string/rise_outcome_question"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/outcomeChips"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:singleSelection="true" />
+
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/firstCheck"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:minHeight="48dp"
+                android:text="@string/rise_first_question" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/saveOutcomeButton"
+                style="@style/Widget.SafeSphere.Button.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:enabled="false"
+                android:text="@string/rise_save_outcome" />
+        </LinearLayout>
+
+        <!-- ===== Saved: proof and what next (all equal) ===== -->
+        <LinearLayout
+            android:id="@+id/afterPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/afterText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:accessibilityLiveRegion="polite"
+                android:textAppearance="@style/TextAppearance.SafeSphere.SectionTitle" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:accessibilityHeading="true"
+                tools:targetApi="p"
+                android:text="@string/rise_next_title"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/againButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rise_next_again" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nextStepButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rise_next_step" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/somethingNewButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rise_next_new" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/restButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rise_next_rest" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/tellAfterButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/rise_tell_someone" />
+        </LinearLayout>
+
+        <!-- ===== Something happened that wasn't OK ===== -->
+        <LinearLayout
+            android:id="@+id/notOkPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:accessibilityHeading="true"
+                tools:targetApi="p"
+                android:text="@string/rise_not_ok_title"
+                android:textAppearance="@style/TextAppearance.SafeSphere.SectionTitle" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/rise_not_ok_body"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/notOkSosButton"
+                style="@style/Widget.SafeSphere.Button.Emergency"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:text="@string/rise_not_ok_sos" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/notOkTellButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rise_not_ok_tell" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/notOkReportButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rise_not_ok_report" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/notOkAsideButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rise_not_ok_aside" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/notOkCloseButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/rise_not_ok_close" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

@@ -13,8 +13,10 @@ import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.tracking.TrackingNotice
 import com.safesphere.app.core.tracking.TrackingNoticeSource
 import com.safesphere.app.feature.auth.domain.AuthSession
+import com.safesphere.app.feature.emergency.domain.EmergencyIds
 import com.safesphere.app.feature.emergency.domain.EmergencyLocationPoint
 import com.safesphere.app.feature.emergency.domain.EmergencyLocationRepository
+import com.safesphere.app.feature.emergency.session.EmergencyRebinder
 import java.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -54,7 +56,7 @@ class EmergencyLocationSharing(
     session: Flow<AuthSession?>,
     private val samplingPolicy: LocationSamplingPolicy = LocationSamplingPolicy(),
     private val now: () -> Instant = Instant::now
-) : LocationSharingController, TrackingNoticeSource {
+) : LocationSharingController, TrackingNoticeSource, EmergencyRebinder {
 
     private val _state = MutableStateFlow(LocationSharingState())
     override val state: StateFlow<LocationSharingState> = _state.asStateFlow()
@@ -69,6 +71,16 @@ class EmergencyLocationSharing(
     private var lastRecorded: LocationFix? = null
     private val restarts = MutableStateFlow(0)
     private var job: Job? = null
+
+    /**
+     * Phase 11: where queued points go. A LOCAL id ([EmergencyIds.isLocal]) means the server does not have the SOS yet:
+     * points are collected but not sent until [rebindEmergency] gives the server's id.
+     */
+    private var uploadTarget: Long? = null
+    private var uploadSignal: Channel<Unit>? = null
+
+    /** Phase 11: points of an SOS that ended before the server had it (memory only), sent once it has. */
+    private val parked = HashMap<Long, List<EmergencyLocationPoint>>()
 
     init {
         // Logout or an expired token (ApiCallHandler clears the session on 401) ends the sharing at once.
@@ -86,6 +98,7 @@ class EmergencyLocationSharing(
         job?.cancel()
         pending.clear()
         lastRecorded = null
+        uploadTarget = emergencyId
         val access = locationProvider.access()
         update {
             LocationSharingState(
@@ -94,7 +107,7 @@ class EmergencyLocationSharing(
                 status = if (access == LocationAccess.NONE) LocationSharingStatus.PERMISSION_NEEDED else LocationSharingStatus.SEARCHING
             )
         }
-        job = scope.launch { run(emergencyId, startedAt) }
+        job = scope.launch { run(startedAt) }
     }
 
     override fun stop() {
@@ -102,10 +115,18 @@ class EmergencyLocationSharing(
         val emergencyId = current.emergencyId ?: return
         job?.cancel()
         job = null
+        uploadTarget = null
+        uploadSignal = null
         val leftovers = pending.toList()
         pending.clear()
         lastRecorded = null
         update { LocationSharingState() } // OFF: the notice becomes null and the service stops itself
+        if (leftovers.isNotEmpty() && EmergencyIds.isLocal(emergencyId) && !current.signedOut) {
+            // The server does not have this SOS yet: keep its points (in memory) until it does.
+            if (parked.size >= MAX_PARKED) parked.remove(parked.keys.first())
+            parked[emergencyId] = leftovers
+            return
+        }
         if (leftovers.isNotEmpty() && !current.signedOut && !current.uploadsStopped) {
             // One best-effort attempt; the server accepts points recorded while active for 15 minutes after the end.
             scope.launch {
@@ -134,16 +155,33 @@ class EmergencyLocationSharing(
         }
     }
 
-    private suspend fun run(emergencyId: Long, startedAt: Instant) = coroutineScope {
-        val uploadSignal = Channel<Unit>(Channel.CONFLATED)
+    /**
+     * Phase 11: the server now has the SOS kept under [localId]. Queued points go to [serverId] from now on; points of
+     * an SOS that already ended are sent in one best-effort attempt (the server accepts them for 15 minutes).
+     */
+    override fun rebindEmergency(localId: Long, serverId: Long) {
+        if (_state.value.emergencyId == localId) {
+            uploadTarget = serverId
+            update { it.copy(emergencyId = serverId) }
+            uploadSignal?.trySend(Unit)
+        }
+        val leftovers = parked.remove(localId) ?: return
+        scope.launch {
+            leftovers.chunked(EmergencyLocationRepository.MAX_BATCH_SIZE).forEach { repository.upload(serverId, it) }
+        }
+    }
+
+    private suspend fun run(startedAt: Instant) = coroutineScope {
+        val signal = Channel<Unit>(Channel.CONFLATED)
+        uploadSignal = signal
         launch {
             connectivityMonitor.isOnline.collect { online ->
                 update { it.copy(isOnline = online) }
-                if (online) uploadSignal.trySend(Unit)
+                if (online) signal.trySend(Unit)
             }
         }
-        launch { uploadLoop(emergencyId, uploadSignal) }
-        restarts.collectLatest { collectLocations(startedAt, uploadSignal) }
+        launch { uploadLoop(signal) }
+        restarts.collectLatest { collectLocations(startedAt, signal) }
     }
 
     private suspend fun collectLocations(startedAt: Instant, uploadSignal: Channel<Unit>) {
@@ -169,10 +207,11 @@ class EmergencyLocationSharing(
         }
     }
 
-    private suspend fun uploadLoop(emergencyId: Long, signal: ReceiveChannel<Unit>) {
+    private suspend fun uploadLoop(signal: ReceiveChannel<Unit>) {
         var retryDelay = INITIAL_RETRY_MILLIS
         while (true) {
-            if (pending.isEmpty() || _state.value.uploadsStopped) {
+            val emergencyId = uploadTarget
+            if (pending.isEmpty() || _state.value.uploadsStopped || emergencyId == null || EmergencyIds.isLocal(emergencyId)) {
                 signal.receive()
                 continue
             }
@@ -222,6 +261,7 @@ class EmergencyLocationSharing(
     }
 
     private fun onSignedOut() {
+        parked.clear()
         if (_state.value.emergencyId == null) return
         job?.cancel()
         job = null
@@ -239,6 +279,7 @@ class EmergencyLocationSharing(
     companion object {
         const val LOCATION_INTERVAL_MILLIS = 10_000L
         const val MAX_PENDING = 500
+        const val MAX_PARKED = 5
         const val INITIAL_RETRY_MILLIS = 5_000L
         const val MAX_RETRY_MILLIS = 60_000L
 

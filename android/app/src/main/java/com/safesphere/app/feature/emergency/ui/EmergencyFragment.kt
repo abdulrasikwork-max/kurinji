@@ -92,7 +92,8 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         collectWhenStarted(evidenceViewModel.card, evidenceCard::render)
 
         collectWhenStarted(viewModel.uiState) { state ->
-            evidenceViewModel.setEmergency((state as? EmergencyUiState.Active)?.event?.id)
+            // Phase 11: evidence belongs to an SOS the server has recorded (not to one with a local id yet).
+            evidenceViewModel.setEmergency((state as? EmergencyUiState.Active)?.takeUnless { it.notOnServerYet }?.event?.id)
             render(state)
             renderLocation(viewModel.locationUi.value)
         }
@@ -161,6 +162,12 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
             R.string.emergency_started_at, EmergencyTimeFormatter.format(state.event.startedAt)
         )
         binding.restoredOfflineNotice.isVisible = state.restoredOffline
+        // Phase 11: running on this phone only, until the server has recorded it.
+        binding.notOnServerNotice.isVisible = state.notOnServerYet
+        binding.notOnServerNotice.setMessage(getString(
+            if (state.recordRefused) R.string.emergency_not_on_server_refused else R.string.emergency_not_on_server_yet
+        ))
+        binding.evidenceCard.root.isVisible = !state.notOnServerYet
         renderCircle(state)
 
         binding.endProgress.isVisible = state.isEnding
@@ -246,6 +253,9 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         binding.endedMessage.setText(when {
             // Phase 10A.4: ended from another phone (with the account password); this phone did not say "I'm safe".
             state.event.endedElsewhere -> R.string.emergency_ended_elsewhere_message
+            // Phase 11: ended on this phone while offline; the server is told when it can be reached.
+            state.unsent != null && resolved -> R.string.emergency_ended_unsent_resolved
+            state.unsent != null -> R.string.emergency_ended_unsent_cancelled
             resolved -> R.string.emergency_ended_resolved_message
             else -> R.string.emergency_ended_cancelled_message
         })
@@ -258,7 +268,10 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         val card = locationCardFor(ui)
 
         binding.locationNotice.setWarning(card.isWarning)
-        binding.locationNotice.setMessage(card.serverMessage ?: getString(card.message))
+        // Phase 11: before the server has the SOS nothing is saved yet; never say it is.
+        val notOnServer = (viewModel.uiState.value as? EmergencyUiState.Active)?.notOnServerYet == true
+        val message = if (notOnServer && card.message in SAVING_MESSAGES) R.string.location_card_waiting_for_server else card.message
+        binding.locationNotice.setMessage(card.serverMessage ?: getString(message))
 
         val fix = ui.sharing.lastFix
         binding.locationDetails.isVisible = card.showDetails && fix != null
@@ -341,6 +354,10 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         } catch (e: ActivityNotFoundException) {
             startActivity(Intent(Settings.ACTION_SETTINGS))
         }
+    }
+
+    private companion object {
+        val SAVING_MESSAGES = setOf(R.string.location_card_saving, R.string.location_card_saved)
     }
 
     private fun showOnly(visiblePanel: View) {

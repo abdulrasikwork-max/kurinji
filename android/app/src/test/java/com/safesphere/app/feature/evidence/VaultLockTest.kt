@@ -9,7 +9,7 @@ import com.safesphere.app.feature.evidence.domain.EvidenceKind
 import com.safesphere.app.feature.evidence.session.EvidenceVault
 import com.safesphere.app.feature.evidence.session.VaultLock
 import com.safesphere.app.feature.evidence.ui.EvidenceVaultViewModel
-import com.safesphere.app.feature.evidence.ui.ScreenLockGate
+import com.safesphere.app.core.ui.ScreenLockGate
 import com.safesphere.app.feature.evidence.ui.VaultEvent
 import com.safesphere.app.testing.FakeConnectivityMonitor
 import com.safesphere.app.testing.FakeEvidenceRepository

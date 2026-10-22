@@ -22,6 +22,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
+import com.safesphere.app.core.ui.ScreenLockGate
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog

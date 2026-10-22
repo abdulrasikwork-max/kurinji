@@ -20,7 +20,9 @@ import com.safesphere.app.feature.circlealert.domain.CircleMessageKind
 import com.safesphere.app.feature.circlealert.domain.CircleMessages
 import com.safesphere.app.feature.circlealert.domain.CircleRecipient
 import com.safesphere.app.feature.circlealert.domain.DeliveryStatus
+import com.safesphere.app.feature.emergency.domain.EmergencyIds
 import com.safesphere.app.feature.emergency.location.LocationSharingState
+import com.safesphere.app.feature.emergency.session.EmergencyRebinder
 import com.safesphere.app.feature.emergency.location.LocationSharingStatus
 import com.safesphere.app.feature.safetycircle.domain.SafetyContact
 import com.safesphere.app.feature.safewalk.domain.CheckInPhase
@@ -65,7 +67,7 @@ class CircleAlertCoordinator(
     private val policy: CircleAlertPolicy = CircleAlertPolicy(),
     private val now: () -> Instant = Instant::now,
     private val zone: () -> ZoneId = ZoneId::systemDefault
-) : CircleAlertController {
+) : CircleAlertController, EmergencyRebinder {
 
     private val _state = MutableStateFlow(CircleAlertState())
     override val state: StateFlow<CircleAlertState> = _state.asStateFlow()
@@ -135,7 +137,30 @@ class CircleAlertCoordinator(
         )
     }
 
+    /**
+     * Phase 11: the server now has the SOS this phone started under [localId]. What the circle was told (memory,
+     * deliveries, reports waiting for the server) moves to [serverId], so nothing is sent twice and every report
+     * reaches the right emergency.
+     */
+    override fun rebindEmergency(localId: Long, serverId: Long) {
+        val from = AlertTarget.Emergency(localId)
+        val to = AlertTarget.Emergency(serverId)
+        activeEmergency?.takeIf { it.first == localId }?.let { activeEmergency = serverId to it.second }
+        mutate { s ->
+            val memory = s.memory.emergencies[localId]?.let { moved ->
+                s.memory.copy(emergencies = s.memory.emergencies - localId + (serverId to moved))
+            } ?: s.memory
+            s.copy(
+                memory = memory,
+                deliveries = s.deliveries.map { if (it.target == from) it.copy(target = to) else it },
+                pendingReports = s.pendingReports.map { if (it.target == from) it.copy(target = to) else it }
+            )
+        }
+        uploadSignal.trySend(Unit)
+    }
+
     override fun onDialPromptOpened(emergencyId: Long) {
+        if (EmergencyIds.isLocal(emergencyId)) return // recorded by SosRecorder once the server has the SOS
         scope.launch {
             var wait = INITIAL_RETRY_MILLIS
             repeat(DIAL_PROMPT_ATTEMPTS) {
@@ -300,7 +325,8 @@ class CircleAlertCoordinator(
         var retryDelay = INITIAL_RETRY_MILLIS
         while (true) {
             val batch = snapshot?.pendingReports?.let { pending ->
-                val first = pending.firstOrNull() ?: return@let null
+                // Phase 11: reports about an SOS the server does not have yet wait until it has it (rebind).
+                val first = pending.firstOrNull { !it.target.isLocalEmergency() } ?: return@let null
                 pending.filter { it.target == first.target }.take(MAX_BATCH)
             }
             if (batch == null) {
@@ -336,6 +362,8 @@ class CircleAlertCoordinator(
         }
         return fix?.let { GeoPoint.of(it) to it.recordedAt } ?: (null to null)
     }
+
+    private fun AlertTarget.isLocalEmergency(): Boolean = this is AlertTarget.Emergency && EmergencyIds.isLocal(id)
 
     private fun walkConcern(target: AlertTarget): ConcernKind? =
         if (target is AlertTarget.Walk && walkState.value.journey?.id == target.id) walkState.value.checkIn?.concern else null

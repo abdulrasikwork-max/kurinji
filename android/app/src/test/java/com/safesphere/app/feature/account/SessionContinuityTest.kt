@@ -33,6 +33,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.TestScope
+import com.safesphere.app.testing.settle
+import com.safesphere.app.testing.sosRecorderForTest
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -164,7 +167,7 @@ class SessionContinuityTest {
         advanceUntilIdle()
 
         viewModel.onImSafeClicked()
-        advanceUntilIdle()
+        settle()
         val asking = viewModel.uiState.value as EmergencyUiState.Active
         assertEquals(EndAction.RESOLVE, asking.passwordNeededFor)
         assertNull(asking.failure)
@@ -174,11 +177,11 @@ class SessionContinuityTest {
         assertNull((viewModel.uiState.value as EmergencyUiState.Active).passwordNeededFor) // the SOS stays active
 
         viewModel.onImSafeClicked()
-        advanceUntilIdle()
+        settle()
         // A wrong password: shown as a failure, NOT asked again in a loop.
         emergencies.resolveResult = ApiResult.Failure(ApiError.CONFLICT, "Password is incorrect")
         viewModel.onEndWithPassword("wrong")
-        advanceUntilIdle()
+        settle()
         val wrong = viewModel.uiState.value as EmergencyUiState.Active
         assertEquals("wrong", emergencies.lastEndPassword)
         assertEquals(ApiError.CONFLICT, wrong.failure?.error)
@@ -186,9 +189,9 @@ class SessionContinuityTest {
 
         emergencies.resolveResult = ApiResult.Success(event(id = 5, status = EmergencyStatus.RESOLVED).copy(endedElsewhere = true))
         viewModel.onImSafeClicked()
-        advanceUntilIdle()
+        settle()
         viewModel.onEndWithPassword("right")
-        advanceUntilIdle()
+        settle()
         assertTrue((viewModel.uiState.value as EmergencyUiState.Ended).event.endedElsewhere)
     }
 
@@ -203,7 +206,7 @@ class SessionContinuityTest {
         emergencies.historyResult = ApiResult.Success(
             listOf(event(id = 5, status = EmergencyStatus.RESOLVED).copy(endedElsewhere = true)))
         viewModel.onScreenVisible()
-        advanceUntilIdle()
+        settle()
 
         val ended = viewModel.uiState.value as EmergencyUiState.Ended
         assertTrue(ended.event.endedElsewhere)
@@ -212,15 +215,16 @@ class SessionContinuityTest {
 
     // ---- helpers ------------------------------------------------------------------------------------------------
 
-    private fun viewModel(emergencies: FakeEmergencyRepository, sharing: FakeLocationSharingController) =
+    /** Phase 11: with the real SosRecorder (background work): every step below is followed by settle(). */
+    private fun TestScope.viewModel(emergencies: FakeEmergencyRepository, sharing: FakeLocationSharingController) =
         EmergencyViewModel(
             emergencyRepository = emergencies,
             safetyCircleRepository = FakeSafetyCircleRepository(emptyList()),
             locationSharing = sharing,
-            activeEmergencyStore = FakeActiveEmergencyStore(),
+            sos = sosRecorderForTest(emergencies, FakeActiveEmergencyStore(), rebinders = listOf(sharing)),
             currentUserId = { 7L },
             trackingServiceRunning = MutableStateFlow(false)
-        )
+        ).also { settle() }
 
     /** An unsigned token with only the claims the phone reads (the phone never verifies signatures). */
     private fun jwt(expiresAt: Instant): String {

@@ -1,4 +1,4 @@
-package com.safesphere.app.feature.evidence.ui
+package com.safesphere.app.core.ui
 
 import android.app.Activity
 import android.app.KeyguardManager
@@ -8,6 +8,7 @@ import android.hardware.biometrics.BiometricPrompt
 import android.os.Build
 import android.os.CancellationSignal
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.fragment.app.Fragment
 import com.safesphere.app.R
 
@@ -17,9 +18,14 @@ import com.safesphere.app.R
  * screen on Android 8 and 9. The app never sees the PIN or the fingerprint; Android only answers "confirmed" or not.
  *
  * Create it as a Fragment field (it registers an activity-result launcher, which must happen before the fragment
- * starts).
+ * starts). Phase 5 (Evidence Vault); moved to core/ui in Phase 10B so Rise can use it too (no behaviour change).
  */
-class ScreenLockGate(private val fragment: Fragment, private val onResult: (Result) -> Unit) {
+class ScreenLockGate(
+    private val fragment: Fragment,
+    @StringRes private val titleRes: Int = R.string.vault_unlock_title,
+    @StringRes private val subtitleRes: Int = R.string.vault_unlock_subtitle,
+    private val onResult: (Result) -> Unit
+) {
 
     enum class Result { CONFIRMED, CANCELLED, NO_SCREEN_LOCK }
 
@@ -38,8 +44,8 @@ class ScreenLockGate(private val fragment: Fragment, private val onResult: (Resu
             onResult(Result.NO_SCREEN_LOCK)
             return
         }
-        val title = context.getString(R.string.vault_unlock_title)
-        val subtitle = context.getString(R.string.vault_unlock_subtitle)
+        val title = context.getString(titleRes)
+        val subtitle = context.getString(subtitleRes)
         when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> prompt(
                 BiometricPrompt.Builder(context).setTitle(title).setSubtitle(subtitle)

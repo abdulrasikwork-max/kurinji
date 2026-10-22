@@ -34,5 +34,17 @@ data class EmergencyEvent(
     val startedAt: Instant,
     val endedAt: Instant?,
     /** Phase 10A.4: ended from another sign-in than the one that started it (that needed the account password). */
-    val endedElsewhere: Boolean = false
+    val endedElsewhere: Boolean = false,
+    /** Phase 11: it began while the phone could not reach the server; its times are the phone's. */
+    val startedOffline: Boolean = false
+)
+
+/**
+ * Phase 11: what the phone sends to record an SOS it started by itself. [startedAt] only when it began before the
+ * server could be reached; [ended] only when it also ended on the phone before the server knew.
+ */
+data class SosRecordRequest(
+    val clientRef: String,
+    val startedAt: Instant? = null,
+    val ended: LocalEnd? = null
 )

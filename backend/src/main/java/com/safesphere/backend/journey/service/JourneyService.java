@@ -214,6 +214,8 @@ public class JourneyService {
     @Transactional
     public void linkActiveJourney(long userId, EmergencyEvent emergency) {
         journeyRepository.findByUserIdAndStatusForUpdate(userId, JourneyStatus.ACTIVE).ifPresent(journey -> {
+            // Phase 11: an SOS recorded late (started offline) belongs only to a walk that was already running then.
+            if (emergency.isStartedOffline() && journey.getStartedAt().isAfter(emergency.getStartedAt())) return;
             LocalDateTime now = now();
             journey.escalateTo(EscalationLevel.EMERGENCY, now);
             journey.end(JourneyStatus.EMERGENCY, now);

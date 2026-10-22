@@ -773,3 +773,40 @@ other sign-in** must send the account password:
 Order of checks: not yours → `404`; already ended → `409`; then the password. Emergencies started by an older token
 without `sid` keep the old rule. Every emergency answer has `endedElsewhere` (false unless ended this way); the session
 id is never returned.
+
+# Phase 11 (SOS without internet, V18, docs/PHASE11.md)
+
+The phone starts every SOS by itself (Safety Circle SMS and location work without internet) and records it here when
+the server can be reached. Changes to two existing endpoints; no new endpoint.
+
+## `POST /api/emergencies` (body still optional)
+```json
+{ "triggerType": "MANUAL",
+  "clientRef": "6f1c2c3e-1d2b-4c5a-9e8f-0a1b2c3d4e5f",
+  "startedAt": "2026-10-22T08:00:00Z",
+  "endedAt": "2026-10-22T08:30:00Z", "outcome": "RESOLVED" }
+```
+- `clientRef` (optional, lower-case UUID made by the phone): the same caller + reference **always answers with the same
+  emergency** (`201`, the stored row as it is now, possibly already ended). Another person's identical reference makes
+  that person's own emergency; it never reveals or touches the first one.
+- `startedAt` (only with `clientRef`): the SOS began before the server could be reached. Clamped by the server to
+  `[now − 24 h, now]`; the row is marked `startedOffline: true` (the phone's times). Without it the server's time is used.
+- `endedAt` + `outcome` (`RESOLVED` | `CANCELLED`, only together and only with `startedAt`): the SOS also ended on the
+  phone while offline; it is stored already ended (`endedAt` clamped to `[startedAt, now]`), with no session id. An
+  ended row never conflicts with an ACTIVE one.
+- An ACTIVE SOS started offline during a Safe Walk links that walk as before, but only a walk that was already running
+  when the SOS began.
+- `400`: `clientRef` not a lower-case UUID; `startedAt` without `clientRef`; `outcome` `ACTIVE`; `outcome`/`endedAt`
+  alone or without `startedAt`; a reserved trigger. `409`: another emergency is ACTIVE (for an ACTIVE request).
+
+## `PUT /api/emergencies/{id}/resolve|cancel` `{ "password": "...", "endedAt": "..." }` (both optional)
+`endedAt` = when the person ended it on a phone that was offline at that moment; clamped to `[startedAt, now]`;
+absent = now. Password rules unchanged (Phase 10A.4).
+
+## Responses
+Every emergency answer adds `"startedOffline": true|false`. The reference itself is never returned.
+
+## Locations of an SOS started offline
+For an emergency with `startedOffline: true`, the 15-minute upload grace counts from its end **or from when the server
+first stored it, whichever is later** (an SOS that started and ended offline reaches the server after its end; its
+points follow). Online emergencies keep the old rule. Point times must still lie between the start and the end.

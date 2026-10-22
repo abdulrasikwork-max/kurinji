@@ -5,9 +5,13 @@ import com.safesphere.app.feature.emergency.domain.EmergencyEvent
 import com.safesphere.app.feature.emergency.domain.EmergencyRepository
 import com.safesphere.app.feature.emergency.domain.EmergencyStatus
 import com.safesphere.app.feature.emergency.domain.EmergencyTrigger
+import com.safesphere.app.feature.emergency.domain.SosRecordRequest
 import java.time.Instant
 
-/** Test double for the emergency recording. Results are configurable; calls are counted. */
+/**
+ * Test double for the emergency recording. Results are configurable; calls are counted. Phase 11: [record] (the
+ * phone's way of recording an SOS it started) answers [startResult] and counts as a start call too.
+ */
 class FakeEmergencyRepository : EmergencyRepository {
 
     var startResult: ApiResult<EmergencyEvent> = ApiResult.Success(event())
@@ -22,8 +26,21 @@ class FakeEmergencyRepository : EmergencyRepository {
     var resolveCalls = 0
         private set
 
+    /** Every record request, in order (Phase 11). */
+    val recordRequests = mutableListOf<SosRecordRequest>()
+
+    /** The end time sent with the last cancel/resolve (Phase 11; null = "now"). */
+    var lastEndedAt: Instant? = null
+        private set
+
     override suspend fun start(): ApiResult<EmergencyEvent> {
         startCalls++
+        return startResult
+    }
+
+    override suspend fun record(request: SosRecordRequest): ApiResult<EmergencyEvent> {
+        startCalls++
+        recordRequests += request
         return startResult
     }
 
@@ -33,15 +50,17 @@ class FakeEmergencyRepository : EmergencyRepository {
     var lastEndPassword: String? = null
         private set
 
-    override suspend fun cancel(id: Long, password: String?): ApiResult<EmergencyEvent> {
+    override suspend fun cancel(id: Long, password: String?, endedAt: Instant?): ApiResult<EmergencyEvent> {
         cancelCalls++
         lastEndPassword = password
+        lastEndedAt = endedAt
         return cancelResult
     }
 
-    override suspend fun resolve(id: Long, password: String?): ApiResult<EmergencyEvent> {
+    override suspend fun resolve(id: Long, password: String?, endedAt: Instant?): ApiResult<EmergencyEvent> {
         resolveCalls++
         lastEndPassword = password
+        lastEndedAt = endedAt
         return resolveResult
     }
 

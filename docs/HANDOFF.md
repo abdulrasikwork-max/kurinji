@@ -1,4 +1,26 @@
-# Handoff: Phase 10A + 10A.4 complete (updated 2026-10-22); Phase 9 complete and frozen
+# Handoff: Phase 11 (SOS without internet) + 10B (Rise "Proof") done (2026-10-22); Phase 9 frozen
+
+**Phase 11 + 10B implemented, compiled, tested and verified 2026-10-22** (full-autonomy brief; `docs/PHASE11.md`):
+- **SOS without internet:** every SOS starts on the phone (Safety Circle SMS and location work offline);
+  `SosRecorder` records it on the server later with a client reference (V18: `client_ref`, `started_offline`,
+  end ≥ start CHECK). "I'm safe" works offline and is recorded later with its real time. Before this, an SOS without a
+  server answer only showed "could not record" and texted nobody.
+- **Rise "Proof" (10B):** tab "Rise", phone-only, encrypted per account; Doubt → Prepare → Try → Proof → Next; replay of
+  the person's own record for the same self-doubt; safety worry opens SAFE preparation; quiet mode, optional screen
+  lock, FLAG_SECURE, delete; no Home card, no notifications, no incident note (deviations R1–R10).
+- **Results:** backend **482/0** (2 skipped); Android **527/0**; lint **0 / 85**; V18 dry run **10/10**, applied (dev DB
+  **v18**, next **V19**); live MySQL **12/12** (after a first attempt stopped on two script faults, disclosed); emulator
+  PASS with the backend really stopped (start offline, process death, recorded later, offline end) and for Rise. One
+  bug found on the emulator and fixed with a regression test (screen stayed "not recorded" if the server answered
+  while contacts loaded).
+- **NOT VERIFIED:** real phone (incl. an automatic SMS sent offline on a real SIM), TalkBack, dark mode, Rise's
+  screen-lock gate on a device with a lock.
+- **State left:** backend and emulator stopped, `adb reverse` removed, all test accounts deleted; the new debug build is
+  installed on the emulator (its account was deleted, so it will show the session-expired dialog).
+- **Next:** the user's review; 10D (real phone + TalkBack for SOS offline and Rise); still deferred: token encryption
+  (A14), password reset (A6), 10C collective proof (needs users and moderators).
+
+---
 
 **Phase 10A.4 "session continuity" implemented, compiled, tested and verified 2026-10-22** (the user's brief;
 `docs/PHASE10.md` §11): token renewal (`POST /api/users/me/token`, always granted during an SOS or Safe Walk; the phone's

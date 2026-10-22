@@ -12,6 +12,10 @@ instead of swapping tokens mid-emergency (D3, R8 below is therefore partly super
 `POST /api/users/me/deletion/cancel` (D4); anonymisation by audit references, not by role (D5); deletion postponed by
 an emergency during the grace period (D6). 10B–10D: still **planned**.
 
+**Status update 2026-10-22 (later):** **10B is implemented, tested and emulator-verified** with ten deliberate
+deviations R1–R10 (no Home card, no private incident note, no "what helped", navigation-only SAFE bridge, SMS app
+without a number, lock offered in the intro, …): `docs/PHASE11.md` §4. 10C is not built; 10D is not done.
+
 Status of everything else here: **planned**. Facts about the current product come from reading the repository. Citations
 marked *(verify)* must be checked against the original paper before they go into the project report.
 

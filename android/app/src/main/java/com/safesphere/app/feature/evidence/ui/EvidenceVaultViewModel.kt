@@ -2,6 +2,7 @@ package com.safesphere.app.feature.evidence.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.safesphere.app.core.ui.ScreenLockGate
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.safesphere.app.AppContainer

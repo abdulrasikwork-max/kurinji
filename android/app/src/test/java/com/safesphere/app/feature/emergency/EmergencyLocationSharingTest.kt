@@ -301,7 +301,58 @@ class EmergencyLocationSharingTest {
         assertEquals(EmergencyLocationSharing.MAX_PENDING, sharing.state.value.pendingCount)
     }
 
+    // ---- Phase 11: SOS without internet ----------------------------------------------------------
+
+    @Test
+    fun `points of an SOS the server does not have yet are collected, and sent to its id once it has it`() = runTest {
+        val sharing = sharing()
+        runCurrent()
+        sharing.start(LOCAL_ID, startedAt)
+        runCurrent()
+        provider.emitFix(fix(at = startedAt.plusSeconds(5)))
+        runCurrent()
+        assertTrue(repository.uploads.isEmpty()) // nothing is sent under a local id
+        assertEquals(1, sharing.state.value.pendingCount)
+
+        sharing.rebindEmergency(LOCAL_ID, EMERGENCY_ID)
+        runCurrent()
+        assertEquals(EMERGENCY_ID, repository.uploads.single().first)
+        assertEquals(EMERGENCY_ID, sharing.state.value.emergencyId)
+        assertEquals(0, sharing.state.value.pendingCount)
+    }
+
+    @Test
+    fun `points of an SOS that ended before the server had it are kept in memory and sent once it has it`() = runTest {
+        val sharing = sharing()
+        runCurrent()
+        sharing.start(LOCAL_ID, startedAt)
+        runCurrent()
+        provider.emitFix(fix(at = startedAt.plusSeconds(5)))
+        runCurrent()
+        sharing.stop()
+        runCurrent()
+        assertTrue(repository.uploads.isEmpty())
+        assertNull(sharing.notice.value) // the service stops: the SOS ended
+
+        sharing.rebindEmergency(LOCAL_ID, EMERGENCY_ID)
+        runCurrent()
+        assertEquals(EMERGENCY_ID, repository.uploads.single().first)
+
+        // A sign-out forgets kept points (they belong to the account).
+        sharing.start(LOCAL_ID - 1, startedAt)
+        runCurrent()
+        provider.emitFix(fix(at = startedAt.plusSeconds(9)))
+        runCurrent()
+        sharing.stop()
+        session.clear()
+        runCurrent()
+        sharing.rebindEmergency(LOCAL_ID - 1, EMERGENCY_ID + 1)
+        runCurrent()
+        assertEquals(1, repository.uploads.size)
+    }
+
     private companion object {
+        const val LOCAL_ID = -77L
         const val EMERGENCY_ID = 10L
     }
 }

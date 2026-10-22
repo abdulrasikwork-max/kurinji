@@ -342,7 +342,41 @@ class CircleAlertCoordinatorTest {
         assertEquals(listOf("dial:7"), server.calls.filter { it.startsWith("dial") })
     }
 
+    // ---- Phase 11: SOS without internet ----------------------------------------------------------
+
+    @Test
+    fun `an SOS the server does not have yet is texted, and its reports wait for the server's id`() = runTest {
+        val alerts = optedIn()
+        emergency.value = LocationSharingState(emergencyId = LOCAL_ID, status = LocationSharingStatus.LOCATION_DISABLED)
+        alerts.onEmergencyActive(LOCAL_ID, now())
+        runCurrent()
+        assertEquals(2, sms.sent.size) // SMS needs no server
+        sms.sent.forEach { sms.emit(SmsResult(it.requestId, SmsOutcome.SENT)) }
+        runCurrent()
+        assertTrue(server.reports.isEmpty()) // nothing reported under a local id
+
+        alerts.rebindEmergency(LOCAL_ID, 70)
+        emergency.value = emergency.value.copy(emergencyId = 70)
+        runCurrent()
+        assertEquals(2, server.reports.size)
+        assertTrue(server.reports.values.all { it.target == AlertTarget.Emergency(70) })
+        // The memory moved too: the same SOS is never texted twice.
+        alerts.onEmergencyActive(70, now())
+        runCurrent()
+        assertEquals(2, sms.sent.size)
+        assertTrue(alerts.state.value.deliveries.all { it.target == AlertTarget.Emergency(70) })
+    }
+
+    @Test
+    fun `Call 112 for a local id is left to the SOS recorder`() = runTest {
+        val alerts = coordinator()
+        alerts.onDialPromptOpened(LOCAL_ID)
+        runCurrent()
+        assertTrue(server.calls.none { it.startsWith("dial") })
+    }
+
     private companion object {
+        const val LOCAL_ID = -500L
         const val USER_ID = 7L
     }
 }

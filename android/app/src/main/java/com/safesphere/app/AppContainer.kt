@@ -41,6 +41,12 @@ import com.safesphere.app.feature.emergency.data.RemoteEmergencyLocationReposito
 import com.safesphere.app.feature.emergency.data.RemoteEmergencyRepository
 import com.safesphere.app.feature.emergency.data.remote.EmergencyApi
 import com.safesphere.app.feature.emergency.domain.ActiveEmergencyStore
+import com.safesphere.app.feature.emergency.domain.EmergencyIds
+import com.safesphere.app.feature.emergency.session.SosRecorder
+import com.safesphere.app.feature.rise.data.EncryptedFileRiseStore
+import com.safesphere.app.feature.rise.data.RiseStore
+import com.safesphere.app.feature.rise.session.RiseJournalHolder
+import com.safesphere.app.feature.rise.session.RiseLock
 import com.safesphere.app.feature.emergency.domain.EmergencyLocationRepository
 import com.safesphere.app.feature.emergency.domain.EmergencyRepository
 import com.safesphere.app.feature.emergency.location.EmergencyLocationSharing
@@ -162,7 +168,8 @@ class AppContainer(context: Context) {
         AccountDataWiper(
             parts = listOf(
                 { userId -> evidenceVault.forgetAccount(userId) },
-                { userId -> withContext(Dispatchers.IO) { recoveryKeyStore.remove(userId) } }
+                { userId -> withContext(Dispatchers.IO) { recoveryKeyStore.remove(userId) } },
+                { userId -> withContext(Dispatchers.IO) { riseStore.delete(userId) } } // Phase 10B
             ),
             pendingDeletion = pendingDeletion
         )
@@ -212,6 +219,23 @@ class AppContainer(context: Context) {
 
     val activeEmergencyStore: ActiveEmergencyStore by lazy { DataStoreActiveEmergencyStore(appContext) }
 
+    /**
+     * Phase 11: starts every SOS on the phone (it works without internet) and records it on the server when it can.
+     * Created with the container, so an SOS that started or ended offline is recorded after a restart too.
+     */
+    val sosRecorder: SosRecorder by lazy {
+        SosRecorder(
+            scope = applicationScope,
+            store = activeEmergencyStore,
+            repository = emergencyRepository,
+            isOnline = AndroidConnectivityMonitor(appContext).isOnline,
+            session = sessionStorage.session,
+            // Circle first: its memory must move before the location state changes and re-triggers it.
+            rebinders = { listOf(circleAlertCoordinator, emergencyLocationSharing) },
+            onDialPromptRecorded = { emergencyId -> circleAlerts.onDialPromptOpened(emergencyId) }
+        )
+    }
+
     // ---- Phase 4B: Safe Walk ---------------------------------------------------------------------
 
     private val journeyApi: JourneyApi by lazy { retrofit.create(JourneyApi::class.java) }
@@ -259,7 +283,9 @@ class AppContainer(context: Context) {
     val circleAlertRepository: CircleAlertRepository by lazy { RemoteCircleAlertRepository(circleAlertApi, apiCallHandler) }
 
     /** The one holder for Safety Circle communication. Created with the container so it watches every walk. */
-    val circleAlerts: CircleAlertController by lazy {
+    val circleAlerts: CircleAlertController get() = circleAlertCoordinator
+
+    private val circleAlertCoordinator: CircleAlertCoordinator by lazy {
         CircleAlertCoordinator(
             scope = applicationScope,
             store = DataStoreCircleAlertStore(appContext),
@@ -338,7 +364,10 @@ class AppContainer(context: Context) {
             vault = evidenceVault,
             writer = MediaRecorderSegmentWriter(appContext),
             storage = AndroidStorageSpace(appContext.filesDir),
-            activeEmergencyId = emergencyLocationSharing.state.map { if (it.signedOut) null else it.emergencyId },
+            // Phase 11: evidence belongs to an SOS the server has (a local id is not one yet).
+            activeEmergencyId = emergencyLocationSharing.state.map {
+                if (it.signedOut || it.emergencyId?.let(EmergencyIds::isLocal) == true) null else it.emergencyId
+            },
             currentUserId = evidenceVault.currentUserId,
             elapsedMillis = SystemClock::elapsedRealtime
         )
@@ -372,10 +401,23 @@ class AppContainer(context: Context) {
     /** Region packs for "Check the way": only 5-character region cells are ever sent. */
     val intelligenceRepository: IntelligenceRepository by lazy { RemoteIntelligenceRepository(intelligenceApi, apiCallHandler) }
 
+    // ---- Phase 10B: Rise "Proof" (phone only: no API, no notification, no service) -----------------------------
+
+    private val riseStore: RiseStore by lazy { EncryptedFileRiseStore(java.io.File(appContext.filesDir, "rise"), AndroidKeystoreKeyWrapper()) }
+
+    /** The signed-in person's Rise record (encrypted file per account on this phone). */
+    val riseJournal: RiseJournalHolder by lazy {
+        RiseJournalHolder(applicationScope, Dispatchers.IO, riseStore, sessionStorage.session.map { it?.user?.id })
+    }
+
+    /** Rise's optional opening lock (the phone's screen lock); any account change locks it. */
+    val riseLock: RiseLock by lazy { RiseLock(applicationScope, sessionStorage.session.map { it?.user?.id }) }
+
     init {
         evidenceVault // seal captures interrupted by a crash and resume uploads right away
         evidenceRecorder // watches the active emergency (stops recording when it ends)
         circleAlerts // start watching walks and emergencies right away (e.g. after a restart into a walk)
+        sosRecorder // record an SOS that started or ended offline as soon as the server can be reached
         // On logout (or an expired token) forget the active emergency / walk records kept on this phone.
         applicationScope.launch {
             sessionStorage.session
@@ -383,7 +425,7 @@ class AppContainer(context: Context) {
                 .distinctUntilChanged()
                 .collect { signedOut ->
                     if (signedOut) {
-                        activeEmergencyStore.clear()
+                        activeEmergencyStore.clearAll() // incl. SOS endings not told to the server yet
                         activeJourneyStore.clear()
                         communityOutbox.clear() // unsent reports belong to the account that made them
                     }

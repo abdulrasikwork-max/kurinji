@@ -250,6 +250,48 @@
         android:label="@string/title_terms"
         tools:layout="@layout/fragment_info_page" />
 
+    <!-- Phase 10B: Rise "Proof" (a tab, plus its own secondary screens) -->
+    <fragment
+        android:id="@+id/riseFragment"
+        android:name="com.safesphere.app.feature.rise.ui.RiseFragment"
+        android:label="@string/nav_rise"
+        tools:layout="@layout/fragment_rise" />
+
+    <fragment
+        android:id="@+id/riseGoalEditorFragment"
+        android:name="com.safesphere.app.feature.rise.ui.RiseGoalEditorFragment"
+        android:label="@string/rise_new_goal"
+        tools:layout="@layout/fragment_rise_goal_editor" />
+
+    <fragment
+        android:id="@+id/riseGoalFragment"
+        android:name="com.safesphere.app.feature.rise.ui.RiseGoalFragment"
+        android:label="@string/title_rise_goal"
+        tools:layout="@layout/fragment_rise_goal">
+        <argument
+            android:name="goalId"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/riseStepFragment"
+        android:name="com.safesphere.app.feature.rise.ui.RiseStepFragment"
+        android:label="@string/title_rise_step"
+        tools:layout="@layout/fragment_rise_step">
+        <argument
+            android:name="goalId"
+            app:argType="long" />
+        <argument
+            android:name="stepId"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/riseProofFragment"
+        android:name="com.safesphere.app.feature.rise.ui.RiseProofFragment"
+        android:label="@string/rise_your_proof"
+        tools:layout="@layout/fragment_rise_proof" />
+
     <fragment
         android:id="@+id/privacyPolicyFragment"
         android:name="com.safesphere.app.feature.settings.ui.info.PrivacyPolicyFragment"

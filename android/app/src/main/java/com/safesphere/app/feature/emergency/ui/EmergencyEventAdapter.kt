@@ -40,7 +40,10 @@ class EmergencyEventAdapter(
 
         with(holder.binding) {
             eventTrigger.text = trigger
-            eventStarted.text = context.getString(R.string.emergency_started_at, started)
+            // Phase 11: an SOS that began without a connection says that its times are the phone's.
+            eventStarted.text = context.getString(
+                if (event.startedOffline) R.string.emergency_started_at_offline else R.string.emergency_started_at, started
+            )
             eventStatus.setStatus(event.status.badge(), status)
 
             val ended = event.endedAt
@@ -48,7 +51,12 @@ class EmergencyEventAdapter(
             if (ended != null) {
                 eventEnded.text = context.getString(R.string.emergency_ended_at, EmergencyTimeFormatter.format(ended))
             }
-            root.contentDescription = context.getString(R.string.cd_emergency_event, trigger, started, status)
+            val description = context.getString(R.string.cd_emergency_event, trigger, started, status)
+            root.contentDescription = if (event.startedOffline) {
+                context.getString(R.string.emergency_history_offline_description, description)
+            } else {
+                description
+            }
             root.isClickable = onClick != null
             root.setOnClickListener(onClick?.let { click -> { click(event) } })
         }
