@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13A: the person's own connections: requests, connections, invite codes, finding someone by exact handle.
+     Every list is the person's own; nothing shows a count. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/errorNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone"
+            app:noticeText="@string/error_unknown"
+            app:noticeType="warning" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
+        <!-- No profile yet (or the age is not confirmed yet): the profile screen handles both. -->
+        <LinearLayout
+            android:id="@+id/noProfileBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.safesphere.app.core.ui.components.EmptyStateView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                app:emptyIcon="@drawable/ic_person_outline"
+                app:emptyMessage="@string/social_no_profile_message"
+                app:emptyTitle="@string/social_no_profile_title" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/makeProfileButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:minHeight="@dimen/menu_row_min_height"
+                android:text="@string/social_make_profile" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/contentBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- The person's own profile -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.SafeSphere.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_lg">
+
+                    <TextView
+                        android:id="@+id/myName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+                    <TextView
+                        android:id="@+id/myHandle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editProfileButton"
+                        style="@style/Widget.SafeSphere.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="@dimen/min_touch_target"
+                        android:text="@string/social_edit_profile" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Phase 13B: experiences (Q11 entry points until 13F) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/shareExperienceButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:minHeight="@dimen/menu_row_min_height"
+                android:text="@string/social_share_experience"
+                app:icon="@drawable/ic_add" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/myExperiencesButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/social_your_experiences" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/privatePlacesButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/social_private_places"
+                app:icon="@drawable/ic_lock" />
+
+            <!-- Find someone: exact handle only -->
+            <TextView
+                style="@style/SocialSectionTitle"
+                android:text="@string/social_find_title" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/findLayout"
+                style="@style/Widget.SafeSphere.TextInputLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:hint="@string/social_find_hint"
+                app:prefixText="\@">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/findInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:importantForAutofill="no"
+                    android:imeOptions="actionSearch"
+                    android:inputType="text|textNoSuggestions"
+                    android:maxLength="21"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/findButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/social_find_action" />
+
+            <!-- Requests for the person -->
+            <TextView
+                style="@style/SocialSectionTitle"
+                android:text="@string/social_incoming_title" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/incomingList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                android:id="@+id/incomingEmpty"
+                style="@style/SocialEmptyLine"
+                android:text="@string/social_incoming_empty" />
+
+            <!-- Requests the person sent -->
+            <TextView
+                style="@style/SocialSectionTitle"
+                android:text="@string/social_outgoing_title" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/outgoingList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                android:id="@+id/outgoingEmpty"
+                style="@style/SocialEmptyLine"
+                android:text="@string/social_outgoing_empty" />
+
+            <!-- Connections -->
+            <TextView
+                style="@style/SocialSectionTitle"
+                android:text="@string/social_connections_title" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/connectionList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                android:id="@+id/connectionsEmpty"
+                style="@style/SocialEmptyLine"
+                android:text="@string/social_connections_empty" />
+
+            <!-- Invite codes -->
+            <TextView
+                style="@style/SocialSectionTitle"
+                android:text="@string/social_invites_title" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:text="@string/social_invites_body"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/createInviteButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:minHeight="@dimen/menu_row_min_height"
+                android:text="@string/social_create_invite"
+                app:icon="@drawable/ic_add"
+                app:iconGravity="textStart" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/inviteList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/redeemLayout"
+                style="@style/Widget.SafeSphere.TextInputLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:hint="@string/social_redeem_hint">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/redeemInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:importantForAutofill="no"
+                    android:imeOptions="actionDone"
+                    android:inputType="textCapCharacters|textNoSuggestions"
+                    android:maxLength="40"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/redeemButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/social_redeem_action" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/blockedMutedButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/social_blocked_muted_link" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

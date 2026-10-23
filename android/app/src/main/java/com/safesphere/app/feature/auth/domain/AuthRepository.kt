@@ -1,5 +1,6 @@
 package com.safesphere.app.feature.auth.domain
 
+import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
@@ -18,8 +19,11 @@ interface AuthRepository {
      */
     val signInNeeded: Flow<Boolean> get() = flowOf(false)
 
-    /** Creates an account on the server and signs in. */
-    suspend fun register(name: String, email: String, password: String): AuthResult<AuthUser>
+    /**
+     * Creates an account on the server and signs in. Phase 13A: [dateOfBirth] must be 18+ (checked on the phone and on
+     * the server); it is sent once and stored nowhere.
+     */
+    suspend fun register(name: String, email: String, password: String, dateOfBirth: LocalDate): AuthResult<AuthUser>
 
     /** Checks credentials on the server and signs in. */
     suspend fun login(email: String, password: String): AuthResult<AuthUser>

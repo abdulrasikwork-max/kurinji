@@ -850,3 +850,123 @@ A `sid` without a session row (signed in before V19) is still accepted until it 
 Password change ends every OTHER device session of the account (`PASSWORD_CHANGED`); the caller's continues. Account
 erasure deletes the account's sessions. A disabled account's refresh is refused (`ACCOUNT_DISABLED`).
 Ended sessions are deleted `app.account.session-retention` (30 days) after they ended.
+
+# Phase 13A (identity foundation: age gate, profiles, connections, invites, blocks, mutes; V20, docs/PHASE13A.md)
+
+All endpoints below need a JWT. Identity only from the token. A person the caller may not see (missing, blocked either
+way, disabled or erased account) answers `404`, exactly like one that does not exist. Ids in URLs are random public ids.
+No answer contains a count of anything. Social endpoints answer `409 "Confirm your age to use this"` for an account
+that has not declared an adult date of birth. Limits are per person, in memory (`app.social.*`).
+
+## Age (decision D6: 18+)
+- `POST /api/auth/register` now REQUIRES `"dateOfBirth": "yyyy-MM-dd"`. Under 18 (server's UTC date) → `400`
+  `"You must be 18 or older to use this app"`; future or > 120 years ago → `400` `"Enter a valid date of birth"`;
+  missing → `400` with `fieldErrors.dateOfBirth`. The date is checked and discarded; it is never stored or echoed.
+- User answers (`/me`, login, register, refresh, password change) add `"ageConfirmed": true|false`.
+- `POST /api/users/me/age-confirmation` `{ "dateOfBirth": "yyyy-MM-dd" }` → `204` (accounts created before V20 confirm
+  once; the first confirmation time is kept). Same `400`s as registration.
+
+## Profiles
+- `GET /api/profiles/me` → own profile `{publicId, handle, displayName, bio, languages[], interests[], city,
+  handleChangeAvailableAt}` (`handleChangeAvailableAt` set while the handle cannot change yet); `404` when none yet.
+- `PUT /api/profiles/me` `{handle, displayName, bio?, languages?[], interests?[], city?}` → own profile (creates or
+  updates). Handle: lower-cased, a leading `@` dropped, `^[a-z][a-z0-9_.]{1,18}[a-z0-9_]$`, no `..`; bad format `400`;
+  reserved word, taken, or reserved for its previous owner (30 days) → `409 "That handle is not available"`; a second
+  change within 30 days → `409 "You can change your handle once every 30 days"`. Text: NFC, invisible/control characters
+  removed, spaces collapsed; name 1–40, bio ≤ 160, city ≤ 60 letters; links refused (`400 "Links are not allowed in a
+  profile"`). `languages` ⊂ `ta en hi ml te kn`; `interests` ⊂ `FOOD_CAFES NATURE_OUTDOORS CULTURE_HERITAGE
+  MUSIC_NIGHTLIFE STUDY_WORK DAY_TRIPS ACTIVITIES_SPORT HOBBIES_MAKING CITY_LIFE HIDDEN_GEMS`; anything else `400`.
+- `GET /api/profiles/by-handle/{handle}` and `GET /api/profiles/{publicId}` → `{publicId, handle, displayName, bio,
+  languages, interests, city, relationship}`; `relationship` = `SELF | NONE | REQUESTED | REQUEST_RECEIVED | CONNECTED`.
+  Exact handle only (no prefix or name search); `404 "No one with that handle"`; `429` after 120 look-ups per hour.
+
+## Connections (mutual)
+- `POST /api/connections/requests` `{profileId}` → `202 {status: REQUESTED|CONNECTED, person}`. CONNECTED when the
+  other person had asked first (waiting, or declined by the caller earlier). Asking again → same `REQUESTED`.
+  `400` yourself; `404` not visible; `409` already connected / 50 requests waiting / `"Make your profile first"`;
+  `429` after 30 per day.
+- `GET /api/connections/requests?direction=incoming|outgoing` → `[{requestId, person{publicId, handle, displayName}}]`.
+  A declined request is not shown to the decliner again and still shows to its sender (a decline is silent).
+- `POST /api/connections/requests/{requestId}/accept` → `200 {status: CONNECTED, person}`;
+  `POST …/decline` → `204`; `DELETE /api/connections/requests/{requestId}` (the sender cancels) → `204`; else `404`.
+- `GET /api/connections` → own connections `[{publicId, handle, displayName}]`, most recent first. Nobody else can list them.
+- `DELETE /api/connections/{profileId}` → `204` (silent); `404` when not connected. At most 1000 connections each (`409`).
+
+## Invite codes
+- `POST /api/connections/invites` → `201 {id, code, expiresAt}`: 26 characters (Crockford base 32), shown ONCE; only
+  its SHA-256 is stored; works once for 7 days. `409` with 5 active codes; `429` after 10 per day; `409` without a profile.
+- `GET /api/connections/invites` → `[{id, expiresAt}]` (active only, never the code); `DELETE …/invites/{id}` → `204`.
+- `POST /api/connections/invites/redeem` `{code}` (case, spaces, hyphens and O/I/L look-alikes forgiven) → `200
+  {status: CONNECTED, person}`. Unknown, used, expired, revoked, own, blocked-either-way → the same
+  `404 "This invite code does not work"`; already connected → `409`; `429` after 10 attempts per hour.
+
+## Blocks and mutes (private to their owner; the other person is never told)
+- `POST /api/blocks` `{profileId}` → `204` (idempotent; works on any existing profile id, also someone who blocked you).
+  Removes the connection and every request between the two in the same transaction; both become invisible to each
+  other everywhere. `GET /api/blocks` → own list; `DELETE /api/blocks/{profileId}` → `204` (does not reconnect).
+- `POST /api/mutes` `{profileId}` → `204`; `GET /api/mutes`; `DELETE /api/mutes/{profileId}` → `204`. A mute changes
+  nothing for the muted person; it takes effect on content from 13B on. Yourself → `400`; unknown id → `404`.
+
+# Phase 13B: experiences (V21, `docs/PHASE13B.md`)
+
+All need a JWT and an age-confirmed account (`409 "Confirm your age to use this"`); posting and perspectives also need
+a profile (`409 "Make your profile first"`). Not visible = **404**, exactly like missing. No answer carries a count, a
+coordinate, or (for anyone but the author) a timestamp. Limits per person, in memory: places 10/day, place look-ups
+60/h, posts 20/day, photos 30/day, perspectives 100/day → `429`. Config `app.social.*` (places-per-day,
+place-lookups-per-hour, posts-per-day, media-per-day, comments-per-day, exact-delay-min/max 1h/3h, media-dir
+`SOCIAL_MEDIA_DIR` default `social-media-store`, max-media-bytes 5 MiB, unattached-media-lifetime 24h,
+media-cleanup-enabled, media-cleanup-interval PT1H).
+
+Codes: type `EXPERIENCE|ASK` (TAKE → 400); precision `EXACT|AREA|CITY|NONE`; audience `EVERYONE|CONNECTIONS|ONLY_ME`;
+commentPolicy `EVERYONE|CONNECTIONS|NOBODY` (ONLY_ME always NOBODY); daypart `MORNING|AFTERNOON|EVENING|NIGHT`; category
+= the 10 interest codes; city `CHENNAI|COIMBATORE|MADURAI|TIRUCHIRAPPALLI|SALEM|TIRUNELVELI|VELLORE|ERODE|THOOTHUKUDI|
+THANJAVUR|PUDUCHERRY|BENGALURU|OTHER`; band `THIS_WEEK|THIS_MONTH|EARLIER`; kind `BEEN_HERE|QUESTION|REPLY|ANSWER`.
+
+## Places (no creator, no coordinates)
+- `POST /api/places` `{name, category, cell(7)}` → `200 {publicId, name, category, cell, areaCell}` — the existing place
+  when the same normalised name exists in that cell. `400`: cell not 7 lower-case geohash characters, unknown category,
+  name 2–60 characters / no links / at least a letter or digit / not a private place ("my home", "hostel room",
+  "en veedu", "door no 12"…).
+- `GET /api/places/nearby?area=(6)` → up to 100 places in the area and its 8 neighbours, by name. `400` for anything
+  that is not a 6-character area.
+- `GET /api/places/{id}` → one place (a merged place answers as the place it was merged into); `404`.
+
+## Photos
+- `POST /api/media` — body = the image, `Content-Type: image/jpeg|image/png` (others `415`), ≤ 5 MB → `201 {mediaId,
+  width, height}`. Recognised by magic bytes; size read before decoding (≤ 4096 px a side); decoded and re-encoded as
+  a JPEG **without any metadata**; the original bytes are never stored. `400` for non-images, damaged/truncated files,
+  too large. Only its owner can fetch it until a post uses it; unattached uploads are deleted after 24 h.
+- `GET /api/media/{mediaId}` → `image/jpeg`, `Cache-Control: no-store, private`, `X-Content-Type-Options: nosniff`.
+  Visible exactly where its post is visible; `404` otherwise.
+
+## Posts
+- `POST /api/posts` `{type, body, tip?, category?, placeId?, precision, city?, experiencedMonth? "YYYY-MM", daypart?,
+  audience, commentPolicy, mediaIds[≤6]?}` → `201` post (author view). Rules: Experience body 1–5000, tip ≤ 300, month
+  required (not later than the month of UTC+14 h, not before 1950); Ask body 10–1000, no tip, no month; EXACT/AREA need
+  `placeId`; CITY needs `city` and no place; NONE neither; audience required (no default). `mediaIds` = the caller's
+  own unattached uploads, attached in this order (`404` otherwise). **EXACT posts become visible to everyone but the
+  author after a random 1–3 h** (`visibleFrom`).
+- `GET /api/posts/{id}` → `{publicId, type, author{publicId, handle, displayName}, own, body, tip, category, precision,
+  place{publicId, name} (EXACT only), areaCell (AREA only, 6 characters), city (CITY only), experiencedMonth, daypart,
+  postedPeriod (band), edited, media[{mediaId, width, height}], audience (author only), commentPolicy, canComment,
+  postedAt (author only), visibleFrom (author only)}`.
+- `PUT /api/posts/{id}` (author) `{body, tip?, category?, precision, city?, experiencedMonth?, daypart?, audience,
+  commentPolicy}` → `200`, marked `edited`. Audience and precision may only stay or narrow (`409` otherwise, also for
+  moving a CITY post to another city); the place and photos never change; narrowing to CITY needs `city`.
+- `DELETE /api/posts/{id}` (author) → `204`: perspectives, photo rows and the post, then the photo files.
+- `GET /api/posts/mine?cursor=` and `GET /api/profiles/{profileId}/posts?cursor=` → `{items[post], nextCursor}`, newest
+  first, 20 per page; `nextCursor` = the last item's id (more only on request). A profile the viewer may not see → `404`;
+  a cursor naming a post the viewer cannot see → `400`.
+
+## Perspectives
+- `GET /api/posts/{id}/comments` → `[{publicId, kind, author, own, body, postedPeriod, hidden, helped, parentId,
+  canHide, canMarkHelped}]`: on an Experience Been here too first, on an Ask the answers marked helpful first, then
+  oldest first; replies follow their parent. A perspective hidden by the post's author is returned only to its writer
+  and the author (`hidden: true`), and its replies to nobody else; perspectives by someone blocked either way are left
+  out.
+- `POST /api/posts/{id}/comments` `{kind, body (1–1000), parentId?}` → `201`. Top level: BEEN_HERE/QUESTION on an
+  Experience, ANSWER/QUESTION on an Ask; REPLY only with `parentId` of a visible top-level perspective of the same post
+  (one level). Who may write = the comment policy (the author always may, except on ONLY_ME); not allowed → `404`.
+- `DELETE /api/comments/{id}` (its writer) → `204`, with the replies under it.
+- `POST /api/comments/{id}/hide|unhide` (the post's author) → `204`.
+- `POST|DELETE /api/comments/{id}/helped` (the asker, ANSWER on an Ask) → `204`; anything else `404`.

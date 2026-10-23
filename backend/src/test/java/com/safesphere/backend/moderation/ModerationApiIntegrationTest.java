@@ -125,7 +125,8 @@ class ModerationApiIntegrationTest {
         String email = "claims.admin." + UUID.randomUUID() + "@example.com";
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("name", "X", "email", email,
-                                "password", TestAccounts.PASSWORD, "role", "ADMIN"))))
+                                "password", TestAccounts.PASSWORD, "role", "ADMIN",
+                                "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE))))
                 .andExpect(status().isCreated());
         assertEquals(UserRole.USER, users.findByEmail(email).orElseThrow().getRole());
     }

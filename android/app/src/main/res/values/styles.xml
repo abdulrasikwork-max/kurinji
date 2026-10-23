@@ -146,4 +146,21 @@
     <style name="Widget.SafeSphere.Divider" parent="">
         <item name="android:background">?attr/colorOutlineVariant</item>
     </style>
+
+    <!-- Phase 13A: section headings and "nothing here" lines of the social screens.
+         values-v28/styles.xml adds accessibilityHeading (API 28+) to the heading style. -->
+    <style name="SocialSectionTitle" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_lg</item>
+        <item name="android:textAppearance">@style/TextAppearance.SafeSphere.SectionTitle</item>
+    </style>
+
+    <style name="SocialEmptyLine" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_xs</item>
+        <item name="android:textAppearance">@style/TextAppearance.SafeSphere.Caption</item>
+        <item name="android:visibility">gone</item>
+    </style>
 </resources>

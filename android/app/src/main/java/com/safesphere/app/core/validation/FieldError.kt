@@ -8,5 +8,9 @@ enum class FieldError {
     PASSWORD_TOO_SHORT,
     PASSWORDS_DO_NOT_MATCH,
     INVALID_PHONE,
-    SELECTION_REQUIRED
+    SELECTION_REQUIRED,
+    /** Phase 13A: the date of birth is less than 18 years ago. */
+    UNDER_AGE,
+    /** Phase 13A: no date of birth chosen, a future date, or more than 120 years ago. */
+    INVALID_DATE_OF_BIRTH
 }

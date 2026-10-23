@@ -10,9 +10,10 @@ import java.time.ZoneOffset;
  * so they cannot leak by accident: the entity is never serialised directly.
  * Phase 10A: [deletionRequestedAt] / [deletionDueAt] are set while a deletion request is pending (the phone's banner);
  * both null otherwise.
+ * Phase 13A: [ageConfirmed] = the person declared an adult date of birth (accounts created before V20 confirm once).
  */
 public record UserResponse(Long id, String name, String email, Instant createdAt, Instant deletionRequestedAt,
-                           Instant deletionDueAt) {
+                           Instant deletionDueAt, boolean ageConfirmed) {
 
     public static UserResponse from(User user) {
         return new UserResponse(
@@ -21,7 +22,8 @@ public record UserResponse(Long id, String name, String email, Instant createdAt
                 user.getEmail(),
                 user.getCreatedAt().toInstant(ZoneOffset.UTC),
                 utc(user.getDeletionRequestedAt()),
-                utc(user.getDeletionDueAt())
+                utc(user.getDeletionDueAt()),
+                user.isAgeConfirmed()
         );
     }
 

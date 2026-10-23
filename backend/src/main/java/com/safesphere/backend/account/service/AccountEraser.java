@@ -6,6 +6,7 @@ import com.safesphere.backend.emergency.entity.EmergencyStatus;
 import com.safesphere.backend.emergency.repository.EmergencyEventRepository;
 import com.safesphere.backend.evidence.repository.EvidenceItemRepository;
 import com.safesphere.backend.evidence.service.EvidenceStorage;
+import com.safesphere.backend.social.media.MediaStorage;
 import com.safesphere.backend.user.entity.User;
 import com.safesphere.backend.user.repository.UserRepository;
 import java.security.SecureRandom;
@@ -28,8 +29,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  * Phase 10A.3: deletes ONE account whose grace period is over, in three steps:
  *
  *   1. check (locked): still due, no ACTIVE emergency, none ended within 24 h (else the date moves later: POSTPONED);
- *      collect the storage keys of the person's evidence files;
- *   2. delete those ciphertext files (outside any transaction; a failure stops here and the job tries again next run,
+ *      collect the storage keys of the person's evidence files and (Phase 13B) photo files;
+ *   2. delete those files (outside any transaction; a failure stops here and the job tries again next run,
  *      so no row is deleted while one of its files is still on disk);
  *   3. in one transaction: check again, delete every row the person owns, children first (the same rows the database
  *      cascades remove; written out so the test database, which has no foreign keys, behaves the same), then either
@@ -51,7 +52,12 @@ public class AccountEraser {
             "safety_contacts.user_id", "emergency_events.user_id", "safe_journeys.user_id",
             "evidence_custody_events.user_id", "evidence_recovery_envelopes.user_id", "evidence_recovery_failures.user_id",
             "signal_contributions.user_id", "contributor_standing.user_id", "signal_flags.user_id",
-            "moderation_actions.subject_user_id", "moderation_appeals.user_id", "device_sessions.user_id");
+            "moderation_actions.subject_user_id", "moderation_appeals.user_id", "device_sessions.user_id",
+            // Phase 13A (V20): the social identity.
+            "profiles.user_id", "connections.user_low", "connections.user_high", "connection_invites.owner_id",
+            "blocks.blocker_id", "blocks.blocked_id", "mutes.muter_id", "mutes.muted_id",
+            // Phase 13B (V21): experiences, their photos and perspectives. Places record no person (Q12).
+            "posts.author_id", "post_media.owner_id", "comments.author_id");
 
     /** References that keep the account row (anonymised): the moderation audit trail of decisions this person took. */
     public static final Set<String> KEPT_REFERENCES = Set.of("moderation_actions.actor_id", "moderation_appeals.decided_by");
@@ -77,7 +83,22 @@ public class AccountEraser {
             "DELETE FROM signal_flags WHERE user_id = ?",
             "DELETE FROM contributor_standing WHERE user_id = ?",
             // Phase 11 C1: every sign-in ends (an anonymised tombstone keeps no session either).
-            "DELETE FROM device_sessions WHERE user_id = ?");
+            "DELETE FROM device_sessions WHERE user_id = ?",
+            // Phase 13A: the profile, connections in both directions, invites, and blocks/mutes by or of the person.
+            "DELETE FROM connections WHERE user_low = ? OR user_high = ?",
+            "DELETE FROM connection_invites WHERE owner_id = ?",
+            "DELETE FROM blocks WHERE blocker_id = ? OR blocked_id = ?",
+            "DELETE FROM mutes WHERE muter_id = ? OR muted_id = ?",
+            // Phase 13B: replies to the person's perspectives, every perspective on their posts, their own
+            // perspectives, their photos (files already deleted in step 2), then their posts. The derived table is
+            // needed because MySQL cannot read the table it deletes from in a plain subquery.
+            "DELETE FROM comments WHERE parent_id IN (SELECT id FROM (SELECT id FROM comments WHERE author_id = ?) AS own)",
+            "DELETE FROM comments WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?) AND parent_id IS NOT NULL",
+            "DELETE FROM comments WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)",
+            "DELETE FROM comments WHERE author_id = ?",
+            "DELETE FROM post_media WHERE owner_id = ?",
+            "DELETE FROM posts WHERE author_id = ?",
+            "DELETE FROM profiles WHERE user_id = ?");
 
     /** Rows ABOUT the person in the moderation log; deleted with a deleted account (as the V13 cascades do). */
     private static final List<String> MODERATION_ABOUT = List.of(
@@ -97,12 +118,14 @@ public class AccountEraser {
     private final AccountProperties properties;
     private final Clock clock;
     private final TransactionTemplate tx;
+    private final MediaStorage media;
     private final SecureRandom random = new SecureRandom();
 
     public AccountEraser(UserRepository users, EmergencyEventRepository emergencies, EvidenceItemRepository evidence,
                          EvidenceStorage storage, CommunityService community, JdbcTemplate jdbc,
                          PasswordEncoder passwordEncoder, AccountProperties properties, Clock clock,
-                         PlatformTransactionManager transactions) {
+                         PlatformTransactionManager transactions, MediaStorage media) {
+        this.media = media;
         this.users = users;
         this.emergencies = emergencies;
         this.evidence = evidence;
@@ -127,17 +150,29 @@ public class AccountEraser {
                 return Outcome.FILES_FAILED;
             }
         }
+        for (String key : check.mediaKeys()) {
+            try {
+                media.delete(key);
+            } catch (RuntimeException e) {
+                log.warn("Account deletion: a photo file could not be removed ({}); trying again next run",
+                        e.getClass().getSimpleName());
+                return Outcome.FILES_FAILED;
+            }
+        }
         return tx.execute(status -> erase(userId));
     }
 
-    private record Check(Outcome outcome, List<String> storageKeys) {
+    private record Check(Outcome outcome, List<String> storageKeys, List<String> mediaKeys) {
     }
 
     private Check check(long userId) {
         User user = users.findByIdForUpdate(userId).orElse(null);
         Outcome blocked = blocked(user);
-        if (blocked != null) return new Check(blocked, List.of());
-        return new Check(null, evidence.storageKeysOf(userId));
+        if (blocked != null) return new Check(blocked, List.of(), List.of());
+        // Phase 13B: every photo the person uploaded (attached to their posts or not); a photo is always its owner's.
+        List<String> mediaKeys = jdbc.queryForList("SELECT storage_key FROM post_media WHERE owner_id = ?", String.class,
+                userId);
+        return new Check(null, evidence.storageKeysOf(userId), mediaKeys);
     }
 
     private Outcome erase(long userId) {

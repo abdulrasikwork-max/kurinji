@@ -87,10 +87,11 @@ class RemoteAuthRepositoryTest {
 
     @Test
     fun `register success signs the new user in`() = runTest {
-        val result = repository.register("Asha Devi", "asha@example.com", "longenough1")
+        val result = repository.register("Asha Devi", "asha@example.com", "longenough1", ADULT)
 
         assertTrue(result is AuthResult.Success)
         assertEquals("Asha Devi", api.lastRegisterRequest?.name)
+        assertEquals("1998-05-14", api.lastRegisterRequest?.dateOfBirth) // Phase 13A: ISO date, as the server reads it
         assertEquals("test-token", storage.savedSession?.token)
     }
 
@@ -98,7 +99,7 @@ class RemoteAuthRepositoryTest {
     fun `register with an existing email maps 409 to EMAIL_ALREADY_USED`() = runTest {
         api.registerOutcome = { throw FakeAuthApi.httpError(409) }
 
-        val result = repository.register("Asha Devi", "asha@example.com", "longenough1")
+        val result = repository.register("Asha Devi", "asha@example.com", "longenough1", ADULT)
 
         assertEquals(AuthError.EMAIL_ALREADY_USED, failureOf(result))
         assertNull(storage.savedSession)
@@ -108,7 +109,7 @@ class RemoteAuthRepositoryTest {
     fun `register with rejected input maps 400 to VALIDATION`() = runTest {
         api.registerOutcome = { throw FakeAuthApi.httpError(400) }
 
-        assertEquals(AuthError.VALIDATION, failureOf(repository.register("A", "a@b.com", "longenough1")))
+        assertEquals(AuthError.VALIDATION, failureOf(repository.register("A", "a@b.com", "longenough1", ADULT)))
     }
 
     // ------------------------------------------------------------------ profile refresh
@@ -171,9 +172,14 @@ class RemoteAuthRepositoryTest {
 
     @Test
     fun `request objects never print passwords`() {
-        val text = RegisterRequestDto("Asha", "asha@example.com", "super-secret-pw").toString()
+        val text = RegisterRequestDto("Asha", "asha@example.com", "super-secret-pw", "1998-05-14").toString()
 
         assertFalse(text.contains("super-secret-pw"))
         assertFalse(text.contains("asha@example.com"))
+        assertFalse(text.contains("1998-05-14"))
+    }
+
+    private companion object {
+        val ADULT: java.time.LocalDate = java.time.LocalDate.of(1998, 5, 14)
     }
 }

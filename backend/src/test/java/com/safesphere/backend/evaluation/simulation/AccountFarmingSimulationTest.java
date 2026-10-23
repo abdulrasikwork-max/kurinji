@@ -112,7 +112,8 @@ class AccountFarmingSimulationTest {
 
     private MvcResult registerRaw(String address) throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("name", "Phase Nine Farm",
-                "email", "phase9.farm." + UUID.randomUUID() + "@example.com", "password", TestAccounts.PASSWORD));
+                "email", "phase9.farm." + UUID.randomUUID() + "@example.com", "password", TestAccounts.PASSWORD,
+                "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE));
         return mockMvc.perform(post("/api/auth/register").with(request -> {
             request.setRemoteAddr(address);
             return request;

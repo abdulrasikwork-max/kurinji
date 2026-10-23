@@ -1,3 +1,38 @@
+# Handoff: Phase 13B experiences done (2026-10-22/23)
+
+**13B implemented, compiled, tested, verified** (`docs/PHASE13B.md`; plan `PHASE13B_PLAN.md`, approved with Q1–Q12):
+places (no creator, cells only), Experiences and Asks with precision EXACT/AREA/CITY/NONE, the 1–3 h delay for exact
+places, bands instead of times, up to 6 photos stripped on the phone and re-encoded on the server, Perspectives (hide,
+"This helped"), encrypted private places on the phone, Coil with memory cache only.
+- **Results:** backend **635/0** (2 skipped); Android **627/0**; lint **0 / 91**; V21 dry run **79/79**, applied (dev DB
+  **v21**, next **V22**); live MySQL **33/33**; emulator (API 37) **E1–E12 PASS** — two bugs found there and fixed
+  (photo preparation always failed; a false delay line on a city post).
+- **NOT VERIFIED:** real phone, TalkBack speech, dark mode, 320 dp / large fonts. No Android edit screen yet (API only).
+- **State left:** backend and emulator stopped, `adb reverse` removed, all `live13b.*`/`emu13b.*` accounts, places,
+  posts, photos, perspectives and files deleted (170 users as before); app data cleared on the emulator; new git-ignored
+  folder `backend/social-media-store/` (empty). Nothing committed (git not on PATH here).
+- **Next:** the user's review of 13B; then the 13C plan (butterflies, Cocoon, Discover/Edition, place and category
+  pages, mute in lists).
+
+---
+
+# Handoff: Phase 13A identity foundation done (2026-10-22); new product direction = experience platform (Phase 13)
+
+**Product direction changed (the user's final decision, 2026-10-22):** a social platform for real-world experiences with
+the safety system as a trust layer (`docs/EXPERIENCE_PLATFORM_DESIGN.md`; decisions D1–D15 all taken; brand Kurinji,
+trademark/domain/store checks still to do). **13A implemented, compiled, tested, verified** (`docs/PHASE13A.md`):
+- **Results:** backend **569/0** (2 skipped); Android **592/0**; lint **0 / 89**; V20 dry run **30/30**, applied (dev DB
+  **v20**, next **V21**); live MySQL **12/12** (a first attempt failed 5 checks on a script fault, disclosed);
+  emulator (API 37) **E1–E7 PASS** — a navigation bug (Block closed two screens) found there and fixed with a test.
+- **NOT VERIFIED:** real phone, TalkBack speech, dark mode, 320 dp / large fonts.
+- **State left:** backend and emulator stopped, `adb reverse` removed, all `live13a.*`/`emu13a.*` accounts deleted (no
+  profile/connection/invite/block/mute rows left), the app's data cleared on the emulator. `android/local.properties`
+  still points at `127.0.0.1:8080` (unchanged; real-phone setting). Nothing committed (git not on PATH here).
+- **Next:** the user's review of 13A; then the 13B plan (experiences, places, photos with Coil, comments, privacy
+  precision and time bands) for approval. The earlier safety "Next" list below is folded into Phase 13 (D10).
+
+---
+
 # Handoff: C1 session continuity done (2026-10-22); Phase 11 (SOS without internet) + 10B (Rise) done; Phase 9 frozen
 
 **C1 "session continuity" implemented, compiled, tested and verified 2026-10-22** (`docs/PHASE11.md` §8; the critical

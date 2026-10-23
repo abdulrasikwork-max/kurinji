@@ -1,0 +1,199 @@
+package com.safesphere.app.feature.social.data.remote
+
+import com.safesphere.app.feature.social.domain.Audience
+import com.safesphere.app.feature.social.domain.City
+import com.safesphere.app.feature.social.domain.CommentKind
+import com.safesphere.app.feature.social.domain.CommentPolicy
+import com.safesphere.app.feature.social.domain.Daypart
+import com.safesphere.app.feature.social.domain.Interest
+import com.safesphere.app.feature.social.domain.MediaRef
+import com.safesphere.app.feature.social.domain.Perspective
+import com.safesphere.app.feature.social.domain.Place
+import com.safesphere.app.feature.social.domain.Post
+import com.safesphere.app.feature.social.domain.PostDraft
+import com.safesphere.app.feature.social.domain.PostPage
+import com.safesphere.app.feature.social.domain.PostType
+import com.safesphere.app.feature.social.domain.Precision
+import com.safesphere.app.feature.social.domain.TimeBand
+import com.safesphere.app.feature.social.domain.UploadedPhoto
+import java.time.Instant
+import java.time.YearMonth
+
+// Phase 13B: these classes mirror the JSON of the backend (docs/API.md). They FAIL CLOSED: an unknown code from a newer
+// server is read as the most private / least capable value (a post that may not be commented on, a hidden perspective
+// stays hidden), never guessed; an item missing what it needs is dropped. Place cells are redacted in toString().
+
+data class PlaceRequestDto(val name: String, val category: String, val cell: String) {
+    override fun toString() = "PlaceRequestDto(name=$name, category=$category, cell=<hidden>)"
+}
+
+data class PlaceDto(
+    val publicId: String? = null,
+    val name: String? = null,
+    val category: String? = null,
+    val cell: String? = null,
+    val areaCell: String? = null
+) {
+    fun toDomain(): Place? {
+        return Place(
+            publicId = publicId ?: return null,
+            name = name ?: return null,
+            category = Interest.fromCode(category ?: return null) ?: return null,
+            cell = cell ?: return null,
+            areaCell = areaCell ?: return null
+        )
+    }
+
+    override fun toString() = "PlaceDto(publicId=$publicId, name=$name, cell=<hidden>)"
+}
+
+data class UploadedDto(val mediaId: String? = null, val width: Int? = null, val height: Int? = null) {
+    fun toDomain(): UploadedPhoto? {
+        return UploadedPhoto(mediaId ?: return null, width ?: 0, height ?: 0)
+    }
+}
+
+data class PostRequestDto(
+    val type: String,
+    val body: String,
+    val tip: String?,
+    val category: String?,
+    val placeId: String?,
+    val precision: String,
+    val city: String?,
+    val experiencedMonth: String?,
+    val daypart: String?,
+    val audience: String,
+    val commentPolicy: String,
+    val mediaIds: List<String>
+) {
+    companion object {
+        /** Only for a draft that passed ComposerPolicy (precision and audience chosen). */
+        fun from(draft: PostDraft): PostRequestDto {
+            val precision = requireNotNull(draft.precision)
+            val audience = requireNotNull(draft.audience)
+            val experience = draft.type == PostType.EXPERIENCE
+            return PostRequestDto(
+                type = draft.type.name,
+                body = draft.body.trim(),
+                tip = if (experience) draft.tip.trim().ifEmpty { null } else null,
+                category = draft.category?.name,
+                placeId = if (precision == Precision.EXACT || precision == Precision.AREA) draft.place?.publicId else null,
+                precision = precision.name,
+                city = if (precision == Precision.CITY) draft.city?.name else null,
+                experiencedMonth = if (experience) draft.month?.toString() else null,
+                daypart = draft.daypart?.name,
+                audience = audience.name,
+                commentPolicy = (if (audience == Audience.ONLY_ME) CommentPolicy.NOBODY else draft.commentPolicy).name,
+                mediaIds = draft.mediaIds
+            )
+        }
+    }
+}
+
+data class PersonRefDto(val publicId: String? = null, val handle: String? = null, val displayName: String? = null)
+
+data class PostPlaceDto(val publicId: String? = null, val name: String? = null)
+
+data class MediaRefDto(val mediaId: String? = null, val width: Int? = null, val height: Int? = null)
+
+data class PostDto(
+    val publicId: String? = null,
+    val type: String? = null,
+    val author: PersonRefDto? = null,
+    val own: Boolean? = null,
+    val body: String? = null,
+    val tip: String? = null,
+    val category: String? = null,
+    val precision: String? = null,
+    val place: PostPlaceDto? = null,
+    val areaCell: String? = null,
+    val city: String? = null,
+    val experiencedMonth: String? = null,
+    val daypart: String? = null,
+    val postedPeriod: String? = null,
+    val edited: Boolean? = null,
+    val media: List<MediaRefDto>? = null,
+    val audience: String? = null,
+    val commentPolicy: String? = null,
+    val canComment: Boolean? = null,
+    val visibleFrom: String? = null
+) {
+    fun toDomain(): Post? {
+        val author = author?.let { a ->
+            val id = a.publicId ?: return@let null
+            com.safesphere.app.feature.social.domain.PersonSummary(id, a.handle.orEmpty(), a.displayName.orEmpty())
+        }
+        return Post(
+            publicId = publicId ?: return null,
+            type = enumOrNull<PostType>(type) ?: return null,
+            author = author,
+            own = own == true,
+            body = body.orEmpty(),
+            tip = tip,
+            category = category?.let(Interest::fromCode),
+            // Unknown precision: show no place at all.
+            precision = enumOrNull<Precision>(precision) ?: Precision.NONE,
+            placeName = place?.name,
+            areaCell = areaCell,
+            city = enumOrNull<City>(city),
+            experiencedMonth = experiencedMonth?.let { runCatching { YearMonth.parse(it) }.getOrNull() },
+            daypart = enumOrNull<Daypart>(daypart),
+            // Unknown band: the vaguest one.
+            postedPeriod = enumOrNull<TimeBand>(postedPeriod) ?: TimeBand.EARLIER,
+            edited = edited == true,
+            media = media.orEmpty().mapNotNull { m -> m.mediaId?.let { MediaRef(it, m.width ?: 0, m.height ?: 0) } },
+            audience = enumOrNull<Audience>(audience),
+            // Unknown comment setting: the closed one.
+            commentPolicy = enumOrNull<CommentPolicy>(commentPolicy) ?: CommentPolicy.NOBODY,
+            canComment = canComment == true,
+            visibleFrom = visibleFrom?.let { runCatching { Instant.parse(it) }.getOrNull() }
+        )
+    }
+
+    override fun toString() = "PostDto(publicId=$publicId, type=$type, precision=$precision)"
+}
+
+data class PostPageDto(val items: List<PostDto>? = null, val nextCursor: String? = null) {
+    fun toDomain() = PostPage(items.orEmpty().mapNotNull { it.toDomain() }, nextCursor)
+}
+
+data class CommentRequestDto(val kind: String, val body: String, val parentId: String?)
+
+data class CommentDto(
+    val publicId: String? = null,
+    val kind: String? = null,
+    val author: PersonRefDto? = null,
+    val own: Boolean? = null,
+    val body: String? = null,
+    val postedPeriod: String? = null,
+    val hidden: Boolean? = null,
+    val helped: Boolean? = null,
+    val parentId: String? = null,
+    val canHide: Boolean? = null,
+    val canMarkHelped: Boolean? = null
+) {
+    /** An unknown kind is dropped (it may need words this app does not have). */
+    fun toDomain(): Perspective? {
+        val author = author?.let { a ->
+            val id = a.publicId ?: return@let null
+            com.safesphere.app.feature.social.domain.PersonSummary(id, a.handle.orEmpty(), a.displayName.orEmpty())
+        }
+        return Perspective(
+            publicId = publicId ?: return null,
+            kind = enumOrNull<CommentKind>(kind) ?: return null,
+            author = author,
+            own = own == true,
+            body = body.orEmpty(),
+            postedPeriod = enumOrNull<TimeBand>(postedPeriod) ?: TimeBand.EARLIER,
+            hidden = hidden == true,
+            helped = helped == true,
+            parentId = parentId,
+            canHide = canHide == true,
+            canMarkHelped = canMarkHelped == true
+        )
+    }
+}
+
+private inline fun <reified T : Enum<T>> enumOrNull(name: String?): T? =
+    if (name == null) null else enumValues<T>().firstOrNull { it.name == name }

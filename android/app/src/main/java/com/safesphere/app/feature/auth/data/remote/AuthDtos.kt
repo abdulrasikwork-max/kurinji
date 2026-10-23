@@ -5,9 +5,10 @@ import java.time.Instant
 
 // These classes mirror the JSON of the Spring Boot API (see docs/API.md).
 
-data class RegisterRequestDto(val name: String, val email: String, val password: String) {
+/** Phase 13A: [dateOfBirth] (yyyy-MM-dd) is checked for 18+ by the server and stored nowhere. */
+data class RegisterRequestDto(val name: String, val email: String, val password: String, val dateOfBirth: String) {
     // Data classes print all fields in toString(). Redact so a stray log line can never leak a password.
-    override fun toString() = "RegisterRequestDto(name=$name, email=<hidden>, password=<hidden>)"
+    override fun toString() = "RegisterRequestDto(name=$name, email=<hidden>, password=<hidden>, dateOfBirth=<hidden>)"
 }
 
 /**

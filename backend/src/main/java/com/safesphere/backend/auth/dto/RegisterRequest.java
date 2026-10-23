@@ -1,6 +1,8 @@
 package com.safesphere.backend.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -19,6 +21,16 @@ public record RegisterRequest(
         // 72 is a BCrypt limit: it ignores everything after 72 bytes.
         @NotBlank(message = "Password is required")
         @Size(min = 8, max = 72, message = "Password must be between 8 and 72 characters")
-        String password
+        String password,
+
+        // Phase 13A (D6): checked for 18+ and then discarded; never stored, never logged. Format yyyy-MM-dd.
+        @NotNull(message = "Date of birth is required")
+        LocalDate dateOfBirth
 ) {
+
+    /** Never prints the password or the date of birth. */
+    @Override
+    public String toString() {
+        return "RegisterRequest[name=" + name + ", email=" + email + "]";
+    }
 }

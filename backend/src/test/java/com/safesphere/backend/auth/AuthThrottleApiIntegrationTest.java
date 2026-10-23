@@ -132,7 +132,7 @@ class AuthThrottleApiIntegrationTest {
 
     private ResultActions registerFrom(String address, String email) throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("name", "Test User", "email", email,
-                "password", TestAccounts.PASSWORD));
+                "password", TestAccounts.PASSWORD, "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE));
         return mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(body)
                 .with(request -> {
                     request.setRemoteAddr(address);

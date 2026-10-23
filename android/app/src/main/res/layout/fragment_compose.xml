@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13B: Share (design §9.5). Choice chips are added in code; nothing about the audience is preselected the first time. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/errorNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone"
+            app:noticeText="@string/error_unknown"
+            app:noticeType="warning" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/typeGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:selectionRequired="true"
+            app:singleSelection="true" />
+
+        <TextView
+            android:id="@+id/typeHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/bodyLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:hint="@string/social_body_label_experience">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/bodyInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="top"
+                android:inputType="textMultiLine|textCapSentences"
+                android:minLines="4" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tipLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:hint="@string/social_tip_label">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/tipInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine|textCapSentences" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/social_photos_title" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/social_photos_note"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/photoList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:orientation="horizontal"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addPhotosButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/social_add_photos" />
+
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/social_where_title" />
+
+        <TextView
+            android:id="@+id/placeText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/choosePlaceButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/social_choose_place" />
+
+        <TextView
+            android:id="@+id/precisionTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/social_precision_title"
+            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/precisionGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true" />
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/privateNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:visibility="gone"
+            app:noticeText="@string/social_precision_private_notice"
+            app:noticeType="info" />
+
+        <TextView
+            android:id="@+id/cityTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/social_city_title"
+            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/cityGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true" />
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/delayNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:visibility="gone"
+            app:noticeText="@string/social_delay_notice"
+            app:noticeType="info" />
+
+        <TextView
+            android:id="@+id/whenTitle"
+            style="@style/SocialSectionTitle"
+            android:text="@string/social_when_title" />
+
+        <Spinner
+            android:id="@+id/monthSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/min_touch_target" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/social_daypart_title"
+            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/daypartGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/social_after_note"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/social_category_title" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/categoryGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true" />
+
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/social_audience_title" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/audienceGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true" />
+
+        <TextView
+            android:id="@+id/audienceLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+        <TextView
+            android:id="@+id/commentsTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="@string/social_comments_title"
+            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/commentGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true" />
+
+        <TextView
+            android:id="@+id/summaryLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+        <TextView
+            android:id="@+id/issuesText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:accessibilityLiveRegion="polite"
+            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
+            android:visibility="gone" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/shareButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:minHeight="@dimen/menu_row_min_height" />
+    </LinearLayout>
+</ScrollView>

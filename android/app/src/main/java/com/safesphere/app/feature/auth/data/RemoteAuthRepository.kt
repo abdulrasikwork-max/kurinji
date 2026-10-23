@@ -14,6 +14,7 @@ import com.safesphere.app.feature.auth.domain.AuthSession
 import com.safesphere.app.feature.auth.domain.AuthUser
 import com.safesphere.app.feature.auth.domain.SessionStorage
 import java.io.IOException
+import java.time.LocalDate
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -46,9 +47,18 @@ class RemoteAuthRepository(
 
     override val signInNeeded: Flow<Boolean> = sessionStorage.session.map { it?.needsSignIn == true }
 
-    override suspend fun register(name: String, email: String, password: String): AuthResult<AuthUser> {
+    override suspend fun register(
+        name: String,
+        email: String,
+        password: String,
+        dateOfBirth: LocalDate
+    ): AuthResult<AuthUser> {
         val previous = sessionStorage.session.first()
-        return authenticate(previous) { api.register(RegisterRequestDto(name = name, email = email, password = password)) }
+        return authenticate(previous) {
+            api.register(
+                RegisterRequestDto(name = name, email = email, password = password, dateOfBirth = dateOfBirth.toString())
+            )
+        }
     }
 
     override suspend fun login(email: String, password: String): AuthResult<AuthUser> {

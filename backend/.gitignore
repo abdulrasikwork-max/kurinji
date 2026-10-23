@@ -6,5 +6,7 @@ target/
 .vscode/
 sql/backups/
 evidence-store/
+# Phase 13B: post photos (app.social.media-dir)
+social-media-store/
 vault-keys/
 *.pem

@@ -29,6 +29,19 @@ import com.safesphere.app.feature.safewalk.data.remote.JourneyApi
 import com.safesphere.app.feature.safewalk.domain.ActiveJourneyStore
 import com.safesphere.app.feature.safewalk.session.AndroidSafeWalkAlerts
 import com.safesphere.app.feature.safewalk.session.SafeWalkSession
+import com.safesphere.app.feature.social.data.RemoteSocialRepository
+import com.safesphere.app.feature.social.data.remote.SocialApi
+import com.safesphere.app.feature.social.domain.SocialRepository
+import coil.ImageLoader
+import coil.memory.MemoryCache
+import com.safesphere.app.feature.social.data.EncryptedPlacesStore
+import com.safesphere.app.feature.social.data.PhotoPreparer
+import com.safesphere.app.feature.social.data.PhotoSource
+import com.safesphere.app.feature.social.data.PlaceMemory
+import com.safesphere.app.feature.social.data.PlacesStore
+import com.safesphere.app.feature.social.data.RemoteExperienceRepository
+import com.safesphere.app.feature.social.data.remote.ExperienceApi
+import com.safesphere.app.feature.social.domain.ExperienceRepository
 import kotlinx.coroutines.flow.first
 import com.safesphere.app.feature.auth.data.DataStoreSessionStorage
 import com.safesphere.app.feature.auth.data.RemoteAuthRepository
@@ -179,6 +192,47 @@ class AppContainer(context: Context) {
         activeJourneyStore.clear()
         communityOutbox.clear()
         circleAlertStore.clear()
+        placeMemory.clearAll() // Phase 13B (Q9): private and recent places belong to the account that marked them
+    }
+
+    // ---- Phase 13A: profiles and connections (nothing stored on the phone) -----------------------------
+
+    val socialRepository: SocialRepository by lazy {
+        RemoteSocialRepository(retrofit.create(SocialApi::class.java), apiCallHandler)
+    }
+
+    // ---- Phase 13B: experiences (places, posts, photos, perspectives) --------------------------------------
+
+    val experienceRepository: ExperienceRepository by lazy {
+        RemoteExperienceRepository(retrofit.create(ExperienceApi::class.java), apiCallHandler, backendBaseUrl())
+    }
+
+    /** Q9: private places, recently used places and the last audience, encrypted on this phone, never uploaded. */
+    private val placesStore: PlacesStore by lazy {
+        EncryptedPlacesStore(java.io.File(appContext.filesDir, "places"), AndroidKeystoreKeyWrapper())
+    }
+
+    val placeMemory: PlaceMemory by lazy {
+        PlaceMemory(placesStore, { currentSession.value?.user?.id }, Dispatchers.IO)
+    }
+
+    /** Photos are made smaller and re-encoded without metadata on the phone before upload (the server does it again). */
+    val photoPreparer: PhotoSource by lazy {
+        val preparer = PhotoPreparer(appContext.contentResolver)
+        PhotoSource { uri -> withContext(Dispatchers.IO) { preparer.prepare(uri) } }
+    }
+
+    /**
+     * Q3: ONE image loader on the shared client (so AuthInterceptor attaches the JWT), memory cache only: nothing about
+     * other people is written to this phone's storage.
+     */
+    val imageLoader: ImageLoader by lazy {
+        ImageLoader.Builder(appContext)
+            .okHttpClient(httpClient)
+            .memoryCache { MemoryCache.Builder(appContext).maxSizePercent(0.15).build() }
+            .diskCache(null)
+            .respectCacheHeaders(true)
+            .build()
     }
 
     // ---- Phase 10A: account security and deletion ------------------------------------------------
@@ -463,6 +517,7 @@ class AppContainer(context: Context) {
                         activeEmergencyStore.clearAll() // incl. SOS endings not told to the server yet
                         activeJourneyStore.clear()
                         communityOutbox.clear() // unsent reports belong to the account that made them
+                        placeMemory.clearAll() // Phase 13B (Q9): private and recent places
                     }
                 }
         }

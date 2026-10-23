@@ -221,6 +221,78 @@
         android:label="@string/title_account"
         tools:layout="@layout/fragment_account" />
 
+    <!-- Phase 13A: profiles and connections (secondary screens, reached from Profile until 13F) -->
+    <fragment
+        android:id="@+id/connectionsFragment"
+        android:name="com.safesphere.app.feature.social.ui.ConnectionsFragment"
+        android:label="@string/title_connections"
+        tools:layout="@layout/fragment_connections" />
+
+    <fragment
+        android:id="@+id/profileSetupFragment"
+        android:name="com.safesphere.app.feature.social.ui.ProfileSetupFragment"
+        android:label="@string/title_social_profile"
+        tools:layout="@layout/fragment_profile_setup" />
+
+    <fragment
+        android:id="@+id/personProfileFragment"
+        android:name="com.safesphere.app.feature.social.ui.PersonProfileFragment"
+        android:label="@string/title_person_profile"
+        tools:layout="@layout/fragment_person_profile">
+        <!-- Exactly one of the two is set: a handle typed in "Find someone", or a profile id from a list. -->
+        <argument
+            android:name="handle"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="profileId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/blockedMutedFragment"
+        android:name="com.safesphere.app.feature.social.ui.BlockedMutedFragment"
+        android:label="@string/title_blocked_muted"
+        tools:layout="@layout/fragment_blocked_muted" />
+
+    <!-- Phase 13B: experiences (reached from Connections and one's own profile until 13F) -->
+    <fragment
+        android:id="@+id/composeFragment"
+        android:name="com.safesphere.app.feature.social.ui.ComposeFragment"
+        android:label="@string/title_compose"
+        tools:layout="@layout/fragment_compose" />
+
+    <fragment
+        android:id="@+id/placePickerFragment"
+        android:name="com.safesphere.app.feature.social.ui.PlacePickerFragment"
+        android:label="@string/title_place_picker"
+        tools:layout="@layout/fragment_place_picker" />
+
+    <fragment
+        android:id="@+id/postFragment"
+        android:name="com.safesphere.app.feature.social.ui.PostFragment"
+        android:label="@string/title_post"
+        tools:layout="@layout/fragment_post">
+        <argument
+            android:name="postId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/myPostsFragment"
+        android:name="com.safesphere.app.feature.social.ui.MyPostsFragment"
+        android:label="@string/title_my_posts"
+        tools:layout="@layout/fragment_my_posts" />
+
+    <fragment
+        android:id="@+id/privatePlacesFragment"
+        android:name="com.safesphere.app.feature.social.ui.PrivatePlacesFragment"
+        android:label="@string/title_private_places"
+        tools:layout="@layout/fragment_private_places" />
+
     <!-- Secondary screens -->
     <fragment
         android:id="@+id/settingsFragment"

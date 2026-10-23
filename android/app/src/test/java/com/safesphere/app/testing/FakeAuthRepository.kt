@@ -4,6 +4,7 @@ import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthRepository
 import com.safesphere.app.feature.auth.domain.AuthResult
 import com.safesphere.app.feature.auth.domain.AuthUser
+import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -28,12 +29,20 @@ class FakeAuthRepository(signedInUser: AuthUser? = null) : AuthRepository {
         private set
     var lastRegisterName: String? = null
         private set
+    var lastRegisterDateOfBirth: LocalDate? = null
+        private set
 
     override val currentUser: Flow<AuthUser?> = user
 
-    override suspend fun register(name: String, email: String, password: String): AuthResult<AuthUser> {
+    override suspend fun register(
+        name: String,
+        email: String,
+        password: String,
+        dateOfBirth: LocalDate
+    ): AuthResult<AuthUser> {
         registerCalls++
         lastRegisterName = name
+        lastRegisterDateOfBirth = dateOfBirth
         return registerResult.also { if (it is AuthResult.Success) user.value = it.data }
     }
 

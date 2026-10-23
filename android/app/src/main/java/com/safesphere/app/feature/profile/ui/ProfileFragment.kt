@@ -93,6 +93,11 @@ class ProfileFragment : ViewBindingFragment<FragmentProfileBinding>(FragmentProf
     private fun appItems(): List<FeatureItem> {
         val navController = findNavController()
         return listOf(
+            // Phase 13A: profiles and connections, here until the new navigation (13F).
+            FeatureItem(
+                R.drawable.ic_person, R.string.profile_social_title, R.string.profile_social_description,
+                BadgeStatus.AVAILABLE
+            ) { navController.navigate(R.id.connectionsFragment) },
             FeatureItem(
                 R.drawable.ic_person_outline, R.string.profile_account_title, R.string.profile_account_description,
                 BadgeStatus.AVAILABLE

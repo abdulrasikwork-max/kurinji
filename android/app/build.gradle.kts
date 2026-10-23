@@ -84,6 +84,7 @@ dependencies {
     implementation(libs.okhttp)
 
     implementation(libs.play.services.location)
+    implementation(libs.coil)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

@@ -11,7 +11,11 @@ import com.safesphere.backend.security.JwtService;
 import com.safesphere.backend.user.dto.UserResponse;
 import com.safesphere.backend.user.entity.User;
 import com.safesphere.backend.user.repository.UserRepository;
+import com.safesphere.backend.user.service.AgeGate;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Locale;
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -39,14 +43,18 @@ public class AuthService {
 
     private final AuthThrottle throttle;
     private final DeviceSessionService sessions;
+    private final AgeGate ageGate;
+    private final Clock clock;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
-                       AuthThrottle throttle, DeviceSessionService sessions) {
+                       AuthThrottle throttle, DeviceSessionService sessions, AgeGate ageGate, Clock clock) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.throttle = throttle;
         this.sessions = sessions;
+        this.ageGate = ageGate;
+        this.clock = clock;
         this.timingHash = passwordEncoder.encode("timing-equaliser-not-a-real-password");
     }
 
@@ -58,6 +66,8 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request, String clientAddress) {
         throttle.checkRegistration(clientAddress);
+        // Phase 13A (D6): 18+ only. The date of birth is checked here and goes no further.
+        ageGate.requireAdult(request.dateOfBirth());
         if (exceedsBcryptLimit(request.password())) {
             throw new InvalidRequestException("Password must be at most 72 bytes long");
         }
@@ -71,6 +81,7 @@ public class AuthService {
                 email,
                 passwordEncoder.encode(request.password())
         );
+        user.confirmAge(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
         try {
             // saveAndFlush so a race on the unique email fails right here, not later at commit.
             user = userRepository.saveAndFlush(user);

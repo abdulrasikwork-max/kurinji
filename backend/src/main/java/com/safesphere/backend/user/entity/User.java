@@ -63,6 +63,10 @@ public class User {
     @Column(name = "erased_at")
     private LocalDateTime erasedAt;
 
+    /** Phase 13A (V20): when the person declared an adult date of birth. The date itself is never stored. */
+    @Column(name = "age_confirmed_at")
+    private LocalDateTime ageConfirmedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -145,6 +149,19 @@ public class User {
 
     public boolean isErased() {
         return erasedAt != null;
+    }
+
+    public LocalDateTime getAgeConfirmedAt() {
+        return ageConfirmedAt;
+    }
+
+    public boolean isAgeConfirmed() {
+        return ageConfirmedAt != null;
+    }
+
+    /** Phase 13A: records that an adult date of birth was declared (checked by AgePolicy, then discarded). Kept once set. */
+    public void confirmAge(LocalDateTime now) {
+        if (ageConfirmedAt == null) this.ageConfirmedAt = now.truncatedTo(ChronoUnit.MICROS);
     }
 
     /**

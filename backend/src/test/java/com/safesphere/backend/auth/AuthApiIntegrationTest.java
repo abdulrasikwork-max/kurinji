@@ -294,7 +294,8 @@ class AuthApiIntegrationTest {
 
     private String registerJson(String name, String email, String password) throws Exception {
         return objectMapper.writeValueAsString(
-                java.util.Map.of("name", name, "email", email, "password", password));
+                java.util.Map.of("name", name, "email", email, "password", password,
+                        "dateOfBirth", com.safesphere.backend.support.TestAccounts.ADULT_BIRTH_DATE));
     }
 
     private String loginJson(String email, String password) throws Exception {
