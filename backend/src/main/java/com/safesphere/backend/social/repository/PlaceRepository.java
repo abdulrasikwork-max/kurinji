@@ -1,6 +1,7 @@
 package com.safesphere.backend.social.repository;
 
 import com.safesphere.backend.social.entity.Place;
+import com.safesphere.backend.social.entity.PostEnums.City;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -17,4 +18,10 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
     List<Place> findByAreaCellInAndMergedIntoIsNullOrderByNameAsc(Collection<String> areaCells, Pageable page);
 
     List<Place> findByIdIn(Collection<Long> ids);
+
+    /** Phase 13C (C12): place-name search, by the normalised name only. */
+    List<Place> findByNormalizedNameContainingAndMergedIntoIsNullOrderByNameAsc(String part, Pageable page);
+
+    List<Place> findByNormalizedNameContainingAndCityAndMergedIntoIsNullOrderByNameAsc(String part, City city,
+                                                                                     Pageable page);
 }

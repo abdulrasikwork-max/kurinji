@@ -121,6 +121,11 @@ class SocialAccountDeletionTest {
         String byP = social.commentId(p, friendsPost, "BEEN_HERE", "p on the friend's post", null);
         social.commentId(friend, friendsPost, "REPLY", "Friend replies to p", byP);
         social.commentId(p, friendsPost, "REPLY", "p replies to the friend", friendsOwn);
+        // Phase 13C: p's Cocoon holds the friend's post; the friend saved p's post; the asker's butterfly on the
+        // friend's post must stay.
+        social.butterfly(p, friendsPost, null).andExpect(status().isOk());
+        social.butterfly(friend, ownPost, "BEEN").andExpect(status().isOk());
+        social.butterfly(asker, friendsPost, null).andExpect(status().isOk());
         photoKeys = jdbc.queryForList("SELECT storage_key FROM post_media WHERE owner_id = ?", String.class, p.id());
         assertThat(photoKeys).hasSize(2).allMatch(media::exists);
         friendsPostId = friendsPost;
@@ -143,6 +148,11 @@ class SocialAccountDeletionTest {
         assertThat(count("SELECT COUNT(*) FROM connection_invites WHERE owner_id = ?", userId)).isZero();
         assertThat(count("SELECT COUNT(*) FROM blocks WHERE blocker_id = ? OR blocked_id = ?", userId, userId)).isZero();
         assertThat(count("SELECT COUNT(*) FROM mutes WHERE muter_id = ? OR muted_id = ?", userId, userId)).isZero();
+        assertThat(count("SELECT COUNT(*) FROM butterflies WHERE user_id = ?", userId)).isZero();
+        // Only the asker's butterfly is left on the friend's post; nothing points at p's deleted post.
+        assertThat(count("SELECT COUNT(*) FROM butterflies b JOIN posts p ON p.id = b.post_id WHERE p.public_id = ?",
+                friendsPostId)).isEqualTo(1);
+        assertThat(count("SELECT COUNT(*) FROM butterflies WHERE post_id NOT IN (SELECT id FROM posts)")).isZero();
     }
 
     private void assertOthersKept(Person friend) throws Exception {

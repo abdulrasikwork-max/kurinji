@@ -38,6 +38,13 @@ public class PlaceController {
         return places.nearby(CurrentUser.id(jwt), area);
     }
 
+    /** Phase 13C: places by name (no people, no post text); optionally in one launch city. */
+    @GetMapping("/search")
+    public List<PlaceResponse> search(@AuthenticationPrincipal Jwt jwt, @RequestParam(value = "q", required = false) String q,
+                                      @RequestParam(value = "city", required = false) String city) {
+        return places.search(CurrentUser.id(jwt), q, city);
+    }
+
     @GetMapping("/{publicId}")
     public PlaceResponse one(@AuthenticationPrincipal Jwt jwt, @PathVariable String publicId) {
         return places.one(CurrentUser.id(jwt), publicId);

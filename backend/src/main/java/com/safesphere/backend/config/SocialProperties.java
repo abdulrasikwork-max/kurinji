@@ -30,6 +30,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param mediaDir             13B: folder of the photo files (never served statically)
  * @param maxMediaBytes        13B: largest photo upload accepted
  * @param unattachedMediaLifetime 13B: an uploaded photo never attached to a post is deleted after this
+ * @param butterfliesPerDay   13C: butterfly changes (save, Been, remove) a person may make per day
+ * @param discoverReadsPerHour 13C: Edition, connections, place and category pages a person may load per hour
+ * @param placeSearchesPerHour 13C: place-name searches per person per hour
  */
 @ConfigurationProperties(prefix = "app.social")
 public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCooldown, Duration handleReservation,
@@ -39,7 +42,8 @@ public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCool
                                Integer placesPerDay, Integer placeLookupsPerHour, Integer postsPerDay,
                                Integer mediaPerDay, Integer commentsPerDay, Duration exactDelayMin,
                                Duration exactDelayMax, Path mediaDir, Integer maxMediaBytes,
-                               Duration unattachedMediaLifetime) {
+                               Duration unattachedMediaLifetime, Integer butterfliesPerDay,
+                               Integer discoverReadsPerHour, Integer placeSearchesPerHour) {
 
     public SocialProperties {
         if (lookupsPerHour == null) lookupsPerHour = 120;
@@ -63,6 +67,9 @@ public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCool
         if (mediaDir == null) mediaDir = Path.of("social-media-store");
         if (maxMediaBytes == null) maxMediaBytes = 5 * 1024 * 1024;
         if (unattachedMediaLifetime == null) unattachedMediaLifetime = Duration.ofHours(24);
+        if (butterfliesPerDay == null) butterfliesPerDay = 200;
+        if (discoverReadsPerHour == null) discoverReadsPerHour = 240;
+        if (placeSearchesPerHour == null) placeSearchesPerHour = 120;
         if (lookupsPerHour < 1 || requestsPerDay < 1 || maxPendingOutgoing < 1 || maxConnections < 1
                 || invitesPerDay < 1 || maxActiveInvites < 1 || redeemsPerHour < 1 || maxTrackedKeys < 1
                 || handleChangeCooldown.isNegative() || handleReservation.isNegative()
@@ -70,7 +77,8 @@ public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCool
                 || placesPerDay < 1 || placeLookupsPerHour < 1 || postsPerDay < 1 || mediaPerDay < 1 || commentsPerDay < 1
                 || exactDelayMin.isNegative() || exactDelayMax.compareTo(exactDelayMin) < 0
                 || maxMediaBytes < 1024 || maxMediaBytes > 5 * 1024 * 1024
-                || unattachedMediaLifetime.compareTo(Duration.ofMinutes(1)) < 0) {
+                || unattachedMediaLifetime.compareTo(Duration.ofMinutes(1)) < 0
+                || butterfliesPerDay < 1 || discoverReadsPerHour < 1 || placeSearchesPerHour < 1) {
             throw new IllegalStateException("app.social.* values are invalid");
         }
     }

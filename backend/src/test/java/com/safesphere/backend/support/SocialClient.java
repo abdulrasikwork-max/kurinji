@@ -41,8 +41,12 @@ public final class SocialClient {
         String token = TestAccounts.registerAndGetToken(mockMvc, objectMapper, email);
         long id = users.findByEmail(email).orElseThrow().getId();
         String handle = name.toLowerCase() + "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
-        JsonNode profile = json(perform(token, put("/api/profiles/me"),
-                Map.of("handle", handle, "displayName", name)).andExpect(status().isOk()));
+        var response = perform(token, put("/api/profiles/me"), Map.of("handle", handle, "displayName", name))
+                .andReturn().getResponse();
+        if (response.getStatus() != 200) {
+            throw new AssertionError("Profile not created (" + response.getStatus() + "): " + response.getContentAsString());
+        }
+        JsonNode profile = objectMapper.readTree(response.getContentAsString());
         return new Person(token, id, profile.get("publicId").asText(), handle);
     }
 
@@ -256,6 +260,83 @@ public final class SocialClient {
 
     public ResultActions media(Person who, String mediaId) throws Exception {
         return perform(who.token(), get("/api/media/{id}", mediaId), null);
+    }
+
+    // ---- Phase 13C: butterflies, Cocoon, Discover ----
+
+    public ResultActions butterfly(Person who, String postId, String state) throws Exception {
+        return perform(who.token(), put("/api/posts/{id}/butterfly", postId),
+                state == null ? Map.of() : Map.of("state", state));
+    }
+
+    public ResultActions removeButterfly(Person who, String postId) throws Exception {
+        return perform(who.token(), delete("/api/posts/{id}/butterfly", postId), null);
+    }
+
+    public ResultActions cocoon(Person who, String state, String cursor) throws Exception {
+        var builder = get("/api/cocoon");
+        if (state != null) builder.param("state", state);
+        if (cursor != null) builder.param("cursor", cursor);
+        return perform(who.token(), builder, null);
+    }
+
+    /** The post ids of a Cocoon page ({items[{post, state, savedPeriod}], nextCursor}). */
+    public List<String> cocoonIds(ResultActions page) throws Exception {
+        List<String> ids = new ArrayList<>();
+        for (JsonNode item : json(page.andExpect(status().isOk())).get("items")) {
+            ids.add(item.get("post").get("publicId").asText());
+        }
+        return ids;
+    }
+
+    public ResultActions edition(Person who, String city) throws Exception {
+        var builder = get("/api/discover/edition");
+        if (city != null) builder.param("city", city);
+        return perform(who.token(), builder, null);
+    }
+
+    /** Every post id in an Edition, all sections together, in order. */
+    public List<String> editionIds(ResultActions edition) throws Exception {
+        List<String> ids = new ArrayList<>();
+        for (JsonNode section : json(edition.andExpect(status().isOk())).get("sections")) {
+            for (JsonNode item : section.get("items")) ids.add(item.get("post").get("publicId").asText());
+        }
+        return ids;
+    }
+
+    public ResultActions fromConnections(Person who, String cursor) throws Exception {
+        var builder = get("/api/discover/connections");
+        if (cursor != null) builder.param("cursor", cursor);
+        return perform(who.token(), builder, null);
+    }
+
+    /** The post ids of a Discover page ({items[{post, reasons}], nextCursor}). */
+    public List<String> discoverIds(ResultActions page) throws Exception {
+        List<String> ids = new ArrayList<>();
+        for (JsonNode item : json(page.andExpect(status().isOk())).get("items")) {
+            ids.add(item.get("post").get("publicId").asText());
+        }
+        return ids;
+    }
+
+    public ResultActions categoryPage(Person who, String category, String city, String cursor) throws Exception {
+        var builder = get("/api/discover/categories/{c}", category);
+        if (city != null) builder.param("city", city);
+        if (cursor != null) builder.param("cursor", cursor);
+        return perform(who.token(), builder, null);
+    }
+
+    public ResultActions placePage(Person who, String placeId, String cursor) throws Exception {
+        var builder = get("/api/places/{id}/posts", placeId);
+        if (cursor != null) builder.param("cursor", cursor);
+        return perform(who.token(), builder, null);
+    }
+
+    public ResultActions searchPlaces(Person who, String q, String city) throws Exception {
+        var builder = get("/api/places/search");
+        if (q != null) builder.param("q", q);
+        if (city != null) builder.param("city", city);
+        return perform(who.token(), builder, null);
     }
 
     /** The public ids in a JSON array answer. */

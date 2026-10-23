@@ -26,6 +26,7 @@ import com.safesphere.app.feature.social.ui.PostListViewModel
 import com.safesphere.app.feature.social.ui.PostViewModel
 import com.safesphere.app.feature.social.ui.PrivatePlacesNotice
 import com.safesphere.app.feature.social.ui.PrivatePlacesViewModel
+import com.safesphere.app.testing.FakeDiscoverRepository
 import com.safesphere.app.testing.FakeExperienceRepository
 import com.safesphere.app.testing.FakeLocationProvider
 import com.safesphere.app.testing.FakePlacesStore
@@ -52,6 +53,7 @@ class ExperienceViewModelsTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repository = FakeExperienceRepository()
+    private val discover = FakeDiscoverRepository()
     private val store = FakePlacesStore()
     private val memory = PlaceMemory(store, { 7L }, Dispatchers.Unconfined)
     private val clock = Clock.fixed(Instant.parse("2026-10-22T10:00:00Z"), ZoneOffset.UTC)
@@ -210,7 +212,7 @@ class ExperienceViewModelsTest {
     fun `post - kinds fit the post, replies carry the parent, hide and helped reach the server`() = runTest {
         repository.postResult = ApiResult.Success(FakeExperienceRepository.post(type = PostType.ASK))
         repository.perspectives = listOf(FakeExperienceRepository.perspective("a1", CommentKind.ANSWER))
-        val vm = PostViewModel(repository, "post-1")
+        val vm = PostViewModel(repository, discover, "post-1")
         advanceUntilIdle()
         assertEquals(listOf(CommentKind.ANSWER, CommentKind.QUESTION), vm.uiState.value.kinds)
         assertFalse(vm.uiState.value.canSend)
@@ -235,11 +237,11 @@ class ExperienceViewModelsTest {
     @Test
     fun `post - not visible is not found, and a closed post takes no perspective`() = runTest {
         repository.postResult = ApiResult.Failure(ApiError.NOT_FOUND)
-        val gone = PostViewModel(repository, "post-1")
+        val gone = PostViewModel(repository, discover, "post-1")
         advanceUntilIdle()
         assertTrue(gone.uiState.value.notFound)
         repository.postResult = ApiResult.Success(FakeExperienceRepository.post(canComment = false))
-        val closed = PostViewModel(repository, "post-1")
+        val closed = PostViewModel(repository, discover, "post-1")
         advanceUntilIdle()
         closed.onKind(CommentKind.QUESTION)
         closed.onText("Hello?")
@@ -249,7 +251,7 @@ class ExperienceViewModelsTest {
     @Test
     fun `post - the author deletes the post and the screen closes`() = runTest {
         repository.postResult = ApiResult.Success(FakeExperienceRepository.post(own = true))
-        val vm = PostViewModel(repository, "post-1")
+        val vm = PostViewModel(repository, discover, "post-1")
         advanceUntilIdle()
         vm.onDeletePostConfirmed()
         advanceUntilIdle()

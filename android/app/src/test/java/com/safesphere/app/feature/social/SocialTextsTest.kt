@@ -35,9 +35,14 @@ class SocialTextsTest {
         val problems = socialStringNames(strings).filter { name ->
             val text = strings[name].orEmpty()
             // %d placeholders would be counts; the only digits allowed are the fixed rules (18, 3 to 20, 7 days, ...).
-            text.contains("%d") || text.contains("%1\$d")
+            name !in AUTHOR_ONLY_COUNTS && (text.contains("%d") || text.contains("%1\$d"))
         }
         assertTrue("counts in: $problems", problems.isEmpty())
+        // Phase 13C (C2): the one number, the author's own private line, says so, and only exists from 3 people up.
+        for (name in AUTHOR_ONLY_COUNTS) assertTrue(name, strings[name].orEmpty().contains("Only you can see this line"))
+        assertTrue(strings["butterfly_author_fewer"].orEmpty().startsWith("Fewer than 3 people"))
+        // Emulator finding (13C): the Cocoon's saved line has its own words, never a band sentence glued after "Saved".
+        assertTrue(strings["cocoon_saved_this_week"] == "Saved this week")
     }
 
     @Test
@@ -95,13 +100,21 @@ class SocialTextsTest {
         val CODE_REF = Regex("R\\.string\\.([a-z0-9_]+)")
         val LAYOUTS = listOf("fragment_profile_setup.xml", "fragment_connections.xml", "fragment_person_profile.xml",
             "fragment_blocked_muted.xml", "item_person_row.xml", "fragment_compose.xml", "fragment_place_picker.xml",
-            "fragment_post.xml", "fragment_my_posts.xml", "fragment_private_places.xml", "item_photo.xml")
+            "fragment_post.xml", "fragment_my_posts.xml", "fragment_private_places.xml", "item_photo.xml",
+            "fragment_discover.xml", "fragment_cocoon.xml", "fragment_post_collection.xml")
+        /** Phase 13C (C2): the only text with a number of people: the author's own private line. */
+        val AUTHOR_ONLY_COUNTS = setOf("butterfly_author_count")
         val LIVE = listOf(Regex("\\blive\\b"), Regex("right now here"), Regex("\\bi'?m here\\b"), Regex("\\bhere now\\b"),
             Regex("\\bcheck[- ]?in\\b"), Regex("who is here"))
         val FORBIDDEN = listOf(
             Regex("\\bfollow(er|ers|ing|s)?\\b"), Regex("\\blikes?\\b"), Regex("\\bpopular"), Regex("\\btrending\\b"),
             Regex("\\bfans?\\b"), Regex("\\bonline\\b"), Regex("last seen"), Regex("\\bstreaks?\\b"),
-            Regex("\\bsafe\\b"), Regex("\\bsafest\\b"), Regex("\\bverified\\b")
+            Regex("\\bsafe\\b"), Regex("\\bsafest\\b"), Regex("\\bverified\\b"),
+            // Phase 13C: no ranking or engagement words in Discover (design §3.7).
+            Regex("^for you$"), Regex("\\b(picked|chosen|made|curated) for you\\b"), Regex("\\brecommended\\b"),
+            Regex("\\btop\\b"), Regex("\\bmost (liked|popular|saved|wanted|viewed|read)\\b"),
+            Regex("\\brank(ed|ing|s)?\\b"), Regex("\\bhot\\b"), Regex("\\bviral\\b"), Regex("\\bbest\\b"),
+            Regex("\\bfeed\\b"), Regex("\\bviews?\\b")
         )
     }
 }

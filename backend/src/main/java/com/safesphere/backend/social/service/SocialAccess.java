@@ -4,6 +4,9 @@ import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.UnauthorizedException;
 import com.safesphere.backend.user.entity.User;
 import com.safesphere.backend.user.repository.UserRepository;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,6 +31,15 @@ public class SocialAccess {
                 .orElseThrow(() -> new UnauthorizedException("Account is not available"));
         if (!user.isAgeConfirmed()) throw new ConflictException(CONFIRM_AGE_MESSAGE);
         return user;
+    }
+
+    /** Phase 13C: the ids among [userIds] whose accounts are active (one query for a list). */
+    public Set<Long> activeAmong(Collection<Long> userIds) {
+        Set<Long> active = new HashSet<>();
+        for (User user : users.findAllById(userIds)) {
+            if (user.isEnabled() && !user.isErased()) active.add(user.getId());
+        }
+        return active;
     }
 
     /** Active = can be seen by others at all (not disabled, not erased). */

@@ -293,6 +293,41 @@
         android:label="@string/title_private_places"
         tools:layout="@layout/fragment_private_places" />
 
+    <!-- Phase 13C: Discover, the Cocoon, place and category pages (secondary screens until 13F) -->
+    <fragment
+        android:id="@+id/discoverFragment"
+        android:name="com.safesphere.app.feature.social.ui.DiscoverFragment"
+        android:label="@string/title_discover"
+        tools:layout="@layout/fragment_discover" />
+
+    <fragment
+        android:id="@+id/cocoonFragment"
+        android:name="com.safesphere.app.feature.social.ui.CocoonFragment"
+        android:label="@string/title_cocoon"
+        tools:layout="@layout/fragment_cocoon" />
+
+    <fragment
+        android:id="@+id/postCollectionFragment"
+        android:name="com.safesphere.app.feature.social.ui.PostCollectionFragment"
+        android:label="@string/title_post_collection"
+        tools:layout="@layout/fragment_post_collection">
+        <argument
+            android:name="placeId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="category"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="city"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+
     <!-- Secondary screens -->
     <fragment
         android:id="@+id/settingsFragment"

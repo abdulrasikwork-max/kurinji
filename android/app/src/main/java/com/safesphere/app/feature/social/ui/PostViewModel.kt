@@ -9,7 +9,9 @@ import com.safesphere.app.AppContainer
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
+import com.safesphere.app.feature.social.domain.ButterflyState
 import com.safesphere.app.feature.social.domain.CommentKind
+import com.safesphere.app.feature.social.domain.DiscoverRepository
 import com.safesphere.app.feature.social.domain.ExperienceRepository
 import com.safesphere.app.feature.social.domain.Perspective
 import com.safesphere.app.feature.social.domain.Post
@@ -33,6 +35,8 @@ data class PostUiState(
     val isBusy: Boolean = false,
     /** One-shot: the post was deleted; the screen closes. */
     val closed: Boolean = false,
+    /** Phase 13C, one-shot: the viewer just marked it Been; invite a Been-here-too perspective or their own post. */
+    val beenInvitation: Boolean = false,
     val failure: ApiResult.Failure? = null,
     val sessionExpired: Boolean = false
 ) {
@@ -43,6 +47,10 @@ data class PostUiState(
 
     val canSend: Boolean
         get() = !isBusy && post?.canComment == true && text.isNotBlank() && (replyTo != null || kind != null)
+
+    /** Phase 13C (C3): only someone else's Experience can be saved to the Cocoon. */
+    val canButterfly: Boolean
+        get() = post?.let { it.type == PostType.EXPERIENCE && !it.own } == true
 }
 
 /**
@@ -52,6 +60,7 @@ data class PostUiState(
  */
 class PostViewModel(
     private val repository: ExperienceRepository,
+    private val discover: DiscoverRepository,
     private val postId: String
 ) : ViewModel() {
 
@@ -114,6 +123,49 @@ class PostViewModel(
         }
     }
 
+    /**
+     * Phase 13C: the butterfly. Not saved: saved as Want. Saved (Want or Been): removed from the Cocoon. The screen
+     * shows the state the server answered.
+     */
+    fun onButterfly() {
+        val post = _uiState.value.post ?: return
+        if (!_uiState.value.canButterfly || _uiState.value.isBusy) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isBusy = true, failure = null) }
+            if (post.yourButterfly == null) {
+                applyButterfly(discover.setButterfly(postId, ButterflyState.WANT), invite = false)
+            } else {
+                when (val result = discover.removeButterfly(postId)) {
+                    is ApiResult.Success -> applyButterfly(ApiResult.Success(null), invite = false)
+                    is ApiResult.Failure -> applyButterfly(result, invite = false)
+                }
+            }
+        }
+    }
+
+    /** Phase 13C: "I've been" (Want to Been), then the invitation to add a perspective or an own Experience. */
+    fun onBeen() {
+        if (!_uiState.value.canButterfly || _uiState.value.isBusy) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isBusy = true, failure = null) }
+            applyButterfly(discover.setButterfly(postId, ButterflyState.BEEN), invite = true)
+        }
+    }
+
+    fun onBeenInvitationHandled() = _uiState.update { it.copy(beenInvitation = false) }
+
+    private fun applyButterfly(result: ApiResult<ButterflyState?>, invite: Boolean) {
+        when (result) {
+            is ApiResult.Success -> _uiState.update {
+                it.copy(isBusy = false, post = it.post?.copy(yourButterfly = result.data),
+                    beenInvitation = invite && result.data == ButterflyState.BEEN)
+            }
+            is ApiResult.Failure -> if (result.error == ApiError.NOT_FOUND) {
+                _uiState.update { it.copy(isBusy = false, post = null, notFound = true) }
+            } else fail(result)
+        }
+    }
+
     fun onClosedHandled() = _uiState.update { it.copy(closed = false) }
     fun onSessionExpiredHandled() = _uiState.update { it.copy(sessionExpired = false) }
 
@@ -146,7 +198,8 @@ class PostViewModel(
 
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
-                PostViewModel(container.experienceRepository, createSavedStateHandle().get<String>(ARG_POST_ID).orEmpty())
+                PostViewModel(container.experienceRepository, container.discoverRepository,
+                    createSavedStateHandle().get<String>(ARG_POST_ID).orEmpty())
             }
         }
     }

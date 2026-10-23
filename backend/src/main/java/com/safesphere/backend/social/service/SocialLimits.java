@@ -23,6 +23,9 @@ public class SocialLimits {
     static final String TOO_MANY_POSTS = "You have shared a lot today. Please try again tomorrow.";
     static final String TOO_MANY_PHOTOS = "You have added many photos today. Please try again tomorrow.";
     static final String TOO_MANY_COMMENTS = "You have written many perspectives today. Please try again tomorrow.";
+    static final String TOO_MANY_BUTTERFLIES = "You have changed your Cocoon many times today. Please try again tomorrow.";
+    static final String TOO_MANY_DISCOVER = "You have opened a lot of lists this hour. Please try again later.";
+    static final String TOO_MANY_SEARCHES = "Too many place searches. Please try again later.";
 
     private final AttemptLimiter lookups;
     private final AttemptLimiter requests;
@@ -33,6 +36,9 @@ public class SocialLimits {
     private final AttemptLimiter posts;
     private final AttemptLimiter media;
     private final AttemptLimiter comments;
+    private final AttemptLimiter butterflies;
+    private final AttemptLimiter discover;
+    private final AttemptLimiter searches;
 
     public SocialLimits(SocialProperties properties, Clock clock) {
         int keys = properties.maxTrackedKeys();
@@ -45,6 +51,9 @@ public class SocialLimits {
         this.posts = new AttemptLimiter(properties.postsPerDay(), Duration.ofDays(1), keys, clock);
         this.media = new AttemptLimiter(properties.mediaPerDay(), Duration.ofDays(1), keys, clock);
         this.comments = new AttemptLimiter(properties.commentsPerDay(), Duration.ofDays(1), keys, clock);
+        this.butterflies = new AttemptLimiter(properties.butterfliesPerDay(), Duration.ofDays(1), keys, clock);
+        this.discover = new AttemptLimiter(properties.discoverReadsPerHour(), Duration.ofHours(1), keys, clock);
+        this.searches = new AttemptLimiter(properties.placeSearchesPerHour(), Duration.ofHours(1), keys, clock);
     }
 
     public void lookup(long userId) {
@@ -81,6 +90,18 @@ public class SocialLimits {
 
     public void comment(long userId) {
         if (!comments.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_COMMENTS);
+    }
+
+    public void butterfly(long userId) {
+        if (!butterflies.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_BUTTERFLIES);
+    }
+
+    public void discover(long userId) {
+        if (!discover.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_DISCOVER);
+    }
+
+    public void search(long userId) {
+        if (!searches.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_SEARCHES);
     }
 
     private static String key(long userId) {

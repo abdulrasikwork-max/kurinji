@@ -77,7 +77,7 @@ Final-year B.Tech IT team project: the student must be able to explain every imp
 2026-10-22/23** (`docs/PHASE13B.md`, plan `PHASE13B_PLAN.md` approved with Q1–Q12): places, Experiences/Asks with
 precision and the 1–3 h exact-place delay, photos stripped twice, Perspectives, encrypted private places; backend 635 /
 Android 627, lint 0 / 91, **V21 dry run 79/79 + applied, live MySQL 33/33, emulator (API 37) E1–E12 PASS** (two bugs
-found and fixed); real phone, TalkBack speech and dark mode **not verified**. 13C–13F, 13R: planned. Sub-phases 13A identity foundation (V20) → 13B experiences → 13C intent + discovery → 13D moderation v2 → 13E AI v1 → 13F new UI/navigation, plus 13R Tamil/Tanglish model research track in parallel (design doc §12). Decided 2026-10-22: D1 (name Kurinji, checks pending), D4 (women's realities = internal principle only), D5 (Chennai first; Tamil/Tanglish content from V1, Tamil UI in V2), D6 (18+, self-declared date of birth), D13 (Phase 13), D7 (Coil is the one new Android dependency for 13B; push stays V2), D11 (places user-created only, no places API), D14 (no audience preselected on the first post), D2 (moderation models allowed under the evidence → policy → human rule), D3 (the user's dataset + licence-checked public sets, ≥ 2 annotators), D8 (Takes in V2), D9 (retire Rise when 13F ships), D10 (pending safety items folded into Phase 13; A23 sprint before any pilot), D12 (HTTPS server before a closed pilot), D15 (team moderators, rotating). All of D1–D15 are decided. Each sub-phase needs its own plan and the user's approval first |
+found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13C intent and discovery implemented, compiled, tested, verified 2026-10-23** (`docs/PHASE13C.md`, plan `PHASE13C_PLAN.md`, C1–C15 decided under the user's delegation): butterfly = private Cocoon item (Want → Been), the author's count only from 3 people up, weekly city Edition with "Why am I seeing this?", From your connections, place and category pages, place-name search, mute in every list; backend 663 / Android 641, lint 0 / 94, **V22 dry run 14/14 + applied, live MySQL 29/29, emulator (API 37) E1–E17 PASS** (one wording bug found and fixed); real phone, TalkBack speech and dark mode **not verified**. 13D–13F, 13R: planned. Sub-phases 13A identity foundation (V20) → 13B experiences → 13C intent + discovery → 13D moderation v2 → 13E AI v1 → 13F new UI/navigation, plus 13R Tamil/Tanglish model research track in parallel (design doc §12). Decided 2026-10-22: D1 (name Kurinji, checks pending), D4 (women's realities = internal principle only), D5 (Chennai first; Tamil/Tanglish content from V1, Tamil UI in V2), D6 (18+, self-declared date of birth), D13 (Phase 13), D7 (Coil is the one new Android dependency for 13B; push stays V2), D11 (places user-created only, no places API), D14 (no audience preselected on the first post), D2 (moderation models allowed under the evidence → policy → human rule), D3 (the user's dataset + licence-checked public sets, ≥ 2 annotators), D8 (Takes in V2), D9 (retire Rise when 13F ships), D10 (pending safety items folded into Phase 13; A23 sprint before any pilot), D12 (HTTPS server before a closed pilot), D15 (team moderators, rotating). All of D1–D15 are decided. Each sub-phase needs its own plan and the user's approval first |
 
 **Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
 - **4A** — Location + permissions, notifications foundation, emergency location sharing, emergency/state recovery, battery + network readers.
@@ -142,7 +142,11 @@ retention, A23 sprint) are folded into Phase 13 (D10, decided 2026-10-22; design
 birth at sign-up): `docs/PHASE13A.md` (deviations A1–A10, results).
 **13B is in the repository** (V21, backend `social` places/posts/media/comments + `SocialMediaCleanupJob`, Android
 `feature/social` composer, place picker, post view, lists, private places, Coil): `docs/PHASE13B.md` (deviations
-B1–B14, results). Next migration **V22**.
+B1–B14, results).
+**13C is in the repository** (V22 `butterflies` + `places.city`, backend `social` `ButterflyService`, `DiscoverService`,
+pure `CityAreas`/`EditionPolicy`/`ButterflyTally`, `Visibility.showInLists`; Android `DiscoverFragment`,
+`CocoonFragment`, `PostCollectionFragment`, 🦋 on `PostFragment`): `docs/PHASE13C.md` (decisions C1–C15 in
+`PHASE13C_PLAN.md`, deviations C-D1–C-D8, results). Next migration **V23**.
 **Note:** `C:\Users\ABDUL RAFIQ\Desktop\CLAUDE.md` (outside the repo) is an old copy (says "4A has not started"); this
 repo copy is the current one.
 
@@ -185,7 +189,7 @@ Android lifecycle implications / security + privacy / likely viva questions*. No
 SafeSphere/
 ├── android/   Kotlin app — open THIS folder in Android Studio (has gradlew)
 ├── backend/   Spring Boot API — Maven (no mvnw wrapper; Maven is installed)
-├── docs/      API.md, PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), AUDIT_NEXT.md (2026-10-22 audit), EXPERIENCE_PLATFORM_DESIGN.md (the new product direction, Phase 13), PHASE13A_PLAN.md + PHASE13A.md (13A), PHASE13B_PLAN.md + PHASE13B.md (13B), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
+├── docs/      API.md, PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), AUDIT_NEXT.md (2026-10-22 audit), EXPERIENCE_PLATFORM_DESIGN.md (the new product direction, Phase 13), PHASE13A_PLAN.md + PHASE13A.md (13A), PHASE13B_PLAN.md + PHASE13B.md (13B), PHASE13C_PLAN.md + PHASE13C.md (13C), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
 └── README.md
 ```
 
@@ -294,6 +298,18 @@ cd android
   `PostFragment` (bands, tip box, Perspectives via `PersonRowAdapter` rows + a "More" menu: hide/show, This helped,
   delete), `MyPostsFragment`, `PrivatePlacesFragment`; Connections: Share / Your experiences / Private places; profiles:
   "Experiences" list (`PostListViewModel`, more only on "Show more"). No Android edit screen (API only).
+- **Intent and discovery (Phase 13C, `feature/social`, `docs/PHASE13C.md`):** separate `DiscoverApi` /
+  `DiscoverRepository` (`RemoteDiscoverRepository`; DTOs fail closed: unknown state/section dropped, unknown reasons
+  vanish, a tally on someone else's post or under 3 dropped). `Post.yourButterfly` (own state only), `Post.butterflies`
+  (author only), `Post.placeId` (EXACT), `Place.city`. Pure `CityMatch` (profile city text → launch city, aliases
+  Madras/Trichy/Pondy/Bangalore…). Screens: `DiscoverFragment` + `DiscoverViewModel` (city chips, not saved; Edition
+  sections with "Why?" (`DiscoverTexts`), end card; From your connections with Show more + end line; search = places
+  on the server, categories matched on the phone), `CocoonFragment` + `CocoonViewModel` (Want / Been, I've been →
+  invitation, Want again, Take out), `PostCollectionFragment` + `PostCollectionViewModel` (`PostCollection.OfPlace` /
+  `OfCategory`), `PostFragment` 🦋 / "I've been" / author's private line / "See this place". Entry: Connections →
+  "Discover", "Your Cocoon" (until 13F). Nothing stored on the phone. `SocialTextsTest`: `%d` only in
+  `butterfly_author_count` ("Only you can see this line"); ranking words (for you, top, most …, rank, best, feed,
+  views, trending, popular) forbidden.
 - **Rise "Proof" (Phase 10B, `feature/rise`, `docs/PHASE11.md` §4):** phone-only; `RiseJournalHolder` (one encrypted
   file per account, `EncryptedFileRiseStore`: AES-GCM per save, key wrapped by the Keystore `LocalKeyWrapper`, AAD
   `SSRISE1|accountId`, `.bak`, Unreadable never silently empty), pure `GoalPolicy` / `ProofPolicy` (replay only for the
@@ -429,7 +445,12 @@ cd android
   `PlaceNamePolicy`; `media/ImageSanitizer` (magic bytes, header size check before decoding, re-encode without
   metadata) + `media/MediaStorage` (`app.social.media-dir`, UUID names); `PlaceService`, `PostService`, `MediaService`,
   `CommentService`; `SocialMediaCleanupJob` = the ONLY `@Scheduled` in `social` (unattached uploads > 24 h, orphan
-  files); `AccountEraser` deletes the person's photo files before the rows),
+  files); `AccountEraser` deletes the person's photo files before the rows;
+  Phase 13C: `Butterfly` (= Cocoon item), `ButterflyService` (Experiences of others only; Cocoon filtered by the one rule),
+  `DiscoverService` (Edition, connections list, place/category pages; SQL pre-filter, then `Relationships.forLists` =
+  `Visibility.showInLists` = canSeePost + not muted), pure `EditionPolicy` (IST week, theme rotation, content-only order +
+  reason codes), `CityAreas` (launch-city boxes → `places.city`), `ButterflyTally` (author only, number from 3),
+  `PlaceService.search` (names only)),
   `community` (Phase 6: `GeoCell`, pure `SignalPolicy`, `CommunityService`, in-memory `AreaQueryLimiter`,
   `CommunityPurgeJob` = a `@Scheduled` task, deletion only (since Phase 10A the other one is `AccountDeletionJob`); `config/CommunityProperties`, `SchedulingConfig`;
   Phase 7: pure `TrustPolicy`, `Independence`, `FlagPolicy`, `TrustService`, private `ContributorStanding`, `SignalFlag`;
@@ -530,7 +551,9 @@ cd android
 
 | V21 | `places`, `posts`, `post_media`, `comments` | 13B: places with no creator (`created_on DATE`), unique (cell, normalised name), cell/area CHECKs; posts: type, precision (`location_precision`), area only for AREA, closed city list only for CITY, month (day 1) only and always for EXPERIENCE, ONLY_ME ⇒ NOBODY, `visible_from ≥ created_at`; media: random `storage_key`, `sort_order` 0–5, unique (post, position), ≤ 4096 px, ≤ 5 MiB, SHA-256; comments: kinds, 1–1000 chars, helped only on ANSWER; "place for EXACT/AREA", "one level", "position iff attached" in code. Dry run 79/79, applied (2026-10-22) |
 
-Conventions: never edit an applied migration; next file is **V22**; snake_case; `DATETIME(6)` stored in UTC; constraint
+| V22 | `butterflies`, `places.city`, index `posts (audience, visible_from)` | 13C: one row per (person, post) = the Cocoon item, FKs cascade, `state` WANT/BEEN binary CHECK, `(state = BEEN) = (been_at IS NOT NULL)` + `been_at >= created_at` CHECK, UNIQUE (user, post); `places.city` closed list without OTHER (binary CHECK), set by the server from the cell (`CityAreas`); "not own post" and "Experiences only" in code. Dry run 14/14, applied (2026-10-23) |
+
+Conventions: never edit an applied migration; next file is **V23**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.
 
 ---
@@ -638,6 +661,13 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
   widening), `GET /api/posts/mine?cursor=`, `GET /api/profiles/{id}/posts?cursor=`; `GET|POST /api/posts/{id}/comments`,
   `DELETE /api/comments/{id}`, `POST /api/comments/{id}/hide|unhide`, `POST|DELETE /api/comments/{id}/helped`. Bands
   for everyone but the author; exact-place posts visible to others after 1–3 h.
+- Phase 13C (V22, `API.md` "Phase 13C"): `PUT|DELETE /api/posts/{id}/butterfly` (`{state?: WANT|BEEN}`; own post / Ask
+  400), `GET /api/cocoon?state=&cursor=` (`{items[{post, state, savedPeriod}], nextCursor}`); post answers add
+  `yourButterfly` and, author only, `butterflies {count ≥ 3 | null, fewerThanThree}`; `GET /api/discover/edition?city=`
+  (`{city, weekOf, theme, sections[{kind CITY|ASKS|THEME, items[{post, reasons}]}]}`), `GET
+  /api/discover/connections?cursor=`, `GET /api/discover/categories/{c}?city=&cursor=`, `GET /api/places/{id}/posts?cursor=`
+  (EXACT + Everyone only), `GET /api/places/search?q=&city=` (names only, ≤ 20); place answers add `city`. Config
+  `app.social.butterflies-per-day` (200), `discover-reads-per-hour` (240), `place-searches-per-hour` (120).
 
 ---
 

@@ -1,6 +1,8 @@
 package com.safesphere.app.feature.social.data.remote
 
 import com.safesphere.app.feature.social.domain.Audience
+import com.safesphere.app.feature.social.domain.ButterflyState
+import com.safesphere.app.feature.social.domain.ButterflyTally
 import com.safesphere.app.feature.social.domain.City
 import com.safesphere.app.feature.social.domain.CommentKind
 import com.safesphere.app.feature.social.domain.CommentPolicy
@@ -32,7 +34,8 @@ data class PlaceDto(
     val name: String? = null,
     val category: String? = null,
     val cell: String? = null,
-    val areaCell: String? = null
+    val areaCell: String? = null,
+    val city: String? = null
 ) {
     fun toDomain(): Place? {
         return Place(
@@ -40,7 +43,9 @@ data class PlaceDto(
             name = name ?: return null,
             category = Interest.fromCode(category ?: return null) ?: return null,
             cell = cell ?: return null,
-            areaCell = areaCell ?: return null
+            areaCell = areaCell ?: return null,
+            // Phase 13C: an unknown city is no city (never guessed).
+            city = enumOrNull<City>(city)?.takeIf { it != City.OTHER }
         )
     }
 
@@ -117,7 +122,9 @@ data class PostDto(
     val audience: String? = null,
     val commentPolicy: String? = null,
     val canComment: Boolean? = null,
-    val visibleFrom: String? = null
+    val visibleFrom: String? = null,
+    val yourButterfly: String? = null,
+    val butterflies: ButterflyTallyDto? = null
 ) {
     fun toDomain(): Post? {
         val author = author?.let { a ->
@@ -147,11 +154,20 @@ data class PostDto(
             // Unknown comment setting: the closed one.
             commentPolicy = enumOrNull<CommentPolicy>(commentPolicy) ?: CommentPolicy.NOBODY,
             canComment = canComment == true,
-            visibleFrom = visibleFrom?.let { runCatching { Instant.parse(it) }.getOrNull() }
+            visibleFrom = visibleFrom?.let { runCatching { Instant.parse(it) }.getOrNull() },
+            yourButterfly = enumOrNull<ButterflyState>(yourButterfly),
+            // Phase 13C: only the author's own posts carry a tally; anything else, or an inconsistent one, is dropped.
+            butterflies = if (own == true) butterflies?.toDomain()?.takeIf { it.isConsistent } else null,
+            placeId = if (precision == Precision.EXACT.name) place?.publicId else null
         )
     }
 
     override fun toString() = "PostDto(publicId=$publicId, type=$type, precision=$precision)"
+}
+
+/** Phase 13C: the author's private tally (C2). */
+data class ButterflyTallyDto(val count: Int? = null, val fewerThanThree: Boolean? = null) {
+    fun toDomain() = ButterflyTally(count, fewerThanThree != false)
 }
 
 data class PostPageDto(val items: List<PostDto>? = null, val nextCursor: String? = null) {
@@ -195,5 +211,5 @@ data class CommentDto(
     }
 }
 
-private inline fun <reified T : Enum<T>> enumOrNull(name: String?): T? =
+internal inline fun <reified T : Enum<T>> enumOrNull(name: String?): T? =
     if (name == null) null else enumValues<T>().firstOrNull { it.name == name }

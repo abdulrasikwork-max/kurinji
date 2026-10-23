@@ -40,7 +40,10 @@ import com.safesphere.app.feature.social.data.PhotoSource
 import com.safesphere.app.feature.social.data.PlaceMemory
 import com.safesphere.app.feature.social.data.PlacesStore
 import com.safesphere.app.feature.social.data.RemoteExperienceRepository
+import com.safesphere.app.feature.social.data.RemoteDiscoverRepository
+import com.safesphere.app.feature.social.data.remote.DiscoverApi
 import com.safesphere.app.feature.social.data.remote.ExperienceApi
+import com.safesphere.app.feature.social.domain.DiscoverRepository
 import com.safesphere.app.feature.social.domain.ExperienceRepository
 import kotlinx.coroutines.flow.first
 import com.safesphere.app.feature.auth.data.DataStoreSessionStorage
@@ -205,6 +208,12 @@ class AppContainer(context: Context) {
 
     val experienceRepository: ExperienceRepository by lazy {
         RemoteExperienceRepository(retrofit.create(ExperienceApi::class.java), apiCallHandler, backendBaseUrl())
+    }
+
+    // ---- Phase 13C: butterflies, the Cocoon and Discover (nothing stored on the phone) ---------------------
+
+    val discoverRepository: DiscoverRepository by lazy {
+        RemoteDiscoverRepository(retrofit.create(DiscoverApi::class.java), apiCallHandler)
     }
 
     /** Q9: private places, recently used places and the last audience, encrypted on this phone, never uploaded. */

@@ -1,6 +1,7 @@
 package com.safesphere.backend.social.repository;
 
 import com.safesphere.backend.social.entity.Comment;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,15 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     Optional<Comment> findByPublicId(String publicId);
 
     List<Comment> findByPostIdOrderByCreatedAtAscIdAsc(long postId);
+
+    /**
+     * Phase 13C (C8): which of [postIds] have a "Been here too" (not hidden) by someone other than the post's author.
+     * Only a yes/no per post leaves this query; never who, never how many.
+     */
+    @Query("SELECT DISTINCT c.postId FROM Comment c, Post p WHERE c.postId = p.id AND c.postId IN :postIds"
+            + " AND c.kind = com.safesphere.backend.social.entity.PostEnums.CommentKind.BEEN_HERE"
+            + " AND c.hiddenByAuthorAt IS NULL AND c.authorId <> p.authorId")
+    List<Long> postsWithBeenHere(@Param("postIds") Collection<Long> postIds);
 
     /** Replies first, then top-level perspectives (the test database has no foreign keys to cascade). */
     @Modifying

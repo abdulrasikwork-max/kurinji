@@ -54,6 +54,8 @@ class ConnectionsFragment : ViewBindingFragment<FragmentConnectionsBinding>(Frag
         binding.blockedMutedButton.setOnClickListener { findNavController().navigate(R.id.blockedMutedFragment) }
         binding.shareExperienceButton.setOnClickListener { findNavController().navigate(R.id.composeFragment) }
         binding.myExperiencesButton.setOnClickListener { findNavController().navigate(R.id.myPostsFragment) }
+        binding.discoverButton.setOnClickListener { findNavController().navigate(R.id.discoverFragment) }
+        binding.cocoonButton.setOnClickListener { findNavController().navigate(R.id.cocoonFragment) }
         binding.privatePlacesButton.setOnClickListener { findNavController().navigate(R.id.privatePlacesFragment) }
         binding.findButton.setOnClickListener { viewModel.onFind(binding.findInput.text.toString()) }
         binding.findInput.setOnEditorActionListener { _, actionId, _ ->

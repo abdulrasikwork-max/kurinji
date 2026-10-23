@@ -57,12 +57,12 @@ class PlaceApiIntegrationTest {
         assertThat(place.get("areaCell").asText()).isEqualTo(cell.substring(0, 6));
         List<String> fields = new ArrayList<>();
         place.fieldNames().forEachRemaining(fields::add);
-        assertThat(fields).containsExactlyInAnyOrder("publicId", "name", "category", "cell", "areaCell");
+        assertThat(fields).containsExactlyInAnyOrder("publicId", "name", "category", "cell", "areaCell", "city");
         // The table has no column that could name a person or a time of day.
         List<String> columns = jdbc.queryForList(
                 "SELECT LOWER(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS WHERE LOWER(TABLE_NAME) = 'places'", String.class);
         assertThat(columns).containsExactlyInAnyOrder("id", "public_id", "name", "normalized_name", "category", "cell",
-                "area_cell", "created_on", "merged_into");
+                "area_cell", "city", "created_on", "merged_into");
     }
 
     @Test

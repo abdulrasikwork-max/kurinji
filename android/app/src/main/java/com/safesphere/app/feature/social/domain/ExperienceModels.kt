@@ -37,7 +37,9 @@ data class Place(
     val name: String,
     val category: Interest,
     val cell: String,
-    val areaCell: String
+    val areaCell: String,
+    /** Phase 13C: the launch city the server placed it in, or null. */
+    val city: City? = null
 )
 
 data class MediaRef(val mediaId: String, val width: Int, val height: Int)
@@ -67,7 +69,13 @@ data class Post(
     val commentPolicy: CommentPolicy,
     val canComment: Boolean,
     /** Own posts only: when others can see it (the delay of an exact-place post). */
-    val visibleFrom: Instant?
+    val visibleFrom: Instant?,
+    /** Phase 13C: the viewer's OWN Cocoon state for this post (never anyone else's). */
+    val yourButterfly: ButterflyState? = null,
+    /** Phase 13C: only on the author's own Experiences shared with others (C2). */
+    val butterflies: ButterflyTally? = null,
+    /** Phase 13C: EXACT only, the place's id (opens its place page). */
+    val placeId: String? = null
 )
 
 data class PostPage(val items: List<Post>, val nextCursor: String?)

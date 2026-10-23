@@ -1,6 +1,7 @@
 package com.safesphere.backend.social.dto;
 
 import com.safesphere.backend.social.dto.ProfileDtos.PersonSummary;
+import com.safesphere.backend.social.policy.ButterflyTally;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
@@ -60,12 +61,16 @@ public final class PostDtos {
      * A post as the viewer may see it. [place] only for EXACT, [areaCell] (6 characters) only for AREA, [city] only for
      * CITY. [audience], [postedAt] and [visibleFrom] only for the author (null for everyone else); [postedPeriod] is the
      * band others see (THIS_WEEK / THIS_MONTH / EARLIER).
+     * Phase 13C: [yourButterfly] is the viewer's OWN Cocoon state for this post (null / WANT / BEEN), never anyone
+     * else's; [butterflies] only for the author of an Experience shared with others (C2: a number from 3 people up),
+     * null for everyone else.
      */
     public record PostResponse(String publicId, String type, PersonSummary author, boolean own, String body, String tip,
                                String category, String precision, PostPlace place, String areaCell, String city,
                                String experiencedMonth, String daypart, String postedPeriod, boolean edited,
                                List<MediaRef> media, String audience, String commentPolicy, boolean canComment,
-                               Instant postedAt, Instant visibleFrom) {
+                               Instant postedAt, Instant visibleFrom, String yourButterfly,
+                               ButterflyTally butterflies) {
     }
 
     /** One page of a list, newest first; [nextCursor] is null on the last page (more only on an explicit request). */

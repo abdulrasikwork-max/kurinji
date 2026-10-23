@@ -10,9 +10,11 @@ import com.safesphere.backend.social.dto.PostDtos.PostPage;
 import com.safesphere.backend.social.dto.PostDtos.PostPlace;
 import com.safesphere.backend.social.dto.PostDtos.PostRequest;
 import com.safesphere.backend.social.dto.PostDtos.PostResponse;
+import com.safesphere.backend.social.entity.Butterfly;
 import com.safesphere.backend.social.entity.Place;
 import com.safesphere.backend.social.entity.Post;
 import com.safesphere.backend.social.entity.PostEnums.Audience;
+import com.safesphere.backend.social.entity.PostEnums.ButterflyState;
 import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.entity.PostEnums.CommentPolicy;
 import com.safesphere.backend.social.entity.PostEnums.Daypart;
@@ -21,10 +23,12 @@ import com.safesphere.backend.social.entity.PostEnums.Precision;
 import com.safesphere.backend.social.entity.PostMedia;
 import com.safesphere.backend.social.entity.Profile;
 import com.safesphere.backend.social.media.MediaStorage;
+import com.safesphere.backend.social.policy.ButterflyTally;
 import com.safesphere.backend.social.policy.PostDelay;
 import com.safesphere.backend.social.policy.PostPolicy;
 import com.safesphere.backend.social.policy.TimeBands;
 import com.safesphere.backend.social.policy.Visibility;
+import com.safesphere.backend.social.repository.ButterflyRepository;
 import com.safesphere.backend.social.repository.CommentRepository;
 import com.safesphere.backend.social.repository.PlaceRepository;
 import com.safesphere.backend.social.repository.PostMediaRepository;
@@ -38,6 +42,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -77,6 +82,7 @@ public class PostService {
     private final PostRepository posts;
     private final PostMediaRepository mediaRows;
     private final CommentRepository comments;
+    private final ButterflyRepository butterflies;
     private final PlaceService placeService;
     private final PlaceRepository places;
     private final ProfileRepository profiles;
@@ -90,12 +96,13 @@ public class PostService {
     private final SecureRandom random = new SecureRandom();
 
     public PostService(PostRepository posts, PostMediaRepository mediaRows, CommentRepository comments,
-                       PlaceService placeService, PlaceRepository places, ProfileRepository profiles,
+                       ButterflyRepository butterflies, PlaceService placeService, PlaceRepository places, ProfileRepository profiles,
                        ProfileService profileService, Relationships relationships, SocialAccess access,
                        SocialLimits limits, SocialProperties properties, MediaStorage storage, Clock clock) {
         this.posts = posts;
         this.mediaRows = mediaRows;
         this.comments = comments;
+        this.butterflies = butterflies;
         this.placeService = placeService;
         this.places = places;
         this.profiles = profiles;
@@ -216,6 +223,7 @@ public class PostService {
         Post post = requireOwn(userId, publicId);
         List<String> keys = mediaRows.findByPostIdOrderBySortOrderAsc(post.getId()).stream()
                 .map(PostMedia::getStorageKey).toList();
+        butterflies.deleteAllOfPost(post.getId());
         comments.deleteRepliesOfPost(post.getId());
         comments.deleteAllOfPost(post.getId());
         mediaRows.deleteAll(mediaRows.findByPostIdOrderBySortOrderAsc(post.getId()));
@@ -295,8 +303,11 @@ public class PostService {
         mediaRows.saveAllAndFlush(found.values());
     }
 
-    /** Builds the answers for [list] as [viewerId] may see them (batch loads of author, places and photos). */
-    private List<PostResponse> respond(long viewerId, List<Post> list, LocalDateTime now) {
+    /**
+     * Builds the answers for [list] as [viewerId] may see them (batch loads of author, places, photos and butterflies).
+     * The caller has already checked that the viewer may see every post in [list] (Visibility).
+     */
+    public List<PostResponse> respond(long viewerId, List<Post> list, LocalDateTime now) {
         if (list.isEmpty()) return List.of();
         Set<Long> authorIds = list.stream().map(Post::getAuthorId).collect(Collectors.toSet());
         Map<Long, Profile> authors = profiles.findByUserIdIn(List.copyOf(authorIds)).stream()
@@ -305,8 +316,17 @@ public class PostService {
                 .map(Post::getPlaceId).collect(Collectors.toSet());
         Map<Long, Place> placeById = placeIds.isEmpty() ? Map.of() : places.findByIdIn(placeIds).stream()
                 .collect(Collectors.toMap(Place::getId, Function.identity()));
-        Map<Long, List<PostMedia>> mediaByPost = mediaRows.findByPostIdIn(list.stream().map(Post::getId).toList())
+        List<Long> postIds = list.stream().map(Post::getId).toList();
+        Map<Long, List<PostMedia>> mediaByPost = mediaRows.findByPostIdIn(postIds)
                 .stream().collect(Collectors.groupingBy(PostMedia::getPostId));
+        // Phase 13C: the viewer's own Cocoon states, and (author only) how many people saved their Experiences.
+        Map<Long, ButterflyState> yours = butterflies.findByUserIdAndPostIdIn(viewerId, postIds).stream()
+                .collect(Collectors.toMap(Butterfly::getPostId, Butterfly::getState));
+        List<Long> tallied = list.stream().filter(p -> showsTally(viewerId, p)).map(Post::getId).toList();
+        Map<Long, Long> counts = new HashMap<>();
+        if (!tallied.isEmpty()) {
+            for (Object[] row : butterflies.countByPostIds(tallied)) counts.put((Long) row[0], (Long) row[1]);
+        }
         List<PostResponse> out = new ArrayList<>(list.size());
         for (Post post : list) {
             boolean own = post.getAuthorId() == viewerId;
@@ -330,9 +350,17 @@ public class PostService {
                     TimeBands.band(since, now).name(), post.getEditedAt() != null, media,
                     own ? post.getAudience().name() : null, post.getCommentPolicy().name(), canComment,
                     own ? post.getCreatedAt().toInstant(ZoneOffset.UTC) : null,
-                    own ? post.getVisibleFrom().toInstant(ZoneOffset.UTC) : null));
+                    own ? post.getVisibleFrom().toInstant(ZoneOffset.UTC) : null,
+                    yours.containsKey(post.getId()) ? yours.get(post.getId()).name() : null,
+                    showsTally(viewerId, post) ? ButterflyTally.of(counts.getOrDefault(post.getId(), 0L)) : null));
         }
         return out;
+    }
+
+    /** C2: only the author of an Experience shared with others learns anything about its butterflies. */
+    private static boolean showsTally(long viewerId, Post post) {
+        return post.getAuthorId() == viewerId && post.getType() == PostType.EXPERIENCE
+                && post.getAudience() != Audience.ONLY_ME;
     }
 
     /** Photo files go only after the rows are gone for good; a file left behind is removed by the clean-up job. */

@@ -1,14 +1,22 @@
 package com.safesphere.backend.social.service;
 
 import com.safesphere.backend.social.dto.Relationship;
+import com.safesphere.backend.social.entity.Block;
 import com.safesphere.backend.social.entity.Connection;
 import com.safesphere.backend.social.entity.ConnectionStatus;
+import com.safesphere.backend.social.entity.Mute;
 import com.safesphere.backend.social.entity.Post;
-import java.time.LocalDateTime;
 import com.safesphere.backend.social.policy.Visibility;
 import com.safesphere.backend.social.repository.BlockRepository;
 import com.safesphere.backend.social.repository.ConnectionRepository;
+import com.safesphere.backend.social.repository.MuteRepository;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,11 +27,14 @@ public class Relationships {
 
     private final BlockRepository blocks;
     private final ConnectionRepository connections;
+    private final MuteRepository mutes;
     private final SocialAccess access;
 
-    public Relationships(BlockRepository blocks, ConnectionRepository connections, SocialAccess access) {
+    public Relationships(BlockRepository blocks, ConnectionRepository connections, MuteRepository mutes,
+                         SocialAccess access) {
         this.blocks = blocks;
         this.connections = connections;
+        this.mutes = mutes;
         this.access = access;
     }
 
@@ -51,6 +62,50 @@ public class Relationships {
 
     public boolean canSeePost(long viewerId, Post post, LocalDateTime now) {
         return Visibility.canSeePost(postFacts(viewerId, post, now));
+    }
+
+    /**
+     * Phase 13C: what lists need to know about the viewer, gathered once: whom they blocked or were blocked by, whom
+     * they muted, whom they are connected with. [postFacts] then builds the same facts the one rule always gets.
+     */
+    public record Viewer(long id, Set<Long> blockedEitherWay, Set<Long> muted, Set<Long> connected) {
+    }
+
+    public Viewer viewer(long viewerId) {
+        Set<Long> blocked = new HashSet<>();
+        for (Block block : blocks.findInvolving(viewerId)) {
+            blocked.add(block.getBlockerId() == viewerId ? block.getBlockedId() : block.getBlockerId());
+        }
+        Set<Long> muted = new HashSet<>();
+        for (Mute mute : mutes.findByMuterIdOrderByCreatedAtDesc(viewerId)) muted.add(mute.getMutedId());
+        Set<Long> connected = new HashSet<>();
+        for (Connection c : connections.findInvolving(viewerId, ConnectionStatus.ACCEPTED)) {
+            connected.add(c.getUserLow() == viewerId ? c.getUserHigh() : c.getUserLow());
+        }
+        return new Viewer(viewerId, blocked, muted, connected);
+    }
+
+    /** Phase 13C: the facts about [viewer] and [post] from the gathered sets; [activeAuthors] from SocialAccess. */
+    public static Visibility.PostFacts postFacts(Viewer viewer, Post post, Set<Long> activeAuthors, LocalDateTime now) {
+        long authorId = post.getAuthorId();
+        boolean self = viewer.id() == authorId;
+        Visibility.Facts people = new Visibility.Facts(self, !self && viewer.blockedEitherWay().contains(authorId),
+                self || activeAuthors.contains(authorId));
+        return new Visibility.PostFacts(people, !self && viewer.connected().contains(authorId), post.getAudience(),
+                !post.getVisibleFrom().isAfter(now));
+    }
+
+    /** Phase 13C: the posts of [candidates] that may appear in a list for [viewer] (Visibility.showInLists). */
+    public List<Post> forLists(Viewer viewer, List<Post> candidates, LocalDateTime now) {
+        if (candidates.isEmpty()) return List.of();
+        Set<Long> active = access.activeAmong(candidates.stream().map(Post::getAuthorId).collect(Collectors.toSet()));
+        List<Post> shown = new ArrayList<>();
+        for (Post post : candidates) {
+            if (Visibility.showInLists(postFacts(viewer, post, active, now), viewer.muted().contains(post.getAuthorId()))) {
+                shown.add(post);
+            }
+        }
+        return shown;
     }
 
     public Optional<Connection> pair(long a, long b) {

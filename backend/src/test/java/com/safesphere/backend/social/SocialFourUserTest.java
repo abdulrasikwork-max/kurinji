@@ -164,6 +164,65 @@ class SocialFourUserTest {
         }
     }
 
+    /**
+     * Phase 13C: every new read path from each point of view, plus a fifth person who MUTED the owner: the Edition,
+     * From your connections, category pages, the butterfly and the Cocoon. Lists leave out the blocked pair and the
+     * muted author; a deliberate visit by the muter still works.
+     */
+    @Test
+    void discover_butterflies_andCocoon_fromEachPointOfView() throws Exception {
+        Person muter = social.person("Muter");
+        social.connect(owner, muter);
+        social.mute(muter, owner).andExpect(status().isNoContent());
+        java.util.Map<String, Object> body = SocialClient.experienceBody("EVERYONE", "CITY");
+        body.put("city", "COIMBATORE");
+        body.put("category", "ACTIVITIES_SPORT");
+        String everyone = social.json(social.createPost(owner, body).andExpect(status().isCreated()))
+                .get("publicId").asText();
+        String connectionsOnly = social.experience(owner, "CONNECTIONS");
+
+        // Edition (Everyone posts of the city): connection and stranger yes; blocked and muter no; the owner's own no.
+        assertThat(social.editionIds(social.edition(connection, "COIMBATORE"))).contains(everyone);
+        assertThat(social.editionIds(social.edition(stranger, "COIMBATORE"))).contains(everyone);
+        assertThat(social.editionIds(social.edition(blocked, "COIMBATORE"))).doesNotContain(everyone);
+        assertThat(social.editionIds(social.edition(muter, "COIMBATORE"))).doesNotContain(everyone);
+        assertThat(social.editionIds(social.edition(owner, "COIMBATORE"))).doesNotContain(everyone);
+
+        // From your connections: only the connection (the muter is connected but muted; the blocked pair is not).
+        assertThat(social.discoverIds(social.fromConnections(connection, null))).contains(everyone, connectionsOnly);
+        assertThat(social.discoverIds(social.fromConnections(stranger, null))).isEmpty();
+        assertThat(social.discoverIds(social.fromConnections(blocked, null))).doesNotContain(everyone, connectionsOnly);
+        assertThat(social.discoverIds(social.fromConnections(muter, null))).doesNotContain(everyone, connectionsOnly);
+
+        // Category pages.
+        for (Person viewer : new Person[] {connection, stranger}) {
+            assertThat(social.postIds(social.categoryPage(viewer, "ACTIVITIES_SPORT", "COIMBATORE", null)))
+                    .contains(everyone);
+        }
+        for (Person viewer : new Person[] {blocked, muter}) {
+            assertThat(social.postIds(social.categoryPage(viewer, "ACTIVITIES_SPORT", "COIMBATORE", null)))
+                    .doesNotContain(everyone);
+        }
+
+        // Butterflies: anyone who can see it; never the blocked; the muter by a deliberate visit.
+        social.butterfly(connection, connectionsOnly, null).andExpect(status().isOk());
+        social.butterfly(stranger, connectionsOnly, null).andExpect(status().isNotFound());
+        social.butterfly(stranger, everyone, null).andExpect(status().isOk());
+        social.butterfly(blocked, everyone, null).andExpect(status().isNotFound());
+        social.butterfly(muter, everyone, null).andExpect(status().isOk());
+        social.butterfly(owner, everyone, null).andExpect(status().isBadRequest());
+        // The muter's own Cocoon still shows what they saved (mute hides lists of others, not one's own choices).
+        assertThat(social.cocoonIds(social.cocoon(muter, "WANT", null))).containsExactly(everyone);
+        assertThat(social.cocoonIds(social.cocoon(stranger, "WANT", null))).containsExactly(everyone);
+        // Each sees only their own state; only the owner gets the (thresholded) number.
+        social.getPost(connection, everyone).andExpect(jsonPath("$.yourButterfly").isEmpty())
+                .andExpect(jsonPath("$.butterflies").isEmpty());
+        social.getPost(stranger, everyone).andExpect(jsonPath("$.yourButterfly").value("WANT"))
+                .andExpect(jsonPath("$.butterflies").isEmpty());
+        social.getPost(owner, everyone).andExpect(jsonPath("$.butterflies.fewerThanThree").value(true))
+                .andExpect(jsonPath("$.butterflies.count").isEmpty());
+    }
+
     private org.springframework.test.web.servlet.ResultActions byId(Person viewer, Person target) throws Exception {
         return mockMvc.perform(get("/api/profiles/{id}", target.publicId())
                 .header(HttpHeaders.AUTHORIZATION, TestAccounts.bearer(viewer.token())));

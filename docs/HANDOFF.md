@@ -1,3 +1,25 @@
+# Handoff: Phase 13C intent and discovery done (2026-10-23)
+
+**13C implemented, compiled, tested, verified** (`docs/PHASE13C.md`; plan `PHASE13C_PLAN.md`, choices C1–C15 decided
+under the user's delegation of 2026-10-23): the butterfly 🦋 saves someone else's Experience to the private Cocoon
+(Want → Been → invitation to add a Been-here-too perspective or an own Experience); the author alone sees a count, and
+only from 3 people up; Discover = a finite weekly Edition per launch city (In the city / Asks you could answer / theme
+of the week, "Why am I seeing this?", ends with "Go make your own"), From your connections (30 days, ends), place pages
+(exact-place Everyone posts only), category pages, place-name search (no people search); mute applies to every list.
+- **Results:** backend **663 run / 0 failures** (2 skipped; 13B 635); Android **641 / 0** (13B 627); lint **0 / 94**
+  (13B 91); V22 dry run **14/14**, applied (dev DB **v22**, next **V23**); live MySQL **29/29**; emulator (API 37)
+  **E1–E17 PASS** — one wording bug found there and fixed with a test ("Saved shared this week").
+- **Disclosed:** one intermittent backend failure in the first full run (`SocialAccountDeletionTest`, a 409 creating a
+  test profile), not reproduced in two more runs; the helper now prints the server's message (C-D7).
+- **NOT VERIFIED:** real phone, TalkBack speech, dark mode, 320 dp / large fonts.
+- **State left:** backend and emulator stopped, `adb reverse` removed, all `live13c.*`/`emu13c.*` accounts, places,
+  posts and butterflies deleted (170 users as before); app data cleared on the emulator.
+- **Git:** git found only inside GitHub Desktop (`%LOCALAPPDATA%\GitHubDesktop\app-3.6.7\resources\app\git\cmd\git.exe`);
+  13A+13B committed locally as c735022, 13C committed on top. **The repository has no remote**, so nothing is pushed
+  yet: the user has been asked for the "Kurinji" repository URL.
+- **Next:** the user's review of 13C; then the 13D plan (moderation v2: reports, holds, collapse, strikes, appeals).
+
+---
 # Handoff: Phase 13B experiences done (2026-10-22/23)
 
 **13B implemented, compiled, tested, verified** (`docs/PHASE13B.md`; plan `PHASE13B_PLAN.md`, approved with Q1–Q12):

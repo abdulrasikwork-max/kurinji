@@ -98,6 +98,24 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Phase 13C: Discover and the Cocoon (entry points until the 13F navigation) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/discoverButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:minHeight="@dimen/menu_row_min_height"
+                android:text="@string/discover_open" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cocoonButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/cocoon_open" />
+
             <!-- Phase 13B: experiences (Q11 entry points until 13F) -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/shareExperienceButton"

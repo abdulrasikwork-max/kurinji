@@ -19,6 +19,8 @@ public final class PlaceDtos {
             @NotNull(message = "Cell is required") @Size(max = 12, message = "Invalid cell") String cell) {
     }
 
-    public record PlaceResponse(String publicId, String name, String category, String cell, String areaCell) {
+    /** [city]: Phase 13C, the launch city the server placed it in (CityAreas), or null. */
+    public record PlaceResponse(String publicId, String name, String category, String cell, String areaCell,
+                                String city) {
     }
 }

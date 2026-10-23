@@ -970,3 +970,44 @@ THANJAVUR|PUDUCHERRY|BENGALURU|OTHER`; band `THIS_WEEK|THIS_MONTH|EARLIER`; kind
 - `DELETE /api/comments/{id}` (its writer) → `204`, with the replies under it.
 - `POST /api/comments/{id}/hide|unhide` (the post's author) → `204`.
 - `POST|DELETE /api/comments/{id}/helped` (the asker, ANSWER on an Ask) → `204`; anything else `404`.
+
+# Phase 13C: intent and discovery (V22, `docs/PHASE13C.md`)
+
+All authenticated and age-confirmed; invisible = `404`; every list ends and gives more only with an explicit `cursor`;
+no counts except the author's own tally; no coordinates; bands instead of times. Limits (in memory, `429`): butterfly
+changes 200/day, Discover reads 240/h, place searches 120/h (`app.social.butterflies-per-day`,
+`discover-reads-per-hour`, `place-searches-per-hour`).
+
+## Butterfly and Cocoon
+
+- `PUT /api/posts/{id}/butterfly` `{state?: "WANT" | "BEEN"}` (body optional, default WANT) → `200 {state}`. Only
+  someone else's Experience the caller can see: own post or Ask → `400`; not visible → `404`. Marking Been again keeps
+  the first time; WANT clears it.
+- `DELETE /api/posts/{id}/butterfly` → `204` (works while the post is not visible to the caller); none → `404`.
+- `GET /api/cocoon?state=WANT|BEEN&cursor=` → `{items[{post, state, savedPeriod}], nextCursor}`: the caller's own,
+  newest saved first, 20 per page; posts the caller can no longer see are skipped (not deleted). `cursor` = a post id
+  in that list.
+- Every post answer (`GET /api/posts/{id}`, lists, Discover) adds `yourButterfly` (`null|WANT|BEEN`, the caller's own)
+  and `butterflies` — only for the author of an Experience shared with others: `{count: n|null, fewerThanThree:
+  bool}`, a number only from 3 people up; `null` for everyone else and on Only-me posts.
+
+## Discover
+
+- `GET /api/discover/edition?city=CHENNAI` (closed list without OTHER; else `400`) → `{city, weekOf (Monday, yyyy-MM-dd,
+  Asia/Kolkata week), theme (category code), sections[{kind CITY|ASKS|THEME, items[{post, reasons[]}]}]}`. Everyone
+  posts of other people in the city: CITY = Experiences visible since the start of last week (≤ 12); ASKS = Asks of
+  the last 28 days without a "This helped" answer (≤ 5); THEME = Experiences of the week's category from the last 56
+  days not already shown (≤ 6). Empty sections are left out. A post is in a city by its CITY precision or its place's
+  city (EXACT, AREA). Muted and blocked people are left out.
+- Reason codes: `IN_THIS_CITY`, `RECENT`, `HAS_PLACE`, `HAS_WHEN`, `HAS_TIP`, `MATCHES_YOUR_INTERESTS`,
+  `BEEN_HERE_TOO`, `OPEN_ASK`, `THEME_OF_THE_WEEK`, `FROM_A_CONNECTION`. The order: these content facts, ties newest
+  first; never counts or engagement.
+- `GET /api/discover/connections?cursor=` → `{items[{post, reasons:[FROM_A_CONNECTION]}], nextCursor}`: accepted
+  connections' Everyone + Connections posts of the last 30 days, newest visible first, 20 per page; muted out.
+- `GET /api/discover/categories/{category}?city=&cursor=` → post page (`{items, nextCursor}`) of Everyone posts.
+- `GET /api/places/{id}/posts?cursor=` → `{place, items, nextCursor}`: only EXACT-precision Everyone posts at that
+  place (an AREA post never appears: it promised not to reveal the place). Unknown place `404`.
+- `GET /api/places/search?q=&city=` → up to 20 places whose normalised name contains `q` (2–40 characters, letters or
+  digits; else `400`), optionally in one city. Places only: no people, no post text.
+- Place answers (`POST /api/places`, nearby, one, search, place page) add `city` (launch city from the server's boxes,
+  or `null`).

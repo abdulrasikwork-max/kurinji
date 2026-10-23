@@ -17,6 +17,7 @@ import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentPostBinding
+import com.safesphere.app.feature.social.domain.ButterflyState
 import com.safesphere.app.feature.social.domain.CommentKind
 import com.safesphere.app.feature.social.domain.Perspective
 import com.safesphere.app.feature.social.domain.Post
@@ -46,6 +47,8 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.sendButton.setOnClickListener { viewModel.onSend() }
         binding.cancelReplyButton.setOnClickListener { viewModel.onCancelReply() }
         binding.deletePostButton.setOnClickListener { confirmDelete() }
+        binding.butterflyButton.setOnClickListener { viewModel.onButterfly() }
+        binding.beenButton.setOnClickListener { viewModel.onBeen() }
         collectWhenStarted(viewModel.uiState, ::render)
     }
 
@@ -116,6 +119,43 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.ownLine.isVisible = ownLines.isNotEmpty()
         binding.deletePostButton.isVisible = post.own
 
+        // Phase 13C: the butterfly on someone else's Experience; the author's private, thresholded line on their own.
+        binding.butterflyBlock.isVisible = state.canButterfly
+        binding.butterflyButton.isEnabled = !state.isBusy
+        binding.beenButton.isEnabled = !state.isBusy
+        when (post.yourButterfly) {
+            null -> {
+                binding.butterflyButton.setText(R.string.butterfly_want)
+                binding.butterflyButton.contentDescription = getString(R.string.butterfly_want_description)
+            }
+            ButterflyState.WANT -> {
+                binding.butterflyButton.setText(R.string.butterfly_saved_want)
+                binding.butterflyButton.contentDescription = getString(R.string.butterfly_remove_description)
+            }
+            ButterflyState.BEEN -> {
+                binding.butterflyButton.setText(R.string.butterfly_saved_been)
+                binding.butterflyButton.contentDescription = getString(R.string.butterfly_remove_description)
+            }
+        }
+        binding.beenButton.isVisible = post.yourButterfly == ButterflyState.WANT
+        val tally = post.butterflies
+        binding.authorTallyLine.isVisible = post.own && tally != null
+        binding.authorTallyLine.text = when {
+            tally == null -> ""
+            tally.fewerThanThree -> getString(R.string.butterfly_author_fewer)
+            else -> getString(R.string.butterfly_author_count, tally.count ?: 0)
+        }
+        val placeId = post.placeId
+        binding.placePageButton.isVisible = post.precision == Precision.EXACT && placeId != null
+        binding.placePageButton.setOnClickListener {
+            if (placeId != null) findNavController().navigate(R.id.postCollectionFragment,
+                bundleOf(PostCollectionViewModel.ARG_PLACE_ID to placeId))
+        }
+        if (state.beenInvitation) {
+            viewModel.onBeenInvitationHandled()
+            showBeenInvitation(post)
+        }
+
         perspectiveAdapter.submitList(state.perspectives.map { row(it, post) })
         binding.perspectivesEmpty.isVisible = state.perspectives.isEmpty()
         binding.writeBlock.isVisible = post.canComment
@@ -163,6 +203,22 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             else add(getString(R.string.social_helped_mark) to { viewModel.onHelped(p, true) })
         }
         if (p.own) add(getString(R.string.social_delete_perspective) to { viewModel.onDeletePerspective(p) })
+    }
+
+    /** Phase 13C (design §3.4.2): after "Been", the invitation to share what was found, for the next person. */
+    private fun showBeenInvitation(post: Post) {
+        val builder = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.been_invitation_title)
+            .setMessage(R.string.been_invitation_message)
+            .setNeutralButton(R.string.been_invitation_later, null)
+            .setNegativeButton(R.string.been_invitation_own) { _, _ -> findNavController().navigate(R.id.composeFragment) }
+        if (post.canComment) {
+            builder.setPositiveButton(R.string.been_invitation_perspective) { _, _ ->
+                viewModel.onKind(CommentKind.BEEN_HERE)
+                binding.perspectiveInput.requestFocus()
+            }
+        }
+        builder.show()
     }
 
     private fun confirmDelete() {

@@ -136,6 +136,58 @@
                 android:layout_marginTop="@dimen/space_md"
                 android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
 
+            <!-- Phase 13C: the butterfly (someone else's Experience) and the author's private line (their own). -->
+            <LinearLayout
+                android:id="@+id/butterflyBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/butterflyButton"
+                    style="@style/Widget.SafeSphere.Button.Secondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="@dimen/min_touch_target"
+                    android:text="@string/butterfly_want" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/beenButton"
+                    style="@style/Widget.SafeSphere.Button.Text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="@dimen/min_touch_target"
+                    android:text="@string/butterfly_been"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:text="@string/butterfly_private_note"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/authorTallyLine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/placePageButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/post_open_place_page"
+                android:visibility="gone"
+                app:icon="@drawable/ic_place" />
+
             <TextView
                 style="@style/SocialSectionTitle"
                 android:text="@string/social_perspectives_title" />

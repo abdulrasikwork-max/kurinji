@@ -50,6 +50,15 @@ public final class Visibility {
     }
 
     /**
+     * Phase 13C (13B Q8, C13): whether a post appears in a LIST of other people's posts (Edition, From your connections,
+     * place and category pages): it must be visible, and its author must not be muted by the viewer. A mute never hides
+     * a post opened deliberately (a profile visit, a link, the viewer's own Cocoon); those ask [canSeePost].
+     */
+    public static boolean showInLists(PostFacts facts, boolean authorMuted) {
+        return canSeePost(facts) && (facts.people().self() || !authorMuted);
+    }
+
+    /**
      * Who may add a Perspective: someone who can see the post, on a post that is not ONLY_ME, as the author's comment
      * policy allows (EVERYONE / CONNECTIONS while connected / NOBODY). The author may always answer on their own shared
      * post (an asker replying to answers).

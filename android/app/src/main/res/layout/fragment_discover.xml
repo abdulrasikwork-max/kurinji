@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13C: Discover. The weekly Edition (it ends), From your connections (it ends), search by place or category.
+     More only on an explicit tap; no counts anywhere. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/errorNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone"
+            app:noticeText="@string/error_unknown"
+            app:noticeType="warning" />
+
+        <!-- Search: places by name, categories from the closed list. Never people. -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/searchLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/discover_search_hint">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/searchInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLength="40" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/searchButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/discover_search_button" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/clearSearchButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_sm"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/discover_search_clear"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/searchBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/searchCategoriesTitle"
+                style="@style/SocialSectionTitle"
+                android:text="@string/discover_search_categories" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/searchCategoryList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                style="@style/SocialSectionTitle"
+                android:text="@string/discover_search_places" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/searchPlaceList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                android:id="@+id/searchNoPlaces"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/discover_search_no_places"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/modeGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            app:checkedButton="@+id/editionTab"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/editionTab"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/discover_tab_edition" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/connectionsTab"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/discover_tab_connections" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
+        <!-- The Edition -->
+        <LinearLayout
+            android:id="@+id/editionBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/cityPrompt"
+                style="@style/SocialSectionTitle"
+                android:text="@string/discover_choose_city" />
+
+            <TextView
+                android:id="@+id/cityHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/discover_city_hint"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:visibility="gone" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/cityGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:singleSelection="true" />
+
+            <TextView
+                android:id="@+id/editionHeading"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:accessibilityHeading="true"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <TextView
+                android:id="@+id/themeLine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+            <TextView
+                android:id="@+id/citySectionTitle"
+                style="@style/SocialSectionTitle" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/citySectionList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                android:id="@+id/asksSectionTitle"
+                style="@style/SocialSectionTitle"
+                android:text="@string/discover_section_asks" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/asksSectionList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                android:id="@+id/themeSectionTitle"
+                style="@style/SocialSectionTitle"
+                android:text="@string/discover_section_theme" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/themeSectionList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                android:id="@+id/editionEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:text="@string/discover_edition_empty"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:visibility="gone" />
+
+            <!-- The end: every edition ends. -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/editionEndCard"
+                style="@style/Widget.SafeSphere.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_md">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/discover_edition_end"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editionShareButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:minHeight="@dimen/min_touch_target"
+                        android:text="@string/social_share_experience"
+                        app:icon="@drawable/ic_add" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                style="@style/SocialSectionTitle"
+                android:text="@string/discover_categories" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/categoryGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <!-- From your connections -->
+        <LinearLayout
+            android:id="@+id/connectionsBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:text="@string/discover_connections_intro"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/connectionsList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                android:id="@+id/connectionsEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:text="@string/discover_connections_empty"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/connectionsShowMore"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/social_show_more"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/connectionsEnd"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:text="@string/discover_connections_end"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

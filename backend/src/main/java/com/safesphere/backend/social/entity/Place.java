@@ -2,11 +2,14 @@ package com.safesphere.backend.social.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import com.safesphere.backend.social.entity.PostEnums.City;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -42,6 +45,11 @@ public class Place {
     @Column(name = "area_cell", nullable = false, updatable = false, length = 6)
     private String areaCell;
 
+    /** Phase 13C (V22): the launch city whose box holds the cell (CityAreas); null outside every one. */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private City city;
+
     @Column(name = "created_on", nullable = false, updatable = false)
     private LocalDate createdOn;
 
@@ -52,14 +60,19 @@ public class Place {
     protected Place() {
     }
 
-    public Place(String name, String normalizedName, String category, String cell, LocalDate createdOn) {
+    public Place(String name, String normalizedName, String category, String cell, City city, LocalDate createdOn) {
         this.publicId = UUID.randomUUID().toString();
         this.name = name;
         this.normalizedName = normalizedName;
         this.category = category;
         this.cell = cell;
         this.areaCell = cell.substring(0, 6);
+        this.city = city;
         this.createdOn = createdOn;
+    }
+
+    public City getCity() {
+        return city;
     }
 
     public Long getId() {
