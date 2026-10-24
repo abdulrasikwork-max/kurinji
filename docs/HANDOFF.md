@@ -15,8 +15,9 @@ of the week, "Why am I seeing this?", ends with "Go make your own"), From your c
 - **State left:** backend and emulator stopped, `adb reverse` removed, all `live13c.*`/`emu13c.*` accounts, places,
   posts and butterflies deleted (170 users as before); app data cleared on the emulator.
 - **Git:** git found only inside GitHub Desktop (`%LOCALAPPDATA%\GitHubDesktop\app-3.6.7\resources\app\git\cmd\git.exe`);
-  13A+13B committed locally as c735022, 13C committed on top. **The repository has no remote**, so nothing is pushed
-  yet: the user has been asked for the "Kurinji" repository URL.
+  13A+13B committed as c735022, 13C as 2e61d88. Remote `origin` = https://github.com/abdulrasikwork-max/kurinji.git
+  (2026-10-24); its starter commit (README + Android .gitignore) merged in f20e3a0 (our README kept, .gitignore
+  combined). Pushing needs the user's GitHub sign-in (GitHub Desktop "Push origin" or `git push -u origin main`).
 - **Next:** the user's review of 13C; then the 13D plan (moderation v2: reports, holds, collapse, strikes, appeals).
 
 ---
