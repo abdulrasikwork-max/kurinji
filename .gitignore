@@ -2,8 +2,10 @@
 .env
 backend/.env
 android/local.properties
+local.properties
 *.jks
 *.keystore
+google-services.json
 
 # Build output / IDE
 backend/target/
@@ -12,12 +14,23 @@ android/build/
 android/app/build/
 android/.kotlin/
 android/app/release/
+.gradle/
+build/
+.kotlin/
+.externalNativeBuild/
+.cxx/
+captures/
+output-metadata.json
 *.apk
 *.aab
 .idea/
 *.iml
+misc.xml
+deploymentTargetDropDown.xml
+render.experimental.xml
 .vscode/
 *.log
+*.hprof
 
 # OS files
 Thumbs.db
