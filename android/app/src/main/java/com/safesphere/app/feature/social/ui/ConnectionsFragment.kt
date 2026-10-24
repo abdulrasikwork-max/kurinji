@@ -21,7 +21,9 @@ import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentConnectionsBinding
+import com.safesphere.app.feature.social.domain.DecisionAction
 import com.safesphere.app.feature.social.domain.InviteItem
+import com.safesphere.app.feature.social.domain.PauseLevel
 import com.safesphere.app.feature.social.domain.NewInvite
 import com.safesphere.app.feature.social.domain.PersonSummary
 import com.safesphere.app.feature.social.domain.RequestItem
@@ -41,6 +43,7 @@ class ConnectionsFragment : ViewBindingFragment<FragmentConnectionsBinding>(Frag
     private val outgoingAdapter = PersonRowAdapter()
     private val connectionAdapter = PersonRowAdapter()
     private val inviteAdapter = PersonRowAdapter()
+    private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -65,14 +68,60 @@ class ConnectionsFragment : ViewBindingFragment<FragmentConnectionsBinding>(Frag
         binding.createInviteButton.setOnClickListener { viewModel.onCreateInvite() }
         binding.redeemButton.setOnClickListener { viewModel.onRedeem(binding.redeemInput.text.toString()) }
         binding.redeemInput.doAfterTextChanged { viewModel.onCodeTyped() }
+        binding.myReportsButton.setOnClickListener { findNavController().navigate(R.id.myReportsFragment) }
+        binding.guidelinesButton.setOnClickListener { findNavController().navigate(R.id.guidelinesFragment) }
 
         collectWhenStarted(viewModel.uiState, ::render)
+        collectWhenStarted(reports.uiState, ::renderStanding)
     }
 
     override fun onStart() {
         super.onStart()
         // Coming back from a profile or the profile form: show what the server holds now.
         if (viewModel.uiState.value.hasLoaded) viewModel.load()
+        reports.loadStanding()
+    }
+
+    /**
+     * Phase 13D: a pause in force (with its end date and reason) or a recent reminder, in amber, with the review request;
+     * and the reminder that reading, blocking, muting, reporting and safety tools are untouched.
+     */
+    private fun renderStanding(state: ReportUiState) {
+        val standing = state.standing
+        val pause = standing?.pause
+        val warning = standing?.decisions?.firstOrNull { it.action == DecisionAction.PERSON_WARN }
+        binding.standingNotice.isVisible = pause != null || warning != null
+        binding.standingLine.isVisible = pause != null
+        val reviewDecision = when {
+            pause != null -> pause.decisionId.takeIf { pause.canAppeal }
+            else -> null
+        }
+        binding.standingReviewButton.isVisible = reviewDecision != null
+        binding.standingReviewButton.isEnabled = !state.isBusy
+        binding.standingReviewButton.setOnClickListener { reviewDecision?.let(reports::appeal) }
+        if (pause != null) {
+            val until = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                .format(pause.until.atZone(ZoneId.systemDefault()))
+            val reason = getString(ModerationLabels.of(pause.reason))
+            binding.standingNotice.setMessage(getString(when (pause.level) {
+                PauseLevel.COMMENTS_PAUSED -> R.string.standing_comments_paused
+                PauseLevel.POSTING_PAUSED -> R.string.standing_posting_paused
+                PauseLevel.SUSPENDED -> R.string.standing_suspended
+            }, until, reason))
+            val appealLine = ModerationLabels.appealLine(pause.appeal)
+            binding.standingLine.text = listOfNotNull(getString(R.string.standing_unaffected),
+                appealLine?.let { getString(it) }).joinToString("\n")
+        } else if (warning != null) {
+            binding.standingNotice.setMessage(getString(R.string.standing_warning, getString(ModerationLabels.of(warning.reason))))
+        }
+        state.message?.let {
+            if (it == ReportMessage.REVIEW_ASKED) Toast.makeText(requireContext(), R.string.review_asked, Toast.LENGTH_LONG).show()
+            reports.onMessageShown()
+        }
+        state.failure?.let {
+            Toast.makeText(requireContext(), it.toMessage(requireContext()), Toast.LENGTH_LONG).show()
+            reports.onFailureShown()
+        }
     }
 
     private fun render(state: ConnectionsUiState) {

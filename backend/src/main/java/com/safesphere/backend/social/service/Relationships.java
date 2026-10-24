@@ -2,6 +2,7 @@ package com.safesphere.backend.social.service;
 
 import com.safesphere.backend.social.dto.Relationship;
 import com.safesphere.backend.social.entity.Block;
+import com.safesphere.backend.social.entity.Comment;
 import com.safesphere.backend.social.entity.Connection;
 import com.safesphere.backend.social.entity.ConnectionStatus;
 import com.safesphere.backend.social.entity.Mute;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -57,7 +59,7 @@ public class Relationships {
     public Visibility.PostFacts postFacts(long viewerId, Post post, LocalDateTime now) {
         long authorId = post.getAuthorId();
         return new Visibility.PostFacts(facts(viewerId, authorId), connected(viewerId, authorId), post.getAudience(),
-                !post.getVisibleFrom().isAfter(now));
+                !post.getVisibleFrom().isAfter(now), post.getModeration());
     }
 
     public boolean canSeePost(long viewerId, Post post, LocalDateTime now) {
@@ -92,20 +94,40 @@ public class Relationships {
         Visibility.Facts people = new Visibility.Facts(self, !self && viewer.blockedEitherWay().contains(authorId),
                 self || activeAuthors.contains(authorId));
         return new Visibility.PostFacts(people, !self && viewer.connected().contains(authorId), post.getAudience(),
-                !post.getVisibleFrom().isAfter(now));
+                !post.getVisibleFrom().isAfter(now), post.getModeration());
     }
 
     /** Phase 13C: the posts of [candidates] that may appear in a list for [viewer] (Visibility.showInLists). */
     public List<Post> forLists(Viewer viewer, List<Post> candidates, LocalDateTime now) {
+        return filter(viewer, candidates, now, false);
+    }
+
+    /** Phase 13D: the posts of [candidates] that may appear in the Edition (Visibility.showInEdition). */
+    public List<Post> forEdition(Viewer viewer, List<Post> candidates, LocalDateTime now) {
+        return filter(viewer, candidates, now, true);
+    }
+
+    private List<Post> filter(Viewer viewer, List<Post> candidates, LocalDateTime now, boolean edition) {
         if (candidates.isEmpty()) return List.of();
         Set<Long> active = access.activeAmong(candidates.stream().map(Post::getAuthorId).collect(Collectors.toSet()));
         List<Post> shown = new ArrayList<>();
         for (Post post : candidates) {
-            if (Visibility.showInLists(postFacts(viewer, post, active, now), viewer.muted().contains(post.getAuthorId()))) {
-                shown.add(post);
-            }
+            Visibility.PostFacts facts = postFacts(viewer, post, active, now);
+            boolean muted = viewer.muted().contains(post.getAuthorId());
+            if (edition ? Visibility.showInEdition(facts, muted) : Visibility.showInLists(facts, muted)) shown.add(post);
         }
         return shown;
+    }
+
+    /**
+     * Phase 13D: the facts about [viewerId] and perspective [c] on [post] (which the viewer can see). [writerFacts]
+     * caches Facts per writer for one list.
+     */
+    public Visibility.CommentFacts commentFacts(long viewerId, Post post, Comment c,
+                                                Map<Long, Visibility.Facts> writerFacts) {
+        Visibility.Facts writer = writerFacts.computeIfAbsent(c.getAuthorId(), id -> facts(viewerId, id));
+        return new Visibility.CommentFacts(writer, post.getAuthorId() == viewerId, c.isHidden(), c.isAwaitingApproval(),
+                c.getModeration());
     }
 
     public Optional<Connection> pair(long a, long b) {

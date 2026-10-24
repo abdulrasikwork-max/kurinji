@@ -75,7 +75,13 @@ data class Post(
     /** Phase 13C: only on the author's own Experiences shared with others (C2). */
     val butterflies: ButterflyTally? = null,
     /** Phase 13C: EXACT only, the place's id (opens its place page). */
-    val placeId: String? = null
+    val placeId: String? = null,
+    /** Phase 13D (Q6): perspectives from people not connected with the author wait for the author's approval. */
+    val approveFirst: Boolean = false,
+    /** Phase 13D: own posts only, what a moderator (or a collapse while reviewing) did to it; null = nothing. */
+    val ownModeration: OwnModeration? = null,
+    /** Phase 13D: other people's posts only: shown behind a tap, and why (never who). */
+    val collapsed: Collapsed? = null
 )
 
 data class PostPage(val items: List<Post>, val nextCursor: String?)
@@ -92,7 +98,15 @@ data class Perspective(
     val helped: Boolean,
     val parentId: String?,
     val canHide: Boolean,
-    val canMarkHelped: Boolean
+    val canMarkHelped: Boolean,
+    /** Phase 13D (Q6): waiting for the post author's approval (seen by its writer and the post's author only). */
+    val awaitingApproval: Boolean = false,
+    /** Phase 13D: the post's author may approve it. */
+    val canApprove: Boolean = false,
+    /** Phase 13D: own perspectives only. */
+    val ownModeration: OwnModeration? = null,
+    /** Phase 13D: others' perspectives only. */
+    val collapsed: Collapsed? = null
 )
 
 /** What the person put together in the composer. */
@@ -108,7 +122,9 @@ data class PostDraft(
     val daypart: Daypart?,
     val audience: Audience?,
     val commentPolicy: CommentPolicy,
-    val mediaIds: List<String>
+    val mediaIds: List<String>,
+    /** Phase 13D (Q6): only with "Everyone can add perspectives". */
+    val approveFirst: Boolean = false
 )
 
 /** A photo uploaded (sanitised) and ready to attach. */

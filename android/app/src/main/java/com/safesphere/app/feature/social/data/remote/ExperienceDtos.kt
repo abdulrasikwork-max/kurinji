@@ -4,6 +4,10 @@ import com.safesphere.app.feature.social.domain.Audience
 import com.safesphere.app.feature.social.domain.ButterflyState
 import com.safesphere.app.feature.social.domain.ButterflyTally
 import com.safesphere.app.feature.social.domain.City
+import com.safesphere.app.feature.social.domain.Collapsed
+import com.safesphere.app.feature.social.domain.ModerationReason
+import com.safesphere.app.feature.social.domain.ModerationState
+import com.safesphere.app.feature.social.domain.OwnModeration
 import com.safesphere.app.feature.social.domain.CommentKind
 import com.safesphere.app.feature.social.domain.CommentPolicy
 import com.safesphere.app.feature.social.domain.Daypart
@@ -70,7 +74,8 @@ data class PostRequestDto(
     val daypart: String?,
     val audience: String,
     val commentPolicy: String,
-    val mediaIds: List<String>
+    val mediaIds: List<String>,
+    val approveFirst: Boolean = false
 ) {
     companion object {
         /** Only for a draft that passed ComposerPolicy (precision and audience chosen). */
@@ -78,6 +83,7 @@ data class PostRequestDto(
             val precision = requireNotNull(draft.precision)
             val audience = requireNotNull(draft.audience)
             val experience = draft.type == PostType.EXPERIENCE
+            val policy = if (audience == Audience.ONLY_ME) CommentPolicy.NOBODY else draft.commentPolicy
             return PostRequestDto(
                 type = draft.type.name,
                 body = draft.body.trim(),
@@ -89,8 +95,10 @@ data class PostRequestDto(
                 experiencedMonth = if (experience) draft.month?.toString() else null,
                 daypart = draft.daypart?.name,
                 audience = audience.name,
-                commentPolicy = (if (audience == Audience.ONLY_ME) CommentPolicy.NOBODY else draft.commentPolicy).name,
-                mediaIds = draft.mediaIds
+                commentPolicy = policy.name,
+                mediaIds = draft.mediaIds,
+                // Phase 13D (Q6): the server refuses it with any other comment setting; never sent then.
+                approveFirst = draft.approveFirst && policy == CommentPolicy.EVERYONE
             )
         }
     }
@@ -124,7 +132,10 @@ data class PostDto(
     val canComment: Boolean? = null,
     val visibleFrom: String? = null,
     val yourButterfly: String? = null,
-    val butterflies: ButterflyTallyDto? = null
+    val butterflies: ButterflyTallyDto? = null,
+    val approveFirst: Boolean? = null,
+    val moderation: ModerationViewDto? = null,
+    val collapsed: String? = null
 ) {
     fun toDomain(): Post? {
         val author = author?.let { a ->
@@ -158,12 +169,31 @@ data class PostDto(
             yourButterfly = enumOrNull<ButterflyState>(yourButterfly),
             // Phase 13C: only the author's own posts carry a tally; anything else, or an inconsistent one, is dropped.
             butterflies = if (own == true) butterflies?.toDomain()?.takeIf { it.isConsistent } else null,
-            placeId = if (precision == Precision.EXACT.name) place?.publicId else null
+            placeId = if (precision == Precision.EXACT.name) place?.publicId else null,
+            approveFirst = approveFirst == true,
+            ownModeration = if (own == true) moderation?.toDomain() else null,
+            collapsed = if (own == true) null else collapsedOf(collapsed)
         )
     }
 
     override fun toString() = "PostDto(publicId=$publicId, type=$type, precision=$precision)"
 }
+
+/**
+ * Phase 13D: what happened to one's own post or perspective. FAILS CLOSED: an unknown state reads as HELD (the most
+ * careful notice: "hidden while a moderator looks"), an unknown reason as none.
+ */
+data class ModerationViewDto(val state: String? = null, val reason: String? = null, val decisionId: String? = null) {
+    fun toDomain(): OwnModeration? {
+        if (state == null) return null
+        return OwnModeration(enumOrNull<ModerationState>(state) ?: ModerationState.HELD,
+            enumOrNull<ModerationReason>(reason), decisionId)
+    }
+}
+
+/** Phase 13D: an unknown collapse value is read as UNDER_REVIEW (still behind a tap, never shown open by mistake). */
+internal fun collapsedOf(value: String?): Collapsed? =
+    if (value == null) null else enumOrNull<Collapsed>(value) ?: Collapsed.UNDER_REVIEW
 
 /** Phase 13C: the author's private tally (C2). */
 data class ButterflyTallyDto(val count: Int? = null, val fewerThanThree: Boolean? = null) {
@@ -187,7 +217,11 @@ data class CommentDto(
     val helped: Boolean? = null,
     val parentId: String? = null,
     val canHide: Boolean? = null,
-    val canMarkHelped: Boolean? = null
+    val canMarkHelped: Boolean? = null,
+    val awaitingApproval: Boolean? = null,
+    val canApprove: Boolean? = null,
+    val moderation: ModerationViewDto? = null,
+    val collapsed: String? = null
 ) {
     /** An unknown kind is dropped (it may need words this app does not have). */
     fun toDomain(): Perspective? {
@@ -206,7 +240,11 @@ data class CommentDto(
             helped = helped == true,
             parentId = parentId,
             canHide = canHide == true,
-            canMarkHelped = canMarkHelped == true
+            canMarkHelped = canMarkHelped == true,
+            awaitingApproval = awaitingApproval == true,
+            canApprove = canApprove == true && awaitingApproval == true,
+            ownModeration = if (own == true) moderation?.toDomain() else null,
+            collapsed = if (own == true) null else collapsedOf(collapsed)
         )
     }
 }

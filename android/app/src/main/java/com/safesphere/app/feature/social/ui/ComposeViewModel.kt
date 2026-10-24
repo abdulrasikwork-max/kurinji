@@ -52,6 +52,8 @@ data class ComposeUiState(
     /** Never preselected on the first post (D14); afterwards the last choice. */
     val audience: Audience? = null,
     val commentPolicy: CommentPolicy = CommentPolicy.EVERYONE,
+    /** Phase 13D (Q6): approve perspectives from people the author is not connected with first. */
+    val approveFirst: Boolean = false,
     val photos: List<ComposePhoto> = emptyList(),
     val issues: List<ComposerIssue> = emptyList(),
     /** Set after the person tried to share: the issues are shown from then on. */
@@ -66,6 +68,10 @@ data class ComposeUiState(
     val isDelayed: Boolean get() = ComposerPolicy.isDelayed(precision)
     val photosPending: Boolean get() = photos.any { it.uploading }
     val canAddPhotos: Boolean get() = photos.size < ComposerPolicy.MAX_PHOTOS
+
+    /** Phase 13D (Q6): the switch exists only while everyone may add perspectives. */
+    val canApproveFirst: Boolean
+        get() = ComposerPolicy.effectiveCommentPolicy(audience, commentPolicy) == CommentPolicy.EVERYONE
 }
 
 /**
@@ -111,6 +117,7 @@ class ComposeViewModel(
     fun onAudience(audience: Audience) = change { it.copy(audience = audience) }
     fun onCommentPolicy(policy: CommentPolicy) = change { it.copy(commentPolicy = policy) }
     fun onCity(city: City) = change { it.copy(city = city) }
+    fun onApproveFirst(on: Boolean) = change { it.copy(approveFirst = on) }
 
     fun onPrecision(precision: Precision) = change {
         if (precision in it.allowedPrecisions) it.copy(precision = precision) else it
@@ -188,7 +195,8 @@ class ComposeViewModel(
         daypart = state.daypart,
         audience = state.audience,
         commentPolicy = ComposerPolicy.effectiveCommentPolicy(state.audience, state.commentPolicy),
-        mediaIds = state.photos.mapNotNull { it.mediaId }
+        mediaIds = state.photos.mapNotNull { it.mediaId },
+        approveFirst = state.approveFirst && state.canApproveFirst
     )
 
     private fun issuesOf(state: ComposeUiState) =

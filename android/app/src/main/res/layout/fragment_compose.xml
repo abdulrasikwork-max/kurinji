@@ -225,6 +225,15 @@
             android:layout_height="wrap_content"
             app:singleSelection="true" />
 
+        <!-- Phase 13D (Q6): only with "Everyone can add perspectives". -->
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/approveFirstSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/approve_first_switch"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/summaryLine"
             android:layout_width="match_parent"

@@ -93,20 +93,20 @@ public class DiscoverService {
         PageRequest candidates = PageRequest.of(0, CANDIDATES);
 
         List<EditionSection> sections = new ArrayList<>();
-        List<Post> cityPosts = relationships.forLists(viewer,
+        List<Post> cityPosts = relationships.forEdition(viewer,
                 posts.editionCandidates(PostType.EXPERIENCE, city, viewerId, cityFrom, now, candidates), now);
         List<Picked<Post>> cityPicked = EditionPolicy.pick(Section.CITY, candidates(cityPosts, interests),
                 EditionPolicy.CITY_CAP);
         add(sections, Section.CITY, viewerId, cityPicked, now);
 
-        List<Post> asks = relationships.forLists(viewer,
+        List<Post> asks = relationships.forEdition(viewer,
                 posts.openAsks(city, viewerId, now.minus(EditionPolicy.ASKS_WINDOW), now, candidates), now);
         add(sections, Section.ASKS, viewerId,
                 EditionPolicy.pick(Section.ASKS, candidates(asks, interests), EditionPolicy.ASKS_CAP), now);
 
         Set<Long> shown = new HashSet<>();
         for (Picked<Post> p : cityPicked) shown.add(p.item().getId());
-        List<Post> themed = relationships.forLists(viewer, posts.themeCandidates(PostType.EXPERIENCE, city, viewerId,
+        List<Post> themed = relationships.forEdition(viewer, posts.themeCandidates(PostType.EXPERIENCE, city, viewerId,
                 theme.name(), now.minus(EditionPolicy.THEME_WINDOW), now, candidates), now).stream()
                 .filter(p -> !shown.contains(p.getId())).toList();
         add(sections, Section.THEME, viewerId,

@@ -38,8 +38,16 @@ data class PostUiState(
     /** Phase 13C, one-shot: the viewer just marked it Been; invite a Been-here-too perspective or their own post. */
     val beenInvitation: Boolean = false,
     val failure: ApiResult.Failure? = null,
-    val sessionExpired: Boolean = false
+    val sessionExpired: Boolean = false,
+    /** Phase 13D: the viewer tapped "Show it" on a collapsed post (kept only on this screen). */
+    val revealed: Boolean = false,
+    /** Phase 13D: the collapsed perspectives the viewer chose to show. */
+    val revealedPerspectives: Set<String> = emptySet()
 ) {
+    /** Phase 13D: someone else's post that stays behind a tap until the viewer chooses to see it. */
+    val showCollapsed: Boolean
+        get() = post?.collapsed != null && !revealed
+
     /** The top-level kinds that fit the post: Been here too / Question on an Experience, Answer / Question on an Ask. */
     val kinds: List<CommentKind>
         get() = if (post?.type == PostType.ASK) listOf(CommentKind.ANSWER, CommentKind.QUESTION)
@@ -111,6 +119,16 @@ class PostViewModel(
     fun onHide(p: Perspective, hidden: Boolean) = act { (repository.setHidden(p.publicId, hidden) as? ApiResult.Failure) }
     fun onHelped(p: Perspective, helped: Boolean) = act { (repository.setHelped(p.publicId, helped) as? ApiResult.Failure) }
     fun onDeletePerspective(p: Perspective) = act { (repository.deletePerspective(p.publicId) as? ApiResult.Failure) }
+
+    /** Phase 13D (Q6): the post's author lets a waiting perspective appear. */
+    fun onApprove(p: Perspective) {
+        if (!p.canApprove) return
+        act { (repository.approvePerspective(p.publicId) as? ApiResult.Failure) }
+    }
+
+    /** Phase 13D: "Show it" on a collapsed post or perspective; only this screen remembers it. */
+    fun onReveal() = _uiState.update { it.copy(revealed = true) }
+    fun onRevealPerspective(p: Perspective) = _uiState.update { it.copy(revealedPerspectives = it.revealedPerspectives + p.publicId) }
 
     fun onDeletePostConfirmed() {
         if (_uiState.value.isBusy) return

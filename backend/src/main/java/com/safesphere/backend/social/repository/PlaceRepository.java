@@ -19,6 +19,9 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
 
     List<Place> findByIdIn(Collection<Long> ids);
 
+    /** Phase 13D (M17): every place of one area, merged ones too (moderators looking for duplicates). */
+    List<Place> findByAreaCellOrderByNameAsc(String areaCell, Pageable page);
+
     /** Phase 13C (C12): place-name search, by the normalised name only. */
     List<Place> findByNormalizedNameContainingAndMergedIntoIsNullOrderByNameAsc(String part, Pageable page);
 

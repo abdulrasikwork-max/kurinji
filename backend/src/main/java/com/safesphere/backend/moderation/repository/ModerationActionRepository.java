@@ -21,6 +21,22 @@ public interface ModerationActionRepository extends JpaRepository<ModerationActi
 
     List<ModerationAction> findAllByOrderByOccurredAtDescIdDesc(Pageable page);
 
+    /** Phase 13D: the decisions taken on one case (oldest first). */
+    List<ModerationAction> findByCaseRefOrderByOccurredAtAscIdAsc(String caseRef);
+
+    /** Phase 13D: whether a decision of these kinds was already taken on this case (one strike per case at most). */
+    boolean existsByCaseRefAndActionIn(String caseRef, Collection<ActionType> actions);
+
+    /** Phase 13D: one decision by its public id (the reference stored on posts, perspectives, strikes and pauses). */
+    Optional<ModerationAction> findByPublicId(String publicId);
+
+    /** Phase 13D: the social decisions about one person since [since], newest first (their own standing view). */
+    @Query("select a from ModerationAction a where a.subjectUserId = :subject and a.action in :actions"
+            + " and a.occurredAt >= :since order by a.occurredAt desc, a.id desc")
+    List<ModerationAction> findAboutPersonSince(@Param("subject") long subject,
+                                                @Param("actions") Collection<ActionType> actions,
+                                                @Param("since") LocalDateTime since, Pageable page);
+
     /** Phase 9B (gate G1): how many different moderators took one of [actions] since [since]. A count, no one named. */
     @Query("select count(distinct a.actorId) from ModerationAction a where a.action in :actions and a.occurredAt >= :since")
     long countActorsSince(@Param("actions") Collection<ActionType> actions, @Param("since") LocalDateTime since);

@@ -153,6 +153,17 @@
             app:argType="string" />
     </fragment>
 
+    <!-- Phase 13D: a reported post, perspective or person (moderators; the server checks the role on every call) -->
+    <fragment
+        android:id="@+id/contentCaseFragment"
+        android:name="com.safesphere.app.feature.moderation.ui.ContentCaseFragment"
+        android:label="@string/content_case_title"
+        tools:layout="@layout/fragment_content_case">
+        <argument
+            android:name="caseId"
+            app:argType="string" />
+    </fragment>
+
     <!-- Phase 3: Safety Circle and emergency (all secondary screens: toolbar with back arrow, no bottom bar) -->
     <fragment
         android:id="@+id/safetyCircleFragment"
@@ -257,6 +268,19 @@
         android:name="com.safesphere.app.feature.social.ui.BlockedMutedFragment"
         android:label="@string/title_blocked_muted"
         tools:layout="@layout/fragment_blocked_muted" />
+
+    <!-- Phase 13D: one's own reports and the community guidelines (reached from Connections and the report dialog) -->
+    <fragment
+        android:id="@+id/myReportsFragment"
+        android:name="com.safesphere.app.feature.social.ui.MyReportsFragment"
+        android:label="@string/my_reports_title"
+        tools:layout="@layout/fragment_my_reports" />
+
+    <fragment
+        android:id="@+id/guidelinesFragment"
+        android:name="com.safesphere.app.feature.social.ui.GuidelinesFragment"
+        android:label="@string/guidelines_title"
+        tools:layout="@layout/fragment_guidelines" />
 
     <!-- Phase 13B: experiences (reached from Connections and one's own profile until 13F) -->
     <fragment

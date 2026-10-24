@@ -29,10 +29,22 @@ public class CaseRefs {
     }
 
     public String ref(long caseId, long userId) {
+        return mac(caseId + ":" + userId);
+    }
+
+    /**
+     * Phase 13D: refs of a content case. Content cases are numbered separately from signal cases, so their input has its
+     * own prefix: the same person in signal case 5 and content case 5 still gets two unrelated refs.
+     */
+    public String contentRef(long caseId, long userId) {
+        return mac("content:" + caseId + ":" + userId);
+    }
+
+    private String mac(String input) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(new SecretKeySpec(key, "HmacSHA256"));
-            byte[] digest = mac.doFinal((caseId + ":" + userId).getBytes(StandardCharsets.US_ASCII));
+            byte[] digest = mac.doFinal(input.getBytes(StandardCharsets.US_ASCII));
             return HexFormat.of().formatHex(digest, 0, 6);
         } catch (GeneralSecurityException e) {
             throw new IllegalStateException("HmacSHA256 is always available", e);

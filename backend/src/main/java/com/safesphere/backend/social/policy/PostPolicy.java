@@ -8,6 +8,7 @@ import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * Phase 13B: the shape of a post (design §3.2, §4.2, §4.3). Pure; the service turns a refusal into a 400 with this
@@ -111,4 +112,19 @@ public final class PostPolicy {
     public static int length(String text) {
         return text == null ? 0 : text.codePointCount(0, text.length());
     }
+
+    /** Phase 13D (M16): accounts on probation may not share links (the profile's link rule, applied to their texts). */
+    public static final String NO_LINKS_ON_PROBATION =
+            "New accounts can share links after their first three days. Please remove the link.";
+
+    /** Phase 13D: whether any of [texts] contains a link (the same pattern as names and profiles). */
+    public static boolean containsLink(String... texts) {
+        for (String text : texts) {
+            if (text != null && LINK.matcher(text).find()) return true;
+        }
+        return false;
+    }
+
+    private static final Pattern LINK = Pattern.compile(
+            "(?i)(https?://|www\\.|\\b[a-z0-9-]+\\.(com|in|net|org|io|me|app|co|xyz|link|ly|info|biz|site|online|top)\\b)");
 }

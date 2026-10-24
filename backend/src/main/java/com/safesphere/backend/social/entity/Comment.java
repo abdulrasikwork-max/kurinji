@@ -1,6 +1,8 @@
 package com.safesphere.backend.social.entity;
 
 import com.safesphere.backend.social.entity.PostEnums.CommentKind;
+import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.PostEnums.ModerationState;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -54,6 +56,21 @@ public class Comment {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // Phase 13D (V23): moderation (written by the moderation package) and Q6 approval by the post's author.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moderation", nullable = false, length = 9)
+    private ModerationState moderation = ModerationState.NONE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moderation_reason", length = 20)
+    private ModerationReason moderationReason;
+
+    @Column(name = "moderation_decision", length = 36)
+    private String moderationDecision;
+
+    @Column(name = "awaiting_approval", nullable = false)
+    private boolean awaitingApproval;
+
     /** Required by JPA. */
     protected Comment() {
     }
@@ -66,6 +83,33 @@ public class Comment {
         this.kind = kind;
         this.body = body;
         this.createdAt = createdAt.truncatedTo(ChronoUnit.MICROS);
+    }
+
+    /** Phase 13D: see Post.moderate. */
+    public void moderate(ModerationState state, ModerationReason reason, String decision) {
+        this.moderation = state;
+        this.moderationReason = state == ModerationState.NONE ? null : reason;
+        this.moderationDecision = state == ModerationState.NONE ? null : decision;
+    }
+
+    public void setAwaitingApproval(boolean awaitingApproval) {
+        this.awaitingApproval = awaitingApproval;
+    }
+
+    public ModerationState getModeration() {
+        return moderation;
+    }
+
+    public ModerationReason getModerationReason() {
+        return moderationReason;
+    }
+
+    public String getModerationDecision() {
+        return moderationDecision;
+    }
+
+    public boolean isAwaitingApproval() {
+        return awaitingApproval;
     }
 
     public void hide(LocalDateTime now) {

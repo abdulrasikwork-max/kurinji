@@ -43,6 +43,27 @@ class SocialIsolationTest {
         assertTrue(violations.isEmpty(), "safety features must not depend on social: " + violations);
     }
 
+    /**
+     * Phase 13D (M2): the content side never depends on moderation. Moderation reads and writes social (state columns,
+     * pauses); social only reads its own columns, so posts and people work without the moderation code.
+     */
+    @Test
+    void social_neverReferencesModeration() throws IOException {
+        List<String> violations = new ArrayList<>();
+        scan(MAIN.resolve("social"), Pattern.compile("com\\.safesphere\\.backend\\.moderation\\b"), violations);
+        assertTrue(violations.isEmpty(), "social must not reference moderation: " + violations);
+    }
+
+    /** Phase 13D: a social pause can never reach a safety feature (they never read social, nor moderation). */
+    @Test
+    void safetyFeatures_neverReadModeration() throws IOException {
+        List<String> violations = new ArrayList<>();
+        for (String pkg : SAFETY) {
+            scan(MAIN.resolve(pkg), Pattern.compile("com\\.safesphere\\.backend\\.moderation\\b"), violations);
+        }
+        assertTrue(violations.isEmpty(), "safety features must not depend on moderation: " + violations);
+    }
+
     @Test
     void social_callsNothingOutside() throws IOException {
         List<String> violations = new ArrayList<>();

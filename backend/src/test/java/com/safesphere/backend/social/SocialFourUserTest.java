@@ -60,6 +60,31 @@ class SocialFourUserTest {
         byId(blocked, owner).andExpect(status().isNotFound());
     }
 
+    /**
+     * Phase 13D: reports and moderation states from each point of view. Only what one can see can be reported; a held
+     * post is the owner's alone; a collapsed one stays visible to those who could see it; the blocked person learns
+     * nothing either way.
+     */
+    @Test
+    void reports_andModerationStates_fromEachPointOfView() throws Exception {
+        String post = social.experience(owner, "CONNECTIONS");
+        social.report(connection, "POST", post, "SPAM", null).andExpect(status().isAccepted());
+        social.report(stranger, "POST", post, "SPAM", null).andExpect(status().isNotFound());
+        social.report(blocked, "POST", post, "SPAM", null).andExpect(status().isNotFound());
+        social.report(blocked, "PERSON", owner.publicId(), "SPAM", null).andExpect(status().isNotFound());
+        social.report(owner, "PERSON", blocked.publicId(), "SPAM", null).andExpect(status().isNotFound());
+        social.getPost(owner, post).andExpect(jsonPath("$.moderation").isEmpty()); // one report changes nothing
+
+        String everyone = social.experience(owner, "EVERYONE");
+        for (Person r : new Person[] {connection, stranger, social.person("Third")}) {
+            social.report(r, "POST", everyone, "HARASSMENT", null).andExpect(status().isAccepted());
+        }
+        social.getPost(owner, everyone).andExpect(jsonPath("$.moderation.state").value("COLLAPSED"));
+        social.getPost(connection, everyone).andExpect(jsonPath("$.collapsed").value("UNDER_REVIEW"));
+        social.getPost(stranger, everyone).andExpect(jsonPath("$.collapsed").value("UNDER_REVIEW"));
+        social.getPost(blocked, everyone).andExpect(status().isNotFound());
+    }
+
     @Test
     void connectionRequests_toTheOwner() throws Exception {
         social.request(connection, owner).andExpect(status().isConflict());     // already connected

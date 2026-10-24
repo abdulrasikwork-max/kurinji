@@ -39,6 +39,8 @@ public class SocialLimits {
     private final AttemptLimiter butterflies;
     private final AttemptLimiter discover;
     private final AttemptLimiter searches;
+    private final AttemptLimiter probationPosts;
+    private final AttemptLimiter probationComments;
 
     public SocialLimits(SocialProperties properties, Clock clock) {
         int keys = properties.maxTrackedKeys();
@@ -54,6 +56,9 @@ public class SocialLimits {
         this.butterflies = new AttemptLimiter(properties.butterfliesPerDay(), Duration.ofDays(1), keys, clock);
         this.discover = new AttemptLimiter(properties.discoverReadsPerHour(), Duration.ofHours(1), keys, clock);
         this.searches = new AttemptLimiter(properties.placeSearchesPerHour(), Duration.ofHours(1), keys, clock);
+        this.probationPosts = new AttemptLimiter(properties.probationPostsPerDay(), Duration.ofDays(1), keys, clock);
+        this.probationComments = new AttemptLimiter(properties.probationCommentsPerDay(), Duration.ofDays(1), keys,
+                clock);
     }
 
     public void lookup(long userId) {
@@ -82,6 +87,20 @@ public class SocialLimits {
 
     public void post(long userId) {
         if (!posts.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_POSTS);
+    }
+
+    /** Phase 13D (M16): a post by someone on probation also counts against the lower probation limit. */
+    public void post(long userId, boolean probation) {
+        if (probation && !probationPosts.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_POSTS);
+        post(userId);
+    }
+
+    /** Phase 13D (M16): the same for perspectives. */
+    public void comment(long userId, boolean probation) {
+        if (probation && !probationComments.tryAcquire(key(userId))) {
+            throw new TooManyAttemptsException(TOO_MANY_COMMENTS);
+        }
+        comment(userId);
     }
 
     public void media(long userId) {

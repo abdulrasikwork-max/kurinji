@@ -18,7 +18,11 @@ import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentPostBinding
 import com.safesphere.app.feature.social.domain.ButterflyState
+import com.safesphere.app.feature.social.domain.Collapsed
 import com.safesphere.app.feature.social.domain.CommentKind
+import com.safesphere.app.feature.social.domain.ModerationState
+import com.safesphere.app.feature.social.domain.OwnModeration
+import com.safesphere.app.feature.social.domain.ReportTarget
 import com.safesphere.app.feature.social.domain.Perspective
 import com.safesphere.app.feature.social.domain.Post
 import com.safesphere.app.feature.social.domain.PostType
@@ -32,6 +36,8 @@ import com.safesphere.app.feature.social.domain.Precision
 class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBinding::inflate) {
 
     private val viewModel by viewModels<PostViewModel> { PostViewModel.factory(appContainer) }
+    private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
+    private var standingAskedFor: String? = null
 
     private lateinit var photoAdapter: PhotoAdapter
     private val perspectiveAdapter = PersonRowAdapter()
@@ -49,7 +55,57 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.deletePostButton.setOnClickListener { confirmDelete() }
         binding.butterflyButton.setOnClickListener { viewModel.onButterfly() }
         binding.beenButton.setOnClickListener { viewModel.onBeen() }
+        binding.showCollapsedButton.setOnClickListener { viewModel.onReveal() }
+        binding.reportPostButton.setOnClickListener {
+            val id = viewModel.uiState.value.post?.publicId ?: return@setOnClickListener
+            ReportDialogs.show(this, ReportTarget.POST) { reason, note -> reports.report(ReportTarget.POST, id, reason, note) }
+        }
         collectWhenStarted(viewModel.uiState, ::render)
+        collectWhenStarted(reports.uiState, ::renderReports)
+    }
+
+    /** Phase 13D: confirmations of the report and review flows, and their failures. */
+    private fun renderReports(state: ReportUiState) {
+        state.message?.let {
+            Toast.makeText(requireContext(),
+                if (it == ReportMessage.REPORT_SENT) R.string.report_sent else R.string.review_asked,
+                Toast.LENGTH_LONG).show()
+            reports.onMessageShown()
+        }
+        state.failure?.let {
+            Toast.makeText(requireContext(), it.toMessage(requireContext()), Toast.LENGTH_LONG).show()
+            reports.onFailureShown()
+        }
+        if (state.sessionExpired) {
+            reports.onSessionExpiredHandled()
+            showSessionExpiredDialog()
+        }
+        viewModel.uiState.value.post?.let { showOwnModeration(it, state) }
+    }
+
+    /** Phase 13D: the author's amber notice about their own post, with the reason and the review request. */
+    private fun showOwnModeration(post: Post, reportState: ReportUiState) {
+        val moderation = post.ownModeration
+        binding.moderationNotice.isVisible = moderation != null
+        if (moderation == null) {
+            binding.reviewButton.isVisible = false
+            binding.reviewLine.isVisible = false
+            return
+        }
+        binding.moderationNotice.setMessage(getString(ModerationLabels.ownNotice(moderation),
+            getString(ModerationLabels.of(moderation.reason))))
+        val decisionId = moderation.decisionId
+        if (decisionId != null && standingAskedFor != decisionId) {
+            standingAskedFor = decisionId
+            reports.loadStanding()
+        }
+        val decision = reportState.standing?.decisionFor(decisionId)
+        binding.reviewButton.isVisible = decision?.canAppeal == true
+        binding.reviewButton.isEnabled = !reportState.isBusy
+        binding.reviewButton.setOnClickListener { if (decisionId != null) reports.appeal(decisionId) }
+        val line = decision?.let { ModerationLabels.appealLine(it.appeal) }
+        binding.reviewLine.isVisible = line != null
+        if (line != null) binding.reviewLine.setText(line)
     }
 
     private fun render(state: PostUiState) {
@@ -83,8 +139,18 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             if (author != null) findNavController().navigate(R.id.personProfileFragment,
                 bundleOf(PersonProfileViewModel.ARG_PROFILE_ID to author.publicId))
         }
-        photoAdapter.submitList(post.media.map { PhotoCell(it.mediaId, appContainer.experienceRepository.photoUrl(it.mediaId), null, null) })
-        binding.photoList.isVisible = post.media.isNotEmpty()
+        // Phase 13D: a collapsed post shows why and "Show it"; its text and photos only after the tap.
+        val hide = state.showCollapsed
+        binding.collapsedBlock.isVisible = hide
+        binding.collapsedNotice.setMessage(getString(
+            if (post.collapsed == Collapsed.BY_MODERATOR) R.string.collapsed_by_moderator else R.string.collapsed_under_review))
+        binding.body.isVisible = !hide
+        photoAdapter.submitList(if (hide) emptyList() else
+            post.media.map { PhotoCell(it.mediaId, appContainer.experienceRepository.photoUrl(it.mediaId), null, null) })
+        binding.photoList.isVisible = post.media.isNotEmpty() && !hide
+        showOwnModeration(post, reports.uiState.value)
+        binding.reportPostButton.isVisible = !post.own
+        binding.approveFirstLine.isVisible = post.approveFirst && post.canComment
 
         binding.placeLine.text = when (post.precision) {
             Precision.EXACT -> post.placeName?.let { getString(R.string.social_place_line, it) } ?: getString(R.string.social_no_place_line)
@@ -103,7 +169,7 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         val band = getString(TimeBandTexts.of(post.postedPeriod))
         binding.bandLine.text = if (post.edited) getString(R.string.social_when_line, band, getString(R.string.social_edited)) else band
         binding.body.text = post.body
-        binding.tipCard.isVisible = !post.tip.isNullOrBlank()
+        binding.tipCard.isVisible = !post.tip.isNullOrBlank() && !hide
         binding.tip.text = post.tip.orEmpty()
 
         val ownLines = buildList {
@@ -156,7 +222,7 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             showBeenInvitation(post)
         }
 
-        perspectiveAdapter.submitList(state.perspectives.map { row(it, post) })
+        perspectiveAdapter.submitList(state.perspectives.map { row(it, post, state) })
         binding.perspectivesEmpty.isVisible = state.perspectives.isEmpty()
         binding.writeBlock.isVisible = post.canComment
         binding.perspectivesClosed.isVisible = !post.canComment && !post.own
@@ -170,19 +236,26 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.sendButton.isEnabled = state.canSend
     }
 
-    private fun row(p: Perspective, post: Post): PersonRow {
+    private fun row(p: Perspective, post: Post, state: PostUiState): PersonRow {
         val kind = getString(ExperienceLabels.of(p.kind))
         val name = p.author?.displayName.orEmpty()
         val extras = buildList {
             add(getString(TimeBandTexts.of(p.postedPeriod)))
             if (p.helped) add(getString(R.string.social_helped))
             if (p.hidden) add(getString(R.string.social_hidden_by_author))
+            // Phase 13D: waiting for approval (Q6); a moderator's state, to its writer only.
+            if (p.awaitingApproval) add(getString(if (p.canApprove) R.string.perspective_awaiting_yours
+                else R.string.perspective_awaiting_author))
+            p.ownModeration?.let { add(getString(R.string.own_perspective_line, ownLine(it))) }
         }
-        val actions = actionsFor(p)
+        val collapsed = p.collapsed != null && p.publicId !in state.revealedPerspectives
+        val text = if (!collapsed) p.body else getString(
+            if (p.collapsed == Collapsed.BY_MODERATOR) R.string.collapsed_by_moderator else R.string.collapsed_under_review)
+        val actions = actionsFor(p, collapsed)
         return PersonRow(
             key = p.publicId,
             title = (if (p.parentId != null) "↳ " else "") + "$name · $kind",
-            subtitle = p.body + "\n" + extras.joinToString(" · "),
+            subtitle = text + "\n" + extras.joinToString(" · "),
             primary = if (post.canComment && p.parentId == null && !p.hidden) RowAction(getString(R.string.social_reply),
                 getString(R.string.social_replying_to, name)) { viewModel.onReplyTo(p) } else null,
             secondary = if (actions.isNotEmpty()) RowAction(getString(R.string.action_more), getString(R.string.action_more)) {
@@ -193,7 +266,19 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         )
     }
 
-    private fun actionsFor(p: Perspective): List<Pair<String, () -> Unit>> = buildList {
+    /** Phase 13D: the short line a writer sees about their own moderated perspective. */
+    private fun ownLine(moderation: OwnModeration): String {
+        val state = getString(when (moderation.state) {
+            ModerationState.COLLAPSED -> R.string.content_state_collapsed
+            ModerationState.HELD -> R.string.content_state_held
+            ModerationState.REMOVED -> R.string.content_state_removed
+        })
+        return if (moderation.reason == null) state else "$state (${getString(ModerationLabels.of(moderation.reason))})"
+    }
+
+    private fun actionsFor(p: Perspective, collapsed: Boolean): List<Pair<String, () -> Unit>> = buildList {
+        if (collapsed) add(getString(R.string.collapsed_show) to { viewModel.onRevealPerspective(p) })
+        if (p.canApprove) add(getString(R.string.perspective_approve) to { viewModel.onApprove(p) })
         if (p.canHide) {
             if (p.hidden) add(getString(R.string.social_unhide) to { viewModel.onHide(p, false) })
             else add(getString(R.string.social_hide) to { viewModel.onHide(p, true) })
@@ -203,6 +288,11 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             else add(getString(R.string.social_helped_mark) to { viewModel.onHelped(p, true) })
         }
         if (p.own) add(getString(R.string.social_delete_perspective) to { viewModel.onDeletePerspective(p) })
+        if (!p.own) add(getString(R.string.report_perspective) to {
+            ReportDialogs.show(this@PostFragment, ReportTarget.COMMENT) { reason, note ->
+                reports.report(ReportTarget.COMMENT, p.publicId, reason, note)
+            }
+        })
     }
 
     /** Phase 13C (design §3.4.2): after "Been", the invitation to share what was found, for the next person. */

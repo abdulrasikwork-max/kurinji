@@ -33,6 +33,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param butterfliesPerDay   13C: butterfly changes (save, Been, remove) a person may make per day
  * @param discoverReadsPerHour 13C: Edition, connections, place and category pages a person may load per hour
  * @param placeSearchesPerHour 13C: place-name searches per person per hour
+ * @param probation            13D (M16): how long a new account is on probation (its reports do not count yet, lower
+ *                             limits, no links)
+ * @param probationPostsPerDay 13D: posts a person on probation may share per day
+ * @param probationCommentsPerDay 13D: perspectives a person on probation may write per day
  */
 @ConfigurationProperties(prefix = "app.social")
 public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCooldown, Duration handleReservation,
@@ -43,7 +47,8 @@ public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCool
                                Integer mediaPerDay, Integer commentsPerDay, Duration exactDelayMin,
                                Duration exactDelayMax, Path mediaDir, Integer maxMediaBytes,
                                Duration unattachedMediaLifetime, Integer butterfliesPerDay,
-                               Integer discoverReadsPerHour, Integer placeSearchesPerHour) {
+                               Integer discoverReadsPerHour, Integer placeSearchesPerHour, Duration probation,
+                               Integer probationPostsPerDay, Integer probationCommentsPerDay) {
 
     public SocialProperties {
         if (lookupsPerHour == null) lookupsPerHour = 120;
@@ -70,6 +75,12 @@ public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCool
         if (butterfliesPerDay == null) butterfliesPerDay = 200;
         if (discoverReadsPerHour == null) discoverReadsPerHour = 240;
         if (placeSearchesPerHour == null) placeSearchesPerHour = 120;
+        if (probation == null) probation = Duration.ofHours(72);
+        if (probationPostsPerDay == null) probationPostsPerDay = 3;
+        if (probationCommentsPerDay == null) probationCommentsPerDay = 10;
+        if (probation.isNegative() || probationPostsPerDay < 1 || probationCommentsPerDay < 1) {
+            throw new IllegalStateException("app.social.* values are invalid");
+        }
         if (lookupsPerHour < 1 || requestsPerDay < 1 || maxPendingOutgoing < 1 || maxConnections < 1
                 || invitesPerDay < 1 || maxActiveInvites < 1 || redeemsPerHour < 1 || maxTrackedKeys < 1
                 || handleChangeCooldown.isNegative() || handleReservation.isNegative()

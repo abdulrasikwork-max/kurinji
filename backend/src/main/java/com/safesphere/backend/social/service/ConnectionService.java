@@ -242,8 +242,9 @@ public class ConnectionService {
 
     // ---- helpers ------------------------------------------------------------------------------------------------
 
+    /** Phase 13D: new connections (request, accept, invite, redeem) also stop while a suspension is in force (M9). */
     private void requireMemberWithProfile(long userId) {
-        access.requireMember(userId);
+        access.requireCanConnect(userId);
         if (profiles.findByUserId(userId).isEmpty()) throw new ConflictException(NEEDS_PROFILE);
     }
 

@@ -45,6 +45,12 @@ import com.safesphere.app.feature.social.data.remote.DiscoverApi
 import com.safesphere.app.feature.social.data.remote.ExperienceApi
 import com.safesphere.app.feature.social.domain.DiscoverRepository
 import com.safesphere.app.feature.social.domain.ExperienceRepository
+import com.safesphere.app.feature.social.data.RemoteReportRepository
+import com.safesphere.app.feature.social.data.remote.ReportApi
+import com.safesphere.app.feature.social.domain.ReportRepository
+import com.safesphere.app.feature.moderation.data.RemoteContentModerationRepository
+import com.safesphere.app.feature.moderation.data.remote.ContentModerationApi
+import com.safesphere.app.feature.moderation.domain.ContentModerationRepository
 import kotlinx.coroutines.flow.first
 import com.safesphere.app.feature.auth.data.DataStoreSessionStorage
 import com.safesphere.app.feature.auth.data.RemoteAuthRepository
@@ -214,6 +220,17 @@ class AppContainer(context: Context) {
 
     val discoverRepository: DiscoverRepository by lazy {
         RemoteDiscoverRepository(retrofit.create(DiscoverApi::class.java), apiCallHandler)
+    }
+
+    // ---- Phase 13D: reports, own standing and appeals; moderators' content queue (nothing stored) ---------------
+
+    val reportRepository: ReportRepository by lazy {
+        RemoteReportRepository(retrofit.create(ReportApi::class.java), apiCallHandler)
+    }
+
+    val contentModerationRepository: ContentModerationRepository by lazy {
+        RemoteContentModerationRepository(retrofit.create(ContentModerationApi::class.java), apiCallHandler,
+            backendBaseUrl())
     }
 
     /** Q9: private places, recently used places and the last audience, encrypted on this phone, never uploaded. */

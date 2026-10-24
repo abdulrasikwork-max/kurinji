@@ -1011,3 +1011,69 @@ changes 200/day, Discover reads 240/h, place searches 120/h (`app.social.butterf
   digits; else `400`), optionally in one city. Places only: no people, no post text.
 - Place answers (`POST /api/places`, nearby, one, search, place page) add `city` (launch city from the server's boxes,
   or `null`).
+
+# Phase 13D: moderation v2 (V23, `docs/PHASE13D.md`)
+
+All authenticated; the member endpoints need an age-confirmed account; invisible = `404`. Nothing returned to the
+person concerned names a reporter, says a report exists, or carries a count.
+
+## Reports (any member; never paused)
+
+- `POST /api/reports` `{targetKind: "POST"|"COMMENT"|"PERSON", targetId, reason, note?}` → `202 {status: "RECEIVED"}`,
+  also when the caller had already reported it (nothing changes). `targetId` = post / perspective / profile public id.
+  Reasons: `HARASSMENT`, `SEXUAL_HARASSMENT`, `HATE`, `THREAT`, `DOXXING`, `SPAM`, `NUDITY_OR_VIOLENCE`,
+  `IMPERSONATION` (people only), `OTHER` (needs `note`, 1–200 characters; no note otherwise). `400` own content /
+  unknown reason / note rules; `404` not visible to the caller; `429` after 20 a day (`app.moderation.reports-per-day`).
+- Three independent counting reports collapse a post or perspective (`app.moderation.collapse-reports`, 3). A report
+  counts from 72 h after its reporter's sign-up (`app.social.probation`) and while the reporter is not paused.
+- `GET /api/reports/mine` → `[{reportId, targetKind, reason, status: RECEIVED|REVIEWED, outcome:
+  null|ACTION_TAKEN|NO_VIOLATION, period}]` (newest 50; only the caller's own).
+
+## Changes to posts and perspectives
+
+- Post answers add `approveFirst` (bool); for the author `moderation: null | {state: COLLAPSED|HELD|REMOVED, reason,
+  decisionId}` (`reason` and `decisionId` are `null` for a collapse while reviewed); for everyone else `collapsed:
+  null | UNDER_REVIEW | BY_MODERATOR`. HELD and REMOVED posts are `404` to everyone but the author (also in lists,
+  photos, perspectives and the Cocoon); collapsed posts are left out of the Edition only.
+- Perspective answers add `awaitingApproval` (writer and post author), `canApprove` (post author), `moderation`
+  (writer), `collapsed` (others).
+- `POST /api/posts` and `PUT /api/posts/{id}` accept `approveFirst` (only with `commentPolicy: EVERYONE`, else `400`).
+  With it, perspectives from people not connected with the author wait; `POST /api/comments/{id}/approve` (post
+  author) → `204`.
+- New accounts (72 h): at most 3 posts and 10 perspectives a day, no links in them (`400`).
+- A pause answers `403` with a calm message: comments paused → new perspectives; posting paused → also posts, photos,
+  places; suspended → also connection requests, accepting, invite codes and profile changes. Reading, blocking, muting,
+  reporting, deleting, narrowing and every safety endpoint are never refused.
+
+## The person's own standing
+
+- `GET /api/social-standing` → `{restriction: null | {level: COMMENTS_PAUSED|POSTING_PAUSED|SUSPENDED, until, reason,
+  decisionId, appeal: NONE|OPEN|UPHELD|OVERTURNED, canAppeal}, decisions[{decisionId, action, reason, targetKind,
+  targetId, period, appeal, canAppeal}]}` — decisions of the last 90 days; "keep" decisions are never listed.
+- `POST /api/social-standing/decisions/{id}/appeal` → `202 {status: "OPEN"}`. Appealable: `CONTENT_COLLAPSE`,
+  `CONTENT_REMOVE` (while the content still carries it), the three pauses (while in force). `404` not theirs; `409`
+  already asked / no longer applies.
+
+## Moderation (MODERATOR or ADMIN, roles read from the database; shared per-hour limit)
+
+- `GET /api/moderation/content-cases?status=OPEN|CLOSED` → `[{caseId, targetKind, status, outcome, openedOn, topReason,
+  reasons{code: n}, counting, independent, contentState, priority, youTookPart}]` (open: priority = severity ×
+  independent reports, then oldest).
+- `GET /api/moderation/content-cases/{id}` → `{summary, content{postType, commentKind, body, tip, category, precision,
+  placeName (EXACT), areaCell (AREA), city, audience, experiencedMonth, daypart, media[], contextBody, person{displayName,
+  handle, bio, city, interests} (PERSON)}, revisions[{body, tip, replacedOn}], participants[{ref, role
+  AUTHOR|SUBJECT|REPORTER, reason, note, counting, accountAge, linkGroup}], author{ref, strikePoints, suggestedStep,
+  restriction, restrictedUntil}, possibleActions[], decisions[]}`. `403` for a moderator who wrote it, is the person or
+  reported it.
+- `POST /api/moderation/content-cases/{id}/actions` `{action, reason}`: `CONTENT_KEEP` (`NO_VIOLATION`), `CONTENT_HOLD`
+  (`NEEDS_REVIEW` or a violation), `CONTENT_COLLAPSE`, `CONTENT_REMOVE`, `PERSON_KEEP` (`NO_VIOLATION`, person cases),
+  `PERSON_WARN`, `PERSON_PAUSE_COMMENTS` (3 d), `PERSON_PAUSE_POSTING` (7 d), `PERSON_SUSPEND` (30 d); violations are the
+  report reasons. Person actions also on a closed content case whose outcome is ACTION_TAKEN. `400` action/reason;
+  `409` closed or another moderator first.
+- `GET /api/moderation/content-cases/{id}/media/{mediaId}` → the photo (`no-store`), only the case post's photos.
+- `GET /api/moderation/content-appeals`, `POST /api/moderation/content-appeals/{id}/decision {decision: UPHELD|
+  OVERTURNED}` (`403` for the decider or a moderator who reported it; `409` decided). `GET /api/moderation/appeals`
+  (Phase 7) now lists community RESTRICT appeals only.
+- `GET /api/moderation/places?area=` (6 characters) → `[{placeId, name, category, cell, mergedInto}]`;
+  `POST /api/moderation/places/{id}/merge {into}` → `204` (same area only, else `400`; `409` one is already merged). The
+  duplicate's posts move; it disappears from search and nearby; reading it gives the kept place.

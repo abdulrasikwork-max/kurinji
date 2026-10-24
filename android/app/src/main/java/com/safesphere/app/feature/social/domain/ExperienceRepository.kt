@@ -35,6 +35,9 @@ interface ExperienceRepository {
 
     suspend fun setHelped(publicId: String, helped: Boolean): ApiResult<Unit>
 
+    /** Phase 13D (Q6): the post's author lets a waiting perspective appear. */
+    suspend fun approvePerspective(publicId: String): ApiResult<Unit>
+
     /** The address the photo is loaded from (Coil, through the shared client so the JWT is attached). */
     fun photoUrl(mediaId: String): String
 }

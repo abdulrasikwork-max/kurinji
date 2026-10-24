@@ -426,7 +426,8 @@ public class ModerationService {
         requireModerator(moderatorId);
         LocalDateTime now = now();
         List<AppealView> result = new ArrayList<>();
-        for (ModerationAppeal appeal : appeals.findByStatusOrderByCreatedAtAsc(AppealStatus.OPEN,
+        // Phase 13D: the appeals table is shared; this queue holds the community restrictions only (M11).
+        for (ModerationAppeal appeal : appeals.findByStatusAndActionIn(AppealStatus.OPEN, List.of(ActionType.RESTRICT),
                 PageRequest.of(0, properties.pageSize()))) {
             if (appeal.getUserId() == moderatorId) continue; // nobody reviews their own appeal
             result.add(appealView(appeal, moderatorId, now));
@@ -444,7 +445,9 @@ public class ModerationService {
         ModerationAppeal appeal = appeals.findByPublicId(appealId).orElseThrow(ModerationService::appealNotFound);
         if (appeal.getUserId() == moderatorId) throw appealNotFound();
         if (appeal.getStatus() != AppealStatus.OPEN) throw new ConflictException("This appeal is already decided.");
-        ModerationAction restriction = actions.findById(appeal.getActionId()).orElseThrow(ModerationService::appealNotFound);
+        ModerationAction restriction = actions.findById(appeal.getActionId())
+                .filter(a -> a.getAction() == ActionType.RESTRICT) // 13D appeals are decided by ContentModerationService
+                .orElseThrow(ModerationService::appealNotFound);
         if (restriction.getActorId() == moderatorId) {
             throw new ForbiddenException("The moderator who made a decision cannot decide its appeal.");
         }
@@ -746,7 +749,8 @@ public class ModerationService {
         actions.saveAndFlush(entry);
     }
 
-    private User requireModerator(long userId) {
+    /** Also used by ContentModerationService (13D): one role check and one per-moderator request limit for both. */
+    User requireModerator(long userId) {
         User user = users.findById(userId).orElseThrow(() -> new ForbiddenException("Moderators only"));
         if (!user.isEnabled() || !user.getRole().canModerate()) throw new ForbiddenException("Moderators only");
         if (!moderatorRequests.tryAcquire(String.valueOf(userId))) {

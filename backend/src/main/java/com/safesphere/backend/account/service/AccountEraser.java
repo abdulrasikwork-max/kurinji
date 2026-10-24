@@ -59,7 +59,10 @@ public class AccountEraser {
             // Phase 13B (V21): experiences, their photos and perspectives. Places record no person (Q12).
             "posts.author_id", "post_media.owner_id", "comments.author_id",
             // Phase 13C (V22): the person's Cocoon (their butterflies).
-            "butterflies.user_id");
+            "butterflies.user_id",
+            // Phase 13D (V23): reports by or about the person, cases about them, their strikes and pause.
+            "content_reports.reporter_id", "content_reports.person_id", "content_cases.person_id",
+            "social_strikes.user_id", "social_standing.user_id");
 
     /** References that keep the account row (anonymised): the moderation audit trail of decisions this person took. */
     public static final Set<String> KEPT_REFERENCES = Set.of("moderation_actions.actor_id", "moderation_appeals.decided_by");
@@ -94,6 +97,22 @@ public class AccountEraser {
             // Phase 13C: the person's Cocoon, and everyone's butterflies on the person's posts (before the posts).
             "DELETE FROM butterflies WHERE user_id = ?",
             "DELETE FROM butterflies WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)",
+            // Phase 13D: the person's reports; every case (and its reports) about the person, their posts, their
+            // perspectives and the perspectives on their posts; earlier texts of their posts; their strikes and pause.
+            "DELETE FROM content_reports WHERE reporter_id = ?",
+            "DELETE FROM content_reports WHERE case_id IN (SELECT id FROM content_cases WHERE person_id = ?"
+                    + " OR post_id IN (SELECT id FROM posts WHERE author_id = ?)"
+                    + " OR comment_id IN (SELECT id FROM comments WHERE author_id = ?"
+                    + " OR post_id IN (SELECT id FROM posts WHERE author_id = ?)"
+                    + " OR parent_id IN (SELECT id FROM comments WHERE author_id = ?)))",
+            "DELETE FROM content_cases WHERE person_id = ?"
+                    + " OR post_id IN (SELECT id FROM posts WHERE author_id = ?)"
+                    + " OR comment_id IN (SELECT id FROM comments WHERE author_id = ?"
+                    + " OR post_id IN (SELECT id FROM posts WHERE author_id = ?)"
+                    + " OR parent_id IN (SELECT id FROM comments WHERE author_id = ?))",
+            "DELETE FROM post_revisions WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)",
+            "DELETE FROM social_strikes WHERE user_id = ?",
+            "DELETE FROM social_standing WHERE user_id = ?",
             // Phase 13B: replies to the person's perspectives, every perspective on their posts, their own
             // perspectives, their photos (files already deleted in step 2), then their posts. The derived table is
             // needed because MySQL cannot read the table it deletes from in a plain subquery.

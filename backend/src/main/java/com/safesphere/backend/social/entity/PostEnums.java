@@ -29,6 +29,29 @@ public final class PostEnums {
     /** Phase 13C (V22): a Cocoon item, "want to experience" until the person marks it "been". */
     public enum ButterflyState { WANT, BEEN }
 
+    /**
+     * Phase 13D (V23): the moderation state of a post or a perspective. COLLAPSED = shown behind a tap (by independent
+     * reports while a moderator looks, or by a moderator's decision); HELD = hidden from everyone but its author while
+     * a moderator reviews it; REMOVED = hidden from everyone but its author by a moderator's decision.
+     */
+    public enum ModerationState {
+        NONE, COLLAPSED, HELD, REMOVED;
+
+        /** Whether people other than the author may see it at all. */
+        public boolean visibleToOthers() {
+            return this == NONE || this == COLLAPSED;
+        }
+    }
+
+    /**
+     * Phase 13D (V23): why something was reported or decided (EXPERIENCE_PLATFORM_DESIGN.md §7.3). Reports use every code
+     * but NEEDS_REVIEW; IMPERSONATION fits people only; OTHER needs a short note from the reporter.
+     */
+    public enum ModerationReason {
+        HARASSMENT, SEXUAL_HARASSMENT, HATE, THREAT, DOXXING, SPAM, NUDITY_OR_VIOLENCE, IMPERSONATION, OTHER,
+        NEEDS_REVIEW
+    }
+
     /** Q2: the launch cities (D5) and Other. Free text would split one city into many spellings. */
     public enum City {
         CHENNAI, COIMBATORE, MADURAI, TIRUCHIRAPPALLI, SALEM, TIRUNELVELI, VELLORE, ERODE, THOOTHUKUDI, THANJAVUR,

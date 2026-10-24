@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.safesphere.backend.social.entity.PostEnums.Audience;
 import com.safesphere.backend.social.entity.PostEnums.CommentPolicy;
+import com.safesphere.backend.social.entity.PostEnums.ModerationState;
 import com.safesphere.backend.social.policy.Visibility;
+import com.safesphere.backend.social.policy.Visibility.CommentFacts;
 import com.safesphere.backend.social.policy.Visibility.Facts;
 import com.safesphere.backend.social.policy.Visibility.PostFacts;
 import java.util.EnumSet;
@@ -63,6 +65,54 @@ class VisibilityTest {
                 Audience.CONNECTIONS);
         assertThat(Visibility.visibleAudiences(BLOCKED, true)).isEmpty();
         assertThat(Visibility.visibleAudiences(SELF, false)).isEqualTo(EnumSet.allOf(Audience.class));
+    }
+
+    /** Phase 13D (M7): held and removed content is its author's alone; collapsed stays visible, out of the Edition. */
+    @Test
+    void moderationStates_perViewer() {
+        for (ModerationState state : ModerationState.values()) {
+            assertThat(Visibility.canSeePost(new PostFacts(SELF, false, Audience.EVERYONE, true, state))).isTrue();
+            boolean others = state == ModerationState.NONE || state == ModerationState.COLLAPSED;
+            assertThat(Visibility.canSeePost(new PostFacts(OTHER, true, Audience.EVERYONE, true, state)))
+                    .isEqualTo(others);
+            assertThat(Visibility.showInLists(new PostFacts(OTHER, true, Audience.EVERYONE, true, state), false))
+                    .isEqualTo(others);
+            assertThat(Visibility.showInEdition(new PostFacts(OTHER, true, Audience.EVERYONE, true, state), false))
+                    .isEqualTo(state == ModerationState.NONE);
+            assertThat(Visibility.canComment(new PostFacts(SELF, false, Audience.EVERYONE, true, state),
+                    CommentPolicy.EVERYONE)).isEqualTo(others);
+        }
+        assertThat(Visibility.showInEdition(new PostFacts(OTHER, true, Audience.EVERYONE, true, ModerationState.NONE),
+                true)).isFalse(); // muted
+        assertThat(Visibility.visibleStates(OTHER)).containsExactlyInAnyOrder(ModerationState.NONE,
+                ModerationState.COLLAPSED);
+        assertThat(Visibility.visibleStates(SELF)).isEqualTo(EnumSet.allOf(ModerationState.class));
+        assertThat(Visibility.visibleStates(BLOCKED)).isEmpty();
+    }
+
+    /** Phase 13D: perspectives (hidden Q5, waiting Q6, moderation) by viewer. */
+    @Test
+    void perspectives_perViewer() {
+        CommentFacts plain = new CommentFacts(OTHER, false, false, false, ModerationState.NONE);
+        assertThat(Visibility.canSeeComment(plain)).isTrue();
+        assertThat(Visibility.canSeeComment(new CommentFacts(BLOCKED, false, false, false, ModerationState.NONE)))
+                .isFalse();
+        // Hidden by the author / waiting for approval: the writer and the post's author only.
+        for (boolean hidden : new boolean[] {true, false}) {
+            CommentFacts stranger = new CommentFacts(OTHER, false, hidden, !hidden, ModerationState.NONE);
+            assertThat(Visibility.canSeeComment(stranger)).isFalse();
+            assertThat(Visibility.canSeeComment(new CommentFacts(OTHER, true, hidden, !hidden, ModerationState.NONE)))
+                    .isTrue();
+            assertThat(Visibility.canSeeComment(new CommentFacts(SELF, false, hidden, !hidden, ModerationState.NONE)))
+                    .isTrue();
+        }
+        // Held / removed: the writer only, not even the post's author.
+        for (ModerationState state : new ModerationState[] {ModerationState.HELD, ModerationState.REMOVED}) {
+            assertThat(Visibility.canSeeComment(new CommentFacts(OTHER, true, false, false, state))).isFalse();
+            assertThat(Visibility.canSeeComment(new CommentFacts(SELF, false, false, false, state))).isTrue();
+        }
+        assertThat(Visibility.canSeeComment(new CommentFacts(OTHER, false, false, false, ModerationState.COLLAPSED)))
+                .isTrue();
     }
 
     private static boolean see(Facts people, boolean connected, Audience audience, boolean reached) {

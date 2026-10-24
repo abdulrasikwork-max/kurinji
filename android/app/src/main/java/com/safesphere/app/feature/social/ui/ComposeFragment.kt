@@ -71,6 +71,7 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         }
         binding.choosePlaceButton.setOnClickListener { findNavController().navigate(R.id.placePickerFragment) }
         binding.shareButton.setOnClickListener { viewModel.onShare() }
+        binding.approveFirstSwitch.setOnCheckedChangeListener { _, on -> viewModel.onApproveFirst(on) }
 
         months = ComposerPolicy.monthsOffered(viewModel.currentMonth)
         binding.monthSpinner.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item,
@@ -144,6 +145,8 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         binding.commentsTitle.isVisible = canTakePerspectives
         binding.commentGroup.isVisible = canTakePerspectives
         commentChips.show(CommentPolicy.entries.map { it to getString(ExperienceLabels.of(it)) }, state.commentPolicy)
+        binding.approveFirstSwitch.isVisible = state.canApproveFirst
+        if (binding.approveFirstSwitch.isChecked != state.approveFirst) binding.approveFirstSwitch.isChecked = state.approveFirst
 
         val shown = when (state.precision) {
             Precision.EXACT -> state.place?.name

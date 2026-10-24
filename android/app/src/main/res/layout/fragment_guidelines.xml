@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13D: the community guidelines (design §8.7), one screen. English in V1 (D5: Tamil UI in V2). -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityHeading="true"
+            android:text="@string/guidelines_motto"
+            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/guidelines_not_allowed_title" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/guidelines_not_allowed"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/guidelines_how_title" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/guidelines_how"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="@string/guidelines_new_accounts"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+    </LinearLayout>
+</ScrollView>

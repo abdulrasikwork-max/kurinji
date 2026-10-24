@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13D: one reported post, perspective or person (moderators). FLAG_SECURE while shown; photos only on a tap. -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/statusNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone"
+            app:noticeText="@string/error_unknown"
+            app:noticeType="warning" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/contentBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/headline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:accessibilityHeading="true"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <TextView
+                android:id="@+id/facts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/content_case_guidance"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.SafeSphere.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md">
+
+                <TextView
+                    android:id="@+id/contentText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="@dimen/space_md"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                    android:textIsSelectable="true" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:id="@+id/photosNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/content_case_photos"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/photoBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/peopleLines"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <TextView
+                android:id="@+id/authorLine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+            <TextView
+                android:id="@+id/decisionsLine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+            <LinearLayout
+                android:id="@+id/actionBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:orientation="vertical" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

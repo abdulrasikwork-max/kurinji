@@ -64,6 +64,8 @@ class RemoteExperienceRepository(
     override suspend fun setHelped(publicId: String, helped: Boolean): ApiResult<Unit> =
         handler.execute { if (helped) api.helped(publicId) else api.notHelped(publicId) }
 
+    override suspend fun approvePerspective(publicId: String): ApiResult<Unit> = handler.execute { api.approve(publicId) }
+
     override fun photoUrl(mediaId: String): String = baseUrl.trimEnd('/') + "/api/media/" + mediaId
 
     private fun <T : Any> orNotFound(result: ApiResult<T?>): ApiResult<T> = when (result) {

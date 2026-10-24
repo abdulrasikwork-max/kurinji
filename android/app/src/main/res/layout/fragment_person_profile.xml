@@ -138,6 +138,16 @@
                     android:text="@string/social_block" />
             </LinearLayout>
 
+            <!-- Phase 13D: report the person (behaviour, impersonation); nobody is told who reported. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/reportPersonButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/report_person"
+                android:visibility="gone" />
+
             <!-- Phase 13B: the experiences of this person the viewer may see -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/shareExperienceButton"

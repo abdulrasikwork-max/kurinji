@@ -91,6 +91,13 @@ class FakeExperienceRepository : ExperienceRepository {
         return ApiResult.Success(Unit)
     }
 
+    val approved = mutableListOf<String>()
+
+    override suspend fun approvePerspective(publicId: String): ApiResult<Unit> {
+        approved += publicId
+        return ApiResult.Success(Unit)
+    }
+
     override fun photoUrl(mediaId: String) = "http://test/api/media/$mediaId"
 
     companion object {

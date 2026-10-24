@@ -71,7 +71,7 @@ fonts, a week boundary passing on a live server (tested with fixed instants only
 | C-D4 | "Been here too" reason ignores the viewer's own blocks | It is a yes/no per post, never who or how many |
 | C-D5 | Place pages show only the place itself, not places merged into it | Merging is 13D |
 | C-D6 | **Emulator bug, fixed:** the Cocoon row read "Saved shared this week" (a band sentence glued after "Saved") | Own strings `cocoon_saved_this_week/_month/_earlier`; `SocialTextsTest` now pins the wording |
-| C-D7 | **Intermittent test failure seen once:** in the first full backend run `SocialAccountDeletionTest.anAnonymisedAccount…` got 409 from `PUT /api/profiles/me` while creating its person; not reproduced in two more full runs nor in a subset run | Cause not found; `SocialClient.person` now fails with the server's message so a repeat can be diagnosed. Reported, not hidden |
+| C-D7 | **Intermittent test failure seen once:** in the first full backend run `SocialAccountDeletionTest.anAnonymisedAccount…` got 409 from `PUT /api/profiles/me` while creating its person; not reproduced in two more full runs nor in a subset run | Cause not found; `SocialClient.person` now fails with the server's message so a repeat can be diagnosed. Reported, not hidden. **Explained and fixed in 13D** (`PHASE13D.md` 13D-D5: a random handle suffix of only digits left a reserved word) |
 | C-D8 | Places created before V22 keep `city` NULL | None existed (dev DB had 0 places) |
 
 ## 5. Security and privacy review

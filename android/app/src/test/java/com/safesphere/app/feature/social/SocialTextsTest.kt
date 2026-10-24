@@ -101,7 +101,9 @@ class SocialTextsTest {
         val LAYOUTS = listOf("fragment_profile_setup.xml", "fragment_connections.xml", "fragment_person_profile.xml",
             "fragment_blocked_muted.xml", "item_person_row.xml", "fragment_compose.xml", "fragment_place_picker.xml",
             "fragment_post.xml", "fragment_my_posts.xml", "fragment_private_places.xml", "item_photo.xml",
-            "fragment_discover.xml", "fragment_cocoon.xml", "fragment_post_collection.xml")
+            "fragment_discover.xml", "fragment_cocoon.xml", "fragment_post_collection.xml",
+            // Phase 13D
+            "fragment_my_reports.xml", "fragment_guidelines.xml")
         /** Phase 13C (C2): the only text with a number of people: the author's own private line. */
         val AUTHOR_ONLY_COUNTS = setOf("butterfly_author_count")
         val LIVE = listOf(Regex("\\blive\\b"), Regex("right now here"), Regex("\\bi'?m here\\b"), Regex("\\bhere now\\b"),

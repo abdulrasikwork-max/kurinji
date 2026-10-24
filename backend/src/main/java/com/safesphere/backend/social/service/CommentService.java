@@ -16,6 +16,7 @@ import com.safesphere.backend.social.policy.Visibility;
 import com.safesphere.backend.social.repository.CommentRepository;
 import com.safesphere.backend.social.repository.PostRepository;
 import com.safesphere.backend.social.repository.ProfileRepository;
+import com.safesphere.backend.user.entity.User;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -72,8 +73,8 @@ public class CommentService {
         LocalDateTime now = now();
         Post post = postService.requireVisible(viewerId, postId, now);
         List<Comment> all = comments.findByPostIdOrderByCreatedAtAscIdAsc(post.getId());
-        Map<Long, Boolean> authorVisible = new HashMap<>();
-        List<Comment> visible = all.stream().filter(c -> visibleTo(viewerId, post, c, authorVisible)).toList();
+        Map<Long, Visibility.Facts> writers = new HashMap<>();
+        List<Comment> visible = all.stream().filter(c -> visibleTo(viewerId, post, c, writers)).toList();
         Set<Long> visibleIds = visible.stream().map(Comment::getId).collect(Collectors.toSet());
 
         Comparator<Comment> topOrder = Comparator.comparingInt((Comment c) -> rank(post, c))
@@ -98,14 +99,15 @@ public class CommentService {
 
     @Transactional
     public CommentResponse create(long userId, String postId, CommentRequest request) {
-        access.requireMember(userId);
+        User user = access.requireCanComment(userId);
         if (profiles.findByUserId(userId).isEmpty()) throw new ConflictException(PostService.PROFILE_NEEDED);
         LocalDateTime now = now();
         Post post = postService.requireVisible(userId, postId, now);
         if (!Visibility.canComment(relationships.postFacts(userId, post, now), post.getCommentPolicy())) {
             throw new ResourceNotFoundException(PostService.NOT_FOUND);
         }
-        limits.comment(userId);
+        boolean probation = access.onProbation(user);
+        limits.comment(userId, probation);
         CommentKind kind = PostService.parse(CommentKind.class, request.kind(), "Choose a kind of perspective");
         Long parentId = null;
         if (request.parentId() == null || request.parentId().isBlank()) {
@@ -129,7 +131,14 @@ public class CommentService {
         int length = PostPolicy.length(body);
         if (length < 1) throw new InvalidRequestException("Write your perspective");
         if (length > BODY_MAX) throw new InvalidRequestException("A perspective has at most 1000 characters");
-        Comment comment = comments.saveAndFlush(new Comment(post.getId(), userId, parentId, kind, body, now));
+        if (probation && PostPolicy.containsLink(body)) {
+            throw new InvalidRequestException(PostPolicy.NO_LINKS_ON_PROBATION);
+        }
+        Comment draft = new Comment(post.getId(), userId, parentId, kind, body, now);
+        // Q6: on a post whose author approves first, a perspective from someone not connected with them waits.
+        draft.setAwaitingApproval(post.isApproveFirst() && post.getAuthorId() != userId
+                && !relationships.connected(userId, post.getAuthorId()));
+        Comment comment = comments.saveAndFlush(draft);
         Map<Long, Profile> authors = profiles.findByUserIdIn(List.of(userId)).stream()
                 .collect(Collectors.toMap(Profile::getUserId, Function.identity()));
         Map<Long, String> publicIds = new HashMap<>();
@@ -169,6 +178,30 @@ public class CommentService {
         comments.saveAndFlush(comment);
     }
 
+    /** Phase 13D (Q6): the post's author lets a waiting perspective appear. */
+    @Transactional
+    public void approve(long userId, String commentId) {
+        access.requireMember(userId);
+        Comment comment = onOwnPost(userId, commentId);
+        if (!comment.isAwaitingApproval()) return;
+        comment.setAwaitingApproval(false);
+        comments.saveAndFlush(comment);
+    }
+
+    /**
+     * Phase 13D: the perspective [commentId] if [viewerId] can see it (on a post they can see), else 404. Used by
+     * reports: nobody can report, or learn about, a perspective they cannot see.
+     */
+    public Comment requireVisible(long viewerId, String commentId, LocalDateTime now) {
+        Comment comment = commentId == null ? null : comments.findByPublicId(commentId).orElse(null);
+        Post post = comment == null ? null : posts.findById(comment.getPostId()).orElse(null);
+        if (post == null || !relationships.canSeePost(viewerId, post, now)
+                || !visibleTo(viewerId, post, comment, new HashMap<>())) {
+            throw new ResourceNotFoundException(NOT_FOUND);
+        }
+        return comment;
+    }
+
     private Comment onOwnPost(long userId, String commentId) {
         Comment comment = comments.findByPublicId(commentId).orElse(null);
         if (comment == null) throw new ResourceNotFoundException(NOT_FOUND);
@@ -177,16 +210,9 @@ public class CommentService {
         return comment;
     }
 
-    /**
-     * Whether [viewerId] may see [c] on a post they can see: its writer must be visible to them (active, no block
-     * either way); a hidden one only to its writer and the post's author.
-     */
-    private boolean visibleTo(long viewerId, Post post, Comment c, Map<Long, Boolean> authorVisible) {
-        boolean writer = c.getAuthorId() == viewerId;
-        boolean postAuthor = post.getAuthorId() == viewerId;
-        if (c.isHidden() && !writer && !postAuthor) return false;
-        return writer || authorVisible.computeIfAbsent(c.getAuthorId(),
-                id -> relationships.canSeeProfile(viewerId, id));
+    /** Whether [viewerId] may see [c] on a post they can see: the one rule (Visibility.canSeeComment). */
+    private boolean visibleTo(long viewerId, Post post, Comment c, Map<Long, Visibility.Facts> writers) {
+        return Visibility.canSeeComment(relationships.commentFacts(viewerId, post, c, writers));
     }
 
     /** Been here too first on an Experience; answers marked helpful first on an Ask. */
@@ -200,11 +226,16 @@ public class CommentService {
         boolean own = c.getAuthorId() == viewerId;
         boolean postAuthor = post.getAuthorId() == viewerId;
         Profile author = authors.get(c.getAuthorId());
+        boolean awaiting = c.isAwaitingApproval() && (own || postAuthor);
         return new CommentResponse(c.getPublicId(), c.getKind().name(),
                 author == null ? null : ProfileService.summary(author), own, c.getBody(),
                 TimeBands.band(c.getCreatedAt(), now).name(), c.isHidden() && (own || postAuthor), c.isHelped(),
                 c.getParentId() == null ? null : publicIds.get(c.getParentId()), postAuthor,
-                postAuthor && post.getType() == PostType.ASK && c.getKind() == CommentKind.ANSWER);
+                postAuthor && post.getType() == PostType.ASK && c.getKind() == CommentKind.ANSWER,
+                awaiting, awaiting && postAuthor && !own,
+                own ? PostService.moderationView(c.getModeration(), c.getModerationReason(), c.getModerationDecision())
+                        : null,
+                own ? null : PostService.collapsed(c.getModeration(), c.getModerationDecision()));
     }
 
     private LocalDateTime now() {

@@ -77,7 +77,7 @@ Final-year B.Tech IT team project: the student must be able to explain every imp
 2026-10-22/23** (`docs/PHASE13B.md`, plan `PHASE13B_PLAN.md` approved with Q1–Q12): places, Experiences/Asks with
 precision and the 1–3 h exact-place delay, photos stripped twice, Perspectives, encrypted private places; backend 635 /
 Android 627, lint 0 / 91, **V21 dry run 79/79 + applied, live MySQL 33/33, emulator (API 37) E1–E12 PASS** (two bugs
-found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13C intent and discovery implemented, compiled, tested, verified 2026-10-23** (`docs/PHASE13C.md`, plan `PHASE13C_PLAN.md`, C1–C15 decided under the user's delegation): butterfly = private Cocoon item (Want → Been), the author's count only from 3 people up, weekly city Edition with "Why am I seeing this?", From your connections, place and category pages, place-name search, mute in every list; backend 663 / Android 641, lint 0 / 94, **V22 dry run 14/14 + applied, live MySQL 29/29, emulator (API 37) E1–E17 PASS** (one wording bug found and fixed); real phone, TalkBack speech and dark mode **not verified**. 13D–13F, 13R: planned. Sub-phases 13A identity foundation (V20) → 13B experiences → 13C intent + discovery → 13D moderation v2 → 13E AI v1 → 13F new UI/navigation, plus 13R Tamil/Tanglish model research track in parallel (design doc §12). Decided 2026-10-22: D1 (name Kurinji, checks pending), D4 (women's realities = internal principle only), D5 (Chennai first; Tamil/Tanglish content from V1, Tamil UI in V2), D6 (18+, self-declared date of birth), D13 (Phase 13), D7 (Coil is the one new Android dependency for 13B; push stays V2), D11 (places user-created only, no places API), D14 (no audience preselected on the first post), D2 (moderation models allowed under the evidence → policy → human rule), D3 (the user's dataset + licence-checked public sets, ≥ 2 annotators), D8 (Takes in V2), D9 (retire Rise when 13F ships), D10 (pending safety items folded into Phase 13; A23 sprint before any pilot), D12 (HTTPS server before a closed pilot), D15 (team moderators, rotating). All of D1–D15 are decided. Each sub-phase needs its own plan and the user's approval first |
+found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13C intent and discovery implemented, compiled, tested, verified 2026-10-23** (`docs/PHASE13C.md`, plan `PHASE13C_PLAN.md`, C1–C15 decided under the user's delegation): butterfly = private Cocoon item (Want → Been), the author's count only from 3 people up, weekly city Edition with "Why am I seeing this?", From your connections, place and category pages, place-name search, mute in every list; backend 663 / Android 641, lint 0 / 94, **V22 dry run 14/14 + applied, live MySQL 29/29, emulator (API 37) E1–E17 PASS** (one wording bug found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13D moderation v2 implemented, compiled, tested, verified 2026-10-24/25** (`docs/PHASE13D.md`, plan `PHASE13D_PLAN.md`, M1–M20 decided under the user's delegation): reports on posts/perspectives/people (reporters never revealed, nothing observable to the reported person below 3 independent reports), collapse, holds, removal, strikes, pauses, appeals to another moderator, approve-first (Q6), edit history during a case (Q7), place merging (API), probation; backend 694 / Android 657, lint 0 / 54, **V23 dry run 51/51 + applied (2 CHECK gaps found and fixed first), live MySQL 30/30, emulator (API 37) E1–E8 PASS** (3 wording bugs found and fixed); real phone, TalkBack speech and dark mode **not verified**. 13E–13F, 13R: planned. Sub-phases 13A identity foundation (V20) → 13B experiences → 13C intent + discovery → 13D moderation v2 → 13E AI v1 → 13F new UI/navigation, plus 13R Tamil/Tanglish model research track in parallel (design doc §12). Decided 2026-10-22: D1 (name Kurinji, checks pending), D4 (women's realities = internal principle only), D5 (Chennai first; Tamil/Tanglish content from V1, Tamil UI in V2), D6 (18+, self-declared date of birth), D13 (Phase 13), D7 (Coil is the one new Android dependency for 13B; push stays V2), D11 (places user-created only, no places API), D14 (no audience preselected on the first post), D2 (moderation models allowed under the evidence → policy → human rule), D3 (the user's dataset + licence-checked public sets, ≥ 2 annotators), D8 (Takes in V2), D9 (retire Rise when 13F ships), D10 (pending safety items folded into Phase 13; A23 sprint before any pilot), D12 (HTTPS server before a closed pilot), D15 (team moderators, rotating). All of D1–D15 are decided. Each sub-phase needs its own plan and the user's approval first |
 
 **Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
 - **4A** — Location + permissions, notifications foundation, emergency location sharing, emergency/state recovery, battery + network readers.
@@ -146,7 +146,13 @@ B1–B14, results).
 **13C is in the repository** (V22 `butterflies` + `places.city`, backend `social` `ButterflyService`, `DiscoverService`,
 pure `CityAreas`/`EditionPolicy`/`ButterflyTally`, `Visibility.showInLists`; Android `DiscoverFragment`,
 `CocoonFragment`, `PostCollectionFragment`, 🦋 on `PostFragment`): `docs/PHASE13C.md` (decisions C1–C15 in
-`PHASE13C_PLAN.md`, deviations C-D1–C-D8, results). Next migration **V23**.
+`PHASE13C_PLAN.md`, deviations C-D1–C-D8, results).
+**13D is in the repository** (V23, backend `moderation` `ReportService`, `ContentModerationService`, pure `ReportPolicy`
+/ `StrikePolicy`, `ContentModerationJob`; `social` moderation state on posts/comments, `SocialStanding`,
+`PostRevision`, `Visibility.canSeeComment/showInEdition/visibleStates`, `SocialAccess` pauses + probation; Android
+`ReportViewModel`/`ReportDialogs`, `MyReportsFragment`, `GuidelinesFragment`, moderator `ContentQueueViewModel`,
+`ContentCaseFragment`): `docs/PHASE13D.md` (decisions M1–M20 in `PHASE13D_PLAN.md`, deviations 13D-D1–D11). Next
+migration **V24**.
 **Note:** `C:\Users\ABDUL RAFIQ\Desktop\CLAUDE.md` (outside the repo) is an old copy (says "4A has not started"); this
 repo copy is the current one.
 
@@ -189,7 +195,7 @@ Android lifecycle implications / security + privacy / likely viva questions*. No
 SafeSphere/
 ├── android/   Kotlin app — open THIS folder in Android Studio (has gradlew)
 ├── backend/   Spring Boot API — Maven (no mvnw wrapper; Maven is installed)
-├── docs/      API.md, PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), AUDIT_NEXT.md (2026-10-22 audit), EXPERIENCE_PLATFORM_DESIGN.md (the new product direction, Phase 13), PHASE13A_PLAN.md + PHASE13A.md (13A), PHASE13B_PLAN.md + PHASE13B.md (13B), PHASE13C_PLAN.md + PHASE13C.md (13C), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
+├── docs/      API.md, PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), AUDIT_NEXT.md (2026-10-22 audit), EXPERIENCE_PLATFORM_DESIGN.md (the new product direction, Phase 13), PHASE13A_PLAN.md + PHASE13A.md (13A), PHASE13B_PLAN.md + PHASE13B.md (13B), PHASE13C_PLAN.md + PHASE13C.md (13C), PHASE13D_PLAN.md + PHASE13D.md (13D), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
 └── README.md
 ```
 
@@ -310,6 +316,18 @@ cd android
   "Discover", "Your Cocoon" (until 13F). Nothing stored on the phone. `SocialTextsTest`: `%d` only in
   `butterfly_author_count` ("Only you can see this line"); ranking words (for you, top, most …, rank, best, feed,
   views, trending, popular) forbidden.
+- **Moderation v2 (Phase 13D, `docs/PHASE13D.md`):** members: `ReportRepository` / `RemoteReportRepository`
+  (`ReportApi`: `/api/reports`, `/api/social-standing`), pure `ReportReason.accepts` (reason fits target, note only and
+  always for OTHER), shared `ReportViewModel` (report, standing, appeal) used by `PostFragment` ("Report this post", a
+  perspective's More menu, collapsed post/perspective behind "Show it", the author's amber `moderationNotice` + "Ask for
+  a review", approve), `PersonProfileFragment` ("Report this person"), `ConnectionsFragment` (amber pause notice +
+  review, "Your reports", "Community guidelines"); `ReportDialogs` + `ModerationLabels`; `MyReportsFragment`,
+  `GuidelinesFragment`; composer approve-first switch (only with "Anyone who can see it"). DTOs fail closed (own unknown
+  state → HELD, others' unknown collapse → UNDER_REVIEW, unknown decisions/reports dropped, unknown appeal → no button).
+  Moderators: `ContentModerationRepository` (`ContentModerationApi`), pure `ContentModerationPolicy`,
+  `ContentQueueViewModel` (two sections in `ModerationFragment`; 403 hides them), `ContentCaseViewModel` /
+  `ContentCaseFragment` (FLAG_SECURE, photos only on tap, reason dialog, confirmation). Moderation words amber, never
+  red; author-facing strings never say "report(s)/reported" (`ModerationV2Test`). Nothing stored on the phone.
 - **Rise "Proof" (Phase 10B, `feature/rise`, `docs/PHASE11.md` §4):** phone-only; `RiseJournalHolder` (one encrypted
   file per account, `EncryptedFileRiseStore`: AES-GCM per save, key wrapped by the Keystore `LocalKeyWrapper`, AAD
   `SSRISE1|accountId`, `.bak`, Unreadable never silently empty), pure `GoalPolicy` / `ProofPolicy` (replay only for the
@@ -450,7 +468,13 @@ cd android
   `DiscoverService` (Edition, connections list, place/category pages; SQL pre-filter, then `Relationships.forLists` =
   `Visibility.showInLists` = canSeePost + not muted), pure `EditionPolicy` (IST week, theme rotation, content-only order +
   reason codes), `CityAreas` (launch-city boxes → `places.city`), `ButterflyTally` (author only, number from 3),
-  `PlaceService.search` (names only)),
+  `PlaceService.search` (names only);
+  Phase 13D: posts/comments carry `moderation` NONE/COLLAPSED/HELD/REMOVED + reason + decision (written only by
+  `moderation`; social never references `moderation` — `SocialIsolationTest`), `Visibility` (HELD/REMOVED = author only,
+  `canSeeComment`, `showInEdition` leaves collapsed out, `visibleStates` for list SQL), `SocialStanding` (pause) read by
+  `SocialAccess.requireCanComment/Post/Connect`, probation (`app.social.probation` 72 h: lower post/perspective limits,
+  no links, `countsFrom` for reports), `PostRevision` (only while `posts.in_review`), `approve_first` /
+  `awaiting_approval` (Q6)),
   `community` (Phase 6: `GeoCell`, pure `SignalPolicy`, `CommunityService`, in-memory `AreaQueryLimiter`,
   `CommunityPurgeJob` = a `@Scheduled` task, deletion only (since Phase 10A the other one is `AccountDeletionJob`); `config/CommunityProperties`, `SchedulingConfig`;
   Phase 7: pure `TrustPolicy`, `Independence`, `FlagPolicy`, `TrustService`, private `ContributorStanding`, `SignalFlag`;
@@ -466,7 +490,14 @@ cd android
   `TrustService.Snapshot.supportOn` (people counting at a DISMISSED COORDINATION case count separately on THAT signal;
   read via `ModerationCaseRepository.lastClosedBySignal`, nothing stored), `CoordinationPolicy.Group.members()` (≥ 2
   of the group's places) for `CaseDetail.groupMembers`, RESTRICT `wholeGroup` and the dismissed-group guard (any
-  signal backed only by members); Phase 9B: `coordination_rule` stored on every new COORDINATION case),
+  signal backed only by members); Phase 9B: `coordination_rule` stored on every new COORDINATION case;
+  Phase 13D: SIBLING tables `content_cases`/`content_reports` (Phase 7 `moderation_cases` untouched), `ReportService`
+  (visible targets only, repeat = same 202, case opened or joined, collapse at `app.moderation.collapse-reports` 3
+  independent counting reports via `community.service.Independence`), `ContentModerationService` (queue, detail, decisions
+  CONTENT_*/PERSON_*, one strike per case, pauses never shorten a stronger one, appeals on the shared
+  `moderation_appeals` (never the decider, never a reporting moderator), standing, place merge, `maintain`),
+  `ContentModerationJob` (`@Scheduled` hourly; collapse + retention only), `CaseRefs.contentRef` (own namespace);
+  `ModerationService.listAppeals/decideAppeal` now handle community RESTRICT appeals only; `requireModerator` shared),
   `evaluation` (Phase 9B: `OutcomeRecorder` = the only writer, typed enum-only methods, counts buffered per transaction
   and written AFTER COMMIT in their own transaction, best effort (failure = WARN with the exception class only), never
   reads; `WeeklySnapshot` from the job, first run of each ISO week, one transaction, reads `SignalVisibility`, also the
@@ -553,7 +584,9 @@ cd android
 
 | V22 | `butterflies`, `places.city`, index `posts (audience, visible_from)` | 13C: one row per (person, post) = the Cocoon item, FKs cascade, `state` WANT/BEEN binary CHECK, `(state = BEEN) = (been_at IS NOT NULL)` + `been_at >= created_at` CHECK, UNIQUE (user, post); `places.city` closed list without OTHER (binary CHECK), set by the server from the cell (`CityAreas`); "not own post" and "Experiences only" in code. Dry run 14/14, applied (2026-10-23) |
 
-Conventions: never edit an applied migration; next file is **V23**; snake_case; `DATETIME(6)` stored in UTC; constraint
+| V23 | `posts`/`comments` moderation columns, `post_revisions`, `content_cases`, `content_reports`, `social_strikes`, `social_standing`, `moderation_actions.target_kind` | 13D: state NONE/COLLAPSED/HELD/REMOVED + reason + decision UUID (CHECK: NONE ⇒ neither, COLLAPSED ⇒ both or neither, HELD/REMOVED ⇒ both), `approve_first` ⇒ comment policy EVERYONE, `awaiting_approval`; one OPEN case per post / comment / person (`open_marker` + unique), outcome NO_VIOLATION/ACTION_TAKEN with `outcome IS NOT NULL` written out; one report per reporter and target, note only for OTHER (1–200), `counts_from ≥ created_at`; strike weight 1–3, decision unique; one standing row per person, until > decided; audit action/reason lists extended + kind-matches CHECK with `COALESCE` (NULL makes `IN` UNKNOWN, which a MySQL CHECK lets pass — found in the dry run). "Exactly one target" in code. Dry run 51/51 + 18/18, applied (2026-10-24) |
+
+Conventions: never edit an applied migration; next file is **V24**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.
 
 ---
@@ -668,6 +701,17 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
   /api/discover/connections?cursor=`, `GET /api/discover/categories/{c}?city=&cursor=`, `GET /api/places/{id}/posts?cursor=`
   (EXACT + Everyone only), `GET /api/places/search?q=&city=` (names only, ≤ 20); place answers add `city`. Config
   `app.social.butterflies-per-day` (200), `discover-reads-per-hour` (240), `place-searches-per-hour` (120).
+- Phase 13D (V23, `API.md` "Phase 13D"): `POST /api/reports {targetKind POST|COMMENT|PERSON, targetId, reason, note?}` →
+  202 always the same (400 own/reason/note, 404 invisible, 429 after 20/day), `GET /api/reports/mine`; `GET
+  /api/social-standing` (pause + decisions of 90 days, never a "keep"), `POST /api/social-standing/decisions/{id}/appeal`
+  (202, 409 asked/no longer applies); post answers add `approveFirst`, author `moderation {state, reason, decisionId}`,
+  others `collapsed` UNDER_REVIEW|BY_MODERATOR; perspectives add `awaitingApproval`, `canApprove`, `moderation`,
+  `collapsed`; posts accept `approveFirst`; `POST /api/comments/{id}/approve`; pauses answer 403 on their writes only.
+  Moderators: `GET /api/moderation/content-cases?status=`, `GET …/{id}`, `POST …/{id}/actions {action, reason}`,
+  `GET …/{id}/media/{mediaId}`, `GET /api/moderation/content-appeals`, `POST …/{id}/decision`, `GET
+  /api/moderation/places?area=`, `POST /api/moderation/places/{id}/merge {into}`; `/api/moderation/appeals` = Phase 7
+  RESTRICT appeals only. Config `app.moderation.reports-per-day` (20), `collapse-reports` (3), `content-interval` (1h),
+  `app.social.probation` (72h), `probation-posts-per-day` (3), `probation-comments-per-day` (10).
 
 ---
 
@@ -688,6 +732,10 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
   author / connection / stranger / blocked users; connection lists, block lists and butterflies visible only to their
   owner; social packages never read safety data and safety never depends on social features; a posting restriction
   never touches SOS, Safe Walk, the Safety Circle or the vault. 18+ at launch, self-declared date of birth at sign-up (D6, decided 2026-10-22).
+- **Moderation (Phase 13D, built):** the reported person is never told who reported or that a report exists (no
+  notice, no refused edit/delete, no "keep" in their standing); reports only collapse (visibly, at 3 independent
+  counting reports); hold, removal and pauses are human decisions with a reason, audited and appealable to another
+  moderator (never the decider or a reporting moderator); no shadow bans: every state is shown to its author.
 
 ---
 

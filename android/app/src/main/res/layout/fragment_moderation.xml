@@ -82,5 +82,56 @@
                 android:text="@string/moderation_no_appeals"
                 android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
         </LinearLayout>
+
+        <!-- Phase 13D: posts, perspectives and people (its own queue; the server answers 403 to non-moderators). -->
+        <LinearLayout
+            android:id="@+id/contentQueue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.safesphere.app.core.ui.components.SectionHeaderView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_spacing"
+                android:layout_marginBottom="@dimen/space_md"
+                app:sectionTitle="@string/content_cases_title" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/contentCaseList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                android:id="@+id/noContentCases"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/content_cases_empty"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <com.safesphere.app.core.ui.components.SectionHeaderView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_spacing"
+                android:layout_marginBottom="@dimen/space_md"
+                app:sectionTitle="@string/content_appeals_title" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/contentAppealList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <TextView
+                android:id="@+id/noContentAppeals"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/content_appeals_empty"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+        </LinearLayout>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

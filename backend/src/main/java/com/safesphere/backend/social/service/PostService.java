@@ -5,6 +5,7 @@ import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.common.exception.ResourceNotFoundException;
 import com.safesphere.backend.config.SocialProperties;
 import com.safesphere.backend.social.dto.PostDtos.MediaRef;
+import com.safesphere.backend.social.dto.PostDtos.ModerationView;
 import com.safesphere.backend.social.dto.PostDtos.PostEditRequest;
 import com.safesphere.backend.social.dto.PostDtos.PostPage;
 import com.safesphere.backend.social.dto.PostDtos.PostPlace;
@@ -18,9 +19,12 @@ import com.safesphere.backend.social.entity.PostEnums.ButterflyState;
 import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.entity.PostEnums.CommentPolicy;
 import com.safesphere.backend.social.entity.PostEnums.Daypart;
+import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.PostEnums.ModerationState;
 import com.safesphere.backend.social.entity.PostEnums.PostType;
 import com.safesphere.backend.social.entity.PostEnums.Precision;
 import com.safesphere.backend.social.entity.PostMedia;
+import com.safesphere.backend.social.entity.PostRevision;
 import com.safesphere.backend.social.entity.Profile;
 import com.safesphere.backend.social.media.MediaStorage;
 import com.safesphere.backend.social.policy.ButterflyTally;
@@ -33,7 +37,9 @@ import com.safesphere.backend.social.repository.CommentRepository;
 import com.safesphere.backend.social.repository.PlaceRepository;
 import com.safesphere.backend.social.repository.PostMediaRepository;
 import com.safesphere.backend.social.repository.PostRepository;
+import com.safesphere.backend.social.repository.PostRevisionRepository;
 import com.safesphere.backend.social.repository.ProfileRepository;
+import com.safesphere.backend.user.entity.User;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -47,6 +53,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -92,13 +99,16 @@ public class PostService {
     private final SocialLimits limits;
     private final SocialProperties properties;
     private final MediaStorage storage;
+    private final PostRevisionRepository revisions;
     private final Clock clock;
     private final SecureRandom random = new SecureRandom();
 
     public PostService(PostRepository posts, PostMediaRepository mediaRows, CommentRepository comments,
                        ButterflyRepository butterflies, PlaceService placeService, PlaceRepository places, ProfileRepository profiles,
                        ProfileService profileService, Relationships relationships, SocialAccess access,
-                       SocialLimits limits, SocialProperties properties, MediaStorage storage, Clock clock) {
+                       SocialLimits limits, SocialProperties properties, MediaStorage storage,
+                       PostRevisionRepository revisions, Clock clock) {
+        this.revisions = revisions;
         this.posts = posts;
         this.mediaRows = mediaRows;
         this.comments = comments;
@@ -117,14 +127,16 @@ public class PostService {
 
     @Transactional
     public PostResponse create(long userId, PostRequest request) {
-        access.requireMember(userId);
+        User user = access.requireCanPost(userId);
         if (profiles.findByUserId(userId).isEmpty()) throw new ConflictException(PROFILE_NEEDED);
-        limits.post(userId);
+        boolean probation = access.onProbation(user);
+        limits.post(userId, probation);
         PostType type = parse(PostType.class, request.type(), "Choose Experience or Ask");
         Precision precision = parse(Precision.class, request.precision(), "Choose how much of the place to show");
         Audience audience = parse(Audience.class, request.audience(), "Choose who can see this");
         CommentPolicy commentPolicy = audience == Audience.ONLY_ME ? CommentPolicy.NOBODY
                 : parse(CommentPolicy.class, request.commentPolicy(), "Choose who can add perspectives");
+        boolean approveFirst = approveFirst(request.approveFirst(), false, commentPolicy);
         City city = parseOptional(City.class, request.city(), "Choose a city from the list");
         Daypart daypart = parseOptional(Daypart.class, request.daypart(), "Choose a time of day from the list");
         String category = blank(request.category()) ? null : PlaceService.category(request.category());
@@ -140,6 +152,9 @@ public class PostService {
                 mediaIds.size()), now).ifPresent(reason -> {
                     throw new InvalidRequestException(reason);
                 });
+        if (probation && PostPolicy.containsLink(body, tip)) {
+            throw new InvalidRequestException(PostPolicy.NO_LINKS_ON_PROBATION);
+        }
 
         LocalDateTime visibleFrom = now.plus(PostDelay.delay(precision, properties.exactDelayMin(),
                 properties.exactDelayMax(), random));
@@ -148,6 +163,7 @@ public class PostService {
         post.setLocation(precision, place == null ? null : place.getId(),
                 precision == Precision.AREA ? place.getAreaCell() : null, precision == Precision.CITY ? city : null);
         post.setSharing(audience, commentPolicy);
+        post.setApproveFirst(approveFirst);
         posts.saveAndFlush(post);
         attach(userId, post, mediaIds);
         return respond(userId, List.of(post), now).get(0);
@@ -162,7 +178,7 @@ public class PostService {
 
     @Transactional
     public PostResponse edit(long userId, String publicId, PostEditRequest request) {
-        access.requireMember(userId);
+        User user = access.requireMember(userId);
         Post post = requireOwn(userId, publicId);
         Audience audience = parse(Audience.class, request.audience(), "Choose who can see this");
         Precision precision = parse(Precision.class, request.precision(), "Choose how much of the place to show");
@@ -202,6 +218,7 @@ public class PostService {
         if ((precision == Precision.EXACT || precision == Precision.AREA) && placeId == null) {
             throw new ConflictException(PLACE_GONE);
         }
+        boolean approveFirst = approveFirst(request.approveFirst(), post.isApproveFirst(), commentPolicy);
         String body = PostPolicy.cleanBody(request.body());
         String tip = PostPolicy.cleanLine(request.tip());
         LocalDateTime now = now();
@@ -209,6 +226,18 @@ public class PostService {
                 audience, 0), now).ifPresent(reason -> {
                     throw new InvalidRequestException(reason);
                 });
+        boolean textChanged = !Objects.equals(body, post.getBody()) || !Objects.equals(tip, post.getTip());
+        if (textChanged) {
+            // Phase 13D: new words are new posting (a pause stops them; narrowing alone always works).
+            access.requireCanPost(userId);
+            if (access.onProbation(user) && PostPolicy.containsLink(body, tip)) {
+                throw new InvalidRequestException(PostPolicy.NO_LINKS_ON_PROBATION);
+            }
+            // Q7: while a case about this post is open, the moderator keeps seeing what it said before (never shown
+            // to anyone else; deleted when the case closes). Without an open case no history is kept.
+            if (post.isInReview()) revisions.save(new PostRevision(post.getId(), post.getBody(), post.getTip(), now));
+        }
+        post.setApproveFirst(approveFirst);
         post.setContent(body, tip, category, month == null ? null : month.atDay(1), daypart);
         post.setLocation(precision, placeId, areaCell, newCity);
         post.setSharing(audience, commentPolicy);
@@ -223,7 +252,10 @@ public class PostService {
         Post post = requireOwn(userId, publicId);
         List<String> keys = mediaRows.findByPostIdOrderBySortOrderAsc(post.getId()).stream()
                 .map(PostMedia::getStorageKey).toList();
+        // Phase 13D (M14): always allowed, also during a review (a refusal would tell the author that someone reported
+        // it). A case and its reports about this post go with it (V23 cascades; the clean-up job removes any left).
         butterflies.deleteAllOfPost(post.getId());
+        revisions.deleteByPost(post.getId());
         comments.deleteRepliesOfPost(post.getId());
         comments.deleteAllOfPost(post.getId());
         mediaRows.deleteAll(mediaRows.findByPostIdOrderBySortOrderAsc(post.getId()));
@@ -249,11 +281,12 @@ public class PostService {
         long ownerId = profileService.requireVisible(viewerId, profilePublicId).getUserId();
         if (ownerId == viewerId) return mine(viewerId, cursor);
         LocalDateTime now = now();
-        Set<Audience> audiences = Visibility.visibleAudiences(relationships.facts(viewerId, ownerId),
-                relationships.connected(viewerId, ownerId));
+        Visibility.Facts facts = relationships.facts(viewerId, ownerId);
+        Set<Audience> audiences = Visibility.visibleAudiences(facts, relationships.connected(viewerId, ownerId));
         if (audiences.isEmpty()) return new PostPage(List.of(), null);
         Post after = cursor(cursor, viewerId, ownerId, now);
-        List<Post> page = posts.visiblePage(ownerId, audiences, now, after == null ? END : after.getCreatedAt(),
+        List<Post> page = posts.visiblePage(ownerId, audiences, Visibility.visibleStates(facts), now,
+                after == null ? END : after.getCreatedAt(),
                 after == null ? Long.MAX_VALUE : after.getId(), PageRequest.of(0, PAGE_SIZE + 1));
         return page(viewerId, page, now);
     }
@@ -352,9 +385,37 @@ public class PostService {
                     own ? post.getCreatedAt().toInstant(ZoneOffset.UTC) : null,
                     own ? post.getVisibleFrom().toInstant(ZoneOffset.UTC) : null,
                     yours.containsKey(post.getId()) ? yours.get(post.getId()).name() : null,
-                    showsTally(viewerId, post) ? ButterflyTally.of(counts.getOrDefault(post.getId(), 0L)) : null));
+                    showsTally(viewerId, post) ? ButterflyTally.of(counts.getOrDefault(post.getId(), 0L)) : null,
+                    post.isApproveFirst(),
+                    own ? moderationView(post.getModeration(), post.getModerationReason(), post.getModerationDecision())
+                            : null,
+                    own ? null : collapsed(post.getModeration(), post.getModerationDecision())));
         }
         return out;
+    }
+
+    /** Phase 13D: the author's view of a moderation state (null when nothing happened). */
+    static ModerationView moderationView(ModerationState state, ModerationReason reason, String decision) {
+        if (state == ModerationState.NONE) return null;
+        return new ModerationView(state.name(), reason == null ? null : reason.name(), decision);
+    }
+
+    /**
+     * Phase 13D: what everyone else learns: whether it is collapsed, and whether a moderator decided that (no reason,
+     * nothing about reports). Held and removed content never reaches them (Visibility).
+     */
+    static String collapsed(ModerationState state, String decision) {
+        if (state != ModerationState.COLLAPSED) return null;
+        return decision == null ? "UNDER_REVIEW" : "BY_MODERATOR";
+    }
+
+    /** Q6: "approve first" needs "Everyone can add perspectives"; [current] when the request leaves it unchanged. */
+    private static boolean approveFirst(Boolean requested, boolean current, CommentPolicy policy) {
+        boolean value = requested == null ? current && policy == CommentPolicy.EVERYONE : requested;
+        if (value && policy != CommentPolicy.EVERYONE) {
+            throw new InvalidRequestException("Approving perspectives first works when everyone can add them");
+        }
+        return value;
     }
 
     /** C2: only the author of an Experience shared with others learns anything about its butterflies. */

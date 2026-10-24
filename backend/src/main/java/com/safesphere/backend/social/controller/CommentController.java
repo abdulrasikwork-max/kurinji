@@ -57,6 +57,13 @@ public class CommentController {
         comments.setHidden(CurrentUser.id(jwt), commentId, false);
     }
 
+    /** Phase 13D (Q6): the post's author approves a waiting perspective. */
+    @PostMapping("/api/comments/{commentId}/approve")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void approve(@AuthenticationPrincipal Jwt jwt, @PathVariable String commentId) {
+        comments.approve(CurrentUser.id(jwt), commentId);
+    }
+
     @PostMapping("/api/comments/{commentId}/helped")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void helped(@AuthenticationPrincipal Jwt jwt, @PathVariable String commentId) {

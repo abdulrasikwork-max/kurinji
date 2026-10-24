@@ -40,7 +40,10 @@ public final class SocialClient {
         String email = "social." + UUID.randomUUID() + "@example.com";
         String token = TestAccounts.registerAndGetToken(mockMvc, objectMapper, email);
         long id = users.findByEmail(email).orElseThrow().getId();
-        String handle = name.toLowerCase() + "_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        // The "x" keeps a letter in the suffix: with 8 random hex characters that all happened to be digits (~2 % of
+        // runs), HandlePolicy saw only the name's letters, and a name like "Mod" is a reserved word (409). This was
+        // the intermittent 13C failure (docs/PHASE13C.md C-D7), found in 13D.
+        String handle = name.toLowerCase() + "_x" + UUID.randomUUID().toString().replace("-", "").substring(0, 7);
         var response = perform(token, put("/api/profiles/me"), Map.of("handle", handle, "displayName", name))
                 .andReturn().getResponse();
         if (response.getStatus() != 200) {
@@ -337,6 +340,72 @@ public final class SocialClient {
         if (q != null) builder.param("q", q);
         if (city != null) builder.param("city", city);
         return perform(who.token(), builder, null);
+    }
+
+    // ---- Phase 13D: reports, standing, moderators ----
+
+    /** Makes [who] a moderator (roles are read from the database on every request). */
+    public void makeModerator(Person who) {
+        var user = users.findById(who.id()).orElseThrow();
+        user.setRole(com.safesphere.backend.user.entity.UserRole.MODERATOR);
+        users.saveAndFlush(user);
+    }
+
+    public ResultActions report(Person who, String kind, String targetId, String reason, String note) throws Exception {
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("targetKind", kind);
+        body.put("targetId", targetId);
+        body.put("reason", reason);
+        if (note != null) body.put("note", note);
+        return perform(who.token(), post("/api/reports"), body);
+    }
+
+    public ResultActions myReports(Person who) throws Exception {
+        return perform(who.token(), get("/api/reports/mine"), null);
+    }
+
+    public ResultActions standing(Person who) throws Exception {
+        return perform(who.token(), get("/api/social-standing"), null);
+    }
+
+    public ResultActions appealDecision(Person who, String decisionId) throws Exception {
+        return perform(who.token(), post("/api/social-standing/decisions/{id}/appeal", decisionId), null);
+    }
+
+    public ResultActions contentCases(Person moderator, String status) throws Exception {
+        var builder = get("/api/moderation/content-cases");
+        if (status != null) builder.param("status", status);
+        return perform(moderator.token(), builder, null);
+    }
+
+    public ResultActions contentCase(Person moderator, String caseId) throws Exception {
+        return perform(moderator.token(), get("/api/moderation/content-cases/{id}", caseId), null);
+    }
+
+    public ResultActions act(Person moderator, String caseId, String action, String reason) throws Exception {
+        return perform(moderator.token(), post("/api/moderation/content-cases/{id}/actions", caseId),
+                Map.of("action", action, "reason", reason));
+    }
+
+    public ResultActions caseMedia(Person moderator, String caseId, String mediaId) throws Exception {
+        return perform(moderator.token(), get("/api/moderation/content-cases/{id}/media/{m}", caseId, mediaId), null);
+    }
+
+    public ResultActions contentAppeals(Person moderator) throws Exception {
+        return perform(moderator.token(), get("/api/moderation/content-appeals"), null);
+    }
+
+    public ResultActions decideContentAppeal(Person moderator, String appealId, String decision) throws Exception {
+        return perform(moderator.token(), post("/api/moderation/content-appeals/{id}/decision", appealId),
+                Map.of("decision", decision));
+    }
+
+    public ResultActions moderatorPlaces(Person moderator, String area) throws Exception {
+        return perform(moderator.token(), get("/api/moderation/places").param("area", area), null);
+    }
+
+    public ResultActions mergePlace(Person moderator, String placeId, String into) throws Exception {
+        return perform(moderator.token(), post("/api/moderation/places/{id}/merge", placeId), Map.of("into", into));
     }
 
     /** The public ids in a JSON array answer. */

@@ -4,6 +4,8 @@ import com.safesphere.backend.social.entity.PostEnums.Audience;
 import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.entity.PostEnums.CommentPolicy;
 import com.safesphere.backend.social.entity.PostEnums.Daypart;
+import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.PostEnums.ModerationState;
 import com.safesphere.backend.social.entity.PostEnums.PostType;
 import com.safesphere.backend.social.entity.PostEnums.Precision;
 import jakarta.persistence.Column;
@@ -89,6 +91,26 @@ public class Post {
     @Column(name = "edited_at")
     private LocalDateTime editedAt;
 
+    // Phase 13D (V23): moderation. Written by the moderation package; social only reads them (the one Visibility rule).
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moderation", nullable = false, length = 9)
+    private ModerationState moderation = ModerationState.NONE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moderation_reason", length = 20)
+    private ModerationReason moderationReason;
+
+    @Column(name = "moderation_decision", length = 36)
+    private String moderationDecision;
+
+    /** A case about this post is open: an edit keeps the earlier text for the moderator (Q7). Never shown. */
+    @Column(name = "in_review", nullable = false)
+    private boolean inReview;
+
+    /** Q6: perspectives from people not connected with the author wait for the author's approval. */
+    @Column(name = "approve_first", nullable = false)
+    private boolean approveFirst;
+
     /** Required by JPA. */
     protected Post() {
     }
@@ -126,6 +148,44 @@ public class Post {
 
     public void markEdited(LocalDateTime now) {
         this.editedAt = now.truncatedTo(ChronoUnit.MICROS);
+    }
+
+    /**
+     * Phase 13D: a moderation state. [reason] and [decision] (the audit row's public id) are both null only for a
+     * collapse by independent reports and for NONE (V23 ck_posts_moderation_state).
+     */
+    public void moderate(ModerationState state, ModerationReason reason, String decision) {
+        this.moderation = state;
+        this.moderationReason = state == ModerationState.NONE ? null : reason;
+        this.moderationDecision = state == ModerationState.NONE ? null : decision;
+    }
+
+    public void setInReview(boolean inReview) {
+        this.inReview = inReview;
+    }
+
+    public void setApproveFirst(boolean approveFirst) {
+        this.approveFirst = approveFirst;
+    }
+
+    public ModerationState getModeration() {
+        return moderation;
+    }
+
+    public ModerationReason getModerationReason() {
+        return moderationReason;
+    }
+
+    public String getModerationDecision() {
+        return moderationDecision;
+    }
+
+    public boolean isInReview() {
+        return inReview;
+    }
+
+    public boolean isApproveFirst() {
+        return approveFirst;
     }
 
     public Long getId() {

@@ -62,7 +62,7 @@ public class ProfileService {
 
     @Transactional
     public OwnProfileResponse save(long userId, ProfileRequest request) {
-        access.requireMember(userId);
+        access.requireCanConnect(userId); // Phase 13D: a suspension also stops profile changes (M9)
         String handle = HandlePolicy.normalize(request.handle());
         switch (HandlePolicy.check(handle)) {
             case OK -> {

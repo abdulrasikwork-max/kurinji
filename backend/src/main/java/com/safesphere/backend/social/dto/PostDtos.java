@@ -31,7 +31,8 @@ public final class PostDtos {
             @Size(max = 12, message = "Unknown time of day") String daypart,
             @Size(max = 12, message = "Unknown audience") String audience,
             @Size(max = 12, message = "Unknown comment setting") String commentPolicy,
-            @Size(max = 6, message = "Add at most 6 photos") List<@Size(max = 40) String> mediaIds) {
+            @Size(max = 6, message = "Add at most 6 photos") List<@Size(max = 40) String> mediaIds,
+            Boolean approveFirst) {
     }
 
     /**
@@ -47,7 +48,16 @@ public final class PostDtos {
             @Size(max = 10, message = "Invalid month") String experiencedMonth,
             @Size(max = 12, message = "Unknown time of day") String daypart,
             @Size(max = 12, message = "Unknown audience") String audience,
-            @Size(max = 12, message = "Unknown comment setting") String commentPolicy) {
+            @Size(max = 12, message = "Unknown comment setting") String commentPolicy,
+            Boolean approveFirst) {
+    }
+
+    /**
+     * Phase 13D: what a moderator decided about the viewer's OWN post or perspective (never shown to anyone else):
+     * [state] COLLAPSED / HELD / REMOVED, [reason] a code (null for a collapse by independent reports while it waits for
+     * a moderator), [decisionId] the decision to ask a review of (null when no moderator has decided yet).
+     */
+    public record ModerationView(String state, String reason, String decisionId) {
     }
 
     /** The place of an EXACT post: its name only (its cell is in GET /api/places/{id}). */
@@ -64,13 +74,18 @@ public final class PostDtos {
      * Phase 13C: [yourButterfly] is the viewer's OWN Cocoon state for this post (null / WANT / BEEN), never anyone
      * else's; [butterflies] only for the author of an Experience shared with others (C2: a number from 3 people up),
      * null for everyone else.
+     * Phase 13D: [approveFirst] = perspectives from people not connected with the author wait for approval (Q6);
+     * [moderation] only for the author (null when nothing happened); [collapsed] for everyone else: null, UNDER_REVIEW
+     * (collapsed while a moderator looks at it) or BY_MODERATOR (a moderator decided to keep it collapsed). Nothing
+     * here says that anyone reported anything.
      */
     public record PostResponse(String publicId, String type, PersonSummary author, boolean own, String body, String tip,
                                String category, String precision, PostPlace place, String areaCell, String city,
                                String experiencedMonth, String daypart, String postedPeriod, boolean edited,
                                List<MediaRef> media, String audience, String commentPolicy, boolean canComment,
                                Instant postedAt, Instant visibleFrom, String yourButterfly,
-                               ButterflyTally butterflies) {
+                               ButterflyTally butterflies, boolean approveFirst, ModerationView moderation,
+                               String collapsed) {
     }
 
     /** One page of a list, newest first; [nextCursor] is null on the last page (more only on an explicit request). */

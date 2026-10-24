@@ -50,7 +50,7 @@ public class PlaceService {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public PlaceResponse create(long userId, PlaceRequest request) {
-        access.requireMember(userId);
+        access.requireCanPost(userId); // Phase 13D: a posting pause also stops new places (M9)
         limits.place(userId);
         String cell = request.cell().trim().toLowerCase(Locale.ROOT);
         if (!GeoCell.isValid(cell, GeoCell.BLOCK_PRECISION)) throw new InvalidRequestException("Invalid cell");

@@ -3,6 +3,7 @@ package com.safesphere.backend.moderation.entity;
 import com.safesphere.backend.community.entity.SignalCategory;
 import com.safesphere.backend.moderation.entity.ModerationEnums.ActionReason;
 import com.safesphere.backend.moderation.entity.ModerationEnums.ActionType;
+import com.safesphere.backend.moderation.entity.ModerationEnums.TargetKind;
 import com.safesphere.backend.user.entity.UserRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,6 +45,11 @@ public class ModerationAction {
 
     @Column(name = "case_ref", updatable = false, length = 36)
     private String caseRef;
+
+    /** Phase 13D (V23): what a social decision is about; null for every Phase 7 decision. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_kind", updatable = false, length = 7)
+    private TargetKind targetKind;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "signal_category", updatable = false, length = 30)
@@ -96,6 +102,32 @@ public class ModerationAction {
         entry.subjectUserId = subjectUserId;
         entry.newRole = newRole;
         return entry;
+    }
+
+    /**
+     * Phase 13D: a decision on a content case. [subjectUserId] = the author or the person concerned (who may appeal and
+     * whose account deletion removes the row, as for Phase 7 restrictions); null for a place merge. [until] only for a
+     * pause.
+     */
+    public static ModerationAction social(long actorId, ActionType action, ActionReason reason, String caseRef,
+                                          TargetKind kind, Long subjectUserId, LocalDateTime until,
+                                          LocalDateTime now) {
+        ModerationAction entry = new ModerationAction(actorId, action, reason, now);
+        entry.caseRef = caseRef;
+        entry.targetKind = kind;
+        entry.subjectUserId = subjectUserId;
+        entry.restrictedUntil = until;
+        return entry;
+    }
+
+    /** Phase 13D: the decision on an appeal about a social decision (keeps the appealed decision's target kind). */
+    public static ModerationAction socialAppeal(long actorId, ActionType action, String caseRef, TargetKind kind,
+                                                long subjectUserId, LocalDateTime now) {
+        return social(actorId, action, ActionReason.APPEAL_REVIEWED, caseRef, kind, subjectUserId, null, now);
+    }
+
+    public TargetKind getTargetKind() {
+        return targetKind;
     }
 
     public Long getId() {

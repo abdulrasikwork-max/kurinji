@@ -54,6 +54,10 @@ interface ExperienceApi {
     @POST("api/comments/{id}/unhide")
     suspend fun unhide(@Path("id") publicId: String)
 
+    /** Phase 13D (Q6). */
+    @POST("api/comments/{id}/approve")
+    suspend fun approve(@Path("id") publicId: String)
+
     @POST("api/comments/{id}/helped")
     suspend fun helped(@Path("id") publicId: String)
 

@@ -1,3 +1,25 @@
+# Handoff: Phase 13D moderation v2 done (2026-10-24/25)
+
+**13D implemented, compiled, tested, verified** (`docs/PHASE13D.md`; plan `PHASE13D_PLAN.md`, choices M1–M20 decided
+under the user's delegation): reports on posts, perspectives and people (closed reasons; the reported person observes
+nothing until 3 independent counting reports collapse the content, and is never told about reports); moderator
+decisions (keep, hide while reviewing, collapse, remove; remind, pause perspectives / posting, suspend), strikes that
+halve every 90 days, appeals to a different moderator on the shared appeals table; approve-first (Q6), edit history
+only during a case (Q7), place merging (API), 72 h probation; pauses never touch reading, blocking, reporting or safety.
+- **Results:** backend **694 run / 0 failures** (2 skipped; 13C 663); Android **657 / 0** (13C 641); lint **0 / 54**
+  (fresh run; 13C recorded 94, not compared like-for-like); V23 dry run **51/51 + 18/18**, applied (dev DB **v23**,
+  next **V24**); live MySQL **30/30**; emulator (API 37) **E1–E8 PASS**.
+- **Found and fixed:** two V23 CHECK gaps (MySQL lets an UNKNOWN CHECK pass) before applying; a reporting moderator
+  could decide the appeal; three emulator wording bugs; the 13C intermittent test failure (C-D7: random handle suffix
+  of digits made "mod" reserved).
+- **Follow-up (not done):** the same NULL weakness in V13 `ck_moderation_cases_state` (Phase 7, frozen).
+- **NOT VERIFIED:** real phone, TalkBack speech, dark mode, 320 dp / large fonts, the hourly job on a live server.
+- **State left:** backend and emulator stopped, `adb reverse` removed, all `live13d.*`/`emu13d.*` accounts and places
+  deleted (170 users as before); app data cleared on the emulator.
+- **Next:** the user's review of 13D; then the 13E plan (AI v1: normaliser, lexicon, linear model, Python service,
+  DecisionPolicy, image classifier, outcome counters).
+
+---
 # Handoff: Phase 13C intent and discovery done (2026-10-23)
 
 **13C implemented, compiled, tested, verified** (`docs/PHASE13C.md`; plan `PHASE13C_PLAN.md`, choices C1–C15 decided

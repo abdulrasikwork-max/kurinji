@@ -17,6 +17,7 @@ import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentPersonProfileBinding
 import com.safesphere.app.feature.social.domain.PersonProfile
 import com.safesphere.app.feature.social.domain.Relationship
+import com.safesphere.app.feature.social.domain.ReportTarget
 
 /**
  * Phase 13A: someone's profile. One main button follows the relationship: Connect, Accept (asking back connects),
@@ -31,6 +32,7 @@ class PersonProfileFragment :
     /** Phase 13B: the person's experiences the viewer may see (Q8: a deliberate visit shows them even when muted). */
     private val posts by viewModels<PostListViewModel> { PostListViewModel.factory(appContainer) }
     private val postAdapter = PersonRowAdapter()
+    private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -40,8 +42,25 @@ class PersonProfileFragment :
         binding.postList.adapter = postAdapter
         binding.showMoreButton.setOnClickListener { posts.onShowMore() }
         binding.shareExperienceButton.setOnClickListener { findNavController().navigate(R.id.composeFragment) }
+        binding.reportPersonButton.setOnClickListener {
+            val id = viewModel.uiState.value.person?.publicId ?: return@setOnClickListener
+            ReportDialogs.show(this, ReportTarget.PERSON) { reason, note -> reports.report(ReportTarget.PERSON, id, reason, note) }
+        }
         collectWhenStarted(viewModel.uiState, ::render)
         collectWhenStarted(posts.uiState, ::renderPosts)
+        collectWhenStarted(reports.uiState) { state ->
+            if (state.message == ReportMessage.REPORT_SENT) Toast.makeText(requireContext(), R.string.report_sent,
+                Toast.LENGTH_LONG).show()
+            if (state.message != null) reports.onMessageShown()
+            state.failure?.let {
+                Toast.makeText(requireContext(), it.toMessage(requireContext()), Toast.LENGTH_LONG).show()
+                reports.onFailureShown()
+            }
+            if (state.sessionExpired) {
+                reports.onSessionExpiredHandled()
+                showSessionExpiredDialog()
+            }
+        }
     }
 
     private fun renderPosts(state: PostListUiState) {
@@ -131,6 +150,7 @@ class PersonProfileFragment :
         binding.removeButton.isVisible = person.relationship == Relationship.CONNECTED
         binding.removeButton.isEnabled = !busy
         binding.moreActions.isVisible = !self
+        binding.reportPersonButton.isVisible = !self
         binding.muteButton.isEnabled = !busy
         binding.blockButton.isEnabled = !busy
     }

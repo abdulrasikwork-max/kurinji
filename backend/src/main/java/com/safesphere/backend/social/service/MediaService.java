@@ -62,7 +62,7 @@ public class MediaService {
 
     /** Reads at most the limit + 1 bytes (a longer body is refused without reading it all), sanitises, stores. */
     public Uploaded upload(long userId, InputStream body) {
-        access.requireMember(userId);
+        access.requireCanPost(userId); // Phase 13D: photos are posting (M9)
         limits.media(userId);
         byte[] input = readLimited(body, properties.maxMediaBytes());
         ImageSanitizer.Result clean;

@@ -19,9 +19,12 @@ public final class CommentDtos {
     /**
      * One perspective. [hidden] is true only for its writer and the post's author (Q5: "Hidden by the author"); nobody
      * else ever receives a hidden one. [canHide] / [canMarkHelped] tell the post's author which controls apply.
+     * Phase 13D: [awaitingApproval] only for its writer and the post's author (Q6; [canApprove] for the post's author);
+     * [moderation] only for its writer; [collapsed] for everyone else (null / UNDER_REVIEW / BY_MODERATOR).
      */
     public record CommentResponse(String publicId, String kind, PersonSummary author, boolean own, String body,
                                   String postedPeriod, boolean hidden, boolean helped, String parentId, boolean canHide,
-                                  boolean canMarkHelped) {
+                                  boolean canMarkHelped, boolean awaitingApproval, boolean canApprove,
+                                  PostDtos.ModerationView moderation, String collapsed) {
     }
 }

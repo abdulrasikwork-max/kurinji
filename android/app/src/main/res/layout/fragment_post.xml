@@ -93,6 +93,59 @@
                 android:layout_marginTop="@dimen/space_xs"
                 android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
 
+            <!-- Phase 13D: the author's amber notice about their own post (never red) and the review request. -->
+            <com.safesphere.app.core.ui.components.NoticeView
+                android:id="@+id/moderationNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:accessibilityLiveRegion="polite"
+                android:visibility="gone"
+                app:noticeText="@string/own_collapsed_while_reviewed"
+                app:noticeType="warning" />
+
+            <TextView
+                android:id="@+id/reviewLine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/reviewButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/review_ask"
+                android:visibility="gone" />
+
+            <!-- Phase 13D: someone else's collapsed post: why, and a tap to show it. -->
+            <LinearLayout
+                android:id="@+id/collapsedBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.safesphere.app.core.ui.components.NoticeView
+                    android:id="@+id/collapsedNotice"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:noticeText="@string/collapsed_under_review"
+                    app:noticeType="warning" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/showCollapsedButton"
+                    style="@style/Widget.SafeSphere.Button.Text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="@dimen/min_touch_target"
+                    android:text="@string/collapsed_show" />
+            </LinearLayout>
+
             <TextView
                 android:id="@+id/body"
                 android:layout_width="match_parent"
@@ -207,6 +260,15 @@
                 android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
             <TextView
+                android:id="@+id/approveFirstLine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/approve_first_line"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:visibility="gone" />
+
+            <TextView
                 android:id="@+id/perspectivesClosed"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -272,6 +334,16 @@
                     android:minHeight="@dimen/min_touch_target"
                     android:text="@string/social_send" />
             </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/reportPostButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/report_post"
+                android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/deletePostButton"

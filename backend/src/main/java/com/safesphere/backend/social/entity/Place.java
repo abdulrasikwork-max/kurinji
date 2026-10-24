@@ -71,6 +71,11 @@ public class Place {
         this.createdOn = createdOn;
     }
 
+    /** Phase 13D (M17): a moderator found this to be the same place as [placeId] (never itself; checked by the caller). */
+    public void mergeInto(long placeId) {
+        this.mergedInto = placeId;
+    }
+
     public City getCity() {
         return city;
     }
