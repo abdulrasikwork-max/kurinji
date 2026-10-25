@@ -455,7 +455,12 @@ public class ContentModerationService {
             this.caseReports = caseReports;
         }
 
+        /**
+         * The person concerned, a reporter, and (Phase 14) for a perspective the author of the post it was written on:
+         * they could hide it themselves and are a party to it, so they must not decide about its writer.
+         */
         boolean tookPart(long userId) {
+            if (c.getTargetKind() == TargetKind.COMMENT && post.getAuthorId() == userId) return true;
             return subjectId == userId || caseReports.stream().anyMatch(r -> r.getReporterId() == userId);
         }
 
@@ -725,13 +730,22 @@ public class ContentModerationService {
         strikes.deleteByDecision(id);
     }
 
-    /** A moderator who reported what a decision is about takes no part in its appeal either (conflict of interest). */
+    /**
+     * A moderator who reported what a decision is about takes no part in its appeal either (conflict of interest); nor,
+     * since Phase 14, the author of the post a perspective case was about (Loaded.tookPart).
+     */
     private boolean reportedIt(ModerationAction decision, long moderatorId) {
         if (decision.getCaseRef() == null) return false;
         return cases.findByPublicId(decision.getCaseRef())
                 .map(c -> reports.findByCaseIdOrderByCreatedAtAscIdAsc(c.getId()).stream()
-                        .anyMatch(r -> r.getReporterId() == moderatorId))
+                        .anyMatch(r -> r.getReporterId() == moderatorId) || postAuthorOfComment(c, moderatorId))
                 .orElse(false);
+    }
+
+    private boolean postAuthorOfComment(ContentCase c, long userId) {
+        if (c.getTargetKind() != TargetKind.COMMENT || c.getCommentId() == null) return false;
+        return comments.findById(c.getCommentId()).flatMap(comment -> posts.findById(comment.getPostId()))
+                .map(post -> post.getAuthorId() == userId).orElse(false);
     }
 
     /** Whether the person may still ask for a review of [d] (no appeal yet is checked by the caller). */

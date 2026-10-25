@@ -20,13 +20,18 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Phase 13A: blocks and mutes, both private to their owner and never told to the other person.
  *
- * A block makes the two invisible to each other in both directions (the one Visibility rule) and, in the same
- * transaction, removes their connection and any request between them, whoever sent it. Blocking is a protective act, so
+ * A block makes the two invisible to each other in both directions (the one Visibility rule) and then removes their
+ * connection and any request between them, whoever sent it. The block row is written first, on its own (Phase 14): the
+ * same block sent twice at once used to break the unique key inside the one transaction and answer 500; now the second
+ * finds the row, and from the moment it exists the Visibility rule already hides everything. Blocking is a protective act, so
  * it works on anyone whose profile id the caller has, even someone who already blocked them. A mute only stops the
  * caller seeing someone's content (from 13B on); the muted person is not affected.
  */
@@ -43,9 +48,12 @@ public class BlockService {
     private final ProfileRepository profiles;
     private final SocialAccess access;
     private final Clock clock;
+    private final TransactionTemplate inTransaction;
 
     public BlockService(BlockRepository blocks, MuteRepository mutes, ConnectionRepository connections,
-                        ProfileRepository profiles, SocialAccess access, Clock clock) {
+                        ProfileRepository profiles, SocialAccess access, Clock clock,
+                        PlatformTransactionManager transactions) {
+        this.inTransaction = new TransactionTemplate(transactions);
         this.blocks = blocks;
         this.mutes = mutes;
         this.connections = connections;
@@ -54,20 +62,20 @@ public class BlockService {
         this.clock = clock;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void block(long userId, String profileId) {
         access.requireMember(userId);
         long otherId = target(profileId);
         if (otherId == userId) throw new InvalidRequestException(SELF_BLOCK);
-        connections.findPairForUpdate(Math.min(userId, otherId), Math.max(userId, otherId))
-                .ifPresent(connections::delete);
         if (blocks.findByBlockerIdAndBlockedId(userId, otherId).isEmpty()) {
             try {
-                blocks.saveAndFlush(new Block(userId, otherId, now()));
+                blocks.saveAndFlush(new Block(userId, otherId, now())); // its own transaction
             } catch (DataIntegrityViolationException e) {
                 // The same block arrived twice at once: it exists, which is what was asked.
             }
         }
+        inTransaction.executeWithoutResult(s -> connections.findPairForUpdate(Math.min(userId, otherId),
+                Math.max(userId, otherId)).ifPresent(connections::delete));
     }
 
     @Transactional
@@ -85,7 +93,8 @@ public class BlockService {
         return summaries(blocks.findByBlockerIdOrderByCreatedAtDesc(userId).stream().map(Block::getBlockedId).toList());
     }
 
-    @Transactional
+    /** Not in a transaction of its own, for the same reason as [block]: a double tap must not answer 500. */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void mute(long userId, String profileId) {
         access.requireMember(userId);
         long otherId = target(profileId);

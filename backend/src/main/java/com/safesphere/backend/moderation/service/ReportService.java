@@ -24,6 +24,7 @@ import com.safesphere.backend.social.policy.PostPolicy;
 import com.safesphere.backend.social.policy.TimeBands;
 import com.safesphere.backend.social.repository.CommentRepository;
 import com.safesphere.backend.social.repository.PostRepository;
+import com.safesphere.backend.social.repository.ProfileRepository;
 import com.safesphere.backend.social.repository.SocialStandingRepository;
 import com.safesphere.backend.social.service.CommentService;
 import com.safesphere.backend.social.service.PostService;
@@ -44,10 +45,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Phase 13D: reports about posts, perspectives and people (EXPERIENCE_PLATFORM_DESIGN.md §8.3, §4.6; plan M3-M6).
@@ -78,11 +84,19 @@ public class ReportService {
     private final ModerationProperties properties;
     private final Clock clock;
     private final AttemptLimiter limiter;
+    private final TransactionTemplate inTransaction;
+    private final ProfileRepository profiles;
 
     public ReportService(ContentCaseRepository cases, ContentReportRepository reports, PostRepository posts,
                          CommentRepository comments, SocialStandingRepository standings, PostService postService,
                          CommentService commentService, ProfileService profileService, SocialAccess access,
-                         ModerationProperties properties, Clock clock) {
+                         ModerationProperties properties, Clock clock, PlatformTransactionManager transactions,
+                         ProfileRepository profiles) {
+        this.inTransaction = new TransactionTemplate(transactions);
+        // Read committed: after waiting for the target's lock, the queries see what the previous report committed
+        // (under MySQL's default repeatable read they would still read the snapshot from before the wait).
+        this.inTransaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+        this.profiles = profiles;
         this.cases = cases;
         this.reports = reports;
         this.posts = posts;
@@ -97,8 +111,25 @@ public class ReportService {
         this.limiter = new AttemptLimiter(properties.reportsPerDay(), Duration.ofDays(1), 100_000, clock);
     }
 
-    @Transactional
+    /**
+     * Phase 14: one transaction per attempt. Two reports arriving together (two people opening the same case, or the
+     * same person sending twice) deadlocked on MySQL's unique indexes (measured live) or broke a unique key. Each
+     * attempt now first locks the reported row, so reports about one target run one after the other and each sees the
+     * case and reports before it. If a transaction still loses a race it is unusable, so the report is tried again in
+     * a new one (at most three attempts), which answers the same 202.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public ReportReceived report(long reporterId, ReportRequest request) {
+        for (int attempt = 1; ; attempt++) {
+            try {
+                return inTransaction.execute(s -> reportOnce(reporterId, request));
+            } catch (DataIntegrityViolationException | ConcurrencyFailureException raced) {
+                if (attempt == 3) throw raced;
+            }
+        }
+    }
+
+    private ReportReceived reportOnce(long reporterId, ReportRequest request) {
         User reporter = access.requireMember(reporterId); // a pause never stops reporting
         TargetKind kind = parse(TargetKind.class, request.targetKind(), "Choose what to report");
         if (kind == TargetKind.PLACE) throw new InvalidRequestException("Choose what to report");
@@ -118,6 +149,7 @@ public class ReportService {
             case POST -> {
                 Post post = postService.requireVisible(reporterId, request.targetId(), now);
                 if (post.getAuthorId() == reporterId) throw new InvalidRequestException(OWN_CONTENT);
+                posts.lockById(post.getId());
                 if (reports.existsByReporterIdAndPostId(reporterId, post.getId())) return received();
                 limit(reporterId);
                 open = openCase(() -> cases.findByPostIdAndStatus(post.getId(), CaseStatus.OPEN),
@@ -130,6 +162,7 @@ public class ReportService {
             case COMMENT -> {
                 Comment comment = commentService.requireVisible(reporterId, request.targetId(), now);
                 if (comment.getAuthorId() == reporterId) throw new InvalidRequestException(OWN_CONTENT);
+                comments.lockById(comment.getId());
                 if (reports.existsByReporterIdAndCommentId(reporterId, comment.getId())) return received();
                 limit(reporterId);
                 open = openCase(() -> cases.findByCommentIdAndStatus(comment.getId(), CaseStatus.OPEN),
@@ -139,6 +172,7 @@ public class ReportService {
                 Profile profile = profileService.requireVisible(reporterId, request.targetId());
                 long personId = profile.getUserId();
                 if (personId == reporterId) throw new InvalidRequestException(OWN_CONTENT);
+                profiles.lockById(profile.getId());
                 if (reports.existsByReporterIdAndPersonId(reporterId, personId)) return received();
                 limit(reporterId);
                 open = openCase(() -> cases.findByPersonIdAndStatus(personId, CaseStatus.OPEN),
@@ -235,13 +269,8 @@ public class ReportService {
 
     /** The open case about a target, or a new one (a concurrent first report gets the other's case). */
     private ContentCase openCase(Finder finder, Maker maker) {
-        Optional<ContentCase> existing = finder.find();
-        if (existing.isPresent()) return existing.get();
-        try {
-            return cases.saveAndFlush(maker.make());
-        } catch (DataIntegrityViolationException e) {
-            return finder.find().orElseThrow(() -> e);
-        }
+        // A simultaneous second case breaks the one-open-case key; report() then tries again (Phase 14).
+        return finder.find().orElseGet(() -> cases.saveAndFlush(maker.make()));
     }
 
     private void limit(long reporterId) {

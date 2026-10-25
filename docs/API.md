@@ -1124,3 +1124,14 @@ check never removes anything and never restricts a person.
   `job-interval` PT5M.
 - ADMIN `GET /api/admin/evaluation` lists the new weekly counters `AI_CHECKED` (`{action}.{rule}`) and `AI_REVIEWED`
   (`{state}.{decision}`), version `lex-1`.
+
+
+## Phase 14 (security audit, `docs/PHASE14.md`): no new endpoint or field
+
+- `GET /api/profiles/{id}/posts` (someone else's posts) is now ordered and paged newest **visible** first
+  (`visible_from`, id), like every other list of others' posts; the cursor is still a post id. Your own list
+  (`/api/posts/mine`, or your own profile) keeps creation order.
+- `POST /api/reports` keeps answering the same 202 when two reports arrive at once (also the same person twice);
+  `POST /api/blocks` / `POST /api/mutes` sent twice at once both answer 204 (were 500).
+- Moderators: on a perspective case, the author of the post it was written on now counts as taking part
+  (`youTookPart: true`, 403 on detail / actions / photos, and kept out of that decision's appeal).

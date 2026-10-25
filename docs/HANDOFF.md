@@ -1,4 +1,21 @@
-# Handoff: Phase 13F complete (2026-10-25) — two local commits, NOT pushed
+# Handoff: Phase 14 security, privacy and abuse-resistance audit (2026-10-26) — one local commit, NOT pushed
+
+**Implemented, compiled, tested, live-verified on MySQL** (`docs/PHASE14.md`). Audit only: no feature, no migration
+(next still **V25**), no new dependency, no Android change.
+- **Findings (all Low, all fixed, regression tests in `backend/src/test/.../audit/Phase14SecurityRegressionTest`):**
+  P14-1 others' profile post list ordered by `created_at` revealed the time the Q1 delay hides (now `visible_from`);
+  P14-2 a moderator could decide a case (and appeal) about a perspective on their own post (now "took part");
+  P14-3 simultaneous blocks/mutes answered 500, and on MySQL simultaneous reports deadlocked → 500 / lost report
+  (now: block row on its own; reports lock the target row in a READ COMMITTED transaction + up to 3 attempts).
+  No Critical / High / Medium.
+- **Results:** backend **728 / 0** (2 skipped); Android **686 / 0**; lint **0 / 94**; Python **38 / 38**; live MySQL
+  **7/7** (earlier failing runs disclosed in PHASE14 §4).
+- **Recommendations (not changed):** scope the token to the API host in `AuthInterceptor`; body-size and upload
+  concurrency limits on the HTTPS proxy (D12); token encryption on the phone (A14); V13 NULL CHECK (V25).
+- **State left:** backend stopped; all `live14.*` accounts deleted (users 170 as before); no key or password in files.
+- **Next:** the user's review and push (GitHub Desktop); then the A23 sprint (D10) / 13R.
+
+---# Handoff: Phase 13F complete (2026-10-25) — two local commits, NOT pushed
 
 **Second step (same day, the user's request):** the **Ready check** "Before you need it" in You → Safety (Safety Circle
 people from the phone's offline copy, refreshed when the hub opens; automatic SMS on / off / permission / not

@@ -295,7 +295,7 @@ public class PostService {
         if (audiences.isEmpty()) return new PostPage(List.of(), null);
         Post after = cursor(cursor, viewerId, ownerId, now);
         List<Post> page = posts.visiblePage(ownerId, audiences, Visibility.visibleStates(facts), now,
-                after == null ? END : after.getCreatedAt(),
+                after == null ? END : after.getVisibleFrom(),
                 after == null ? Long.MAX_VALUE : after.getId(), PageRequest.of(0, PAGE_SIZE + 1));
         return page(viewerId, page, now);
     }

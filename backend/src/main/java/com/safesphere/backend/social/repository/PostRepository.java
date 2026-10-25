@@ -5,12 +5,14 @@ import com.safesphere.backend.social.entity.PostEnums.Audience;
 import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.entity.PostEnums.ModerationState;
 import com.safesphere.backend.social.entity.PostEnums.PostType;
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,6 +25,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     Optional<Post> findByPublicId(String publicId);
 
+    /** Phase 14: locks the row, so that reports about one post are handled one after the other (ReportService). */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Post p WHERE p.id = :id")
+    Optional<Post> lockById(@Param("id") long id);
+
     @Query("SELECT p FROM Post p WHERE p.authorId = :author"
             + " AND (p.createdAt < :cursorAt OR (p.createdAt = :cursorAt AND p.id < :cursorId))"
             + " ORDER BY p.createdAt DESC, p.id DESC")
@@ -31,12 +38,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     /**
      * Someone's posts another viewer may see: audiences from Visibility.visibleAudiences, moderation states from
-     * Visibility.visibleStates (13D), delay over.
+     * Visibility.visibleStates (13D), delay over. Phase 14: ordered and paged by visible_from, like every other list
+     * of others' posts; ordering by created_at placed a delayed exact-place post below a later post and so told the
+     * viewer when it was really written (the Q1 delay hides exactly that).
      */
     @Query("SELECT p FROM Post p WHERE p.authorId = :author AND p.audience IN :audiences AND p.visibleFrom <= :now"
             + " AND p.moderation IN :states"
-            + " AND (p.createdAt < :cursorAt OR (p.createdAt = :cursorAt AND p.id < :cursorId))"
-            + " ORDER BY p.createdAt DESC, p.id DESC")
+            + " AND (p.visibleFrom < :cursorAt OR (p.visibleFrom = :cursorAt AND p.id < :cursorId))"
+            + " ORDER BY p.visibleFrom DESC, p.id DESC")
     List<Post> visiblePage(@Param("author") long author, @Param("audiences") Collection<Audience> audiences,
                            @Param("states") Collection<ModerationState> states,
                            @Param("now") LocalDateTime now, @Param("cursorAt") LocalDateTime cursorAt,
