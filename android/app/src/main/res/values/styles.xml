@@ -209,21 +209,6 @@
         <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
-    <!-- Small label on hero panels -->
-    <style name="Widget.SafeSphere.Badge.OnHero" parent="">
-        <item name="android:background">@drawable/bg_chip_on_hero</item>
-        <item name="android:paddingStart">@dimen/chip_padding_horizontal</item>
-        <item name="android:paddingEnd">@dimen/chip_padding_horizontal</item>
-        <item name="android:paddingTop">@dimen/chip_padding_vertical</item>
-        <item name="android:paddingBottom">@dimen/chip_padding_vertical</item>
-        <item name="android:textAppearance">@style/TextAppearance.SafeSphere.StatusLabel</item>
-        <item name="android:textColor">?attr/colorOnHero</item>
-    </style>
-
-    <style name="Widget.SafeSphere.Divider" parent="">
-        <item name="android:background">?attr/colorOutlineVariant</item>
-    </style>
-
     <!-- Phase 13A: section headings and "nothing here" lines of the social screens.
          values-v28/styles.xml adds accessibilityHeading (API 28+) to the heading style. -->
     <style name="SocialSectionTitle" parent="">

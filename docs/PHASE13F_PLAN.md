@@ -1,7 +1,7 @@
 # Phase 13F — Kurinji UI/UX, safety integration and final integration: plan
 
-**Results: `docs/PHASE13F.md`** (implemented, compiled, tested, emulator-verified 2026-10-25; Ready check F12 not
-built, deviations 13F-D1–D9).
+**Results: `docs/PHASE13F.md`** (implemented, compiled, tested, emulator-verified 2026-10-25, including the Ready check
+F12 and the unused-resource clean-up; deviations 13F-D1–D9).
 
 **Date:** 2026-10-25 · **Status: approved by the user 2026-10-25 with F1–F4 as recommended** (Kurinji visible now;
 fonts downloaded; SOS shortcut/tile start the countdown; Heads-up = editable note, no location). F5–F21 decided under

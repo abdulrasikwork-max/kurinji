@@ -1,14 +1,24 @@
 package com.safesphere.app.feature.safety.ui
 
+import android.Manifest
 import android.app.StatusBarManager
 import android.content.ComponentName
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.drawable.Icon
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.viewModels
+import com.google.android.material.color.MaterialColors
+import com.safesphere.app.databinding.ItemReadyRowBinding
 import com.safesphere.app.feature.emergency.entry.SosTileService
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
@@ -31,6 +41,7 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
 
     /** The same instance as the banner host's (MainActivity), so the card and the banners never disagree. */
     private val session by activityViewModels<SessionStatusViewModel> { SessionStatusViewModel.factory(appContainer) }
+    private val ready by viewModels<ReadyCheckViewModel> { ReadyCheckViewModel.factory(appContainer) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -43,6 +54,7 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
             binding.statusCard.isVisible = content != null
             if (content != null) binding.statusCard.setContent(content)
         }
+        collectWhenStarted(ready.rows, ::renderReady)
 
         if (savedInstanceState == null) {
             Motion.revealInSequence(listOf(binding.headerBlock, binding.statusCard, binding.sosTile, binding.featureList))
@@ -52,6 +64,55 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
     override fun onStart() {
         super.onStart()
         session.onScreenVisible()
+        // Back from Settings or the Safety Circle: read the answers again.
+        val context = requireContext()
+        fun granted(permission: String) =
+            ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        ready.refresh(
+            locationAllowed = granted(Manifest.permission.ACCESS_FINE_LOCATION) ||
+                granted(Manifest.permission.ACCESS_COARSE_LOCATION),
+            notificationsAllowed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+                granted(Manifest.permission.POST_NOTIFICATIONS) else null
+        )
+    }
+
+    /** Phase 13F (F12): the Ready check, one row per fact; the icon's shape and the spoken mark carry the state too. */
+    private fun renderReady(rows: List<ReadyRow>) {
+        binding.readyCard.isVisible = rows.isNotEmpty()
+        val list = binding.readyList
+        list.removeAllViews()
+        val inflater = LayoutInflater.from(list.context)
+        for (row in rows) {
+            val item = ItemReadyRowBinding.inflate(inflater, list, false)
+            val fact = if (row.count != null) resources.getQuantityString(row.fact, row.count, row.count) else getString(row.fact)
+            item.fact.text = fact
+            val (icon, tint, mark) = when (row.mark) {
+                ReadyMark.SET -> Triple(R.drawable.ic_check_circle, androidx.appcompat.R.attr.colorPrimary, R.string.cd_ready_set)
+                ReadyMark.CHOICE -> Triple(R.drawable.ic_info, com.google.android.material.R.attr.colorOnSurfaceVariant,
+                    R.string.cd_ready_choice)
+                ReadyMark.NEEDS_ATTENTION -> Triple(R.drawable.ic_warning, R.attr.colorCaution, R.string.cd_ready_attention)
+            }
+            item.icon.setImageResource(icon)
+            item.icon.imageTintList = ColorStateList.valueOf(MaterialColors.getColor(item.icon, tint))
+            item.root.contentDescription = getString(mark) + ". " + fact
+            item.root.isFocusable = true
+            val action = row.action
+            item.action.isVisible = action != null
+            if (action != null) {
+                item.action.setText(when (action) {
+                    ReadyAction.OPEN_SAFETY_CIRCLE -> R.string.ready_action_circle
+                    ReadyAction.OPEN_APP_SETTINGS -> R.string.ready_action_settings
+                })
+                item.action.setOnClickListener {
+                    when (action) {
+                        ReadyAction.OPEN_SAFETY_CIRCLE -> findNavController().navigate(R.id.safetyCircleFragment)
+                        ReadyAction.OPEN_APP_SETTINGS -> startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", requireContext().packageName, null)))
+                    }
+                }
+            }
+            list.addView(item.root)
+        }
     }
 
     private fun featureItems(): List<FeatureItem> {

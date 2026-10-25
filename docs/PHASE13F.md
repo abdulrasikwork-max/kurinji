@@ -1,6 +1,7 @@
 # Phase 13F — Kurinji UI/UX, safety integration and final integration: results
 
-**Date:** 2026-10-25 · **Status: implemented, compiled, tested, emulator-verified (API 37) for the flows in §4;
+**Date:** 2026-10-25 (Ready check and resource clean-up added the same day) · **Status: complete as planned
+(F1–F21); implemented, compiled, tested, emulator-verified (API 37) for the flows in §4;
 real phone, TalkBack speech by finger and the remaining items in §6 NOT VERIFIED.** Plan: `docs/PHASE13F_PLAN.md`
 (approved by the user 2026-10-25 with F1–F4 as recommended; F5–F21 decided under the delegation). Visual direction:
 `docs/design/kurinji-13f-direction.html`. **Android only: no backend change, no migration (next stays V25).**
@@ -44,7 +45,7 @@ once and shows a one-time notice.
 
 | # | Plan | Built | Why |
 |---|---|---|---|
-| 13F-D1 | F12 Ready check in the hub | **Not built** (follow-up) | Scope/context; the hub lists every tool and the tile/shortcut. Nothing half-built is shown |
+| 13F-D1 | F12 Ready check in the hub | **Built in a second step (2026-10-25), titled "Before you need it"** (`ReadyCheck` pure, `ReadyCheckViewModel`): Safety Circle people (the phone's offline copy, refreshed from the server when the hub opens), automatic SMS on / off / permission missing / not supported, location, notifications (Android 13+), and how to reach SOS quickly. Marks: set / your choice / needs a look (icon shape + spoken word); buttons open the Safety Circle or the app's settings. No verdict ("ready", "safe", "protected") | The user asked to finish 13F with it; "Before you need it" states what will happen instead of grading the person |
 | 13F-D2 | Display text with a Tamil fallback face on Android 10+ | System fallback only | Young Serif has no Tamil; per-view typeface code everywhere was not worth it now |
 | 13F-D3 | Composer "type cards" | The existing chips, restyled | The live postmark carried the value; the ViewModel is untouched |
 | 13F-D4 | — | Theme `android:fontFamily` replaced by a default `textViewStyle` | **Emulator finding:** a theme font overrode every text appearance (headlines lost the serif) |
@@ -58,8 +59,8 @@ once and shows a one-time notice.
 
 | Check | Result |
 |---|---|
-| Android `testDebugUnitTest` (final code) | **682 run, 0 failures** (13E: 677; Rise's own tests removed with Rise) |
-| Android `lintDebug` | **0 errors / 144 warnings** (13E: 54): 49 `UnusedResources` (leftovers of the retired Home/Profile/Rise screens: follow-up clean-up), 31 `UnusedAttribute` (`accessibilityHeading` below API 28), 39 `GradleDependency` notices |
+| Android `testDebugUnitTest` (final code, after the Ready check and the clean-up) | **686 run, 0 failures** (first 13F commit: 682; 13E: 677; Rise's own tests removed with Rise) |
+| Android `lintDebug` (final code) | **0 errors / 94 warnings, 0 `UnusedResources`** (first 13F commit: 144 with 49 unused leftovers of Home/Profile/Rise, all removed: 40 strings, 3 dimens, 2 styles, 4 drawables). Remaining: 39 `GradleDependency` notices, 31 `UnusedAttribute` (`accessibilityHeading` below API 28), older items in pre-13F layouts |
 | Backend, Python | Not changed, not re-run |
 
 New or rewritten tests: `ContrastTest` (every text pair ≥ 4.5:1, control edges ≥ 3:1, day and night), `KurinjiTextsTest`
@@ -69,7 +70,8 @@ reading screens only, banners never on the SOS screen, SOS entries from any sign
 word), `GoingThereTest` (bridge imports neither side; social ↔ safety never import each other; Heads-up has no
 location/link; SOS entry not exported; only MainActivity sets auto-start; request used once, expires, distrusts a
 clock going back), `RiseRetirementTest`, `SessionStatusViewModelTest` + `SafetyHubTextsTest` (moved from Home),
-`HonestyTextsTest` and `CircleMessagesTest` updated.
+`HonestyTextsTest` and `CircleMessagesTest` updated; `ReadyCheckTest` (rows per input, buttons only where a screen
+changes the fact, automatic SMS off is a choice, an unread Circle copy is never reported as empty, no verdict words).
 
 ## 4. Emulator walk-through (AVD `Medium_Phone_API_37.0`, backend on MySQL v24, throwaway `emu13f.*` accounts)
 
@@ -88,6 +90,9 @@ clock going back), `RiseRetirementTest`, `SessionStatusViewModelTest` + `SafetyH
 | E11 | Dark mode (Kurinji night) on Discover | PASS |
 | E12 | 320 dp with 1.3× / 2.0× text: Discover and You readable | PASS after 13F-D6 |
 | E13 | Composer opened from the Share disc (no bottom bar), new header | PASS (the live postmark and the stamp animation were not exercised on the emulator) |
+| E14 | Ready check on a fresh account: "No one is in your Safety Circle…" (needs a look), automatic SMS off (your choice), location not allowed, notifications off, quick-SOS line; buttons shown only where something can be changed | PASS |
+| E15 | A contact added through the API → reopening the hub refreshes the phone's copy: "Set. 1 person is in your Safety Circle on this phone." (spoken mark included) | PASS |
+| E16 | "Open app settings" opens Android's page for Kurinji | PASS |
 
 **State left:** test accounts deleted (users 174 → 170, as before the walk-through), the test place and photo files
 removed, the app's data cleared, the tile removed, `adb reverse` removed, emulator and backend stopped, emulator size,
@@ -111,8 +116,9 @@ density, font scale and night mode restored.
 Real phone (A23 sprint, D10); TalkBack speech by finger (labels checked through the accessibility tree only); the
 butterfly flight, emergence and stamp animations frame by frame and on low-end hardware; the live composer postmark;
 the launcher shortcut (the tile path was verified); the tile on a locked device; Android 13 "Add SOS to Quick
-Settings" dialog; Tamil text at 2.0× in headlines. **Not built:** Ready check (13F-D1), unused-resource clean-up,
-Safe Walk local start (its own plan, D10), Tamil UI (V2). D1 trademark, domain and store checks are still open.
+Settings" dialog; Tamil text at 2.0× in headlines; the Ready check with automatic SMS switched on (the emulator
+account had it off). **Not built:** Safe Walk local start (its own plan, D10), Tamil UI (V2). D1 trademark, domain and
+store checks are still open.
 
 ## 7. Viva notes
 

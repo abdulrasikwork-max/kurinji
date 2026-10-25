@@ -14,11 +14,9 @@
     <string name="badge_concern">Concern</string>
 
     <!-- Navigation titles -->
-    <string name="nav_home">Home</string>
     <string name="nav_safety">Safety</string>
     <!-- Phase 10A: "Nearby", not "Community": it shows places, not people (there is no community feed) -->
     <string name="nav_community">Nearby</string>
-    <string name="nav_profile">Profile</string>
     <string name="title_register">Create account</string>
     <string name="title_forgot_password">Reset password</string>
     <string name="title_settings">Settings</string>
@@ -37,8 +35,6 @@
 
     <!-- Accessibility descriptions -->
     <string name="cd_app_logo">Kurinji logo</string>
-    <string name="cd_open_profile">Open profile</string>
-    <string name="cd_profile_photo_placeholder">Profile photo placeholder</string>
     <string name="cd_menu_item_coming_soon">%1$s, coming soon</string>
     <string name="cd_onboarding_page">Page %1$d of %2$d</string>
     <string name="cd_status_card">Right now: %1$s. %2$s %3$s</string>
@@ -115,9 +111,7 @@
 
     <!-- Features (shared by Home, Safety Center and Profile) -->
     <string name="feature_sos_title">SOS</string>
-    <string name="feature_sos_description">Start an emergency session; your Safety Circle is texted if you switched on automatic SMS</string>
     <string name="feature_safe_walk_title">Safe Walk</string>
-    <string name="feature_safe_walk_description">Regular check-ins while you travel, plus checks for unusual stops and leaving your route.</string>
     <string name="feature_safety_circle_title">Safety Circle</string>
     <string name="feature_safety_circle_description">People you choose to keep in the loop</string>
     <string name="feature_evidence_vault_title">Evidence Vault</string>
@@ -128,10 +122,6 @@
     <string name="feature_safety_settings_description">Account, privacy, permissions and notifications</string>
 
     <!-- Home: Safety Command Center -->
-    <string name="greeting_morning">Good morning</string>
-    <string name="greeting_afternoon">Good afternoon</string>
-    <string name="greeting_evening">Good evening</string>
-    <string name="greeting_with_name">%1$s, %2$s</string>
     <!-- Home status card: only facts this phone knows (an SOS, a Safe Walk, or neither). It never says a place or a
          person is safe (docs/PHASE8_DESIGN.md §6.4); HomeTextsTest checks every string Home shows. -->
     <string name="status_overline">Right now</string>
@@ -147,14 +137,8 @@
     <string name="status_missed_label">Check-in missed</string>
     <string name="status_missed_headline">Open Safe Walk to answer.</string>
     <string name="status_missed_detail">Tell Kurinji you are OK, or start SOS if you need help.</string>
-    <string name="section_quick_actions">Quick actions</string>
     <string name="sos_subtitle">Emergency help</string>
     <string name="sos_badge_countdown">5 s to cancel</string>
-    <string name="section_nearby">Nearby</string>
-    <string name="nearby_overline">Your area</string>
-    <string name="nearby_message">Find the nearest safe places to head for, and what people noticed around you.</string>
-    <string name="cd_nearby_card">Nearby. Opens Nearby.</string>
-    <string name="privacy_reassurance">Your safety data stays under your control. Nobody can use Kurinji to track you.</string>
     <!-- Phase 10A.3: Home banner while an account deletion is pending (opens Account) -->
     <string name="cd_home_deletion_banner">%1$s Opens Account and security.</string>
 
@@ -350,7 +334,6 @@
         <item quantity="one">%d day</item>
         <item quantity="other">%d days</item>
     </plurals>
-    <string name="moderation_confirm_title">Record this decision?</string>
     <string name="moderation_confirm_restrict">This person will not be able to report, confirm or flag for %1$s. They can still see signals and use SOS and every safety feature. They can ask another moderator to review it.</string>
     <string name="moderation_confirm_remove">The signal is hidden and its reports are deleted. A report aimed at someone or spam counts against its reporters.</string>
     <string name="moderation_confirm_dismiss">The signal stays visible and these flags are closed.</string>
@@ -393,16 +376,6 @@
     <string name="coordination_confirm_pause_group">Every account in this group will not be able to report, confirm or flag for %1$s. People who only flagged this place are not included. They can all still see signals and use SOS and every safety feature, and each of them can ask another moderator to review it. Backing each other is not proof on its own.</string>
 
     <!-- Safety Profile -->
-    <string name="profile_title">Safety Profile</string>
-    <string name="profile_name_fallback">Not signed in</string>
-    <string name="profile_email_fallback">No email available</string>
-    <string name="profile_status_signed_in">Signed in</string>
-    <string name="section_your_safety">Your safety</string>
-    <string name="section_privacy_app">Privacy and app</string>
-    <string name="profile_activity_title">Emergency History</string>
-    <string name="profile_activity_description">Your past SOS sessions and their details</string>
-    <string name="profile_contributions_title">Your Nearby reports</string>
-    <string name="profile_contributions_description">What you shared or confirmed about places; withdraw it at any time</string>
     <string name="profile_account_title">Account and security</string>
     <string name="profile_account_description">Change your password or delete your account</string>
     <string name="profile_privacy_title">Privacy notice</string>
@@ -502,8 +475,6 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- ===== Phase 3: shared ===== -->
     <string name="badge_primary">Primary</string>
     <string name="badge_disabled">Disabled</string>
-    <string name="badge_open">Open</string>
-    <string name="cd_quick_action_open">%1$s. Opens this screen.</string>
     <string name="action_edit">Edit</string>
     <string name="action_remove">Remove</string>
     <string name="action_save">Save</string>
@@ -1043,8 +1014,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="title_connections">Connections</string>
     <string name="title_person_profile">Profile</string>
     <string name="title_blocked_muted">Blocked and muted</string>
-    <string name="profile_social_title">Your profile and connections</string>
-    <string name="profile_social_description">Your handle, the people you are connected with, invite codes, blocks and mutes.</string>
 
     <string name="social_age_title">Confirm your age</string>
     <string name="social_age_body">Profiles and connections are for people aged 18 and over. Your date of birth is only used to check your age and is not stored.</string>
@@ -1175,7 +1144,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_experiences_empty">Nothing shared here yet.</string>
     <string name="social_my_posts_empty">You have not shared anything yet. Share something you did, written for the next person.</string>
     <string name="social_show_more">Show more</string>
-    <string name="social_open_post">Open this post</string>
 
     <string name="social_type_experience">Experience</string>
     <string name="social_type_ask">Ask</string>
@@ -1271,7 +1239,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_band_this_month">Shared this month</string>
     <string name="social_band_earlier">Shared earlier</string>
     <string name="social_edited">Edited</string>
-    <string name="social_tip_title">Tip for the next person</string>
     <string name="social_ask_badge">Ask</string>
     <string name="social_by_line">By %1$s</string>
     <string name="social_own_audience_line">Who can see it: %1$s</string>
@@ -1321,7 +1288,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="title_discover">Discover</string>
     <string name="title_cocoon">Your Cocoon</string>
     <string name="title_post_collection">Experiences</string>
-    <string name="discover_open">Discover</string>
     <string name="cocoon_open">Your Cocoon</string>
     <string name="butterfly_want">Want to go</string>
     <string name="butterfly_want_description">Want to experience this. Saves to Cocoon.</string>
@@ -1354,17 +1320,13 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="cocoon_saved_earlier">Saved earlier</string>
     <string name="discover_tab_edition">This week\'s edition</string>
     <string name="discover_tab_connections">From your connections</string>
-    <string name="discover_choose_city">Choose a city for the edition</string>
     <string name="discover_city_hint">Your profile does not name one of these cities, so choose one. It is not saved.</string>
-    <string name="discover_edition_heading">%1$s · week of %2$s</string>
-    <string name="discover_theme_line">This week\'s theme: %1$s</string>
     <string name="discover_section_city">New in %1$s</string>
     <string name="discover_section_asks">Asks you could answer</string>
     <string name="discover_section_theme">This week\'s theme</string>
     <string name="discover_edition_end">That\'s this week\'s edition. Go make your own.</string>
     <string name="discover_edition_empty">Nothing in this week\'s edition yet. Be the first to share an experience here.</string>
     <string name="discover_why">Why?</string>
-    <string name="discover_why_description">Why am I seeing this: %1$s</string>
     <string name="discover_why_title">Why am I seeing this?</string>
     <string name="discover_why_footer">The order uses only what a post contains and the interests you chose. It never uses how many people saved, read or answered anything.</string>
     <string name="discover_reason_in_this_city">It is in the city you chose.</string>
@@ -1441,7 +1403,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="standing_suspended">A moderator paused your posting, perspectives and new connections until %1$s. Why: %2$s.</string>
     <string name="standing_unaffected">Reading, blocking, muting, reporting and your safety tools are not affected.</string>
     <string name="standing_warning">A moderator reminded you of the community guidelines. Why: %1$s.</string>
-    <string name="my_reports_entry">Your reports</string>
     <string name="my_reports_title">Your reports</string>
     <string name="my_reports_intro">Only you can see this list. Nobody is told who reported.</string>
     <string name="my_reports_empty">You haven\'t reported anything.</string>
@@ -1452,7 +1413,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="my_reports_action_taken">Reviewed: a moderator acted on it</string>
     <string name="my_reports_no_violation">Reviewed: no guideline was broken</string>
     <string name="my_reports_reviewed">Reviewed</string>
-    <string name="guidelines_entry">Community guidelines</string>
     <string name="guidelines_title">Community guidelines</string>
     <string name="guidelines_motto">Tell it true. Be kind to people, honest about places.</string>
     <string name="guidelines_not_allowed_title">Not allowed here</string>
@@ -1625,6 +1585,30 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="card_stamp_grid">Grid %1$s</string>
     <string name="card_action_open">Open</string>
     <string name="card_spoken_tip">For the next person: %1$s</string>
+
+    <!-- Ready check (F12): facts about this phone, never a verdict (ReadyCheckTest). -->
+    <string name="ready_title">Before you need it</string>
+    <string name="ready_intro">What this phone will do in an SOS or a Safe Walk, so nothing comes as a surprise.</string>
+    <string name="ready_circle_unknown">Your Safety Circle has not been read on this phone yet.</string>
+    <string name="ready_circle_empty">No one is in your Safety Circle on this phone, so an SOS has nobody to text.</string>
+    <plurals name="ready_circle_people">
+        <item quantity="one">%d person is in your Safety Circle on this phone.</item>
+        <item quantity="other">%d people are in your Safety Circle on this phone.</item>
+    </plurals>
+    <string name="ready_sms_not_supported">This phone cannot send SMS, so Kurinji cannot text your Safety Circle. Call 112 or message people yourself.</string>
+    <string name="ready_sms_off">Automatic SMS is off: in an SOS your SMS app opens with a message, and you press send.</string>
+    <string name="ready_sms_permission">Automatic SMS is on, but the SMS permission is not allowed, so nothing is sent automatically.</string>
+    <string name="ready_sms_on">Automatic SMS is on: when an SOS starts, your phone texts your Safety Circle.</string>
+    <string name="ready_location_on">Location is allowed, so SOS and Safe Walk can save where you are.</string>
+    <string name="ready_location_off">Location is not allowed, so SOS and Safe Walk cannot save where you are until you allow it.</string>
+    <string name="ready_notifications_on">Notifications are allowed, so Safe Walk can ask \"Are you OK?\" with the screen off.</string>
+    <string name="ready_notifications_off">Notifications are off, so Safe Walk cannot ask \"Are you OK?\" with the screen off.</string>
+    <string name="ready_shortcut">For a quick SOS: long-press the Kurinji icon, or add the SOS tile to Quick Settings.</string>
+    <string name="ready_action_circle">Open Safety Circle</string>
+    <string name="ready_action_settings">Open app settings</string>
+    <string name="cd_ready_set">Set</string>
+    <string name="cd_ready_choice">Your choice</string>
+    <string name="cd_ready_attention">Needs a look</string>
 
     <!-- SOS shortcut and Quick Settings tile (F11) -->
     <string name="sos_shortcut_short">SOS</string>

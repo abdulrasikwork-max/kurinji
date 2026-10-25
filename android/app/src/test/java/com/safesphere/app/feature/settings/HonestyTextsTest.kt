@@ -67,7 +67,12 @@ class HonestyTextsTest {
         val hub = File("src/main/java/com/safesphere/app/feature/safety/ui/SafetyFragment.kt").readText(Charsets.UTF_8)
         for (destination in listOf("R.id.emergencyFragment", "R.id.safeWalkFragment", "R.id.safetyCircleFragment",
                 "R.id.evidenceVaultFragment", "R.id.communityFragment", "R.id.emergencyHistoryFragment")) {
-            assertEquals(destination, 1, Regex(Regex.escape(destination)).findAll(hub).count())
+            assertTrue(destination, hub.contains(destination))
+        }
+        // One row per tool (the Ready check may also link to the Safety Circle from its own row).
+        for (title in listOf("feature_safe_walk_title", "feature_safety_circle_title", "feature_evidence_vault_title",
+                "safety_hub_nearby_title", "feature_emergency_history_title")) {
+            assertEquals(title, 1, Regex("R\\.string\\.$title\\b").findAll(hub).count())
         }
         assertFalse(File("src/main/res/layout/fragment_home.xml").exists())
         assertFalse(File("src/main/java/com/safesphere/app/feature/home").exists())

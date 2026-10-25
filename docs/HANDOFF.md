@@ -1,4 +1,12 @@
-# Handoff: Phase 13F Kurinji UI/UX + safety integration done (2026-10-25) — committed locally, NOT pushed
+# Handoff: Phase 13F complete (2026-10-25) — two local commits, NOT pushed
+
+**Second step (same day, the user's request):** the **Ready check** "Before you need it" in You → Safety (Safety Circle
+people from the phone's offline copy, refreshed when the hub opens; automatic SMS on / off / permission / not
+supported; location; notifications; the quick-SOS line; buttons to the Safety Circle or app settings; never a verdict)
+and the **clean-up of all 49 unused resources** (40 strings, 3 dimens, 2 styles, 4 drawables). Android **686 / 0**,
+lint **0 errors / 94 warnings, 0 unused**; emulator **E14–E16 PASS** (fresh account facts, Circle row refreshed after a
+contact was added, "Open app settings" lands on Kurinji's page). Test data deleted again (users 170), emulator and
+backend stopped. The first-step notes below still apply, except that the Ready check and the clean-up are now done.
 
 **13F implemented, compiled, tested, emulator-verified** (`docs/PHASE13F.md`; plan `PHASE13F_PLAN.md`, approved by the
 user with F1–F4 as recommended; visual direction `docs/design/kurinji-13f-direction.html`). Android only; no backend

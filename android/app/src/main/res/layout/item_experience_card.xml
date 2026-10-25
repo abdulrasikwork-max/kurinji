@@ -134,6 +134,7 @@
                         android:layout_width="@dimen/butterfly_size"
                         android:layout_height="@dimen/butterfly_size"
                         android:layout_marginStart="@dimen/space_sm"
+                        android:importantForAccessibility="no"
                         android:visibility="gone" />
                 </LinearLayout>
             </LinearLayout>
