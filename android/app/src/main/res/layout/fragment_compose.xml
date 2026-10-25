@@ -12,6 +12,21 @@
         android:orientation="vertical"
         android:padding="@dimen/screen_padding">
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityHeading="true"
+            android:text="@string/compose_heading"
+            android:textAppearance="@style/TextAppearance.Kurinji.Headline.Large" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:layout_marginBottom="@dimen/space_md"
+            android:text="@string/compose_subheading"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
         <com.safesphere.app.core.ui.components.NoticeView
             android:id="@+id/errorNotice"
             android:layout_width="match_parent"
@@ -234,12 +249,28 @@
             android:text="@string/approve_first_switch"
             android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/summaryLine"
+        <!-- Phase 13F (F17): the postmark others will see, live, beside the same fact in words. -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_md"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+            android:clipChildren="false"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/summaryLine"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <com.safesphere.app.core.ui.components.PostmarkView
+                android:id="@+id/stampPreview"
+                android:layout_width="@dimen/postmark_size"
+                android:layout_height="@dimen/postmark_size"
+                android:layout_marginStart="@dimen/space_sm" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/issuesText"

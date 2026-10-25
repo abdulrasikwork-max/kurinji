@@ -1,39 +1,52 @@
 package com.safesphere.app.feature.social.ui
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.navigation.navOptions
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
+import com.safesphere.app.core.ui.components.ButterflyDrawable
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentCocoonBinding
+import com.safesphere.app.databinding.ItemCocoonBinding
+import com.safesphere.app.feature.going.GoingThere
 import com.safesphere.app.feature.social.domain.ButterflyState
 import com.safesphere.app.feature.social.domain.CocoonItem
 import com.safesphere.app.feature.social.domain.TimeBand
 
 /**
- * Phase 13C: the Cocoon (design §3.4, §9.6). Want to experience / Been; "I've been" moves an item and invites a
- * perspective or an experience of the person's own. Reduce-motion friendly: no animation, the state is in words.
+ * Phase 13C, redesigned in 13F (F16): the Cocoon tab. Want to go (chrysalises) / Been (butterflies). "I've been" lets
+ * the butterfly out ([BeenInvitation.emerge]), moves the item, then invites a word for the next person. Private: nothing
+ * here is shown to anyone. [CocoonViewModel] is unchanged.
  */
 class CocoonFragment : ViewBindingFragment<FragmentCocoonBinding>(FragmentCocoonBinding::inflate) {
 
     private val viewModel by viewModels<CocoonViewModel> { CocoonViewModel.factory(appContainer) }
-    private val adapter = PersonRowAdapter()
+    private val adapter = CocoonAdapter()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.itemList.adapter = adapter
-        binding.tabGroup.addOnButtonCheckedListener { _, id, checked ->
-            if (checked) viewModel.onTab(if (id == R.id.beenTab) ButterflyState.BEEN else ButterflyState.WANT)
-        }
         binding.showMoreButton.setOnClickListener { viewModel.onShowMore() }
+        binding.emptyDiscoverButton.setOnClickListener {
+            findNavController().navigate(R.id.discoverFragment, null, navOptions {
+                launchSingleTop = true
+                restoreState = true
+                popUpTo(R.id.discoverFragment) { saveState = true }
+            })
+        }
         collectWhenStarted(viewModel.uiState, ::render)
     }
 
@@ -43,18 +56,26 @@ class CocoonFragment : ViewBindingFragment<FragmentCocoonBinding>(FragmentCocoon
     }
 
     private fun render(state: CocoonUiState) {
+        binding.tabs.setTabs(listOf(getString(R.string.cocoon_tab_want), getString(R.string.cocoon_tab_been)),
+            if (state.tab == ButterflyState.BEEN) 1 else 0) { index ->
+            viewModel.onTab(if (index == 1) ButterflyState.BEEN else ButterflyState.WANT)
+        }
         binding.progress.isVisible = state.isLoading || state.isBusy
-        adapter.submitList(state.items.map { row(it, state.isBusy) })
-        binding.emptyText.isVisible = state.loaded && state.items.isEmpty()
+        adapter.busy = state.isBusy
+        adapter.submitList(state.items)
+        binding.emptyBlock.isVisible = state.loaded && state.items.isEmpty()
         binding.emptyText.setText(if (state.tab == ButterflyState.WANT) R.string.cocoon_empty_want else R.string.cocoon_empty_been)
+        binding.emptyDiscoverButton.isVisible = state.tab == ButterflyState.WANT
         binding.showMoreButton.isVisible = state.hasMore
         binding.showMoreButton.isEnabled = !state.isLoading
         val failure = state.failure
         binding.errorNotice.isVisible = failure != null
         if (failure != null) binding.errorNotice.setMessage(failure.toMessage(requireContext()))
-        state.beenInvitation?.let {
+        state.beenInvitation?.let { item ->
             viewModel.onBeenInvitationHandled()
-            showBeenInvitation(it)
+            BeenInvitation.show(this, item.post.canComment,
+                onPerspective = { openPost(item.post.publicId) },
+                onOwn = { findNavController().navigate(R.id.composeFragment) })
         }
         if (state.sessionExpired) {
             viewModel.onSessionExpiredHandled()
@@ -62,43 +83,64 @@ class CocoonFragment : ViewBindingFragment<FragmentCocoonBinding>(FragmentCocoon
         }
     }
 
-    private fun row(item: CocoonItem, busy: Boolean): PersonRow {
-        val base = PostRows.of(requireContext(), item.post) { openPost(item.post.publicId) }
-        val saved = getString(when (item.savedPeriod) {
-            TimeBand.THIS_WEEK -> R.string.cocoon_saved_this_week
-            TimeBand.THIS_MONTH -> R.string.cocoon_saved_this_month
-            TimeBand.EARLIER -> R.string.cocoon_saved_earlier
-        })
-        val move = if (item.state == ButterflyState.WANT) {
-            RowAction(getString(R.string.cocoon_mark_been), getString(R.string.cocoon_mark_been_description, base.title)) {
-                if (!busy) viewModel.onMarkBeen(item)
-            }
-        } else {
-            RowAction(getString(R.string.cocoon_want_again), getString(R.string.cocoon_want_again_description, base.title)) {
-                if (!busy) viewModel.onWantAgain(item)
-            }
-        }
-        return base.copy(
-            subtitle = base.subtitle + " · " + saved,
-            primary = move,
-            secondary = RowAction(getString(R.string.cocoon_remove), getString(R.string.cocoon_remove_description, base.title)) {
-                if (!busy) viewModel.onRemove(item)
-            }
-        )
-    }
-
-    private fun showBeenInvitation(item: CocoonItem) {
-        val builder = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.been_invitation_title)
-            .setMessage(R.string.been_invitation_message)
-            .setNeutralButton(R.string.been_invitation_later, null)
-            .setNegativeButton(R.string.been_invitation_own) { _, _ -> findNavController().navigate(R.id.composeFragment) }
-        if (item.post.canComment) {
-            builder.setPositiveButton(R.string.been_invitation_perspective) { _, _ -> openPost(item.post.publicId) }
-        }
-        builder.show()
-    }
-
     private fun openPost(postId: String) =
         findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to postId))
+
+    private inner class CocoonAdapter : ListAdapter<CocoonItem, CocoonAdapter.Holder>(Diff) {
+
+        var busy = false
+
+        inner class Holder(val binding: ItemCocoonBinding) : RecyclerView.ViewHolder(binding.root)
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
+            Holder(ItemCocoonBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+
+        override fun onBindViewHolder(holder: Holder, position: Int) {
+            val item = getItem(position)
+            val b = holder.binding
+            val context = b.root.context
+            val card = ExperienceCards.of(item.post, collapseStrongLanguage = false)
+            val title = card.headline ?: card.collapse?.let { context.getString(CardTexts.collapsedLine(it)) }.orEmpty()
+            val saved = context.getString(when (item.savedPeriod) {
+                TimeBand.THIS_WEEK -> R.string.cocoon_saved_this_week
+                TimeBand.THIS_MONTH -> R.string.cocoon_saved_this_month
+                TimeBand.EARLIER -> R.string.cocoon_saved_earlier
+            })
+            b.headline.text = title
+            b.meta.text = listOfNotNull(CardTexts.whereLine(context, card), saved).joinToString(" · ")
+            b.glyph.scaleX = 1f
+            b.glyph.scaleY = 1f
+            b.glyph.rotation = 0f
+            if (item.state == ButterflyState.WANT) b.glyph.setImageResource(R.drawable.ic_chrysalis)
+            else b.glyph.setImageDrawable(ButterflyDrawable.intent(context, 40))
+            b.openArea.contentDescription = context.getString(R.string.cocoon_item_description, title, b.meta.text,
+                context.getString(if (item.state == ButterflyState.WANT) R.string.cocoon_tab_want else R.string.cocoon_tab_been))
+            b.openArea.setOnClickListener { openPost(item.post.publicId) }
+
+            if (item.state == ButterflyState.WANT) {
+                b.moveButton.setText(R.string.cocoon_mark_been)
+                b.moveButton.contentDescription = context.getString(R.string.cocoon_mark_been_description, title)
+                b.moveButton.setOnClickListener {
+                    if (!busy) BeenInvitation.emerge(b.glyph) { viewModel.onMarkBeen(item) }
+                }
+            } else {
+                b.moveButton.setText(R.string.cocoon_want_again)
+                b.moveButton.contentDescription = context.getString(R.string.cocoon_want_again_description, title)
+                b.moveButton.setOnClickListener { if (!busy) viewModel.onWantAgain(item) }
+            }
+            b.removeButton.contentDescription = context.getString(R.string.cocoon_remove_description, title)
+            b.removeButton.setOnClickListener { if (!busy) viewModel.onRemove(item) }
+            // Phase 13F (F9): a Want item is the moment someone may actually go.
+            b.goingButton.isVisible = item.state == ButterflyState.WANT
+            b.goingButton.setOnClickListener {
+                GoingThere.show(this@CocoonFragment, GoingThere.Target(CardTexts.goingLabel(card)),
+                    GoingThere.CocoonChoice(saved = true) { })
+            }
+        }
+    }
+
+    private object Diff : DiffUtil.ItemCallback<CocoonItem>() {
+        override fun areItemsTheSame(old: CocoonItem, new: CocoonItem) = old.post.publicId == new.post.publicId
+        override fun areContentsTheSame(old: CocoonItem, new: CocoonItem) = old == new
+    }
 }

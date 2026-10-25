@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13F: Share, the centre action: a bloom disc with a plus. Drawn in its own colours (NavigationRules keeps the
+     bar's tint off this one icon), because it is an action, not a tab. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    <path
+        android:fillColor="?attr/colorPrimary"
+        android:pathData="M16,1a15,15 0,1 0,0.01 0Z" />
+    <path
+        android:pathData="M16,9v14M9,16h14"
+        android:strokeColor="?attr/colorOnPrimary"
+        android:strokeLineCap="round"
+        android:strokeWidth="2.4" />
+</vector>

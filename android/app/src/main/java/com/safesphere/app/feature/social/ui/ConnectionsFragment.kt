@@ -12,7 +12,6 @@ import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
@@ -22,13 +21,10 @@ import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentConnectionsBinding
-import com.safesphere.app.feature.social.domain.DecisionAction
 import com.safesphere.app.feature.social.domain.InviteItem
-import com.safesphere.app.feature.social.domain.PauseLevel
 import com.safesphere.app.feature.social.domain.NewInvite
 import com.safesphere.app.feature.social.domain.PersonSummary
 import com.safesphere.app.feature.social.domain.RequestItem
-import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -45,7 +41,6 @@ class ConnectionsFragment : ViewBindingFragment<FragmentConnectionsBinding>(Frag
     private val outgoingAdapter = PersonRowAdapter()
     private val connectionAdapter = PersonRowAdapter()
     private val inviteAdapter = PersonRowAdapter()
-    private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -55,13 +50,7 @@ class ConnectionsFragment : ViewBindingFragment<FragmentConnectionsBinding>(Frag
         binding.inviteList.adapter = inviteAdapter
 
         binding.makeProfileButton.setOnClickListener { findNavController().navigate(R.id.profileSetupFragment) }
-        binding.editProfileButton.setOnClickListener { findNavController().navigate(R.id.profileSetupFragment) }
         binding.blockedMutedButton.setOnClickListener { findNavController().navigate(R.id.blockedMutedFragment) }
-        binding.shareExperienceButton.setOnClickListener { findNavController().navigate(R.id.composeFragment) }
-        binding.myExperiencesButton.setOnClickListener { findNavController().navigate(R.id.myPostsFragment) }
-        binding.discoverButton.setOnClickListener { findNavController().navigate(R.id.discoverFragment) }
-        binding.cocoonButton.setOnClickListener { findNavController().navigate(R.id.cocoonFragment) }
-        binding.privatePlacesButton.setOnClickListener { findNavController().navigate(R.id.privatePlacesFragment) }
         binding.findButton.setOnClickListener { viewModel.onFind(binding.findInput.text.toString()) }
         binding.findInput.setOnEditorActionListener { _, actionId, _ ->
             (actionId == EditorInfo.IME_ACTION_SEARCH).also { if (it) viewModel.onFind(binding.findInput.text.toString()) }
@@ -70,68 +59,14 @@ class ConnectionsFragment : ViewBindingFragment<FragmentConnectionsBinding>(Frag
         binding.createInviteButton.setOnClickListener { viewModel.onCreateInvite() }
         binding.redeemButton.setOnClickListener { viewModel.onRedeem(binding.redeemInput.text.toString()) }
         binding.redeemInput.doAfterTextChanged { viewModel.onCodeTyped() }
-        binding.myReportsButton.setOnClickListener { findNavController().navigate(R.id.myReportsFragment) }
-        binding.guidelinesButton.setOnClickListener { findNavController().navigate(R.id.guidelinesFragment) }
-        // Phase 13E (E20): the viewer's own choice, on this phone only.
-        val preferences = appContainer.viewerPreferences
-        collectWhenStarted(preferences.collapseStrongLanguage) { on ->
-            if (binding.strongLanguageSwitch.isChecked != on) binding.strongLanguageSwitch.isChecked = on
-        }
-        binding.strongLanguageSwitch.setOnCheckedChangeListener { button, on ->
-            if (button.isPressed) viewLifecycleOwner.lifecycleScope.launch { preferences.setCollapseStrongLanguage(on) }
-        }
 
         collectWhenStarted(viewModel.uiState, ::render)
-        collectWhenStarted(reports.uiState, ::renderStanding)
     }
 
     override fun onStart() {
         super.onStart()
         // Coming back from a profile or the profile form: show what the server holds now.
         if (viewModel.uiState.value.hasLoaded) viewModel.load()
-        reports.loadStanding()
-    }
-
-    /**
-     * Phase 13D: a pause in force (with its end date and reason) or a recent reminder, in amber, with the review request;
-     * and the reminder that reading, blocking, muting, reporting and safety tools are untouched.
-     */
-    private fun renderStanding(state: ReportUiState) {
-        val standing = state.standing
-        val pause = standing?.pause
-        val warning = standing?.decisions?.firstOrNull { it.action == DecisionAction.PERSON_WARN }
-        binding.standingNotice.isVisible = pause != null || warning != null
-        binding.standingLine.isVisible = pause != null
-        val reviewDecision = when {
-            pause != null -> pause.decisionId.takeIf { pause.canAppeal }
-            else -> null
-        }
-        binding.standingReviewButton.isVisible = reviewDecision != null
-        binding.standingReviewButton.isEnabled = !state.isBusy
-        binding.standingReviewButton.setOnClickListener { reviewDecision?.let(reports::appeal) }
-        if (pause != null) {
-            val until = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-                .format(pause.until.atZone(ZoneId.systemDefault()))
-            val reason = getString(ModerationLabels.of(pause.reason))
-            binding.standingNotice.setMessage(getString(when (pause.level) {
-                PauseLevel.COMMENTS_PAUSED -> R.string.standing_comments_paused
-                PauseLevel.POSTING_PAUSED -> R.string.standing_posting_paused
-                PauseLevel.SUSPENDED -> R.string.standing_suspended
-            }, until, reason))
-            val appealLine = ModerationLabels.appealLine(pause.appeal)
-            binding.standingLine.text = listOfNotNull(getString(R.string.standing_unaffected),
-                appealLine?.let { getString(it) }).joinToString("\n")
-        } else if (warning != null) {
-            binding.standingNotice.setMessage(getString(R.string.standing_warning, getString(ModerationLabels.of(warning.reason))))
-        }
-        state.message?.let {
-            if (it == ReportMessage.REVIEW_ASKED) Toast.makeText(requireContext(), R.string.review_asked, Toast.LENGTH_LONG).show()
-            reports.onMessageShown()
-        }
-        state.failure?.let {
-            Toast.makeText(requireContext(), it.toMessage(requireContext()), Toast.LENGTH_LONG).show()
-            reports.onFailureShown()
-        }
     }
 
     private fun render(state: ConnectionsUiState) {
@@ -139,10 +74,6 @@ class ConnectionsFragment : ViewBindingFragment<FragmentConnectionsBinding>(Frag
         val me = state.me
         binding.noProfileBlock.isVisible = state.hasLoaded && me == null && state.failure == null
         binding.contentBlock.isVisible = me != null
-        if (me != null) {
-            binding.myName.text = me.displayName
-            binding.myHandle.text = getString(R.string.social_handle_line, me.handle)
-        }
 
         incomingAdapter.submitList(state.incoming.map(::incomingRow))
         outgoingAdapter.submitList(state.outgoing.map(::outgoingRow))

@@ -1,52 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- SafeSphere palette (light). Navy = brand, teal = primary action,
-         green / amber = safe / caution, red = emergency ONLY. -->
-    <color name="ss_primary">#0E7C86</color>
-    <color name="ss_on_primary">#FFFFFF</color>
-    <color name="ss_primary_container">#CDEEEC</color>
-    <color name="ss_on_primary_container">#00363B</color>
-    <color name="ss_secondary">#3A5573</color>
-    <color name="ss_on_secondary">#FFFFFF</color>
-    <color name="ss_secondary_container">#E3E9F0</color>
-    <color name="ss_on_secondary_container">#1B2B3D</color>
+    <!--
+        Kurinji palette, light ("mist, ink and bloom", Phase 13F, docs/PHASE13F_PLAN.md §2).
+        Mist = the page (cool hill mist), ink = indigo night, bloom = Neelakurinji violet-blue (brand, actions,
+        postmarks), yeoman = the Tamil Yeoman butterfly's orange (intent only: the butterfly, "Want to go"),
+        ochre = moderation and caution (always with an icon and words), red = emergency UI ONLY.
+        Every text pair is at least 4.5:1 (ContrastTest).
+    -->
+    <color name="k_mist">#EEF1EF</color>
+    <color name="k_card">#FBFCFA</color>
+    <color name="k_sunk">#E3E8E5</color>
+    <color name="k_ink">#1A1D35</color>
+    <color name="k_ink_soft">#4A4F66</color>
+    <color name="k_outline">#7D8494</color>
+    <color name="k_line">#CDD4D1</color>
+    <color name="k_surface_low">#F5F7F6</color>
+    <color name="k_surface_container">#E9EDEB</color>
+    <color name="k_surface_high">#E3E8E5</color>
+    <color name="k_surface_highest">#DCE2DF</color>
 
-    <color name="ss_surface">#F4F7FA</color>
-    <color name="ss_on_surface">#0F1D2B</color>
-    <color name="ss_surface_variant">#E2E8EE</color>
-    <color name="ss_on_surface_variant">#475463</color>
-    <color name="ss_outline">#7A8794</color>
-    <color name="ss_outline_variant">#D3DBE3</color>
-    <color name="ss_surface_container_lowest">#FFFFFF</color>
-    <color name="ss_surface_container_low">#FAFBFD</color>
-    <color name="ss_surface_container">#EEF2F6</color>
-    <color name="ss_surface_container_high">#E8EDF2</color>
-    <color name="ss_surface_container_highest">#E1E7ED</color>
+    <color name="k_bloom">#4A46B0</color>
+    <color name="k_on_bloom">#FBFCFA</color>
+    <color name="k_bloom_soft">#E2E1F6</color>
+    <color name="k_on_bloom_soft">#23206B</color>
 
-    <!-- Emergency (mapped to the Material "error" roles) -->
+    <color name="k_yeoman">#E58A2E</color>
+    <color name="k_yeoman_ink">#9A4A0B</color>
+    <color name="k_yeoman_soft">#FBE5CF</color>
+    <color name="k_on_yeoman_soft">#4A2004</color>
+
+    <!-- Emergency (mapped to the Material "error" roles): red is reserved for emergency UI. -->
     <color name="ss_emergency">#C62828</color>
     <color name="ss_on_emergency">#FFFFFF</color>
     <color name="ss_emergency_container">#FBE3E3</color>
     <color name="ss_on_emergency_container">#5C0F0F</color>
 
-    <!-- Status colours (text and icons on light surfaces) -->
+    <!-- Status colours of the safety screens (text and icons on mist) -->
     <color name="ss_safe">#187A4B</color>
     <color name="ss_safe_container">#D9F2E3</color>
     <color name="ss_on_safe_container">#0B3D24</color>
-    <color name="ss_caution">#A35F00</color>
-    <color name="ss_caution_container">#FFF0D1</color>
-    <color name="ss_on_caution_container">#4A2C00</color>
+    <color name="ss_caution">#8A5A00</color>
+    <color name="ss_caution_container">#F3E6C4</color>
+    <color name="ss_on_caution_container">#3D2700</color>
 
-    <!-- "Hero" surfaces: the dark navy panels (status card, splash, brand tile) -->
-    <color name="hero_background">#0B1B2E</color>
-    <color name="hero_on">#F5F9FC</color>
-    <color name="hero_on_variant">#B7C6D6</color>
-    <color name="hero_accent">#3DD6C6</color>
+    <!-- "Hero" panels (status card, splash): indigo night with mist text. -->
+    <color name="hero_background">#1A1D35</color>
+    <color name="hero_on">#EEF1EF</color>
+    <color name="hero_on_variant">#B8BDD0</color>
+    <color name="hero_accent">#ABA8F7</color>
     <color name="hero_caution">#F5B544</color>
 
-    <!-- Brand mark (always drawn on navy) -->
-    <color name="mark_shield">#173A5E</color>
+    <!-- Brand mark and launcher icon (always on mist) -->
+    <color name="mark_wing_fore">#4A46B0</color>
+    <color name="mark_wing_hind">#E58A2E</color>
+    <color name="mark_body">#1A1D35</color>
 
-    <color name="splash_background">@color/hero_background</color>
-    <color name="ic_launcher_background">#0B1B2E</color>
+    <!-- The launcher always draws the icon on its light background: fixed colours, no night variant. -->
+    <color name="launcher_wing_fore">#4A46B0</color>
+    <color name="launcher_wing_hind">#E58A2E</color>
+    <color name="launcher_body">#1A1D35</color>
+    <color name="launcher_sos">#C62828</color>
+
+    <color name="splash_background">#EEF1EF</color>
+    <color name="ic_launcher_background">#EEF1EF</color>
 </resources>

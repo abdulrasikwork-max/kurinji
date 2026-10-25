@@ -1,58 +1,58 @@
-# SafeSphere design system
+# Kurinji design system (Phase 13F)
 
-Concept: **"Calm when everything is safe. Powerful when something goes wrong."**
-This redesign changes how the app looks. It does not change what the app does (see README, "Phase 1 behaviour").
+Concept: **"A field journal from the hills, not a feed."** Motto: *Written for the next one who goes.*
+Visual reference with mock-ups: `docs/design/kurinji-13f-direction.html`. Results and decisions: `docs/PHASE13F.md`.
+(Until Phase 13F this file described the SafeSphere navy/teal system; that is superseded.)
 
-## Colour (res/values/colors.xml, values-night/colors.xml)
-| Role | Light | Dark | Used for |
+## Colour (`res/values/colors.xml`, `values-night/colors.xml`; `ContrastTest` checks every pair)
+
+| Role | Day | Night ("Kurinji night") | Used for |
 |---|---|---|---|
-| Hero / midnight | #0B1B2E | #12293F | Status card, profile header, brand tile, splash |
-| Accent (primary) | #0E7C86 | #3DD6C6 | Primary buttons, selected states, links |
-| Safe | #187A4B | #5BD694 | Safe / Available badges |
-| Caution | #A35F00 | #F5B544 | Caution badges and warning notices |
-| Emergency | #C62828 | #FF6B6B | **Only** the SOS tile/icon and "Concern" badge |
-Every text/background pair is at least 4.5:1 (checked for light and dark).
-Status is never colour-only: each badge has a word, and most have an icon. Map markers also differ in shape.
+| Mist (`k_mist`) | #EEF1EF | #12142A | The page |
+| Card (`k_card`, `?attr/colorCard`) | #FBFCFA | #1B1E36 | Raised surfaces, sheets |
+| Ink / ink soft | #1A1D35 / #4A4F66 | #E8EAF2 / #B4B8CC | Text |
+| Bloom (`colorPrimary`) | #4A46B0 | #ABA8F7 | Brand, actions, postmarks, chosen states |
+| Yeoman (`colorIntent`, `colorIntentInk`) | #E58A2E / #9A4A0B | #F2A65A / #F6B97A | Intent only: the butterfly, "Want to go" (fill; edges and text use the ink shade) |
+| Ochre (`colorCaution`) | #8A5A00 | #E8B54A | Moderation and caution, always with an icon and words |
+| Red (`colorError`) | #C62828 | #FF6B6B | **Emergency UI only** (SOS tile, SOS screen, active-SOS banner, shortcut icon) |
 
-## Where styling lives (so layouts do not repeat it)
-- `themes.xml`: colour roles, and which style every default Material button/card/text field/bottom bar uses.
-- `type.xml`: the type scale (ScreenTitle, SectionTitle, CardTitle, Body, Caption, Overline, StatusLabel, Button, Hero.*).
-- `styles.xml`: buttons, text field, cards (normal / hero / emergency), bottom navigation, toolbar, small decorations.
-- `attrs.xml`: theme attributes such as `?attr/colorSafe`, `?attr/colorHero`, and the XML attributes of the custom views.
+Text pairs ≥ 4.5:1, control edges ≥ 3:1, day and night. Status is never colour alone.
 
-## Reusable components (core/ui/components)
-| Component | What it is | Used on |
+## Type (`res/font`, `values/type.xml`)
+
+- **Young Serif** (`@font/kurinji_display`): headlines only (`TextAppearance.Kurinji.Masthead`, `Headline.*`,
+  `CardHeadline`; `TextAppearance.SafeSphere.ScreenTitle/SectionTitle` point at them).
+- **Mukta Malar** (`kurinji_sans`, `kurinji_sans_medium`): everything else; Tamil and Latin drawn together.
+- Plain TextViews get Mukta through `android:textViewStyle` (never `android:fontFamily` on the theme: it overrides
+  every text appearance). The SOS badge uses the phone's sans (lining figures; "5" must never read as "s").
+- OFL licences: `docs/licences/`. No network font loading.
+
+## The four Kurinji objects (`core/ui/components`)
+
+| Object | Component | Meaning |
 |---|---|---|
-| `StatusBadgeView` + `BadgeStatus` | Pill: Available / Preview / Coming soon / Sample / Safe / Caution / Concern | everywhere |
-| `SectionHeaderView` | Section title with optional badge | Home, Community, Profile |
-| `NoticeView` | Info (teal) or warning (amber) message box | Login, Register, Home, Safety Center, Forgot Password |
-| `SafetyStatusCardView` + `StatusCardContent` / `StatusTone` | Navy status card: label, headline, detail, icon; tone CALM (teal) or CAUTION (amber + warning icon), deliberately no green or red. Home maps `HomeStatus` to it (`HomeStatusCard`) | Home |
-| `FeatureListAdapter` + `FeatureItem` | Icon + title + description + badge card row | Safety Center, Profile |
-| `EmptyStateView` | Icon + title + message | Community ("Your reports") |
-| `SafetyRadarView` (Phase 6) | Signals by direction/distance around the person; shape + colour (▲ concern, ■ take care, ● safe place, amber/green, never red); soft halo = placed only to ~1 km; one content description, details in the list | Community |
-| `Motion` | Short fade + slide-up, off when system animations are off | splash, Home, Safety, Community, Profile |
+| Postmark | `PostmarkView` (`CardTexts.postmark`) | Where and when, only what the author revealed: place name, "Grid …" for an area, a city, or a blank cancellation |
+| Ticket | `TicketLayout` | "For the next person": the tip |
+| Butterfly / chrysalis | `ButterflyDrawable` (flap), `ic_chrysalis` | Intent: Want (chrysalis) → Been (butterfly) |
+| Kolam | `KolamView` | Empty states only; draws itself once |
 
-## Honesty rules built into the UI
-1. Anything not built is labelled **Coming soon**; anything that shows a design only is labelled **Preview** or **Sample**.
-2. The SOS tile is red (emergency UI). Its badge says "5 s to cancel" (the countdown) and sits under "Emergency help",
-   never beside the title (beside it, it squeezed "SOS" off the tile on 320 dp phones with large text); its
-   description says SafeSphere texts the Safety Circle only if automatic SMS is switched on (Phase 4D). Until
-   2026-10-21 it said "No alerts yet".
-3. The Home status card never says "safe" (Phase 8 rule, `PHASE8_DESIGN.md` §6.4). It states only what the phone
-   knows: *Checking* (until the phone has looked), *Nothing running* ("No SOS or Safe Walk is running on this phone"),
-   *Safe Walk on*, or *Check-in missed* (amber, warning icon). Until 2026-10-21 it was a Phase 1 "SAFE" sample.
-4. During an SOS the status card is hidden: the red banner is the one emergency element. `HomeTextsTest` scans every
-   string Home shows for safety claims.
+Other components: `TextTabsView` (editorial tabs; stack when they do not fit), `AspectRatioImageView`,
+`ExperienceCardAdapter` (postcards and Ask slips), `FeatureListAdapter` (rows, no badge by default),
+`SafetyStatusCardView` (facts-only status card), `NoticeView`, `Widget.Kurinji.SheetRow`.
 
-## Identity and language (Phase 10A, `docs/PHASE10.md`)
+## Motion (`core/ui/ButterflyFlight`, `BeenInvitation.emerge`, `Motion`, `Haptics`)
 
-- **Product line:** *Safety that expands your world.* Philosophy (unchanged): *Safe enough to live. Free enough to grow.*
-  SAFE: *You deserve to feel safe.* The RISE line (*You decide what's for you.*) appears only once RISE exists.
-- **No placeholders:** no "Coming soon" row, tile or dialog anywhere; a feature that is not built is not shown.
-- **Places, not people:** the community tab is **Nearby**. Area summaries lead with safe places, then concerns, then
-  places to take care (order only, every count shown).
-- **Going out, not staying away:** no text tells people to avoid places or stay away (`HonestyTextsTest`).
-- **Support is a choice:** the Safety Circle is "people you choose to keep in the loop"; Safe Walk says "Using support is
-  a choice, not a weakness."
-- **Account warnings** (pending deletion) use the amber warning NoticeView with its icon, never red (red is emergency UI).
-- **Screens with passwords** (Account and security) are FLAG_SECURE.
+Four moments only: butterfly flight into the Cocoon tab (~620 ms), chrysalis emergence (~700 ms), stamp on share
+(~280 ms), kolam drawn once (~900 ms); screens fade in with a small rise (~220 ms); cards settle under the finger.
+With the system's "remove animations" each moment becomes a plain state change (plus haptic and a spoken line).
+
+## Navigation and chrome (`navigation/NavigationRules`)
+
+Discover · ✚ Share (action) · Cocoon · You. Bar on tabs and reading screens; toolbar + back on task screens. Safety
+banners on every tab and reading screen, never on the SOS screen. SOS shortcut and tile from any signed-in screen.
+
+## Honesty rules kept
+
+No text claims a place or person is safe (`SafetyHubTextsTest`, `SocialTextsTest`); no counts except the author's
+private butterfly line; no ranking or engagement words; no emoji, slang or hype (`KurinjiTextsTest`); no "avoid"
+(`HonestyTextsTest`); moderation feedback in ochre, never red; red only for emergency UI.

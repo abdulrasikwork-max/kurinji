@@ -25,7 +25,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_lg"
-            android:text="@string/tagline_your_safety"
+            android:text="@string/motto"
             android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle"
             android:accessibilityHeading="true" />
 

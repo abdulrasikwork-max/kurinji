@@ -33,7 +33,7 @@ class SplashFragment : ViewBindingFragment<FragmentSplashBinding>(FragmentSplash
         val actionId = when (destination) {
             StartDestination.Onboarding -> R.id.action_splash_to_onboarding
             StartDestination.Login -> R.id.action_splash_to_login
-            StartDestination.Home -> R.id.action_splash_to_home
+            StartDestination.Home -> R.id.action_splash_to_start
         }
         navController.navigate(actionId)
     }

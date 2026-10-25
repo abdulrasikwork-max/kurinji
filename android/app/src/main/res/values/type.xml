@@ -1,81 +1,177 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        SafeSphere type scale. The system font is used on purpose (no extra dependency);
-        hierarchy comes from size, weight (regular / medium only) and colour.
+        Kurinji type (Phase 13F). Young Serif (display, one weight) for headlines only; Mukta Malar for everything else
+        (Regular / Medium / Bold, drawn for Tamil and Latin together). Sizes in sp, so the phone's font size applies.
+        The TextAppearance.SafeSphere.* names stay (every layout uses them); they now point at the Kurinji faces.
     -->
 
-    <!-- Screen title: one per screen -->
-    <style name="TextAppearance.SafeSphere.ScreenTitle" parent="TextAppearance.Material3.HeadlineMedium">
-        <item name="android:textSize">28sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textColor">?attr/colorOnSurface</item>
+    <!-- ===== Display and headlines (Young Serif) ===== -->
+    <style name="TextAppearance.Kurinji.Masthead" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="android:fontFamily">@font/kurinji_display</item>
+        <item name="fontFamily">@font/kurinji_display</item>
+        <item name="android:textSize">38sp</item>
         <item name="android:letterSpacing">-0.01</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="TextAppearance.Kurinji.Headline.Large" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:fontFamily">@font/kurinji_display</item>
+        <item name="fontFamily">@font/kurinji_display</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:letterSpacing">-0.005</item>
+    </style>
+
+    <style name="TextAppearance.Kurinji.Headline.Medium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:fontFamily">@font/kurinji_display</item>
+        <item name="fontFamily">@font/kurinji_display</item>
+        <item name="android:textSize">24sp</item>
+    </style>
+
+    <style name="TextAppearance.Kurinji.Headline.Small" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:fontFamily">@font/kurinji_display</item>
+        <item name="fontFamily">@font/kurinji_display</item>
+        <item name="android:textSize">21sp</item>
+    </style>
+
+    <!-- A card's headline (the first line of an experience). -->
+    <style name="TextAppearance.Kurinji.CardHeadline" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">@font/kurinji_display</item>
+        <item name="fontFamily">@font/kurinji_display</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- ===== Material slots (Mukta Malar) ===== -->
+    <style name="TextAppearance.Kurinji.Title.Large" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">@font/kurinji_sans_medium</item>
+        <item name="fontFamily">@font/kurinji_sans_medium</item>
+        <item name="android:textSize">20sp</item>
+    </style>
+
+    <style name="TextAppearance.Kurinji.Title.Medium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">@font/kurinji_sans_medium</item>
+        <item name="fontFamily">@font/kurinji_sans_medium</item>
+        <item name="android:textSize">17sp</item>
+    </style>
+
+    <style name="TextAppearance.Kurinji.Title.Small" parent="TextAppearance.Material3.TitleSmall">
+        <item name="android:fontFamily">@font/kurinji_sans_medium</item>
+        <item name="fontFamily">@font/kurinji_sans_medium</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="TextAppearance.Kurinji.Body.Large" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:fontFamily">@font/kurinji_sans</item>
+        <item name="fontFamily">@font/kurinji_sans</item>
+        <item name="android:textSize">17sp</item>
+    </style>
+
+    <style name="TextAppearance.Kurinji.Body.Medium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:fontFamily">@font/kurinji_sans</item>
+        <item name="fontFamily">@font/kurinji_sans</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="TextAppearance.Kurinji.Body.Small" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:fontFamily">@font/kurinji_sans</item>
+        <item name="fontFamily">@font/kurinji_sans</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="TextAppearance.Kurinji.Label.Large" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:fontFamily">@font/kurinji_sans_medium</item>
+        <item name="fontFamily">@font/kurinji_sans_medium</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.Kurinji.Label.Medium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:fontFamily">@font/kurinji_sans_medium</item>
+        <item name="fontFamily">@font/kurinji_sans_medium</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="TextAppearance.Kurinji.Label.Small" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">@font/kurinji_sans_medium</item>
+        <item name="fontFamily">@font/kurinji_sans_medium</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <!-- Small capitals above a headline ("EXPERIENCE · FOOD & CAFÉS", "THIS WEEK IN"). -->
+    <style name="TextAppearance.Kurinji.Overline" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">@font/kurinji_sans</item>
+        <item name="fontFamily">@font/kurinji_sans</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.14</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- The ticket label "FOR THE NEXT PERSON" -->
+    <style name="TextAppearance.Kurinji.TicketLabel" parent="TextAppearance.Kurinji.Overline">
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:letterSpacing">0.16</item>
+    </style>
+
+    <!-- ===== The names every existing layout uses ===== -->
+
+    <!-- Screen title: one per screen -->
+    <style name="TextAppearance.SafeSphere.ScreenTitle" parent="TextAppearance.Kurinji.Headline.Large">
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <!-- Section title: groups of cards -->
-    <style name="TextAppearance.SafeSphere.SectionTitle" parent="TextAppearance.Material3.TitleMedium">
-        <item name="android:textSize">18sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+    <style name="TextAppearance.SafeSphere.SectionTitle" parent="TextAppearance.Kurinji.Headline.Small">
+        <item name="android:textSize">19sp</item>
         <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <!-- Primary information inside a card -->
-    <style name="TextAppearance.SafeSphere.CardTitle" parent="TextAppearance.Material3.TitleSmall">
+    <style name="TextAppearance.SafeSphere.CardTitle" parent="TextAppearance.Kurinji.Title.Medium">
         <item name="android:textSize">16sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <!-- Body text -->
-    <style name="TextAppearance.SafeSphere.Body" parent="TextAppearance.Material3.BodyMedium">
+    <style name="TextAppearance.SafeSphere.Body" parent="TextAppearance.Kurinji.Body.Medium">
         <item name="android:textSize">15sp</item>
         <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
     <!-- Secondary / supporting text -->
-    <style name="TextAppearance.SafeSphere.Caption" parent="TextAppearance.Material3.BodySmall">
+    <style name="TextAppearance.SafeSphere.Caption" parent="TextAppearance.Kurinji.Body.Small">
         <item name="android:textSize">13sp</item>
         <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
     <!-- Small label above a heading -->
-    <style name="TextAppearance.SafeSphere.Overline" parent="TextAppearance.Material3.LabelSmall">
-        <item name="android:textSize">12sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textAllCaps">true</item>
-        <item name="android:letterSpacing">0.1</item>
-        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
-    </style>
+    <style name="TextAppearance.SafeSphere.Overline" parent="TextAppearance.Kurinji.Overline" />
 
     <!-- Status labels and badges -->
-    <style name="TextAppearance.SafeSphere.StatusLabel" parent="TextAppearance.Material3.LabelMedium">
-        <item name="android:textSize">12sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-    </style>
+    <style name="TextAppearance.SafeSphere.StatusLabel" parent="TextAppearance.Kurinji.Label.Small" />
 
     <!-- Buttons -->
-    <style name="TextAppearance.SafeSphere.Button" parent="TextAppearance.Material3.LabelLarge">
+    <style name="TextAppearance.SafeSphere.Button" parent="TextAppearance.Kurinji.Label.Large">
         <item name="android:textSize">16sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:letterSpacing">0</item>
     </style>
 
-    <!-- On the dark navy "hero" panels -->
-    <style name="TextAppearance.SafeSphere.Hero.Status" parent="TextAppearance.Material3.HeadlineLarge">
-        <item name="android:textSize">32sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:letterSpacing">0.08</item>
+    <!-- On the dark "hero" panels -->
+    <style name="TextAppearance.SafeSphere.Hero.Status" parent="TextAppearance.Kurinji.Headline.Medium">
+        <item name="android:textSize">24sp</item>
         <item name="android:textColor">?attr/colorOnHero</item>
     </style>
 
-    <style name="TextAppearance.SafeSphere.Hero.Title" parent="TextAppearance.Material3.TitleMedium">
-        <item name="android:textSize">17sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+    <style name="TextAppearance.SafeSphere.Hero.Title" parent="TextAppearance.Kurinji.Headline.Small">
+        <item name="android:textSize">19sp</item>
         <item name="android:textColor">?attr/colorOnHero</item>
     </style>
 
-    <style name="TextAppearance.SafeSphere.Hero.Body" parent="TextAppearance.Material3.BodyMedium">
+    <style name="TextAppearance.SafeSphere.Hero.Body" parent="TextAppearance.Kurinji.Body.Medium">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">?attr/colorOnHeroVariant</item>
     </style>

@@ -21,6 +21,9 @@ class OnboardingPagerAdapter(
         val page = pages[position]
         with(holder.binding) {
             pageIcon.setImageResource(page.iconRes)
+            pageIcon.imageTintList = if (page.tinted) android.content.res.ColorStateList.valueOf(
+                com.google.android.material.color.MaterialColors.getColor(pageIcon, androidx.appcompat.R.attr.colorPrimary)
+            ) else null
             pageTitle.setText(page.titleRes)
             pageDescription.setText(page.descriptionRes)
         }

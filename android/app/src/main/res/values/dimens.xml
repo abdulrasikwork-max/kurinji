@@ -14,18 +14,27 @@
     <dimen name="icon_circle_size">48dp</dimen>
     <dimen name="icon_circle_size_small">40dp</dimen>
     <dimen name="brand_tile_size">44dp</dimen>
-    <dimen name="brand_tile_padding">8dp</dimen>
+    <dimen name="brand_tile_padding">6dp</dimen>
     <dimen name="logo_size_splash">104dp</dimen>
     <dimen name="illustration_size">104dp</dimen>
     <dimen name="avatar_size">72dp</dimen>
     <dimen name="menu_row_min_height">56dp</dimen>
     <dimen name="button_height">56dp</dimen>
 
-    <dimen name="radius_card">20dp</dimen>
-    <dimen name="radius_button">14dp</dimen>
+    <dimen name="radius_card">18dp</dimen>
+    <dimen name="radius_button">16dp</dimen>
+    <dimen name="radius_field">12dp</dimen>
     <dimen name="stroke_hairline">1dp</dimen>
 
     <dimen name="chip_padding_horizontal">10dp</dimen>
     <dimen name="chip_padding_vertical">4dp</dimen>
     <dimen name="onboarding_dot_size">8dp</dimen>
+
+    <!-- Phase 13F: the Kurinji objects -->
+    <dimen name="postmark_size">88dp</dimen>
+    <dimen name="postmark_size_small">64dp</dimen>
+    <dimen name="ticket_notch_radius">9dp</dimen>
+    <dimen name="butterfly_size">28dp</dimen>
+    <dimen name="kolam_size">112dp</dimen>
+    <dimen name="card_press_depth">2dp</dimen>
 </resources>

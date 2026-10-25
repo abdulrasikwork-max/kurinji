@@ -62,115 +62,13 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <!-- Phase 13D: a moderator's pause or reminder about this person (amber, never red), and a review. -->
-            <com.safesphere.app.core.ui.components.NoticeView
-                android:id="@+id/standingNotice"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:accessibilityLiveRegion="polite"
-                android:visibility="gone"
-                app:noticeText="@string/standing_unaffected"
-                app:noticeType="warning" />
-
+            <!-- Phase 13F: the own profile, standing notice and the experience links moved to You. -->
             <TextView
-                android:id="@+id/standingLine"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
-                android:visibility="gone" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/standingReviewButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/review_ask"
-                android:visibility="gone" />
-
-            <!-- The person's own profile -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.SafeSphere.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="@dimen/space_lg">
-
-                    <TextView
-                        android:id="@+id/myName"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
-
-                    <TextView
-                        android:id="@+id/myHandle"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_xs"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/editProfileButton"
-                        style="@style/Widget.SafeSphere.Button.Text"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minHeight="@dimen/min_touch_target"
-                        android:text="@string/social_edit_profile" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Phase 13C: Discover and the Cocoon (entry points until the 13F navigation) -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/discoverButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:minHeight="@dimen/menu_row_min_height"
-                android:text="@string/discover_open" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/cocoonButton"
-                style="@style/Widget.SafeSphere.Button.Secondary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_sm"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/cocoon_open" />
-
-            <!-- Phase 13B: experiences (Q11 entry points until 13F) -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/shareExperienceButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:minHeight="@dimen/menu_row_min_height"
-                android:text="@string/social_share_experience"
-                app:icon="@drawable/ic_add" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/myExperiencesButton"
-                style="@style/Widget.SafeSphere.Button.Secondary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/social_your_experiences" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/privatePlacesButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/social_private_places"
-                app:icon="@drawable/ic_lock" />
+                android:text="@string/connections_intro"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
             <!-- Find someone: exact handle only -->
             <TextView
@@ -323,38 +221,6 @@
                 android:minHeight="@dimen/min_touch_target"
                 android:text="@string/social_blocked_muted_link" />
 
-            <!-- Phase 13D -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/myReportsButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/my_reports_entry" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/guidelinesButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/guidelines_entry" />
-
-            <!-- Phase 13E (E20): a choice about the viewer only, kept on this phone. -->
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/strongLanguageSwitch"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/settings_strong_language_title" />
-
-            <TextView
-                android:id="@+id/strongLanguageSummary"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_strong_language_summary" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

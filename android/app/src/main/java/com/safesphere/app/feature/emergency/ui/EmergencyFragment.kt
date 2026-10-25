@@ -91,9 +91,16 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         }
         collectWhenStarted(evidenceViewModel.card, evidenceCard::render)
 
+        // Phase 13F (F11, F3): opened from the SOS shortcut or tile, the countdown starts by itself once the screen knows
+        // no SOS is running (Idle). It stays cancellable for 5 s, exactly as after a tap on Start SOS. Once only.
+        var autoStart = savedInstanceState == null && arguments?.getBoolean(ARG_AUTO_START) == true
         collectWhenStarted(viewModel.uiState) { state ->
             // Phase 11: evidence belongs to an SOS the server has recorded (not to one with a local id yet).
             evidenceViewModel.setEmergency((state as? EmergencyUiState.Active)?.takeUnless { it.notOnServerYet }?.event?.id)
+            if (autoStart && state != EmergencyUiState.Loading) {
+                autoStart = false
+                if (state == EmergencyUiState.Idle) viewModel.onStartSosClicked()
+            }
             render(state)
             renderLocation(viewModel.locationUi.value)
         }
@@ -366,8 +373,11 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         }
     }
 
-    private companion object {
-        val SAVING_MESSAGES = setOf(R.string.location_card_saving, R.string.location_card_saved)
+    companion object {
+        private val SAVING_MESSAGES = setOf(R.string.location_card_saving, R.string.location_card_saved)
+
+        /** Phase 13F (F11): set only by MainActivity after it consumed an in-memory SosLaunchRequest. */
+        const val ARG_AUTO_START = "autoStart"
     }
 
     private fun showOnly(visiblePanel: View) {

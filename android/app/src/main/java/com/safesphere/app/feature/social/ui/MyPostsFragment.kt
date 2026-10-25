@@ -18,10 +18,11 @@ import com.safesphere.app.databinding.FragmentMyPostsBinding
 class MyPostsFragment : ViewBindingFragment<FragmentMyPostsBinding>(FragmentMyPostsBinding::inflate) {
 
     private val viewModel by viewModels<PostListViewModel> { PostListViewModel.factory(appContainer) }
-    private val adapter = PersonRowAdapter()
+    private lateinit var adapter: ExperienceCardAdapter
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        adapter = ExperienceCardAdapter(appContainer.imageLoader, appContainer.experienceRepository::photoUrl)
         binding.postList.adapter = adapter
         binding.shareButton.setOnClickListener { findNavController().navigate(R.id.composeFragment) }
         binding.showMoreButton.setOnClickListener { viewModel.onShowMore() }
@@ -36,9 +37,9 @@ class MyPostsFragment : ViewBindingFragment<FragmentMyPostsBinding>(FragmentMyPo
     private fun render(state: PostListUiState) {
         binding.progress.isVisible = state.isLoading
         adapter.submitList(state.items.map { post ->
-            PostRows.of(requireContext(), post) {
+            CardRow(ExperienceCards.of(post), onOpen = {
                 findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to post.publicId))
-            }
+            })
         })
         binding.emptyText.isVisible = state.loaded && state.items.isEmpty()
         binding.showMoreButton.isVisible = state.hasMore

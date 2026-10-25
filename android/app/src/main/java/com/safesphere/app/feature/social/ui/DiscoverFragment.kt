@@ -8,6 +8,8 @@ import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
@@ -27,36 +29,66 @@ import java.time.format.FormatStyle
 import java.util.Locale
 
 /**
- * Phase 13C: Discover (design §3.7, §9.3). The Edition ends with "Go make your own"; From your connections ends too;
- * every Edition row answers "Why am I seeing this?". Search finds places by name and categories by their words, never
- * people. Reached from the Connections screen until the 13F navigation.
+ * Phase 13C, redesigned in 13F (docs/PHASE13F_PLAN.md F14): Discover, the first tab. The Edition reads like a small
+ * weekly for one city: a masthead ("This week in Chennai"), short sections of postcards and question slips, and an end
+ * ("Go make your own"). From your connections ends too. Every Edition card answers "Why am I seeing this?". Search
+ * finds places by name and categories by their words, never people. [DiscoverViewModel] is unchanged.
  */
 class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDiscoverBinding::inflate) {
 
     private val viewModel by viewModels<DiscoverViewModel> { DiscoverViewModel.factory(appContainer) }
 
-    private val cityAdapter = PersonRowAdapter()
-    private val asksAdapter = PersonRowAdapter()
-    private val themeAdapter = PersonRowAdapter()
-    private val connectionsAdapter = PersonRowAdapter()
+    private lateinit var cityAdapter: ExperienceCardAdapter
+    private lateinit var asksAdapter: ExperienceCardAdapter
+    private lateinit var themeAdapter: ExperienceCardAdapter
+    private lateinit var connectionsAdapter: ExperienceCardAdapter
     private val placeResults = PersonRowAdapter()
     private val categoryResults = PersonRowAdapter()
     private lateinit var cityChips: ChoiceChips<City>
+    private var cityPickerOpen = false
+    private var searchOpen = false
+    private var collapseStrongLanguage = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val loader = appContainer.imageLoader
+        val photoUrl = appContainer.experienceRepository::photoUrl
+        cityAdapter = ExperienceCardAdapter(loader, photoUrl)
+        asksAdapter = ExperienceCardAdapter(loader, photoUrl)
+        themeAdapter = ExperienceCardAdapter(loader, photoUrl)
+        connectionsAdapter = ExperienceCardAdapter(loader, photoUrl)
         binding.citySectionList.adapter = cityAdapter
         binding.asksSectionList.adapter = asksAdapter
         binding.themeSectionList.adapter = themeAdapter
         binding.connectionsList.adapter = connectionsAdapter
         binding.searchPlaceList.adapter = placeResults
         binding.searchCategoryList.adapter = categoryResults
-        cityChips = ChoiceChips(binding.cityGroup) { it?.let(viewModel::onCity) }
-        binding.modeGroup.addOnButtonCheckedListener { _, id, checked ->
-            if (checked) viewModel.onMode(if (id == R.id.connectionsTab) DiscoverMode.CONNECTIONS else DiscoverMode.EDITION)
+        cityChips = ChoiceChips(binding.cityGroup) { city ->
+            if (city != null) {
+                cityPickerOpen = false
+                viewModel.onCity(city)
+            }
         }
+        binding.cityTitle.setOnClickListener {
+            cityPickerOpen = !cityPickerOpen
+            render(viewModel.uiState.value)
+        }
+        binding.searchToggle.setOnClickListener {
+            searchOpen = !searchOpen
+            if (searchOpen) binding.searchInput.requestFocus()
+            render(viewModel.uiState.value)
+        }
+        binding.modeTabs.setTabs(listOf(getString(R.string.discover_tab_edition), getString(R.string.discover_tab_connections)),
+            selected = 0) { index -> viewModel.onMode(if (index == 1) DiscoverMode.CONNECTIONS else DiscoverMode.EDITION) }
         binding.connectionsShowMore.setOnClickListener { viewModel.onShowMoreConnections() }
         binding.editionShareButton.setOnClickListener { findNavController().navigate(R.id.composeFragment) }
+        binding.editionCocoonButton.setOnClickListener {
+            findNavController().navigate(R.id.cocoonFragment, null, navOptions {
+                launchSingleTop = true
+                restoreState = true
+                popUpTo(R.id.discoverFragment) { saveState = true }
+            })
+        }
         binding.searchInput.doAfterTextChanged { viewModel.onQuery(it?.toString().orEmpty()) }
         binding.searchInput.setOnEditorActionListener { _, action, _ ->
             if (action == EditorInfo.IME_ACTION_SEARCH) viewModel.onSearch()
@@ -70,32 +102,37 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         Interest.entries.forEach { interest ->
             binding.categoryGroup.addView(Chip(requireContext()).apply {
                 text = getString(SocialLabels.of(interest))
+                isCheckable = false
                 contentDescription = getString(R.string.discover_open_category, text)
                 setOnClickListener { openCategory(interest) }
             })
         }
         collectWhenStarted(viewModel.uiState, ::render)
+        collectWhenStarted(appContainer.viewerPreferences.collapseStrongLanguage) { on ->
+            if (on != collapseStrongLanguage) {
+                collapseStrongLanguage = on
+                render(viewModel.uiState.value)
+            }
+        }
         viewModel.start()
     }
 
     private fun render(state: DiscoverUiState) {
         val edition = state.mode == DiscoverMode.EDITION
+        if (binding.modeTabs.selectedIndex != (if (edition) 0 else 1)) {
+            binding.modeTabs.setTabs(listOf(getString(R.string.discover_tab_edition),
+                getString(R.string.discover_tab_connections)), if (edition) 0 else 1) { index ->
+                viewModel.onMode(if (index == 1) DiscoverMode.CONNECTIONS else DiscoverMode.EDITION)
+            }
+        }
         binding.editionBlock.isVisible = edition
         binding.connectionsBlock.isVisible = !edition
         binding.progress.isVisible = state.editionLoading || state.connectionsLoading || state.searching
 
-        // City: preselected from the profile when it names a launch city; otherwise chosen here (not saved).
-        cityChips.show(City.entries.filter { it != City.OTHER }.map { it to ExperienceLabels.cityName(it) }, state.city)
-        binding.cityHint.isVisible = state.needsCity && state.city == null
+        renderMasthead(state)
 
         val e = state.edition
-        binding.editionHeading.isVisible = e != null
-        binding.themeLine.isVisible = e?.theme != null
         if (e != null) {
-            val week = e.weekOf?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()))
-            binding.editionHeading.text = if (week != null) getString(R.string.discover_edition_heading,
-                ExperienceLabels.cityName(e.city), week) else ExperienceLabels.cityName(e.city)
-            binding.themeLine.text = e.theme?.let { getString(R.string.discover_theme_line, getString(SocialLabels.of(it))) }.orEmpty()
             binding.citySectionTitle.text = getString(R.string.discover_section_city, ExperienceLabels.cityName(e.city))
         }
         section(e?.sections?.firstOrNull { it.kind == EditionSectionKind.CITY }?.items, binding.citySectionTitle,
@@ -105,9 +142,9 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         section(e?.sections?.firstOrNull { it.kind == EditionSectionKind.THEME }?.items, binding.themeSectionTitle,
             binding.themeSectionList, themeAdapter)
         binding.editionEmpty.isVisible = e != null && e.isEmpty
-        binding.editionEndCard.isVisible = e != null
+        binding.editionEndCard.isVisible = e != null && !e.isEmpty
 
-        connectionsAdapter.submitList(state.connections.map { row(it) })
+        connectionsAdapter.submitList(state.connections.map { row(it, withWhy = false) })
         binding.connectionsEmpty.isVisible = state.connectionsLoaded && state.connections.isEmpty()
         binding.connectionsShowMore.isVisible = state.connectionsHasMore
         binding.connectionsShowMore.isEnabled = !state.connectionsLoading
@@ -124,7 +161,32 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         }
     }
 
+    /** "This week in / Chennai / Week of 19 Oct 2026 · Theme: Hidden gems". The city chips open from the city's name. */
+    private fun renderMasthead(state: DiscoverUiState) {
+        val city = state.city
+        binding.cityTitle.text = city?.let(ExperienceLabels::cityName) ?: getString(R.string.discover_masthead_no_city)
+        binding.cityTitle.contentDescription = city?.let {
+            getString(R.string.discover_city_description, ExperienceLabels.cityName(it))
+        } ?: getString(R.string.discover_masthead_no_city)
+        cityChips.show(City.entries.filter { it != City.OTHER }.map { it to ExperienceLabels.cityName(it) }, city)
+        binding.cityBlock.isVisible = city == null || cityPickerOpen
+        binding.cityHint.isVisible = state.needsCity && city == null
+
+        val week = state.edition?.weekOf
+            ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()))
+        val theme = state.edition?.theme
+        binding.mastheadSub.isVisible = week != null
+        binding.mastheadSub.text = when {
+            week == null -> ""
+            theme != null -> getString(R.string.discover_masthead_sub_theme, week, getString(SocialLabels.of(theme)))
+            else -> getString(R.string.discover_masthead_sub, week)
+        }
+    }
+
     private fun renderSearch(state: DiscoverUiState) {
+        binding.searchPanel.isVisible = searchOpen
+        binding.searchToggle.contentDescription = getString(if (searchOpen) R.string.discover_search_close
+            else R.string.discover_search_open)
         val query = state.query.trim()
         val categories = if (query.length < DiscoverViewModel.SEARCH_MIN) emptyList() else Interest.entries.filter {
             getString(SocialLabels.of(it)).contains(query, ignoreCase = true) || it.name.contains(query.replace(' ', '_'), ignoreCase = true)
@@ -143,18 +205,17 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         binding.searchButton.isEnabled = query.length >= DiscoverViewModel.SEARCH_MIN && !state.searching
     }
 
-    private fun section(items: List<DiscoverItem>?, title: View, list: View, adapter: PersonRowAdapter) {
+    private fun section(items: List<DiscoverItem>?, title: View, list: RecyclerView, adapter: ExperienceCardAdapter) {
         val shown = !items.isNullOrEmpty()
         title.isVisible = shown
         list.isVisible = shown
-        adapter.submitList(items.orEmpty().map { row(it) })
+        adapter.submitList(items.orEmpty().map { row(it, withWhy = true) })
     }
 
-    private fun row(item: DiscoverItem): PersonRow {
-        val base = PostRows.of(requireContext(), item.post) { openPost(item.post.publicId) }
-        if (item.reasons.isEmpty()) return base
-        return base.copy(secondary = RowAction(getString(R.string.discover_why),
-            getString(R.string.discover_why_description, base.title)) { explain(item) })
+    private fun row(item: DiscoverItem, withWhy: Boolean): CardRow {
+        val card = ExperienceCards.of(item.post, item.reasons, collapseStrongLanguage)
+        return CardRow(card, onOpen = { openPost(item.post.publicId) },
+            onWhy = if (withWhy && item.reasons.isNotEmpty()) ({ explain(item) }) else null)
     }
 
     private fun placeRow(place: Place): PersonRow {

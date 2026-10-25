@@ -79,7 +79,7 @@ class LoginFragment : ViewBindingFragment<FragmentLoginBinding>(FragmentLoginBin
 
         if (state.navigateToHome) {
             viewModel.onNavigationHandled()
-            findNavController().navigate(R.id.action_login_to_home)
+            findNavController().navigate(R.id.action_login_to_start)
         }
     }
 }

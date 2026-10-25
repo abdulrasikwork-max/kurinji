@@ -71,10 +71,8 @@ import com.safesphere.app.feature.emergency.data.remote.EmergencyApi
 import com.safesphere.app.feature.emergency.domain.ActiveEmergencyStore
 import com.safesphere.app.feature.emergency.domain.EmergencyIds
 import com.safesphere.app.feature.emergency.session.SosRecorder
-import com.safesphere.app.feature.rise.data.EncryptedFileRiseStore
-import com.safesphere.app.feature.rise.data.RiseStore
-import com.safesphere.app.feature.rise.session.RiseJournalHolder
-import com.safesphere.app.feature.rise.session.RiseLock
+import com.safesphere.app.core.retired.RiseRetirement
+import com.safesphere.app.feature.emergency.entry.SosLaunchRequest
 import com.safesphere.app.feature.emergency.domain.EmergencyLocationRepository
 import com.safesphere.app.feature.emergency.domain.EmergencyRepository
 import com.safesphere.app.feature.emergency.location.EmergencyLocationSharing
@@ -298,8 +296,7 @@ class AppContainer(context: Context) {
         AccountDataWiper(
             parts = listOf(
                 { userId -> evidenceVault.forgetAccount(userId) },
-                { userId -> withContext(Dispatchers.IO) { recoveryKeyStore.remove(userId) } },
-                { userId -> withContext(Dispatchers.IO) { riseStore.delete(userId) } } // Phase 10B
+                { userId -> withContext(Dispatchers.IO) { recoveryKeyStore.remove(userId) } }
             ),
             pendingDeletion = pendingDeletion
         )
@@ -534,19 +531,15 @@ class AppContainer(context: Context) {
     /** Region packs for "Check the way": only 5-character region cells are ever sent. */
     val intelligenceRepository: IntelligenceRepository by lazy { RemoteIntelligenceRepository(intelligenceApi, apiCallHandler) }
 
-    // ---- Phase 10B: Rise "Proof" (phone only: no API, no notification, no service) -----------------------------
+    // ---- Phase 13F (D9): Rise "Proof" is retired; its encrypted notes on this phone are deleted once, with a notice --
 
-    private val riseStore: RiseStore by lazy { EncryptedFileRiseStore(java.io.File(appContext.filesDir, "rise"), AndroidKeystoreKeyWrapper()) }
+    val riseRetirement: RiseRetirement by lazy { RiseRetirement(appContext.filesDir) }
 
-    /** The signed-in person's Rise record (encrypted file per account on this phone). */
-    val riseJournal: RiseJournalHolder by lazy {
-        RiseJournalHolder(applicationScope, Dispatchers.IO, riseStore, sessionStorage.session.map { it?.user?.id })
-    }
-
-    /** Rise's optional opening lock (the phone's screen lock); any account change locks it. */
-    val riseLock: RiseLock by lazy { RiseLock(applicationScope, sessionStorage.session.map { it?.user?.id }) }
+    /** Phase 13F (F11): set only by the non-exported SosEntryActivity (shortcut, tile); memory only. */
+    val sosLaunchRequest: SosLaunchRequest = SosLaunchRequest()
 
     init {
+        applicationScope.launch(Dispatchers.IO) { riseRetirement.retire() }
         currentSession // Phase 11 C1: start following the session now, so the dialog never reads a stale "null"
         evidenceVault // seal captures interrupted by a crash and resume uploads right away
         evidenceRecorder // watches the active emergency (stops recording when it ends)
@@ -608,3 +601,6 @@ class AppContainer(context: Context) {
 
 val Fragment.appContainer: AppContainer
     get() = (requireActivity().application as SafeSphereApp).container
+
+val android.app.Activity.appContainer: AppContainer
+    get() = (application as SafeSphereApp).container

@@ -86,6 +86,15 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
             else wayLocationLauncher.launch(LocationPermissions.REQUESTED)
         }
         binding.destinationInput.doAfterTextChanged { wayCheck.onDestinationChanged() }
+        // Phase 13F (F10): "Going there?" only fills in the place; nothing starts until the person presses a button.
+        val prefill = arguments?.getString(ARG_DESTINATION_LABEL)
+        if (savedInstanceState == null && !prefill.isNullOrBlank() && binding.destinationInput.text.isNullOrEmpty()) {
+            binding.destinationInput.setText(prefill)
+        }
+        if (savedInstanceState == null && arguments?.getBoolean(ARG_CHECK_WAY) == true) {
+            binding.checkWayButton.post { binding.checkWayButton.requestRectangleOnScreen(android.graphics.Rect(0, 0,
+                binding.checkWayButton.width, binding.checkWayButton.height), false) }
+        }
         collectWhenStarted(wayCheck.state, ::renderWayCheck)
         binding.checkInButton.setOnClickListener { viewModel.onCheckInClicked() }
         binding.arrivedButton.setOnClickListener { confirm(R.string.safe_walk_confirm_arrived, R.string.action_arrived) { viewModel.onArrivedConfirmed() } }
@@ -395,5 +404,13 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
             .setPositiveButton(positive) { _, _ -> onConfirmed() }
             .setNegativeButton(R.string.action_keep_walking, null)
             .show()
+    }
+
+    companion object {
+        /** Phase 13F (F10): a place name the "Going there?" sheet fills in; the person can change or clear it. */
+        const val ARG_DESTINATION_LABEL = "destinationLabel"
+
+        /** Phase 13F: opened from "Check the way": the screen scrolls to that button (nothing runs by itself). */
+        const val ARG_CHECK_WAY = "checkWay"
     }
 }

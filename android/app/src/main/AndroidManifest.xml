@@ -72,7 +72,34 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Phase 13F: long-press the icon → SOS (opens the non-exported SosEntryActivity below). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
+
+        <!-- Phase 13F (F11): the SOS shortcut's and tile's target. NOT exported: another app cannot open it, so it
+             cannot start an SOS countdown. It records an in-memory request and opens MainActivity. -->
+        <activity
+            android:name=".feature.emergency.entry.SosEntryActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.SafeSphere.Trampoline" />
+
+        <!-- Phase 13F (F11): the SOS tile in Quick Settings. Exported only so the system can bind it; the
+             BIND_QUICK_SETTINGS_TILE permission means no other app can. -->
+        <service
+            android:name=".feature.emergency.entry.SosTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_shield_alert"
+            android:label="@string/sos_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
         <!-- Started only from a visible screen during an active emergency; not reachable by other apps.
              "microphone" only while the person records audio evidence (Phase 5). -->

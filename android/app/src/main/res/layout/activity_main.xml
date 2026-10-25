@@ -3,16 +3,21 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorHero"
+    android:background="?attr/colorSurface"
     android:orientation="vertical">
 
-    <!-- Only shown on secondary screens (Settings, About, Register...). MainActivity decides. -->
+    <!-- Only shown on secondary screens (post, Safety, Settings, Register...). MainActivity decides. -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         style="@style/Widget.SafeSphere.Toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:visibility="gone" />
+
+    <!-- Phase 13F: the safety banners on every tab and reading screen (NavigationRules.bannerDestinations). -->
+    <include
+        android:id="@+id/banners"
+        layout="@layout/view_session_banners" />
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/navHostFragment"
@@ -23,17 +28,7 @@
         app:defaultNavHost="true"
         app:navGraph="@navigation/nav_graph" />
 
-    <!--
-        Reserved for the future emergency (SOS) action so it can sit above the bottom bar on every tab.
-        Still empty and hidden: the SOS tile on Home is a labelled preview, not this slot.
-    -->
-    <FrameLayout
-        android:id="@+id/emergencyActionHost"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone" />
-
-    <!-- Styling (pill indicator, filled icon when selected) comes from Widget.SafeSphere.BottomNavigation -->
+    <!-- Discover · Share · Cocoon · You (styling from Widget.SafeSphere.BottomNavigation) -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"

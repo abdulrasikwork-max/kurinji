@@ -26,7 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:accessibilityHeading="true"
-            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+            android:textAppearance="@style/TextAppearance.Kurinji.Headline.Large" />
 
         <TextView
             android:id="@+id/detailLine"
@@ -34,6 +34,17 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_xs"
             android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <!-- Phase 13F (F9): from reading to going (place pages only). -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/goingButton"
+            style="@style/Widget.Kurinji.Button.Quiet"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="@string/going_there"
+            android:visibility="gone"
+            app:icon="@drawable/ic_route" />
 
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/progress"
@@ -51,13 +62,27 @@
             android:nestedScrollingEnabled="false"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-        <TextView
-            android:id="@+id/emptyText"
+        <LinearLayout
+            android:id="@+id/emptyBlock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-            android:visibility="gone" />
+            android:layout_marginTop="@dimen/space_lg"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.safesphere.app.core.ui.components.KolamView
+                android:layout_width="@dimen/kolam_size"
+                android:layout_height="@dimen/kolam_size" />
+
+            <TextView
+                android:id="@+id/emptyText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:gravity="center"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/showMoreButton"

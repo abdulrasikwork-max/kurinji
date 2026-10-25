@@ -1,0 +1,480 @@
+<title>Kurinji Design Direction</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Mukta+Malar:wght@400;500;700&family=Arima:wght@600&family=Noto+Serif+Tamil:wght@600&display=swap">
+<style>
+/* Layout: a review board. A short thesis, then the system (colour, type, motifs), then phone screens side by side, then motion, map and open decisions. */
+:root {
+  --mist: #EEF1EF;      /* page: hill mist, cool and faintly green */
+  --card: #FBFCFA;      /* raised surfaces */
+  --sunk: #E3E8E5;      /* wells, chips */
+  --ink: #1A1D35;       /* text: indigo night */
+  --ink2: #4A4F66;      /* secondary text */
+  --line: #CDD4D1;
+  --bloom: #4A46B0;     /* Kurinji violet-blue: brand, actions, postmark ink */
+  --bloom-soft: #E2E1F6;
+  --on-bloom: #FBFCFA;
+  --yeoman: #E58A2E;    /* Tamil Yeoman orange: intent only (butterfly, Want) */
+  --yeoman-ink: #9A4A0B;
+  --yeoman-soft: #FBE5CF;
+  --ochre: #8A5A00;     /* moderation notices (with icon + words) */
+  --ochre-soft: #F3E6C4;
+  --sos: #C62828;       /* emergency UI only */
+  --on-sos: #FFFFFF;
+  --display: "Young Serif", "Noto Serif Tamil", Georgia, serif;
+  --ui: "Mukta Malar", "Noto Sans Tamil", system-ui, sans-serif;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --mist: #12142A; --card: #1B1E36; --sunk: #232746; --ink: #E8EAF2; --ink2: #B4B8CC; --line: #33385A;
+  --bloom: #ABA8F7; --bloom-soft: #2C2A66; --on-bloom: #12142A; --yeoman: #F2A65A; --yeoman-ink: #F6B97A;
+  --yeoman-soft: #4A2A10; --ochre: #E8B54A; --ochre-soft: #3F2F0B; --sos: #FF6B6B; --on-sos: #3A0606; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --mist: #12142A; --card: #1B1E36; --sunk: #232746; --ink: #E8EAF2; --ink2: #B4B8CC; --line: #33385A;
+  --bloom: #ABA8F7; --bloom-soft: #2C2A66; --on-bloom: #12142A; --yeoman: #F2A65A; --yeoman-ink: #F6B97A;
+  --yeoman-soft: #4A2A10; --ochre: #E8B54A; --ochre-soft: #3F2F0B; --sos: #FF6B6B; --on-sos: #3A0606; color-scheme: dark }
+
+body { background: var(--mist); color: var(--ink); font-family: var(--ui); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 64px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; text-wrap: balance; margin: 0; }
+h2 { font-size: 30px; line-height: 1.15; }
+h3 { font-size: 20px; }
+p { margin: 0; max-width: 65ch; }
+.eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); font-weight: 500; }
+.stack { display: grid; gap: 14px; }
+.muted { color: var(--ink2); }
+
+/* Thesis */
+.hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 32px; align-items: center; }
+.word { font-family: var(--display); font-size: clamp(56px, 10vw, 104px); line-height: .95; color: var(--bloom); }
+.word-ta { font-family: "Noto Serif Tamil", serif; font-weight: 600; font-size: clamp(24px, 4vw, 34px); color: var(--ink2); margin-top: 6px; }
+.motto { font-family: var(--display); font-size: clamp(22px, 3vw, 30px); line-height: 1.25; margin-top: 18px; }
+.note { border: 1px dashed var(--line); border-radius: var(--r); padding: 14px 16px; font-size: 14px; color: var(--ink2); }
+@media (max-width: 760px) { .hero { grid-template-columns: minmax(0, 1fr); } }
+
+/* System */
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 20px; }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.sw { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center; font-size: 14px; }
+.chip { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line); }
+.sw b { font-weight: 700; }
+.spec-d { font-family: var(--display); font-size: 34px; line-height: 1.1; }
+.spec-ta { font-family: var(--ui); font-size: 18px; line-height: 1.7; }
+.alt { font-size: 13px; color: var(--ink2); }
+.motif { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 14px; align-items: start; }
+.motif svg { width: 64px; height: 64px; }
+
+/* Phones */
+.phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px; align-items: start; }
+.phone { background: var(--mist); border: 1px solid var(--line); border-radius: 30px; overflow: hidden; max-width: 340px; width: 100%; justify-self: center;
+  display: flex; flex-direction: column; min-height: 640px; box-shadow: 0 1px 0 var(--line); }
+.cap { font-size: 13px; color: var(--ink2); text-align: center; margin-top: 10px; max-width: 340px; justify-self: center; }
+.scr { flex: 1; padding: 16px 14px; display: grid; gap: 14px; align-content: start; }
+.bar { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--card); padding: 8px 4px 10px; }
+.tab { display: grid; justify-items: center; gap: 2px; font-size: 11px; color: var(--ink2); }
+.tab svg { width: 22px; height: 22px; }
+.tab.on { color: var(--bloom); font-weight: 700; }
+.tab .plus { width: 34px; height: 34px; border-radius: 50%; background: var(--bloom); color: var(--on-bloom); display: grid; place-items: center; font-size: 22px; line-height: 1; margin-top: -4px; }
+.tab.pulse { animation: pulse .32s ease-out; }
+@keyframes pulse { 50% { transform: scale(1.18); } }
+
+.mast .eyebrow { font-size: 10px; }
+.mast .city { font-family: var(--display); font-size: 34px; line-height: 1; color: var(--ink); }
+.mast .sub { font-size: 12px; color: var(--ink2); }
+.mtabs { display: flex; gap: 18px; font-size: 13px; border-bottom: 1px solid var(--line); }
+.mtabs span { padding: 6px 0; }
+.mtabs .on { border-bottom: 2px solid var(--ink); font-weight: 700; }
+.sec { font-family: var(--display); font-size: 17px; }
+
+.post { background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; display: grid; position: relative; }
+.photo { aspect-ratio: 4 / 3; background:
+  linear-gradient(160deg, #6E7FA8 0%, #8F86C4 38%, #C9B6D8 62%, #E8C49A 100%); position: relative; }
+.photo::after { content: ""; position: absolute; inset: 0; background:
+  radial-gradient(ellipse 80% 40% at 30% 100%, rgba(26,29,53,.55), transparent 70%),
+  radial-gradient(ellipse 70% 35% at 85% 100%, rgba(26,29,53,.4), transparent 70%); }
+.pm { position: absolute; right: 10px; bottom: -30px; width: 86px; height: 86px; transform: rotate(-7deg); z-index: 2; }
+.body { padding: 14px 14px 12px; display: grid; gap: 8px; }
+.kind { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); font-weight: 700; }
+.head { font-family: var(--display); font-size: 21px; line-height: 1.2; padding-right: 64px; }
+.excerpt { font-size: 14px; color: var(--ink2); }
+.ticket { position: relative; padding: 10px 18px; font-size: 14px; color: var(--ink);
+  background:
+    radial-gradient(circle at 0 50%, transparent 9px, var(--bloom-soft) 9.5px) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, transparent 9px, var(--bloom-soft) 9.5px) right / 51% 100% no-repeat; }
+.ticket .tl { display: block; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; color: var(--bloom); border-bottom: 1px dashed var(--bloom); padding-bottom: 4px; margin-bottom: 6px; }
+.by { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--ink2); gap: 8px; }
+.bfly { width: 28px; height: 24px; }
+
+.ask { border: 1.5px dashed var(--ink2); border-radius: 18px; padding: 14px; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; background: var(--card); }
+.ask .q { font-family: var(--display); font-size: 40px; line-height: .8; color: var(--bloom); }
+.ask .t { font-family: var(--display); font-size: 16px; line-height: 1.25; }
+.ask .s { font-size: 12px; color: var(--ink2); margin-top: 4px; }
+
+.btn { border-radius: 999px; padding: 10px 16px; font: 700 14px var(--ui); border: 1px solid var(--line); background: var(--card); color: var(--ink); display: inline-flex; align-items: center; gap: 8px; justify-content: center; cursor: pointer; }
+.btn:focus-visible { outline: 3px solid var(--bloom); outline-offset: 2px; }
+.btn.want { background: var(--yeoman-soft); border-color: var(--yeoman); color: var(--yeoman-ink); }
+.btn.saved { background: var(--card); border-color: var(--line); color: var(--ink2); }
+.btn.pri { background: var(--bloom); border-color: var(--bloom); color: var(--on-bloom); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.sheet { margin-top: auto; background: var(--card); border-top-left-radius: 22px; border-top-right-radius: 22px; border-top: 1px solid var(--line); padding: 10px 16px 18px; display: grid; gap: 4px; }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: var(--line); justify-self: center; margin-bottom: 8px; }
+.opt { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.opt:last-child { border-bottom: 0; }
+.ico { width: 36px; height: 36px; border-radius: 50%; background: var(--sunk); display: grid; place-items: center; color: var(--bloom); }
+.ico svg { width: 20px; height: 20px; }
+.opt b { display: block; font-size: 15px; }
+.opt span { font-size: 12px; color: var(--ink2); }
+.dim { background: color-mix(in srgb, var(--ink) 35%, transparent); flex: 1; display: flex; flex-direction: column; }
+
+.coc { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
+.coc svg { width: 40px; height: 40px; }
+.coc .t { font-family: var(--display); font-size: 15px; line-height: 1.25; }
+.coc .s { font-size: 12px; color: var(--ink2); }
+.coc .a { font-size: 12px; font-weight: 700; color: var(--bloom); margin-top: 4px; }
+
+.field { border-bottom: 1px solid var(--line); padding: 8px 0; font-size: 14px; color: var(--ink2); }
+.types { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.type { border: 1px solid var(--line); border-radius: 14px; padding: 10px; background: var(--card); font-size: 13px; }
+.type.on { border: 2px solid var(--bloom); }
+.type b { font-family: var(--display); font-weight: 400; font-size: 16px; display: block; }
+.aud { display: grid; gap: 6px; }
+.aud div { border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; font-size: 12px; background: var(--card); }
+.aud div b { font-size: 14px; display: block; color: var(--ink); }
+
+.status { background: var(--ink); color: var(--mist); border-radius: 18px; padding: 14px; display: grid; gap: 4px; }
+.status small { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
+.status b { font-family: var(--display); font-weight: 400; font-size: 19px; }
+.status span { font-size: 12px; opacity: .85; }
+.sos { background: var(--sos); color: var(--on-sos); border-radius: 18px; padding: 16px; display: grid; gap: 2px; }
+.sos b { font-size: 26px; letter-spacing: .04em; }
+.sos span { font-size: 13px; }
+.sos em { font-style: normal; font-size: 11px; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; justify-self: start; margin-top: 6px; }
+.list { background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+.li { display: flex; justify-content: space-between; gap: 10px; padding: 11px 12px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.li:last-child { border-bottom: 0; }
+.li i { font-style: normal; color: var(--ink2); font-size: 12px; text-align: right; }
+
+.end { background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.end svg { display: block; width: 100%; height: auto; }
+.end div { padding: 12px 14px 14px; display: grid; gap: 10px; }
+.end p { font-family: var(--display); font-size: 18px; line-height: 1.25; }
+
+/* Motion + map */
+.moments { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px; }
+.moment { border-top: 2px solid var(--bloom); padding-top: 10px; display: grid; gap: 6px; font-size: 14px; }
+.moment b { font-family: var(--display); font-weight: 400; font-size: 18px; }
+.moment code { font-size: 12px; color: var(--ink2); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+.tw { overflow-x: auto; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink2); font-weight: 500; }
+.dec { display: grid; gap: 10px; counter-reset: d; }
+.dec div { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; font-size: 14px; }
+.dec b { font-weight: 700; }
+
+.flyer { position: fixed; width: 30px; height: 26px; pointer-events: none; z-index: 50; }
+@media (prefers-reduced-motion: reduce) { .tab.pulse { animation: none; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="fly" viewBox="0 0 48 40">
+      <g class="wl"><path d="M23 18C16 6 4 4 3 12C2 19 12 22 23 21Z" fill="var(--yeoman)" stroke="var(--ink)" stroke-width="2"/>
+        <path d="M23 22C14 22 6 27 9 34C12 39 20 33 23 25Z" fill="var(--yeoman)" stroke="var(--ink)" stroke-width="2"/>
+        <circle cx="9" cy="12" r="1.6" fill="var(--ink)"/></g>
+      <g class="wr"><path d="M25 18C32 6 44 4 45 12C46 19 36 22 25 21Z" fill="var(--yeoman)" stroke="var(--ink)" stroke-width="2"/>
+        <path d="M25 22C34 22 42 27 39 34C36 39 28 33 25 25Z" fill="var(--yeoman)" stroke="var(--ink)" stroke-width="2"/>
+        <circle cx="39" cy="12" r="1.6" fill="var(--ink)"/></g>
+      <ellipse cx="24" cy="22" rx="1.8" ry="9" fill="var(--ink)"/>
+      <path d="M23.4 13.5L19.5 5M24.6 13.5L28.5 5" stroke="var(--ink)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="chrysalis" viewBox="0 0 40 40">
+      <path d="M20 3V8" stroke="var(--ink2)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M20 8C28 10 29 22 25 30C23 35 17 35 15 30C11 22 12 10 20 8Z" fill="var(--yeoman-soft)" stroke="var(--yeoman-ink)" stroke-width="2"/>
+      <path d="M15.5 17C18 19 22 19 24.5 17M15 23C18 25 22 25 25 23" stroke="var(--yeoman-ink)" stroke-width="1.4" fill="none"/>
+    </symbol>
+    <symbol id="postmark" viewBox="0 0 100 100">
+      <path id="arcTop" d="M18 50A32 32 0 0 1 82 50" fill="none"/>
+      <path id="arcBot" d="M14 50A36 36 0 0 0 86 50" fill="none"/>
+      <circle cx="50" cy="50" r="44" fill="none" stroke="var(--bloom)" stroke-width="2.4" opacity=".85"/>
+      <circle cx="50" cy="50" r="27" fill="none" stroke="var(--bloom)" stroke-width="1.4" opacity=".85"/>
+      <text font-family="Mukta Malar, sans-serif" font-size="9.5" font-weight="700" letter-spacing="1.6" fill="var(--bloom)"><textPath href="#arcTop" startOffset="50%" text-anchor="middle">ELLIOT'S BEACH</textPath></text>
+      <text font-family="Mukta Malar, sans-serif" font-size="8" font-weight="700" letter-spacing="1.4" fill="var(--bloom)"><textPath href="#arcBot" startOffset="50%" text-anchor="middle">OCT 2026 · EVENING</textPath></text>
+      <text x="50" y="47" text-anchor="middle" font-family="Young Serif, serif" font-size="11" fill="var(--bloom)">Chennai</text>
+      <path d="M38 55h24" stroke="var(--bloom)" stroke-width="1.2"/>
+      <text x="50" y="64" text-anchor="middle" font-family="Mukta Malar, sans-serif" font-size="7" font-weight="700" letter-spacing="1" fill="var(--bloom)">KURINJI</text>
+    </symbol>
+    <symbol id="kolam" viewBox="0 0 60 60">
+      <g fill="var(--ink2)"><circle cx="20" cy="20" r="2"/><circle cx="40" cy="20" r="2"/><circle cx="20" cy="40" r="2"/><circle cx="40" cy="40" r="2"/><circle cx="30" cy="30" r="2"/></g>
+      <path d="M30 8C44 8 52 16 52 30S44 52 30 52 8 44 8 30 16 8 30 8ZM30 8C22 16 22 22 30 30S38 44 30 52M30 8C38 16 38 22 30 30S22 44 30 52M8 30C16 22 22 22 30 30S44 38 52 30M8 30C16 38 22 38 30 30S44 22 52 30" fill="none" stroke="var(--bloom)" stroke-width="1.6" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-disc" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></symbol>
+    <symbol id="i-coc" viewBox="0 0 24 24"><path d="M12 2v3M12 5c5 1 5.5 8 3 13-1.2 2.4-4.8 2.4-6 0C6.5 13 7 6 12 5Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></symbol>
+    <symbol id="i-you" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></symbol>
+    <symbol id="i-msg" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4Z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/></symbol>
+    <symbol id="i-walk" viewBox="0 0 24 24"><circle cx="13" cy="4" r="2" fill="currentColor"/><path d="M9 21l3-7 3 3v4M12 14l1-5-4 2-1 3M13 9l3 3h3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-way" viewBox="0 0 24 24"><path d="M5 20c0-6 14-4 14-10a4 4 0 0 0-8 0" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-dasharray="3 3"/><circle cx="5" cy="20" r="2" fill="currentColor"/><path d="M15 6l-4 4" stroke="currentColor" stroke-width="2"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<section class="hero" aria-labelledby="t">
+  <div>
+    <div class="eyebrow">Phase 13F · design direction for review</div>
+    <h1 id="t" class="word">Kurinji</h1>
+    <div class="word-ta" lang="ta">குறிஞ்சி</div>
+    <p class="motto">Written for the next one who goes.</p>
+  </div>
+  <div class="stack">
+    <p>A field journal from the hills, not a feed. Every screen is built from three facts about a post: <b>where</b>, <b>when</b> and <b>what the next person should know</b>. Each of those gets its own object: a postmark, a band of time and a ticket.</p>
+    <p class="muted">The colours come from the Western Ghats. Neelakurinji blooms violet-blue across the hills once every twelve years. Tamil Nadu's state butterfly, the Tamil Yeoman, is a tawny orange with dark wing edges. Indian office stamps are inked in violet.</p>
+    <div class="note">Nothing here is built yet. The screens are mock-ups for this review. Sample place, names and text are examples, not data.</div>
+  </div>
+</section>
+
+<section class="stack" aria-labelledby="sys">
+  <h2 id="sys">The system</h2>
+  <div class="grid2">
+    <div class="panel">
+      <div class="eyebrow">Colour roles</div>
+      <div class="sw"><div class="chip" style="background:var(--mist)"></div><div><b>Mist</b> · the page. Cool hill mist, not cream paper.</div></div>
+      <div class="sw"><div class="chip" style="background:var(--ink)"></div><div><b>Ink</b> · indigo night. All body text.</div></div>
+      <div class="sw"><div class="chip" style="background:var(--bloom)"></div><div><b>Bloom</b> · Kurinji violet-blue. Brand, buttons, postmarks, "Been".</div></div>
+      <div class="sw"><div class="chip" style="background:var(--yeoman)"></div><div><b>Yeoman</b> · intent only: the butterfly and "Want to go". A fill, never small text.</div></div>
+      <div class="sw"><div class="chip" style="background:var(--ochre-soft);border-color:var(--ochre)"></div><div><b>Ochre</b> · moderation notices, always with an icon and words.</div></div>
+      <div class="sw"><div class="chip" style="background:var(--sos)"></div><div><b>Red</b> · emergency screens only. Unchanged rule.</div></div>
+      <p class="alt">Dark mode is "Kurinji night" (the kurinji landscape's hour in Sangam poetry is midnight). Every text pair is 4.5:1 or better in both themes.</p>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Type</div>
+      <div class="spec-d">Filter coffee by the temple tank</div>
+      <p class="alt">Display: Young Serif. Warm, heavy, slightly old-fashioned, and rarely used. Headlines only.</p>
+      <div class="spec-ta"><b>For the next person:</b> go before 7, the decoction runs out by 8. Semma place da.<br><span lang="ta">கோயில் குளத்தருகே சின்ன டீக்கடை, காலை ஏழு மணிக்கு முன் போங்க.</span></div>
+      <p class="alt">UI and body: Mukta Malar. One family drawn for Tamil and Latin together, so Tamil, Tanglish and English sit at the same size and weight.</p>
+      <div style="font-family:Arima, serif;font-weight:600;font-size:26px;line-height:1.2">Kurinji <span lang="ta">குறிஞ்சி</span></div>
+      <p class="alt">Alternative display: Arima, which also has Tamil letters. Fonts ship inside the app (OFL licence); nothing loads from the network.</p>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Four motifs, each with a job</div>
+      <div class="motif"><svg aria-hidden="true"><use href="#postmark"/></svg><div><b>Postmark</b> = where and when. Place name on the ring, month and time of day below. Area posts show a grid reference, city posts only the city, "no place" posts a blank cancellation.</div></div>
+      <div class="motif"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="4" y="18" width="56" height="28" rx="3" fill="var(--bloom-soft)"/><circle cx="4" cy="32" r="6" fill="var(--card)"/><circle cx="60" cy="32" r="6" fill="var(--card)"/><path d="M12 27h40" stroke="var(--bloom)" stroke-dasharray="3 2"/></svg><div><b>Ticket</b> = the tip for the next person. Notched like a bus ticket, because it is what gets someone there.</div></div>
+      <div class="motif"><svg aria-hidden="true"><use href="#fly"/></svg><div><b>Butterfly and chrysalis</b> = intent. Want to go is a chrysalis in your Cocoon; Been is the butterfly.</div></div>
+      <div class="motif"><svg aria-hidden="true"><use href="#kolam"/></svg><div><b>Kolam</b> = empty states only. A kolam is drawn at the door every morning for whoever comes next.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="stack" aria-labelledby="scr">
+  <h2 id="scr">Screens</h2>
+  <p class="muted">Navigation becomes Discover · Share · Cocoon · You. Tap the butterfly on the second phone to see the save.</p>
+  <div class="phones">
+
+    <div style="display:grid">
+      <div class="phone" aria-label="Discover mock-up">
+        <div class="scr">
+          <div class="mast"><div class="eyebrow">This week in</div><div class="city">Chennai</div><div class="sub">Week of 19 October · Theme: Hidden gems</div></div>
+          <div class="mtabs"><span class="on">Edition</span><span>Connections</span><span style="margin-left:auto">Search</span></div>
+          <div class="sec">New in Chennai</div>
+          <article class="post">
+            <div class="photo"><svg class="pm" aria-hidden="true"><use href="#postmark"/></svg></div>
+            <div class="body">
+              <div class="kind">Experience · Food &amp; cafés</div>
+              <div class="head">Filter coffee at the stall behind the beach</div>
+              <div class="ticket"><span class="tl">For the next person</span>Go before 7. After that the decoction runs out.</div>
+              <div class="by"><span>Asha · this week</span><svg class="bfly" aria-hidden="true"><use href="#chrysalis"/></svg></div>
+            </div>
+          </article>
+          <div class="sec">Asks you could answer</div>
+          <div class="ask"><div class="q">?</div><div><div class="t">Anyone been to Kovalam point in the evening? How do people get back?</div><div class="s">Day trips · Chennai · Been there? You could answer.</div></div></div>
+        </div>
+        <div class="bar"><div class="tab on"><svg><use href="#i-disc"/></svg>Discover</div><div class="tab"><div class="plus">+</div>Share</div><div class="tab"><svg><use href="#i-coc"/></svg>Cocoon</div><div class="tab"><svg><use href="#i-you"/></svg>You</div></div>
+      </div>
+      <p class="cap">Discover opens on the weekly Edition: a masthead, short sections, and an end.</p>
+    </div>
+
+    <div style="display:grid">
+      <div class="phone" aria-label="Post mock-up">
+        <div class="scr">
+          <article class="post" style="border-radius:18px">
+            <div class="photo"><svg class="pm" aria-hidden="true"><use href="#postmark"/></svg></div>
+            <div class="body">
+              <div class="kind">Experience · Food &amp; cafés</div>
+              <div class="head" style="font-size:24px">Filter coffee at the stall behind the beach</div>
+              <div class="excerpt">A steel tumbler, a bench facing the sea and a man who has made the same coffee since 1989. Sit on the far side; the wind takes the smoke from the bajji stall.</div>
+              <div class="ticket"><span class="tl">For the next person</span>Go before 7. After that the decoction runs out.</div>
+              <div class="by"><span>By Asha · October, evening · this week</span></div>
+              <div class="row"><button class="btn want" id="wantBtn" type="button" aria-label="Want to experience this. Saves to Cocoon."><svg class="bfly" id="srcFly" aria-hidden="true"><use href="#fly"/></svg><span id="wantText">Want to go</span></button><button class="btn" type="button">Going there?</button></div>
+            </div>
+          </article>
+          <div class="sec">Perspectives</div>
+          <div class="list"><div class="li"><span><b>Been here too</b> · Karthik<br><span class="muted" style="font-size:13px">Sundays it opens at 6.</span></span><i>this month</i></div></div>
+        </div>
+        <div class="bar"><div class="tab on"><svg><use href="#i-disc"/></svg>Discover</div><div class="tab"><div class="plus">+</div>Share</div><div class="tab" id="cocoonTab"><svg><use href="#i-coc"/></svg>Cocoon</div><div class="tab"><svg><use href="#i-you"/></svg>You</div></div>
+      </div>
+      <p class="cap">The post keeps the bottom bar, so the butterfly can fly into the Cocoon. "Going there?" is where safety appears.</p>
+    </div>
+
+    <div style="display:grid">
+      <div class="phone" aria-label="Going there sheet mock-up">
+        <div class="dim">
+          <div class="sheet">
+            <div class="grab"></div>
+            <h3>Going there?</h3>
+            <p class="muted" style="font-size:13px;margin-bottom:6px">Elliot's Beach, Chennai. Use what helps; none of it is needed.</p>
+            <div class="opt"><div class="ico"><svg style="width:24px;height:20px"><use href="#fly"/></svg></div><div><b>In your Cocoon</b><span>Saved as want to go</span></div></div>
+            <div class="opt"><div class="ico"><svg><use href="#i-msg"/></svg></div><div><b>Let someone know</b><span>Opens your messages with a note you can edit. Kurinji sends nothing and keeps nothing.</span></div></div>
+            <div class="opt"><div class="ico"><svg><use href="#i-walk"/></svg></div><div><b>Walk with check-ins</b><span>Safe Walk, with the place filled in</span></div></div>
+            <div class="opt"><div class="ico"><svg><use href="#i-way"/></svg></div><div><b>Check the way</b><span>What people nearby have confirmed along the way</span></div></div>
+          </div>
+        </div>
+      </div>
+      <p class="cap">The bridge from reading to going. Social screens only open it; the safety screens stay separate.</p>
+    </div>
+
+    <div style="display:grid">
+      <div class="phone" aria-label="Cocoon mock-up">
+        <div class="scr">
+          <div class="mast"><div class="eyebrow">Private to you</div><div class="city" style="font-size:30px">Your Cocoon</div></div>
+          <div class="mtabs"><span class="on">Want to go</span><span>Been</span></div>
+          <div class="coc"><svg aria-hidden="true"><use href="#chrysalis"/></svg><div><div class="t">Filter coffee at the stall behind the beach</div><div class="s">Elliot's Beach · saved this week</div><div class="a">I've been · Going there?</div></div></div>
+          <div class="coc"><svg aria-hidden="true"><use href="#chrysalis"/></svg><div><div class="t">The step-well behind the old market</div><div class="s">Kanchipuram · saved this month</div><div class="a">I've been · Going there?</div></div></div>
+          <div class="coc" style="opacity:.9"><svg aria-hidden="true"><use href="#fly"/></svg><div><div class="t">Sunrise from the lighthouse steps</div><div class="s">Been · tell the next person what you found</div></div></div>
+        </div>
+        <div class="bar"><div class="tab"><svg><use href="#i-disc"/></svg>Discover</div><div class="tab"><div class="plus">+</div>Share</div><div class="tab on"><svg><use href="#i-coc"/></svg>Cocoon</div><div class="tab"><svg><use href="#i-you"/></svg>You</div></div>
+      </div>
+      <p class="cap">"I've been" splits the chrysalis and lets the butterfly out, then asks what the next person should know.</p>
+    </div>
+
+    <div style="display:grid">
+      <div class="phone" aria-label="Share mock-up">
+        <div class="scr">
+          <div class="mast"><div class="city" style="font-size:26px">Write it for the next one who goes</div></div>
+          <div class="types"><div class="type on"><b>Experience</b>Something you did</div><div class="type"><b>Ask</b>Something you want to know</div></div>
+          <div class="field">What was it like?</div>
+          <div class="field" style="display:flex;justify-content:space-between;align-items:center">Where · Elliot's Beach <svg style="width:54px;height:54px;transform:rotate(-7deg)" aria-hidden="true"><use href="#postmark"/></svg></div>
+          <div class="field">Tip for the next person</div>
+          <div class="aud"><div><b>Everyone</b>Anyone signed in can see this. It appears on the place page.</div><div><b>Connections</b>Only the people you've connected with.</div></div>
+          <button class="btn pri" type="button">Choose who can see this</button>
+        </div>
+      </div>
+      <p class="cap">The postmark preview changes as you pick place and precision: it is exactly what others will see.</p>
+    </div>
+
+    <div style="display:grid">
+      <div class="phone" aria-label="You and Safety mock-up">
+        <div class="scr">
+          <div class="mast"><div class="eyebrow">You → Safety</div><div class="city" style="font-size:28px">Your safety tools</div></div>
+          <div class="status"><small>Right now</small><b>Nothing is running on this phone</b><span>No SOS or Safe Walk. This screen does not check your surroundings.</span></div>
+          <div class="sos"><b>SOS</b><span>Emergency help</span><em>5 s to cancel</em></div>
+          <div class="list">
+            <div class="li"><span>Safety Circle</span><i>2 people</i></div>
+            <div class="li"><span>Automatic SMS</span><i>Off · the SMS app opens</i></div>
+            <div class="li"><span>SOS in Quick Settings</span><i>Add</i></div>
+            <div class="li"><span>Safe Walk · Evidence Vault · Nearby heads-ups</span><i>›</i></div>
+          </div>
+        </div>
+        <div class="bar"><div class="tab"><svg><use href="#i-disc"/></svg>Discover</div><div class="tab"><div class="plus">+</div>Share</div><div class="tab"><svg><use href="#i-coc"/></svg>Cocoon</div><div class="tab on"><svg><use href="#i-you"/></svg>You</div></div>
+      </div>
+      <p class="cap">Safety keeps its own calm, high-contrast hub under You. Red stays here and on the SOS screen.</p>
+    </div>
+
+  </div>
+</section>
+
+<section class="grid2" aria-label="End of edition and empty state">
+  <div class="end">
+    <svg viewBox="0 0 320 120" aria-hidden="true">
+      <rect width="320" height="120" fill="var(--sunk)"/>
+      <path d="M0 80C40 50 70 46 110 66S180 40 220 54 290 70 320 52V120H0Z" fill="var(--bloom-soft)"/>
+      <path d="M0 98C50 74 100 80 150 92S240 76 320 88V120H0Z" fill="var(--bloom)" opacity=".85"/>
+      <g fill="var(--card)" opacity=".85"><circle cx="40" cy="96" r="2"/><circle cx="62" cy="91" r="2.4"/><circle cx="90" cy="94" r="1.8"/><circle cx="130" cy="96" r="2.2"/><circle cx="200" cy="92" r="2"/><circle cx="246" cy="89" r="2.4"/><circle cx="282" cy="92" r="1.8"/></g>
+      <use href="#fly" x="214" y="18" width="30" height="26"/>
+    </svg>
+    <div><p>That's this week's edition. Go make your own.</p><div class="row"><span class="btn pri">Share an experience</span><span class="btn">Open your Cocoon</span></div></div>
+  </div>
+  <div class="panel" style="justify-items:center;text-align:center;align-content:center">
+    <svg style="width:96px;height:96px" aria-hidden="true"><use href="#kolam"/></svg>
+    <h3>Your Cocoon is empty.</h3>
+    <p class="muted">Butterfly something you'd love to experience.</p>
+  </div>
+</section>
+
+<section class="stack" aria-labelledby="mo">
+  <h2 id="mo">Motion: four moments, nothing else moves</h2>
+  <div class="moments">
+    <div class="moment"><b>Butterfly to Cocoon</b>Two wing beats, then a curved flight into the Cocoon tab, which pulses once. Light haptic.<code>~600 ms · reduce motion: state change + spoken "Saved to your Cocoon"</code></div>
+    <div class="moment"><b>Emergence</b>On "I've been" the chrysalis splits and the butterfly opens its wings, then the invitation sheet rises.<code>~700 ms · reduce motion: cross-fade</code></div>
+    <div class="moment"><b>Stamp on share</b>The postmark presses onto the page with a small overshoot and settles at a slant.<code>~280 ms · haptic · reduce motion: appears</code></div>
+    <div class="moment"><b>Kolam</b>Empty states draw their kolam line once, then rest. No loops, no ambient movement.<code>~900 ms once · reduce motion: drawn</code></div>
+  </div>
+  <p class="muted">Screen changes use a short fade with a 12 dp rise (about 220 ms). Cards respond to touch with a slight press. All of it follows the system "remove animations" setting.</p>
+</section>
+
+<section class="stack" aria-labelledby="map">
+  <h2 id="map">Where today's screens go</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Today</th><th>After 13F</th></tr></thead>
+    <tbody>
+      <tr><td>Home tab (SOS tile, status card, banners)</td><td>Banners move to every tab, so an SOS, a walk, a pending deletion or "sign in to sync" is never missed. SOS tile and status card move to You → Safety</td></tr>
+      <tr><td>Safety tab</td><td>You → Safety hub (plus Ready check, SOS shortcut and Quick Settings tile)</td></tr>
+      <tr><td>Nearby tab (radar)</td><td>You → Safety → Nearby heads-ups</td></tr>
+      <tr><td>Rise tab</td><td>Retired (decision D9): its notes on the phone are deleted, with a one-time notice</td></tr>
+      <tr><td>Profile tab and the Connections hub</td><td>You: your journal, experiences, connections, private places, guidelines, reports, settings</td></tr>
+      <tr><td>Discover, Cocoon, Share behind Connections</td><td>Three of the four tabs; Discover is where the app opens</td></tr>
+      <tr><td>SOS, Safe Walk, Safety Circle, Evidence Vault, moderator screens</td><td>Same behaviour. New colours and type only</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="stack" aria-labelledby="dq">
+  <h2 id="dq">What I need you to decide</h2>
+  <div class="dec">
+    <div><b>Brand on screen.</b> Show "Kurinji" as the app name and in every visible text now, keeping the package name com.safesphere.app. Trademark, domain and store checks are still open.</div>
+    <div><b>Fonts.</b> Download Young Serif and Mukta Malar (OFL) from the official Google Fonts repository into the app, about 0.7 MB. Without them the app falls back to the phone's own serif and sans.</div>
+    <div><b>SOS shortcut and Quick Settings tile.</b> Open the SOS screen with the 5-second countdown already running, or open it waiting for a tap.</div>
+    <div><b>"Let someone know".</b> A message the person edits and sends from their own app, with no location and no link. Kurinji sends and stores nothing.</div>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('wantBtn');
+  var label = document.getElementById('wantText');
+  var tab = document.getElementById('cocoonTab');
+  var saved = false;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function setState(on) {
+    saved = on;
+    btn.className = on ? 'btn saved' : 'btn want';
+    label.textContent = on ? 'In your Cocoon' : 'Want to go';
+    btn.setAttribute('aria-label', on ? 'In your Cocoon. Tap to take it out.' : 'Want to experience this. Saves to Cocoon.');
+  }
+  btn.addEventListener('click', function () {
+    if (saved) { setState(false); return; }
+    var src = document.getElementById('srcFly').getBoundingClientRect();
+    var dst = tab.getBoundingClientRect();
+    if (reduce || !document.body.animate) { setState(true); return; }
+    var f = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    f.setAttribute('class', 'flyer');
+    f.innerHTML = '<use href="#fly"/>';
+    f.style.left = src.left + 'px'; f.style.top = src.top + 'px';
+    document.body.appendChild(f);
+    var dx = dst.left + dst.width / 2 - 15 - src.left, dy = dst.top + 2 - src.top;
+    var a = f.animate([
+      { transform: 'translate(0,0) scale(1)', offset: 0 },
+      { transform: 'translate(' + (dx * 0.15) + 'px,' + (-46) + 'px) scale(1.15) rotate(-10deg)', offset: 0.35 },
+      { transform: 'translate(' + (dx * 0.7) + 'px,' + (dy * 0.45) + 'px) scale(1) rotate(12deg)', offset: 0.7 },
+      { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.55)', opacity: 0.2, offset: 1 }
+    ], { duration: 620, easing: 'cubic-bezier(.2,0,0,1)' });
+    a.onfinish = function () {
+      f.remove(); setState(true);
+      tab.classList.remove('pulse'); void tab.offsetWidth; tab.classList.add('pulse');
+    };
+  });
+})();
+</script>

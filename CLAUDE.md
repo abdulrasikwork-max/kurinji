@@ -28,8 +28,8 @@ the user instead of guessing. Detailed history is in `docs/` — read only what 
 > - Do **not** treat this as a planning/outings app or return to `AUDIT_NEXT.md` Part II ("Go further, prepared"): that
 >   direction is superseded. Do not keep re-opening the core concept.
 > - Brand: **Kurinji** (குறிஞ்சி; D1, chosen 2026-10-22; trademark, domain and store checks still to do; design doc
->   §14). Keep "SafeSphere" in code until a rename is approved. Decisions D1–D15: design doc §15 (all
->   decided 2026-10-22).
+>   §14). **Since 13F the visible name is Kurinji (F1, 2026-10-25); package, applicationId and code names stay
+>   SafeSphere** until a rename is approved. Decisions D1–D15: design doc §15 (all decided 2026-10-22).
 >
 > Everything below in §1 describes the product as built up to Phase 11 (history; still the truth for existing code).
 
@@ -77,7 +77,7 @@ Final-year B.Tech IT team project: the student must be able to explain every imp
 2026-10-22/23** (`docs/PHASE13B.md`, plan `PHASE13B_PLAN.md` approved with Q1–Q12): places, Experiences/Asks with
 precision and the 1–3 h exact-place delay, photos stripped twice, Perspectives, encrypted private places; backend 635 /
 Android 627, lint 0 / 91, **V21 dry run 79/79 + applied, live MySQL 33/33, emulator (API 37) E1–E12 PASS** (two bugs
-found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13C intent and discovery implemented, compiled, tested, verified 2026-10-23** (`docs/PHASE13C.md`, plan `PHASE13C_PLAN.md`, C1–C15 decided under the user's delegation): butterfly = private Cocoon item (Want → Been), the author's count only from 3 people up, weekly city Edition with "Why am I seeing this?", From your connections, place and category pages, place-name search, mute in every list; backend 663 / Android 641, lint 0 / 94, **V22 dry run 14/14 + applied, live MySQL 29/29, emulator (API 37) E1–E17 PASS** (one wording bug found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13D moderation v2 implemented, compiled, tested, verified 2026-10-24/25** (`docs/PHASE13D.md`, plan `PHASE13D_PLAN.md`, M1–M20 decided under the user's delegation): reports on posts/perspectives/people (reporters never revealed, nothing observable to the reported person below 3 independent reports), collapse, holds, removal, strikes, pauses, appeals to another moderator, approve-first (Q6), edit history during a case (Q7), place merging (API), probation; backend 694 / Android 657, lint 0 / 54, **V23 dry run 51/51 + applied (2 CHECK gaps found and fixed first), live MySQL 30/30, emulator (API 37) E1–E8 PASS** (3 wording bugs found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13E AI v1 implemented, compiled, tested, verified 2026-10-25** (`docs/PHASE13E.md`, plan `PHASE13E_PLAN.md`, E1–E30 decided under the user's delegation): Python moderation service (standard library only, internal, never logs text) with the norm-1 normaliser + hashed Tamil/Tanglish/English lexicon lex-1 + evidence rules; pure Java `DecisionPolicy` policy-1 (PUBLISH / PUBLISH_COLLAPSED / HOLD_FOR_REVIEW, never a removal or a restriction); the same normaliser, lexicon and rules in plain Kotlin on the phone for a private nudge (drafts never leave it) and a self-harm support line (never stored); rung-2 linear model built in Python + Kotlin but **OFF, no model ships** (no D3 dataset); V24 dry run 59/59 + 19/19 and applied, live MySQL 28/28 with the real service, emulator (API 37) E1–E8 PASS (one privacy leak and two UI gaps found and fixed); real phone, TalkBack speech and dark mode **not verified**. 13F, 13R: planned. Sub-phases 13A identity foundation (V20) → 13B experiences → 13C intent + discovery → 13D moderation v2 → 13E AI v1 → 13F new UI/navigation, plus 13R Tamil/Tanglish model research track in parallel (design doc §12). Decided 2026-10-22: D1 (name Kurinji, checks pending), D4 (women's realities = internal principle only), D5 (Chennai first; Tamil/Tanglish content from V1, Tamil UI in V2), D6 (18+, self-declared date of birth), D13 (Phase 13), D7 (Coil is the one new Android dependency for 13B; push stays V2), D11 (places user-created only, no places API), D14 (no audience preselected on the first post), D2 (moderation models allowed under the evidence → policy → human rule), D3 (the user's dataset + licence-checked public sets, ≥ 2 annotators), D8 (Takes in V2), D9 (retire Rise when 13F ships), D10 (pending safety items folded into Phase 13; A23 sprint before any pilot), D12 (HTTPS server before a closed pilot), D15 (team moderators, rotating). All of D1–D15 are decided. Each sub-phase needs its own plan and the user's approval first |
+found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13C intent and discovery implemented, compiled, tested, verified 2026-10-23** (`docs/PHASE13C.md`, plan `PHASE13C_PLAN.md`, C1–C15 decided under the user's delegation): butterfly = private Cocoon item (Want → Been), the author's count only from 3 people up, weekly city Edition with "Why am I seeing this?", From your connections, place and category pages, place-name search, mute in every list; backend 663 / Android 641, lint 0 / 94, **V22 dry run 14/14 + applied, live MySQL 29/29, emulator (API 37) E1–E17 PASS** (one wording bug found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13D moderation v2 implemented, compiled, tested, verified 2026-10-24/25** (`docs/PHASE13D.md`, plan `PHASE13D_PLAN.md`, M1–M20 decided under the user's delegation): reports on posts/perspectives/people (reporters never revealed, nothing observable to the reported person below 3 independent reports), collapse, holds, removal, strikes, pauses, appeals to another moderator, approve-first (Q6), edit history during a case (Q7), place merging (API), probation; backend 694 / Android 657, lint 0 / 54, **V23 dry run 51/51 + applied (2 CHECK gaps found and fixed first), live MySQL 30/30, emulator (API 37) E1–E8 PASS** (3 wording bugs found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13E AI v1 implemented, compiled, tested, verified 2026-10-25** (`docs/PHASE13E.md`, plan `PHASE13E_PLAN.md`, E1–E30 decided under the user's delegation): Python moderation service (standard library only, internal, never logs text) with the norm-1 normaliser + hashed Tamil/Tanglish/English lexicon lex-1 + evidence rules; pure Java `DecisionPolicy` policy-1 (PUBLISH / PUBLISH_COLLAPSED / HOLD_FOR_REVIEW, never a removal or a restriction); the same normaliser, lexicon and rules in plain Kotlin on the phone for a private nudge (drafts never leave it) and a self-harm support line (never stored); rung-2 linear model built in Python + Kotlin but **OFF, no model ships** (no D3 dataset); V24 dry run 59/59 + 19/19 and applied, live MySQL 28/28 with the real service, emulator (API 37) E1–E8 PASS (one privacy leak and two UI gaps found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13F Kurinji UI/UX + safety integration implemented, compiled, tested, emulator-verified 2026-10-25** (`docs/PHASE13F.md`, plan `PHASE13F_PLAN.md` approved with F1–F4): new identity (mist/ink/bloom/yeoman, Young Serif + Mukta Malar), Discover · Share · Cocoon · You, safety banners on every screen, You → Safety hub, "Going there?", SOS shortcut + Quick Settings tile, Rise retired (D9), visible brand Kurinji (F1); Android 682 / 0, lint 0 / 144; emulator E1–E13 PASS (4 bugs found and fixed); Ready check not built; real phone and TalkBack speech **not verified**. 13R: planned. Sub-phases 13A identity foundation (V20) → 13B experiences → 13C intent + discovery → 13D moderation v2 → 13E AI v1 → 13F new UI/navigation, plus 13R Tamil/Tanglish model research track in parallel (design doc §12). Decided 2026-10-22: D1 (name Kurinji, checks pending), D4 (women's realities = internal principle only), D5 (Chennai first; Tamil/Tanglish content from V1, Tamil UI in V2), D6 (18+, self-declared date of birth), D13 (Phase 13), D7 (Coil is the one new Android dependency for 13B; push stays V2), D11 (places user-created only, no places API), D14 (no audience preselected on the first post), D2 (moderation models allowed under the evidence → policy → human rule), D3 (the user's dataset + licence-checked public sets, ≥ 2 annotators), D8 (Takes in V2), D9 (retire Rise when 13F ships), D10 (pending safety items folded into Phase 13; A23 sprint before any pilot), D12 (HTTPS server before a closed pilot), D15 (team moderators, rotating). All of D1–D15 are decided. Each sub-phase needs its own plan and the user's approval first |
 
 **Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
 - **4A** — Location + permissions, notifications foundation, emergency location sharing, emergency/state recovery, battery + network readers.
@@ -161,6 +161,14 @@ pure `CityAreas`/`EditionPolicy`/`ButterflyTally`, `Visibility.showInLists`; And
 `social/event/ContentWritten`; Android `core/textcheck` (`TextNormalizer`, `PhoneticKey`, `HashedLexicon`, `TextCheck`,
 `LinearModel`, `DraftNudge`, `TextSpans`), `DraftNudgeDialogs`, `ViewerPreferences`): `docs/PHASE13E.md` (decisions
 E1–E30 in `PHASE13E_PLAN.md`, deviations 13E-D1–D10). Next migration **V25**.
+**13F is in the repository** (Android only): `res/font` (Young Serif, Mukta Malar), Kurinji colours/type/themes,
+`core/ui/components` `PostmarkView`, `TicketLayout`, `ButterflyDrawable`, `KolamView`, `TextTabsView`,
+`AspectRatioImageView`; `core/ui/ButterflyFlight`, `Haptics`; `core/retired/RiseRetirement`; `navigation/NavigationRules`
+(tabs, reading screens, banners, `opensSosFrom`); `MainActivity` banner host; `feature/safety/ui`
+`SessionStatusViewModel` (was HomeViewModel) + Safety hub; `feature/profile/ui/YouFragment`; `feature/going/GoingThere`;
+`feature/emergency/entry` (`SosEntryActivity` not exported, `SosLaunchRequest`, `SosTileService`), `res/xml/shortcuts.xml`;
+social `ExperienceCard(s)`, `ExperienceCardAdapter` + `CardTexts`, `BeenInvitation`, `JournalViewModel`,
+`PostPageText`: `docs/PHASE13F.md` (deviations 13F-D1–D9). `feature/home` and `feature/rise` no longer exist.
 **Note:** `C:\Users\ABDUL RAFIQ\Desktop\CLAUDE.md` (outside the repo) is an old copy (says "4A has not started"); this
 repo copy is the current one.
 
@@ -233,9 +241,14 @@ cd android
   graph, MVVM, repositories, Coroutines/Flow, DataStore, Retrofit 2.11 + OkHttp 4.12 + Gson, Material 3.
   minSdk 26, compile/target 35. **No Compose. No Hilt** unless explicitly approved.
 - **Packages:** feature-first `feature/<name>/{domain,data,ui}`; shared code in `core/`, `navigation/`.
-  Features: splash, onboarding, auth, home, safety, community, profile, settings, safetycircle, emergency, safewalk,
-  circlealert, evidence, moderation (Phase 7), intelligence (Phase 8), account (Phase 10A), rise (Phase 10B).
-  (`feature/map` was removed in Phase 10A; it was an empty placeholder. No screen shows "Coming soon" any more.)
+  Features: splash, onboarding, auth, safety (You → Safety hub + session status), community (Nearby heads-ups), profile
+  (You), settings, safetycircle, emergency (+ `entry`: SOS shortcut/tile), safewalk, circlealert, evidence, moderation
+  (Phase 7), intelligence (Phase 8), account (Phase 10A), social (Phase 13), going (Phase 13F bridge, navigation only).
+  `feature/map` (10A), `feature/home` and `feature/rise` (13F, D9) were removed. No screen shows "Coming soon".
+- **Navigation (13F):** Discover · ✚ Share (action → composer) · Cocoon · You; start = Discover. Bar on tabs + reading
+  screens (post, place/category page, person profile); task/safety screens toolbar + back. Safety banners (SOS, walk,
+  deletion, sign in to sync) on every tab and reading screen via `MainActivity` + `SessionStatusViewModel`, never on the
+  SOS screen. Social and safety never import each other; `feature/going` imports neither (`GoingThereTest`).
 - **DI:** manual `AppContainer` (composition root) via `Fragment.appContainer`; each ViewModel has `factory(container)`.
 - **Networking:** exactly **one** Retrofit instance; all APIs are created from it in `AppContainer`. `AuthInterceptor` adds the
   Bearer token to everything except `/api/auth/*`. **No HTTP logging interceptor** (bodies contain passwords).
@@ -351,6 +364,8 @@ cd android
   viewer's own "Collapse strong language", switch on Connections). Moderator case screen: openedBy, "by the automatic
   check", findings with phrases, "evidence, not a verdict". `ModelPlacesTest` replaced `NoMlRuntimeTest`;
   `AiModerationTest` guards words (no score, no "you are", "our system").
+- **Rise is retired (13F, D9):** code, layouts, strings and tests removed; `core/retired/RiseRetirement` deletes
+  `files/rise/` once and MainActivity shows a one-time notice. The description below is history.
 - **Rise "Proof" (Phase 10B, `feature/rise`, `docs/PHASE11.md` §4):** phone-only; `RiseJournalHolder` (one encrypted
   file per account, `EncryptedFileRiseStore`: AES-GCM per save, key wrapped by the Keystore `LocalKeyWrapper`, AAD
   `SSRISE1|accountId`, `.bak`, Unreadable never silently empty), pure `GoalPolicy` / `ProofPolicy` (replay only for the
@@ -789,19 +804,20 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
 
 ## 10. Design system and UX (full spec: `docs/DESIGN_SYSTEM.md`)
 
-> **Phase 13 (planned) replaces this visual identity** ("field journal, not feed": paper/ink, monarch orange + morpho
-> blue butterfly accents, serif headlines + grotesk UI + a real Tamil typeface; design doc §9). Until 13F is approved
-> and built, the rules below govern the existing screens. **Red stays emergency-only** and status never by colour
-> alone in the new design too; moderation feedback uses amber.
+> **Since 13F the Kurinji system governs every screen** (`docs/DESIGN_SYSTEM.md`): mist page, indigo ink, bloom
+> violet-blue primary, yeoman orange for intent only, ochre for moderation/caution, red for emergency UI only; Young
+> Serif headlines + Mukta Malar (Tamil + Latin) bundled; postmark / ticket / butterfly / kolam objects; four motion
+> moments. `ContrastTest` and `KurinjiTextsTest` guard contrast and voice. (The navy/teal identity is superseded.)
 
-- Navy hero `#0B1B2E`, teal primary `#0E7C86` (dark `#3DD6C6`), green = safe, amber = caution.
-  **Red only for emergency UI.** All text pairs ≥ 4.5:1 contrast. Status never by colour alone (text + icon).
+- **Red only for emergency UI.** All text pairs ≥ 4.5:1 contrast, control edges ≥ 3:1. Status never by colour alone.
+  Never set `android:fontFamily` on the theme (it overrides text appearances); emergency digits use the phone's sans.
 - Use theme attributes and existing styles/components; no hard-coded colours in layouts.
 - Honesty labels: **Available** (works), **Preview** (design only), **Coming soon** (not built), **Sample** (placeholder data).
 - No text claims a place or person is safe (Phase 8). The Home status card states facts only (`HomeStatus`: checking /
   nothing running / Safe Walk on / check-in missed; hidden during an SOS); `HomeTextsTest` scans every Home string.
 - Emergency UI: clear, fast, high contrast, low cognitive load, large touch targets, `keepScreenOn` while active.
-- Bottom nav: Home, Safety, Nearby (the `communityFragment`; renamed in Phase 10A), Rise (Phase 10B), Profile. Phase 3+ screens are secondary destinations (toolbar + back, no bottom bar).
+- Bottom nav (13F): Discover, ✚ Share (action), Cocoon, You. Reading screens keep the bar; everything else is a
+  secondary destination (toolbar + back, no bottom bar). Nearby (`communityFragment`) is under You → Safety.
 
 ---
 
@@ -993,3 +1009,10 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
 | 13E: quoted / reported speech and identity terms never act alone (E15/E16) | People describing harassment they faced, and people naming their own community, must not be silenced |
 | 13E: self-harm never stored, only a support line (E12) | Health data is the most sensitive; support, not surveillance |
 | 13E: one normaliser spec, two implementations, shared vectors, byte-identical hashed lexicon on the phone (E21/E22) | Phone nudge and server check agree; the app never contains readable slurs |
+| 13F: visible brand Kurinji now; package/applicationId and code names stay SafeSphere (F1, the user's decision) | The phase is the Kurinji identity; D1 trademark/domain/store checks remain open |
+| 13F: mist/ink/bloom palette, yeoman orange for intent only, bundled Young Serif + Mukta Malar (F2) | Not the cream-serif-terracotta cliché; colours from Neelakurinji and the Tamil Yeoman; one face for Tamil and Latin |
+| 13F: postmark = where/when showing only the revealed precision; ticket = the tip; drawn butterfly; kolam for empty states | Privacy made visible; "written for the next person" made concrete; no emoji |
+| 13F: safety banners in MainActivity on every tab and reading screen | Safety guarantees must not depend on one tab being open |
+| 13F: SOS shortcut/tile start the countdown via a non-exported activity + in-memory request (F3, F11) | Fast access; another app cannot forge a start through the exported launcher activity |
+| 13F: "Let someone know" = the person's own share sheet, editable note, no location, no link (F4) | Care without monitoring; nothing stored or sent by Kurinji |
+| 13F: "Going there?" bridge imports neither social nor safety code; Safe Walk only gets a pre-filled field | Keeps the isolation; nothing starts by itself |

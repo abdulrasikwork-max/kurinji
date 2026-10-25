@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13F: the Ask slip: card colour with a dashed ink edge (a question pinned up for whoever has been there). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="?attr/colorCard" />
+    <stroke
+        android:width="1.5dp"
+        android:color="?attr/colorOnSurfaceVariant"
+        android:dashGap="4dp"
+        android:dashWidth="7dp" />
+    <corners android:radius="@dimen/radius_card" />
+</shape>

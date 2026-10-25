@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13F: the wordmark on mist (Kurinji night in the dark), in both scripts, with the motto. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorHero"
+    android:background="?attr/colorSurface"
     android:gravity="center"
     android:orientation="vertical"
     android:padding="@dimen/space_lg">
@@ -20,14 +21,24 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_lg"
         android:text="@string/app_name"
-        android:textAppearance="@style/TextAppearance.SafeSphere.Hero.Status"
-        android:letterSpacing="0.04" />
+        android:textAppearance="@style/TextAppearance.Kurinji.Masthead"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="48sp" />
+
+    <TextView
+        android:id="@+id/splashNameTamil"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name_tamil"
+        android:textAppearance="@style/TextAppearance.Kurinji.Title.Large"
+        android:textColor="?attr/colorOnSurfaceVariant" />
 
     <TextView
         android:id="@+id/splashTagline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/space_xs"
-        android:text="@string/app_tagline"
-        android:textAppearance="@style/TextAppearance.SafeSphere.Hero.Body" />
+        android:layout_marginTop="@dimen/space_lg"
+        android:gravity="center"
+        android:text="@string/motto"
+        android:textAppearance="@style/TextAppearance.Kurinji.Headline.Small" />
 </LinearLayout>

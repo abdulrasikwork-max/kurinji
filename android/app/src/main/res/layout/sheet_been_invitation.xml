@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13F: after "I've been", the invitation to tell the next person (a bottom sheet instead of a dialog). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/space_lg"
+    android:paddingTop="@dimen/space_lg"
+    android:paddingEnd="@dimen/space_lg"
+    android:paddingBottom="@dimen/space_lg">
+
+    <ImageView
+        android:id="@+id/glyph"
+        android:layout_width="56dp"
+        android:layout_height="48dp"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_md"
+        android:accessibilityHeading="true"
+        android:text="@string/been_invitation_title"
+        android:textAppearance="@style/TextAppearance.Kurinji.Headline.Medium" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:text="@string/been_invitation_message"
+        android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/perspectiveButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_lg"
+        android:text="@string/been_invitation_perspective" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/ownButton"
+        style="@style/Widget.SafeSphere.Button.Secondary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:text="@string/been_invitation_own" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/laterButton"
+        style="@style/Widget.SafeSphere.Button.Text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:text="@string/been_invitation_later" />
+</LinearLayout>

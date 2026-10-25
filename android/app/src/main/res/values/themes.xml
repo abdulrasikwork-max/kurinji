@@ -1,30 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- SafeSphere theme: Material 3 underneath, branded on top. Follows the system light/dark setting. -->
+    <!-- Kurinji theme (Phase 13F): Material 3 underneath, "mist, ink and bloom" on top. Follows the system light/dark
+         setting. Style names keep the SafeSphere prefix: code names are unchanged until a rename is approved. -->
     <style name="Base.Theme.SafeSphere" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Material colour roles -->
-        <item name="colorPrimary">@color/ss_primary</item>
-        <item name="colorOnPrimary">@color/ss_on_primary</item>
-        <item name="colorPrimaryContainer">@color/ss_primary_container</item>
-        <item name="colorOnPrimaryContainer">@color/ss_on_primary_container</item>
-        <item name="colorSecondary">@color/ss_secondary</item>
-        <item name="colorOnSecondary">@color/ss_on_secondary</item>
-        <item name="colorSecondaryContainer">@color/ss_secondary_container</item>
-        <item name="colorOnSecondaryContainer">@color/ss_on_secondary_container</item>
-        <item name="colorSurface">@color/ss_surface</item>
-        <item name="colorOnSurface">@color/ss_on_surface</item>
-        <item name="colorSurfaceVariant">@color/ss_surface_variant</item>
-        <item name="colorOnSurfaceVariant">@color/ss_on_surface_variant</item>
-        <item name="colorOutline">@color/ss_outline</item>
-        <item name="colorOutlineVariant">@color/ss_outline_variant</item>
-        <item name="colorSurfaceContainerLowest">@color/ss_surface_container_lowest</item>
-        <item name="colorSurfaceContainerLow">@color/ss_surface_container_low</item>
-        <item name="colorSurfaceContainer">@color/ss_surface_container</item>
-        <item name="colorSurfaceContainerHigh">@color/ss_surface_container_high</item>
-        <item name="colorSurfaceContainerHighest">@color/ss_surface_container_highest</item>
-        <item name="android:colorBackground">@color/ss_surface</item>
-        <item name="colorOnBackground">@color/ss_on_surface</item>
+        <item name="colorPrimary">@color/k_bloom</item>
+        <item name="colorOnPrimary">@color/k_on_bloom</item>
+        <item name="colorPrimaryContainer">@color/k_bloom_soft</item>
+        <item name="colorOnPrimaryContainer">@color/k_on_bloom_soft</item>
+        <item name="colorSecondary">@color/k_ink_soft</item>
+        <item name="colorOnSecondary">@color/k_card</item>
+        <item name="colorSecondaryContainer">@color/k_bloom_soft</item>
+        <item name="colorOnSecondaryContainer">@color/k_on_bloom_soft</item>
+        <item name="colorTertiary">@color/k_yeoman_ink</item>
+        <item name="colorOnTertiary">@color/k_card</item>
+        <item name="colorTertiaryContainer">@color/k_yeoman_soft</item>
+        <item name="colorOnTertiaryContainer">@color/k_on_yeoman_soft</item>
+        <item name="colorSurface">@color/k_mist</item>
+        <item name="colorOnSurface">@color/k_ink</item>
+        <item name="colorSurfaceVariant">@color/k_sunk</item>
+        <item name="colorOnSurfaceVariant">@color/k_ink_soft</item>
+        <item name="colorOutline">@color/k_outline</item>
+        <item name="colorOutlineVariant">@color/k_line</item>
+        <item name="colorSurfaceContainerLowest">@color/k_card</item>
+        <item name="colorSurfaceContainerLow">@color/k_surface_low</item>
+        <item name="colorSurfaceContainer">@color/k_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/k_surface_high</item>
+        <item name="colorSurfaceContainerHighest">@color/k_surface_highest</item>
+        <item name="android:colorBackground">@color/k_mist</item>
+        <item name="colorOnBackground">@color/k_ink</item>
 
         <!-- Red is reserved for emergency UI, so it lives in the "error" roles. -->
         <item name="colorError">@color/ss_emergency</item>
@@ -32,7 +37,7 @@
         <item name="colorErrorContainer">@color/ss_emergency_container</item>
         <item name="colorOnErrorContainer">@color/ss_on_emergency_container</item>
 
-        <!-- SafeSphere status and hero colours (see attrs.xml) -->
+        <!-- Status, hero and Kurinji colours (see attrs.xml) -->
         <item name="colorSafe">@color/ss_safe</item>
         <item name="colorSafeContainer">@color/ss_safe_container</item>
         <item name="colorOnSafeContainer">@color/ss_on_safe_container</item>
@@ -43,21 +48,87 @@
         <item name="colorOnHero">@color/hero_on</item>
         <item name="colorOnHeroVariant">@color/hero_on_variant</item>
         <item name="colorHeroAccent">@color/hero_accent</item>
+        <item name="colorCard">@color/k_card</item>
+        <item name="colorLine">@color/k_line</item>
+        <item name="colorIntent">@color/k_yeoman</item>
+        <item name="colorIntentInk">@color/k_yeoman_ink</item>
+        <item name="colorIntentContainer">@color/k_yeoman_soft</item>
+        <item name="colorOnIntentContainer">@color/k_on_yeoman_soft</item>
 
-        <!-- Make every default Material component use the SafeSphere style. -->
+        <!-- Type: Mukta Malar everywhere, Young Serif for headlines; the Material type scale points at ours.
+             Not android:fontFamily on the theme: a theme value acts as a view attribute and would override every
+             text appearance (found on the emulator: headlines lost the serif). Plain TextViews get a default
+             text appearance instead, which any explicit one replaces. -->
+        <item name="android:textViewStyle">@style/Widget.Kurinji.TextView</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.Kurinji.Headline.Large</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Kurinji.Headline.Medium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.Kurinji.Headline.Small</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.Kurinji.Title.Large</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.Kurinji.Title.Medium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.Kurinji.Title.Small</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Kurinji.Body.Large</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Kurinji.Body.Medium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.Kurinji.Body.Small</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.Kurinji.Label.Large</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.Kurinji.Label.Medium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.Kurinji.Label.Small</item>
+
+        <!-- Shapes: soft, not pill-everything. -->
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.Kurinji.Small</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.Kurinji.Medium</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.Kurinji.Large</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.Kurinji.ExtraLarge</item>
+
+        <!-- Make every default Material component use the Kurinji style. -->
         <item name="materialButtonStyle">@style/Widget.SafeSphere.Button.Primary</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.SafeSphere.Button.Secondary</item>
         <item name="textInputStyle">@style/Widget.SafeSphere.TextInputLayout</item>
         <item name="materialCardViewStyle">@style/Widget.SafeSphere.Card</item>
         <item name="bottomNavigationStyle">@style/Widget.SafeSphere.BottomNavigation</item>
+        <item name="chipStyle">@style/Widget.Kurinji.Chip</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.Kurinji.BottomSheet</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.Kurinji.Dialog</item>
     </style>
 
     <style name="Theme.SafeSphere" parent="Base.Theme.SafeSphere" />
 
-    <!-- Shown by the system while the process starts. Navy, so it flows straight into our splash. -->
+    <style name="Widget.Kurinji.TextView" parent="Widget.AppCompat.TextView">
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Body.Medium</item>
+    </style>
+
+    <!-- Shown by the system while the process starts: mist (or Kurinji night) with the butterfly, flowing into the splash. -->
     <style name="Theme.SafeSphere.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_mark</item>
         <item name="postSplashScreenTheme">@style/Theme.SafeSphere</item>
+    </style>
+
+    <!-- A non-exported trampoline for the SOS shortcut and tile (Phase 13F, F11): never visible. -->
+    <style name="Theme.SafeSphere.Trampoline" parent="Theme.SafeSphere">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+
+    <style name="ThemeOverlay.Kurinji.BottomSheet" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.Kurinji.BottomSheet</item>
+    </style>
+
+    <style name="Widget.Kurinji.BottomSheet" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="backgroundTint">?attr/colorCard</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Kurinji.Sheet</item>
+    </style>
+
+    <style name="ThemeOverlay.Kurinji.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurface">@color/k_card</item>
+        <item name="colorSurfaceContainerHigh">@color/k_card</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.Kurinji.Title</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.Kurinji.ExtraLarge</item>
+    </style>
+
+    <style name="MaterialAlertDialog.Kurinji.Title" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Headline.Small</item>
     </style>
 
 </resources>

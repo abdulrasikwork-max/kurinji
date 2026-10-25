@@ -11,12 +11,15 @@ import com.safesphere.app.R
 import com.safesphere.app.databinding.ItemFeatureRowBinding
 import com.google.android.material.R as MaterialR
 
-/** One card row: icon, title, description and a status badge. Used by Safety Center and Profile. */
+/**
+ * One card row: icon, title, description and an optional status badge. Used by the Safety hub and You. Phase 13F: no
+ * badge by default ([status] null): every row shown opens a working screen (Phase 10A), so "Available" said nothing.
+ */
 data class FeatureItem(
     @DrawableRes val iconRes: Int,
     @StringRes val titleRes: Int,
     @StringRes val descriptionRes: Int,
-    val status: BadgeStatus,
+    val status: BadgeStatus? = null,
     /** Only emergency features use red, so the colour keeps its meaning. */
     val isEmergency: Boolean = false,
     val onClick: () -> Unit
@@ -54,14 +57,15 @@ class FeatureListAdapter(
 
             rowTitle.text = title
             rowDescription.text = description
-            statusBadge.setStatus(item.status)
+            val status = item.status
+            statusBadge.isVisible = status != null
+            if (status != null) statusBadge.setStatus(status)
             // Only rows that really open something show an arrow.
-            chevron.isVisible = item.status == BadgeStatus.AVAILABLE
+            chevron.isVisible = status == null || status == BadgeStatus.AVAILABLE
 
             root.setOnClickListener { item.onClick() }
-            root.contentDescription = context.getString(
-                R.string.cd_feature_row, title, description, context.getString(item.status.labelRes)
-            )
+            root.contentDescription = if (status == null) context.getString(R.string.cd_feature_row_plain, title, description)
+            else context.getString(R.string.cd_feature_row, title, description, context.getString(status.labelRes))
         }
     }
 }

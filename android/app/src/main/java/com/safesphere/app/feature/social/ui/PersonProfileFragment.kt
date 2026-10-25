@@ -31,11 +31,19 @@ class PersonProfileFragment :
 
     /** Phase 13B: the person's experiences the viewer may see (Q8: a deliberate visit shows them even when muted). */
     private val posts by viewModels<PostListViewModel> { PostListViewModel.factory(appContainer) }
-    private val postAdapter = PersonRowAdapter()
+    private lateinit var postAdapter: ExperienceCardAdapter
     private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
+    private var collapseStrongLanguage = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        postAdapter = ExperienceCardAdapter(appContainer.imageLoader, appContainer.experienceRepository::photoUrl)
+        collectWhenStarted(appContainer.viewerPreferences.collapseStrongLanguage) { on ->
+            if (on != collapseStrongLanguage) {
+                collapseStrongLanguage = on
+                renderPosts(posts.uiState.value)
+            }
+        }
         binding.removeButton.setOnClickListener { confirmRemove() }
         binding.muteButton.setOnClickListener { viewModel.onMute() }
         binding.blockButton.setOnClickListener { confirmBlock() }
@@ -65,9 +73,9 @@ class PersonProfileFragment :
 
     private fun renderPosts(state: PostListUiState) {
         postAdapter.submitList(state.items.map { post ->
-            PostRows.of(requireContext(), post) {
+            CardRow(ExperienceCards.of(post, collapseStrongLanguage = collapseStrongLanguage), onOpen = {
                 findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to post.publicId))
-            }
+            })
         })
         binding.postsEmpty.isVisible = state.loaded && state.items.isEmpty()
         binding.showMoreButton.isVisible = state.hasMore

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13F: a chrysalis = "want to go" in the Cocoon (the butterfly = "been"). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="40"
+    android:viewportHeight="40">
+    <path
+        android:pathData="M20,3V8"
+        android:strokeColor="?attr/colorOnSurfaceVariant"
+        android:strokeLineCap="round"
+        android:strokeWidth="2" />
+    <path
+        android:fillColor="?attr/colorIntentContainer"
+        android:pathData="M20,8C28,10 29,22 25,30C23,35 17,35 15,30C11,22 12,10 20,8Z"
+        android:strokeColor="?attr/colorIntentInk"
+        android:strokeWidth="2" />
+    <path
+        android:pathData="M15.5,17C18,19 22,19 24.5,17M15,23C18,25 22,25 25,23"
+        android:strokeColor="?attr/colorIntentInk"
+        android:strokeWidth="1.4" />
+</vector>

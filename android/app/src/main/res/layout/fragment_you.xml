@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13F (F18): You. The person's journal header (no counts, ever), then everything that is theirs: experiences,
+     connections, private places, the safety tools, reading choices, community, account. -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/screen_padding"
+        android:paddingTop="@dimen/space_lg"
+        android:paddingEnd="@dimen/screen_padding"
+        android:paddingBottom="@dimen/space_xl">
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
+        <!-- The journal header -->
+        <LinearLayout
+            android:id="@+id/headerBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/you_overline"
+                android:textAppearance="@style/TextAppearance.Kurinji.Overline" />
+
+            <TextView
+                android:id="@+id/youName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:accessibilityHeading="true"
+                android:text="@string/nav_you"
+                android:textAppearance="@style/TextAppearance.Kurinji.Masthead" />
+
+            <TextView
+                android:id="@+id/youHandle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/youBio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/youInterests"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/editProfileButton"
+                style="@style/Widget.Kurinji.Button.Quiet"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:text="@string/social_edit_profile"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- No profile yet (or the age is not confirmed yet): the profile screen handles both. -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/noProfileCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/space_md">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/you_no_profile"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/makeProfileButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:text="@string/social_make_profile" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/errorNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone"
+            app:noticeText="@string/error_unknown"
+            app:noticeType="warning" />
+
+        <!-- Phase 13D: a moderator's pause or reminder about this person (amber, never red), and a review. -->
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/standingNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone"
+            app:noticeText="@string/standing_unaffected"
+            app:noticeType="warning" />
+
+        <TextView
+            android:id="@+id/standingLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/standingReviewButton"
+            style="@style/Widget.SafeSphere.Button.Text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/review_ask"
+            android:visibility="gone" />
+
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/you_section_journal" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/journalList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:nestedScrollingEnabled="false"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/you_section_safety" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/safetyList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:nestedScrollingEnabled="false"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/you_section_reading" />
+
+        <!-- Phase 13E (E20): a choice about the viewer only, kept on this phone. -->
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/strongLanguageSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/settings_strong_language_title"
+            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_strong_language_summary"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/you_section_community" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/communityList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:nestedScrollingEnabled="false"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        <LinearLayout
+            android:id="@+id/moderationSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                style="@style/SocialSectionTitle"
+                android:text="@string/profile_moderation_title" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/moderationList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/you_section_account" />
+
+        <TextView
+            android:id="@+id/accountLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/accountList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:nestedScrollingEnabled="false"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/logoutButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:text="@string/action_log_out"
+            app:icon="@drawable/ic_logout" />
+
+        <!-- A quiet sign-off: the motto and the name in both scripts. -->
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="@dimen/space_xl"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_brand_mark" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:gravity="center"
+            android:text="@string/motto"
+            android:textAppearance="@style/TextAppearance.Kurinji.Headline.Small" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:gravity="center"
+            android:text="@string/you_signoff"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

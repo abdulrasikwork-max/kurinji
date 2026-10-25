@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13F: You → Safety, the hub of the safety tools (docs/PHASE13F_PLAN.md F7). Calm and high-contrast; red only
+     for the SOS tile. The status card states facts only, and is hidden during an SOS (the red banner says it). -->
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -9,7 +11,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/screen_padding">
+        android:paddingStart="@dimen/screen_padding"
+        android:paddingTop="@dimen/space_sm"
+        android:paddingEnd="@dimen/screen_padding"
+        android:paddingBottom="@dimen/space_xl">
 
         <LinearLayout
             android:id="@+id/headerBlock"
@@ -32,7 +37,89 @@
                 android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
         </LinearLayout>
 
-        <!-- What SafeSphere does and does not do in an emergency (never contacts emergency services) -->
+        <!-- Only facts this phone knows (an SOS, a Safe Walk or neither), never "safe". -->
+        <com.safesphere.app.core.ui.components.SafetyStatusCardView
+            android:id="@+id/statusCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg" />
+
+        <!-- Red: emergency UI. The badge says the countdown can be cancelled; the description says when the
+             Safety Circle is texted (only with automatic SMS switched on, Phase 4D). -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/sosTile"
+            style="@style/Widget.SafeSphere.Card.Emergency"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:clickable="true"
+            android:contentDescription="@string/cd_sos_tile"
+            android:focusable="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:minHeight="96dp"
+                android:orientation="horizontal"
+                android:padding="@dimen/space_md">
+
+                <ImageView
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:background="@drawable/bg_icon_circle"
+                    android:backgroundTint="?attr/colorOnError"
+                    android:importantForAccessibility="no"
+                    android:padding="14dp"
+                    android:src="@drawable/ic_shield_alert"
+                    app:tint="?attr/colorError" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_md"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/feature_sos_title"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Hero.Status"
+                        android:textColor="?attr/colorOnError" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/sos_subtitle"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                        android:textColor="?attr/colorOnError" />
+
+                    <!-- Under the subtitle, not beside it: beside it, the badge took the title's width on
+                         small screens and large text (at 320 dp and 2.0x text, "SOS" disappeared). -->
+                    <TextView
+                        style="@style/Widget.SafeSphere.Badge.OnEmergency"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:text="@string/sos_badge_countdown" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/safety_hub_section_tools" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/featureList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:nestedScrollingEnabled="false"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        <!-- What the app does and does not do in an emergency (never contacts emergency services) -->
         <com.safesphere.app.core.ui.components.NoticeView
             android:id="@+id/previewNotice"
             android:layout_width="match_parent"
@@ -40,13 +127,5 @@
             android:layout_marginTop="@dimen/space_lg"
             app:noticeText="@string/safety_center_notice"
             app:noticeType="info" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/featureList"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:nestedScrollingEnabled="false"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

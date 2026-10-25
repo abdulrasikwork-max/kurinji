@@ -1,25 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Item ids intentionally match the destination ids in nav_graph.xml.
-     Each icon is a selector: outline when idle, filled when selected. -->
+<!-- Phase 13F: Discover · Share · Cocoon · You. Tab ids match the destination ids in nav_graph.xml; "share" is an action
+     (it opens the composer and never becomes the selected item). -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/homeFragment"
-        android:icon="@drawable/selector_nav_home"
-        android:title="@string/nav_home" />
+        android:id="@+id/discoverFragment"
+        android:icon="@drawable/ic_nav_discover"
+        android:title="@string/nav_discover" />
     <item
-        android:id="@+id/safetyFragment"
-        android:icon="@drawable/selector_nav_safety"
-        android:title="@string/nav_safety" />
+        android:id="@+id/navShare"
+        android:icon="@drawable/ic_nav_share"
+        android:title="@string/nav_share" />
     <item
-        android:id="@+id/communityFragment"
-        android:icon="@drawable/selector_nav_community"
-        android:title="@string/nav_community" />
+        android:id="@+id/cocoonFragment"
+        android:icon="@drawable/ic_nav_cocoon"
+        android:title="@string/nav_cocoon" />
     <item
-        android:id="@+id/riseFragment"
-        android:icon="@drawable/selector_nav_rise"
-        android:title="@string/nav_rise" />
-    <item
-        android:id="@+id/profileFragment"
-        android:icon="@drawable/selector_nav_profile"
-        android:title="@string/nav_profile" />
+        android:id="@+id/youFragment"
+        android:icon="@drawable/ic_nav_you"
+        android:title="@string/nav_you" />
 </menu>

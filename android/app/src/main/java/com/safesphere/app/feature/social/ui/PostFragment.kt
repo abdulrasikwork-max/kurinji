@@ -1,5 +1,6 @@
 package com.safesphere.app.feature.social.ui
 
+import android.animation.ValueAnimator
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.View
@@ -12,11 +13,15 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
+import com.safesphere.app.core.ui.ButterflyFlight
+import com.safesphere.app.core.ui.Haptics
 import com.safesphere.app.core.ui.ViewBindingFragment
+import com.safesphere.app.core.ui.components.ButterflyDrawable
 import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentPostBinding
+import com.safesphere.app.feature.going.GoingThere
 import com.safesphere.app.feature.social.domain.ButterflyState
 import com.safesphere.app.feature.social.domain.CommentKind
 import com.safesphere.app.feature.social.domain.ModerationState
@@ -41,6 +46,12 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
     private lateinit var photoAdapter: PhotoAdapter
     private val perspectiveAdapter = PersonRowAdapter()
     private lateinit var kindChips: ChoiceChips<CommentKind>
+    private lateinit var butterfly: ButterflyDrawable
+
+    /** Phase 13F: the flight plays only when a tap's save has really been confirmed (null → WANT seen after the tap). */
+    private var flyAfterSave = false
+    private var shownButterfly: ButterflyState? = null
+    private var butterflyKnown = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -55,7 +66,12 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         }
         binding.cancelReplyButton.setOnClickListener { viewModel.onCancelReply() }
         binding.deletePostButton.setOnClickListener { confirmDelete() }
-        binding.butterflyButton.setOnClickListener { viewModel.onButterfly() }
+        butterfly = ButterflyDrawable.intent(requireContext())
+        binding.butterflyButton.icon = butterfly
+        binding.butterflyButton.setOnClickListener {
+            flyAfterSave = viewModel.uiState.value.post?.yourButterfly == null
+            viewModel.onButterfly()
+        }
         binding.beenButton.setOnClickListener { viewModel.onBeen() }
         binding.showCollapsedButton.setOnClickListener { viewModel.onReveal() }
         binding.reportPostButton.setOnClickListener {
@@ -151,8 +167,12 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
     }
 
     private fun show(post: Post, state: PostUiState) {
-        binding.typeLine.text = getString(if (post.type == PostType.ASK) R.string.social_ask_badge else R.string.social_type_experience)
+        // Phase 13F: the same overline and postmark as the post's card; the postmark says only what the author revealed.
+        val card = ExperienceCards.of(post)
+        binding.typeLine.text = CardTexts.overline(requireContext(), card)
+        binding.postmark.content = CardTexts.postmark(requireContext(), card)
         val author = post.author
+        binding.byLine.isVisible = author != null
         binding.byLine.text = author?.let { getString(R.string.social_by_line, it.displayName) }.orEmpty()
         binding.byLine.setOnClickListener {
             if (author != null) findNavController().navigate(R.id.personProfileFragment,
@@ -162,7 +182,10 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         val hide = state.showCollapsed
         binding.collapsedBlock.isVisible = hide
         binding.collapsedNotice.setMessage(getString(ModerationLabels.collapsedLine(post.collapsed)))
-        binding.body.isVisible = !hide
+        val (headline, rest) = PostPageText.split(post.body)
+        binding.headline.isVisible = headline != null && !hide
+        binding.headline.text = headline.orEmpty()
+        binding.body.isVisible = !hide && rest.isNotEmpty()
         photoAdapter.submitList(if (hide) emptyList() else
             post.media.map { PhotoCell(it.mediaId, appContainer.experienceRepository.photoUrl(it.mediaId), null, null) })
         binding.photoList.isVisible = post.media.isNotEmpty() && !hide
@@ -186,7 +209,7 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.whenLine.isVisible = month != null || daypart != null
         val band = getString(TimeBandTexts.of(post.postedPeriod))
         binding.bandLine.text = if (post.edited) getString(R.string.social_when_line, band, getString(R.string.social_edited)) else band
-        binding.body.text = post.body
+        binding.body.text = rest
         binding.tipCard.isVisible = !post.tip.isNullOrBlank() && !hide
         binding.tip.text = post.tip.orEmpty()
 
@@ -221,7 +244,17 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
                 binding.butterflyButton.contentDescription = getString(R.string.butterfly_remove_description)
             }
         }
+        onButterflyState(post.yourButterfly)
         binding.beenButton.isVisible = post.yourButterfly == ButterflyState.WANT
+        // Phase 13F (F9): from reading to going. The sheet only navigates; the save is this screen's own butterfly.
+        binding.goingButton.isVisible = state.canButterfly
+        binding.goingButton.setOnClickListener {
+            GoingThere.show(this, GoingThere.Target(CardTexts.goingLabel(card)),
+                GoingThere.CocoonChoice(saved = post.yourButterfly != null) {
+                    flyAfterSave = true
+                    viewModel.onButterfly()
+                })
+        }
         val tally = post.butterflies
         binding.authorTallyLine.isVisible = post.own && tally != null
         binding.authorTallyLine.text = when {
@@ -286,6 +319,30 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         )
     }
 
+    /**
+     * Phase 13F, the first moment: when a tap's save is confirmed (no state → WANT), the butterfly beats its wings and
+     * flies into the Cocoon tab, with one haptic and a spoken confirmation. On BEEN it flutters once. With animations off,
+     * only the state, the haptic and the announcement change.
+     */
+    private fun onButterflyState(state: ButterflyState?) {
+        val previous = shownButterfly
+        val known = butterflyKnown
+        shownButterfly = state
+        butterflyKnown = true
+        if (!known || previous == state) return
+        if (previous == null && state == ButterflyState.WANT && flyAfterSave) {
+            flyAfterSave = false
+            Haptics.confirm(binding.butterflyButton)
+            binding.butterflyButton.announceForAccessibility(getString(R.string.butterfly_saved_announcement))
+            ButterflyFlight.fly(binding.butterflyButton, requireActivity().findViewById(R.id.cocoonFragment)) { }
+        } else if (state == ButterflyState.BEEN && ValueAnimator.areAnimatorsEnabled()) {
+            ValueAnimator.ofFloat(0f, 1f, 0f, 1f, 0f).apply {
+                duration = 420
+                addUpdateListener { butterfly.flap = it.animatedValue as Float }
+            }.start()
+        }
+    }
+
     /** Phase 13E: the text the server checked (body, a new line, the tip): flagged offsets point into it. */
     private fun ownText(post: Post): String = if (post.tip == null) post.body else post.body + "\n" + post.tip
 
@@ -323,18 +380,12 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
 
     /** Phase 13C (design §3.4.2): after "Been", the invitation to share what was found, for the next person. */
     private fun showBeenInvitation(post: Post) {
-        val builder = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.been_invitation_title)
-            .setMessage(R.string.been_invitation_message)
-            .setNeutralButton(R.string.been_invitation_later, null)
-            .setNegativeButton(R.string.been_invitation_own) { _, _ -> findNavController().navigate(R.id.composeFragment) }
-        if (post.canComment) {
-            builder.setPositiveButton(R.string.been_invitation_perspective) { _, _ ->
+        BeenInvitation.show(this, post.canComment,
+            onPerspective = {
                 viewModel.onKind(CommentKind.BEEN_HERE)
                 binding.perspectiveInput.requestFocus()
-            }
-        }
-        builder.show()
+            },
+            onOwn = { findNavController().navigate(R.id.composeFragment) })
     }
 
     private fun confirmDelete() {

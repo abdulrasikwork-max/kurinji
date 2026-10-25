@@ -26,10 +26,10 @@
             app:popUpTo="@id/splashFragment"
             app:popUpToInclusive="true" />
         <action
-            android:id="@+id/action_splash_to_home"
+            android:id="@+id/action_splash_to_start"
             app:enterAnim="@anim/fade_in"
             app:exitAnim="@anim/fade_out"
-            app:destination="@id/homeFragment"
+            app:destination="@id/discoverFragment"
             app:popUpTo="@id/splashFragment"
             app:popUpToInclusive="true" />
         <action
@@ -66,8 +66,8 @@
             android:id="@+id/action_login_to_forgot_password"
             app:destination="@id/forgotPasswordFragment" />
         <action
-            android:id="@+id/action_login_to_home"
-            app:destination="@id/homeFragment"
+            android:id="@+id/action_login_to_start"
+            app:destination="@id/discoverFragment"
             app:popUpTo="@id/loginFragment"
             app:popUpToInclusive="true" />
     </fragment>
@@ -78,8 +78,8 @@
         android:label="@string/title_register"
         tools:layout="@layout/fragment_register">
         <action
-            android:id="@+id/action_register_to_home"
-            app:destination="@id/homeFragment"
+            android:id="@+id/action_register_to_start"
+            app:destination="@id/discoverFragment"
             app:popUpTo="@id/loginFragment"
             app:popUpToInclusive="true" />
     </fragment>
@@ -90,13 +90,26 @@
         android:label="@string/title_forgot_password"
         tools:layout="@layout/fragment_forgot_password" />
 
-    <!-- Main area: the four bottom-navigation tabs -->
+    <!-- Phase 13F: the tabs. Discover · (Share = an action, opens composeFragment) · Cocoon · You -->
     <fragment
-        android:id="@+id/homeFragment"
-        android:name="com.safesphere.app.feature.home.ui.HomeFragment"
-        android:label="@string/nav_home"
-        tools:layout="@layout/fragment_home" />
+        android:id="@+id/discoverFragment"
+        android:name="com.safesphere.app.feature.social.ui.DiscoverFragment"
+        android:label="@string/title_discover"
+        tools:layout="@layout/fragment_discover" />
 
+    <fragment
+        android:id="@+id/cocoonFragment"
+        android:name="com.safesphere.app.feature.social.ui.CocoonFragment"
+        android:label="@string/title_cocoon"
+        tools:layout="@layout/fragment_cocoon" />
+
+    <fragment
+        android:id="@+id/youFragment"
+        android:name="com.safesphere.app.feature.profile.ui.YouFragment"
+        android:label="@string/nav_you"
+        tools:layout="@layout/fragment_you" />
+
+    <!-- You → Safety: the safety tools (secondary screen since 13F) -->
     <fragment
         android:id="@+id/safetyFragment"
         android:name="com.safesphere.app.feature.safety.ui.SafetyFragment"
@@ -107,30 +120,12 @@
             app:destination="@id/settingsFragment" />
     </fragment>
 
+    <!-- You → Safety → Nearby (Phase 6/8 place signals; a secondary screen since 13F) -->
     <fragment
         android:id="@+id/communityFragment"
         android:name="com.safesphere.app.feature.community.ui.CommunityFragment"
         android:label="@string/nav_community"
         tools:layout="@layout/fragment_community" />
-
-    <fragment
-        android:id="@+id/profileFragment"
-        android:name="com.safesphere.app.feature.profile.ui.ProfileFragment"
-        android:label="@string/nav_profile"
-        tools:layout="@layout/fragment_profile">
-        <action
-            android:id="@+id/action_profile_to_settings"
-            app:destination="@id/settingsFragment" />
-        <action
-            android:id="@+id/action_profile_to_about"
-            app:destination="@id/aboutFragment" />
-        <action
-            android:id="@+id/action_profile_to_privacy_policy"
-            app:destination="@id/privacyPolicyFragment" />
-        <action
-            android:id="@+id/action_profile_to_moderation"
-            app:destination="@id/moderationFragment" />
-    </fragment>
 
     <!-- Phase 7: moderator screens (secondary; the server checks the role on every call) -->
     <fragment
@@ -223,7 +218,18 @@
         android:id="@+id/safeWalkFragment"
         android:name="com.safesphere.app.feature.safewalk.ui.SafeWalkFragment"
         android:label="@string/title_safe_walk"
-        tools:layout="@layout/fragment_safe_walk" />
+        tools:layout="@layout/fragment_safe_walk">
+        <!-- Phase 13F: filled in by "Going there?"; the person still presses Start or Check the way. -->
+        <argument
+            android:name="destinationLabel"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="checkWay"
+            android:defaultValue="false"
+            app:argType="boolean" />
+    </fragment>
 
     <!-- Phase 10A: Account and security (password change, account deletion) -->
     <fragment
@@ -317,19 +323,7 @@
         android:label="@string/title_private_places"
         tools:layout="@layout/fragment_private_places" />
 
-    <!-- Phase 13C: Discover, the Cocoon, place and category pages (secondary screens until 13F) -->
-    <fragment
-        android:id="@+id/discoverFragment"
-        android:name="com.safesphere.app.feature.social.ui.DiscoverFragment"
-        android:label="@string/title_discover"
-        tools:layout="@layout/fragment_discover" />
-
-    <fragment
-        android:id="@+id/cocoonFragment"
-        android:name="com.safesphere.app.feature.social.ui.CocoonFragment"
-        android:label="@string/title_cocoon"
-        tools:layout="@layout/fragment_cocoon" />
-
+    <!-- Phase 13C: place and category pages (reading screens: the bottom bar stays) -->
     <fragment
         android:id="@+id/postCollectionFragment"
         android:name="com.safesphere.app.feature.social.ui.PostCollectionFragment"
@@ -380,48 +374,6 @@
         android:name="com.safesphere.app.feature.settings.ui.info.TermsFragment"
         android:label="@string/title_terms"
         tools:layout="@layout/fragment_info_page" />
-
-    <!-- Phase 10B: Rise "Proof" (a tab, plus its own secondary screens) -->
-    <fragment
-        android:id="@+id/riseFragment"
-        android:name="com.safesphere.app.feature.rise.ui.RiseFragment"
-        android:label="@string/nav_rise"
-        tools:layout="@layout/fragment_rise" />
-
-    <fragment
-        android:id="@+id/riseGoalEditorFragment"
-        android:name="com.safesphere.app.feature.rise.ui.RiseGoalEditorFragment"
-        android:label="@string/rise_new_goal"
-        tools:layout="@layout/fragment_rise_goal_editor" />
-
-    <fragment
-        android:id="@+id/riseGoalFragment"
-        android:name="com.safesphere.app.feature.rise.ui.RiseGoalFragment"
-        android:label="@string/title_rise_goal"
-        tools:layout="@layout/fragment_rise_goal">
-        <argument
-            android:name="goalId"
-            app:argType="long" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/riseStepFragment"
-        android:name="com.safesphere.app.feature.rise.ui.RiseStepFragment"
-        android:label="@string/title_rise_step"
-        tools:layout="@layout/fragment_rise_step">
-        <argument
-            android:name="goalId"
-            app:argType="long" />
-        <argument
-            android:name="stepId"
-            app:argType="long" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/riseProofFragment"
-        android:name="com.safesphere.app.feature.rise.ui.RiseProofFragment"
-        android:label="@string/rise_your_proof"
-        tools:layout="@layout/fragment_rise_proof" />
 
     <fragment
         android:id="@+id/privacyPolicyFragment"

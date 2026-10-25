@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Phase 13F: TalkBack custom actions on cards. -->
+    <item name="card_action_why" type="id" />
+    <item name="card_action_going" type="id" />
+</resources>

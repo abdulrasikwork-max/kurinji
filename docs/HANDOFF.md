@@ -1,3 +1,27 @@
+# Handoff: Phase 13F Kurinji UI/UX + safety integration done (2026-10-25) — committed locally, NOT pushed
+
+**13F implemented, compiled, tested, emulator-verified** (`docs/PHASE13F.md`; plan `PHASE13F_PLAN.md`, approved by the
+user with F1–F4 as recommended; visual direction `docs/design/kurinji-13f-direction.html`). Android only; no backend
+change; next migration still **V25**.
+- **What changed:** the Kurinji identity (mist/ink/bloom/yeoman colours, Young Serif + Mukta Malar bundled, postmark /
+  ticket / butterfly / kolam, four motion moments), visible name Kurinji (package unchanged), Discover · Share · Cocoon
+  · You, safety banners on every tab and reading screen, You → Safety hub, "Going there?" (save, let someone know,
+  walk, check the way), SOS launcher shortcut + Quick Settings tile (countdown; non-exported entry), Rise retired
+  with a one-time notice (D9), new onboarding/splash/icon, Safety Circle SMS say "Kurinji".
+- **Results:** Android **682 / 0**; lint **0 errors / 144 warnings** (49 unused leftovers of removed screens);
+  emulator (API 37) **E1–E13 PASS**, 4 bugs found there and fixed (theme font overriding headlines, "5" read as "s"
+  on the SOS badge, tabs breaking mid-word at large text, SOS tile ignored on task screens). **Disclosed:** during the
+  tile test a real SOS started on a throwaway account (my scripted cancel was late); ended as false alarm, server
+  CANCELLED, 0 Safety Circle alerts.
+- **NOT VERIFIED:** real phone, TalkBack speech by finger, animations frame by frame / low-end phones, live composer
+  postmark, launcher shortcut (tile verified), locked-device tile, Android 13 add-tile dialog, Tamil headlines at 2.0×.
+- **Not built (follow-ups):** Ready check in the hub (13F-D1); unused-resource clean-up (lint 49); Safe Walk local start
+  (its own safety plan, D10); Tamil UI (V2).
+- **State left:** emulator and backend stopped, `adb reverse` removed, app data cleared, test accounts deleted (users
+  170 as before), test place and photo files removed; emulator display settings restored.
+- **Next:** the user's review of 13F (and pushing via GitHub Desktop); then the A23 sprint (D10), Ready check, 13R.
+
+---
 # Handoff: Phase 13E AI v1 done (2026-10-25) — committed locally, NOT pushed
 
 **13E implemented, compiled, tested, verified** (`docs/PHASE13E.md`; plan `PHASE13E_PLAN.md`, choices E1–E30 decided

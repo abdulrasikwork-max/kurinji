@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13F: labels, buttons and titles (Mukta Malar Medium as the normal weight, so it works on every API level). -->
+<font-family xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <font
+        android:font="@font/mukta_malar_medium"
+        android:fontStyle="normal"
+        android:fontWeight="400"
+        app:font="@font/mukta_malar_medium"
+        app:fontStyle="normal"
+        app:fontWeight="400" />
+    <font
+        android:font="@font/mukta_malar_bold"
+        android:fontStyle="normal"
+        android:fontWeight="700"
+        app:font="@font/mukta_malar_bold"
+        app:fontStyle="normal"
+        app:fontWeight="700" />
+</font-family>

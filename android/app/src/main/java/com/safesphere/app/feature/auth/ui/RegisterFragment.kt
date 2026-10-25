@@ -82,7 +82,7 @@ class RegisterFragment :
 
         if (state.navigateToHome) {
             viewModel.onNavigationHandled()
-            findNavController().navigate(R.id.action_register_to_home)
+            findNavController().navigate(R.id.action_register_to_start)
         }
     }
 

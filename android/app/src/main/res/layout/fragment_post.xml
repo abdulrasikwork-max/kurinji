@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13B: one post and its Perspectives. Bands, never times; no counts. -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Phase 13B, redesigned in 13F (F15): one experience as a journal page. Photos, the postmark (where and when, only what
+     the author chose to reveal), the headline and words, the ticket with the tip for the next person, the butterfly and
+     "Going there?", then Perspectives ("Been here too" first). Times are bands; no counts except the author's own
+     private line (from 3 people up). -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,13 +12,17 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:clipChildren="false"
         android:orientation="vertical"
-        android:padding="@dimen/screen_padding">
+        android:paddingStart="@dimen/screen_padding"
+        android:paddingEnd="@dimen/screen_padding"
+        android:paddingBottom="@dimen/space_xl">
 
         <com.safesphere.app.core.ui.components.NoticeView
             android:id="@+id/errorNotice"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
             android:accessibilityLiveRegion="polite"
             android:visibility="gone"
             app:noticeText="@string/error_unknown"
@@ -28,77 +35,132 @@
             android:indeterminate="true"
             android:visibility="gone" />
 
-        <com.safesphere.app.core.ui.components.EmptyStateView
+        <LinearLayout
             android:id="@+id/notFound"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_lg"
-            android:visibility="gone"
-            app:emptyIcon="@drawable/ic_place"
-            app:emptyMessage="@string/social_post_not_found_message"
-            app:emptyTitle="@string/social_post_not_found_title" />
+            android:layout_marginTop="@dimen/space_xl"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.safesphere.app.core.ui.components.KolamView
+                android:layout_width="@dimen/kolam_size"
+                android:layout_height="@dimen/kolam_size" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:gravity="center"
+                android:text="@string/social_post_not_found_title"
+                android:textAppearance="@style/TextAppearance.Kurinji.Headline.Small" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:gravity="center"
+                android:text="@string/social_post_not_found_message"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/contentBlock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:clipChildren="false"
             android:orientation="vertical"
             android:visibility="gone">
-
-            <TextView
-                android:id="@+id/typeLine"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Overline" />
-
-            <TextView
-                android:id="@+id/byLine"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs"
-                android:accessibilityHeading="true"
-                android:background="?attr/selectableItemBackground"
-                android:minHeight="@dimen/min_touch_target"
-                android:gravity="center_vertical"
-                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/photoList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_sm"
+                android:clipToPadding="false"
                 android:orientation="horizontal"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-            <TextView
-                android:id="@+id/placeLine"
+            <!-- Kind, headline and by-line, with the postmark pressed on at the top right. -->
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:drawablePadding="@dimen/space_xs"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-                app:drawableStartCompat="@drawable/ic_place" />
+                android:layout_marginTop="@dimen/space_md"
+                android:clipChildren="false">
 
-            <TextView
-                android:id="@+id/whenLine"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/postmark_size"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/typeLine"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.Kurinji.Overline" />
+
+                    <TextView
+                        android:id="@+id/headline"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:accessibilityHeading="true"
+                        android:textAppearance="@style/TextAppearance.Kurinji.Headline.Large"
+                        android:textSize="26sp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/byLine"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:minHeight="@dimen/min_touch_target"
+                        android:textAppearance="@style/TextAppearance.Kurinji.Title.Small"
+                        android:textColor="?attr/colorPrimary" />
+                </LinearLayout>
+
+                <com.safesphere.app.core.ui.components.PostmarkView
+                    android:id="@+id/postmark"
+                    android:layout_width="@dimen/postmark_size"
+                    android:layout_height="@dimen/postmark_size"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="-4dp" />
+            </FrameLayout>
+
+            <!-- Phase 13D: a collapsed post shows why and "Show it"; its words and photos only after the tap. -->
+            <LinearLayout
+                android:id="@+id/collapsedBlock"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+                android:layout_marginTop="@dimen/space_md"
+                android:orientation="vertical"
+                android:visibility="gone">
 
-            <TextView
-                android:id="@+id/bandLine"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+                <com.safesphere.app.core.ui.components.NoticeView
+                    android:id="@+id/collapsedNotice"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:noticeText="@string/collapsed_under_review"
+                    app:noticeType="info" />
 
-            <!-- Phase 13D: the author's amber notice about their own post (never red) and the review request. -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/showCollapsedButton"
+                    style="@style/Widget.SafeSphere.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/collapsed_show" />
+            </LinearLayout>
+
+            <!-- Phase 13D/13E: the author's own amber notice, with the reason and a review request. -->
             <com.safesphere.app.core.ui.components.NoticeView
                 android:id="@+id/moderationNotice"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
+                android:layout_marginTop="@dimen/space_md"
                 android:accessibilityLiveRegion="polite"
                 android:visibility="gone"
                 app:noticeText="@string/own_collapsed_while_reviewed"
@@ -115,105 +177,132 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/reviewButton"
                 style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minHeight="@dimen/min_touch_target"
                 android:text="@string/review_ask"
                 android:visibility="gone" />
-
-            <!-- Phase 13D: someone else's collapsed post: why, and a tap to show it. -->
-            <LinearLayout
-                android:id="@+id/collapsedBlock"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <com.safesphere.app.core.ui.components.NoticeView
-                    android:id="@+id/collapsedNotice"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:noticeText="@string/collapsed_under_review"
-                    app:noticeType="warning" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/showCollapsedButton"
-                    style="@style/Widget.SafeSphere.Button.Text"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="@dimen/min_touch_target"
-                    android:text="@string/collapsed_show" />
-            </LinearLayout>
 
             <TextView
                 android:id="@+id/body"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_md"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:lineSpacingMultiplier="1.1"
+                android:textAppearance="@style/TextAppearance.Kurinji.Body.Large"
+                android:textColor="?attr/colorOnSurface"
                 android:textIsSelectable="true" />
 
-            <com.google.android.material.card.MaterialCardView
+            <!-- The ticket: the tip for the next person. -->
+            <com.safesphere.app.core.ui.components.TicketLayout
                 android:id="@+id/tipCard"
-                style="@style/Widget.SafeSphere.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md">
+                android:layout_marginTop="@dimen/space_lg"
+                android:paddingStart="22dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="22dp"
+                android:paddingBottom="16dp"
+                android:visibility="gone">
 
-                <LinearLayout
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="@dimen/space_md">
+                    android:paddingBottom="6dp"
+                    android:text="@string/card_ticket_label"
+                    android:textAppearance="@style/TextAppearance.Kurinji.TicketLabel" />
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/social_tip_title"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+                <TextView
+                    android:id="@+id/tip"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textAppearance="@style/TextAppearance.Kurinji.Body.Large"
+                    android:textColor="?attr/colorOnPrimaryContainer"
+                    android:textIsSelectable="true" />
+            </com.safesphere.app.core.ui.components.TicketLayout>
 
-                    <TextView
-                        android:id="@+id/tip"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_xs"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            <!-- Where and when, in words (the postmark says the same in its own way). -->
+            <TextView
+                android:id="@+id/placeLine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:drawablePadding="@dimen/space_sm"
+                android:gravity="center_vertical"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                app:drawableStartCompat="@drawable/ic_place"
+                app:drawableTint="?attr/colorPrimary" />
+
+            <TextView
+                android:id="@+id/whenLine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:drawablePadding="@dimen/space_sm"
+                android:gravity="center_vertical"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                app:drawableStartCompat="@drawable/ic_schedule"
+                app:drawableTint="?attr/colorPrimary" />
+
+            <TextView
+                android:id="@+id/bandLine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
 
             <TextView
                 android:id="@+id/ownLine"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+                android:layout_marginTop="@dimen/space_xs"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:visibility="gone" />
 
-            <!-- Phase 13C: the butterfly (someone else's Experience) and the author's private line (their own). -->
+            <!-- Phase 13C: the butterfly (someone else's Experience), and Phase 13F "Going there?" -->
             <LinearLayout
                 android:id="@+id/butterflyBlock"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
+                android:layout_marginTop="@dimen/space_lg"
                 android:orientation="vertical"
                 android:visibility="gone">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/butterflyButton"
-                    style="@style/Widget.SafeSphere.Button.Secondary"
+                    style="@style/Widget.Kurinji.Button.Intent"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="@dimen/min_touch_target"
+                    android:minHeight="@dimen/button_height"
                     android:text="@string/butterfly_want" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/beenButton"
-                    style="@style/Widget.SafeSphere.Button.Text"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="@dimen/min_touch_target"
-                    android:text="@string/butterfly_been"
-                    android:visibility="gone" />
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/beenButton"
+                        style="@style/Widget.Kurinji.Button.Quiet"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_sm"
+                        android:layout_weight="1"
+                        android:text="@string/butterfly_been"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/goingButton"
+                        style="@style/Widget.Kurinji.Button.Quiet"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:contentDescription="@string/going_there_description"
+                        android:text="@string/going_there"
+                        android:visibility="gone"
+                        app:icon="@drawable/ic_route" />
+                </LinearLayout>
 
                 <TextView
                     android:layout_width="match_parent"
@@ -227,28 +316,56 @@
                 android:id="@+id/authorTallyLine"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:layout_marginTop="@dimen/space_md"
+                android:drawablePadding="@dimen/space_sm"
+                android:gravity="center_vertical"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
                 android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/placePageButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="match_parent"
+                style="@style/Widget.Kurinji.Button.Quiet"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minHeight="@dimen/min_touch_target"
+                android:layout_marginTop="@dimen/space_sm"
                 android:text="@string/post_open_place_page"
                 android:visibility="gone"
                 app:icon="@drawable/ic_place" />
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/reportPostButton"
+                    style="@style/Widget.SafeSphere.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/report_post"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/deletePostButton"
+                    style="@style/Widget.SafeSphere.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/social_delete_post"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <!-- Perspectives -->
             <TextView
                 style="@style/SocialSectionTitle"
+                android:layout_marginTop="@dimen/space_xl"
                 android:text="@string/social_perspectives_title" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/perspectiveList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
                 android:nestedScrollingEnabled="false"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
@@ -256,14 +373,16 @@
                 android:id="@+id/perspectivesEmpty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
                 android:text="@string/social_perspectives_empty"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/approveFirstLine"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
+                android:layout_marginTop="@dimen/space_xs"
                 android:text="@string/approve_first_line"
                 android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
                 android:visibility="gone" />
@@ -272,16 +391,18 @@
                 android:id="@+id/perspectivesClosed"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
+                android:layout_marginTop="@dimen/space_xs"
                 android:text="@string/social_perspectives_closed"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:visibility="gone" />
 
             <LinearLayout
                 android:id="@+id/writeBlock"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_md"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="gone">
 
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/kindGroup"
@@ -294,21 +415,21 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    android:visibility="gone">
 
                     <TextView
                         android:id="@+id/replyingTo"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/cancelReplyButton"
                         style="@style/Widget.SafeSphere.Button.Text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:minHeight="@dimen/min_touch_target"
                         android:text="@string/social_cancel_reply" />
                 </LinearLayout>
 
@@ -316,6 +437,7 @@
                     android:id="@+id/perspectiveLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
                     android:hint="@string/social_write_perspective">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -328,31 +450,11 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/sendButton"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:minHeight="@dimen/min_touch_target"
+                    android:layout_marginTop="@dimen/space_sm"
                     android:text="@string/social_send" />
             </LinearLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/reportPostButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_lg"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/report_post"
-                android:visibility="gone" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/deletePostButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_lg"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/social_delete_post" />
         </LinearLayout>
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

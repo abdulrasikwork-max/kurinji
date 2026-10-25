@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13F (F11): long-press the app icon → SOS. Opens the non-exported SosEntryActivity (started by the launcher as
+     this app), which starts the cancellable 5-second countdown. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_sos"
+        android:shortcutDisabledMessage="@string/sos_shortcut_long"
+        android:shortcutId="sos"
+        android:shortcutLongLabel="@string/sos_shortcut_long"
+        android:shortcutShortLabel="@string/sos_shortcut_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.safesphere.app.feature.emergency.entry.SosEntryActivity"
+            android:targetPackage="com.safesphere.app" />
+    </shortcut>
+</shortcuts>

@@ -1,6 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- ===== Shapes (Phase 13F) ===== -->
+    <style name="ShapeAppearance.Kurinji.Small" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerSize">8dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Kurinji.Medium" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerSize">14dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Kurinji.Large" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSize">18dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Kurinji.ExtraLarge" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerSize">26dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Kurinji.Sheet" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">26dp</item>
+        <item name="cornerSizeTopRight">26dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
     <!-- ===== Buttons ===== -->
     <style name="Widget.SafeSphere.Button.Primary" parent="Widget.Material3.Button">
         <item name="android:minHeight">@dimen/button_height</item>
@@ -15,8 +40,10 @@
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
         <item name="android:textAppearance">@style/TextAppearance.SafeSphere.Button</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
         <item name="cornerRadius">@dimen/radius_button</item>
         <item name="strokeColor">?attr/colorOutline</item>
+        <item name="iconTint">?attr/colorPrimary</item>
     </style>
 
     <!-- The red "Start SOS" button. Red is reserved for emergency UI, and this is that. -->
@@ -31,34 +58,81 @@
         <item name="android:textAppearance">@style/TextAppearance.SafeSphere.Button</item>
     </style>
 
+    <!-- The butterfly button: the one place the intent colour fills a control (Phase 13F). -->
+    <style name="Widget.Kurinji.Button.Intent" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">@dimen/min_touch_target</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Label.Large</item>
+        <item name="android:textColor">?attr/colorOnIntentContainer</item>
+        <item name="backgroundTint">?attr/colorIntentContainer</item>
+        <!-- The ink shade, not the bright orange: the edge must reach 3:1 to mark the control (ContrastTest). -->
+        <item name="strokeColor">?attr/colorIntentInk</item>
+        <item name="strokeWidth">1.5dp</item>
+        <item name="cornerRadius">@dimen/radius_button</item>
+        <item name="iconTint">@null</item>
+        <item name="iconSize">28dp</item>
+        <item name="iconPadding">8dp</item>
+    </style>
+
+    <!-- A quiet, outlined action next to the butterfly ("Going there?"). -->
+    <style name="Widget.Kurinji.Button.Quiet" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">@dimen/min_touch_target</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Label.Large</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="strokeColor">?attr/colorOutline</item>
+        <item name="iconTint">?attr/colorPrimary</item>
+        <item name="cornerRadius">@dimen/radius_button</item>
+    </style>
+
     <!-- ===== Text fields ===== -->
     <style name="Widget.SafeSphere.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
-        <item name="boxCornerRadiusTopStart">@dimen/radius_button</item>
-        <item name="boxCornerRadiusTopEnd">@dimen/radius_button</item>
-        <item name="boxCornerRadiusBottomStart">@dimen/radius_button</item>
-        <item name="boxCornerRadiusBottomEnd">@dimen/radius_button</item>
+        <item name="boxCornerRadiusTopStart">@dimen/radius_field</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/radius_field</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/radius_field</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/radius_field</item>
         <item name="boxStrokeColor">?attr/colorPrimary</item>
+        <item name="boxBackgroundColor">?attr/colorCard</item>
     </style>
 
     <!-- Same look as the text field above, for the drop-down lists in the contact form -->
     <style name="Widget.SafeSphere.TextInputLayout.Dropdown" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
-        <item name="boxCornerRadiusTopStart">@dimen/radius_button</item>
-        <item name="boxCornerRadiusTopEnd">@dimen/radius_button</item>
-        <item name="boxCornerRadiusBottomStart">@dimen/radius_button</item>
-        <item name="boxCornerRadiusBottomEnd">@dimen/radius_button</item>
+        <item name="boxCornerRadiusTopStart">@dimen/radius_field</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/radius_field</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/radius_field</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/radius_field</item>
         <item name="boxStrokeColor">?attr/colorPrimary</item>
+        <item name="boxBackgroundColor">?attr/colorCard</item>
+    </style>
+
+    <!-- ===== Chips ===== -->
+    <style name="Widget.Kurinji.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">@color/selector_chip_background</item>
+        <item name="chipStrokeColor">?attr/colorOutlineVariant</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipMinHeight">@dimen/min_touch_target</item>
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Label.Large</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Kurinji.Medium</item>
     </style>
 
     <!-- ===== Cards ===== -->
     <style name="Widget.SafeSphere.Card" parent="Widget.Material3.CardView.Outlined">
-        <item name="cardBackgroundColor">?attr/colorSurfaceContainerLowest</item>
+        <item name="cardBackgroundColor">?attr/colorCard</item>
         <item name="strokeColor">?attr/colorOutlineVariant</item>
         <item name="strokeWidth">@dimen/stroke_hairline</item>
         <item name="cardCornerRadius">@dimen/radius_card</item>
         <item name="cardElevation">0dp</item>
     </style>
 
-    <!-- Dark navy panel used for the status card and the profile header -->
+    <!-- An experience card: a postcard (photo on top, postmark, ticket). Presses down slightly when touched. -->
+    <style name="Widget.Kurinji.Card.Postcard" parent="Widget.SafeSphere.Card">
+        <item name="android:stateListAnimator">@animator/press_settle</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+    </style>
+
+    <!-- Indigo-night panel used for the safety status card -->
     <style name="Widget.SafeSphere.Card.Hero">
         <item name="cardBackgroundColor">?attr/colorHero</item>
         <item name="strokeWidth">0dp</item>
@@ -84,20 +158,20 @@
 
     <style name="Widget.SafeSphere.BottomNavigation.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
         <item name="android:color">?attr/colorPrimaryContainer</item>
-        <item name="android:width">64dp</item>
+        <item name="android:width">60dp</item>
         <item name="android:height">32dp</item>
     </style>
 
-    <style name="TextAppearance.SafeSphere.Nav.Active" parent="TextAppearance.Material3.LabelMedium">
+    <style name="TextAppearance.SafeSphere.Nav.Active" parent="TextAppearance.Kurinji.Label.Medium">
         <item name="android:textSize">12sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textStyle">bold</item>
     </style>
 
-    <style name="TextAppearance.SafeSphere.Nav.Inactive" parent="TextAppearance.Material3.LabelMedium">
+    <style name="TextAppearance.SafeSphere.Nav.Inactive" parent="TextAppearance.Kurinji.Label.Medium">
         <item name="android:textSize">12sp</item>
     </style>
 
-    <!-- ===== Toolbar (secondary screens only) ===== -->
+    <!-- ===== Toolbar (secondary screens) ===== -->
     <style name="Widget.SafeSphere.Toolbar" parent="Widget.Material3.Toolbar">
         <item name="android:background">?attr/colorSurface</item>
         <item name="titleTextAppearance">@style/TextAppearance.SafeSphere.SectionTitle</item>
@@ -113,7 +187,7 @@
         <item name="tint">?attr/colorOnPrimaryContainer</item>
     </style>
 
-    <!-- Brand mark on a navy rounded square -->
+    <!-- The Kurinji butterfly on a soft tile -->
     <style name="Widget.SafeSphere.BrandTile" parent="">
         <item name="android:background">@drawable/bg_brand_tile</item>
         <item name="android:padding">@dimen/brand_tile_padding</item>
@@ -130,9 +204,12 @@
         <item name="android:paddingBottom">@dimen/chip_padding_vertical</item>
         <item name="android:textAppearance">@style/TextAppearance.SafeSphere.StatusLabel</item>
         <item name="android:textColor">?attr/colorOnError</item>
+        <!-- Found on the emulator: Mukta's old-style "5" read as "s" at badge size. Emergency text keeps the phone's
+             sans with lining figures, so "5 s to cancel" can never be misread. -->
+        <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
-    <!-- Small label on dark hero panels (profile status) -->
+    <!-- Small label on hero panels -->
     <style name="Widget.SafeSphere.Badge.OnHero" parent="">
         <item name="android:background">@drawable/bg_chip_on_hero</item>
         <item name="android:paddingStart">@dimen/chip_padding_horizontal</item>
@@ -162,5 +239,34 @@
         <item name="android:layout_marginTop">@dimen/space_xs</item>
         <item name="android:textAppearance">@style/TextAppearance.SafeSphere.Caption</item>
         <item name="android:visibility">gone</item>
+    </style>
+
+    <!-- Phase 13F: one choice in a bottom sheet ("Going there?"): icon, words, a full-width touch target. -->
+    <style name="Widget.Kurinji.SheetRow" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_xs</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:drawablePadding">@dimen/space_md</item>
+        <item name="drawableTint">?attr/colorPrimary</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Title.Medium</item>
+    </style>
+
+    <!-- Phase 13F: an editorial text tab ("Edition · Connections", "Want to go · Been"): a word, underlined when chosen. -->
+    <style name="Widget.Kurinji.TextTab" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">@dimen/min_touch_target</item>
+        <item name="android:gravity">center</item>
+        <item name="android:layout_marginEnd">@dimen/space_lg</item>
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Title.Medium</item>
+        <item name="android:textColor">@color/selector_text_tab</item>
+        <item name="android:background">@drawable/bg_text_tab</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
     </style>
 </resources>

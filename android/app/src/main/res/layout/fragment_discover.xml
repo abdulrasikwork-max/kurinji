@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13C: Discover. The weekly Edition (it ends), From your connections (it ends), search by place or category.
-     More only on an explicit tap; no counts anywhere. -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Phase 13C, redesigned in 13F (F14): Discover opens on this week's Edition, a small printed weekly for one city:
+     a masthead, short sections of postcards and question slips, and an end. From your connections ends too. Search
+     (places and categories, never people) sits behind the search button. More only on an explicit tap; no counts. -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
@@ -11,131 +13,205 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/screen_padding">
+        android:paddingStart="@dimen/screen_padding"
+        android:paddingTop="@dimen/space_lg"
+        android:paddingEnd="@dimen/screen_padding"
+        android:paddingBottom="@dimen/space_xl">
 
-        <com.safesphere.app.core.ui.components.NoticeView
-            android:id="@+id/errorNotice"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:accessibilityLiveRegion="polite"
-            android:visibility="gone"
-            app:noticeText="@string/error_unknown"
-            app:noticeType="warning" />
-
-        <!-- Search: places by name, categories from the closed list. Never people. -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/searchLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/discover_search_hint">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/searchInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:imeOptions="actionSearch"
-                android:inputType="text"
-                android:maxLength="40" />
-        </com.google.android.material.textfield.TextInputLayout>
-
+        <!-- The masthead -->
         <LinearLayout
+            android:id="@+id/masthead"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="top"
             android:orientation="horizontal">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/searchButton"
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/discover_search_button" />
+                android:orientation="vertical">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/clearSearchButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/space_sm"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/discover_search_clear"
-                android:visibility="gone" />
+                <TextView
+                    android:id="@+id/mastheadOverline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/discover_masthead_overline"
+                    android:textAppearance="@style/TextAppearance.Kurinji.Overline" />
+
+                <!-- The city: tap to choose another (not saved). -->
+                <TextView
+                    android:id="@+id/cityTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:accessibilityHeading="true"
+                    android:background="?attr/selectableItemBackground"
+                    android:drawablePadding="@dimen/space_xs"
+                    android:minHeight="@dimen/min_touch_target"
+                    android:text="@string/discover_masthead_no_city"
+                    android:textAppearance="@style/TextAppearance.Kurinji.Masthead"
+                    app:drawableEndCompat="@drawable/ic_chevron_down"
+                    app:drawableTint="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/mastheadSub"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/searchToggle"
+                android:layout_width="@dimen/min_touch_target"
+                android:layout_height="@dimen/min_touch_target"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/discover_search_open"
+                android:src="@drawable/ic_search"
+                app:tint="?attr/colorOnSurface" />
         </LinearLayout>
 
+        <!-- City chips: shown when no city is chosen yet, or after tapping the city. -->
         <LinearLayout
-            android:id="@+id/searchBlock"
+            android:id="@+id/cityBlock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone">
 
             <TextView
-                android:id="@+id/searchCategoriesTitle"
-                style="@style/SocialSectionTitle"
-                android:text="@string/discover_search_categories" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/searchCategoryList"
+                android:id="@+id/cityHint"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
-            <TextView
-                style="@style/SocialSectionTitle"
-                android:text="@string/discover_search_places" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/searchPlaceList"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
-            <TextView
-                android:id="@+id/searchNoPlaces"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/discover_search_no_places"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/discover_city_hint"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
                 android:visibility="gone" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/cityGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                app:singleSelection="true" />
         </LinearLayout>
 
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/modeGroup"
+        <!-- Search: places by name, categories from the closed list. Never people. -->
+        <LinearLayout
+            android:id="@+id/searchPanel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_md"
-            app:checkedButton="@+id/editionTab"
-            app:selectionRequired="true"
-            app:singleSelection="true">
+            android:orientation="vertical"
+            android:visibility="gone">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/editionTab"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="0dp"
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/searchLayout"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/discover_tab_edition" />
+                android:hint="@string/discover_search_hint"
+                app:startIconDrawable="@drawable/ic_search">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/connectionsTab"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="0dp"
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/searchInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionSearch"
+                    android:inputType="text"
+                    android:maxLength="40" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/discover_tab_connections" />
-        </com.google.android.material.button.MaterialButtonToggleGroup>
+                android:layout_marginTop="@dimen/space_sm"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/searchButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:minHeight="@dimen/min_touch_target"
+                    android:text="@string/discover_search_button" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/clearSearchButton"
+                    style="@style/Widget.SafeSphere.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_sm"
+                    android:text="@string/discover_search_clear"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/searchBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/searchCategoriesTitle"
+                    style="@style/SocialSectionTitle"
+                    android:text="@string/discover_search_categories" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/searchCategoryList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+                <TextView
+                    style="@style/SocialSectionTitle"
+                    android:text="@string/discover_search_places" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/searchPlaceList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+                <TextView
+                    android:id="@+id/searchNoPlaces"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/discover_search_no_places"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <com.safesphere.app.core.ui.components.TextTabsView
+            android:id="@+id/modeTabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/stroke_hairline"
+            android:background="?attr/colorOutlineVariant" />
 
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/progress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_sm"
             android:indeterminate="true"
             android:visibility="gone" />
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/errorNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone"
+            app:noticeText="@string/error_unknown"
+            app:noticeType="warning" />
 
         <!-- The Edition -->
         <LinearLayout
@@ -145,39 +221,6 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/cityPrompt"
-                style="@style/SocialSectionTitle"
-                android:text="@string/discover_choose_city" />
-
-            <TextView
-                android:id="@+id/cityHint"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/discover_city_hint"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
-                android:visibility="gone" />
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/cityGroup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:singleSelection="true" />
-
-            <TextView
-                android:id="@+id/editionHeading"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:accessibilityHeading="true"
-                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
-
-            <TextView
-                android:id="@+id/themeLine"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
-
-            <TextView
                 android:id="@+id/citySectionTitle"
                 style="@style/SocialSectionTitle" />
 
@@ -185,6 +228,7 @@
                 android:id="@+id/citySectionList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
                 android:nestedScrollingEnabled="false"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
@@ -197,6 +241,7 @@
                 android:id="@+id/asksSectionList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
                 android:nestedScrollingEnabled="false"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
@@ -209,22 +254,36 @@
                 android:id="@+id/themeSectionList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
                 android:nestedScrollingEnabled="false"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-            <TextView
+            <!-- Nothing this week: a kolam for whoever comes next. -->
+            <LinearLayout
                 android:id="@+id/editionEmpty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:text="@string/discover_edition_empty"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-                android:visibility="gone" />
+                android:layout_marginTop="@dimen/space_lg"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.safesphere.app.core.ui.components.KolamView
+                    android:layout_width="@dimen/kolam_size"
+                    android:layout_height="@dimen/kolam_size" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:gravity="center"
+                    android:text="@string/discover_edition_empty"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+            </LinearLayout>
 
             <!-- The end: every edition ends. -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/editionEndCard"
-                style="@style/Widget.SafeSphere.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_lg"
@@ -233,23 +292,43 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="@dimen/space_md">
+                    android:orientation="vertical">
 
-                    <TextView
+                    <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/discover_edition_end"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+                        android:adjustViewBounds="true"
+                        android:importantForAccessibility="no"
+                        android:scaleType="fitXY"
+                        android:src="@drawable/ill_edition_end" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/editionShareButton"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_sm"
-                        android:minHeight="@dimen/min_touch_target"
-                        android:text="@string/social_share_experience"
-                        app:icon="@drawable/ic_add" />
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_md">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/discover_edition_end"
+                            android:textAppearance="@style/TextAppearance.Kurinji.Headline.Small" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/editionShareButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:text="@string/social_share_experience" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/editionCocoonButton"
+                            style="@style/Widget.SafeSphere.Button.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_sm"
+                            android:text="@string/cocoon_open" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -260,7 +339,8 @@
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/categoryGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm" />
         </LinearLayout>
 
         <!-- From your connections -->
@@ -282,24 +362,37 @@
                 android:id="@+id/connectionsList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
                 android:nestedScrollingEnabled="false"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-            <TextView
+            <LinearLayout
                 android:id="@+id/connectionsEmpty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:text="@string/discover_connections_empty"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-                android:visibility="gone" />
+                android:layout_marginTop="@dimen/space_lg"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.safesphere.app.core.ui.components.KolamView
+                    android:layout_width="@dimen/kolam_size"
+                    android:layout_height="@dimen/kolam_size" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:gravity="center"
+                    android:text="@string/discover_connections_empty"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+            </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/connectionsShowMore"
                 style="@style/Widget.SafeSphere.Button.Secondary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="@dimen/min_touch_target"
                 android:text="@string/social_show_more"
                 android:visibility="gone" />
 
@@ -308,9 +401,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_md"
+                android:gravity="center"
                 android:text="@string/discover_connections_end"
                 android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
                 android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

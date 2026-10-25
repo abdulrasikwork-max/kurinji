@@ -13,6 +13,7 @@ import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentPostCollectionBinding
+import com.safesphere.app.feature.going.GoingThere
 import com.safesphere.app.feature.social.domain.City
 import com.safesphere.app.feature.social.domain.Interest
 
@@ -23,11 +24,19 @@ import com.safesphere.app.feature.social.domain.Interest
 class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding>(FragmentPostCollectionBinding::inflate) {
 
     private val viewModel by viewModels<PostCollectionViewModel> { PostCollectionViewModel.factory(appContainer) }
-    private val adapter = PersonRowAdapter()
+    private lateinit var adapter: ExperienceCardAdapter
+    private var collapseStrongLanguage = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        adapter = ExperienceCardAdapter(appContainer.imageLoader, appContainer.experienceRepository::photoUrl)
         binding.postList.adapter = adapter
+        collectWhenStarted(appContainer.viewerPreferences.collapseStrongLanguage) { on ->
+            if (on != collapseStrongLanguage) {
+                collapseStrongLanguage = on
+                render(viewModel.uiState.value)
+            }
+        }
         binding.showMoreButton.setOnClickListener { viewModel.onShowMore() }
         collectWhenStarted(viewModel.uiState, ::render)
         val args = arguments
@@ -45,6 +54,12 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
             is PostCollection.OfPlace -> {
                 val place = state.place
                 binding.heading.text = place?.name.orEmpty()
+                // Phase 13F (F9): a place page is where someone decides to go.
+                binding.goingButton.isVisible = place != null
+                binding.goingButton.setOnClickListener {
+                    if (place != null) GoingThere.show(this, GoingThere.Target(listOfNotNull(place.name,
+                        place.city?.let(ExperienceLabels::cityName)).joinToString(", ")), cocoon = null)
+                }
                 binding.detailLine.text = if (place == null) "" else listOfNotNull(
                     getString(SocialLabels.of(place.category)), place.city?.let(ExperienceLabels::cityName),
                     getString(R.string.collection_place_line)).joinToString(" · ")
@@ -58,11 +73,11 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
         }
         binding.progress.isVisible = state.isLoading
         adapter.submitList(state.items.map { post ->
-            PostRows.of(requireContext(), post) {
+            CardRow(ExperienceCards.of(post, collapseStrongLanguage = collapseStrongLanguage), onOpen = {
                 findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to post.publicId))
-            }
+            })
         })
-        binding.emptyText.isVisible = state.loaded && state.items.isEmpty()
+        binding.emptyBlock.isVisible = state.loaded && state.items.isEmpty()
         binding.emptyText.setText(if (state.notFound) R.string.collection_not_found else R.string.collection_empty)
         binding.showMoreButton.isVisible = state.hasMore
         binding.showMoreButton.isEnabled = !state.isLoading

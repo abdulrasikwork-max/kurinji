@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 13F (F13): an experience as a postcard. Photo (optional), postmark = where and when, headline, a short
+     excerpt, the ticket with the tip for the next person, the by-line with a band, and the reader's own Cocoon state.
+     The whole card is one TalkBack item; its sentence is built in ExperienceCardAdapter. -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card"
+    style="@style/Widget.Kurinji.Card.Postcard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_md"
+    android:clickable="true"
+    android:focusable="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipChildren="false"
+        android:importantForAccessibility="noHideDescendants"
+        android:orientation="vertical">
+
+        <com.safesphere.app.core.ui.components.AspectRatioImageView
+            android:id="@+id/photo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorSurfaceVariant"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/space_md">
+
+                <TextView
+                    android:id="@+id/overline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/postmark_size_small"
+                    android:textAppearance="@style/TextAppearance.Kurinji.Overline" />
+
+                <TextView
+                    android:id="@+id/headline"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:layout_marginEnd="@dimen/postmark_size_small"
+                    android:ellipsize="end"
+                    android:maxLines="3"
+                    android:textAppearance="@style/TextAppearance.Kurinji.CardHeadline" />
+
+                <TextView
+                    android:id="@+id/excerpt"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+                <!-- Collapsed (13D/13E): only the reason; the words stay behind a tap on the post. -->
+                <TextView
+                    android:id="@+id/collapsedLine"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:drawablePadding="@dimen/space_sm"
+                    android:gravity="center_vertical"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                    android:visibility="gone"
+                    app:drawableStartCompat="@drawable/ic_info"
+                    app:drawableTint="?attr/colorOnSurfaceVariant" />
+
+                <com.safesphere.app.core.ui.components.TicketLayout
+                    android:id="@+id/ticket"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:paddingStart="20dp"
+                    android:paddingTop="@dimen/space_sm"
+                    android:paddingEnd="20dp"
+                    android:paddingBottom="12dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingBottom="6dp"
+                        android:text="@string/card_ticket_label"
+                        android:textAppearance="@style/TextAppearance.Kurinji.TicketLabel" />
+
+                    <TextView
+                        android:id="@+id/tip"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:ellipsize="end"
+                        android:maxLines="3"
+                        android:textAppearance="@style/TextAppearance.Kurinji.Body.Medium"
+                        android:textColor="?attr/colorOnPrimaryContainer" />
+                </com.safesphere.app.core.ui.components.TicketLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/byline"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+                    <!-- Edition items: "Why am I seeing this?" (TalkBack gets it as an action on the card). -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/whyButton"
+                        style="@style/Widget.SafeSphere.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="0dp"
+                        android:text="@string/discover_why"
+                        android:visibility="gone" />
+
+                    <ImageView
+                        android:id="@+id/intentGlyph"
+                        android:layout_width="@dimen/butterfly_size"
+                        android:layout_height="@dimen/butterfly_size"
+                        android:layout_marginStart="@dimen/space_sm"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <com.safesphere.app.core.ui.components.PostmarkView
+                android:id="@+id/postmark"
+                android:layout_width="@dimen/postmark_size_small"
+                android:layout_height="@dimen/postmark_size_small"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="@dimen/space_sm"
+                android:layout_marginEnd="@dimen/space_sm" />
+        </FrameLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

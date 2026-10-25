@@ -5,7 +5,6 @@ import com.safesphere.app.core.network.SessionEndReason
 import com.safesphere.app.core.ui.sessionEndTexts
 import com.safesphere.app.feature.community.domain.CommunityPolicy
 import com.safesphere.app.feature.community.ui.CommunityTexts
-import com.safesphere.app.feature.home.ui.QuickActions
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -32,17 +31,20 @@ class HonestyTextsTest {
             }
         }
         val all = onboarding.values.joinToString(" ").lowercase()
-        assertTrue(all.contains("safety that expands your world"))
-        assertTrue("support is named as a choice", all.contains("using support is a choice"))
-        assertTrue("SOS honesty", all.contains("never contacts emergency services"))
-        assertTrue("no-tracking promise", all.contains("nobody can use safesphere to track you"))
+        // Phase 13F (F19): the Kurinji identity, no safety pitch; the SOS honesty line lives in the Safety hub now
+        // (SafetyHubTextsTest), and onboarding says where the safety tools are.
+        assertTrue(all.contains("written for the next one who goes"))
+        assertTrue("the Cocoon is private", all.contains("nobody sees what is in your cocoon"))
+        assertTrue("no-tracking promise", all.contains("nobody can use kurinji to track you"))
+        assertTrue("where the safety tools live", all.contains("trusted people and sos live in you"))
+        for (pitch in listOf("emergency", "danger", "protect", "stay safe")) assertFalse("safety pitch: $pitch", pitch in all)
     }
 
     @Test
-    fun `Settings, Profile, Safety Center and Home have no Coming-soon placeholders`() {
+    fun `Settings, You and the Safety hub have no Coming-soon placeholders`() {
         val sources = listOf(
-            "feature/settings/ui/SettingsFragment.kt", "feature/profile/ui/ProfileFragment.kt",
-            "feature/safety/ui/SafetyFragment.kt", "feature/home/ui/HomeContent.kt", "feature/home/ui/QuickActionAdapter.kt"
+            "feature/settings/ui/SettingsFragment.kt", "feature/profile/ui/YouFragment.kt",
+            "feature/safety/ui/SafetyFragment.kt"
         ).map { File("src/main/java/com/safesphere/app/$it") }
         for (file in sources) {
             assertTrue("missing ${file.path}", file.isFile)
@@ -61,11 +63,14 @@ class HonestyTextsTest {
     }
 
     @Test
-    fun `Home has one Safe Walk tile, and every quick action opens a screen`() {
-        assertEquals(2, QuickActions.all.size)
-        assertEquals(QuickActions.all.size, QuickActions.all.map { it.destinationId }.toSet().size)
-        val home = File("src/main/res/layout/fragment_home.xml").readText(Charsets.UTF_8)
-        assertFalse("the Phase 1 timeline placeholder is back", home.contains("@+id/timeline") || home.contains("section_journey"))
+    fun `the Safety hub opens each tool once, and the retired Home screen is gone`() {
+        val hub = File("src/main/java/com/safesphere/app/feature/safety/ui/SafetyFragment.kt").readText(Charsets.UTF_8)
+        for (destination in listOf("R.id.emergencyFragment", "R.id.safeWalkFragment", "R.id.safetyCircleFragment",
+                "R.id.evidenceVaultFragment", "R.id.communityFragment", "R.id.emergencyHistoryFragment")) {
+            assertEquals(destination, 1, Regex(Regex.escape(destination)).findAll(hub).count())
+        }
+        assertFalse(File("src/main/res/layout/fragment_home.xml").exists())
+        assertFalse(File("src/main/java/com/safesphere/app/feature/home").exists())
     }
 
     @Test
@@ -75,7 +80,8 @@ class HonestyTextsTest {
         assertTrue(strings.getValue("feature_safety_circle_description").contains("choose to keep in the loop"))
         assertTrue(strings.getValue("safety_circle_empty_message").contains("choose to keep in the loop"))
         assertTrue(strings.getValue("safe_walk_setup_body").contains("Using support is a choice, not a weakness."))
-        assertTrue(strings.getValue("tagline_your_safety").contains("expands your world"))
+        assertEquals("Written for the next one who goes.", strings["motto"])
+        assertEquals("Kurinji", strings["app_name"])
         assertFalse(strings.values.any { it.contains("Safety, connected") })
         assertTrue(strings.getValue("privacy_policy_body").contains("not legal advice"))
         assertFalse(strings.getValue("privacy_policy_body").contains("placeholder"))

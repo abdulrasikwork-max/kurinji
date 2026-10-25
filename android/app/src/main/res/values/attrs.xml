@@ -12,6 +12,14 @@
     <attr name="colorOnHeroVariant" format="color" />
     <attr name="colorHeroAccent" format="color" />
 
+    <!-- Phase 13F (Kurinji): raised cards, hairlines, and the intent colour (the butterfly, "Want to go"). -->
+    <attr name="colorCard" format="color" />
+    <attr name="colorLine" format="color" />
+    <attr name="colorIntent" format="color" />
+    <attr name="colorIntentInk" format="color" />
+    <attr name="colorIntentContainer" format="color" />
+    <attr name="colorOnIntentContainer" format="color" />
+
     <!-- Which badge a StatusBadgeView (or a SectionHeaderView) shows. -->
     <attr name="badgeStatus" format="enum">
         <enum name="none" value="-1" />

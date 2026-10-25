@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Brand -->
-    <string name="app_name">SafeSphere</string>
+    <string name="app_name">Kurinji</string>
     <!-- Phase 10A identity: "Safety that expands your world" (docs/PHASE10_DESIGN.md §2) -->
-    <string name="app_tagline">Safety that expands your world.</string>
-    <string name="tagline_your_safety">Safety that expands your world.</string>
 
     <!-- Badges: Available = works today, Preview = shows the design only, Coming soon = not built yet -->
     <string name="badge_available">Available</string>
@@ -24,7 +22,7 @@
     <string name="title_register">Create account</string>
     <string name="title_forgot_password">Reset password</string>
     <string name="title_settings">Settings</string>
-    <string name="title_about">About SafeSphere</string>
+    <string name="title_about">About Kurinji</string>
     <string name="title_terms">Terms</string>
     <string name="title_privacy_policy">Privacy Policy</string>
 
@@ -38,23 +36,23 @@
     <string name="action_log_out">Log out</string>
 
     <!-- Accessibility descriptions -->
-    <string name="cd_app_logo">SafeSphere logo</string>
+    <string name="cd_app_logo">Kurinji logo</string>
     <string name="cd_open_profile">Open profile</string>
     <string name="cd_profile_photo_placeholder">Profile photo placeholder</string>
     <string name="cd_menu_item_coming_soon">%1$s, coming soon</string>
     <string name="cd_onboarding_page">Page %1$d of %2$d</string>
     <string name="cd_status_card">Right now: %1$s. %2$s %3$s</string>
     <string name="cd_feature_row">%1$s. %2$s. %3$s.</string>
-    <string name="cd_sos_tile">SOS. Emergency help. Starts a five second countdown you can cancel. SafeSphere texts your Safety Circle only if you switched on automatic SMS. Tap to open.</string>
+    <string name="cd_sos_tile">SOS. Emergency help. Starts a five second countdown you can cancel. Kurinji texts your Safety Circle only if you switched on automatic SMS. Tap to open.</string>
 
     <!-- Onboarding (Phase 10A: rewritten; it said nothing was available yet). Only what this build really does;
          OnboardingTextsTest forbids "not available", "future", "later" and safety promises. -->
-    <string name="onboarding_connected_title">Go further, prepared</string>
-    <string name="onboarding_connected_body">SafeSphere is safety that expands your world: it helps you go where you want to go. Check the way before you go, and start a Safe Walk with check-ins if you want support on the way. Using support is a choice, never a weakness.</string>
-    <string name="onboarding_aware_title">Your people, your choice</string>
-    <string name="onboarding_aware_body">Choose the people you want to keep in the loop. SOS starts with a five second countdown you can cancel. Your Safety Circle is texted from your phone only if you switch on automatic SMS, and SafeSphere never contacts emergency services for you.</string>
+    <string name="onboarding_connected_title">Written for the next one who goes</string>
+    <string name="onboarding_connected_body">Kurinji is where people share what a place or an activity is really like, so the next person can go and see for themselves. Every experience carries a tip for whoever goes next.</string>
+    <string name="onboarding_aware_title">Want to go? Butterfly it.</string>
+    <string name="onboarding_aware_body">The butterfly saves an experience to your Cocoon, a private list of things you want to try. When you have been, tell the next person what you found. Nobody sees what is in your Cocoon.</string>
     <string name="onboarding_safe_title">Yours to control</string>
-    <string name="onboarding_safe_body">Nobody can use SafeSphere to track you. Your exact location never goes to Nearby, evidence is encrypted on your phone before it is uploaded, and you can change your password or delete your account at any time.</string>
+    <string name="onboarding_safe_body">No followers, no public counts, no messages from strangers. You choose who sees each post and how exactly its place is shown. Nobody can use Kurinji to track you. Trusted people and SOS live in You, under Safety; set them up any time.</string>
 
     <!-- Authentication (UI preview only) -->
     <string name="label_email">Email</string>
@@ -65,15 +63,15 @@
     <string name="label_date_of_birth">Date of birth</string>
     <string name="register_date_of_birth_helper">You must be 18 or older. It is only used to check your age and is not stored.</string>
 
-    <string name="login_subtitle">Log in to continue to SafeSphere.</string>
+    <string name="login_subtitle">Log in to continue to Kurinji.</string>
     <string name="action_continue">Continue</string>
     <string name="action_log_in">Log in</string>
     <string name="action_forgot_password">Forgot password?</string>
-    <string name="login_no_account">New to SafeSphere?</string>
+    <string name="login_no_account">New to Kurinji?</string>
     <string name="action_create_an_account">Create an account</string>
 
     <string name="register_title">Create your account</string>
-    <string name="register_subtitle">Create your SafeSphere account. Your password is sent securely to the server and never stored on this device.</string>
+    <string name="register_subtitle">Create your Kurinji account. Your password is sent securely to the server and never stored on this device.</string>
     <string name="action_create_account">Create account</string>
     <string name="register_have_account">Already have an account?</string>
 
@@ -104,12 +102,12 @@
     <string name="session_password_changed_title">Password changed</string>
     <string name="session_password_changed">The password of this account was changed, so this phone was signed out. Log in with the new password. If you did not change it, someone else knows your password: log in and change it again as soon as you can.</string>
     <string name="session_account_deleted_title">Account deleted</string>
-    <string name="session_account_deleted">This account has been deleted. SafeSphere is removing its evidence and recovery key from this phone as well.</string>
-    <string name="session_account_unavailable">This account is switched off. Please contact the SafeSphere team.</string>
+    <string name="session_account_deleted">This account has been deleted. Kurinji is removing its evidence and recovery key from this phone as well.</string>
+    <string name="session_account_unavailable">This account is switched off. Please contact the Kurinji team.</string>
     <!-- Phase 11 C1: the server needs a sign-in again, but nothing on this phone was deleted and SOS still works. -->
     <string name="session_sign_in_to_sync_title">Sign in to sync</string>
-    <string name="session_sign_in_to_sync">SafeSphere needs your password again to reach your account. Your SOS, your Safety Circle texts and any Safe Walk keep working on this phone, and nothing has been deleted. Sign in when you can so it can save to your account again.</string>
-    <string name="session_sign_in_to_sync_revoked">This phone was signed out of your account on the server. Your SOS and Safety Circle texts keep working on this phone, and nothing has been deleted. Sign in again so SafeSphere can save to your account. If you did not sign out, change your password after signing in.</string>
+    <string name="session_sign_in_to_sync">Kurinji needs your password again to reach your account. Your SOS, your Safety Circle texts and any Safe Walk keep working on this phone, and nothing has been deleted. Sign in when you can so it can save to your account again.</string>
+    <string name="session_sign_in_to_sync_revoked">This phone was signed out of your account on the server. Your SOS and Safety Circle texts keep working on this phone, and nothing has been deleted. Sign in again so Kurinji can save to your account. If you did not sign out, change your password after signing in.</string>
     <string name="action_sign_in">Sign in</string>
     <string name="action_later">Later</string>
     <string name="home_sign_in_banner">Sign in to sync. SOS works on this phone; your account is not being updated.</string>
@@ -142,13 +140,13 @@
     <string name="status_checking_detail">This can take a moment after the app starts.</string>
     <string name="status_idle_label">Nothing running</string>
     <string name="status_idle_headline">No SOS or Safe Walk is running on this phone.</string>
-    <string name="status_idle_detail">Home does not check your surroundings. Start a Safe Walk or SOS whenever you need it.</string>
+    <string name="status_idle_detail">This screen does not check your surroundings. Start a Safe Walk or SOS whenever you need it.</string>
     <string name="status_walk_label">Safe Walk on</string>
     <string name="status_walk_headline">Your check-ins are running.</string>
-    <string name="status_walk_detail">If you miss a check-in, SafeSphere first asks whether you are OK.</string>
+    <string name="status_walk_detail">If you miss a check-in, Kurinji first asks whether you are OK.</string>
     <string name="status_missed_label">Check-in missed</string>
     <string name="status_missed_headline">Open Safe Walk to answer.</string>
-    <string name="status_missed_detail">Tell SafeSphere you are OK, or start SOS if you need help.</string>
+    <string name="status_missed_detail">Tell Kurinji you are OK, or start SOS if you need help.</string>
     <string name="section_quick_actions">Quick actions</string>
     <string name="sos_subtitle">Emergency help</string>
     <string name="sos_badge_countdown">5 s to cancel</string>
@@ -156,14 +154,14 @@
     <string name="nearby_overline">Your area</string>
     <string name="nearby_message">Find the nearest safe places to head for, and what people noticed around you.</string>
     <string name="cd_nearby_card">Nearby. Opens Nearby.</string>
-    <string name="privacy_reassurance">Your safety data stays under your control. Nobody can use SafeSphere to track you.</string>
+    <string name="privacy_reassurance">Your safety data stays under your control. Nobody can use Kurinji to track you.</string>
     <!-- Phase 10A.3: Home banner while an account deletion is pending (opens Account) -->
     <string name="cd_home_deletion_banner">%1$s Opens Account and security.</string>
 
     <!-- Safety Center -->
     <string name="safety_center_title">Safety Center</string>
     <string name="safety_center_subtitle">Your tools for going out prepared, and for when something goes wrong.</string>
-    <string name="safety_center_notice">SafeSphere never contacts emergency services: in an emergency, call 112 or your local emergency number. Your Safety Circle is texted from your phone only if you switch on automatic SMS. During SOS and Safe Walk your location is saved to your own records, and nobody else can look you up.</string>
+    <string name="safety_center_notice">Kurinji never contacts emergency services: in an emergency, call 112 or your local emergency number. Your Safety Circle is texted from your phone only if you switch on automatic SMS. During SOS and Safe Walk your location is saved to your own records, and nobody else can look you up.</string>
 
     <!-- Community Safety (the "Nearby" tab since Phase 10A) -->
     <string name="community_title">Nearby</string>
@@ -177,7 +175,7 @@
     <string name="community_locating">Finding your area…</string>
     <string name="community_loading">Looking at your area…</string>
     <string name="community_permission_title">Location is needed to show your area</string>
-    <string name="community_permission_rationale">SafeSphere turns your location into an area of about 1 km on this phone and asks only for signals there. It is used while this screen is open and is never stored.</string>
+    <string name="community_permission_rationale">Kurinji turns your location into an area of about 1 km on this phone and asks only for signals there. It is used while this screen is open and is never stored.</string>
     <string name="community_location_off">Location is switched off. Turn it on to see your area.</string>
     <string name="community_location_unsupported">Location is not available on this phone.</string>
     <string name="community_no_fix">Your location could not be found right now. Try again outdoors or near a window.</string>
@@ -274,7 +272,7 @@
     <string name="why_reason_established">Some of them have a good record of reports that others confirmed.</string>
     <string name="why_reason_linked">Some support came from accounts that keep acting together, so it was counted once.</string>
     <string name="why_reason_disputed">Someone said this has changed.</string>
-    <string name="why_footer">SafeSphere counts independent people, not accounts, and never shows who they are. Signals are not verified. In danger, use SOS or call 112.</string>
+    <string name="why_footer">Kurinji counts independent people, not accounts, and never shows who they are. Signals are not verified. In danger, use SOS or call 112.</string>
     <string name="flag_choose_title">What is wrong with it?</string>
     <string name="flag_reason_false">It is not true</string>
     <string name="flag_reason_targets">It is aimed at a person, home or business</string>
@@ -408,10 +406,10 @@
     <string name="profile_account_title">Account and security</string>
     <string name="profile_account_description">Change your password or delete your account</string>
     <string name="profile_privacy_title">Privacy notice</string>
-    <string name="profile_privacy_description">What SafeSphere stores and who can see it</string>
+    <string name="profile_privacy_description">What Kurinji stores and who can see it</string>
     <string name="profile_settings_title">Settings</string>
     <string name="profile_settings_description">Account, privacy, permissions and notifications</string>
-    <string name="profile_about_title">About SafeSphere</string>
+    <string name="profile_about_title">About Kurinji</string>
     <string name="profile_about_description">Version and project information</string>
     <string name="logout_dialog_title">Log out?</string>
     <string name="logout_dialog_message">This signs you out on this phone. Your evidence stays encrypted on this phone for when you sign in again; your Safety Circle copy for offline SMS and any unsent Nearby reports are removed.</string>
@@ -427,7 +425,7 @@
     <string name="settings_emergency_history">Emergency History</string>
     <string name="settings_app_permissions">App permissions (phone settings)</string>
     <string name="settings_notifications">Notifications (phone settings)</string>
-    <string name="settings_about">About SafeSphere</string>
+    <string name="settings_about">About Kurinji</string>
     <string name="settings_terms">Terms</string>
     <string name="settings_privacy_policy">Privacy notice</string>
 
@@ -462,20 +460,20 @@
     <string name="login_remove_deleted_account_confirm">This removes that account\'s evidence and recovery key from this phone. Do this only if the account was deleted: if it still exists, you would have to restore its evidence with the recovery passphrase.</string>
 
     <!-- Information pages -->
-    <string name="about_body">SafeSphere: safety that expands your world. A privacy-focused safety app designed with women at the centre, built in phases as a final-year B.Tech project. Safe enough to live. Free enough to grow.
+    <string name="about_body">Kurinji: safety that expands your world. A privacy-focused safety app designed with women at the centre, built in phases as a final-year B.Tech project. Safe enough to live. Free enough to grow.
 
-This build has real accounts (with password change and account deletion), a Safety Circle, a manual SOS session, Safe Walk with check-ins and movement checks, Nearby (anonymous place signals) and "Check the way". Nobody can use SafeSphere to track another person. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. During an active SOS you can record audio, photos or video as evidence: only when you tap, always with a visible notification, encrypted on your phone at once and uploaded to your private Evidence Vault. SafeSphere never contacts emergency services and never records in the background on its own.
+This build has real accounts (with password change and account deletion), a Safety Circle, a manual SOS session, Safe Walk with check-ins and movement checks, Nearby (anonymous place signals) and "Check the way". Nobody can use Kurinji to track another person. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. During an active SOS you can record audio, photos or video as evidence: only when you tap, always with a visible notification, encrypted on your phone at once and uploaded to your private Evidence Vault. Kurinji never contacts emergency services and never records in the background on its own.
 
 Suggested recovery passphrases use the EFF Large Wordlist by the Electronic Frontier Foundation (CC BY 3.0). Passphrases are checked against the 10k-most-common password list from the SecLists project (MIT licence).</string>
     <string name="about_version_format">Version %1$s</string>
-    <string name="terms_body">SafeSphere is a student prototype, not a released product, and there are no final terms of use yet. It is not an emergency service: it never contacts the police, an ambulance or anyone else for you, and an SMS that was sent is not proof that it was delivered or read. In an emergency, call 112 or your local emergency number. Do not rely on SafeSphere as your only way to get help. Terms of use will be written and reviewed before any public release.</string>
+    <string name="terms_body">Kurinji is a student prototype, not a released product, and there are no final terms of use yet. It is not an emergency service: it never contacts the police, an ambulance or anyone else for you, and an SMS that was sent is not proof that it was delivered or read. In an emergency, call 112 or your local emergency number. Do not rely on Kurinji as your only way to get help. Terms of use will be written and reviewed before any public release.</string>
     <string name="privacy_policy_body">Privacy notice for this prototype build. It describes what this build actually does. It is written by the project team, is not legal advice and is not a final privacy policy.
 
-Who can see your data: you, and the people who run the SafeSphere server (the project team). Nobody else can look you up, follow you or see where you are: SafeSphere has no family, partner or guardian mode, no location on request and no remote view, by design. SafeSphere has no advertising and no analytics, and does not read your phone\'s contacts or messages.
+Who can see your data: you, and the people who run the Kurinji server (the project team). Nobody else can look you up, follow you or see where you are: Kurinji has no family, partner or guardian mode, no location on request and no remote view, by design. Kurinji has no advertising and no analytics, and does not read your phone\'s contacts or messages.
 
-Account: SafeSphere sends your name, email and password to the SafeSphere server to create and check your account. The server stores your name and email, and only a one-way hash of your password. This device stores your name, email and a sign-in token so you stay signed in (the token is not yet encrypted on the phone; a known limitation). Failed sign-ins are counted in the server\'s memory for 15 minutes only, never stored. Changing your password signs out every other phone. Asking to delete your account starts a 7-day wait; after it, everything your account holds on the server is deleted (see the end of this notice).
+Account: Kurinji sends your name, email and password to the Kurinji server to create and check your account. The server stores your name and email, and only a one-way hash of your password. This device stores your name, email and a sign-in token so you stay signed in (the token is not yet encrypted on the phone; a known limitation). Failed sign-ins are counted in the server\'s memory for 15 minutes only, never stored. Changing your password signs out every other phone. Asking to delete your account starts a 7-day wait; after it, everything your account holds on the server is deleted (see the end of this notice).
 
-Location: only while an emergency is active, and only if you allow it, your phone\'s location (with its accuracy and the battery level) is saved to your own emergency record on the SafeSphere server. Only you can see the saved points; the only place your location goes beyond that is a map link in the Safety Circle SMS, and only if you switch on automatic SMS or send it yourself (see below). Points that are waiting to be uploaded are kept in memory, not stored on the phone. Location points are deleted together with the emergency record and your account.
+Location: only while an emergency is active, and only if you allow it, your phone\'s location (with its accuracy and the battery level) is saved to your own emergency record on the Kurinji server. Only you can see the saved points; the only place your location goes beyond that is a map link in the Safety Circle SMS, and only if you switch on automatic SMS or send it yourself (see below). Points that are waiting to be uploaded are kept in memory, not stored on the phone. Location points are deleted together with the emergency record and your account.
 
 SOS without internet: an SOS starts on your phone at once, even without a connection, and is recorded on the server as soon as it can be reached. Until then the phone keeps only a random reference for the SOS, its start and end times and whether you tapped Call 112 (no location, no number); the server stores the reference and marks the times as your phone\'s. Signing out deletes what is still waiting.
 
@@ -483,9 +481,9 @@ Safe Walk: the server stores the walk (optional destination text you type, check
 
 Stop and route checks (if switched on): the destination text you type is looked up with your phone\'s map service (Google on most phones) and its coordinates are stored with the walk. Your phone compares its position with the direct route in memory only; no movement history is stored on the phone or the server. When a walk ends normally, its destination coordinates and last location are deleted from the server; if it ended in an emergency they are kept with that walk.
 
-Safety Circle SMS (only if you switch on automatic SMS, or when you tap Text yourself): your phone sends an SMS to your enabled contacts with your name, the time, what happened and a map link to your last location. To work without internet, your enabled contacts\' names and numbers are kept on this phone (deleted when you log out). The server records only that a message was sent, to which contact and its status; never the number or the text. Tapping Call 112 opens your phone\'s dialer; SafeSphere records that it was opened, not whether you called.
+Safety Circle SMS (only if you switch on automatic SMS, or when you tap Text yourself): your phone sends an SMS to your enabled contacts with your name, the time, what happened and a map link to your last location. To work without internet, your enabled contacts\' names and numbers are kept on this phone (deleted when you log out). The server records only that a message was sent, to which contact and its status; never the number or the text. Tapping Call 112 opens your phone\'s dialer; Kurinji records that it was opened, not whether you called.
 
-Evidence Vault (only during an active SOS, only when you tap): audio from your microphone, or a photo or video taken with your phone\'s own camera app. Each item is encrypted on this phone right away with its own key, which is protected by your phone\'s secure hardware; the unencrypted file is deleted. The SafeSphere server receives only the encrypted file, its size, two fingerprints (SHA-256), the capture times and a chain-of-custody log; it cannot open the evidence. If the server offers a vault recovery key, a copy of each item\'s key is sealed for it, so the evidence can still be recovered if your phone is lost; that recovery key is kept offline by the SafeSphere operator, not on the server. If you set up a recovery passphrase, the server also stores a copy of each item\'s key locked with a key that only your passphrase opens; the passphrase itself never leaves your phone, so SafeSphere cannot read it or reset it (someone holding the server\'s data could try to guess a weak passphrase, which is why short or common ones are refused). The server records when that locked copy was last fetched. No location, file name or device details are sent with evidence. You can delete evidence everywhere with your password once the emergency has ended. The camera app you use may keep its own copy; check its settings.
+Evidence Vault (only during an active SOS, only when you tap): audio from your microphone, or a photo or video taken with your phone\'s own camera app. Each item is encrypted on this phone right away with its own key, which is protected by your phone\'s secure hardware; the unencrypted file is deleted. The Kurinji server receives only the encrypted file, its size, two fingerprints (SHA-256), the capture times and a chain-of-custody log; it cannot open the evidence. If the server offers a vault recovery key, a copy of each item\'s key is sealed for it, so the evidence can still be recovered if your phone is lost; that recovery key is kept offline by the Kurinji operator, not on the server. If you set up a recovery passphrase, the server also stores a copy of each item\'s key locked with a key that only your passphrase opens; the passphrase itself never leaves your phone, so Kurinji cannot read it or reset it (someone holding the server\'s data could try to guess a weak passphrase, which is why short or common ones are refused). The server records when that locked copy was last fetched. No location, file name or device details are sent with evidence. You can delete evidence everywhere with your password once the emergency has ended. The camera app you use may keep its own copy; check its settings.
 
 Nearby (only when you open it): your phone turns one location fix into an area code of about 1 km to look at your area, and of about 150 m to report or answer. Your coordinates never leave the phone. A report says only the kind of place problem (or a safe place) and that block; it has no text, photo, name or time, and nobody is shown who shared it. It starts to count after a random delay, shows only to about 1 km until a second person confirms it, and is deleted at the end of its lifetime. You can see and withdraw your own reports in Nearby. Privately, the server keeps a few counters about how your reports turned out (never places or times); they halve every 90 days and are never shown, not even to you. If you flag a signal, a moderator sees only codes and a pseudonym valid for that one case. Moderation decisions are logged with reason codes for 365 days.
 
@@ -493,7 +491,7 @@ Check the way (Safe Walk set-up): your phone asks for area summaries of a few re
 
 Counts: once a week the server counts, system-wide, how the Nearby rules worked (no person, place or signal). Only an administrator can read them.
 
-Rise: everything you write or choose in Rise (goals, steps, how you expected and how it went, dates) stays on this phone in a file encrypted with a key held by your phone\'s secure hardware, separately for each account. None of it is sent to the SafeSphere server or to anyone. Rise has no reminders or notifications. Signing out keeps it; Delete all Rise data, deleting your account, or uninstalling the app removes it.
+Rise: everything you write or choose in Rise (goals, steps, how you expected and how it went, dates) stays on this phone in a file encrypted with a key held by your phone\'s secure hardware, separately for each account. None of it is sent to the Kurinji server or to anyone. Rise has no reminders or notifications. Signing out keeps it; Delete all Rise data, deleting your account, or uninstalling the app removes it.
 
 Account deletion: you need your password; it is refused during an emergency and for 24 hours after one, and it waits 7 days (cancel with your password; signing in does not cancel it). Then the server deletes your account and everything it holds: emergencies and their locations, walks, Safety Circle, evidence files and records, recovery data and Nearby contributions. If you ever acted as a moderator, your account row stays as an anonymous, switched-off record so that the moderation log keeps who decided what; your name, email and safety data are still deleted. After the deletion, this phone removes the account\'s evidence and recovery key the next time it learns of it, or when you tap the button on the login screen.
 
@@ -524,7 +522,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="title_emergency_history">Emergency History</string>
 
     <!-- ===== Safety Circle ===== -->
-    <string name="safety_circle_notice">Your Safety Circle is saved to your SafeSphere account. The people in it are texted only if you switch on automatic SMS below, or when you text them yourself.</string>
+    <string name="safety_circle_notice">Your Safety Circle is saved to your Kurinji account. The people in it are texted only if you switch on automatic SMS below, or when you text them yourself.</string>
     <string name="safety_circle_empty_title">Your trusted people</string>
     <string name="safety_circle_empty_message">People you choose to keep in the loop: when something goes wrong, and when you want them to know where you are going.</string>
     <string name="action_add_trusted_contact">Add Trusted Contact</string>
@@ -560,8 +558,8 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- ===== Emergency SOS ===== -->
     <string name="emergency_idle_title">Emergency SOS</string>
-    <string name="emergency_idle_body">Starts a five second countdown. If you do not cancel it, your SOS starts on this phone, even without internet, and is recorded on your account as soon as SafeSphere\'s server can be reached.</string>
-    <string name="emergency_limits_notice">During SOS, SafeSphere asks for your location and saves it to your own emergency record. If you switched on automatic SMS (Safety Circle screen), your Safety Circle is texted with a map link; otherwise you can text them yourself. SafeSphere never calls emergency services, and records audio, photos or video only when you tap to do so. In an emergency, call 112 or your local emergency number.</string>
+    <string name="emergency_idle_body">Starts a five second countdown. If you do not cancel it, your SOS starts on this phone, even without internet, and is recorded on your account as soon as Kurinji\'s server can be reached.</string>
+    <string name="emergency_limits_notice">During SOS, Kurinji asks for your location and saves it to your own emergency record. If you switched on automatic SMS (Safety Circle screen), your Safety Circle is texted with a map link; otherwise you can text them yourself. Kurinji never calls emergency services, and records audio, photos or video only when you tap to do so. In an emergency, call 112 or your local emergency number.</string>
     <string name="action_start_sos">Start SOS</string>
     <string name="action_view_emergency_history">View emergency history</string>
     <string name="emergency_countdown_label">Starting emergency in</string>
@@ -603,23 +601,23 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- ===== Phase 4A: emergency location ===== -->
     <string name="section_your_location">Your location</string>
     <string name="emergency_restored_offline">You are offline. This is the active emergency saved on this phone; it may already have been ended on another device.</string>
-    <string name="emergency_restored_sign_in">SafeSphere needs you to sign in again before it can update your account. This is the emergency saved on this phone; it keeps running here, and your Safety Circle texts still work.</string>
-    <string name="emergency_ended_unsent_sign_in_resolved">Your SOS has ended on this phone. SafeSphere saves it to your history once you sign in again.</string>
-    <string name="emergency_ended_unsent_sign_in_cancelled">Marked as a false alarm on this phone. SafeSphere saves it to your history once you sign in again.</string>
+    <string name="emergency_restored_sign_in">Kurinji needs you to sign in again before it can update your account. This is the emergency saved on this phone; it keeps running here, and your Safety Circle texts still work.</string>
+    <string name="emergency_ended_unsent_sign_in_resolved">Your SOS has ended on this phone. Kurinji saves it to your history once you sign in again.</string>
+    <string name="emergency_ended_unsent_sign_in_cancelled">Marked as a false alarm on this phone. Kurinji saves it to your history once you sign in again.</string>
     <!-- Phase 11: SOS without internet -->
-    <string name="emergency_not_on_server_yet">Your SOS is running on this phone. SafeSphere\'s server has not been reached yet, so it keeps trying in the background. SMS to your Safety Circle needs no internet, and your location is collected and saved once the server is reached. Evidence recording opens once the server has your SOS. You can call 112 at any time.</string>
-    <string name="location_card_waiting_for_server">Your location is being collected on this phone. It is saved to your emergency record once SafeSphere\'s server has your SOS.</string>
-    <string name="emergency_not_on_server_refused">Your SOS is running on this phone, but SafeSphere\'s server did not accept it. Text your Safety Circle with the buttons below, or call 112.</string>
-    <string name="emergency_ended_unsent_resolved">Your SOS has ended on this phone. SafeSphere saves it to your history once its server can be reached.</string>
-    <string name="emergency_ended_unsent_cancelled">Marked as a false alarm on this phone. SafeSphere saves it to your history once its server can be reached.</string>
+    <string name="emergency_not_on_server_yet">Your SOS is running on this phone. Kurinji\'s server has not been reached yet, so it keeps trying in the background. SMS to your Safety Circle needs no internet, and your location is collected and saved once the server is reached. Evidence recording opens once the server has your SOS. You can call 112 at any time.</string>
+    <string name="location_card_waiting_for_server">Your location is being collected on this phone. It is saved to your emergency record once Kurinji\'s server has your SOS.</string>
+    <string name="emergency_not_on_server_refused">Your SOS is running on this phone, but Kurinji\'s server did not accept it. Text your Safety Circle with the buttons below, or call 112.</string>
+    <string name="emergency_ended_unsent_resolved">Your SOS has ended on this phone. Kurinji saves it to your history once its server can be reached.</string>
+    <string name="emergency_ended_unsent_cancelled">Marked as a false alarm on this phone. Kurinji saves it to your history once its server can be reached.</string>
     <string name="emergency_started_at_offline">Started: %1$s\nStarted without a connection (times from your phone)</string>
     <string name="emergency_history_offline_description">%1$s. Started without a connection; the times are from your phone.</string>
     <string name="location_card_permission_needed">Your location is not being saved. Allow location so your position is stored with this emergency record and a map link can be included in your Safety Circle\'s SMS.</string>
-    <string name="location_card_permission_blocked">Location is blocked for SafeSphere. To save your position with this emergency, allow Location in the app\'s Settings.</string>
+    <string name="location_card_permission_blocked">Location is blocked for Kurinji. To save your position with this emergency, allow Location in the app\'s Settings.</string>
     <string name="location_card_location_off">Your phone\'s location is turned off, so your position cannot be saved.</string>
     <string name="location_card_services_unavailable">Location is not available on this phone (Google Play services are missing or out of date).</string>
     <string name="location_card_searching">Finding your location…</string>
-    <string name="location_card_unavailable">Location is temporarily unavailable. SafeSphere keeps trying.</string>
+    <string name="location_card_unavailable">Location is temporarily unavailable. Kurinji keeps trying.</string>
     <string name="location_card_saving">Saving your location to your emergency record…</string>
     <string name="location_card_saved">Your location is being saved to your emergency record. Only your Safety Circle\'s SMS (if automatic SMS is on) contains a map link to it.</string>
     <string name="location_card_offline">No connection. Your location is kept on this phone for now and saved when you are back online.</string>
@@ -636,7 +634,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="location_hint_approximate">Only approximate location is allowed, so your position may be off by a few hundred metres.</string>
     <string name="location_hint_low_accuracy">Low accuracy right now. Moving near a window or outdoors can help.</string>
     <string name="location_hint_rejected">Some points could not be saved. Check that the phone\'s date and time are set automatically.</string>
-    <string name="location_hint_keep_app_open">Keep SafeSphere open: with the screen off or another app in front, location may pause.</string>
+    <string name="location_hint_keep_app_open">Keep Kurinji open: with the screen off or another app in front, location may pause.</string>
     <string name="action_allow_location">Allow location</string>
     <string name="action_open_settings">Open settings</string>
     <string name="action_turn_on_location">Turn on location</string>
@@ -644,11 +642,11 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- ===== Phase 4B: Safe Walk ===== -->
     <string name="title_safe_walk">Safe Walk</string>
     <string name="safe_walk_setup_title">Start a Safe Walk</string>
-    <string name="safe_walk_setup_body">SafeSphere asks you to check in at regular times while you are on your way. Tap “I\'m OK” each time, and “I\'ve arrived” when you get there. Using support is a choice, not a weakness.</string>
+    <string name="safe_walk_setup_body">Kurinji asks you to check in at regular times while you are on your way. Tap “I\'m OK” each time, and “I\'ve arrived” when you get there. Using support is a choice, not a weakness.</string>
     <string name="safe_walk_destination_hint">Where are you going? (optional)</string>
     <string name="safe_walk_interval_label">Check in every</string>
     <string name="safe_walk_interval_option">%1$d min</string>
-    <string name="safe_walk_limits_notice">If you miss a check-in, SafeSphere alerts you on this phone. If you switched on automatic SMS (Safety Circle screen) and still do not answer, your Safety Circle is texted. This only works while your phone is on. If you are in danger, use SOS or call 112.</string>
+    <string name="safe_walk_limits_notice">If you miss a check-in, Kurinji alerts you on this phone. If you switched on automatic SMS (Safety Circle screen) and still do not answer, your Safety Circle is texted. This only works while your phone is on. If you are in danger, use SOS or call 112.</string>
     <string name="action_start_safe_walk">Start Safe Walk</string>
     <string name="safe_walk_active_title">Safe Walk active</string>
     <string name="safe_walk_to">To: %1$s</string>
@@ -670,8 +668,8 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="safe_walk_confirm_cancel">Cancel this Safe Walk? You will not be asked to check in any more.</string>
     <string name="safe_walk_location_saved">Last location saved: %1$s (only the latest one is kept)</string>
     <string name="safe_walk_hint_no_location">Location is not shared with this walk.</string>
-    <string name="safe_walk_hint_keep_open">Keep SafeSphere open: without its background notification, check-in reminders may not reach you.</string>
-    <string name="safe_walk_hint_notifications_off">Notifications are off, so check-in reminders only appear while SafeSphere is open.</string>
+    <string name="safe_walk_hint_keep_open">Keep Kurinji open: without its background notification, check-in reminders may not reach you.</string>
+    <string name="safe_walk_hint_notifications_off">Notifications are off, so check-in reminders only appear while Kurinji is open.</string>
     <string name="safe_walk_hint_offline">No connection. Your check-ins count on this phone and are sent when you are back online.</string>
     <string name="safe_walk_hint_restored_offline">You are offline. This walk was restored from this phone.</string>
     <string name="safe_walk_ended_completed_title">You have arrived</string>
@@ -688,24 +686,24 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- Safe Walk notifications: generic text only (no destination, no location) -->
     <string name="notification_channel_alerts_name">Safe Walk check-ins</string>
     <string name="notification_channel_alerts_description">Reminders and missed check-ins during a Safe Walk.</string>
-    <string name="safe_walk_alert_public_title">SafeSphere needs your attention</string>
+    <string name="safe_walk_alert_public_title">Kurinji needs your attention</string>
     <string name="safe_walk_alert_due_soon_title">Check-in due soon</string>
     <string name="safe_walk_alert_due_soon_text">Tap “I\'m OK” to check in.</string>
     <string name="safe_walk_alert_missed_title">You missed a check-in</string>
     <string name="safe_walk_alert_missed_text">Are you OK? Tap “I\'m OK” to check in.</string>
     <string name="safe_walk_alert_no_response_title">No response to your check-in</string>
-    <string name="safe_walk_alert_no_response_text">Tap “I\'m OK” if you are fine. If you need help, open SafeSphere and tap SOS, or call 112.</string>
+    <string name="safe_walk_alert_no_response_text">Tap “I\'m OK” if you are fine. If you need help, open Kurinji and tap SOS, or call 112.</string>
     <string name="action_im_ok">I\'m OK</string>
     <string name="safe_walk_notification_title">Safe Walk active</string>
-    <string name="safe_walk_notification_active">SafeSphere will ask you to check in.</string>
-    <string name="safe_walk_notification_missed">Check-in missed. Open SafeSphere to check in.</string>
-    <string name="safe_walk_notification_concern">SafeSphere asked if you are OK. Open it to answer.</string>
-    <string name="safe_walk_notification_arrived">Looks like you have arrived. Open SafeSphere to finish.</string>
+    <string name="safe_walk_notification_active">Kurinji will ask you to check in.</string>
+    <string name="safe_walk_notification_missed">Check-in missed. Open Kurinji to check in.</string>
+    <string name="safe_walk_notification_concern">Kurinji asked if you are OK. Open it to answer.</string>
+    <string name="safe_walk_notification_arrived">Looks like you have arrived. Open Kurinji to finish.</string>
     <string name="safe_walk_alert_concern_title">Are you OK?</string>
     <string name="safe_walk_alert_off_route_text">You seem to have left your route. Tap “I\'m OK” if you are fine.</string>
     <string name="safe_walk_alert_stopped_text">You have not moved for a while. Tap “I\'m OK” if you are fine.</string>
     <string name="safe_walk_alert_battery_title">Battery very low</string>
-    <string name="safe_walk_alert_battery_text">If your phone switches off, SafeSphere cannot check on you. Charge it if you can, or finish your walk and tell someone where you are.</string>
+    <string name="safe_walk_alert_battery_text">If your phone switches off, Kurinji cannot check on you. Charge it if you can, or finish your walk and tell someone where you are.</string>
 
     <!-- Phase 4D: Safety Circle communication, level 4, Emergency Context Packet -->
     <string name="emergency_number" translatable="false">112</string>
@@ -716,7 +714,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="cd_text_contact">Open the SMS app with a message for %1$s</string>
     <string name="action_text_my_circle">Text my Safety Circle</string>
     <string name="text_my_circle_title">Who should get the message?</string>
-    <string name="emergency_circle_auto_notice">Your Safety Circle is texted automatically from this phone (SMS). “Sent” means the message left your phone; it does not mean it was received. SafeSphere does not contact emergency services: use Call 112.</string>
+    <string name="emergency_circle_auto_notice">Your Safety Circle is texted automatically from this phone (SMS). “Sent” means the message left your phone; it does not mean it was received. Kurinji does not contact emergency services: use Call 112.</string>
     <string name="emergency_circle_manual_notice">Your Safety Circle has NOT been told automatically (automatic SMS is off). Tap Text next to a contact to send them a ready message yourself, or call 112.</string>
     <string name="circle_status_will_text">Will be texted automatically</string>
     <string name="circle_status_not_notified">Not notified</string>
@@ -742,8 +740,8 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="auto_sms_status_permission">SMS permission is off, so nothing will be sent. Switch this off and on again to allow it.</string>
     <string name="auto_sms_status_no_contacts">On, but you have no enabled contacts to text.</string>
     <string name="auto_sms_status_on">On. %1$d contact(s) will receive an SMS from this phone. “Sent” does not mean received.</string>
-    <string name="auto_sms_permission_title">Allow SafeSphere to send SMS?</string>
-    <string name="auto_sms_permission_rationale">SafeSphere needs the SMS permission to text your Safety Circle by itself when you start SOS or do not answer a Safe Walk check. It only texts your enabled contacts and never reads your messages.</string>
+    <string name="auto_sms_permission_title">Allow Kurinji to send SMS?</string>
+    <string name="auto_sms_permission_rationale">Kurinji needs the SMS permission to text your Safety Circle by itself when you start SOS or do not answer a Safe Walk check. It only texts your enabled contacts and never reads your messages.</string>
     <string name="auto_sms_permission_denied">SMS permission was not given. Automatic alerts stay off.</string>
     <string name="title_emergency_details">Emergency details</string>
     <string name="section_last_location">Last saved location</string>
@@ -761,7 +759,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="detail_escalation_line">%1$s · Level %2$d · %3$s</string>
     <string name="detail_alert_line">%1$s · %2$s · %3$s · %4$s</string>
     <string name="detail_unknown_contact">Removed contact</string>
-    <string name="emergency_detail_note">“Sent” means an SMS left the phone, not that it was received. “SMS app opened” means you were shown the message; SafeSphere cannot know whether you sent it. “Dialer opened” does not mean a call was made.</string>
+    <string name="emergency_detail_note">“Sent” means an SMS left the phone, not that it was received. “SMS app opened” means you were shown the message; Kurinji cannot know whether you sent it. “Dialer opened” does not mean a call was made.</string>
     <string name="reason_checked_in">Checked in</string>
     <string name="reason_check_in_missed">Check-in missed</string>
     <string name="reason_no_response">No response</string>
@@ -784,7 +782,7 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- Safe Walk: stop and route checks, battery (Phase 4C) -->
     <string name="safe_walk_movement_checks_label">Watch for unusual stops and route changes</string>
-    <string name="safe_walk_movement_checks_body">If you stay in one place for a long time, or clearly leave the area around the direct route to your destination, SafeSphere asks “Are you OK?”. No answer counts like a missed check-in. To find your destination, the text you type is looked up with your phone\'s map service.</string>
+    <string name="safe_walk_movement_checks_body">If you stay in one place for a long time, or clearly leave the area around the direct route to your destination, Kurinji asks “Are you OK?”. No answer counts like a missed check-in. To find your destination, the text you type is looked up with your phone\'s map service.</string>
     <string name="safe_walk_off_route">You seem to have left the area around your route. Are you OK? Tap “I\'m OK”.</string>
     <string name="safe_walk_stopped">You have not moved for a while. Are you OK? Tap “I\'m OK”.</string>
     <string name="safe_walk_no_response_concern_title">No answer to “Are you OK?”</string>
@@ -799,9 +797,9 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="safe_walk_movement_stops_only">Watching for unusual stops. Type a destination next time to add a route check.</string>
     <string name="safe_walk_movement_not_found">That destination could not be found on the map, so only stops are watched.</string>
     <string name="safe_walk_movement_lookup_unavailable">The map lookup was not available, so only stops are watched.</string>
-    <string name="safe_walk_movement_resumes_online">Watching for unusual stops. Any route check resumes when SafeSphere is back online.</string>
+    <string name="safe_walk_movement_resumes_online">Watching for unusual stops. Any route check resumes when Kurinji is back online.</string>
     <string name="safe_walk_battery_low">Battery low (%1$s). Location is checked less often to save power. Charge your phone if you can.</string>
-    <string name="safe_walk_battery_critical">Battery very low (%1$s). If your phone switches off, SafeSphere cannot check on you. Your latest location is saved to this walk if possible.</string>
+    <string name="safe_walk_battery_critical">Battery very low (%1$s). If your phone switches off, Kurinji cannot check on you. Your latest location is saved to this walk if possible.</string>
     <string name="action_movement_checks_off">Turn off stop and route checks</string>
     <string name="action_movement_checks_on">Turn on stop and route checks</string>
     <string name="distance_km">%1$.1f km</string>
@@ -810,9 +808,9 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- Tracking notification (never contains the location itself) -->
     <string name="notification_channel_tracking_name">Emergency location</string>
-    <string name="notification_channel_tracking_description">Shown while SafeSphere saves your location during an active emergency.</string>
+    <string name="notification_channel_tracking_description">Shown while Kurinji saves your location during an active emergency.</string>
     <string name="tracking_notification_title">Emergency active</string>
-    <string name="tracking_notification_public_title">SafeSphere is running</string>
+    <string name="tracking_notification_public_title">Kurinji is running</string>
     <string name="tracking_notification_starting">Starting…</string>
     <string name="tracking_notification_searching">Finding your location to save it to your emergency record.</string>
     <string name="tracking_notification_saving">Your location is being saved to your emergency record.</string>
@@ -821,7 +819,7 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- ===== Phase 5: Emergency Evidence Vault ===== -->
     <string name="recording_notification_title">Recording audio evidence</string>
-    <string name="recording_notification_text">SafeSphere is recording audio. Each part is encrypted on this phone. Open the app to stop.</string>
+    <string name="recording_notification_text">Kurinji is recording audio. Each part is encrypted on this phone. Open the app to stop.</string>
 
     <string name="section_evidence">Evidence</string>
     <string name="section_evidence_items">Evidence items</string>
@@ -844,11 +842,11 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="evidence_photo_sealed">Photo encrypted and saved. Some camera apps also keep their own copy in the Gallery: check there if that matters to you.</string>
     <string name="evidence_video_sealed">Video encrypted and saved. Some camera apps also keep their own copy in the Gallery: check there if that matters to you.</string>
     <string name="evidence_camera_unavailable">No camera app is available on this phone.</string>
-    <string name="evidence_microphone_denied">SafeSphere needs microphone access to record audio evidence. Nothing was recorded.</string>
-    <string name="evidence_microphone_blocked">Microphone access is turned off for SafeSphere. Allow it in Settings to record audio evidence.</string>
+    <string name="evidence_microphone_denied">Kurinji needs microphone access to record audio evidence. Nothing was recorded.</string>
+    <string name="evidence_microphone_blocked">Microphone access is turned off for Kurinji. Allow it in Settings to record audio evidence.</string>
     <string name="evidence_refused_signed_out">Sign in to record evidence.</string>
     <string name="evidence_refused_no_emergency">Evidence can only be recorded during an active emergency.</string>
-    <string name="evidence_hint_keep_open">Keep SafeSphere open: Android did not allow recording to continue with the screen off.</string>
+    <string name="evidence_hint_keep_open">Keep Kurinji open: Android did not allow recording to continue with the screen off.</string>
     <string name="evidence_hint_start_failed">The microphone could not be started (another app may be using it). Nothing was recorded.</string>
     <string name="evidence_hint_max_duration">Recording stopped after 60 minutes. Tap Record audio to continue.</string>
     <string name="evidence_hint_storage_low">The phone is almost out of storage, so recording stopped. Saved parts are kept.</string>
@@ -858,7 +856,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="evidence_hint_no_escrow">This server has no operator recovery key: unless you set up a recovery passphrase in the Evidence Vault, uploaded evidence can only be opened on this phone.</string>
 
     <string name="vault_intro">Only you can see this. Evidence is encrypted on your phone; the server stores it but cannot open it. \"Verified\" means the server checked that every byte arrived unchanged.</string>
-    <string name="vault_privacy_note">Anyone who can unlock this phone and open SafeSphere can view the evidence here. Screenshots are blocked on this screen, and the evidence is decrypted only while you view it.</string>
+    <string name="vault_privacy_note">Anyone who can unlock this phone and open Kurinji can view the evidence here. Screenshots are blocked on this screen, and the evidence is decrypted only while you view it.</string>
     <string name="vault_empty">No evidence yet.</string>
     <string name="action_refresh">Refresh</string>
     <string name="action_more">More</string>
@@ -930,7 +928,7 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- Restore on a new phone (recovery passphrase, docs/PHASE5.md §11) -->
     <string name="section_recovery">Restore on a new phone</string>
-    <string name="recovery_status_off">Off. If this phone is lost, your vault evidence can only be opened here (or by the SafeSphere operator\'s offline recovery key, if this server has one). Set up a recovery passphrase to open it yourself on a new phone.</string>
+    <string name="recovery_status_off">Off. If this phone is lost, your vault evidence can only be opened here (or by the Kurinji operator\'s offline recovery key, if this server has one). Set up a recovery passphrase to open it yourself on a new phone.</string>
     <string name="recovery_status_on">On since %1$s. Vault items you can restore on a new phone with your passphrase: %2$d of %3$d.</string>
     <string name="recovery_status_on_elsewhere">A recovery passphrase is set up for your account, but this phone does not have your recovery key yet. Enter your passphrase to restore your vault evidence here.</string>
     <string name="recovery_status_unavailable">Could not check your recovery passphrase (no connection).</string>
@@ -946,7 +944,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="label_recovery_passphrase">Recovery passphrase</string>
     <string name="label_recovery_confirm">Repeat the recovery passphrase</string>
     <string name="recovery_set_up_title">Set up a recovery passphrase</string>
-    <string name="recovery_set_up_message">With this passphrase you can open your vault evidence on a new phone. It never leaves this phone: SafeSphere cannot see it and cannot reset it. If you forget it and lose this phone, your evidence cannot be opened this way. Keep it somewhere only you can reach. It must be different from your account password. Your account password confirms the change.</string>
+    <string name="recovery_set_up_message">With this passphrase you can open your vault evidence on a new phone. It never leaves this phone: Kurinji cannot see it and cannot reset it. If you forget it and lose this phone, your evidence cannot be opened this way. Keep it somewhere only you can reach. It must be different from your account password. Your account password confirms the change.</string>
     <string name="recovery_change_title">Change your recovery passphrase</string>
     <string name="recovery_change_message">Enter your current passphrase, then the new one. Your account password confirms the change. Evidence stays the same; only the passphrase that unlocks it changes.</string>
     <string name="recovery_forgot_title">Set a new passphrase</string>
@@ -1014,7 +1012,7 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- Phase 8D: "Check the way" on the Safe Walk set-up screen. Never says the way is safe. -->
     <string name="action_check_the_way">Check the way</string>
-    <string name="way_intro">See what people have shared about places around the way. SafeSphere is asked only about the wider area (about 5 km), never your route. The place you type is looked up with your phone\'s map service, as when you start a walk.</string>
+    <string name="way_intro">See what people have shared about places around the way. Kurinji is asked only about the wider area (about 5 km), never your route. The place you type is looked up with your phone\'s map service, as when you start a walk.</string>
     <string name="way_checking">Checking the way…</string>
     <string name="way_needs_destination">Type where you are going first.</string>
     <string name="way_not_found">That place could not be found, so the way cannot be checked.</string>
@@ -1038,197 +1036,6 @@ A complete privacy policy will be written and reviewed before any public release
         <item quantity="other">Places to go for help are known near the way.</item>
     </plurals>
     <string name="way_footer">Checked around a straight line, not your exact route. It cannot tell you that the way is safe, and it does not change your walk or its check-ins.</string>
-
-    <!-- Phase 10B: Rise "Proof". Every rise_ string is scanned by RiseTextsTest (no gender, no opponent, no pressure,
-         no claims that something is safe, support never ranked). -->
-    <string name="nav_rise">Rise</string>
-    <string name="title_rise_goal">Goal</string>
-    <string name="title_rise_step">A step</string>
-    <string name="rise_title">Rise</string>
-    <string name="rise_tagline">You decide what\'s for you.</string>
-    <string name="rise_intro_title">Something you\'d like to try?</string>
-    <string name="rise_intro_body">Rise helps you try something you have been told, or have told yourself, is not for you. Before a step, say how you think it will go. Afterwards, say how it went. Over time, your own record answers your doubts.</string>
-    <string name="rise_intro_private">Everything in Rise stays on this phone, encrypted. It is never sent to SafeSphere\'s server or to anyone else. Signing out keeps it. Deleting Rise data, deleting your account or uninstalling the app removes it. If this phone is lost, Rise is lost with it.</string>
-    <string name="rise_intro_no_pressure">No reminders, no streaks, no scores. Not trying is always fine.</string>
-    <string name="rise_intro_start">Start</string>
-    <string name="rise_locked_title">Rise is locked</string>
-    <string name="rise_locked_body">Unlock it with this phone\'s screen lock.</string>
-    <string name="rise_unlock">Unlock</string>
-    <string name="rise_unlock_title">Unlock Rise</string>
-    <string name="rise_unlock_subtitle">Use this phone\'s screen lock</string>
-    <string name="rise_no_screen_lock">This phone has no screen lock, so Rise cannot be locked. Anyone who can open this phone can open Rise.</string>
-    <string name="rise_unreadable">Rise could not open its data on this phone. The file may be damaged, or the phone\'s key was reset. Nothing was sent anywhere.</string>
-    <string name="rise_start_fresh">Delete it and start again</string>
-    <string name="rise_empty_title">Is there something you\'d like to try that feels out of reach?</string>
-    <string name="rise_new_goal">Something to try</string>
-    <string name="rise_your_proof">Your proof</string>
-    <string name="rise_section_goals">What you are trying</string>
-    <string name="rise_section_aside">Put aside for now</string>
-    <string name="rise_goal_quiet">Goal %1$d · %2$s</string>
-    <plurals name="rise_goal_done_count">
-        <item quantity="one">Done once so far</item>
-        <item quantity="other">Done %d times so far</item>
-    </plurals>
-    <string name="rise_goal_not_done_yet">Not tried yet</string>
-    <string name="rise_settings_title">Rise settings</string>
-    <string name="rise_quiet_mode">Quiet mode: hide your words in lists</string>
-    <string name="rise_quiet_mode_hint">Lists show \"Goal 2 · Learn\" instead of what you wrote. Useful if other people look at this phone.</string>
-    <string name="rise_lock_setting">Keep Rise behind this phone\'s screen lock</string>
-    <string name="rise_delete_all">Delete all Rise data</string>
-    <string name="rise_delete_all_confirm_title">Delete all Rise data?</string>
-    <string name="rise_delete_all_confirm">Your goals and your proof are deleted from this phone. This cannot be undone.</string>
-    <string name="rise_delete">Delete</string>
-    <string name="rise_not_saved">Rise could not save this on the phone. Please try again.</string>
-
-    <string name="rise_domain_go">Go places</string>
-    <string name="rise_domain_learn">Learn</string>
-    <string name="rise_domain_work">Work and build</string>
-    <string name="rise_domain_lead">Lead and speak up</string>
-    <string name="rise_domain_move">Move</string>
-    <string name="rise_domain_money">Money of my own</string>
-    <string name="rise_domain_decide">My own decision</string>
-    <string name="rise_domain_be_me">Be myself</string>
-    <string name="rise_domain_other">Something else</string>
-
-    <string name="rise_editor_domain">What kind of thing is it?</string>
-    <string name="rise_editor_words">In your words (optional)</string>
-    <string name="rise_editor_words_hint">Keep it vague if you like.</string>
-    <string name="rise_editor_steps">Small steps, one per line</string>
-    <string name="rise_editor_steps_hint">Suggestions only: change any step, remove any step, or write your own.</string>
-    <string name="rise_editor_save">Save</string>
-    <string name="rise_editor_no_steps">Write at least one step.</string>
-    <string name="rise_editor_too_many">You have 20 goals already. Delete one first.</string>
-
-    <!-- Templates: about the activity only; never remove support as progress -->
-    <string name="rise_template_go_1">Look at the way there</string>
-    <string name="rise_template_go_2">Go once, at a time you choose, with any support you want</string>
-    <string name="rise_template_go_3">Go to the event, trip or class</string>
-    <string name="rise_template_learn_1">Try one beginner lesson</string>
-    <string name="rise_template_learn_2">Make one small thing</string>
-    <string name="rise_template_learn_3">Show it to someone you choose</string>
-    <string name="rise_template_work_1">Find one opening or idea that interests you</string>
-    <string name="rise_template_work_2">Ask someone who does it one question</string>
-    <string name="rise_template_work_3">Prepare</string>
-    <string name="rise_template_work_4">Apply or start</string>
-    <string name="rise_template_lead_1">Say one thing in a meeting or class</string>
-    <string name="rise_template_lead_2">Volunteer for one small task</string>
-    <string name="rise_template_lead_3">Present to people you know</string>
-    <string name="rise_template_move_1">Find a place or a group</string>
-    <string name="rise_template_move_2">Go once</string>
-    <string name="rise_template_move_3">Keep going if you want</string>
-    <string name="rise_template_money_1">Find out one thing (an account, a budget, a course)</string>
-    <string name="rise_template_money_2">Do the first step</string>
-    <string name="rise_template_money_3">Keep track your own way</string>
-    <string name="rise_template_decide_1">Write what you want</string>
-    <string name="rise_template_decide_2">Find out the facts</string>
-    <string name="rise_template_decide_3">Talk to someone you choose</string>
-    <string name="rise_template_decide_4">Decide</string>
-    <string name="rise_template_be_me_1">Something you\'d like to wear, say or choose for yourself, in a place you pick</string>
-
-    <string name="rise_step_trying">Trying now</string>
-    <string name="rise_step_prepare">Prepare and try</string>
-    <string name="rise_step_how">How did it go?</string>
-    <string name="rise_step_history">%1$s · %2$s</string>
-    <plurals name="rise_summary_unsure">
-        <item quantity="one">You weren\'t sure once.</item>
-        <item quantity="other">You weren\'t sure %d times.</item>
-    </plurals>
-    <plurals name="rise_summary_better">
-        <item quantity="one">%d went better than you expected.</item>
-        <item quantity="other">%d went better than you expected.</item>
-    </plurals>
-    <string name="rise_goal_set_aside">Put this aside for now</string>
-    <string name="rise_goal_bring_back">Bring it back</string>
-    <string name="rise_goal_delete">Delete this goal</string>
-    <string name="rise_goal_delete_confirm">This goal and its steps are deleted from this phone, with what is in your proof for it.</string>
-
-    <string name="rise_expect_question">How do you think this will go? (optional)</string>
-    <string name="rise_expect_cant">I don\'t think I can</string>
-    <string name="rise_expect_not_sure">I\'m not sure</string>
-    <string name="rise_expect_fine">Probably fine</string>
-    <string name="rise_expect_confident">I\'m confident</string>
-    <string name="rise_doubts_question">What\'s on your mind? (optional)</string>
-    <string name="rise_doubt_can_i">I\'m not sure I can do this</string>
-    <string name="rise_doubt_on_my_own">I\'m not sure I can do this on my own</string>
-    <string name="rise_doubt_not_for_me">It doesn\'t feel like it\'s for someone like me</string>
-    <string name="rise_doubt_others">I\'m worried what others will think or say</string>
-    <string name="rise_doubt_not_good_enough">I don\'t think I\'m good enough at this yet</string>
-    <string name="rise_doubt_never">I\'ve never done anything like this</string>
-    <string name="rise_concern_section">About the situation</string>
-    <string name="rise_concern">I\'m worried about my safety getting there or being there</string>
-    <string name="rise_concern_note">That worry is worth listening to. Preparing for real risk is part of doing this well. SafeSphere cannot tell you that a place is fine; these can help you prepare.</string>
-    <string name="rise_supports_question">What would help? Choose any, or none.</string>
-    <string name="rise_supports_note">Choosing support is part of doing something well.</string>
-    <string name="rise_support_with_someone">With someone</string>
-    <string name="rise_support_time">At a time I choose</string>
-    <string name="rise_support_way">A way I know</string>
-    <string name="rise_support_practise">Practise first</string>
-    <string name="rise_support_smaller">A smaller version</string>
-    <string name="rise_support_someone_knows">Someone knows where I am</string>
-    <string name="rise_prepare_section">Prepare with SafeSphere (optional)</string>
-    <string name="rise_safe_plan_way">Plan the way (Safe Walk set-up and Check the way)</string>
-    <string name="rise_safe_sos">Your SOS and Safety Circle</string>
-    <string name="rise_safe_sos_note">An SOS texts your Safety Circle by SMS only if automatic SMS is switched on, and it works without internet. Check your set-up before you go.</string>
-    <string name="rise_tell_someone">Tell someone (opens your SMS app)</string>
-    <string name="rise_try_it">I\'m going to try it</string>
-    <string name="rise_not_now">Not now</string>
-    <string name="rise_trying_note">Take your time. Rise does nothing while you try: no timer, no reminder. Come back whenever you like.</string>
-    <plurals name="rise_replay_times">
-        <item quantity="one">You\'ve felt this once before.</item>
-        <item quantity="other">You\'ve felt this %d times before.</item>
-    </plurals>
-    <plurals name="rise_replay_better">
-        <item quantity="one">%d went better than you expected.</item>
-        <item quantity="other">%d went better than you expected.</item>
-    </plurals>
-    <plurals name="rise_replay_as_expected">
-        <item quantity="one">%d went about as you expected.</item>
-        <item quantity="other">%d went about as you expected.</item>
-    </plurals>
-    <plurals name="rise_replay_harder">
-        <item quantity="one">%d was harder, and you did it.</item>
-        <item quantity="other">%d were harder, and you did each one.</item>
-    </plurals>
-    <plurals name="rise_replay_not_ahead">
-        <item quantity="one">%d time you decided not to go ahead. That was your call.</item>
-        <item quantity="other">%d times you decided not to go ahead. That was your call.</item>
-    </plurals>
-
-    <string name="rise_outcome_question">How did it go?</string>
-    <string name="rise_outcome_better">Better than I expected</string>
-    <string name="rise_outcome_as_expected">About as I expected</string>
-    <string name="rise_outcome_harder">Harder than I expected</string>
-    <string name="rise_outcome_not_ahead">I didn\'t go ahead</string>
-    <string name="rise_outcome_not_ok">Something happened that wasn\'t OK</string>
-    <string name="rise_first_question">This was a first for me</string>
-    <string name="rise_save_outcome">Save</string>
-    <string name="rise_after_proof">That\'s in your proof.</string>
-    <string name="rise_after_harder">Harder still counts. You did it.</string>
-    <string name="rise_after_not_ahead">That was your call.</string>
-    <string name="rise_next_title">What next? Any of these is fine.</string>
-    <string name="rise_next_again">Do it again</string>
-    <string name="rise_next_step">Next step</string>
-    <string name="rise_next_new">Something new</string>
-    <string name="rise_next_rest">Rest for now</string>
-    <string name="rise_not_ok_title">That wasn\'t your fault.</string>
-    <string name="rise_not_ok_body">Nothing about this goes into your proof. If you are in danger now, open SOS or call 112.</string>
-    <string name="rise_not_ok_sos">Open SOS</string>
-    <string name="rise_not_ok_tell">Tell someone you trust (SMS)</string>
-    <string name="rise_not_ok_report">Report a problem with a place (Nearby)</string>
-    <string name="rise_not_ok_aside">Put this goal aside for now</string>
-    <string name="rise_not_ok_close">Close</string>
-    <string name="rise_history_not_ok">Something wasn\'t OK. That wasn\'t your fault.</string>
-
-    <string name="rise_proof_empty">Steps you try and do are kept here, only on this phone.</string>
-    <string name="rise_proof_line">%1$s · %2$s</string>
-    <string name="rise_proof_expected">You thought: %1$s. It went: %2$s.</string>
-    <string name="rise_proof_no_expectation">It went: %1$s.</string>
-    <string name="rise_proof_first">A first</string>
-    <string name="rise_proof_with">With: %1$s</string>
-    <string name="rise_proof_step_quiet">A step in %1$s</string>
-    <string name="rise_sms_before">I\'m trying something new today.</string>
-    <string name="rise_sms_after">I did something today that I wasn\'t sure I could do.</string>
-    <string name="rise_sms_unavailable">No SMS app was found on this phone.</string>
 
     <!-- ==== Phase 13A: profiles and connections (docs/PHASE13A_PLAN.md). SocialTextsTest scans every social_* text:
          no counts of people, no follower/like wording, no claim that anyone is safe. ==== -->
@@ -1516,10 +1323,11 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="title_post_collection">Experiences</string>
     <string name="discover_open">Discover</string>
     <string name="cocoon_open">Your Cocoon</string>
-    <string name="butterfly_want">🦋 Want to experience this</string>
+    <string name="butterfly_want">Want to go</string>
     <string name="butterfly_want_description">Want to experience this. Saves to Cocoon.</string>
-    <string name="butterfly_saved_want">🦋 In your Cocoon: want to go</string>
-    <string name="butterfly_saved_been">🦋 In your Cocoon: been</string>
+    <string name="butterfly_saved_want">In your Cocoon: want to go</string>
+    <string name="butterfly_saved_been">In your Cocoon: been</string>
+    <string name="butterfly_saved_announcement">Saved to your Cocoon</string>
     <string name="butterfly_remove_description">In your Cocoon. Tap to take it out.</string>
     <string name="butterfly_been">I\'ve been</string>
     <string name="butterfly_private_note">Only you can see what is in your Cocoon. Nobody is told.</string>
@@ -1532,9 +1340,9 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="been_invitation_later">Not now</string>
     <string name="cocoon_tab_want">Want to experience</string>
     <string name="cocoon_tab_been">Been</string>
-    <string name="cocoon_intro">Experiences you saved with the 🦋. Private to you.</string>
-    <string name="cocoon_empty_want">Nothing saved yet. Tap 🦋 on an experience you want to try.</string>
-    <string name="cocoon_empty_been">Nothing marked as been yet.</string>
+    <string name="cocoon_intro">Experiences you want to go and try, saved with the butterfly. Private to you: nobody is told.</string>
+    <string name="cocoon_empty_want">Your Cocoon is empty. Butterfly something you would love to experience.</string>
+    <string name="cocoon_empty_been">Nothing marked as been yet. When you go, mark it here and tell the next person what you found.</string>
     <string name="cocoon_mark_been">I\'ve been</string>
     <string name="cocoon_mark_been_description">Mark as been: %1$s</string>
     <string name="cocoon_want_again">Want again</string>
@@ -1741,4 +1549,93 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="content_case_check_targeted">, aimed at someone</string>
     <string name="content_case_check_quoted">, quoted or reported speech</string>
     <string name="content_case_check_guidance">The automatic check is evidence, not a verdict: it reads words, not their context.</string>
+
+    <!-- ===== Phase 13F: Kurinji UI (docs/PHASE13F_PLAN.md). KurinjiTextsTest: no emoji, no slang or hype. ===== -->
+    <string name="a11y_tab">Tab</string>
+    <string name="motto">Written for the next one who goes.</string>
+    <string name="app_name_tamil" translatable="false">குறிஞ்சி</string>
+    <string name="nav_discover">Discover</string>
+    <string name="nav_share">Share</string>
+    <string name="nav_cocoon">Cocoon</string>
+    <string name="nav_you">You</string>
+    <string name="cd_feature_row_plain">%1$s. %2$s.</string>
+
+    <!-- You -->
+    <string name="you_overline">Your journal</string>
+    <string name="you_handle_city">\@%1$s · %2$s</string>
+    <string name="you_no_profile">Make a profile to share experiences and connect with people. Your safety tools work without one.</string>
+    <string name="you_section_journal">Yours</string>
+    <string name="you_section_safety">Safety</string>
+    <string name="you_section_reading">Reading</string>
+    <string name="you_section_community">Community</string>
+    <string name="you_section_account">Account</string>
+    <string name="you_experiences_description">Everything you shared, and who can see each one</string>
+    <string name="you_connections_description">Requests, invite codes and the people you are connected with. Only you see this list.</string>
+    <string name="you_private_places_description">Home, hostel or work: kept on this phone, never sent</string>
+    <string name="you_safety_title">Your safety tools</string>
+    <string name="you_safety_description">SOS, Safe Walk, your Safety Circle, the Evidence Vault and Nearby heads-ups</string>
+    <string name="you_guidelines_description">What is and is not allowed, and why</string>
+    <string name="you_reports_description">What you reported and what happened to it</string>
+    <string name="you_blocked_description">People you blocked or muted. They are not told.</string>
+    <string name="you_signoff">Kurinji · குறிஞ்சி</string>
+    <string name="connections_intro">The people you are connected with see what you share with Connections. This list is yours alone: nobody else can see who is on it.</string>
+
+    <!-- You → Safety -->
+    <string name="safety_hub_section_tools">Tools</string>
+    <string name="safety_hub_walk_description">Check-ins while you travel, a look at the way before you go, and checks for unusual stops</string>
+    <string name="safety_hub_nearby_title">Nearby heads-ups</string>
+    <string name="safety_hub_nearby_description">Anonymous notes about places near you, confirmed by people nearby</string>
+
+    <!-- Discover (F14) -->
+    <string name="discover_masthead_overline">This week in</string>
+    <string name="discover_masthead_no_city">Choose a city</string>
+    <string name="discover_masthead_sub">Week of %1$s</string>
+    <string name="discover_masthead_sub_theme">Week of %1$s · Theme: %2$s</string>
+    <string name="discover_city_description">Edition city: %1$s. Tap to choose another city.</string>
+    <string name="discover_search_open">Search places and categories</string>
+    <string name="discover_search_close">Close search</string>
+
+    <!-- Going there? (F9). The sheet's own words are going_*; it lives in feature/going (navigation only). -->
+    <string name="going_there">Going there?</string>
+    <string name="going_there_description">Going there? Ways to save it, tell someone, and set off with support if you want it</string>
+    <string name="going_place_line">%1$s. Use what helps; none of it is needed.</string>
+    <string name="going_no_place_line">The post does not show a place. Use what helps; none of it is needed.</string>
+    <string name="going_save">Save to your Cocoon</string>
+    <string name="going_saved">In your Cocoon</string>
+    <string name="going_tell">Let someone know</string>
+    <string name="going_walk">Walk with check-ins</string>
+    <string name="going_way">Check the way</string>
+    <string name="going_footer">Let someone know opens your own messages with a note you can change. It has no location and no link, and Kurinji sends and keeps nothing. Safe Walk opens with the place filled in; nothing starts until you press it.</string>
+    <string name="going_heads_up">I\'m heading to %1$s. I\'ll message you when I\'m back.</string>
+    <string name="going_heads_up_no_place">I\'m heading out to try something new. I\'ll message you when I\'m back.</string>
+
+    <!-- Share (F17) -->
+    <string name="compose_heading">Write it for the next one who goes</string>
+    <string name="compose_subheading">How it really was, where, when, and one thing worth knowing. The stamp shows exactly what others will see of the place.</string>
+
+    <!-- Cocoon (F16) -->
+    <string name="cocoon_overline">Private to you</string>
+    <string name="cocoon_open_discover">Open this week\'s edition</string>
+    <string name="cocoon_item_description">%1$s. %2$s. %3$s. Opens the experience.</string>
+
+    <!-- Cards (F13) -->
+    <string name="card_ticket_label">For the next person</string>
+    <string name="card_ask_mark">?</string>
+    <string name="card_area_line">In an area of about 1 km (grid %1$s)</string>
+    <string name="card_stamp_grid">Grid %1$s</string>
+    <string name="card_action_open">Open</string>
+    <string name="card_spoken_tip">For the next person: %1$s</string>
+
+    <!-- SOS shortcut and Quick Settings tile (F11) -->
+    <string name="sos_shortcut_short">SOS</string>
+    <string name="sos_shortcut_long">Start SOS (5 s to cancel)</string>
+    <string name="sos_tile_label">SOS</string>
+    <string name="safety_hub_tile_title">Add SOS to Quick Settings</string>
+    <string name="safety_hub_tile_description">Swipe down, tap SOS: the 5-second countdown starts and you can still cancel it. You can also long-press the app icon.</string>
+    <string name="safety_hub_tile_added">SOS is in your Quick Settings.</string>
+    <string name="safety_hub_tile_not_added">SOS was not added. You can add it from the Quick Settings edit screen.</string>
+
+    <!-- Rise retired (D9) -->
+    <string name="rise_retired_title">Rise has been retired</string>
+    <string name="rise_retired_message">Its notes on this phone were deleted. Nothing from Rise was ever on a server. Your Cocoon and \"Only me\" experiences are the place for plans you keep to yourself.</string>
 </resources>
