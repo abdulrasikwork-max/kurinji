@@ -1077,3 +1077,50 @@ person concerned names a reporter, says a report exists, or carries a count.
 - `GET /api/moderation/places?area=` (6 characters) → `[{placeId, name, category, cell, mergedInto}]`;
   `POST /api/moderation/places/{id}/merge {into}` → `204` (same area only, else `400`; `409` one is already merged). The
   duplicate's posts move; it disappears from search and nearby; reading it gives the kept place.
+
+# Phase 13E: the automatic check (V24, `docs/PHASE13E.md`)
+
+Every Experience, Ask and perspective that someone else can see is checked when it is written and when its words change
+(an only-me post never is). The internal moderation service returns evidence; the backend's DecisionPolicy decides
+PUBLISH / PUBLISH_COLLAPSED / HOLD_FOR_REVIEW. Nothing is ever refused: a write answers as before (`201` / `200`). The
+check never removes anything and never restricts a person.
+
+## Changes to posts and perspectives
+
+- Everyone: `strongLanguage` (bool) — the check found strong language (an app may let its viewer collapse it).
+- Others: `collapsed` may also be `BY_SYSTEM` ("our system thinks this may be hurtful").
+- The author's `moderation` adds `source: "SYSTEM" | "MODERATOR" | null` (`null` = a collapse by reports while a
+  moderator looks: the author is never told that reports exist) and `flagged: [{start, end}]` (SYSTEM only): code-point
+  offsets of the phrases the check noticed, in the checked text = the body, a new line and the tip (or the perspective).
+- New reason `AWAITING_CHECK`: a new account's (72 h) content waits for an unavailable check, at most 2 hours
+  (`app.moderation.ai.probation-wait-max`), then it is published anyway. `NEEDS_REVIEW` from the system = a new
+  account's post for everyone with photos waits for a moderator.
+- The author's own create/edit answer may carry `supportSuggested: true` (the words suggest they may be going through
+  something hard; an app shows a support line). It is in that answer only and is stored nowhere.
+
+## Ask for a review of an automatic collapse
+
+- `POST /api/content-checks/review` `{targetKind: "POST"|"COMMENT", targetId}` → `202 {status: "RECEIVED"}`, the same
+  whether a case already existed or not. Own content only, collapsed or held by the system; else `404`; other kinds
+  `400`. A hold is already in front of a moderator.
+
+## Moderators
+
+- Case summaries add `openedBy: REPORTS|SYSTEM|AUTHOR_REQUEST` and `contentSource: REPORTS|SYSTEM|MODERATOR|null`.
+- Case detail adds `assessment: null | {status, action, rule, reason, evidence[{category, severity 0-3, targeted,
+  quoted, start, end}], strongLanguage, normaliserVersion, lexiconVersion, modelVersion, policyVersion}`. Never a
+  self-harm signal (not stored). Decisions are the 13D actions; KEEP on a system hold or collapse restores the content
+  and is counted (`AI_REVIEWED`).
+
+## The internal service (not exposed; `moderation-service/README.md`)
+
+- `POST /v1/assess` with `X-Moderation-Key` `{kind: POST|COMMENT, text}` → `{versions{normaliser, lexicon, model},
+  script, evidence[{category, severity, targeted, quoted, start, end, source}], strongLanguage, selfHarm, modelScores}`;
+  `GET /v1/health`. The backend waits at most `app.moderation.ai.timeout` (1500 ms); unavailable → published and
+  retried (`PENDING`, backoff 1 → 30 min, for 24 h).
+- Config `app.moderation.ai.*`: `enabled` (true), `url` (`http://127.0.0.1:8091`), `key` (env `MODERATION_SERVICE_KEY`,
+  16+ characters, else the check is off and the start-up log says so), `connect-timeout` 300ms, `timeout` 1500ms,
+  `model-mode` OFF|SHADOW|ACTIVE (OFF; no model ships), `probation-wait-max` 2h, `retry-for` 24h, `retention` 90d,
+  `job-interval` PT5M.
+- ADMIN `GET /api/admin/evaluation` lists the new weekly counters `AI_CHECKED` (`{action}.{rule}`) and `AI_REVIEWED`
+  (`{state}.{decision}`), version `lex-1`.

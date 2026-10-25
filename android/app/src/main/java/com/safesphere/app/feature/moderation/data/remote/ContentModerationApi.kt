@@ -1,12 +1,14 @@
 package com.safesphere.app.feature.moderation.data.remote
 
 import com.safesphere.app.feature.moderation.domain.CaseAuthor
+import com.safesphere.app.feature.moderation.domain.CaseCheck
 import com.safesphere.app.feature.moderation.domain.CaseContent
 import com.safesphere.app.feature.moderation.domain.CaseDecisionEntry
 import com.safesphere.app.feature.moderation.domain.CaseMedia
 import com.safesphere.app.feature.moderation.domain.ContentParticipant
 import com.safesphere.app.feature.moderation.domain.CaseRevision
 import com.safesphere.app.feature.moderation.domain.CaseRole
+import com.safesphere.app.feature.moderation.domain.CheckFinding
 import com.safesphere.app.feature.moderation.domain.ContentAction
 import com.safesphere.app.feature.moderation.domain.ContentAppeal
 import com.safesphere.app.feature.moderation.domain.ContentCaseDetail
@@ -64,7 +66,9 @@ data class ContentCaseSummaryDto(
     val independent: Int? = null,
     val contentState: String? = null,
     val priority: Int? = null,
-    val youTookPart: Boolean? = null
+    val youTookPart: Boolean? = null,
+    val openedBy: String? = null,
+    val contentSource: String? = null
 ) {
     fun toDomain(): ContentCaseSummary? {
         val reasonCounts = buildMap {
@@ -85,10 +89,45 @@ data class ContentCaseSummaryDto(
             counting = counting ?: 0,
             independent = independent ?: 0,
             contentState = contentState,
-            youTookPart = youTookPart != false
+            youTookPart = youTookPart != false,
+            openedBy = openedBy?.takeIf { it in setOf("REPORTS", "SYSTEM", "AUTHOR_REQUEST") } ?: "REPORTS",
+            contentSource = contentSource?.takeIf { it in setOf("REPORTS", "SYSTEM", "MODERATOR") }
         )
     }
 }
+
+/** Phase 13E: the automatic check, as moderators see it. Unknown categories are dropped; a bad span is no span. */
+data class AssessmentViewDto(
+    val status: String? = null,
+    val action: String? = null,
+    val rule: String? = null,
+    val evidence: List<EvidenceViewDto>? = null,
+    val normaliserVersion: String? = null,
+    val lexiconVersion: String? = null,
+    val modelVersion: String? = null,
+    val policyVersion: String? = null
+) {
+    fun toDomain(): CaseCheck? {
+        val a = action ?: return null
+        val r = rule ?: return null
+        return CaseCheck(a, r, evidence.orEmpty().mapNotNull { it.toDomain() },
+            listOfNotNull(normaliserVersion, lexiconVersion, modelVersion?.takeIf { it != "-" }, policyVersion)
+                .joinToString(", "))
+    }
+}
+
+data class EvidenceViewDto(val category: String? = null, val severity: Int? = null, val targeted: Boolean? = null,
+                           val quoted: Boolean? = null, val start: Int? = null, val end: Int? = null) {
+    fun toDomain(): CheckFinding? {
+        val c = category?.takeIf { it in CHECK_CATEGORIES } ?: return null
+        val s = start
+        val e = end
+        return CheckFinding(c, (severity ?: 0).coerceIn(0, 3), targeted == true, quoted == true,
+            if (s != null && e != null && s in 0 until e) s until e else null)
+    }
+}
+
+private val CHECK_CATEGORIES = setOf("PROFANITY", "HARASSMENT", "SEXUAL_HARASSMENT", "HATE", "THREAT", "DOXXING", "SPAM")
 
 data class PersonInfoDto(
     val displayName: String? = null,
@@ -185,7 +224,8 @@ data class ContentCaseDetailDto(
     val participants: List<ContentParticipantDto>? = null,
     val author: AuthorViewDto? = null,
     val possibleActions: List<String>? = null,
-    val decisions: List<CaseDecisionDto>? = null
+    val decisions: List<CaseDecisionDto>? = null,
+    val assessment: AssessmentViewDto? = null
 ) {
     fun toDomain(): ContentCaseDetail? = summary?.toDomain()?.let { s -> ContentCaseDetail(
         summary = s,
@@ -198,7 +238,8 @@ data class ContentCaseDetailDto(
             codeOf<ContentAction>(d.action)?.let {
                 CaseDecisionEntry(it, codeOf<ContentDecisionReason>(d.reason), dateOf(d.decidedOn), d.byYou == true)
             }
-        }
+        },
+        check = assessment?.toDomain()
     ) }
 }
 

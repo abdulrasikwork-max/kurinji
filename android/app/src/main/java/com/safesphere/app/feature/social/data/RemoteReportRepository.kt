@@ -4,6 +4,7 @@ import com.safesphere.app.core.network.ApiCallHandler
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.feature.social.data.remote.ReportApi
 import com.safesphere.app.feature.social.data.remote.ReportRequestDto
+import com.safesphere.app.feature.social.data.remote.ReviewRequestDto
 import com.safesphere.app.feature.social.domain.MyReport
 import com.safesphere.app.feature.social.domain.ReportReason
 import com.safesphere.app.feature.social.domain.ReportRepository
@@ -26,6 +27,11 @@ class RemoteReportRepository(private val api: ReportApi, private val handler: Ap
 
     override suspend fun appeal(decisionId: String): ApiResult<Unit> = handler.execute {
         api.appeal(decisionId)
+        Unit
+    }
+
+    override suspend fun askCheckReview(target: ReportTarget, targetId: String): ApiResult<Unit> = handler.execute {
+        api.reviewCheck(ReviewRequestDto(target.name, targetId))
         Unit
     }
 }

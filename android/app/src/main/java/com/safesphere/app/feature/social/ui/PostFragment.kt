@@ -18,7 +18,6 @@ import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentPostBinding
 import com.safesphere.app.feature.social.domain.ButterflyState
-import com.safesphere.app.feature.social.domain.Collapsed
 import com.safesphere.app.feature.social.domain.CommentKind
 import com.safesphere.app.feature.social.domain.ModerationState
 import com.safesphere.app.feature.social.domain.OwnModeration
@@ -50,7 +49,10 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.perspectiveList.adapter = perspectiveAdapter
         kindChips = ChoiceChips(binding.kindGroup) { it?.let(viewModel::onKind) }
         binding.perspectiveInput.doAfterTextChanged { viewModel.onText(it?.toString().orEmpty()) }
-        binding.sendButton.setOnClickListener { viewModel.onSend() }
+        // Phase 13E: a private nudge first (the draft is checked on this phone only).
+        binding.sendButton.setOnClickListener {
+            DraftNudgeDialogs.beforeSharing(this, viewModel.uiState.value.text, onlyMe = false) { viewModel.onSend() }
+        }
         binding.cancelReplyButton.setOnClickListener { viewModel.onCancelReply() }
         binding.deletePostButton.setOnClickListener { confirmDelete() }
         binding.butterflyButton.setOnClickListener { viewModel.onButterfly() }
@@ -62,14 +64,17 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         }
         collectWhenStarted(viewModel.uiState, ::render)
         collectWhenStarted(reports.uiState, ::renderReports)
+        collectWhenStarted(appContainer.viewerPreferences.collapseStrongLanguage, viewModel::onStrongLanguageFilter)
     }
 
     /** Phase 13D: confirmations of the report and review flows, and their failures. */
     private fun renderReports(state: ReportUiState) {
         state.message?.let {
-            Toast.makeText(requireContext(),
-                if (it == ReportMessage.REPORT_SENT) R.string.report_sent else R.string.review_asked,
-                Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), when (it) {
+                ReportMessage.REPORT_SENT -> R.string.report_sent
+                ReportMessage.REVIEW_ASKED -> R.string.review_asked
+                ReportMessage.CHECK_REVIEW_ASKED -> R.string.check_review_asked
+            }, Toast.LENGTH_LONG).show()
             reports.onMessageShown()
         }
         state.failure?.let {
@@ -92,8 +97,22 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             binding.reviewLine.isVisible = false
             return
         }
+        // Phase 13E: the automatic check's notice marks the words it noticed, in the author's own text.
+        val phrases = DraftNudgeDialogs.phrases(ownText(post), moderation.flagged)
         binding.moderationNotice.setMessage(getString(ModerationLabels.ownNotice(moderation),
-            getString(ModerationLabels.of(moderation.reason))))
+            getString(ModerationLabels.of(moderation.reason)),
+            if (phrases.isEmpty()) "" else getString(R.string.own_flagged_phrase, phrases)))
+        if (moderation.bySystem) {
+            val asked = post.publicId in reportState.checkReviewAsked
+            binding.reviewButton.setText(R.string.check_review_ask)
+            binding.reviewButton.isVisible = moderation.canAskCheckReview && !asked
+            binding.reviewButton.isEnabled = !reportState.isBusy
+            binding.reviewButton.setOnClickListener { reports.askCheckReview(ReportTarget.POST, post.publicId) }
+            binding.reviewLine.isVisible = asked
+            if (asked) binding.reviewLine.setText(R.string.check_review_asked)
+            return
+        }
+        binding.reviewButton.setText(R.string.review_ask)
         val decisionId = moderation.decisionId
         if (decisionId != null && standingAskedFor != decisionId) {
             standingAskedFor = decisionId
@@ -142,8 +161,7 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         // Phase 13D: a collapsed post shows why and "Show it"; its text and photos only after the tap.
         val hide = state.showCollapsed
         binding.collapsedBlock.isVisible = hide
-        binding.collapsedNotice.setMessage(getString(
-            if (post.collapsed == Collapsed.BY_MODERATOR) R.string.collapsed_by_moderator else R.string.collapsed_under_review))
+        binding.collapsedNotice.setMessage(getString(ModerationLabels.collapsedLine(post.collapsed)))
         binding.body.isVisible = !hide
         photoAdapter.submitList(if (hide) emptyList() else
             post.media.map { PhotoCell(it.mediaId, appContainer.experienceRepository.photoUrl(it.mediaId), null, null) })
@@ -246,11 +264,13 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             // Phase 13D: waiting for approval (Q6); a moderator's state, to its writer only.
             if (p.awaitingApproval) add(getString(if (p.canApprove) R.string.perspective_awaiting_yours
                 else R.string.perspective_awaiting_author))
-            p.ownModeration?.let { add(getString(R.string.own_perspective_line, ownLine(it))) }
+            p.ownModeration?.let {
+                add(getString(if (it.bySystem) R.string.own_perspective_system_line else R.string.own_perspective_line,
+                    ownLine(it)))
+            }
         }
-        val collapsed = p.collapsed != null && p.publicId !in state.revealedPerspectives
-        val text = if (!collapsed) p.body else getString(
-            if (p.collapsed == Collapsed.BY_MODERATOR) R.string.collapsed_by_moderator else R.string.collapsed_under_review)
+        val collapsed = state.perspectiveCollapsed(p)
+        val text = if (!collapsed) p.body else getString(ModerationLabels.collapsedLine(p.collapsed))
         val actions = actionsFor(p, collapsed)
         return PersonRow(
             key = p.publicId,
@@ -265,6 +285,9 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             } else null
         )
     }
+
+    /** Phase 13E: the text the server checked (body, a new line, the tip): flagged offsets point into it. */
+    private fun ownText(post: Post): String = if (post.tip == null) post.body else post.body + "\n" + post.tip
 
     /** Phase 13D: the short line a writer sees about their own moderated perspective. */
     private fun ownLine(moderation: OwnModeration): String {
@@ -287,6 +310,9 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             if (p.helped) add(getString(R.string.social_helped_unmark) to { viewModel.onHelped(p, false) })
             else add(getString(R.string.social_helped_mark) to { viewModel.onHelped(p, true) })
         }
+        if (p.ownModeration?.canAskCheckReview == true) add(getString(R.string.check_review_ask) to {
+            reports.askCheckReview(ReportTarget.COMMENT, p.publicId)
+        })
         if (p.own) add(getString(R.string.social_delete_perspective) to { viewModel.onDeletePerspective(p) })
         if (!p.own) add(getString(R.string.report_perspective) to {
             ReportDialogs.show(this@PostFragment, ReportTarget.COMMENT) { reason, note ->

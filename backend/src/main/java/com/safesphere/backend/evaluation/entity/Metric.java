@@ -32,5 +32,9 @@ public enum Metric {
     /** Weekly snapshot: ~1 km areas with a visible signal, by the active rules' outlook. */
     AREAS_BY_OUTLOOK,
     /** Weekly snapshot, rules-2 in SHADOW: per area, SAME / LESS_CAUTIOUS / MORE_CAUTIOUS concern than the active rules. */
-    SHADOW_PICTURE
+    SHADOW_PICTURE,
+    /** Phase 13E (V24): the automatic check decided about a post or perspective. Dimension: {action}.{rule}. */
+    AI_CHECKED,
+    /** Phase 13E (V24): a moderator decided about content the check had collapsed or held. Dimension: {state}.{action}. */
+    AI_REVIEWED
 }

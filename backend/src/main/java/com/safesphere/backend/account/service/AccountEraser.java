@@ -111,6 +111,11 @@ public class AccountEraser {
                     + " OR post_id IN (SELECT id FROM posts WHERE author_id = ?)"
                     + " OR parent_id IN (SELECT id FROM comments WHERE author_id = ?))",
             "DELETE FROM post_revisions WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)",
+            // Phase 13E: the automatic checks of their posts, their perspectives and the perspectives on their posts.
+            "DELETE FROM content_assessments WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)"
+                    + " OR comment_id IN (SELECT id FROM comments WHERE author_id = ?"
+                    + " OR post_id IN (SELECT id FROM posts WHERE author_id = ?)"
+                    + " OR parent_id IN (SELECT id FROM comments WHERE author_id = ?))",
             "DELETE FROM social_strikes WHERE user_id = ?",
             "DELETE FROM social_standing WHERE user_id = ?",
             // Phase 13B: replies to the person's perspectives, every perspective on their posts, their own

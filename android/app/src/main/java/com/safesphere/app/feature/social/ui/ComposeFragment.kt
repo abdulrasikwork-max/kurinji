@@ -70,7 +70,12 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
             pickPhotos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
         binding.choosePlaceButton.setOnClickListener { findNavController().navigate(R.id.placePickerFragment) }
-        binding.shareButton.setOnClickListener { viewModel.onShare() }
+        // Phase 13E: a private nudge first (the draft is checked on this phone only; the server checks again).
+        binding.shareButton.setOnClickListener {
+            val state = viewModel.uiState.value
+            val text = if (state.tip.isBlank()) state.body else state.body + "\n" + state.tip
+            DraftNudgeDialogs.beforeSharing(this, text, onlyMe = state.audience == Audience.ONLY_ME) { viewModel.onShare() }
+        }
         binding.approveFirstSwitch.setOnCheckedChangeListener { _, on -> viewModel.onApproveFirst(on) }
 
         months = ComposerPolicy.monthsOffered(viewModel.currentMonth)

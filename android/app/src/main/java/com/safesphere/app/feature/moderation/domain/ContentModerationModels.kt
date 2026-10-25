@@ -39,8 +39,19 @@ data class ContentCaseSummary(
     val independent: Int,
     /** COLLAPSED / HELD / REMOVED / NONE for posts and perspectives; null for a person. */
     val contentState: String?,
-    val youTookPart: Boolean
+    val youTookPart: Boolean,
+    /** Phase 13E: REPORTS / SYSTEM / AUTHOR_REQUEST (unknown reads as REPORTS: the 13D words). */
+    val openedBy: String = "REPORTS",
+    /** Phase 13E: who set the content's state (SYSTEM = the automatic check); null while NONE or for a person. */
+    val contentSource: String? = null
 )
+
+/** Phase 13E: one finding of the automatic check, with the flagged phrase as code points of the case's text. */
+data class CheckFinding(val category: String, val severity: Int, val targeted: Boolean, val quoted: Boolean,
+                        val span: IntRange?)
+
+/** Phase 13E: what the automatic check found (evidence, not a verdict). */
+data class CaseCheck(val action: String, val rule: String, val findings: List<CheckFinding>, val versions: String)
 
 data class PersonInfo(val displayName: String, val handle: String, val bio: String?, val city: String?,
                       val interests: List<String>)
@@ -99,7 +110,9 @@ data class ContentCaseDetail(
     val participants: List<ContentParticipant>,
     val author: CaseAuthor?,
     val possibleActions: List<ContentAction>,
-    val decisions: List<CaseDecisionEntry>
+    val decisions: List<CaseDecisionEntry>,
+    /** Phase 13E: null when the check never ran on it (or it is a person case). */
+    val check: CaseCheck? = null
 )
 
 data class ContentAppeal(

@@ -110,6 +110,19 @@ public class OutcomeRecorder {
         count(Metric.CASE_UNREVIEWED, trigger.name(), trigger.version());
     }
 
+    /** Phase 13E: what the automatic check decided ([action] and [rule] are DecisionPolicy codes; [version] lex-N). */
+    public void aiChecked(Enum<?> action, Enum<?> rule, String version) {
+        count(Metric.AI_CHECKED, action.name() + "." + rule.name(), version);
+    }
+
+    /**
+     * Phase 13E: a moderator's decision about content the check had collapsed or held ([state] COLLAPSED / HELD,
+     * [action] e.g. CONTENT_KEEP = the check was overruled): the live precision of each automatic action (§6.6).
+     */
+    public void aiReviewed(Enum<?> state, Enum<?> action, String version) {
+        count(Metric.AI_REVIEWED, state.name() + "." + action.name(), version);
+    }
+
     /**
      * coord-1 in SHADOW found a group (it runs hourly, so the same group is found again and again): counted once per
      * week, the first time none of its signals belonged to a group already counted this week. That is what ACTIVE would

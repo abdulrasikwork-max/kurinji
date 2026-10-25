@@ -31,6 +31,10 @@ interface ReportApi {
 
     @POST("api/social-standing/decisions/{id}/appeal")
     suspend fun appeal(@Path("id") decisionId: String): ReportReceivedDto
+
+    /** Phase 13E: "Ask for a review" of one's own post or perspective that the automatic check collapsed. */
+    @POST("api/content-checks/review")
+    suspend fun reviewCheck(@Body body: ReviewRequestDto): ReportReceivedDto
 }
 
 // These DTOs FAIL CLOSED like the other social ones: an unknown code is dropped (a report or decision this app cannot
@@ -42,6 +46,9 @@ data class ReportRequestDto(val targetKind: String, val targetId: String, val re
 }
 
 data class ReportReceivedDto(val status: String? = null)
+
+/** Phase 13E: [targetKind] POST or COMMENT (one's own). */
+data class ReviewRequestDto(val targetKind: String, val targetId: String)
 
 data class MyReportDto(
     val reportId: String? = null,

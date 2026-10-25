@@ -72,7 +72,25 @@ public final class ContentModerationDtos {
      */
     public record CaseSummary(String caseId, String targetKind, String status, String outcome, LocalDate openedOn,
                               String topReason, Map<String, Integer> reasons, int counting, int independent,
-                              String contentState, int priority, boolean youTookPart) {
+                              String contentState, int priority, boolean youTookPart, String openedBy,
+                              String contentSource) {
+    }
+
+    /**
+     * Phase 13E: what the automatic check found (the moderator's "why"). [evidence] in the order found, each with the
+     * flagged phrase as code-point offsets of the text ([start] -1 when unknown); no self-harm signal ever (not stored).
+     */
+    public record AssessmentView(String status, String action, String rule, String reason, List<EvidenceView> evidence,
+                                 boolean strongLanguage, String normaliserVersion, String lexiconVersion,
+                                 String modelVersion, String policyVersion) {
+    }
+
+    public record EvidenceView(String category, int severity, boolean targeted, boolean quoted, int start, int end) {
+    }
+
+    /** Phase 13E: POST /api/content-checks/review (the author's own content collapsed or held by the check). */
+    public record ReviewRequest(@NotNull(message = "Choose what to review") @Size(max = 10) String targetKind,
+                                @NotNull(message = "Choose what to review") @Size(max = 40) String targetId) {
     }
 
     public record MediaView(String mediaId, int width, int height) {
@@ -116,7 +134,7 @@ public final class ContentModerationDtos {
 
     public record CaseDetail(CaseSummary summary, ContentView content, List<RevisionView> revisions,
                              List<Participant> participants, AuthorView author, List<String> possibleActions,
-                             List<CaseDecision> decisions) {
+                             List<CaseDecision> decisions, AssessmentView assessment) {
     }
 
     public record ActionRequest(@NotNull(message = "Action is required") ActionType action,

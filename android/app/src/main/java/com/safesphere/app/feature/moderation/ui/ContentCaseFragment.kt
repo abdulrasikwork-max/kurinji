@@ -14,6 +14,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
+import com.safesphere.app.core.textcheck.TextSpans
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog
@@ -78,16 +79,44 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
         }
     }
 
+    /**
+     * Phase 13E: what the automatic check found, with the phrase it noticed (in the case's text: a post's body, a new
+     * line and its tip; or the perspective), and ALWAYS the reminder that it is evidence, not a verdict.
+     */
+    private fun checkLines(detail: ContentCaseDetail): List<String> {
+        val check = detail.check ?: return emptyList()
+        val content = detail.content
+        val text = if (content.commentKind != null || content.tip == null) content.body.orEmpty()
+        else content.body.orEmpty() + "\n" + content.tip
+        return listOf(getString(R.string.content_case_check, check.action.lowercase().replace('_', ' '),
+            check.rule.lowercase().replace('_', ' '), check.versions)) +
+            check.findings.map { f ->
+                getString(R.string.content_case_check_finding, f.category.lowercase().replace('_', ' '), f.severity,
+                    (if (f.targeted) getString(R.string.content_case_check_targeted) else "") +
+                        (if (f.quoted) getString(R.string.content_case_check_quoted) else ""),
+                    f.span?.let { TextSpans.phrase(text, it) }.orEmpty())
+            } + getString(R.string.content_case_check_guidance)
+    }
+
     private fun show(detail: ContentCaseDetail, state: ContentCaseUiState) {
         val summary = detail.summary
         binding.headline.text = getString(R.string.content_case_row, getString(ContentModerationTexts.of(summary.target)),
             getString(ContentModerationTexts.of(summary.topReason)))
-        binding.facts.text = listOfNotNull(
-            getString(R.string.content_case_counts, summary.independent.toString()),
-            summary.contentState?.let { getString(R.string.content_case_state, getString(ContentModerationTexts.state(it))) },
-            detail.content.audience?.let { getString(R.string.content_case_audience, it.lowercase()) },
-            if (!summary.open) getString(R.string.content_case_closed) else null
-        ).joinToString("\n")
+        val facts = buildList {
+            when (summary.openedBy) {
+                "SYSTEM" -> add(getString(R.string.content_case_opened_by_system))
+                "AUTHOR_REQUEST" -> add(getString(R.string.content_case_opened_by_author))
+            }
+            add(getString(R.string.content_case_counts, summary.independent.toString()))
+            summary.contentState?.let {
+                add(getString(if (summary.contentSource == "SYSTEM") R.string.content_case_state_system
+                    else R.string.content_case_state, getString(ContentModerationTexts.state(it))))
+            }
+            detail.content.audience?.let { add(getString(R.string.content_case_audience, it.lowercase())) }
+            if (!summary.open) add(getString(R.string.content_case_closed))
+            addAll(checkLines(detail))
+        }
+        binding.facts.text = facts.joinToString("\n")
 
         val content = detail.content
         binding.contentText.text = when (summary.target) {

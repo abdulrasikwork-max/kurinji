@@ -103,7 +103,9 @@ public class ReportService {
         TargetKind kind = parse(TargetKind.class, request.targetKind(), "Choose what to report");
         if (kind == TargetKind.PLACE) throw new InvalidRequestException("Choose what to report");
         ModerationReason reason = parse(ModerationReason.class, request.reason(), "Choose a reason");
-        if (reason == ModerationReason.NEEDS_REVIEW) throw new InvalidRequestException("Choose a reason");
+        if (reason == ModerationReason.NEEDS_REVIEW || reason == ModerationReason.AWAITING_CHECK) {
+            throw new InvalidRequestException("Choose a reason");
+        }
         if (reason == ModerationReason.IMPERSONATION && kind != TargetKind.PERSON) {
             throw new InvalidRequestException("Impersonation is reported on the person's profile");
         }

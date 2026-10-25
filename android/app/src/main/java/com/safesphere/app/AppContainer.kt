@@ -29,9 +29,13 @@ import com.safesphere.app.feature.safewalk.data.remote.JourneyApi
 import com.safesphere.app.feature.safewalk.domain.ActiveJourneyStore
 import com.safesphere.app.feature.safewalk.session.AndroidSafeWalkAlerts
 import com.safesphere.app.feature.safewalk.session.SafeWalkSession
+import com.safesphere.app.core.textcheck.HashedLexicon
+import com.safesphere.app.core.textcheck.TextCheck
+import com.safesphere.app.feature.social.data.DataStoreViewerPreferences
 import com.safesphere.app.feature.social.data.RemoteSocialRepository
 import com.safesphere.app.feature.social.data.remote.SocialApi
 import com.safesphere.app.feature.social.domain.SocialRepository
+import com.safesphere.app.feature.social.domain.ViewerPreferences
 import coil.ImageLoader
 import coil.memory.MemoryCache
 import com.safesphere.app.feature.social.data.EncryptedPlacesStore
@@ -232,6 +236,23 @@ class AppContainer(context: Context) {
         RemoteContentModerationRepository(retrofit.create(ContentModerationApi::class.java), apiCallHandler,
             backendBaseUrl())
     }
+
+    // ---- Phase 13E: the private check before sharing (the draft never leaves the phone) ----------------------------
+
+    /**
+     * The hashed lexicon from the app's assets (no readable words) and the same evidence rules as the server. Null when
+     * the asset cannot be read: then the app simply shares without a nudge (the server checks anyway).
+     */
+    val textCheck: TextCheck? by lazy {
+        runCatching {
+            appContext.assets.open(HashedLexicon.ASSET).bufferedReader(Charsets.UTF_8).use {
+                TextCheck(HashedLexicon(it.readLines()))
+            }
+        }.getOrNull()
+    }
+
+    /** E20: "Collapse strong language", a choice about the viewer only, kept on this phone. */
+    val viewerPreferences: ViewerPreferences by lazy { DataStoreViewerPreferences(appContext) }
 
     /** Q9: private places, recently used places and the last audience, encrypted on this phone, never uploaded. */
     private val placesStore: PlacesStore by lazy {

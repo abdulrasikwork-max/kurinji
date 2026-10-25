@@ -339,6 +339,22 @@
                 android:layout_height="wrap_content"
                 android:minHeight="@dimen/min_touch_target"
                 android:text="@string/guidelines_entry" />
+
+            <!-- Phase 13E (E20): a choice about the viewer only, kept on this phone. -->
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/strongLanguageSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/settings_strong_language_title" />
+
+            <TextView
+                android:id="@+id/strongLanguageSummary"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_strong_language_summary" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

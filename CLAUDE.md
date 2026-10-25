@@ -77,7 +77,7 @@ Final-year B.Tech IT team project: the student must be able to explain every imp
 2026-10-22/23** (`docs/PHASE13B.md`, plan `PHASE13B_PLAN.md` approved with Q1–Q12): places, Experiences/Asks with
 precision and the 1–3 h exact-place delay, photos stripped twice, Perspectives, encrypted private places; backend 635 /
 Android 627, lint 0 / 91, **V21 dry run 79/79 + applied, live MySQL 33/33, emulator (API 37) E1–E12 PASS** (two bugs
-found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13C intent and discovery implemented, compiled, tested, verified 2026-10-23** (`docs/PHASE13C.md`, plan `PHASE13C_PLAN.md`, C1–C15 decided under the user's delegation): butterfly = private Cocoon item (Want → Been), the author's count only from 3 people up, weekly city Edition with "Why am I seeing this?", From your connections, place and category pages, place-name search, mute in every list; backend 663 / Android 641, lint 0 / 94, **V22 dry run 14/14 + applied, live MySQL 29/29, emulator (API 37) E1–E17 PASS** (one wording bug found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13D moderation v2 implemented, compiled, tested, verified 2026-10-24/25** (`docs/PHASE13D.md`, plan `PHASE13D_PLAN.md`, M1–M20 decided under the user's delegation): reports on posts/perspectives/people (reporters never revealed, nothing observable to the reported person below 3 independent reports), collapse, holds, removal, strikes, pauses, appeals to another moderator, approve-first (Q6), edit history during a case (Q7), place merging (API), probation; backend 694 / Android 657, lint 0 / 54, **V23 dry run 51/51 + applied (2 CHECK gaps found and fixed first), live MySQL 30/30, emulator (API 37) E1–E8 PASS** (3 wording bugs found and fixed); real phone, TalkBack speech and dark mode **not verified**. 13E–13F, 13R: planned. Sub-phases 13A identity foundation (V20) → 13B experiences → 13C intent + discovery → 13D moderation v2 → 13E AI v1 → 13F new UI/navigation, plus 13R Tamil/Tanglish model research track in parallel (design doc §12). Decided 2026-10-22: D1 (name Kurinji, checks pending), D4 (women's realities = internal principle only), D5 (Chennai first; Tamil/Tanglish content from V1, Tamil UI in V2), D6 (18+, self-declared date of birth), D13 (Phase 13), D7 (Coil is the one new Android dependency for 13B; push stays V2), D11 (places user-created only, no places API), D14 (no audience preselected on the first post), D2 (moderation models allowed under the evidence → policy → human rule), D3 (the user's dataset + licence-checked public sets, ≥ 2 annotators), D8 (Takes in V2), D9 (retire Rise when 13F ships), D10 (pending safety items folded into Phase 13; A23 sprint before any pilot), D12 (HTTPS server before a closed pilot), D15 (team moderators, rotating). All of D1–D15 are decided. Each sub-phase needs its own plan and the user's approval first |
+found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13C intent and discovery implemented, compiled, tested, verified 2026-10-23** (`docs/PHASE13C.md`, plan `PHASE13C_PLAN.md`, C1–C15 decided under the user's delegation): butterfly = private Cocoon item (Want → Been), the author's count only from 3 people up, weekly city Edition with "Why am I seeing this?", From your connections, place and category pages, place-name search, mute in every list; backend 663 / Android 641, lint 0 / 94, **V22 dry run 14/14 + applied, live MySQL 29/29, emulator (API 37) E1–E17 PASS** (one wording bug found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13D moderation v2 implemented, compiled, tested, verified 2026-10-24/25** (`docs/PHASE13D.md`, plan `PHASE13D_PLAN.md`, M1–M20 decided under the user's delegation): reports on posts/perspectives/people (reporters never revealed, nothing observable to the reported person below 3 independent reports), collapse, holds, removal, strikes, pauses, appeals to another moderator, approve-first (Q6), edit history during a case (Q7), place merging (API), probation; backend 694 / Android 657, lint 0 / 54, **V23 dry run 51/51 + applied (2 CHECK gaps found and fixed first), live MySQL 30/30, emulator (API 37) E1–E8 PASS** (3 wording bugs found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13E AI v1 implemented, compiled, tested, verified 2026-10-25** (`docs/PHASE13E.md`, plan `PHASE13E_PLAN.md`, E1–E30 decided under the user's delegation): Python moderation service (standard library only, internal, never logs text) with the norm-1 normaliser + hashed Tamil/Tanglish/English lexicon lex-1 + evidence rules; pure Java `DecisionPolicy` policy-1 (PUBLISH / PUBLISH_COLLAPSED / HOLD_FOR_REVIEW, never a removal or a restriction); the same normaliser, lexicon and rules in plain Kotlin on the phone for a private nudge (drafts never leave it) and a self-harm support line (never stored); rung-2 linear model built in Python + Kotlin but **OFF, no model ships** (no D3 dataset); V24 dry run 59/59 + 19/19 and applied, live MySQL 28/28 with the real service, emulator (API 37) E1–E8 PASS (one privacy leak and two UI gaps found and fixed); real phone, TalkBack speech and dark mode **not verified**. 13F, 13R: planned. Sub-phases 13A identity foundation (V20) → 13B experiences → 13C intent + discovery → 13D moderation v2 → 13E AI v1 → 13F new UI/navigation, plus 13R Tamil/Tanglish model research track in parallel (design doc §12). Decided 2026-10-22: D1 (name Kurinji, checks pending), D4 (women's realities = internal principle only), D5 (Chennai first; Tamil/Tanglish content from V1, Tamil UI in V2), D6 (18+, self-declared date of birth), D13 (Phase 13), D7 (Coil is the one new Android dependency for 13B; push stays V2), D11 (places user-created only, no places API), D14 (no audience preselected on the first post), D2 (moderation models allowed under the evidence → policy → human rule), D3 (the user's dataset + licence-checked public sets, ≥ 2 annotators), D8 (Takes in V2), D9 (retire Rise when 13F ships), D10 (pending safety items folded into Phase 13; A23 sprint before any pilot), D12 (HTTPS server before a closed pilot), D15 (team moderators, rotating). All of D1–D15 are decided. Each sub-phase needs its own plan and the user's approval first |
 
 **Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
 - **4A** — Location + permissions, notifications foundation, emergency location sharing, emergency/state recovery, battery + network readers.
@@ -116,8 +116,11 @@ plans it: rules decide everything users see; no learned model without gates G1�
 **Changed for Phase 13 (decision D2, approved by the user 2026-10-22):** learned models are allowed for content
 moderation only (Tamil/Tanglish/English text, images), under the rule "models produce evidence → a tested
 deterministic policy decides → only humans restrict people" (design doc §6). Models run only in the Python moderation
-service and as a plain-Kotlin linear model on the phone. `NoMlRuntimeTest` and the ML-runtime check in
-`EvaluationIsolationTest` are replaced in 13E by tests pinning exactly those places, not earlier. Everything else above
+service and as a plain-Kotlin linear model on the phone. Since 13E `NoMlRuntimeTest` and the ML-runtime check in
+`EvaluationIsolationTest` are replaced by `ModelPlacesTest` (backend + Android), which pins exactly those places (no ML
+library anywhere, model/lexicon files only in `assets/textcheck/`, only `ModerationServiceClient` calls the service,
+the service imports the Python standard library only, `core/textcheck` has no network/storage/logging). No learned model
+acts until gates L1–L3 (`PHASE13E_PLAN.md` E2) and the user's decision (`app.moderation.ai.model-mode`). Everything else above
 (Phase 8/9 intelligence: rules only) is unchanged.
 Phase 9A attack scenarios live in `backend/src/test/.../evaluation/simulation` (real API, virtual clock, SIMULATED
 reports in `backend/target/attack-simulation/`); since 9D they measure only PRODUCTION rules (`CandidateRules` was
@@ -151,8 +154,13 @@ pure `CityAreas`/`EditionPolicy`/`ButterflyTally`, `Visibility.showInLists`; And
 / `StrikePolicy`, `ContentModerationJob`; `social` moderation state on posts/comments, `SocialStanding`,
 `PostRevision`, `Visibility.canSeeComment/showInEdition/visibleStates`, `SocialAccess` pauses + probation; Android
 `ReportViewModel`/`ReportDialogs`, `MyReportsFragment`, `GuidelinesFragment`, moderator `ContentQueueViewModel`,
-`ContentCaseFragment`): `docs/PHASE13D.md` (decisions M1–M20 in `PHASE13D_PLAN.md`, deviations 13D-D1–D11). Next
-migration **V24**.
+`ContentCaseFragment`): `docs/PHASE13D.md` (decisions M1–M20 in `PHASE13D_PLAN.md`, deviations 13D-D1–D11).
+**13E is in the repository** (V24; `moderation-service/` Python, stdlib only, with `NORMALISER.md`, `restricted/`
+(readable lexicon + developer challenge set: sensitive, **git-ignored**, only its README is in git; tests that need it skip); backend `moderation.assessment`
+`ModerationServiceClient`, pure `DecisionPolicy`, `AssessmentService`, `ContentAssessment`, `AssessmentJob`;
+`social/event/ContentWritten`; Android `core/textcheck` (`TextNormalizer`, `PhoneticKey`, `HashedLexicon`, `TextCheck`,
+`LinearModel`, `DraftNudge`, `TextSpans`), `DraftNudgeDialogs`, `ViewerPreferences`): `docs/PHASE13E.md` (decisions
+E1–E30 in `PHASE13E_PLAN.md`, deviations 13E-D1–D10). Next migration **V25**.
 **Note:** `C:\Users\ABDUL RAFIQ\Desktop\CLAUDE.md` (outside the repo) is an old copy (says "4A has not started"); this
 repo copy is the current one.
 
@@ -195,7 +203,8 @@ Android lifecycle implications / security + privacy / likely viva questions*. No
 SafeSphere/
 ├── android/   Kotlin app — open THIS folder in Android Studio (has gradlew)
 ├── backend/   Spring Boot API — Maven (no mvnw wrapper; Maven is installed)
-├── docs/      API.md, PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), AUDIT_NEXT.md (2026-10-22 audit), EXPERIENCE_PLATFORM_DESIGN.md (the new product direction, Phase 13), PHASE13A_PLAN.md + PHASE13A.md (13A), PHASE13B_PLAN.md + PHASE13B.md (13B), PHASE13C_PLAN.md + PHASE13C.md (13C), PHASE13D_PLAN.md + PHASE13D.md (13D), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
+├── docs/      API.md, PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), AUDIT_NEXT.md (2026-10-22 audit), EXPERIENCE_PLATFORM_DESIGN.md (the new product direction, Phase 13), PHASE13A_PLAN.md + PHASE13A.md (13A), PHASE13B_PLAN.md + PHASE13B.md (13B), PHASE13C_PLAN.md + PHASE13C.md (13C), PHASE13D_PLAN.md + PHASE13D.md (13D), PHASE13E_PLAN.md + PHASE13E.md (13E), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
+├── moderation-service/  Phase 13E Python service (stdlib only): README.md, NORMALISER.md, restricted/ (sensitive, git-ignored)
 └── README.md
 ```
 
@@ -328,6 +337,20 @@ cd android
   `ContentQueueViewModel` (two sections in `ModerationFragment`; 403 hides them), `ContentCaseViewModel` /
   `ContentCaseFragment` (FLAG_SECURE, photos only on tap, reason dialog, confirmation). Moderation words amber, never
   red; author-facing strings never say "report(s)/reported" (`ModerationV2Test`). Nothing stored on the phone.
+- **Automatic check on the phone (Phase 13E, `core/textcheck`, `docs/PHASE13E.md`):** pure Kotlin twins of the
+  service's norm-1 `TextNormalizer` (offsets per character), `PhoneticKey` (spaces en/enc/ta), `HashedLexicon` (asset
+  `assets/textcheck/lexicon-v1.keys`, byte-identical to `moderation-service/data/lexicon-v1.keys`, SHA-256 keys only),
+  `TextCheck` (evidence rules), `LinearModel` (runtime only, no model ships), pure `DraftNudge` (Support first, Care,
+  Contact, None) and `TextSpans`; `TextCheckParityTest` reads `../../moderation-service/data/vectors/*` and
+  `restricted/evidence-vectors.tsv` directly. `AppContainer.textCheck` (null if the asset is unreadable: share without a
+  nudge). `DraftNudgeDialogs` before Share (composer) and Add (perspective): "Our system thinks this may come across
+  as…", Edit / Share anyway; contact details; support line Tele-MANAS 14416 (`ACTION_DIAL`, nothing stored); only-me
+  drafts get the support line only. DTOs: `OwnModeration.source` (unknown → MODERATOR, phrases only for SYSTEM),
+  `flagged`, `Collapsed.BY_SYSTEM`, `strongLanguage`; `ModerationLabels.ownNotice/collapsedLine`; list rows (`PostRows`)
+  show the collapsed line, never a collapsed post's words. `ViewerPreferences` (DataStore "viewer_preferences": the
+  viewer's own "Collapse strong language", switch on Connections). Moderator case screen: openedBy, "by the automatic
+  check", findings with phrases, "evidence, not a verdict". `ModelPlacesTest` replaced `NoMlRuntimeTest`;
+  `AiModerationTest` guards words (no score, no "you are", "our system").
 - **Rise "Proof" (Phase 10B, `feature/rise`, `docs/PHASE11.md` §4):** phone-only; `RiseJournalHolder` (one encrypted
   file per account, `EncryptedFileRiseStore`: AES-GCM per save, key wrapped by the Keystore `LocalKeyWrapper`, AAD
   `SSRISE1|accountId`, `.bak`, Unreadable never silently empty), pure `GoalPolicy` / `ProofPolicy` (replay only for the
@@ -474,7 +497,22 @@ cd android
   `canSeeComment`, `showInEdition` leaves collapsed out, `visibleStates` for list SQL), `SocialStanding` (pause) read by
   `SocialAccess.requireCanComment/Post/Connect`, probation (`app.social.probation` 72 h: lower post/perspective limits,
   no links, `countsFrom` for reports), `PostRevision` (only while `posts.in_review`), `approve_first` /
-  `awaiting_approval` (Q6)),
+  `awaiting_approval` (Q6);
+  Phase 13E: `moderation_source` REPORTS/SYSTEM/MODERATOR (`moderate()` derives REPORTS/MODERATOR,
+  `moderateBySystem()` only COLLAPSED/HELD/NONE, never REMOVED), `moderation_spans`, `strong_language`;
+  `event/ContentWritten` published synchronously by `PostService.create/edit` (text changed, never ONLY_ME) and
+  `CommentService.create`; the author's `ModerationView.source` is SYSTEM/MODERATOR only (a report collapse has none:
+  13D M4), `collapsed` BY_SYSTEM, `supportSuggested` only in the author's write answer),
+  `moderation.assessment` (Phase 13E: `ModerationServiceClient` = the ONLY caller of the Python service (java.net.http,
+  `app.moderation.ai.*`, sends `{kind, text}` only, fail-closed parsing, logs exception classes only); pure
+  `DecisionPolicy` policy-1 pinned to `moderation-service/data/vectors/policy-vectors.tsv`; `AssessmentService`
+  (`@EventListener` inside the write transaction, never throws into it; applies only over NONE/SYSTEM; HOLD (not
+  CHECK_PENDING) opens a `content_cases` row `origin` SYSTEM + `in_review`; `requestReview` = origin AUTHOR_REQUEST,
+  same 202; `viewFor` for moderators; `reviewed` → `OutcomeRecorder.aiReviewed`); `ContentAssessment` (V24, no text,
+  one per target); `AssessmentJob` (`@Scheduled` `app.moderation.ai.job-interval`: retries with backoff 1→30 min for
+  24 h, publishes a probation hold after `probation-wait-max` 2 h, retention 90 d unless an open case/appeal); the check
+  is OFF without a 16+ character `MODERATION_SERVICE_KEY` (start-up WARN); tests: stub `support/StubModerationService`,
+  `AssessmentIntegrationTest` + `AssessmentProbationIntegrationTest` on their own H2 URLs, `ModelPlacesTest`),
   `community` (Phase 6: `GeoCell`, pure `SignalPolicy`, `CommunityService`, in-memory `AreaQueryLimiter`,
   `CommunityPurgeJob` = a `@Scheduled` task, deletion only (since Phase 10A the other one is `AccountDeletionJob`); `config/CommunityProperties`, `SchedulingConfig`;
   Phase 7: pure `TrustPolicy`, `Independence`, `FlagPolicy`, `TrustService`, private `ContributorStanding`, `SignalFlag`;
@@ -586,7 +624,9 @@ cd android
 
 | V23 | `posts`/`comments` moderation columns, `post_revisions`, `content_cases`, `content_reports`, `social_strikes`, `social_standing`, `moderation_actions.target_kind` | 13D: state NONE/COLLAPSED/HELD/REMOVED + reason + decision UUID (CHECK: NONE ⇒ neither, COLLAPSED ⇒ both or neither, HELD/REMOVED ⇒ both), `approve_first` ⇒ comment policy EVERYONE, `awaiting_approval`; one OPEN case per post / comment / person (`open_marker` + unique), outcome NO_VIOLATION/ACTION_TAKEN with `outcome IS NOT NULL` written out; one report per reporter and target, note only for OTHER (1–200), `counts_from ≥ created_at`; strike weight 1–3, decision unique; one standing row per person, until > decided; audit action/reason lists extended + kind-matches CHECK with `COALESCE` (NULL makes `IN` UNKNOWN, which a MySQL CHECK lets pass — found in the dry run). "Exactly one target" in code. Dry run 51/51 + 18/18, applied (2026-10-24) |
 
-Conventions: never edit an applied migration; next file is **V24**; snake_case; `DATETIME(6)` stored in UTC; constraint
+| V24 | `posts`/`comments` `moderation_source`, `moderation_spans`, `strong_language`; `content_cases.origin`; `content_assessments`; V15 metric list + `AI_CHECKED`, `AI_REVIEWED` | 13E: state CHECK replaced (NONE ⇔ no source/reason/decision/spans; REPORTS ⇒ COLLAPSED without reason/decision/spans; SYSTEM ⇒ COLLAPSED/HELD + reason, no decision; MODERATOR ⇒ reason + decision, no spans; `COALESCE(source,'-')` against UNKNOWN), reason list + `AWAITING_CHECK`, spans `start-end` list; origin REPORTS/SYSTEM/AUTHOR_REQUEST; assessments: one per post/comment (unique, FK cascade), status PENDING/DONE/UNAVAILABLE with consistent times/rule, action + rule + reason (`(action = 'PUBLISH') = (reason IS NULL)`), evidence `CATEGORY:sev:T|U:Q|-` list whose categories exclude self-harm, versions V15 pattern, **no text column**. Dry run 59/59 + 19/19, applied (2026-10-25) |
+
+Conventions: never edit an applied migration; next file is **V25**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.
 
 ---
@@ -712,6 +752,14 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
   /api/moderation/places?area=`, `POST /api/moderation/places/{id}/merge {into}`; `/api/moderation/appeals` = Phase 7
   RESTRICT appeals only. Config `app.moderation.reports-per-day` (20), `collapse-reports` (3), `content-interval` (1h),
   `app.social.probation` (72h), `probation-posts-per-day` (3), `probation-comments-per-day` (10).
+- Phase 13E (V24, `API.md` "Phase 13E"): writes answer as before (never refused); post/perspective answers add
+  `strongLanguage`; others' `collapsed` + `BY_SYSTEM`; the author's `moderation` + `source` (SYSTEM|MODERATOR|null),
+  `flagged [{start,end}]` (code points of body + "\n" + tip); reason `AWAITING_CHECK`; the author's create/edit answer
+  may carry `supportSuggested`. `POST /api/content-checks/review {targetKind POST|COMMENT, targetId}` → 202 always the
+  same (own SYSTEM state only, else 404). Moderator summaries add `openedBy`, `contentSource`; detail adds `assessment
+  {status, action, rule, reason, evidence[], strongLanguage, versions}`. Internal service `POST /v1/assess` (key header)
+  and `GET /v1/health`. Config `app.moderation.ai.*` (enabled, url, key = env `MODERATION_SERVICE_KEY`, connect-timeout
+  300ms, timeout 1500ms, model-mode OFF, probation-wait-max 2h, retry-for 24h, retention 90d, job-interval PT5M).
 
 ---
 
@@ -835,7 +883,15 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
   never round-trip source files through them (it turned "…" into "â€¦" in `strings.xml`). `ResourceEncodingTest` guards res/.
 - **Live-check scripts (PowerShell 5.1):** `$home` is read-only (assigning it aborts the script); a one-element array
   returned from a function unrolls to its element (`return , @(...)`); wrap the scenario in try/finally so the
-  clean-up (withdrawals, role reset) always runs. Method and results: `docs/PHASE9.md` §13.
+  clean-up (withdrawals, role reset) always runs. Method and results: `docs/PHASE9.md` §13. Save a script containing
+  Tamil text with a UTF-8 **BOM** (5.1 reads BOM-less UTF-8 as Windows-1252); `R` is an alias of Invoke-History and
+  `Type` of Get-Content (don't name helpers so); native-exe arguments lose embedded double quotes.
+- **Python (13E):** none on PATH on this PC; verification used the 3.12.14 interpreter inside
+  `%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\` (another tool's runtime). Tools and
+  tests run with `-I`; the service must start with `-E -s -m kurinji_moderation.server` (`-I` drops its folder from the
+  module path). After changing the lexicon or the rules: `tools/build_lexicon.py`, then `tools/make_vectors.py`.
+- **Emulator:** starting it with `-no-snapshot-save` can come back from an older snapshot with an older APK installed;
+  check `dumpsys package com.safesphere.app | lastUpdateTime` and reinstall before a walk-through.
 
 ---
 
@@ -931,3 +987,9 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
 | Location privacy built into the post shape (cells, precision per post, time bands, private places on the phone, no live posting) | Public experiences must not reveal anyone's routine |
 | AI produces evidence, a deterministic policy decides, only humans restrict people; collapse rather than remove; no shadow bans (D2, decided 2026-10-22) | Moderation that can be explained and appealed; an AI mistake must not silence anyone |
 | Tamil/Tanglish abuse model as the research contribution; Chennai launch community (D5, decided 2026-10-22) | The launch community writes that way; general moderation tools handle it poorly; measurable, publishable work |
+| 13E: rules (normaliser + hashed lexicon + context rules) decide; the linear model is built but OFF; no transformer (E1/E2) | No D3 dataset exists; a model trained on developer-written text learns the developer; a model must beat the rules on held-out data without more false actions on banter, counter-speech and identity mentions before it acts |
+| 13E: the Python service gives evidence, Java `DecisionPolicy` decides, the machine never removes or restricts (E3/E5/E11) | D2; decisions tested and explainable; humans keep every serious decision |
+| 13E: outage = publish; only new accounts wait, at most 2 h (E7) | Infrastructure failure must never silence people |
+| 13E: quoted / reported speech and identity terms never act alone (E15/E16) | People describing harassment they faced, and people naming their own community, must not be silenced |
+| 13E: self-harm never stored, only a support line (E12) | Health data is the most sensitive; support, not surveillance |
+| 13E: one normaliser spec, two implementations, shared vectors, byte-identical hashed lexicon on the phone (E21/E22) | Phone nudge and server check agree; the app never contains readable slurs |

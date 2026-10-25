@@ -1708,4 +1708,37 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="content_appeal_open_case">Open the case</string>
     <string name="content_appeal_decided">Review recorded.</string>
     <string name="content_reason_no_violation">No guideline broken</string>
+    <!-- Phase 13E: the automatic check (docs/PHASE13E_PLAN.md). Calm words, amber, never "you are…", never a score. -->
+    <string name="nudge_care_title">Before you share</string>
+    <string name="nudge_care_message">Our system thinks this may come across as: %1$s.\n\nMarked: “%2$s”\n\nIf you share it as it is, others may see it collapsed, or a moderator may look at it first. You can edit it or share anyway.</string>
+    <string name="nudge_edit">Edit</string>
+    <string name="nudge_share_anyway">Share anyway</string>
+    <string name="nudge_contact_title">Someone\'s contact details?</string>
+    <string name="nudge_contact_message">Marked: “%1$s”\n\nSharing another person\'s phone number or e-mail is not allowed. A shop\'s or a service\'s own number is fine.</string>
+    <string name="nudge_support_title">You don\'t have to carry this alone</string>
+    <string name="nudge_support_message">If things feel heavy right now, you can talk to someone today. Tele-MANAS is free, open day and night, and you can speak in Tamil or English: 14416.\n\nThis suggestion is not saved or shared with anyone.</string>
+    <string name="nudge_support_call">Call 14416</string>
+    <string name="nudge_support_share">Share</string>
+    <string name="nudge_support_back">Not now</string>
+    <string name="own_collapsed_by_system">Our system thinks this may be hurtful (%1$s), so others see it collapsed and can tap to read it.%2$s If our system got it wrong, ask a moderator to look.</string>
+    <string name="own_held_by_system">Our system thinks this may break the community guidelines (%1$s), so only you can see it until a moderator looks. That usually happens soon.%2$s</string>
+    <string name="own_waiting_check">Waiting for a quick automatic check before others can see it. It will be visible in 2 hours at the latest.</string>
+    <string name="own_held_new_photos">Photo posts for everyone from new accounts are looked at by a moderator first. Only you can see this until then.</string>
+    <string name="own_flagged_phrase">" Marked: “%1$s”."</string>
+    <string name="own_perspective_system_line">Our system: %1$s</string>
+    <string name="check_review_ask">Our system got it wrong? Ask a moderator to look</string>
+    <string name="check_review_asked">Thank you. A moderator will look at it.</string>
+    <string name="collapsed_by_system">Collapsed: our system thinks this may be hurtful.</string>
+    <string name="collapsed_strong_language">Collapsed: strong language (your setting).</string>
+    <string name="moderation_reason_awaiting_check">Waiting for the automatic check</string>
+    <string name="settings_strong_language_title">Collapse strong language</string>
+    <string name="settings_strong_language_summary">Posts and perspectives with strong words are shown behind a tap. Only this phone remembers this choice.</string>
+    <string name="content_case_opened_by_system">Opened by the automatic check. It never removes anything and never restricts anyone: you decide.</string>
+    <string name="content_case_opened_by_author">The author asked for a review of an automatic collapse.</string>
+    <string name="content_case_state_system">Shown as: %1$s (by the automatic check)</string>
+    <string name="content_case_check">Automatic check: %1$s (rule %2$s; %3$s)</string>
+    <string name="content_case_check_finding">Found: %1$s, strength %2$d of 3%3$s: “%4$s”</string>
+    <string name="content_case_check_targeted">, aimed at someone</string>
+    <string name="content_case_check_quoted">, quoted or reported speech</string>
+    <string name="content_case_check_guidance">The automatic check is evidence, not a verdict: it reads words, not their context.</string>
 </resources>

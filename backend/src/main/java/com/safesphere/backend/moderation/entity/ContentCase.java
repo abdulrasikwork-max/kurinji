@@ -1,5 +1,6 @@
 package com.safesphere.backend.moderation.entity;
 
+import com.safesphere.backend.moderation.entity.ModerationEnums.CaseOpenedBy;
 import com.safesphere.backend.moderation.entity.ModerationEnums.CaseStatus;
 import com.safesphere.backend.moderation.entity.ModerationEnums.ContentOutcome;
 import com.safesphere.backend.moderation.entity.ModerationEnums.TargetKind;
@@ -34,6 +35,11 @@ public class ContentCase {
     @Enumerated(EnumType.STRING)
     @Column(name = "target_kind", nullable = false, updatable = false, length = 7)
     private TargetKind targetKind;
+
+    /** Phase 13E (V24): why it was opened (reports, a hold by the automatic check, or the author asking for a review). */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, updatable = false, length = 14)
+    private CaseOpenedBy origin = CaseOpenedBy.REPORTS;
 
     @Column(name = "post_id", updatable = false)
     private Long postId;
@@ -85,6 +91,16 @@ public class ContentCase {
 
     public static ContentCase aboutPerson(long personId, LocalDateTime now) {
         return new ContentCase(TargetKind.PERSON, null, null, personId, now);
+    }
+
+    /** Phase 13E: a case opened by the automatic check or by the author's request (reports may join it later). */
+    public ContentCase openedBy(CaseOpenedBy origin) {
+        this.origin = origin;
+        return this;
+    }
+
+    public CaseOpenedBy getOrigin() {
+        return origin;
     }
 
     public void close(ContentOutcome outcome, LocalDateTime now) {

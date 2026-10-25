@@ -32,4 +32,12 @@ class FakeReportRepository : ReportRepository {
         appeals += decisionId
         return appealResult
     }
+
+    /** Phase 13E. */
+    val checkReviews = mutableListOf<Pair<ReportTarget, String>>()
+
+    override suspend fun askCheckReview(target: ReportTarget, targetId: String): ApiResult<Unit> {
+        checkReviews += target to targetId
+        return appealResult
+    }
 }

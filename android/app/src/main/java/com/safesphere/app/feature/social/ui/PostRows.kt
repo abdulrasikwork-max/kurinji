@@ -10,7 +10,9 @@ import com.safesphere.app.feature.social.domain.Precision
 object PostRows {
 
     fun of(context: Context, post: Post, open: () -> Unit): PersonRow {
-        val firstLine = post.body.lineSequence().firstOrNull().orEmpty().let { if (it.length > 80) it.take(79) + "…" else it }
+        // Phase 13E (emulator finding): a collapsed post stays behind a tap in lists too: the row says why, not its words.
+        val firstLine = if (post.collapsed != null) context.getString(ModerationLabels.collapsedLine(post.collapsed))
+        else post.body.lineSequence().firstOrNull().orEmpty().let { if (it.length > 80) it.take(79) + "…" else it }
         val where = when (post.precision) {
             Precision.EXACT -> post.placeName?.let { context.getString(R.string.social_place_line, it) }
             Precision.AREA -> post.areaCell?.let { context.getString(R.string.social_area_line, it) }

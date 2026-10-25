@@ -2,6 +2,7 @@ package com.safesphere.backend.social.entity;
 
 import com.safesphere.backend.social.entity.PostEnums.CommentKind;
 import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.PostEnums.ModerationSource;
 import com.safesphere.backend.social.entity.PostEnums.ModerationState;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -71,6 +72,17 @@ public class Comment {
     @Column(name = "awaiting_approval", nullable = false)
     private boolean awaitingApproval;
 
+    // Phase 13E (V24): see Post.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moderation_source", length = 9)
+    private ModerationSource moderationSource;
+
+    @Column(name = "moderation_spans", length = 200)
+    private String moderationSpans;
+
+    @Column(name = "strong_language", nullable = false)
+    private boolean strongLanguage;
+
     /** Required by JPA. */
     protected Comment() {
     }
@@ -90,6 +102,34 @@ public class Comment {
         this.moderation = state;
         this.moderationReason = state == ModerationState.NONE ? null : reason;
         this.moderationDecision = state == ModerationState.NONE ? null : decision;
+        this.moderationSource = ModerationSource.of(state, decision);
+        this.moderationSpans = null;
+    }
+
+    /** Phase 13E: see Post.moderateBySystem. */
+    public void moderateBySystem(ModerationState state, ModerationReason reason, String spans) {
+        if (state == ModerationState.REMOVED) throw new IllegalArgumentException("the system never removes");
+        this.moderation = state;
+        this.moderationReason = state == ModerationState.NONE ? null : reason;
+        this.moderationDecision = null;
+        this.moderationSource = state == ModerationState.NONE ? null : ModerationSource.SYSTEM;
+        this.moderationSpans = state == ModerationState.NONE ? null : spans;
+    }
+
+    public void setStrongLanguage(boolean strongLanguage) {
+        this.strongLanguage = strongLanguage;
+    }
+
+    public ModerationSource getModerationSource() {
+        return moderationSource;
+    }
+
+    public String getModerationSpans() {
+        return moderationSpans;
+    }
+
+    public boolean isStrongLanguage() {
+        return strongLanguage;
     }
 
     public void setAwaitingApproval(boolean awaitingApproval) {

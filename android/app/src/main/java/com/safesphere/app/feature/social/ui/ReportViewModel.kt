@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** One-shot confirmations of the report and review flows. */
-enum class ReportMessage { REPORT_SENT, REVIEW_ASKED }
+enum class ReportMessage { REPORT_SENT, REVIEW_ASKED, CHECK_REVIEW_ASKED }
 
 data class ReportUiState(
     val isBusy: Boolean = false,
@@ -26,7 +26,9 @@ data class ReportUiState(
     val standing: SocialStanding? = null,
     val message: ReportMessage? = null,
     val failure: ApiResult.Failure? = null,
-    val sessionExpired: Boolean = false
+    val sessionExpired: Boolean = false,
+    /** Phase 13E: own content whose automatic collapse the person asked a moderator to look at (this screen only). */
+    val checkReviewAsked: Set<String> = emptySet()
 )
 
 /**
@@ -72,6 +74,21 @@ class ReportViewModel(private val repository: ReportRepository) : ViewModel() {
             when (val standing = repository.standing()) {
                 is ApiResult.Success -> _uiState.update { it.copy(standing = standing.data) }
                 is ApiResult.Failure -> Unit
+            }
+        }
+    }
+
+    /** Phase 13E: "Ask for a review" of one's own content that the automatic check collapsed. */
+    fun askCheckReview(target: ReportTarget, targetId: String) {
+        if (_uiState.value.isBusy) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isBusy = true, failure = null) }
+            when (val result = repository.askCheckReview(target, targetId)) {
+                is ApiResult.Success -> _uiState.update {
+                    it.copy(isBusy = false, message = ReportMessage.CHECK_REVIEW_ASKED,
+                        checkReviewAsked = it.checkReviewAsked + targetId)
+                }
+                is ApiResult.Failure -> fail(result)
             }
         }
     }

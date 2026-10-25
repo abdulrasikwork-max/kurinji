@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+# evaluation output written on request (tools/evaluate.py --json)
+evaluation-*.json
+# Sensitive moderation reference material (readable lexicon, abusive test sentences): kept on the team's machines only,
+# never in git. The README stays so a fresh clone explains what is missing.
+restricted/*
+!restricted/README.md

@@ -64,6 +64,9 @@ public final class ModerationEnums {
     /** Phase 13D (V23): what a 13D decision or case is about. */
     public enum TargetKind { POST, COMMENT, PERSON, PLACE }
 
+    /** Phase 13E (V24): what opened a content case. */
+    public enum CaseOpenedBy { REPORTS, SYSTEM, AUTHOR_REQUEST }
+
     /** Phase 13D: the result of a content case, as its reporters see it. */
     public enum ContentOutcome { NO_VIOLATION, ACTION_TAKEN }
 }

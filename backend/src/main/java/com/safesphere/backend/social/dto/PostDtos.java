@@ -57,7 +57,14 @@ public final class PostDtos {
      * [state] COLLAPSED / HELD / REMOVED, [reason] a code (null for a collapse by independent reports while it waits for
      * a moderator), [decisionId] the decision to ask a review of (null when no moderator has decided yet).
      */
-    public record ModerationView(String state, String reason, String decisionId) {
+    public record ModerationView(String state, String reason, String decisionId, String source, List<Span> flagged) {
+    }
+
+    /**
+     * Phase 13E: a phrase the automatic check flagged in the author's OWN text, as code-point offsets [start, end) of the
+     * text it was given (the body, then a new line and the tip; or the perspective). Only ever sent to the author.
+     */
+    public record Span(int start, int end) {
     }
 
     /** The place of an EXACT post: its name only (its cell is in GET /api/places/{id}). */
@@ -78,6 +85,11 @@ public final class PostDtos {
      * [moderation] only for the author (null when nothing happened); [collapsed] for everyone else: null, UNDER_REVIEW
      * (collapsed while a moderator looks at it) or BY_MODERATOR (a moderator decided to keep it collapsed). Nothing
      * here says that anyone reported anything.
+     * Phase 13E: [collapsed] may also be BY_SYSTEM (the automatic check thinks it may be hurtful); the author's
+     * [moderation] gains [source] (REPORTS / SYSTEM / MODERATOR) and, for SYSTEM, the flagged phrases;
+     * [strongLanguage] (everyone) = the check found strong language (a viewer may choose to collapse it on their phone);
+     * [supportSuggested] only in the author's own create / edit answer, never stored: the words suggest they may be
+     * going through something hard, so the app shows a support line.
      */
     public record PostResponse(String publicId, String type, PersonSummary author, boolean own, String body, String tip,
                                String category, String precision, PostPlace place, String areaCell, String city,
@@ -85,7 +97,15 @@ public final class PostDtos {
                                List<MediaRef> media, String audience, String commentPolicy, boolean canComment,
                                Instant postedAt, Instant visibleFrom, String yourButterfly,
                                ButterflyTally butterflies, boolean approveFirst, ModerationView moderation,
-                               String collapsed) {
+                               String collapsed, boolean strongLanguage, Boolean supportSuggested) {
+
+        /** The same answer with the one-time support flag (the author's own write answer). */
+        public PostResponse withSupport(boolean support) {
+            return new PostResponse(publicId, type, author, own, body, tip, category, precision, place, areaCell, city,
+                    experiencedMonth, daypart, postedPeriod, edited, media, audience, commentPolicy, canComment,
+                    postedAt, visibleFrom, yourButterfly, butterflies, approveFirst, moderation, collapsed,
+                    strongLanguage, support ? Boolean.TRUE : null);
+        }
     }
 
     /** One page of a list, newest first; [nextCursor] is null on the last page (more only on an explicit request). */

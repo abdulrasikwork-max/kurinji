@@ -10,6 +10,7 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.feature.social.domain.AppealState
+import com.safesphere.app.feature.social.domain.Collapsed
 import com.safesphere.app.feature.social.domain.ModerationReason
 import com.safesphere.app.feature.social.domain.ModerationState
 import com.safesphere.app.feature.social.domain.OwnModeration
@@ -41,16 +42,35 @@ object ModerationLabels {
     fun of(reason: ModerationReason?): Int = when (reason) {
         null -> R.string.moderation_reason_unknown
         ModerationReason.NEEDS_REVIEW -> R.string.moderation_reason_needs_review
+        ModerationReason.AWAITING_CHECK -> R.string.moderation_reason_awaiting_check
         else -> of(ReportReason.valueOf(reason.name))
     }
 
-    /** The amber notice on one's own post or perspective. */
+    /**
+     * The amber notice on one's own post or perspective: %1$s = the reason, %2$s = the marked phrase line (empty when
+     * none). Phase 13E: the automatic check speaks for itself ("Our system thinks…"), never as a moderator.
+     */
     @StringRes
-    fun ownNotice(moderation: OwnModeration): Int = when (moderation.state) {
-        ModerationState.COLLAPSED -> if (moderation.decisionId == null) R.string.own_collapsed_while_reviewed
-        else R.string.own_collapsed_by_moderator
-        ModerationState.HELD -> R.string.own_held
-        ModerationState.REMOVED -> R.string.own_removed
+    fun ownNotice(moderation: OwnModeration): Int = when {
+        moderation.bySystem && moderation.state == ModerationState.HELD &&
+            moderation.reason == ModerationReason.AWAITING_CHECK -> R.string.own_waiting_check
+        moderation.bySystem && moderation.state == ModerationState.HELD &&
+            moderation.reason == ModerationReason.NEEDS_REVIEW -> R.string.own_held_new_photos
+        moderation.bySystem && moderation.state == ModerationState.HELD -> R.string.own_held_by_system
+        moderation.bySystem -> R.string.own_collapsed_by_system
+        moderation.state == ModerationState.COLLAPSED -> if (moderation.decisionId == null)
+            R.string.own_collapsed_while_reviewed else R.string.own_collapsed_by_moderator
+        moderation.state == ModerationState.HELD -> R.string.own_held
+        else -> R.string.own_removed
+    }
+
+    /** What others read on a collapsed post or perspective (never who, never why in detail). */
+    @StringRes
+    fun collapsedLine(collapsed: Collapsed?): Int = when (collapsed) {
+        Collapsed.BY_MODERATOR -> R.string.collapsed_by_moderator
+        Collapsed.BY_SYSTEM -> R.string.collapsed_by_system
+        Collapsed.UNDER_REVIEW -> R.string.collapsed_under_review
+        null -> R.string.collapsed_strong_language
     }
 
     @StringRes

@@ -81,7 +81,9 @@ data class Post(
     /** Phase 13D: own posts only, what a moderator (or a collapse while reviewing) did to it; null = nothing. */
     val ownModeration: OwnModeration? = null,
     /** Phase 13D: other people's posts only: shown behind a tap, and why (never who). */
-    val collapsed: Collapsed? = null
+    val collapsed: Collapsed? = null,
+    /** Phase 13E: the automatic check found strong language (a viewer may collapse it on their own phone). */
+    val strongLanguage: Boolean = false
 )
 
 data class PostPage(val items: List<Post>, val nextCursor: String?)
@@ -106,7 +108,9 @@ data class Perspective(
     /** Phase 13D: own perspectives only. */
     val ownModeration: OwnModeration? = null,
     /** Phase 13D: others' perspectives only. */
-    val collapsed: Collapsed? = null
+    val collapsed: Collapsed? = null,
+    /** Phase 13E: see Post. */
+    val strongLanguage: Boolean = false
 )
 
 /** What the person put together in the composer. */

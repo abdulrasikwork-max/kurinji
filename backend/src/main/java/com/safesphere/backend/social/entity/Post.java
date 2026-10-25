@@ -5,6 +5,7 @@ import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.entity.PostEnums.CommentPolicy;
 import com.safesphere.backend.social.entity.PostEnums.Daypart;
 import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.PostEnums.ModerationSource;
 import com.safesphere.backend.social.entity.PostEnums.ModerationState;
 import com.safesphere.backend.social.entity.PostEnums.PostType;
 import com.safesphere.backend.social.entity.PostEnums.Precision;
@@ -103,6 +104,17 @@ public class Post {
     @Column(name = "moderation_decision", length = 36)
     private String moderationDecision;
 
+    // Phase 13E (V24): who set the state, the flagged phrases of an automatic state, and strong language (anyone sees it).
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moderation_source", length = 9)
+    private ModerationSource moderationSource;
+
+    @Column(name = "moderation_spans", length = 200)
+    private String moderationSpans;
+
+    @Column(name = "strong_language", nullable = false)
+    private boolean strongLanguage;
+
     /** A case about this post is open: an edit keeps the earlier text for the moderator (Q7). Never shown. */
     @Column(name = "in_review", nullable = false)
     private boolean inReview;
@@ -158,6 +170,38 @@ public class Post {
         this.moderation = state;
         this.moderationReason = state == ModerationState.NONE ? null : reason;
         this.moderationDecision = state == ModerationState.NONE ? null : decision;
+        this.moderationSource = ModerationSource.of(state, decision);
+        this.moderationSpans = null;
+    }
+
+    /**
+     * Phase 13E: a state set by the automatic check (COLLAPSED or HELD with a reason, or NONE when it found nothing).
+     * [spans] = the flagged phrases as code-point offsets "start-end,…" (null when none). Written by the moderation
+     * package only, and only over NONE or an earlier SYSTEM state (never over reports or a moderator).
+     */
+    public void moderateBySystem(ModerationState state, ModerationReason reason, String spans) {
+        if (state == ModerationState.REMOVED) throw new IllegalArgumentException("the system never removes");
+        this.moderation = state;
+        this.moderationReason = state == ModerationState.NONE ? null : reason;
+        this.moderationDecision = null;
+        this.moderationSource = state == ModerationState.NONE ? null : ModerationSource.SYSTEM;
+        this.moderationSpans = state == ModerationState.NONE ? null : spans;
+    }
+
+    public void setStrongLanguage(boolean strongLanguage) {
+        this.strongLanguage = strongLanguage;
+    }
+
+    public ModerationSource getModerationSource() {
+        return moderationSource;
+    }
+
+    public String getModerationSpans() {
+        return moderationSpans;
+    }
+
+    public boolean isStrongLanguage() {
+        return strongLanguage;
     }
 
     public void setInReview(boolean inReview) {

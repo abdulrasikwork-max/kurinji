@@ -22,8 +22,9 @@ import org.junit.jupiter.api.Test;
  *   - nothing that decides what people see (intelligence, the community policies) reads a counter: measurement can
  *     never feed back into a picture, a confidence or a threshold by itself;
  *   - it schedules nothing, sends nothing and calls nothing outside the server;
- *   - V15 has no column that could hold a person, a place or an address, and its CHECKs keep cells and ids out;
- *   - no machine-learning runtime anywhere in the backend (NoMlRuntimeTest of the design).
+ *   - V15 has no column that could hold a person, a place or an address, and its CHECKs keep cells and ids out.
+ * (Until Phase 13E it also checked "no machine-learning runtime in the backend"; that rule now lives, unchanged for the
+ * backend, in moderation/assessment/ModelPlacesTest.)
  */
 class EvaluationIsolationTest {
 
@@ -125,14 +126,8 @@ class EvaluationIsolationTest {
         assertTrue(table.contains("occurrences >= 0"));
     }
 
-    @Test
-    void noMachineLearningRuntime_inTheBackend() throws IOException {
-        String pom = Files.readString(Path.of("pom.xml")).toLowerCase(Locale.ROOT);
-        for (String runtime : new String[] {"tensorflow", "onnx", "djl", "tribuo", "smile", "weka", "pytorch",
-                "deeplearning4j", "xgboost", "lightgbm", "openai", "anthropic", "langchain"}) {
-            assertFalse(pom.contains(runtime), "no ML runtime or AI API: " + runtime);
-        }
-    }
+    // Phase 13E (D2): the "no machine-learning runtime in the backend" check moved to ModelPlacesTest, which pins exactly
+    // where a model may run (the Python moderation service; the plain-Kotlin linear model on the phone).
 
     private static void scan(Path root, Pattern forbidden, List<String> violations) throws IOException {
         if (!Files.exists(root)) return;

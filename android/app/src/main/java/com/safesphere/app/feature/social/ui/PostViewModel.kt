@@ -42,11 +42,21 @@ data class PostUiState(
     /** Phase 13D: the viewer tapped "Show it" on a collapsed post (kept only on this screen). */
     val revealed: Boolean = false,
     /** Phase 13D: the collapsed perspectives the viewer chose to show. */
-    val revealedPerspectives: Set<String> = emptySet()
+    val revealedPerspectives: Set<String> = emptySet(),
+    /** Phase 13E (E20): the viewer chose "Collapse strong language" (their own setting, on this phone). */
+    val strongLanguageFilter: Boolean = false
 ) {
-    /** Phase 13D: someone else's post that stays behind a tap until the viewer chooses to see it. */
+    /**
+     * Phase 13D: someone else's post that stays behind a tap until the viewer chooses to see it. 13E: also when it has
+     * strong language and the viewer asked for that.
+     */
     val showCollapsed: Boolean
-        get() = post?.collapsed != null && !revealed
+        get() = post?.let { !it.own && (it.collapsed != null || (strongLanguageFilter && it.strongLanguage)) } == true &&
+            !revealed
+
+    /** Phase 13E: whether one perspective stays behind a tap (moderation, or strong language with the setting on). */
+    fun perspectiveCollapsed(p: Perspective): Boolean =
+        !p.own && (p.collapsed != null || (strongLanguageFilter && p.strongLanguage)) && p.publicId !in revealedPerspectives
 
     /** The top-level kinds that fit the post: Been here too / Question on an Experience, Answer / Question on an Ask. */
     val kinds: List<CommentKind>
@@ -125,6 +135,9 @@ class PostViewModel(
         if (!p.canApprove) return
         act { (repository.approvePerspective(p.publicId) as? ApiResult.Failure) }
     }
+
+    /** Phase 13E: the viewer's "Collapse strong language" setting (read from this phone by the screen). */
+    fun onStrongLanguageFilter(on: Boolean) = _uiState.update { it.copy(strongLanguageFilter = on) }
 
     /** Phase 13D: "Show it" on a collapsed post or perspective; only this screen remembers it. */
     fun onReveal() = _uiState.update { it.copy(revealed = true) }

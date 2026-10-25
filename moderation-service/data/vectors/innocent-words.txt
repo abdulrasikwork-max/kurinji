@@ -1,0 +1,36 @@
+# Everyday words that must never produce a scored hit on their own (tests/test_lexicon.py, the Android twin).
+# English
+the a an and or but if then so to of in on at by for with from up down out over under about into than too very
+is are was were be been being am do does did done have has had having will would can could should may might must
+i me my mine we us our they them their it its this that these those there here where when what which who whom why how
+not no yes all any some many much more most few less least other another each every both either neither
+go goes went gone come came get got make made take took give gave see saw seen know knew think thought say said
+tell told ask asked feel felt try tried leave left call called keep kept let put mean meant need want look looked
+good great nice fine bad big small long short high low old new young early late best better worse first last next
+place places shop shops food tea coffee juice beach temple church mosque park road street bus train metro auto
+morning afternoon evening night today tomorrow yesterday week weekend month year time hour minute
+friendly staff owner waiter crowd crowded quiet clean dirty safe busy open closed cheap costly price prices rate menu
+dog dogs cat cow goat pig chicken mutton fish rice curry dosa idli vada sambar chutney biryani parotta pongal
+pant pants punt sit sitting pits tick tickets ticket pitch kick kicked dirt sunny sunday kutty pass sun fun hot cool
+hell hello hey hi bye please thanks thank sorry welcome okay ok cute sweet lovely amazing awesome super
+music song songs dance movie film theatre book books story stories photo photos picture view views sunset sunrise
+water rain sea river hill hills lake trek trekking walk walking ride cycling swimming climbing camping
+girl girls boy boys man men woman women people friend friends family mother father sister brother child children
+kill killed killing die died dead death suicide point rape case acid attack police station report reported warning
+fight fighting beat beaten slap slapped cut cutting knife gun shot shoot shooting bomb fire burn burning
+number phone address house home location insta whatsapp email contact
+gay pride trans dalit muslim christian hindu jain sikh community caste religion festival culture
+# Tanglish
+nalla sema mass super vera level semma romba konjam kammi athigam inga anga enga eppo epdi enna yen illa illai
+iruku irukku irunthuchu vandhen ponen poren varen paaren saapitten saapadu sapadu thanni tea kaapi juice
+panni pannunga pannren pannalam panniten panniruken panna ponga vaanga vanga po vaa sollu sollunga
+kutty kuttys paattu paadu paadunga paatu kuthu kuthu-song naai naaigal pani panikalam vettu vettunga
+aval upma podi idli-podi kaaram uppu sakkarai ponnu payyan amma appa akka anna thambi thangachi paati thatha
+ombadhu ombadhu-mani pathu nooru aayiram oru rendu moonu naalu anju aaru ezhu ettu
+kovil theru kadai hotel mess beach-la kadal malai aaru kulam veedu ooru nagaram
+sappadu thoongu thookam kanavu kadhal anbu santhosam kashtam bayam dhairiyam
+loose sunny sunni-islam
+# Tamil script
+நல்ல செம்ம சூப்பர் ரொம்ப கொஞ்சம் இங்க அங்க எங்க என்ன இல்ல இருக்கு வந்தேன் போனேன் சாப்பாடு தண்ணி
+நாய் பன்னி பண்ணி பண்ணுங்க குட்டி பாட்டு பாடு குத்து வெட்டு பனி அவல் பொடி அம்மா அப்பா அக்கா அண்ணா
+கோவில் தெரு கடை கடல் மலை வீடு ஊர் பாதுகாப்பு காவல் நிலையம் ஒன்பது பத்து

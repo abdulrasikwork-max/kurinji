@@ -45,11 +45,26 @@ public final class PostEnums {
 
     /**
      * Phase 13D (V23): why something was reported or decided (EXPERIENCE_PLATFORM_DESIGN.md §7.3). Reports use every code
-     * but NEEDS_REVIEW; IMPERSONATION fits people only; OTHER needs a short note from the reporter.
+     * but NEEDS_REVIEW and AWAITING_CHECK; IMPERSONATION fits people only; OTHER needs a short note from the reporter.
+     * Phase 13E (V24): AWAITING_CHECK = a new account's post waits for the automatic check (at most 2 hours).
      */
     public enum ModerationReason {
         HARASSMENT, SEXUAL_HARASSMENT, HATE, THREAT, DOXXING, SPAM, NUDITY_OR_VIOLENCE, IMPERSONATION, OTHER,
-        NEEDS_REVIEW
+        NEEDS_REVIEW, AWAITING_CHECK
+    }
+
+    /**
+     * Phase 13E (V24): who set a moderation state (null while NONE). REPORTS = a collapse by independent reports while a
+     * moderator looks; SYSTEM = the automatic check (collapsed or held, never removed); MODERATOR = a human decision.
+     */
+    public enum ModerationSource {
+        REPORTS, SYSTEM, MODERATOR;
+
+        /** The source of a state set by reports (no decision) or by a moderator (a decision id); null for NONE. */
+        public static ModerationSource of(ModerationState state, String decision) {
+            if (state == ModerationState.NONE) return null;
+            return decision == null ? REPORTS : MODERATOR;
+        }
     }
 
     /** Q2: the launch cities (D5) and Other. Free text would split one city into many spellings. */

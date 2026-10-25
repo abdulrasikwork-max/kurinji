@@ -1,4 +1,37 @@
-# Handoff: Phase 13D moderation v2 done (2026-10-24/25)
+# Handoff: Phase 13E AI v1 done (2026-10-25) — committed locally, NOT pushed
+
+**13E implemented, compiled, tested, verified** (`docs/PHASE13E.md`; plan `PHASE13E_PLAN.md`, choices E1–E30 decided
+under the user's delegation): a Python moderation service (`moderation-service/`, standard library only, internal, never
+logs text) gives evidence from the norm-1 normaliser, a hashed Tamil / Tanglish / English lexicon (lex-1) and context
+rules; the backend's pure `DecisionPolicy` (policy-1) decides publish / publish collapsed / hold for a moderator; the
+machine never removes anything or restricts anyone; an outage publishes (new accounts wait at most 2 h); self-harm only
+ever shows a support line (Tele-MANAS 14416) and is never stored; the phone runs the same rules in plain Kotlin for a
+private nudge before sharing. The rung-2 linear model is built in Python and Kotlin but OFF: **no model ships** (no D3
+dataset). `NoMlRuntimeTest` / the ML check of `EvaluationIsolationTest` are replaced by `ModelPlacesTest`.
+- **Results:** backend **725 run / 0 failures** (2 skipped; 13D 694); Android **677 / 0** (13D 657); lint **0 / 54**
+  (fresh run); Python **37 / 37**; Kotlin = Python on every shared vector; V24 dry run **59/59 + 19/19**, applied
+  (dev DB **v24**, next **V25**); live MySQL with the real service **28/28** (first run 22/28: script faults, disclosed);
+  emulator (API 37) **E1–E8 PASS**.
+- **Rule evaluation (developer challenge set, not a D3 dataset):** held-out part B before fixes: collapse/hold precision
+  1.00, recall 0.88, holds 1.00 / 0.79, 0 false actions on 31 banter / counter-speech / identity / safety / profanity
+  items; the normaliser cuts obfuscation attack success from 0.91–1.00 to 0.00–0.09 (spacing 0.24).
+- **Found and fixed:** the author's answer said `source: REPORTS` (would reveal reports, 13D M4); list rows showed a
+  collapsed post's words (since 13D); a system case was headed "A guideline"; several Tanglish/English key collisions
+  (dei/the, un/on, vaada/vada, koothi/kutty, baadu/paattu, Niger).
+- **`moderation-service/restricted/` is git-ignored** (user's decision before pushing): the readable slur lexicon and
+  the abusive test sentences stay on this machine (back them up privately); only the folder's README is in git. A clone
+  without them works and its tests skip what needs them. They were never in any commit of the branch.
+- **To run the check locally:** Python 3.10+ (none on PATH here), `MODERATION_SERVICE_KEY` (16+ chars) for both the
+  service (`python -E -s -m kurinji_moderation.server`) and the backend (`backend/.env`); without a key the backend
+  publishes unchecked and says so.
+- **NOT VERIFIED:** real phone, TalkBack speech, dark mode, 320 dp / large fonts; any real-world precision (needs a
+  pilot and `AI_REVIEWED` counts); the lexicon's review by ≥ 2 native speakers (required before any pilot).
+- **State left:** backend, service and emulator stopped, `adb reverse` removed, app data cleared, all `live13e.*` /
+  `emu13e.*` accounts deleted (170 users as before), test counters removed; no key or password left in files.
+- **Next:** the user's review of 13E (and the restricted-folder decision); then 13F (new UI and navigation) or 13R
+  (dataset: annotation guideline, licence checks, ≥ 2 annotators) to unlock rung 2.
+
+---# Handoff: Phase 13D moderation v2 done (2026-10-24/25)
 
 **13D implemented, compiled, tested, verified** (`docs/PHASE13D.md`; plan `PHASE13D_PLAN.md`, choices M1–M20 decided
 under the user's delegation): reports on posts, perspectives and people (closed reasons; the reported person observes

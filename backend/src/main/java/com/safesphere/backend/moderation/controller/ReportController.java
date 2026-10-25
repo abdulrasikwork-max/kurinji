@@ -1,6 +1,8 @@
 package com.safesphere.backend.moderation.controller;
 
+import com.safesphere.backend.moderation.assessment.AssessmentService;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.AppealAccepted;
+import com.safesphere.backend.moderation.dto.ContentModerationDtos.ReviewRequest;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.MyReport;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.ReportReceived;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.ReportRequest;
@@ -29,10 +31,13 @@ public class ReportController {
 
     private final ReportService reports;
     private final ContentModerationService moderation;
+    private final AssessmentService assessments;
 
-    public ReportController(ReportService reports, ContentModerationService moderation) {
+    public ReportController(ReportService reports, ContentModerationService moderation,
+                            AssessmentService assessments) {
         this.reports = reports;
         this.moderation = moderation;
+        this.assessments = assessments;
     }
 
     /** 202 with the same answer whether new or already reported (M4: nothing to learn from it). */
@@ -56,5 +61,16 @@ public class ReportController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     public AppealAccepted appeal(@AuthenticationPrincipal Jwt jwt, @PathVariable String decisionId) {
         return moderation.appeal(CurrentUser.id(jwt), decisionId);
+    }
+
+    /**
+     * Phase 13E: "Ask for a review" of one's own post or perspective that the automatic check collapsed or held. 202,
+     * the same answer whether a case already existed or not.
+     */
+    @PostMapping("/api/content-checks/review")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ReportReceived review(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ReviewRequest request) {
+        assessments.requestReview(CurrentUser.id(jwt), request.targetKind(), request.targetId());
+        return new ReportReceived("RECEIVED");
     }
 }

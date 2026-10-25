@@ -56,7 +56,7 @@ public final class ReportPolicy {
         return switch (reason) {
             case THREAT, SEXUAL_HARASSMENT, HATE, DOXXING -> 3;
             case HARASSMENT, NUDITY_OR_VIOLENCE, IMPERSONATION -> 2;
-            case SPAM, OTHER, NEEDS_REVIEW -> 1;
+            case SPAM, OTHER, NEEDS_REVIEW, AWAITING_CHECK -> 1;
         };
     }
 

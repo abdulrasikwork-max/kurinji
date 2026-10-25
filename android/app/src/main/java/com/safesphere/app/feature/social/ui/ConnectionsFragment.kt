@@ -12,6 +12,7 @@ import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
@@ -27,6 +28,7 @@ import com.safesphere.app.feature.social.domain.PauseLevel
 import com.safesphere.app.feature.social.domain.NewInvite
 import com.safesphere.app.feature.social.domain.PersonSummary
 import com.safesphere.app.feature.social.domain.RequestItem
+import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -70,6 +72,14 @@ class ConnectionsFragment : ViewBindingFragment<FragmentConnectionsBinding>(Frag
         binding.redeemInput.doAfterTextChanged { viewModel.onCodeTyped() }
         binding.myReportsButton.setOnClickListener { findNavController().navigate(R.id.myReportsFragment) }
         binding.guidelinesButton.setOnClickListener { findNavController().navigate(R.id.guidelinesFragment) }
+        // Phase 13E (E20): the viewer's own choice, on this phone only.
+        val preferences = appContainer.viewerPreferences
+        collectWhenStarted(preferences.collapseStrongLanguage) { on ->
+            if (binding.strongLanguageSwitch.isChecked != on) binding.strongLanguageSwitch.isChecked = on
+        }
+        binding.strongLanguageSwitch.setOnCheckedChangeListener { button, on ->
+            if (button.isPressed) viewLifecycleOwner.lifecycleScope.launch { preferences.setCollapseStrongLanguage(on) }
+        }
 
         collectWhenStarted(viewModel.uiState, ::render)
         collectWhenStarted(reports.uiState, ::renderStanding)

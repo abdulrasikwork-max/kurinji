@@ -11,6 +11,7 @@ import com.safesphere.backend.social.dto.PostDtos.PostPage;
 import com.safesphere.backend.social.dto.PostDtos.PostPlace;
 import com.safesphere.backend.social.dto.PostDtos.PostRequest;
 import com.safesphere.backend.social.dto.PostDtos.PostResponse;
+import com.safesphere.backend.social.dto.PostDtos.Span;
 import com.safesphere.backend.social.entity.Butterfly;
 import com.safesphere.backend.social.entity.Place;
 import com.safesphere.backend.social.entity.Post;
@@ -20,12 +21,14 @@ import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.entity.PostEnums.CommentPolicy;
 import com.safesphere.backend.social.entity.PostEnums.Daypart;
 import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.PostEnums.ModerationSource;
 import com.safesphere.backend.social.entity.PostEnums.ModerationState;
 import com.safesphere.backend.social.entity.PostEnums.PostType;
 import com.safesphere.backend.social.entity.PostEnums.Precision;
 import com.safesphere.backend.social.entity.PostMedia;
 import com.safesphere.backend.social.entity.PostRevision;
 import com.safesphere.backend.social.entity.Profile;
+import com.safesphere.backend.social.event.ContentWritten;
 import com.safesphere.backend.social.media.MediaStorage;
 import com.safesphere.backend.social.policy.ButterflyTally;
 import com.safesphere.backend.social.policy.PostDelay;
@@ -59,6 +62,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -100,6 +104,7 @@ public class PostService {
     private final SocialProperties properties;
     private final MediaStorage storage;
     private final PostRevisionRepository revisions;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
     private final SecureRandom random = new SecureRandom();
 
@@ -107,8 +112,9 @@ public class PostService {
                        ButterflyRepository butterflies, PlaceService placeService, PlaceRepository places, ProfileRepository profiles,
                        ProfileService profileService, Relationships relationships, SocialAccess access,
                        SocialLimits limits, SocialProperties properties, MediaStorage storage,
-                       PostRevisionRepository revisions, Clock clock) {
+                       PostRevisionRepository revisions, ApplicationEventPublisher events, Clock clock) {
         this.revisions = revisions;
+        this.events = events;
         this.posts = posts;
         this.mediaRows = mediaRows;
         this.comments = comments;
@@ -166,7 +172,8 @@ public class PostService {
         post.setApproveFirst(approveFirst);
         posts.saveAndFlush(post);
         attach(userId, post, mediaIds);
-        return respond(userId, List.of(post), now).get(0);
+        boolean support = checkWords(post, user);
+        return respond(userId, List.of(post), now).get(0).withSupport(support);
     }
 
     @Transactional(readOnly = true)
@@ -243,7 +250,9 @@ public class PostService {
         post.setSharing(audience, commentPolicy);
         post.markEdited(now);
         posts.saveAndFlush(post);
-        return respond(userId, List.of(post), now).get(0);
+        // Phase 13E (E14): new words are checked again ("post clean, then edit" must not slip through).
+        boolean support = textChanged && checkWords(post, user);
+        return respond(userId, List.of(post), now).get(0).withSupport(support);
     }
 
     @Transactional
@@ -387,26 +396,57 @@ public class PostService {
                     yours.containsKey(post.getId()) ? yours.get(post.getId()).name() : null,
                     showsTally(viewerId, post) ? ButterflyTally.of(counts.getOrDefault(post.getId(), 0L)) : null,
                     post.isApproveFirst(),
-                    own ? moderationView(post.getModeration(), post.getModerationReason(), post.getModerationDecision())
-                            : null,
-                    own ? null : collapsed(post.getModeration(), post.getModerationDecision())));
+                    own ? moderationView(post.getModeration(), post.getModerationReason(), post.getModerationDecision(),
+                            post.getModerationSource(), post.getModerationSpans()) : null,
+                    own ? null : collapsed(post.getModeration(), post.getModerationSource()),
+                    post.isStrongLanguage(), null));
         }
         return out;
     }
 
-    /** Phase 13D: the author's view of a moderation state (null when nothing happened). */
-    static ModerationView moderationView(ModerationState state, ModerationReason reason, String decision) {
+    /**
+     * Phase 13D: the author's view of a moderation state (null when nothing happened). 13E adds who set it, SYSTEM or
+     * MODERATOR only: a collapse by reports has NO source in the author's answer (13D M4: nothing the author sees may
+     * say that a report exists; found by ReportApiIntegrationTest), and, for the automatic check, the flagged phrases.
+     */
+    static ModerationView moderationView(ModerationState state, ModerationReason reason, String decision,
+                                         ModerationSource source, String spans) {
         if (state == ModerationState.NONE) return null;
-        return new ModerationView(state.name(), reason == null ? null : reason.name(), decision);
+        String by = source == ModerationSource.SYSTEM || source == ModerationSource.MODERATOR ? source.name() : null;
+        return new ModerationView(state.name(), reason == null ? null : reason.name(), decision, by,
+                source == ModerationSource.SYSTEM ? spans(spans) : List.of());
+    }
+
+    /** "start-end,start-end" -> spans (the V24 CHECK keeps the column in exactly this shape). */
+    static List<Span> spans(String encoded) {
+        if (encoded == null || encoded.isBlank()) return List.of();
+        List<Span> out = new ArrayList<>();
+        for (String part : encoded.split(",")) {
+            String[] ends = part.split("-");
+            out.add(new Span(Integer.parseInt(ends[0]), Integer.parseInt(ends[1])));
+        }
+        return out;
     }
 
     /**
-     * Phase 13D: what everyone else learns: whether it is collapsed, and whether a moderator decided that (no reason,
-     * nothing about reports). Held and removed content never reaches them (Visibility).
+     * Phase 13D: what everyone else learns: whether it is collapsed, and who decided that (no reason, nothing about
+     * reports). 13E: BY_SYSTEM when the automatic check collapsed it. Held and removed content never reaches them.
      */
-    static String collapsed(ModerationState state, String decision) {
+    static String collapsed(ModerationState state, ModerationSource source) {
         if (state != ModerationState.COLLAPSED) return null;
-        return decision == null ? "UNDER_REVIEW" : "BY_MODERATOR";
+        if (source == ModerationSource.SYSTEM) return "BY_SYSTEM";
+        return source == ModerationSource.MODERATOR ? "BY_MODERATOR" : "UNDER_REVIEW";
+    }
+
+    /** Phase 13E (E6, E13): the automatic check hears of every write someone else can see (never an only-me post). */
+    private boolean checkWords(Post post, User author) {
+        if (post.getAudience() == Audience.ONLY_ME) return false;
+        boolean photos = post.getAudience() == Audience.EVERYONE && !mediaRows.findByPostIdOrderBySortOrderAsc(
+                post.getId()).isEmpty();
+        ContentWritten written = new ContentWritten(ContentWritten.Kind.POST, post.getId(), post.getAuthorId(),
+                access.onProbation(author), photos, ContentWritten.postText(post.getBody(), post.getTip()));
+        events.publishEvent(written);
+        return written.supportSuggested();
     }
 
     /** Q6: "approve first" needs "Everyone can add perspectives"; [current] when the request leaves it unchanged. */

@@ -6,6 +6,7 @@ import com.safesphere.app.feature.social.domain.ButterflyTally
 import com.safesphere.app.feature.social.domain.City
 import com.safesphere.app.feature.social.domain.Collapsed
 import com.safesphere.app.feature.social.domain.ModerationReason
+import com.safesphere.app.feature.social.domain.ModerationSource
 import com.safesphere.app.feature.social.domain.ModerationState
 import com.safesphere.app.feature.social.domain.OwnModeration
 import com.safesphere.app.feature.social.domain.CommentKind
@@ -135,7 +136,8 @@ data class PostDto(
     val butterflies: ButterflyTallyDto? = null,
     val approveFirst: Boolean? = null,
     val moderation: ModerationViewDto? = null,
-    val collapsed: String? = null
+    val collapsed: String? = null,
+    val strongLanguage: Boolean? = null
 ) {
     fun toDomain(): Post? {
         val author = author?.let { a ->
@@ -172,7 +174,8 @@ data class PostDto(
             placeId = if (precision == Precision.EXACT.name) place?.publicId else null,
             approveFirst = approveFirst == true,
             ownModeration = if (own == true) moderation?.toDomain() else null,
-            collapsed = if (own == true) null else collapsedOf(collapsed)
+            collapsed = if (own == true) null else collapsedOf(collapsed),
+            strongLanguage = strongLanguage == true
         )
     }
 
@@ -183,11 +186,32 @@ data class PostDto(
  * Phase 13D: what happened to one's own post or perspective. FAILS CLOSED: an unknown state reads as HELD (the most
  * careful notice: "hidden while a moderator looks"), an unknown reason as none.
  */
-data class ModerationViewDto(val state: String? = null, val reason: String? = null, val decisionId: String? = null) {
+data class ModerationViewDto(
+    val state: String? = null,
+    val reason: String? = null,
+    val decisionId: String? = null,
+    val source: String? = null,
+    val flagged: List<SpanDto>? = null
+) {
+    /**
+     * Phase 13E: an unknown or missing source reads as MODERATOR (the 13D words, no phrase); flagged phrases only for
+     * the automatic check, and only well-formed ones.
+     */
     fun toDomain(): OwnModeration? {
         if (state == null) return null
+        val by = enumOrNull<ModerationSource>(source) ?: ModerationSource.MODERATOR
         return OwnModeration(enumOrNull<ModerationState>(state) ?: ModerationState.HELD,
-            enumOrNull<ModerationReason>(reason), decisionId)
+            enumOrNull<ModerationReason>(reason), decisionId, by,
+            if (by == ModerationSource.SYSTEM) flagged.orEmpty().mapNotNull { it.toRange() } else emptyList())
+    }
+}
+
+/** Phase 13E: a flagged phrase as code points [start, end) of one's own text. */
+data class SpanDto(val start: Int? = null, val end: Int? = null) {
+    fun toRange(): IntRange? {
+        val s = start ?: return null
+        val e = end ?: return null
+        return if (s in 0 until e) s until e else null
     }
 }
 
@@ -221,7 +245,8 @@ data class CommentDto(
     val awaitingApproval: Boolean? = null,
     val canApprove: Boolean? = null,
     val moderation: ModerationViewDto? = null,
-    val collapsed: String? = null
+    val collapsed: String? = null,
+    val strongLanguage: Boolean? = null
 ) {
     /** An unknown kind is dropped (it may need words this app does not have). */
     fun toDomain(): Perspective? {
@@ -244,7 +269,8 @@ data class CommentDto(
             awaitingApproval = awaitingApproval == true,
             canApprove = canApprove == true && awaitingApproval == true,
             ownModeration = if (own == true) moderation?.toDomain() else null,
-            collapsed = if (own == true) null else collapsedOf(collapsed)
+            collapsed = if (own == true) null else collapsedOf(collapsed),
+            strongLanguage = strongLanguage == true
         )
     }
 }

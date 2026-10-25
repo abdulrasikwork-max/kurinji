@@ -10,6 +10,7 @@ import com.safesphere.backend.social.entity.Post;
 import com.safesphere.backend.social.entity.PostEnums.CommentKind;
 import com.safesphere.backend.social.entity.PostEnums.PostType;
 import com.safesphere.backend.social.entity.Profile;
+import com.safesphere.backend.social.event.ContentWritten;
 import com.safesphere.backend.social.policy.PostPolicy;
 import com.safesphere.backend.social.policy.TimeBands;
 import com.safesphere.backend.social.policy.Visibility;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,11 +54,13 @@ public class CommentService {
     private final Relationships relationships;
     private final SocialAccess access;
     private final SocialLimits limits;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     public CommentService(CommentRepository comments, PostRepository posts, PostService postService,
                           ProfileRepository profiles, Relationships relationships, SocialAccess access,
-                          SocialLimits limits, Clock clock) {
+                          SocialLimits limits, ApplicationEventPublisher events, Clock clock) {
+        this.events = events;
         this.comments = comments;
         this.posts = posts;
         this.postService = postService;
@@ -139,11 +143,20 @@ public class CommentService {
         draft.setAwaitingApproval(post.isApproveFirst() && post.getAuthorId() != userId
                 && !relationships.connected(userId, post.getAuthorId()));
         Comment comment = comments.saveAndFlush(draft);
+        // Phase 13E (E6): the automatic check may collapse or hold it before anyone sees it.
+        ContentWritten written = new ContentWritten(ContentWritten.Kind.COMMENT, comment.getId(), userId, probation,
+                false, comment.getBody());
+        events.publishEvent(written);
         Map<Long, Profile> authors = profiles.findByUserIdIn(List.of(userId)).stream()
                 .collect(Collectors.toMap(Profile::getUserId, Function.identity()));
         Map<Long, String> publicIds = new HashMap<>();
         if (parentId != null) publicIds.put(parentId, request.parentId());
-        return respond(userId, post, comment, authors, publicIds, now);
+        CommentResponse answer = respond(userId, post, comment, authors, publicIds, now);
+        if (!written.supportSuggested()) return answer;
+        return new CommentResponse(answer.publicId(), answer.kind(), answer.author(), answer.own(), answer.body(),
+                answer.postedPeriod(), answer.hidden(), answer.helped(), answer.parentId(), answer.canHide(),
+                answer.canMarkHelped(), answer.awaitingApproval(), answer.canApprove(), answer.moderation(),
+                answer.collapsed(), answer.strongLanguage(), Boolean.TRUE);
     }
 
     /** Its writer deletes it (with the replies under it). */
@@ -233,9 +246,10 @@ public class CommentService {
                 c.getParentId() == null ? null : publicIds.get(c.getParentId()), postAuthor,
                 postAuthor && post.getType() == PostType.ASK && c.getKind() == CommentKind.ANSWER,
                 awaiting, awaiting && postAuthor && !own,
-                own ? PostService.moderationView(c.getModeration(), c.getModerationReason(), c.getModerationDecision())
-                        : null,
-                own ? null : PostService.collapsed(c.getModeration(), c.getModerationDecision()));
+                own ? PostService.moderationView(c.getModeration(), c.getModerationReason(), c.getModerationDecision(),
+                        c.getModerationSource(), c.getModerationSpans()) : null,
+                own ? null : PostService.collapsed(c.getModeration(), c.getModerationSource()),
+                c.isStrongLanguage(), null);
     }
 
     private LocalDateTime now() {

@@ -7,6 +7,7 @@ import com.safesphere.backend.common.exception.ResourceNotFoundException;
 import com.safesphere.backend.community.service.GeoCell;
 import com.safesphere.backend.community.service.Independence;
 import com.safesphere.backend.config.ModerationProperties;
+import com.safesphere.backend.moderation.assessment.AssessmentService;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.AppealAccepted;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.AppealView;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.AuthorView;
@@ -43,6 +44,7 @@ import com.safesphere.backend.social.entity.Comment;
 import com.safesphere.backend.social.entity.Place;
 import com.safesphere.backend.social.entity.Post;
 import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.PostEnums.ModerationSource;
 import com.safesphere.backend.social.entity.PostEnums.ModerationState;
 import com.safesphere.backend.social.entity.PostEnums.Precision;
 import com.safesphere.backend.social.entity.PostMedia;
@@ -141,6 +143,7 @@ public class ContentModerationService {
     private final UserRepository users;
     private final CaseRefs refs;
     private final ModerationProperties properties;
+    private final AssessmentService assessmentService;
     private final Clock clock;
 
     public ContentModerationService(ModerationService moderation, ReportService reportService,
@@ -151,7 +154,9 @@ public class ContentModerationService {
                                     PostMediaRepository mediaRows, MediaStorage mediaStorage, PlaceRepository places,
                                     ProfileRepository profiles, SocialStandingRepository standings,
                                     SocialAccess access, UserRepository users, CaseRefs refs,
-                                    ModerationProperties properties, Clock clock) {
+                                    ModerationProperties properties, AssessmentService assessmentService,
+                                    Clock clock) {
+        this.assessmentService = assessmentService;
         this.moderation = moderation;
         this.reportService = reportService;
         this.cases = cases;
@@ -220,6 +225,8 @@ public class ContentModerationService {
         ContentCase c = l.c;
         Restriction pause = pauseOf(action);
         LocalDateTime until = pause == null ? null : now.plus(stepOf(action).length());
+        // Phase 13E (E27): a decision about content the automatic check had collapsed or held is counted.
+        ModerationState systemState = l.contentSource() == ModerationSource.SYSTEM ? l.contentState() : null;
         ModerationAction entry = ModerationAction.social(moderatorId, action, reason, c.getPublicId(),
                 c.getTargetKind(), l.subjectId, until, now);
         String decision = entry.getPublicId();
@@ -250,6 +257,7 @@ public class ContentModerationService {
         actions.saveAndFlush(entry);
         if (strike) strikes.save(new SocialStrike(l.subjectId, why, StrikePolicy.weight(why), decision, now));
         cases.saveAndFlush(c);
+        if (systemState != null && CONTENT_ACTIONS.contains(action)) assessmentService.reviewed(c, systemState, action);
         return detail(load(c), moderatorId, now);
     }
 
@@ -456,6 +464,20 @@ public class ContentModerationService {
             if (c.getTargetKind() == TargetKind.COMMENT) return comment.getModeration();
             return null;
         }
+
+        /** Phase 13E: the content's own moderation reason (null for a person or while NONE; never AWAITING_CHECK). */
+        ModerationReason contentReason() {
+            ModerationReason reason = c.getTargetKind() == TargetKind.POST ? post.getModerationReason()
+                    : c.getTargetKind() == TargetKind.COMMENT ? comment.getModerationReason() : null;
+            return reason == ModerationReason.AWAITING_CHECK ? null : reason;
+        }
+
+        /** Phase 13E: who set the content's state (null for a person, or while NONE). */
+        ModerationSource contentSource() {
+            if (c.getTargetKind() == TargetKind.POST) return post.getModerationSource();
+            if (c.getTargetKind() == TargetKind.COMMENT) return comment.getModerationSource();
+            return null;
+        }
     }
 
     private Loaded load(ContentCase c) {
@@ -494,11 +516,15 @@ public class ContentModerationService {
         ModerationReason top = tally.topReason() != null ? tally.topReason() : l.caseReports.stream()
                 .map(ContentReport::getReason)
                 .max(Comparator.comparingInt(ReportPolicy::severity)).orElse(null);
+        // Phase 13E (emulator finding): a case the automatic check or the author opened has no report: it says why the
+        // content was collapsed or held (else the headline read "A guideline").
+        if (top == null) top = l.contentReason();
         return new CaseSummary(l.c.getPublicId(), l.c.getTargetKind().name(), l.c.getStatus().name(),
                 l.c.getOutcome() == null ? null : l.c.getOutcome().name(), l.c.getOpenedAt().toLocalDate(),
                 top == null ? null : top.name(), reasons, tally.counting(),
                 tally.independent(), state == null ? null : state.name(), ReportPolicy.priority(tally),
-                l.tookPart(moderatorId));
+                l.tookPart(moderatorId), l.c.getOrigin().name(),
+                l.contentSource() == null ? null : l.contentSource().name());
     }
 
     private CaseDetail detail(Loaded l, long moderatorId, LocalDateTime now) {
@@ -545,7 +571,7 @@ public class ContentModerationService {
                         a.getOccurredAt().toLocalDate(), a.getActorId() == moderatorId))
                 .toList();
         return new CaseDetail(summary, content(l), history, participants, author,
-                possibleActions(l).stream().map(Enum::name).toList(), decided);
+                possibleActions(l).stream().map(Enum::name).toList(), decided, assessmentService.viewFor(l.c));
     }
 
     private ContentView content(Loaded l) {
