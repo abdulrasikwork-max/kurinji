@@ -67,6 +67,13 @@ public class User {
     @Column(name = "age_confirmed_at")
     private LocalDateTime ageConfirmedAt;
 
+    /**
+     * V25: when the person proved they control [email] (opened the verification link). Null = not verified: such an
+     * account gets no session at all. Separate from [enabled], a pending deletion, moderation standing and sessions.
+     */
+    @Column(name = "email_verified_at")
+    private LocalDateTime emailVerifiedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -162,6 +169,22 @@ public class User {
     /** Phase 13A: records that an adult date of birth was declared (checked by AgePolicy, then discarded). Kept once set. */
     public void confirmAge(LocalDateTime now) {
         if (ageConfirmedAt == null) this.ageConfirmedAt = now.truncatedTo(ChronoUnit.MICROS);
+    }
+
+    public LocalDateTime getEmailVerifiedAt() {
+        return emailVerifiedAt;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerifiedAt != null;
+    }
+
+    /** V25: the owner of [email] opened a valid verification link. Kept once set. */
+    public void markEmailVerified(LocalDateTime now) {
+        if (emailVerifiedAt != null) return;
+        // Never before created_at (V25 CHECK), even with a clock a little behind the one that stamped the row.
+        LocalDateTime at = createdAt != null && now.isBefore(createdAt) ? createdAt : now;
+        this.emailVerifiedAt = at.truncatedTo(ChronoUnit.MICROS);
     }
 
     /**

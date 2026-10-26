@@ -3,7 +3,9 @@ package com.safesphere.backend.auth.service;
 import com.safesphere.backend.auth.dto.AuthResponse;
 import com.safesphere.backend.auth.dto.LoginRequest;
 import com.safesphere.backend.auth.dto.RegisterRequest;
+import com.safesphere.backend.auth.dto.RegistrationResponse;
 import com.safesphere.backend.common.exception.EmailAlreadyUsedException;
+import com.safesphere.backend.common.exception.EmailNotVerifiedException;
 import com.safesphere.backend.common.exception.InvalidCredentialsException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.common.exception.SessionRefusedException;
@@ -44,10 +46,13 @@ public class AuthService {
     private final AuthThrottle throttle;
     private final DeviceSessionService sessions;
     private final AgeGate ageGate;
+    private final EmailVerificationService verification;
     private final Clock clock;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
-                       AuthThrottle throttle, DeviceSessionService sessions, AgeGate ageGate, Clock clock) {
+                       AuthThrottle throttle, DeviceSessionService sessions, AgeGate ageGate,
+                       EmailVerificationService verification, Clock clock) {
+        this.verification = verification;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -59,12 +64,14 @@ public class AuthService {
     }
 
     /**
-     * Creates the account, then signs the new user in by returning a token straight away.
-     * (Design choice: one fewer screen and request than "register, then log in".)
+     * Creates the account with an UNVERIFIED e-mail and sends the verification link (after commit). V25: no session and
+     * no token: the account is usable only once its owner opens the link (until Phase 15 sign-up signed in at once).
+     * An unverified account whose last link expired may be replaced by a new sign-up with the same address
+     * ([EmailVerificationService.replaceableBySignUp]); any other existing account answers 409 as before.
      * [clientAddress] is only used for the in-memory sign-up limit (Phase 7); it is never stored.
      */
     @Transactional
-    public AuthResponse register(RegisterRequest request, String clientAddress) {
+    public RegistrationResponse register(RegisterRequest request, String clientAddress) {
         throttle.checkRegistration(clientAddress);
         // Phase 13A (D6): 18+ only. The date of birth is checked here and goes no further.
         ageGate.requireAdult(request.dateOfBirth());
@@ -72,8 +79,10 @@ public class AuthService {
             throw new InvalidRequestException("Password must be at most 72 bytes long");
         }
         String email = normalizeEmail(request.email());
-        if (userRepository.existsByEmail(email)) {
-            throw new EmailAlreadyUsedException();
+        Optional<User> existing = userRepository.findByEmail(email);
+        if (existing.isPresent()) {
+            if (!verification.replaceableBySignUp(existing.get())) throw new EmailAlreadyUsedException();
+            verification.removeUnverified(existing.get());
         }
 
         User user = new User(
@@ -88,7 +97,8 @@ public class AuthService {
         } catch (DataIntegrityViolationException e) {
             throw new EmailAlreadyUsedException();
         }
-        return toResponse(user);
+        verification.issueAndSendAfterCommit(user);
+        return RegistrationResponse.verificationRequired(email);
     }
 
     /**
@@ -111,6 +121,8 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
         throttle.signInSucceeded(email);
+        // V25: the right password, but the e-mail is not proven yet: no session. Only the password holder learns this.
+        if (!found.get().isEmailVerified()) throw new EmailNotVerifiedException();
         AuthResponse response = toResponse(found.get());
         if (request.previousRefreshToken() != null) {
             // Phase 11 C1: the same phone signing in again takes over its old sign-in (and its running SOS).

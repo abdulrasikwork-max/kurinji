@@ -29,7 +29,9 @@ data class RegisterUiState(
     val confirmPasswordError: FieldError? = null,
     val isLoading: Boolean = false,
     val authError: AuthError? = null,
-    val navigateToHome: Boolean = false
+    /** V25: the account was created; its owner must open the link e-mailed to this (normalised) address first. */
+    val verificationSentTo: String? = null,
+    val resend: ResendStatus = ResendStatus.Idle
 )
 
 /**
@@ -76,15 +78,37 @@ class RegisterViewModel(
         viewModelScope.launch {
             val result = authRepository.register(fullName.trim(), email.trim(), password, dateOfBirth)
             _uiState.value = when (result) {
-                is AuthResult.Success -> RegisterUiState(navigateToHome = true)
+                is AuthResult.Success -> {
+                    // Kept in this ViewModel's memory only, for "send the email again"; cleared when the screen goes.
+                    pendingCredentials = result.data.email to password
+                    RegisterUiState(verificationSentTo = result.data.email)
+                }
                 is AuthResult.Failure -> RegisterUiState(dateOfBirth = dateOfBirth, authError = result.error)
             }
         }
     }
 
-    fun onNavigationHandled() {
-        _uiState.update { it.copy(navigateToHome = false) }
+    /** V25: a new verification e-mail for the account just created (the earlier link stops working). */
+    fun onResendVerificationClicked() {
+        val (email, password) = pendingCredentials ?: return
+        if (_uiState.value.resend == ResendStatus.Sending) return
+        _uiState.update { it.copy(resend = ResendStatus.Sending) }
+        viewModelScope.launch {
+            val status = when (val result = authRepository.resendVerification(email, password)) {
+                is AuthResult.Success -> ResendStatus.Sent
+                is AuthResult.Failure -> ResendStatus.Failed(result.error)
+            }
+            _uiState.update { it.copy(resend = status) }
+        }
     }
+
+    override fun onCleared() {
+        pendingCredentials = null
+        super.onCleared()
+    }
+
+    /** V25: (normalised e-mail, password) of the account just created; memory only, never saved or logged. */
+    private var pendingCredentials: Pair<String, String>? = null
 
     private fun dateOfBirthError(date: LocalDate?): FieldError? = when (AgePolicy.check(date, today())) {
         AgePolicy.Result.ADULT -> null

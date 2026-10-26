@@ -3,8 +3,13 @@ package com.safesphere.backend.auth.controller;
 import com.safesphere.backend.auth.dto.AuthResponse;
 import com.safesphere.backend.auth.dto.LoginRequest;
 import com.safesphere.backend.auth.dto.RefreshRequest;
+import com.safesphere.backend.auth.dto.EmailVerificationDtos.ResendVerificationRequest;
+import com.safesphere.backend.auth.dto.EmailVerificationDtos.VerificationStatus;
+import com.safesphere.backend.auth.dto.EmailVerificationDtos.VerifyEmailRequest;
 import com.safesphere.backend.auth.dto.RegisterRequest;
+import com.safesphere.backend.auth.dto.RegistrationResponse;
 import com.safesphere.backend.auth.service.AuthService;
+import com.safesphere.backend.auth.service.EmailVerificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -23,15 +28,34 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailVerificationService verification;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, EmailVerificationService verification) {
         this.authService = authService;
+        this.verification = verification;
     }
 
+    /** V25: 201 VERIFICATION_REQUIRED and no session; the account works once the e-mailed link is opened. */
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public AuthResponse register(@Valid @RequestBody RegisterRequest request, HttpServletRequest http) {
+    public RegistrationResponse register(@Valid @RequestBody RegisterRequest request, HttpServletRequest http) {
         return authService.register(request, http.getRemoteAddr());
+    }
+
+    /** V25: called by the verification page with the token from the link. 200 VERIFIED or one generic 400. */
+    @PostMapping("/verify-email")
+    public VerificationStatus verifyEmail(@Valid @RequestBody VerifyEmailRequest request, HttpServletRequest http) {
+        verification.verify(request.token(), http.getRemoteAddr());
+        return VerificationStatus.VERIFIED;
+    }
+
+    /** V25: 202 RECEIVED whatever the account's state (sends only for the right password of an unverified account). */
+    @PostMapping("/verification/resend")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public VerificationStatus resendVerification(@Valid @RequestBody ResendVerificationRequest request,
+                                                 HttpServletRequest http) {
+        verification.resend(request.email(), request.password(), http.getRemoteAddr());
+        return VerificationStatus.RECEIVED;
     }
 
     @PostMapping("/login")

@@ -64,9 +64,12 @@ class AgeGateApiIntegrationTest {
 
     @Test
     void eighteenthBirthdayToday_isAccepted_andTheAccountIsConfirmed() throws Exception {
-        register(email(), today().minusYears(18).toString())
+        String email = email();
+        register(email, today().minusYears(18).toString())
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.user.ageConfirmed").value(true));
+                .andExpect(jsonPath("$.status").value("VERIFICATION_REQUIRED"));
+        // V25: sign-up no longer answers with the user; the confirmation is on the account itself.
+        assertThat(users.findByEmail(email).orElseThrow().isAgeConfirmed()).isTrue();
     }
 
     @Test

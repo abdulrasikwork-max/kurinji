@@ -62,7 +62,9 @@ public class AccountEraser {
             "butterflies.user_id",
             // Phase 13D (V23): reports by or about the person, cases about them, their strikes and pause.
             "content_reports.reporter_id", "content_reports.person_id", "content_cases.person_id",
-            "social_strikes.user_id", "social_standing.user_id");
+            "social_strikes.user_id", "social_standing.user_id",
+            // V25: a pending e-mail verification link.
+            "email_verification_tokens.user_id");
 
     /** References that keep the account row (anonymised): the moderation audit trail of decisions this person took. */
     public static final Set<String> KEPT_REFERENCES = Set.of("moderation_actions.actor_id", "moderation_appeals.decided_by");
@@ -89,6 +91,7 @@ public class AccountEraser {
             "DELETE FROM contributor_standing WHERE user_id = ?",
             // Phase 11 C1: every sign-in ends (an anonymised tombstone keeps no session either).
             "DELETE FROM device_sessions WHERE user_id = ?",
+            "DELETE FROM email_verification_tokens WHERE user_id = ?",
             // Phase 13A: the profile, connections in both directions, invites, and blocks/mutes by or of the person.
             "DELETE FROM connections WHERE user_low = ? OR user_high = ?",
             "DELETE FROM connection_invites WHERE owner_id = ?",

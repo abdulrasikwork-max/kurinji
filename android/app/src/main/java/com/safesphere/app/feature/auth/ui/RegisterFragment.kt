@@ -45,6 +45,9 @@ class RegisterFragment :
             }
         }
         binding.loginButton.setOnClickListener { findNavController().navigateUp() }
+        // V25: after sign-up, sign-in is the next step (once the e-mailed link was opened).
+        binding.goToSignInButton.setOnClickListener { findNavController().navigateUp() }
+        binding.resendVerificationButton.setOnClickListener { viewModel.onResendVerificationClicked() }
 
         collectWhenStarted(viewModel.uiState, ::render)
     }
@@ -80,9 +83,24 @@ class RegisterFragment :
         binding.errorNotice.isVisible = authError != null
         if (authError != null) binding.errorNotice.setMessage(authError.toMessage(requireContext()))
 
-        if (state.navigateToHome) {
-            viewModel.onNavigationHandled()
-            findNavController().navigate(R.id.action_register_to_start)
+        // V25: the account exists; it works once its owner opens the e-mailed link. Nothing is signed in.
+        val sentTo = state.verificationSentTo
+        binding.formBlock.isVisible = sentTo == null
+        binding.verificationBlock.isVisible = sentTo != null
+        if (sentTo != null) {
+            binding.checkEmailMessage.text = getString(R.string.register_check_email_message, sentTo)
+            renderResend(state.resend)
+        }
+    }
+
+    private fun renderResend(resend: ResendStatus) {
+        binding.resendProgress.isVisible = resend == ResendStatus.Sending
+        binding.resendVerificationButton.isEnabled = resend != ResendStatus.Sending
+        binding.resendNotice.isVisible = resend == ResendStatus.Sent || resend is ResendStatus.Failed
+        when (resend) {
+            ResendStatus.Sent -> binding.resendNotice.setMessage(getString(R.string.verification_resent))
+            is ResendStatus.Failed -> binding.resendNotice.setMessage(resend.error.toMessage(requireContext()))
+            else -> Unit
         }
     }
 

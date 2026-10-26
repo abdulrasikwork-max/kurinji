@@ -123,6 +123,7 @@ class AuthThrottleApiIntegrationTest {
     private String register() throws Exception {
         String email = "throttle." + UUID.randomUUID() + "@example.com";
         registerFrom(newAddress(), email).andExpect(status().isCreated());
+        TestAccounts.markVerified(mockMvc, email); // V25: sign-in needs a verified e-mail
         return email;
     }
 

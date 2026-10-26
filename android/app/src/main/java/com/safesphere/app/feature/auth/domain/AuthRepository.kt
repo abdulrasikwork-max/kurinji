@@ -20,13 +20,21 @@ interface AuthRepository {
     val signInNeeded: Flow<Boolean> get() = flowOf(false)
 
     /**
-     * Creates an account on the server and signs in. Phase 13A: [dateOfBirth] must be 18+ (checked on the phone and on
-     * the server); it is sent once and stored nowhere.
+     * Creates an account on the server. V25: it does NOT sign in: the server e-mails a link to [email], and the account
+     * works once its owner opens it. Phase 13A: [dateOfBirth] must be 18+ (checked on the phone and on the server); it
+     * is sent once and stored nowhere.
      */
-    suspend fun register(name: String, email: String, password: String, dateOfBirth: LocalDate): AuthResult<AuthUser>
+    suspend fun register(name: String, email: String, password: String, dateOfBirth: LocalDate): AuthResult<VerificationPending>
 
-    /** Checks credentials on the server and signs in. */
+    /** Checks credentials on the server and signs in. V25: [AuthError.EMAIL_NOT_VERIFIED] while the e-mail is unconfirmed. */
     suspend fun login(email: String, password: String): AuthResult<AuthUser>
+
+    /**
+     * V25: asks for a new verification e-mail (the previous link stops working). The server answers the same for every
+     * address and password, so success only means "asked"; it sends only for the right password of an unconfirmed
+     * account. Nothing is stored.
+     */
+    suspend fun resendVerification(email: String, password: String): AuthResult<Unit>
 
     /** Asks the server (GET /api/users/me) who the stored token belongs to. Clears the session if the token was rejected. */
     suspend fun refreshProfile(): AuthResult<AuthUser>

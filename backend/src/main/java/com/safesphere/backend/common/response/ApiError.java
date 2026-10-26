@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 /**
  * The one JSON shape every error uses, so the Android app only needs to understand one format.
  * fieldErrors is only present for validation failures (field name -> message).
+ * code (V25) is present only where the app must react to one specific refusal (e.g. EMAIL_NOT_VERIFIED); a stable
+ * upper-case code, never an exception name or internal detail.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ApiError(
@@ -16,7 +18,8 @@ public record ApiError(
         String error,
         String message,
         String path,
-        Map<String, String> fieldErrors
+        Map<String, String> fieldErrors,
+        String code
 ) {
 
     public static ApiError of(HttpStatus status, String message, String path) {
@@ -24,6 +27,10 @@ public record ApiError(
     }
 
     public static ApiError of(HttpStatus status, String message, String path, Map<String, String> fieldErrors) {
-        return new ApiError(Instant.now(), status.value(), status.getReasonPhrase(), message, path, fieldErrors);
+        return new ApiError(Instant.now(), status.value(), status.getReasonPhrase(), message, path, fieldErrors, null);
+    }
+
+    public static ApiError withCode(HttpStatus status, String message, String path, String code) {
+        return new ApiError(Instant.now(), status.value(), status.getReasonPhrase(), message, path, null, code);
     }
 }

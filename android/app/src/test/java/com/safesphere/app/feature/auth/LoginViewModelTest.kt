@@ -3,6 +3,7 @@ package com.safesphere.app.feature.auth
 import com.safesphere.app.core.validation.FieldError
 import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.ui.LoginViewModel
+import com.safesphere.app.feature.auth.ui.ResendStatus
 import com.safesphere.app.testing.FakeAuthRepository
 import com.safesphere.app.testing.MainDispatcherRule
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -53,6 +54,47 @@ class LoginViewModelTest {
         assertTrue(viewModel.uiState.value.navigateToHome)
         assertFalse(viewModel.uiState.value.isLoading)
         assertEquals("user@example.com", repository.lastLoginEmail)
+    }
+
+    @Test
+    fun `an unverified email does not sign in and offers to send the email again`() = runTest {
+        repository.loginResult = FakeAuthRepository.failure(AuthError.EMAIL_NOT_VERIFIED)
+        viewModel.onLoginClicked(email = "asha@example.com", password = "right-password")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(AuthError.EMAIL_NOT_VERIFIED, state.authError)
+        assertFalse(state.navigateToHome)
+        assertTrue(state.canResendVerification)
+
+        viewModel.onResendVerificationClicked(" asha@example.com ", "right-password")
+        advanceUntilIdle()
+        assertEquals(ResendStatus.Sent, viewModel.uiState.value.resend)
+        assertEquals("asha@example.com", repository.lastResendEmail)
+        assertEquals(AuthError.EMAIL_NOT_VERIFIED, viewModel.uiState.value.authError) // still not signed in
+    }
+
+    @Test
+    fun `resend is not offered or sent after other errors`() = runTest {
+        repository.loginResult = FakeAuthRepository.failure(AuthError.INVALID_CREDENTIALS)
+        viewModel.onLoginClicked(email = "asha@example.com", password = "wrong")
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.canResendVerification)
+        viewModel.onResendVerificationClicked("asha@example.com", "wrong")
+        advanceUntilIdle()
+        assertEquals(0, repository.resendCalls)
+    }
+
+    @Test
+    fun `a failed resend shows why`() = runTest {
+        repository.loginResult = FakeAuthRepository.failure(AuthError.EMAIL_NOT_VERIFIED)
+        repository.resendResult = FakeAuthRepository.failure(AuthError.NO_CONNECTION)
+        viewModel.onLoginClicked(email = "asha@example.com", password = "right-password")
+        advanceUntilIdle()
+        viewModel.onResendVerificationClicked("asha@example.com", "right-password")
+        advanceUntilIdle()
+        assertEquals(ResendStatus.Failed(AuthError.NO_CONNECTION), viewModel.uiState.value.resend)
     }
 
     @Test

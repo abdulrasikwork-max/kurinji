@@ -4,6 +4,7 @@ import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthRepository
 import com.safesphere.app.feature.auth.domain.AuthResult
 import com.safesphere.app.feature.auth.domain.AuthUser
+import com.safesphere.app.feature.auth.domain.VerificationPending
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +15,15 @@ class FakeAuthRepository(signedInUser: AuthUser? = null) : AuthRepository {
     private val user = MutableStateFlow(signedInUser)
 
     var loginResult: AuthResult<AuthUser> = AuthResult.Success(DEFAULT_USER)
-    var registerResult: AuthResult<AuthUser> = AuthResult.Success(DEFAULT_USER)
+    /** V25: sign-up never signs in; it answers that a verification e-mail went to the (normalised) address. */
+    var registerResult: AuthResult<VerificationPending> = AuthResult.Success(VerificationPending("asha@example.com"))
+    var resendResult: AuthResult<Unit> = AuthResult.Success(Unit)
+    var resendCalls = 0
+        private set
+    var lastResendEmail: String? = null
+        private set
+    var lastResendPassword: String? = null
+        private set
     var refreshResult: AuthResult<AuthUser> = AuthResult.Success(DEFAULT_USER)
 
     var loginCalls = 0
@@ -34,16 +43,26 @@ class FakeAuthRepository(signedInUser: AuthUser? = null) : AuthRepository {
 
     override val currentUser: Flow<AuthUser?> = user
 
+    /** The signed-in user right now (null = nobody). */
+    fun currentUserNow(): AuthUser? = user.value
+
     override suspend fun register(
         name: String,
         email: String,
         password: String,
         dateOfBirth: LocalDate
-    ): AuthResult<AuthUser> {
+    ): AuthResult<VerificationPending> {
         registerCalls++
         lastRegisterName = name
         lastRegisterDateOfBirth = dateOfBirth
-        return registerResult.also { if (it is AuthResult.Success) user.value = it.data }
+        return registerResult
+    }
+
+    override suspend fun resendVerification(email: String, password: String): AuthResult<Unit> {
+        resendCalls++
+        lastResendEmail = email
+        lastResendPassword = password
+        return resendResult
     }
 
     override suspend fun login(email: String, password: String): AuthResult<AuthUser> {

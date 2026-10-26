@@ -1,3 +1,24 @@
+# Handoff: V25 e-mail ownership verification (2026-10-26) — one local commit, NOT pushed
+
+**Implemented, compiled, tested, verified on MySQL, live API and emulator** (`docs/EMAIL_VERIFICATION.md`, EV1–EV16).
+A new account is UNVERIFIED and gets no session until its owner opens the e-mailed link (60 min, single use, only
+SHA-256 stored); login of an unverified account = 403 `EMAIL_NOT_VERIFIED`; resend needs e-mail + password and always
+answers 202; existing 171 accounts grandfathered as verified. New dependency: `spring-boot-starter-mail`.
+- **Results:** backend **752 / 0** (2 skipped; +24); Android **701 / 0** (+9); lint **0 errors / 95 warnings** (+1: the
+  new heading's `accessibilityHeading`, like the existing ones; 0 unused); Python **38 / 38**; V25 dry run **11/11 rejected + 6/6 accepted** on scratch copies, backup `safesphere-before-V25.sql`
+  (scratchpad, outside the repo), **applied** (Flyway v25); live API **16/16** through a local SMTP sink (real SMTP
+  path, real e-mail text, links extracted from delivered messages); browser page confirm + replay; emulator sign-up →
+  "Check your email" → resend → refused sign-in with resend → confirm in browser → replaced link 400 → sign-in OK.
+- **NOT VERIFIED:** delivery to a real external mailbox (no provider credentials configured; the user's personal
+  Gmail was deliberately not used); a physical phone (none connected); TalkBack speech.
+- **To enable real e-mail:** set `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` (provider API key),
+  `MAIL_FROM` and an HTTPS `PUBLIC_BASE_URL` in `backend/.env` (template in `.env.example`); restart; the start-up log
+  says "Verification e-mails go through SMTP …".
+- **State left:** backend, SMTP sink and emulator stopped; all `liveev.*` / `emuev.*` accounts erased (users 171 = the
+  171 before, incl. `abdul@…` created by the user today); no token, key or password left in files.
+- **Next:** the user's review and push; Phase 16.
+
+---
 # Handoff: Phase 15 final integration and acceptance testing (2026-10-26) — one local commit, NOT pushed
 
 **PARTIAL** (`docs/PHASE15.md`): everything runnable here passed; real phone (none connected), TalkBack by ear and a

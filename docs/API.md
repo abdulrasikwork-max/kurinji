@@ -1126,6 +1126,35 @@ check never removes anything and never restricts a person.
   (`{state}.{decision}`), version `lex-1`.
 
 
+# V25: e-mail ownership verification (`docs/EMAIL_VERIFICATION.md`)
+
+A new account has an unverified e-mail and gets **no session** until its owner opens the link e-mailed to that address.
+Accounts that existed before V25 are verified. Every error body (ApiError) may now carry an optional `code`; it is
+present only where an app must react (below) and absent everywhere else.
+
+- `POST /api/auth/register` (body unchanged) → **201** `{status: "VERIFICATION_REQUIRED", email}` — no `accessToken`,
+  no `refreshToken`, no `user`. The server e-mails `PUBLIC_BASE_URL/verify-email#t=<token>` (after commit, in the
+  background). 409 for an address already in use, EXCEPT an unverified account whose last link expired: it is replaced.
+  400 / 429 as before.
+- `POST /api/auth/login`: the right password of an unverified account → **403** `{code: "EMAIL_NOT_VERIFIED", message:
+  "Please verify your email before signing in"}`, no session. A wrong password or unknown e-mail is the generic 401 as
+  before (no code).
+- `POST /api/auth/verify-email` `{token}` (public) → 200 `{status: "VERIFIED"}`. Every link that cannot verify
+  (unknown, malformed, already used, replaced by a newer e-mail, expired) → the same **400** `{code:
+  "VERIFICATION_LINK_INVALID", message: "This link is not valid or has expired"}`. 429 after 30 failed attempts per
+  network address per 15 min. A link works once, for 60 minutes.
+- `POST /api/auth/verification/resend` `{email, password}` (public) → **202** `{status: "RECEIVED"}` for EVERY request
+  (unknown address, wrong password, already verified, real). Only the right password of an unverified account gets a
+  new e-mail; its new link replaces the previous one. 429 after 3 per e-mail address or 20 per network address per hour.
+- `GET /verify-email`, `GET /verify-email.js`, `GET /verify-email.css` (public): the confirmation page. The token stays in
+  the URL fragment; the page posts it to `/api/auth/verify-email` when the person taps "Confirm my email". Headers:
+  `Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; …;
+  frame-ancestors 'none'`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store`.
+- Defence in depth: an access token or refresh of an unverified account is refused (401 `account_unavailable`); none is
+  ever issued.
+- Config: `PUBLIC_BASE_URL`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`, `MAIL_STARTTLS`;
+  `app.email-verification.*` (see `docs/EMAIL_VERIFICATION.md` §4).
+
 ## Phase 14 (security audit, `docs/PHASE14.md`): no new endpoint or field
 
 - `GET /api/profiles/{id}/posts` (someone else's posts) is now ordered and paged newest **visible** first

@@ -31,4 +31,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
             + "order by u.deletionDueAt asc")
     java.util.List<Long> findIdsDueForDeletion(@Param("now") java.time.LocalDateTime now,
                                                org.springframework.data.domain.Pageable page);
+
+    /**
+     * V25: accounts whose e-mail was never verified, created before [before] (the clean-up removes them). Erased
+     * tombstones are excluded: they are kept on purpose for the moderation audit trail.
+     */
+    @Query("select u.id from User u where u.emailVerifiedAt is null and u.erasedAt is null and u.createdAt < :before "
+            + "order by u.createdAt asc")
+    java.util.List<Long> findIdsUnverifiedCreatedBefore(@Param("before") java.time.LocalDateTime before,
+                                                        org.springframework.data.domain.Pageable page);
 }

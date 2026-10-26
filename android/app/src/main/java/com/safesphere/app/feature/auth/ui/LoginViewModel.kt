@@ -30,8 +30,13 @@ data class LoginUiState(
     /** Set when the server (or the network) rejected the attempt. */
     val authError: AuthError? = null,
     /** True after a successful login: the screen then opens Home. */
-    val navigateToHome: Boolean = false
-)
+    val navigateToHome: Boolean = false,
+    /** V25: where a "send the verification e-mail again" request stands (offered after EMAIL_NOT_VERIFIED). */
+    val resend: ResendStatus = ResendStatus.Idle
+) {
+    /** V25: the account exists and the password was right, but its e-mail is not confirmed yet. */
+    val canResendVerification: Boolean get() = authError == AuthError.EMAIL_NOT_VERIFIED
+}
 
 /**
  * Checks the form on the device first (same rules as Phase 1), then asks the backend through
@@ -78,6 +83,24 @@ class LoginViewModel(
                 is AuthResult.Success -> LoginUiState(navigateToHome = true)
                 is AuthResult.Failure -> LoginUiState(authError = result.error)
             }
+        }
+    }
+
+    /**
+     * V25: a new verification e-mail for the account in the form (offered only after EMAIL_NOT_VERIFIED). The password is
+     * sent once with the request and kept nowhere, like a sign-in.
+     */
+    fun onResendVerificationClicked(email: String, password: String) {
+        val state = _uiState.value
+        if (!state.canResendVerification || state.resend == ResendStatus.Sending) return
+        if (FormValidator.validateEmail(email) != null || password.isEmpty()) return
+        _uiState.update { it.copy(resend = ResendStatus.Sending) }
+        viewModelScope.launch {
+            val status = when (val result = authRepository.resendVerification(email.trim(), password)) {
+                is AuthResult.Success -> ResendStatus.Sent
+                is AuthResult.Failure -> ResendStatus.Failed(result.error)
+            }
+            _uiState.update { it.copy(resend = status) }
         }
     }
 

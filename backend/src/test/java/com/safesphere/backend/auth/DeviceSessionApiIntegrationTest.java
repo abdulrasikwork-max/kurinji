@@ -1,6 +1,5 @@
 package com.safesphere.backend.auth;
 
-import static com.safesphere.backend.support.TestAccounts.ADULT_BIRTH_DATE;
 import static com.safesphere.backend.support.TestAccounts.PASSWORD;
 import static com.safesphere.backend.support.TestAccounts.bearer;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -439,11 +438,10 @@ class DeviceSessionApiIntegrationTest {
         return "Bearer error=\"invalid_token\", error_description=\"" + reason + "\"";
     }
 
+    /** V25: sign-up, e-mail verified, first sign-in (sign-up itself no longer starts a session). */
     private Session register(String email) throws Exception {
-        JsonNode body = json(mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("name", "Test User", "email", email, "password", PASSWORD,
-                                "dateOfBirth", ADULT_BIRTH_DATE))))
-                .andExpect(status().isCreated()));
+        JsonNode body = com.safesphere.backend.support.TestAccounts.registerVerifiedAndLogin(mockMvc, objectMapper,
+                "Test User", email);
         return new Session(email, body.get("accessToken").asText(), body.get("refreshToken").asText());
     }
 

@@ -19,6 +19,19 @@ data class LoginRequestDto(val email: String, val password: String, val previous
     override fun toString() = "LoginRequestDto(email=<hidden>, password=<hidden>, previous=<hidden>)"
 }
 
+/** V25: answer of /api/auth/register: no session; [status] is "VERIFICATION_REQUIRED", [email] the normalised address. */
+data class RegistrationResponseDto(val status: String?, val email: String?) {
+    override fun toString() = "RegistrationResponseDto(status=$status, email=<hidden>)"
+}
+
+/** V25: body of /api/auth/verification/resend. The password proves the request comes from the account's owner. */
+data class ResendVerificationRequestDto(val email: String, val password: String) {
+    override fun toString() = "ResendVerificationRequestDto(<hidden>)"
+}
+
+/** V25: {"status": "RECEIVED"} (resend) — the same whatever the account's state. */
+data class VerificationStatusDto(val status: String?)
+
 /** Phase 11 C1: body of /api/auth/refresh and /api/auth/sign-out. The token is a credential. */
 data class RefreshRequestDto(val refreshToken: String) {
     override fun toString() = "RefreshRequestDto(<hidden>)"

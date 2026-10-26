@@ -27,6 +27,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  *   POST /api/auth/login         public (rate-limited per account and per network address, Phase 7)
  *   POST /api/auth/refresh       public; the refresh secret in the body is the credential (Phase 11 C1)
  *   POST /api/auth/sign-out      public; ends the device session whose refresh secret is in the body
+ *   POST /api/auth/verify-email  public; the e-mailed token is the credential (V25, limited per address)
+ *   POST /api/auth/verification/resend  public; e-mail + password, always 202 (V25, limited)
+ *   GET  /verify-email(.js|.css) public; the static page the verification e-mail links to (V25)
  *   GET  /api/moderation/access  any valid JWT (tells the app whether to show moderation at all)
  *   /api/moderation/**           valid JWT + MODERATOR or ADMIN role read from the database (Phase 7)
  *   /api/admin/**                valid JWT + ADMIN role read from the database (Phase 7)
@@ -55,6 +58,12 @@ public class SecurityConfig {
                         // Phase 11 C1: refresh and sign-out carry their own credential (the refresh secret).
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login",
                                 "/api/auth/refresh", "/api/auth/sign-out").permitAll()
+                        // V25: the link's token (verify) or the password (resend) is the credential.
+                        .requestMatchers(HttpMethod.POST, "/api/auth/verify-email",
+                                "/api/auth/verification/resend").permitAll()
+                        // V25: the static verification page opened from the e-mail (it holds no data).
+                        .requestMatchers(HttpMethod.GET, "/verify-email", "/verify-email.js", "/verify-email.css")
+                                .permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/moderation/access").authenticated()
                         .requestMatchers("/api/moderation/**").access(roles.moderator())

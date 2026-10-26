@@ -7,12 +7,15 @@ import com.safesphere.app.feature.auth.data.remote.AuthResponseDto
 import com.safesphere.app.feature.auth.data.remote.LoginRequestDto
 import com.safesphere.app.feature.auth.data.remote.RefreshRequestDto
 import com.safesphere.app.feature.auth.data.remote.RegisterRequestDto
+import com.safesphere.app.feature.auth.data.remote.ResendVerificationRequestDto
+import com.google.gson.JsonParser
 import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthRepository
 import com.safesphere.app.feature.auth.domain.AuthResult
 import com.safesphere.app.feature.auth.domain.AuthSession
 import com.safesphere.app.feature.auth.domain.AuthUser
 import com.safesphere.app.feature.auth.domain.SessionStorage
+import com.safesphere.app.feature.auth.domain.VerificationPending
 import java.io.IOException
 import java.time.LocalDate
 import kotlin.coroutines.cancellation.CancellationException
@@ -52,14 +55,36 @@ class RemoteAuthRepository(
         email: String,
         password: String,
         dateOfBirth: LocalDate
-    ): AuthResult<AuthUser> {
-        val previous = sessionStorage.session.first()
-        return authenticate(previous) {
-            api.register(
+    ): AuthResult<VerificationPending> =
+        // V25: sign-up starts no session (nothing is saved here); the account works once the e-mailed link is opened.
+        try {
+            val answer = api.register(
                 RegisterRequestDto(name = name, email = email, password = password, dateOfBirth = dateOfBirth.toString())
             )
+            AuthResult.Success(VerificationPending(answer.email?.takeIf { it.isNotBlank() } ?: email.trim().lowercase()))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: HttpException) {
+            AuthResult.Failure(errorForHttpCode(e.code(), unauthorizedMeans = AuthError.UNKNOWN))
+        } catch (e: IOException) {
+            AuthResult.Failure(AuthError.NO_CONNECTION)
+        } catch (e: Exception) {
+            AuthResult.Failure(AuthError.UNKNOWN)
         }
-    }
+
+    override suspend fun resendVerification(email: String, password: String): AuthResult<Unit> =
+        try {
+            api.resendVerification(ResendVerificationRequestDto(email = email, password = password))
+            AuthResult.Success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: HttpException) {
+            AuthResult.Failure(errorForHttpCode(e.code(), unauthorizedMeans = AuthError.UNKNOWN))
+        } catch (e: IOException) {
+            AuthResult.Failure(AuthError.NO_CONNECTION)
+        } catch (e: Exception) {
+            AuthResult.Failure(AuthError.UNKNOWN)
+        }
 
     override suspend fun login(email: String, password: String): AuthResult<AuthUser> {
         val previous = sessionStorage.session.first()
@@ -118,12 +143,24 @@ class RemoteAuthRepository(
         } catch (e: CancellationException) {
             throw e // never swallow coroutine cancellation
         } catch (e: HttpException) {
-            AuthResult.Failure(errorForHttpCode(e.code(), unauthorizedMeans = AuthError.INVALID_CREDENTIALS))
+            // V25: the right password of an account whose e-mail is not confirmed yet (no session was started).
+            if (e.code() == 403 && errorCode(e) == EMAIL_NOT_VERIFIED_CODE) AuthResult.Failure(AuthError.EMAIL_NOT_VERIFIED)
+            else AuthResult.Failure(errorForHttpCode(e.code(), unauthorizedMeans = AuthError.INVALID_CREDENTIALS))
         } catch (e: IOException) {
             AuthResult.Failure(AuthError.NO_CONNECTION)
         } catch (e: Exception) {
             AuthResult.Failure(AuthError.UNKNOWN) // for example an unreadable response body
         }
+
+    /** V25: the stable `code` of our error body (ApiError), or null. Never shown to the person. */
+    private fun errorCode(e: HttpException): String? = try {
+        val body = e.response()?.errorBody()?.string()
+        if (body.isNullOrBlank()) null
+        else JsonParser.parseString(body).takeIf { it.isJsonObject }?.asJsonObject?.get("code")
+            ?.takeIf { it.isJsonPrimitive }?.asString
+    } catch (e: Exception) {
+        null
+    }
 
     /** Best effort: offline or slow, the sign-in simply ends on the server when its idle time runs out. */
     private suspend fun endOnServer(refreshToken: String) {
@@ -147,5 +184,6 @@ class RemoteAuthRepository(
 
     private companion object {
         const val SIGN_OUT_TIMEOUT_MILLIS = 3_000L
+        const val EMAIL_NOT_VERIFIED_CODE = "EMAIL_NOT_VERIFIED"
     }
 }

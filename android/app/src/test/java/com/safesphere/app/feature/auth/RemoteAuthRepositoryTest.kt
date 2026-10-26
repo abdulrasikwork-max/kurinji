@@ -2,6 +2,7 @@ package com.safesphere.app.feature.auth
 
 import com.safesphere.app.feature.auth.data.RemoteAuthRepository
 import com.safesphere.app.feature.auth.data.remote.RegisterRequestDto
+import com.safesphere.app.feature.auth.data.remote.RegistrationResponseDto
 import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthResult
 import com.safesphere.app.feature.auth.domain.AuthSession
@@ -86,13 +87,45 @@ class RemoteAuthRepositoryTest {
     // ------------------------------------------------------------------ register
 
     @Test
-    fun `register success signs the new user in`() = runTest {
-        val result = repository.register("Asha Devi", "asha@example.com", "longenough1", ADULT)
+    fun `register success does NOT sign in, it only reports where the verification email went`() = runTest {
+        api.registerOutcome = { RegistrationResponseDto("VERIFICATION_REQUIRED", "asha@example.com") }
+        val result = repository.register("Asha Devi", "Asha@Example.com", "longenough1", ADULT)
 
-        assertTrue(result is AuthResult.Success)
+        assertEquals("asha@example.com", (result as AuthResult.Success).data.email)
         assertEquals("Asha Devi", api.lastRegisterRequest?.name)
         assertEquals("1998-05-14", api.lastRegisterRequest?.dateOfBirth) // Phase 13A: ISO date, as the server reads it
-        assertEquals("test-token", storage.savedSession?.token)
+        assertNull(storage.savedSession) // V25: no session before the e-mail is verified
+        assertEquals(0, storage.saveCalls)
+    }
+
+    // ------------------------------------------------------------------ V25 e-mail verification
+
+    @Test
+    fun `login of an unverified account maps 403 EMAIL_NOT_VERIFIED and saves nothing`() = runTest {
+        api.loginOutcome = { throw FakeAuthApi.httpError(403, "EMAIL_NOT_VERIFIED") }
+
+        assertEquals(AuthError.EMAIL_NOT_VERIFIED, failureOf(repository.login("asha@example.com", "right-password")))
+        assertNull(storage.savedSession)
+    }
+
+    @Test
+    fun `a 403 without that code is not mistaken for an unverified email`() = runTest {
+        api.loginOutcome = { throw FakeAuthApi.httpError(403) }
+
+        assertEquals(AuthError.UNKNOWN, failureOf(repository.login("asha@example.com", "x")))
+    }
+
+    @Test
+    fun `resend sends email and password once and maps its answers`() = runTest {
+        assertTrue(repository.resendVerification("asha@example.com", "pw-123") is AuthResult.Success)
+        assertEquals("asha@example.com", api.lastResendRequest?.email)
+        assertFalse(api.lastResendRequest.toString().contains("pw-123"))
+
+        api.resendOutcome = { throw FakeAuthApi.httpError(429) }
+        assertEquals(AuthError.TOO_MANY_ATTEMPTS, failureOf(repository.resendVerification("a@b.com", "x")))
+        api.resendOutcome = { throw IOException("offline") }
+        assertEquals(AuthError.NO_CONNECTION, failureOf(repository.resendVerification("a@b.com", "x")))
+        assertNull(storage.savedSession)
     }
 
     @Test

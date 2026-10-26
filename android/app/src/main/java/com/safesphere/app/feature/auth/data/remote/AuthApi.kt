@@ -10,8 +10,13 @@ import retrofit2.http.POST
  */
 interface AuthApi {
 
+    /** V25: 201 with no session; the account is usable once the e-mailed link is opened. */
     @POST("api/auth/register")
-    suspend fun register(@Body body: RegisterRequestDto): AuthResponseDto
+    suspend fun register(@Body body: RegisterRequestDto): RegistrationResponseDto
+
+    /** V25: 202 always the same; 429 when asked too often. */
+    @POST("api/auth/verification/resend")
+    suspend fun resendVerification(@Body body: ResendVerificationRequestDto): VerificationStatusDto
 
     @POST("api/auth/login")
     suspend fun login(@Body body: LoginRequestDto): AuthResponseDto

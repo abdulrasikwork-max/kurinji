@@ -15,5 +15,6 @@ fun AuthError.toMessage(context: Context): String = context.getString(
         AuthError.SERVER -> R.string.error_server
         AuthError.UNKNOWN -> R.string.error_unknown
         AuthError.TOO_MANY_ATTEMPTS -> R.string.error_auth_too_many
+        AuthError.EMAIL_NOT_VERIFIED -> R.string.error_email_not_verified
     }
 )

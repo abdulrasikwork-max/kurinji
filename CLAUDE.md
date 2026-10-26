@@ -81,6 +81,7 @@ found and fixed); real phone, TalkBack speech and dark mode **not verified**. **
 
 | **14** | **Security, privacy + abuse-resistance audit** (`docs/PHASE14.md`) | **Implemented, compiled, tested 2026-10-26** (no feature, no migration, no Android change): 3 Low findings fixed with regression tests (`backend/src/test/.../audit/Phase14SecurityRegressionTest`): P14-1 others' profile list ordered by `visible_from` (created_at leaked the Q1-delayed time), P14-2 a post's author takes no part in a perspective case on it (or its appeal), P14-3 simultaneous block/mute/report no longer 500 (unique-key race inside one transaction; MySQL deadlocks on reports, fixed with a target row lock + READ COMMITTED + retry); no Critical/High/Medium; backend 728 / Android 686, lint 0 / 94, Python 38/38, **live MySQL 7/7**; real phone not verified |
 | **15** | **Final integration + acceptance testing** (`docs/PHASE15.md`) | **PARTIAL 2026-10-26** (no feature, no migration, no backend change): acceptance matrix 31/36 PASS, 0 FAIL, 5 NOT VERIFIED (real phone — device unavailable, TalkBack by ear, device SOS/Safe Walk, Connections and moderator screens on the phone); live API **119 checks** against MySQL + the real Python service (118 PASS + 1 script fault re-verified), erasure incl. photo files verified; emulator (API 37) walk-through PASS after **6 Android fixes** (15-1 onboarding dots, 15-2 post failure off-screen, 15-3 Cocoon "Add a perspective", 15-4 report band words + doubled full stops in spoken labels (`core/ui/SpokenText`), **15-5 session banners not re-shown on return to a tab**, 15-6 deletion text names social content; `Phase15IntegrationFixesTest`); backend 728 / Android 692, lint 0 / 94, Python 38/38. Dev DB: 168 old phase6–9 test accounts and an ACTIVE SOS (id 24) on the owner's account found and left for the user |
+| **V25** | **E-mail ownership verification** (`docs/EMAIL_VERIFICATION.md`) | **Implemented, compiled, tested, verified 2026-10-26**: unverified accounts get no session; 60-min single-use links (SHA-256 only); resend (e-mail + password, always 202); login 403 `EMAIL_NOT_VERIFIED`; browser confirmation page; SMTP mailer (off without MAIL_HOST/MAIL_FROM); backend 752 / Android 701, lint 0 / 95, Python 38/38; **V25 dry run 11/11 + 6/6, applied** (171 accounts grandfathered verified); live API 16/16 via a local SMTP sink; emulator flow PASS. **Real external mailbox, physical phone: NOT VERIFIED** |
 
 **Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
 - **4A** — Location + permissions, notifications foundation, emergency location sharing, emergency/state recovery, battery + network readers.
@@ -163,7 +164,13 @@ pure `CityAreas`/`EditionPolicy`/`ButterflyTally`, `Visibility.showInLists`; And
 `ModerationServiceClient`, pure `DecisionPolicy`, `AssessmentService`, `ContentAssessment`, `AssessmentJob`;
 `social/event/ContentWritten`; Android `core/textcheck` (`TextNormalizer`, `PhoneticKey`, `HashedLexicon`, `TextCheck`,
 `LinearModel`, `DraftNudge`, `TextSpans`), `DraftNudgeDialogs`, `ViewerPreferences`): `docs/PHASE13E.md` (decisions
-E1–E30 in `PHASE13E_PLAN.md`, deviations 13E-D1–D10). Next migration **V25**.
+E1–E30 in `PHASE13E_PLAN.md`, deviations 13E-D1–D10).
+**V25 e-mail verification is in the repository** (`docs/EMAIL_VERIFICATION.md`, decisions EV1–EV16): `users.email_verified_at`
++ `email_verification_tokens` (SHA-256 only, one per account); backend `auth/service/EmailVerificationService`
+(+ `EmailVerificationCleanupJob`), `auth/mail` (`VerificationMailer`, `SmtpVerificationMailer`, `MailConfig`,
+`VerificationEmailText`), `auth/controller/VerificationPageController` + `resources/verification/*`,
+`EmailNotVerifiedException`, `VerificationLinkInvalidException`, `ApiError.code`; Android `VerificationPending`,
+`AuthError.EMAIL_NOT_VERIFIED`, `ResendStatus`, register "Check your email" block, login resend. Next migration **V26**.
 **13F is in the repository** (Android only): `res/font` (Young Serif, Mukta Malar), Kurinji colours/type/themes,
 `core/ui/components` `PostmarkView`, `TicketLayout`, `ButterflyDrawable`, `KolamView`, `TextTabsView`,
 `AspectRatioImageView`; `core/ui/ButterflyFlight`, `Haptics`; `core/retired/RiseRetirement`; `navigation/NavigationRules`
@@ -215,7 +222,7 @@ Android lifecycle implications / security + privacy / likely viva questions*. No
 SafeSphere/
 ├── android/   Kotlin app — open THIS folder in Android Studio (has gradlew)
 ├── backend/   Spring Boot API — Maven (no mvnw wrapper; Maven is installed)
-├── docs/      API.md, PHASE15.md (acceptance), PHASE14.md (security audit), PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), AUDIT_NEXT.md (2026-10-22 audit), EXPERIENCE_PLATFORM_DESIGN.md (the new product direction, Phase 13), PHASE13A_PLAN.md + PHASE13A.md (13A), PHASE13B_PLAN.md + PHASE13B.md (13B), PHASE13C_PLAN.md + PHASE13C.md (13C), PHASE13D_PLAN.md + PHASE13D.md (13D), PHASE13E_PLAN.md + PHASE13E.md (13E), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
+├── docs/      API.md, EMAIL_VERIFICATION.md (V25), PHASE15.md (acceptance), PHASE14.md (security audit), PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), AUDIT_NEXT.md (2026-10-22 audit), EXPERIENCE_PLATFORM_DESIGN.md (the new product direction, Phase 13), PHASE13A_PLAN.md + PHASE13A.md (13A), PHASE13B_PLAN.md + PHASE13B.md (13B), PHASE13C_PLAN.md + PHASE13C.md (13C), PHASE13D_PLAN.md + PHASE13D.md (13D), PHASE13E_PLAN.md + PHASE13E.md (13E), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
 ├── moderation-service/  Phase 13E Python service (stdlib only): README.md, NORMALISER.md, restricted/ (sensitive, git-ignored)
 └── README.md
 ```
@@ -589,6 +596,13 @@ cd android
   `AccountEraser` (postpone if an emergency is recent; evidence files first; owned rows children-first + 
   `CommunityService.eraseContributor`; delete the row, or anonymise it if the audit log names it as decider);
   `AccountEraserCoverageTest` compares the eraser with every `REFERENCES users` in the migrations.
+- **E-mail verification (V25, `docs/EMAIL_VERIFICATION.md`):** sign-up creates an UNVERIFIED account and NO session;
+  `EmailVerificationService` issues a 256-bit token (only SHA-256 stored, one row per account, 60 min), the e-mail goes
+  out after commit on the `verificationMailExecutor` thread (never logged); `POST /api/auth/verify-email` consumes it
+  with one conditional DELETE (single use, race-safe) and sets `email_verified_at`; login of an unverified account =
+  403 `EMAIL_NOT_VERIFIED` (only after the right password); resend needs e-mail + password, always 202, limited;
+  `ActiveAccountCheck` and refresh refuse unverified accounts; unverified accounts go after 7 days; an unverified
+  address whose link expired can be signed up again. `TestAccounts.registerVerifiedAndLogin/markVerified` for tests.
 - **Security:** stateless; `POST /api/auth/register|login` public, everything else authenticated. CSRF off (no cookies).
   CORS: no origins by default. BCrypt passwords (72-byte limit enforced). Login errors generic and timing-equalised.
 - **Tests:** `@SpringBootTest` + MockMvc, real JWT flow, H2 in MySQL mode with **Flyway disabled** and Hibernate `create-drop`
@@ -645,7 +659,9 @@ cd android
 
 | V24 | `posts`/`comments` `moderation_source`, `moderation_spans`, `strong_language`; `content_cases.origin`; `content_assessments`; V15 metric list + `AI_CHECKED`, `AI_REVIEWED` | 13E: state CHECK replaced (NONE ⇔ no source/reason/decision/spans; REPORTS ⇒ COLLAPSED without reason/decision/spans; SYSTEM ⇒ COLLAPSED/HELD + reason, no decision; MODERATOR ⇒ reason + decision, no spans; `COALESCE(source,'-')` against UNKNOWN), reason list + `AWAITING_CHECK`, spans `start-end` list; origin REPORTS/SYSTEM/AUTHOR_REQUEST; assessments: one per post/comment (unique, FK cascade), status PENDING/DONE/UNAVAILABLE with consistent times/rule, action + rule + reason (`(action = 'PUBLISH') = (reason IS NULL)`), evidence `CATEGORY:sev:T|U:Q|-` list whose categories exclude self-harm, versions V15 pattern, **no text column**. Dry run 59/59 + 19/19, applied (2026-10-25) |
 
-Conventions: never edit an applied migration; next file is **V25**; snake_case; `DATETIME(6)` stored in UTC; constraint
+| V25 | `users.email_verified_at`, `email_verification_tokens` | E-mail verification: NULL = unverified; existing non-erased accounts set verified at the migration (no production users); CHECK verified ≥ created; index (email_verified_at, created_at); tokens: PK user_id (one live token), UNIQUE lower-case hex SHA-256 (CHECK), expires > created (CHECK), FK cascade, **no token, no IP**. Dry run 11/11 rejected + 6/6 accepted, applied on MySQL 8.0 (2026-10-26, backup taken first) |
+
+Conventions: never edit an applied migration; next file is **V26**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.
 
 ---
@@ -653,6 +669,10 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
 ## 8. API (details and examples in `docs/API.md`)
 
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/users/me`
+- V25 (`API.md` "V25"): register → 201 `{status: VERIFICATION_REQUIRED, email}` (no tokens); login of an unverified
+  account → 403 `code EMAIL_NOT_VERIFIED`; `POST /api/auth/verify-email {token}` (200 / 400 `VERIFICATION_LINK_INVALID`
+  / 429); `POST /api/auth/verification/resend {email, password}` (202 always / 429); `GET /verify-email(.js|.css)`;
+  `ApiError.code` optional. Config `PUBLIC_BASE_URL`, `MAIL_*`, `app.email-verification.*`.
 - `GET|POST /api/safety-contacts`, `GET|PUT|DELETE /api/safety-contacts/{id}`
 - `POST|GET /api/emergencies`, `GET /api/emergencies/{id}`, `PUT /api/emergencies/{id}/cancel`, `PUT /api/emergencies/{id}/resolve`
 - `POST|GET /api/emergencies/{id}/locations`, `GET /api/emergencies/{id}/locations/latest` (4A; config
@@ -799,6 +819,11 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
   author / connection / stranger / blocked users; connection lists, block lists and butterflies visible only to their
   owner; social packages never read safety data and safety never depends on social features; a posting restriction
   never touches SOS, Safe Walk, the Safety Circle or the vault. 18+ at launch, self-declared date of birth at sign-up (D6, decided 2026-10-22).
+- **E-mail ownership (V25, built):** no account gets a session before its owner opens the e-mailed link; verification,
+  refresh and per-request checks all refuse an unverified account; tokens are 256-bit, single use, 60 min, stored only as
+  SHA-256 and never logged or returned by an API; resend and verification answers reveal nothing about accounts; mail
+  credentials only from the environment. A future password reset must use its own token table and refuse unverified
+  accounts.
 - **Moderation (Phase 13D, built):** the reported person is never told who reported or that a report exists (no
   notice, no refused edit/delete, no "keep" in their standing); reports only collapse (visibly, at 3 independent
   counting reports); hold, removal and pauses are human decisions with a reason, audited and appealable to another
@@ -1023,3 +1048,7 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
 | 14: every list of others' posts is ordered by `visible_from`, never `created_at` (also the profile list) | The order of a list must not reveal the time the Q1 delay hides |
 | 14: on a perspective case, the post's author counts as taking part (case and appeal) | They are a party and can already hide it; deciding about its writer is a conflict of interest |
 | 14: never catch a unique-key error inside a transaction and carry on; write the row in its own transaction or retry the whole attempt in a new one | Spring marks the transaction rollback-only, so the commit fails (500) and "it already exists" cannot be honoured |
+| V25: no session of any kind before the e-mail is verified; existing accounts grandfathered | Ownership of the address is proven before the account can act; no production users exist, every row is a dev/test account |
+| V25: token in the URL fragment, confirmed by a tap on a static same-origin page; no App Link | The fragment never reaches a server log or Referer; scanners cannot use the link up; App Links need an HTTPS domain that does not exist yet |
+| V25: resend needs e-mail + password, always 202, sent asynchronously | Only the owner can trigger mail; answer and timing reveal nothing about accounts |
+| V25: SMTP via `spring-boot-starter-mail` behind `VerificationMailer`; nothing is sent without MAIL_HOST + MAIL_FROM | Provider-neutral; credentials only from the environment; mail being unavailable never verifies anyone |

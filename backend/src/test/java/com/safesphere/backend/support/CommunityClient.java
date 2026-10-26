@@ -34,11 +34,7 @@ public final class CommunityClient {
 
     public Account account() throws Exception {
         String email = "phase7." + UUID.randomUUID() + "@example.com";
-        String body = objectMapper.writeValueAsString(Map.of("name", "Phase Seven", "email", email,
-                "password", TestAccounts.PASSWORD, "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE));
-        JsonNode response = objectMapper.readTree(mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
+        JsonNode response = TestAccounts.registerVerifiedAndLogin(mockMvc, objectMapper, "Phase Seven", email);
         return new Account(response.get("accessToken").asText(), response.get("user").get("id").asLong(), email);
     }
 

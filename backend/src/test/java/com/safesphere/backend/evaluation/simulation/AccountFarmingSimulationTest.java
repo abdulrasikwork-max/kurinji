@@ -102,17 +102,27 @@ class AccountFarmingSimulationTest {
                         + "proxies), it cannot stop a farm"));
     }
 
+    /** V25: the farm also has to confirm each address (done directly here), then sign in. */
     private Account register(String address) throws Exception {
-        MvcResult result = registerRaw(address);
-        assertEquals(201, status(result));
-        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        String email = "phase9.farm." + UUID.randomUUID() + "@example.com";
+        assertEquals(201, status(registerRaw(address, email)));
+        TestAccounts.markVerified(mockMvc, email);
+        MvcResult login = mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("email", email, "password", TestAccounts.PASSWORD))))
+                .andReturn();
+        assertEquals(200, status(login));
+        JsonNode body = objectMapper.readTree(login.getResponse().getContentAsString());
         return new Account(body.get("accessToken").asText(), body.get("user").get("id").asLong(),
                 body.get("user").get("email").asText());
     }
 
     private MvcResult registerRaw(String address) throws Exception {
+        return registerRaw(address, "phase9.farm." + UUID.randomUUID() + "@example.com");
+    }
+
+    private MvcResult registerRaw(String address, String email) throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("name", "Phase Nine Farm",
-                "email", "phase9.farm." + UUID.randomUUID() + "@example.com", "password", TestAccounts.PASSWORD,
+                "email", email, "password", TestAccounts.PASSWORD,
                 "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE));
         return mockMvc.perform(post("/api/auth/register").with(request -> {
             request.setRemoteAddr(address);

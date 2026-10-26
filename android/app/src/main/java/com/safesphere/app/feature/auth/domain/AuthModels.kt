@@ -49,7 +49,17 @@ enum class AuthError {
     SERVER,
     UNKNOWN,
     /** 429 (Phase 7): too many failed sign-ins for this account or network, or too many new accounts. */
-    TOO_MANY_ATTEMPTS
+    TOO_MANY_ATTEMPTS,
+    /** 403 + code EMAIL_NOT_VERIFIED (V25): the right password, but the e-mail address is not confirmed yet. */
+    EMAIL_NOT_VERIFIED
+}
+
+/**
+ * V25: a new account waiting for its owner to open the link e-mailed to [email] (the server's normalised address).
+ * Nothing is signed in and nothing is stored on the phone.
+ */
+data class VerificationPending(val email: String) {
+    override fun toString() = "VerificationPending(email=<hidden>)"
 }
 
 sealed interface AuthResult<out T> {

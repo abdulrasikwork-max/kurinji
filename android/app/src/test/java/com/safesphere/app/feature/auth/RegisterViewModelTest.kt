@@ -3,6 +3,7 @@ package com.safesphere.app.feature.auth
 import com.safesphere.app.core.validation.FieldError
 import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.ui.RegisterViewModel
+import com.safesphere.app.feature.auth.ui.ResendStatus
 import com.safesphere.app.testing.FakeAuthRepository
 import com.safesphere.app.testing.MainDispatcherRule
 import java.time.Clock
@@ -58,18 +59,57 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun `valid form registers with trimmed values and the date of birth and navigates home`() = runTest {
+    fun `valid form registers with trimmed values and the date of birth, then asks to check the email`() = runTest {
         viewModel.onDateOfBirthChosen(LocalDate.of(1998, 5, 14))
         viewModel.onRegisterClicked(" Asha Devi ", " asha@example.com ", "longenough1", "longenough1")
         assertTrue(viewModel.uiState.value.isLoading)
 
         advanceUntilIdle()
 
-        assertTrue(viewModel.uiState.value.navigateToHome)
+        // V25: no sign-in; the account waits for its owner to open the e-mailed link.
+        assertEquals("asha@example.com", viewModel.uiState.value.verificationSentTo)
         assertEquals("Asha Devi", repository.lastRegisterName)
         assertEquals(LocalDate.of(1998, 5, 14), repository.lastRegisterDateOfBirth)
         assertEquals(1, repository.registerCalls)
+        assertNull(repository.currentUserNow())
         assertNull(viewModel.uiState.value.dateOfBirth) // forgotten once the account exists
+    }
+
+    @Test
+    fun `send the email again uses the account just created and reports the honest answer`() = runTest {
+        viewModel.onDateOfBirthChosen(LocalDate.of(1998, 5, 14))
+        viewModel.onRegisterClicked("Asha Devi", "asha@example.com", "longenough1", "longenough1")
+        advanceUntilIdle()
+
+        viewModel.onResendVerificationClicked()
+        assertEquals(ResendStatus.Sending, viewModel.uiState.value.resend)
+        advanceUntilIdle()
+
+        assertEquals(ResendStatus.Sent, viewModel.uiState.value.resend)
+        assertEquals(1, repository.resendCalls)
+        assertEquals("asha@example.com", repository.lastResendEmail)
+        assertEquals("longenough1", repository.lastResendPassword)
+        assertTrue(viewModel.uiState.value.toString().contains("verificationSentTo")) // state holds no password
+        assertFalse(viewModel.uiState.value.toString().contains("longenough1"))
+    }
+
+    @Test
+    fun `too many emails asked for shows the limit`() = runTest {
+        repository.resendResult = FakeAuthRepository.failure(AuthError.TOO_MANY_ATTEMPTS)
+        viewModel.onDateOfBirthChosen(LocalDate.of(1998, 5, 14))
+        viewModel.onRegisterClicked("Asha Devi", "asha@example.com", "longenough1", "longenough1")
+        advanceUntilIdle()
+        viewModel.onResendVerificationClicked()
+        advanceUntilIdle()
+        assertEquals(ResendStatus.Failed(AuthError.TOO_MANY_ATTEMPTS), viewModel.uiState.value.resend)
+    }
+
+    @Test
+    fun `resend before any account exists does nothing`() = runTest {
+        viewModel.onResendVerificationClicked()
+        advanceUntilIdle()
+        assertEquals(0, repository.resendCalls)
+        assertEquals(ResendStatus.Idle, viewModel.uiState.value.resend)
     }
 
     @Test
@@ -101,7 +141,7 @@ class RegisterViewModelTest {
         advanceUntilIdle()
 
         assertEquals(AuthError.EMAIL_ALREADY_USED, viewModel.uiState.value.authError)
-        assertFalse(viewModel.uiState.value.navigateToHome)
+        assertNull(viewModel.uiState.value.verificationSentTo)
         assertFalse(viewModel.uiState.value.isLoading)
         assertEquals(LocalDate.of(1998, 5, 14), viewModel.uiState.value.dateOfBirth)
     }

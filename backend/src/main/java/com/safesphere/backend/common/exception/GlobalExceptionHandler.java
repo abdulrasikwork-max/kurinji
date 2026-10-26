@@ -34,8 +34,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     /** Our own deliberate errors (409, 401, 400...). */
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiError> handleApiException(ApiException ex, HttpServletRequest request) {
-        return ResponseEntity.status(ex.getStatus())
-                .body(ApiError.of(ex.getStatus(), ex.getMessage(), request.getRequestURI()));
+        ApiError body = ex.getCode() == null
+                ? ApiError.of(ex.getStatus(), ex.getMessage(), request.getRequestURI())
+                : ApiError.withCode(ex.getStatus(), ex.getMessage(), request.getRequestURI(), ex.getCode());
+        return ResponseEntity.status(ex.getStatus()).body(body);
     }
 
     /** Phase 11 C1: a refused refresh says why in WWW-Authenticate (as the per-request account check does). */

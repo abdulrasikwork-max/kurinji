@@ -64,19 +64,22 @@ class AuthApiIntegrationTest {
 
     // ---------------------------------------------------------------- registration
 
+    /** V25: sign-up creates an unverified account and starts NO session (no token of any kind in the answer). */
     @Test
-    void register_createsAccount_returnsTokenAndSafeUser() throws Exception {
+    void register_createsUnverifiedAccount_withoutAnySession() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("Asha Devi", "asha@example.com", PASSWORD)))
+                        .content(registerJson("Asha Devi", "Asha@Example.com", PASSWORD)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.accessToken", not(emptyOrNullString())))
-                .andExpect(jsonPath("$.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.user.name").value("Asha Devi"))
-                .andExpect(jsonPath("$.user.email").value("asha@example.com"))
-                .andExpect(jsonPath("$.user.passwordHash").doesNotExist())
-                .andExpect(jsonPath("$.user.password").doesNotExist())
+                .andExpect(jsonPath("$.status").value("VERIFICATION_REQUIRED"))
+                .andExpect(jsonPath("$.email").value("asha@example.com"))
+                .andExpect(jsonPath("$.accessToken").doesNotExist())
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andExpect(jsonPath("$.token").doesNotExist())
+                .andExpect(jsonPath("$.user").doesNotExist())
                 .andExpect(jsonPath("$.passwordHash").doesNotExist());
+        User saved = userRepository.findByEmail("asha@example.com").orElseThrow();
+        assertFalse(saved.isEmailVerified());
     }
 
     @Test
@@ -277,12 +280,20 @@ class AuthApiIntegrationTest {
 
     // ---------------------------------------------------------------- helpers
 
-    /** Registers a user through the real endpoint and returns the JWT from the response. */
+    /**
+     * Registers a user through the real endpoint, marks the e-mail verified (V25; the link flow itself is in
+     * EmailVerificationApiIntegrationTest), signs in and returns the JWT.
+     */
     private String register(String name, String email, String password) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson(name, email, password)))
-                .andExpect(status().isCreated())
+                .andExpect(status().isCreated());
+        com.safesphere.backend.support.TestAccounts.markVerified(mockMvc, email);
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson(email, password)))
+                .andExpect(status().isOk())
                 .andReturn();
         return tokenFrom(result);
     }

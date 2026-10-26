@@ -91,6 +91,14 @@
     <string name="error_unknown">Something went wrong. Please try again.</string>
     <string name="error_too_many_attempts">Too many attempts. Please wait and try again later.</string>
     <string name="error_auth_too_many">Too many attempts. Please wait a few minutes and try again.</string>
+    <!-- V25: e-mail ownership verification -->
+    <string name="error_email_not_verified">Please verify your email before signing in. Open the link we sent to your email, or ask for a new one.</string>
+    <string name="action_resend_verification">Send the email again</string>
+    <string name="verification_resent">If this account is waiting for confirmation, a new email is on its way. Check your inbox and spam folder. Earlier links no longer work.</string>
+    <string name="register_check_email_title">Check your email</string>
+    <string name="register_check_email_message">We sent a link to %1$s. Open it to confirm that this address is yours, then come back and sign in. The link works once, for 60 minutes.</string>
+    <string name="register_check_email_note">You are not signed in until then. No email? Check your spam folder, or send it again.</string>
+    <string name="action_go_to_sign_in">Go to sign in</string>
     <string name="error_forbidden">You are not allowed to do this.</string>
     <string name="error_session_expired">Your session has expired. Please log in again.</string>
     <string name="session_expired_title">Session expired</string>

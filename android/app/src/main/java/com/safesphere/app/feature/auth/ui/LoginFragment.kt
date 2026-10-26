@@ -40,6 +40,13 @@ class LoginFragment : ViewBindingFragment<FragmentLoginBinding>(FragmentLoginBin
         binding.registerButton.setOnClickListener {
             findNavController().navigate(R.id.action_login_to_register)
         }
+        // V25: a new verification link for the account typed in the form (after "Please verify your email").
+        binding.resendVerificationButton.setOnClickListener {
+            viewModel.onResendVerificationClicked(
+                email = binding.emailInput.text.toString(),
+                password = binding.passwordInput.text.toString()
+            )
+        }
 
         binding.removeDeletedAccountDataButton.setOnClickListener {
             MaterialAlertDialogBuilder(requireContext())
@@ -76,6 +83,19 @@ class LoginFragment : ViewBindingFragment<FragmentLoginBinding>(FragmentLoginBin
         val authError = state.authError
         binding.errorNotice.isVisible = authError != null
         if (authError != null) binding.errorNotice.setMessage(authError.toMessage(requireContext()))
+
+        // V25: "Please verify your email" comes with a way to get a new link.
+        val resend = state.resend
+        binding.resendVerificationButton.isVisible = state.canResendVerification
+        binding.resendVerificationButton.isEnabled = resend != ResendStatus.Sending && !state.isLoading
+        binding.resendNotice.isVisible = state.canResendVerification &&
+            (resend == ResendStatus.Sent || resend is ResendStatus.Failed)
+        when (resend) {
+            ResendStatus.Sent -> binding.resendNotice.setMessage(getString(R.string.verification_resent))
+            is ResendStatus.Failed -> binding.resendNotice.setMessage(resend.error.toMessage(requireContext()))
+            else -> Unit
+        }
+        binding.progress.isVisible = state.isLoading || resend == ResendStatus.Sending
 
         if (state.navigateToHome) {
             viewModel.onNavigationHandled()
