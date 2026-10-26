@@ -8,6 +8,7 @@ import androidx.annotation.StringRes
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.safesphere.app.R
+import com.safesphere.app.core.ui.SpokenText
 import com.safesphere.app.databinding.ItemFeatureRowBinding
 import com.google.android.material.R as MaterialR
 
@@ -64,8 +65,13 @@ class FeatureListAdapter(
             chevron.isVisible = status == null || status == BadgeStatus.AVAILABLE
 
             root.setOnClickListener { item.onClick() }
-            root.contentDescription = if (status == null) context.getString(R.string.cd_feature_row_plain, title, description)
-            else context.getString(R.string.cd_feature_row, title, description, context.getString(status.labelRes))
+            val spokenTitle = SpokenText.part(title)
+            val spokenDescription = SpokenText.part(description)
+            root.contentDescription = if (status == null) {
+                context.getString(R.string.cd_feature_row_plain, spokenTitle, spokenDescription)
+            } else {
+                context.getString(R.string.cd_feature_row, spokenTitle, spokenDescription, context.getString(status.labelRes))
+            }
         }
     }
 }

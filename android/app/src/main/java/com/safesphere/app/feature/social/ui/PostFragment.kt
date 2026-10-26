@@ -1,11 +1,13 @@
 package com.safesphere.app.feature.social.ui
 
 import android.animation.ValueAnimator
+import android.graphics.Rect
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.View
 import android.widget.Toast
 import androidx.core.os.bundleOf
+import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
@@ -13,6 +15,7 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
+import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.ui.ButterflyFlight
 import com.safesphere.app.core.ui.Haptics
 import com.safesphere.app.core.ui.ViewBindingFragment
@@ -42,6 +45,8 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
     private val viewModel by viewModels<PostViewModel> { PostViewModel.factory(appContainer) }
     private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
     private var standingAskedFor: String? = null
+    private var shownFailure: ApiResult.Failure? = null
+    private var writeBeenHere = false
 
     private lateinit var photoAdapter: PhotoAdapter
     private val perspectiveAdapter = PersonRowAdapter()
@@ -55,6 +60,8 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        writeBeenHere = savedInstanceState == null &&
+            arguments?.getBoolean(PostViewModel.ARG_WRITE_BEEN_HERE) == true
         photoAdapter = PhotoAdapter(appContainer.imageLoader)
         binding.photoList.adapter = photoAdapter
         binding.perspectiveList.adapter = perspectiveAdapter
@@ -152,7 +159,17 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
 
         val failure = state.failure
         binding.errorNotice.isVisible = failure != null
-        if (failure != null) binding.errorNotice.setMessage(failure.toMessage(requireContext()))
+        if (failure != null) {
+            val message = failure.toMessage(requireContext())
+            binding.errorNotice.setMessage(message)
+            // Phase 15: the notice is at the top, the perspective's Add button at the bottom; bring a NEW failure
+            // into view (and say it) so the tap does not look ignored.
+            if (failure !== shownFailure) binding.errorNotice.post {
+                binding.root.smoothScrollTo(0, binding.errorNotice.top)
+                binding.errorNotice.announceForAccessibility(message)
+            }
+        }
+        shownFailure = failure
 
         if (state.closed) {
             viewModel.onClosedHandled()
@@ -273,7 +290,14 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             showBeenInvitation(post)
         }
 
-        perspectiveAdapter.submitList(state.perspectives.map { row(it, post, state) })
+        // Phase 15: opened to write "Been here too": once the perspectives are loaded (isLoading) AND their rows are in
+        // the list (the commit callback; the diff runs in the background), so the box is where it will stay.
+        val beenHereNow = writeBeenHere && !state.isLoading
+        if (beenHereNow) writeBeenHere = false
+        val startWriting = beenHereNow && post.canComment && CommentKind.BEEN_HERE in state.kinds
+        perspectiveAdapter.submitList(state.perspectives.map { row(it, post, state) }) {
+            if (startWriting && view != null) startBeenHere()
+        }
         binding.perspectivesEmpty.isVisible = state.perspectives.isEmpty()
         binding.writeBlock.isVisible = post.canComment
         binding.perspectivesClosed.isVisible = !post.canComment && !post.own
@@ -381,11 +405,19 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
     /** Phase 13C (design §3.4.2): after "Been", the invitation to share what was found, for the next person. */
     private fun showBeenInvitation(post: Post) {
         BeenInvitation.show(this, post.canComment,
-            onPerspective = {
-                viewModel.onKind(CommentKind.BEEN_HERE)
-                binding.perspectiveInput.requestFocus()
-            },
+            onPerspective = ::startBeenHere,
             onOwn = { findNavController().navigate(R.id.composeFragment) })
+    }
+
+    private fun startBeenHere() {
+        viewModel.onKind(CommentKind.BEEN_HERE)
+        binding.root.doOnPreDraw {
+            val box = Rect()
+            binding.writeBlock.getDrawingRect(box)
+            binding.root.offsetDescendantRectToMyCoords(binding.writeBlock, box)
+            binding.root.scrollTo(0, (box.bottom - binding.root.height).coerceAtLeast(0))
+            binding.perspectiveInput.requestFocus()
+        }
     }
 
     private fun confirmDelete() {

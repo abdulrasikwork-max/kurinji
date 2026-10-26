@@ -415,7 +415,7 @@
     <string name="account_password_same">Choose a password different from your current one.</string>
     <string name="account_password_required">Enter your password.</string>
     <string name="account_section_delete">Delete account</string>
-    <string name="account_delete_explainer">Your account is deleted 7 days after you ask, not at once. Until then everything keeps working, SOS included, and you can cancel with your password. Asking is not possible during an emergency or within 24 hours after one. Everything your account holds on the server is deleted, including your Evidence Vault, your emergencies and walks, your Safety Circle and your Nearby reports; once it is gone it cannot be restored. Afterwards this phone removes the account\'s evidence and recovery key too.</string>
+    <string name="account_delete_explainer">Your account is deleted 7 days after you ask, not at once. Until then everything keeps working, SOS included, and you can cancel with your password. Asking is not possible during an emergency or within 24 hours after one. Everything your account holds on the server is deleted, including your profile, experiences, photos and perspectives, your connections, your Cocoon, your Evidence Vault, your emergencies and walks, your Safety Circle and your Nearby reports; once it is gone it cannot be restored. Afterwards this phone removes the account\'s evidence and recovery key too.</string>
     <string name="account_delete_button">Delete my account…</string>
     <string name="account_delete_confirm_title">Delete your account?</string>
     <string name="account_delete_confirm_message">Enter your password. Nothing is deleted for 7 days; you can cancel until then.</string>
@@ -1410,6 +1410,9 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="my_reports_perspective">A perspective</string>
     <string name="my_reports_person">A person</string>
     <string name="my_reports_received">Received: a moderator will look at it</string>
+    <string name="my_reports_sent_this_week">Sent this week</string>
+    <string name="my_reports_sent_this_month">Sent this month</string>
+    <string name="my_reports_sent_earlier">Sent earlier</string>
     <string name="my_reports_action_taken">Reviewed: a moderator acted on it</string>
     <string name="my_reports_no_violation">Reviewed: no guideline was broken</string>
     <string name="my_reports_reviewed">Reviewed</string>

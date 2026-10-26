@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
+import com.safesphere.app.core.ui.SpokenText
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.components.ButterflyDrawable
@@ -74,7 +75,7 @@ class CocoonFragment : ViewBindingFragment<FragmentCocoonBinding>(FragmentCocoon
         state.beenInvitation?.let { item ->
             viewModel.onBeenInvitationHandled()
             BeenInvitation.show(this, item.post.canComment,
-                onPerspective = { openPost(item.post.publicId) },
+                onPerspective = { openPost(item.post.publicId, writeBeenHere = true) },
                 onOwn = { findNavController().navigate(R.id.composeFragment) })
         }
         if (state.sessionExpired) {
@@ -83,8 +84,9 @@ class CocoonFragment : ViewBindingFragment<FragmentCocoonBinding>(FragmentCocoon
         }
     }
 
-    private fun openPost(postId: String) =
-        findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to postId))
+    private fun openPost(postId: String, writeBeenHere: Boolean = false) =
+        findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to postId,
+            PostViewModel.ARG_WRITE_BEEN_HERE to writeBeenHere))
 
     private inner class CocoonAdapter : ListAdapter<CocoonItem, CocoonAdapter.Holder>(Diff) {
 
@@ -113,7 +115,8 @@ class CocoonFragment : ViewBindingFragment<FragmentCocoonBinding>(FragmentCocoon
             b.glyph.rotation = 0f
             if (item.state == ButterflyState.WANT) b.glyph.setImageResource(R.drawable.ic_chrysalis)
             else b.glyph.setImageDrawable(ButterflyDrawable.intent(context, 40))
-            b.openArea.contentDescription = context.getString(R.string.cocoon_item_description, title, b.meta.text,
+            b.openArea.contentDescription = context.getString(R.string.cocoon_item_description,
+                SpokenText.part(title), SpokenText.part(b.meta.text),
                 context.getString(if (item.state == ButterflyState.WANT) R.string.cocoon_tab_want else R.string.cocoon_tab_been))
             b.openArea.setOnClickListener { openPost(item.post.publicId) }
 

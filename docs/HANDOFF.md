@@ -1,3 +1,21 @@
+# Handoff: Phase 15 final integration and acceptance testing (2026-10-26) — one local commit, NOT pushed
+
+**PARTIAL** (`docs/PHASE15.md`): everything runnable here passed; real phone (none connected), TalkBack by ear and a
+production HTTPS deployment were not possible. No feature, no migration (next still **V25**), no backend change.
+- **Results:** backend **728 / 0** (2 skipped); Android **692 / 0**; lint **0 / 94**; Python **38 / 38**; live API
+  **119 checks** on MySQL + the real Python service (118 PASS + 1 script fault re-verified by hand); emulator (API 37)
+  walk-through PASS; acceptance matrix **31/36 PASS, 0 FAIL, 5 NOT VERIFIED**.
+- **Fixed (Android, `Phase15IntegrationFixesTest`):** 15-1 onboarding dots; 15-2 post failures off-screen; 15-3 Cocoon
+  "Add a perspective"; 15-4 report rows "Sent …" + `SpokenText` (no "list.."); **15-5 session banners (deletion, walk,
+  SOS) not re-shown on returning to a tab** (`MainActivity.anyBannerDue`); 15-6 deletion text names social content.
+- **For the user (not changed):** dev DB holds 168 old `phase6–9.*@example.com` test accounts and an **ACTIVE SOS (id 24)
+  since 2026-10-20 on the owner's personal account** (blocks its deletion / password change).
+- **State left:** backend, service and emulator stopped, `adb reverse` removed, app data and test photo removed, font
+  scale / night mode reset; all `live15.*` / `emu15.*` accounts erased (users 170), test place and this week's counters
+  deleted; temporary service key deleted.
+- **Next:** the user's review and push; then V25, A14, `AuthInterceptor` host scope, the A23 sprint (D10).
+
+---
 # Handoff: Phase 14 security, privacy and abuse-resistance audit (2026-10-26) — one local commit, NOT pushed
 
 **Implemented, compiled, tested, live-verified on MySQL** (`docs/PHASE14.md`). Audit only: no feature, no migration

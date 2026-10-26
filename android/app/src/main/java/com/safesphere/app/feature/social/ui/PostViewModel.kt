@@ -227,6 +227,9 @@ class PostViewModel(
     companion object {
         const val ARG_POST_ID = "postId"
 
+        /** Phase 15: opened from the Cocoon's "You went" invitation: start with a "Been here too" perspective. */
+        const val ARG_WRITE_BEEN_HERE = "writeBeenHere"
+
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
                 PostViewModel(container.experienceRepository, container.discoverRepository,

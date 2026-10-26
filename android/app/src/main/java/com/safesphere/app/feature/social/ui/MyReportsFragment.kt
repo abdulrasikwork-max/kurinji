@@ -62,7 +62,7 @@ class MyReportsFragment : ViewBindingFragment<FragmentMyReportsBinding>(Fragment
         return PersonRow(
             key = report.reportId,
             title = "$what · ${getString(ModerationLabels.of(report.reason))}",
-            subtitle = status + "\n" + getString(TimeBandTexts.of(report.period))
+            subtitle = status + "\n" + getString(TimeBandTexts.sent(report.period))
         )
     }
 }

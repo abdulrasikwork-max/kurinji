@@ -23,6 +23,14 @@ object TimeBandTexts {
         TimeBand.THIS_MONTH -> R.string.social_band_this_month
         TimeBand.EARLIER -> R.string.social_band_earlier
     }
+
+    /** Phase 15: when one of the viewer's own reports was sent ("Shared …" is for posts). */
+    @StringRes
+    fun sent(band: TimeBand): Int = when (band) {
+        TimeBand.THIS_WEEK -> R.string.my_reports_sent_this_week
+        TimeBand.THIS_MONTH -> R.string.my_reports_sent_this_month
+        TimeBand.EARLIER -> R.string.my_reports_sent_earlier
+    }
 }
 
 /** Phase 13B: the words for the experience codes. */

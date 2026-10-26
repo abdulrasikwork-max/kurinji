@@ -46,6 +46,8 @@ class MainActivity : AppCompatActivity() {
     private val session by viewModels<SessionStatusViewModel> { SessionStatusViewModel.factory(appContainer) }
     private var bannersStarted = false
     private var bannersAllowed = false
+    /** Phase 15: the last banner state had something to show (SOS, walk, deletion or "sign in to sync"). */
+    private var anyBannerDue = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen() // must be called before super.onCreate
@@ -73,7 +75,10 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.isVisible = destination.id !in NavigationRules.destinationsWithoutToolbar
         binding.bottomNavigation.isVisible = destination.id in NavigationRules.bottomBarDestinations
         bannersAllowed = destination.id in NavigationRules.bannerDestinations
-        if (bannersAllowed) startBanners() else binding.banners.sessionBanners.isVisible = false
+        if (bannersAllowed) startBanners()
+        // Phase 15: re-applied on every screen change; the banner state does not change when the person comes back
+        // to a tab from a screen without banners (e.g. after starting a Safe Walk or asking to delete the account).
+        binding.banners.sessionBanners.isVisible = bannersAllowed && anyBannerDue
         if (bannersStarted && bannersAllowed) session.onScreenVisible()
         if (NavigationRules.opensSosFrom(destination.id)) openSosIfRequested()
         updateSystemBars(onHero = destination.id in NavigationRules.destinationsOnHero)
@@ -128,8 +133,8 @@ class MainActivity : AppCompatActivity() {
                         banners.deletionBanner.contentDescription = getString(R.string.cd_home_deletion_banner, text)
                     }
                     banners.signInBanner.isVisible = signIn
-                    banners.sessionBanners.isVisible = bannersAllowed &&
-                        (active != null || deletion != null || signIn)
+                    anyBannerDue = active != null || deletion != null || signIn
+                    banners.sessionBanners.isVisible = bannersAllowed && anyBannerDue
                 }
             }
         }

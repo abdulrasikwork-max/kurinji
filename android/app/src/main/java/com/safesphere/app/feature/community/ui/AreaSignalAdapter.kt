@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.safesphere.app.R
+import com.safesphere.app.core.ui.SpokenText
 import com.safesphere.app.databinding.ItemAreaSignalBinding
 import com.safesphere.app.feature.community.domain.AreaSignal
 import com.safesphere.app.feature.community.domain.CommunityPolicy
@@ -63,7 +64,8 @@ class AreaSignalAdapter(
             flagButton.isVisible = CommunityPolicy.canFlag(signal)
             flagButton.setOnClickListener { onFlag(signal) }
 
-            signalSummary.contentDescription = context.getString(R.string.cd_area_signal, title, context.getString(badgeLabel), details)
+            signalSummary.contentDescription = context.getString(R.string.cd_area_signal, SpokenText.part(title),
+                SpokenText.part(context.getString(badgeLabel)), SpokenText.part(details))
         }
     }
 
