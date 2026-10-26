@@ -28,11 +28,14 @@
             android:layout_height="wrap_content"
             android:importantForAccessibility="no"
             android:minHeight="56dp"
+            android:drawablePadding="@dimen/space_md"
             android:gravity="center_vertical"
             android:padding="@dimen/space_md"
             android:text="@string/home_emergency_banner"
             android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
-            android:textColor="?attr/colorOnError" />
+            android:textColor="?attr/colorOnError"
+            app:drawableStartCompat="@drawable/ic_siren"
+            app:drawableTint="?attr/colorOnError" />
     </com.google.android.material.card.MaterialCardView>
 
     <com.safesphere.app.core.ui.components.NoticeView

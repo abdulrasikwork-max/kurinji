@@ -94,7 +94,12 @@ class PostViewModel(
             _uiState.update { it.copy(isLoading = true) }
             when (val result = repository.post(postId)) {
                 is ApiResult.Success -> {
-                    _uiState.update { it.copy(post = result.data, notFound = false, failure = null) }
+                    // Phase 16: a kind is chosen from the start (the first that fits: "Been here too" on an
+                    // Experience, "Answer" on a question), so typing and sending just works; it can be changed.
+                    _uiState.update {
+                        val loaded = it.copy(post = result.data, notFound = false, failure = null)
+                        loaded.copy(kind = it.kind ?: loaded.kinds.first())
+                    }
                     loadPerspectives()
                     _uiState.update { it.copy(isLoading = false) }
                 }
@@ -229,6 +234,9 @@ class PostViewModel(
 
         /** Phase 15: opened from the Cocoon's "You went" invitation: start with a "Been here too" perspective. */
         const val ARG_WRITE_BEEN_HERE = "writeBeenHere"
+
+        /** Phase 16: opened from a card's comment button: scroll to the comments. */
+        const val ARG_TO_COMMENTS = "toComments"
 
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {

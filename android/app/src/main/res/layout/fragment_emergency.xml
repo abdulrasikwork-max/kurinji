@@ -37,7 +37,7 @@
                 android:layout_width="@dimen/illustration_size"
                 android:layout_height="@dimen/illustration_size"
                 android:importantForAccessibility="no"
-                android:src="@drawable/ic_shield_alert"
+                android:src="@drawable/ic_siren"
                 app:tint="?attr/colorError" />
 
             <TextView
@@ -169,13 +169,18 @@
                     android:orientation="vertical"
                     android:padding="@dimen/space_lg">
 
+                    <!-- Phase 16 (U4): the siren beside the title; emergency UI never depends on colour alone. -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:accessibilityHeading="true"
+                        android:drawablePadding="@dimen/space_sm"
+                        android:gravity="center_vertical"
                         android:text="@string/emergency_active_title"
                         android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle"
-                        android:textColor="?attr/colorOnError" />
+                        android:textColor="?attr/colorOnError"
+                        app:drawableStartCompat="@drawable/ic_siren"
+                        app:drawableTint="?attr/colorOnError" />
 
                     <TextView
                         android:layout_width="match_parent"

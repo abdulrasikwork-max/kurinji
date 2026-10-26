@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13F: an onboarding page on the mist: the drawing on a soft card tile, a serif title, plain words. -->
+<!-- Phase 13F/16: an onboarding page: the drawing on a card tile, a big bold title, plain words. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"

@@ -25,6 +25,14 @@ the user instead of guessing. Detailed history is in `docs/` — read only what 
 > - Permanent product rules: **no follower/following, no public counts of anything, no DMs, no reels/stories, no
 >   streaks, no popularity rankings, no infinite auto-scroll, no presence/online status, notifications only from
 >   people**; nobody can use the platform to monitor another person (applies to social features too).
+> - **Changed by the user on 2026-10-26 (Phase 16 UX reset, `docs/PHASE16.md`):** (U1) a post shows **how many
+>   comments the viewer can read** (only comments; never likes, saves, views or followers; the number is computed
+>   through the same visibility rule as the comment list, so it reveals nothing the viewer could not count); (U2)
+>   Discover may show **"Talking now"**: posts with recent comments, ordered by the time of the newest visible comment,
+>   **never by totals**, no numbers in the order; (U3) Discover **auto-loads the next page** while scrolling but always
+>   **ends** with an "all caught up" card (no endless feed); (U4) the brand is **red / black / white**; red is no longer
+>   reserved for emergencies, so **emergency UI never relies on colour**: it always carries the siren icon and the words
+>   (SOS / Emergency) and uses its own black-and-red treatment. The other permanent rules below are unchanged.
 > - Do **not** treat this as a planning/outings app or return to `AUDIT_NEXT.md` Part II ("Go further, prepared"): that
 >   direction is superseded. Do not keep re-opening the core concept.
 > - Brand: **Kurinji** (குறிஞ்சி; D1, chosen 2026-10-22; trademark, domain and store checks still to do; design doc
@@ -82,6 +90,7 @@ found and fixed); real phone, TalkBack speech and dark mode **not verified**. **
 | **14** | **Security, privacy + abuse-resistance audit** (`docs/PHASE14.md`) | **Implemented, compiled, tested 2026-10-26** (no feature, no migration, no Android change): 3 Low findings fixed with regression tests (`backend/src/test/.../audit/Phase14SecurityRegressionTest`): P14-1 others' profile list ordered by `visible_from` (created_at leaked the Q1-delayed time), P14-2 a post's author takes no part in a perspective case on it (or its appeal), P14-3 simultaneous block/mute/report no longer 500 (unique-key race inside one transaction; MySQL deadlocks on reports, fixed with a target row lock + READ COMMITTED + retry); no Critical/High/Medium; backend 728 / Android 686, lint 0 / 94, Python 38/38, **live MySQL 7/7**; real phone not verified |
 | **15** | **Final integration + acceptance testing** (`docs/PHASE15.md`) | **PARTIAL 2026-10-26** (no feature, no migration, no backend change): acceptance matrix 31/36 PASS, 0 FAIL, 5 NOT VERIFIED (real phone — device unavailable, TalkBack by ear, device SOS/Safe Walk, Connections and moderator screens on the phone); live API **119 checks** against MySQL + the real Python service (118 PASS + 1 script fault re-verified), erasure incl. photo files verified; emulator (API 37) walk-through PASS after **6 Android fixes** (15-1 onboarding dots, 15-2 post failure off-screen, 15-3 Cocoon "Add a perspective", 15-4 report band words + doubled full stops in spoken labels (`core/ui/SpokenText`), **15-5 session banners not re-shown on return to a tab**, 15-6 deletion text names social content; `Phase15IntegrationFixesTest`); backend 728 / Android 692, lint 0 / 94, Python 38/38. Dev DB: 168 old phase6–9 test accounts and an ACTIVE SOS (id 24) on the owner's account found and left for the user |
 | **V25** | **E-mail ownership verification** (`docs/EMAIL_VERIFICATION.md`) | **Implemented, compiled, tested, verified 2026-10-26**: unverified accounts get no session; 60-min single-use links (SHA-256 only); resend (e-mail + password, always 202); login 403 `EMAIL_NOT_VERIFIED`; browser confirmation page; SMTP mailer (off without MAIL_HOST/MAIL_FROM); backend 752 / Android 701, lint 0 / 95, Python 38/38; **V25 dry run 11/11 + 6/6, applied** (171 accounts grandfathered verified); live API 16/16 via a local SMTP sink; emulator flow PASS. **Real external mailbox, physical phone: NOT VERIFIED** |
+| **16** | **Kurinji UX reset + stabilization** (`docs/PHASE16.md`) | **Implemented, compiled, tested, emulator-verified 2026-10-26** (decisions U1–U4 by the user): red/black/white identity (Mukta Malar Bold, Go-K icon `docs/design/kurinji-16-icon.md`, "Go. See. Tell." splash), feed cards (avatar, photo, words, Save, comment count), one-feed Discover (`DiscoverFeed`: Near me, Talking now, city, theme, people you know, auto-load, ends), rebuilt post page (large photos, chips, Tip, pinned comment box), Saved tab (was Cocoon), plain words, `core/location/OneFix` (cached/fresh one-shot fix, distinct notices, settings fallbacks, platform fallback), emergency UI = black + red ring + siren; backend `PostResponse.commentCount` + Edition `TALKING` (no migration, next still **V26**); backend 756 / Android 712, lint 0 / 99; `docs/EMAIL_SETUP.md`. Physical phone, TalkBack by ear, real e-mail **not verified** |
 
 **Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
 - **4A** — Location + permissions, notifications foundation, emergency location sharing, emergency/state recovery, battery + network readers.
@@ -180,6 +189,7 @@ verdict; `ReadyCheckTest`); `feature/profile/ui/YouFragment`; `feature/going/Goi
 `feature/emergency/entry` (`SosEntryActivity` not exported, `SosLaunchRequest`, `SosTileService`), `res/xml/shortcuts.xml`;
 social `ExperienceCard(s)`, `ExperienceCardAdapter` + `CardTexts`, `BeenInvitation`, `JournalViewModel`,
 `PostPageText`: `docs/PHASE13F.md` (deviations 13F-D1–D9). `feature/home` and `feature/rise` no longer exist.
+**16 is in the repository** (Android + 2 backend read additions, no migration): `core/ui/components/AvatarView`, `core/ui/LocationHelp` (`LocationAsk`, `LocationSettings`), `core/location/OneFix` + `LocationProvider.currentFix`, social `ExperienceCard` (thought, canSave, commentCount) + `CardBinder`, `DiscoverFeed` + `DiscoverFeedAdapter` (FeedActions), `CommentAdapter`, `domain/CityAreas` (phone copy of the server boxes), `EmergencyTreatmentTest`; removed `PostmarkView`, `TicketLayout`, `KolamView`, `TextTabsView`, `PostPageText`, Young Serif; backend `CommentService.readable`, `PostResponse.commentCount`, `EditionPolicy.TALKING/pickTalking`, `PostRepository.talkedAbout`: `docs/PHASE16.md`. The Saved tab keeps the id `cocoonFragment` and the Cocoon API.
 **Note:** `C:\Users\ABDUL RAFIQ\Desktop\CLAUDE.md` (outside the repo) is an old copy (says "4A has not started"); this
 repo copy is the current one.
 
@@ -222,7 +232,7 @@ Android lifecycle implications / security + privacy / likely viva questions*. No
 SafeSphere/
 ├── android/   Kotlin app — open THIS folder in Android Studio (has gradlew)
 ├── backend/   Spring Boot API — Maven (no mvnw wrapper; Maven is installed)
-├── docs/      API.md, EMAIL_VERIFICATION.md (V25), PHASE15.md (acceptance), PHASE14.md (security audit), PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), AUDIT_NEXT.md (2026-10-22 audit), EXPERIENCE_PLATFORM_DESIGN.md (the new product direction, Phase 13), PHASE13A_PLAN.md + PHASE13A.md (13A), PHASE13B_PLAN.md + PHASE13B.md (13B), PHASE13C_PLAN.md + PHASE13C.md (13C), PHASE13D_PLAN.md + PHASE13D.md (13D), PHASE13E_PLAN.md + PHASE13E.md (13E), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
+├── docs/      API.md, PHASE16.md (UX reset), EMAIL_SETUP.md, EMAIL_VERIFICATION.md (V25), PHASE15.md (acceptance), PHASE14.md (security audit), PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), AUDIT_NEXT.md (2026-10-22 audit), EXPERIENCE_PLATFORM_DESIGN.md (the new product direction, Phase 13), PHASE13A_PLAN.md + PHASE13A.md (13A), PHASE13B_PLAN.md + PHASE13B.md (13B), PHASE13C_PLAN.md + PHASE13C.md (13C), PHASE13D_PLAN.md + PHASE13D.md (13D), PHASE13E_PLAN.md + PHASE13E.md (13E), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
 ├── moderation-service/  Phase 13E Python service (stdlib only): README.md, NORMALISER.md, restricted/ (sensitive, git-ignored)
 └── README.md
 ```
@@ -838,7 +848,13 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
 > Serif headlines + Mukta Malar (Tamil + Latin) bundled; postmark / ticket / butterfly / kolam objects; four motion
 > moments. `ContrastTest` and `KurinjiTextsTest` guard contrast and voice. (The navy/teal identity is superseded.)
 
-- **Red only for emergency UI.** All text pairs ≥ 4.5:1 contrast, control edges ≥ 3:1. Status never by colour alone.
+> **Since Phase 16 (2026-10-26, decision U4) the red / black / white Kurinji system replaces the 13F mist/bloom look**
+> (`docs/DESIGN_SYSTEM.md`, `docs/PHASE16.md`): brand red for actions and the save; black hero surfaces; Mukta Malar
+> Bold headlines; social feed cards (person, photo, short thought, context chips, save + comments). Emergency UI is
+> recognised by the siren icon + the words SOS/Emergency + its black-and-red treatment, never by colour alone. The
+> bullet below about red is superseded.
+
+- ~~**Red only for emergency UI.**~~ (superseded by U4) All text pairs ≥ 4.5:1 contrast, control edges ≥ 3:1. Status never by colour alone.
   Never set `android:fontFamily` on the theme (it overrides text appearances); emergency digits use the phone's sans.
 - Use theme attributes and existing styles/components; no hard-coded colours in layouts.
 - Honesty labels: **Available** (works), **Preview** (design only), **Coming soon** (not built), **Sample** (placeholder data).
@@ -1052,3 +1068,7 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
 | V25: token in the URL fragment, confirmed by a tap on a static same-origin page; no App Link | The fragment never reaches a server log or Referer; scanners cannot use the link up; App Links need an HTTPS domain that does not exist yet |
 | V25: resend needs e-mail + password, always 202, sent asynchronously | Only the owner can trigger mail; answer and timing reveal nothing about accounts |
 | V25: SMTP via `spring-boot-starter-mail` behind `VerificationMailer`; nothing is sent without MAIL_HOST + MAIL_FROM | Provider-neutral; credentials only from the environment; mail being unavailable never verifies anyone |
+| U1 (2026-10-26, the user): a post shows the number of comments the viewer can read; no other public count | A comment number says "there is a conversation here" without ranking people; computed through the comment visibility rule, so it equals what the viewer could count themselves |
+| U2 (2026-10-26, the user): "Talking now" ordered by the newest visible comment, never by totals | Shows what people are reacting to without a popularity ranking that rewards pile-ons |
+| U3 (2026-10-26, the user): Discover auto-loads pages but always ends ("You're all caught up") | Natural browsing without an endless feed |
+| U4 (2026-10-26, the user): red/black/white brand; emergency UI = siren icon + words + black/red treatment, never colour alone | A bold, recognisable social brand; the safety meaning of the SOS UI survives because it never depended on hue alone |

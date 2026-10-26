@@ -22,5 +22,6 @@ object DiscoverTexts {
         DiscoverReason.OPEN_ASK -> R.string.discover_reason_open_ask
         DiscoverReason.THEME_OF_THE_WEEK -> R.string.discover_reason_theme
         DiscoverReason.FROM_A_CONNECTION -> R.string.discover_reason_from_connection
+        DiscoverReason.NEW_PERSPECTIVES -> R.string.discover_reason_new_comments
     }
 }

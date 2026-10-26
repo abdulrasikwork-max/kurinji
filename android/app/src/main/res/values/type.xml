@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        Kurinji type (Phase 13F). Young Serif (display, one weight) for headlines only; Mukta Malar for everything else
-        (Regular / Medium / Bold, drawn for Tamil and Latin together). Sizes in sp, so the phone's font size applies.
-        The TextAppearance.SafeSphere.* names stay (every layout uses them); they now point at the Kurinji faces.
+        Kurinji type (Phase 16): Mukta Malar throughout, Bold (kurinji_display) for headlines, buttons and the wordmark,
+        set large and tight; drawn for Tamil and Latin together. Sizes in sp, so the phone's font size applies.
+        The TextAppearance.SafeSphere.* names stay (every layout uses them); they point at the Kurinji styles.
     -->
 
-    <!-- ===== Display and headlines (Young Serif) ===== -->
+    <!-- ===== Display and headlines (Mukta Malar Bold) ===== -->
     <style name="TextAppearance.Kurinji.Masthead" parent="TextAppearance.Material3.DisplaySmall">
         <item name="android:fontFamily">@font/kurinji_display</item>
         <item name="fontFamily">@font/kurinji_display</item>
-        <item name="android:textSize">38sp</item>
-        <item name="android:letterSpacing">-0.01</item>
+        <item name="android:textSize">34sp</item>
+        <item name="android:letterSpacing">-0.03</item>
         <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
@@ -20,7 +20,8 @@
         <item name="android:fontFamily">@font/kurinji_display</item>
         <item name="fontFamily">@font/kurinji_display</item>
         <item name="android:textSize">30sp</item>
-        <item name="android:letterSpacing">-0.005</item>
+        <item name="android:letterSpacing">-0.025</item>
+        <item name="android:lineSpacingMultiplier">0.95</item>
     </style>
 
     <style name="TextAppearance.Kurinji.Headline.Medium" parent="TextAppearance.Material3.HeadlineMedium">
@@ -28,6 +29,7 @@
         <item name="android:fontFamily">@font/kurinji_display</item>
         <item name="fontFamily">@font/kurinji_display</item>
         <item name="android:textSize">24sp</item>
+        <item name="android:letterSpacing">-0.02</item>
     </style>
 
     <style name="TextAppearance.Kurinji.Headline.Small" parent="TextAppearance.Material3.HeadlineSmall">
@@ -35,13 +37,32 @@
         <item name="android:fontFamily">@font/kurinji_display</item>
         <item name="fontFamily">@font/kurinji_display</item>
         <item name="android:textSize">21sp</item>
+        <item name="android:letterSpacing">-0.015</item>
     </style>
 
-    <!-- A card's headline (the first line of an experience). -->
+    <!-- Phase 16: the short thought on a feed card (the post's own words, the first lines). -->
     <style name="TextAppearance.Kurinji.CardHeadline" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">@font/kurinji_sans_medium</item>
+        <item name="fontFamily">@font/kurinji_sans_medium</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:lineSpacingMultiplier">1.05</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- Phase 16: a person's name on a card or comment. -->
+    <style name="TextAppearance.Kurinji.Name" parent="TextAppearance.Material3.TitleSmall">
         <item name="android:fontFamily">@font/kurinji_display</item>
         <item name="fontFamily">@font/kurinji_display</item>
-        <item name="android:textSize">20sp</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- Phase 16: the wordmark "kurinji" (top bar, splash). -->
+    <style name="TextAppearance.Kurinji.Wordmark" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">@font/kurinji_display</item>
+        <item name="fontFamily">@font/kurinji_display</item>
+        <item name="android:textSize">26sp</item>
+        <item name="android:letterSpacing">-0.04</item>
         <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
@@ -101,21 +122,14 @@
         <item name="android:textSize">12sp</item>
     </style>
 
-    <!-- Small capitals above a headline ("EXPERIENCE · FOOD & CAFÉS", "THIS WEEK IN"). -->
+    <!-- A small bold label above a heading (Phase 16: sentence case, no letter-spaced capitals). -->
     <style name="TextAppearance.Kurinji.Overline" parent="TextAppearance.Material3.LabelSmall">
-        <item name="android:fontFamily">@font/kurinji_sans</item>
-        <item name="fontFamily">@font/kurinji_sans</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textSize">11sp</item>
-        <item name="android:textAllCaps">true</item>
-        <item name="android:letterSpacing">0.14</item>
+        <item name="android:fontFamily">@font/kurinji_display</item>
+        <item name="fontFamily">@font/kurinji_display</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
         <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
-    </style>
-
-    <!-- The ticket label "FOR THE NEXT PERSON" -->
-    <style name="TextAppearance.Kurinji.TicketLabel" parent="TextAppearance.Kurinji.Overline">
-        <item name="android:textColor">?attr/colorPrimary</item>
-        <item name="android:letterSpacing">0.16</item>
     </style>
 
     <!-- ===== The names every existing layout uses ===== -->
@@ -157,6 +171,8 @@
 
     <!-- Buttons -->
     <style name="TextAppearance.SafeSphere.Button" parent="TextAppearance.Kurinji.Label.Large">
+        <item name="android:fontFamily">@font/kurinji_display</item>
+        <item name="fontFamily">@font/kurinji_display</item>
         <item name="android:textSize">16sp</item>
     </style>
 

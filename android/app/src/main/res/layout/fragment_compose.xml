@@ -249,28 +249,17 @@
             android:text="@string/approve_first_switch"
             android:visibility="gone" />
 
-        <!-- Phase 13F (F17): the postmark others will see, live, beside the same fact in words. -->
-        <LinearLayout
+        <!-- What others will see of the place, in words (Phase 16: the 13F postmark is gone). -->
+        <TextView
+            android:id="@+id/summaryLine"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_md"
-            android:clipChildren="false"
+            android:drawablePadding="@dimen/space_sm"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/summaryLine"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-
-            <com.safesphere.app.core.ui.components.PostmarkView
-                android:id="@+id/stampPreview"
-                android:layout_width="@dimen/postmark_size"
-                android:layout_height="@dimen/postmark_size"
-                android:layout_marginStart="@dimen/space_sm" />
-        </LinearLayout>
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+            app:drawableStartCompat="@drawable/ic_place"
+            app:drawableTint="?attr/colorPrimary" />
 
         <TextView
             android:id="@+id/issuesText"

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13F: headlines only. Young Serif (The Young Serif Project Authors, OFL 1.1, docs/licences); one weight.
-     Young Serif has no Tamil letters: Tamil in a headline is drawn by the phone's own Tamil font (system fallback). -->
+<!-- Phase 16: headlines and the wordmark in Mukta Malar Bold (Ek Type, OFL 1.1, docs/licences): one confident sans that
+     draws Tamil and Latin together, so a Tamil headline keeps the same weight. (13F used Young Serif; removed.) -->
 <font-family xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <font
-        android:font="@font/young_serif_regular"
+        android:font="@font/mukta_malar_bold"
         android:fontStyle="normal"
-        android:fontWeight="400"
-        app:font="@font/young_serif_regular"
+        android:fontWeight="700"
+        app:font="@font/mukta_malar_bold"
         app:fontStyle="normal"
-        app:fontWeight="400" />
+        app:fontWeight="700" />
 </font-family>

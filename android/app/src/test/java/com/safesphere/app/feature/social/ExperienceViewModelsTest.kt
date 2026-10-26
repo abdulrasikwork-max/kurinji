@@ -196,7 +196,12 @@ class ExperienceViewModelsTest {
         runCurrent()
         location.emit(LocationUpdate.Unavailable(LocationUnavailableReason.LOCATION_DISABLED))
         advanceUntilIdle()
-        assertEquals(PickerNotice.LOCATION_UNAVAILABLE, vm.uiState.value.notice)
+        assertEquals(PickerNotice.LOCATION_OFF, vm.uiState.value.notice)           // Phase 16: its own notice and button
+        location.locationEnabled = false
+        vm.onNearMe()
+        advanceUntilIdle()
+        assertEquals("switched off is known at once, no waiting", PickerNotice.LOCATION_OFF, vm.uiState.value.notice)
+        location.locationEnabled = true
         location.access = LocationAccess.APPROXIMATE
         vm.onNearMe()
         runCurrent()

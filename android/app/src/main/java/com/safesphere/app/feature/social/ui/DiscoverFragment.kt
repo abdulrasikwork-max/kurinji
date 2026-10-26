@@ -3,17 +3,22 @@ package com.safesphere.app.feature.social.ui
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import androidx.activity.OnBackPressedCallback
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navOptions
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
+import com.safesphere.app.core.location.LocationAccess
+import com.safesphere.app.core.ui.Haptics
+import com.safesphere.app.core.ui.LocationAsk
+import com.safesphere.app.core.ui.LocationSettings
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog
@@ -21,73 +26,78 @@ import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentDiscoverBinding
 import com.safesphere.app.feature.social.domain.City
 import com.safesphere.app.feature.social.domain.DiscoverItem
-import com.safesphere.app.feature.social.domain.EditionSectionKind
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.Place
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
+import com.safesphere.app.feature.social.domain.Post
 
 /**
- * Phase 13C, redesigned in 13F (docs/PHASE13F_PLAN.md F14): Discover, the first tab. The Edition reads like a small
- * weekly for one city: a masthead ("This week in Chennai"), short sections of postcards and question slips, and an end
- * ("Go make your own"). From your connections ends too. Every Edition card answers "Why am I seeing this?". Search
- * finds places by name and categories by their words, never people. [DiscoverViewModel] is unchanged.
+ * Phase 13C, rebuilt in Phase 16 (docs/PHASE16.md): Discover, the first tab, as one social feed ([DiscoverFeed]):
+ * open it and there is something to look at, react to (save with the butterfly, open the comments) and explore (Near
+ * me, categories, places). It loads more while scrolling and then ends ("You're all caught up", U3). Search finds
+ * places by name and categories by their words, never people.
  */
-class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDiscoverBinding::inflate) {
+class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDiscoverBinding::inflate), FeedActions {
 
     private val viewModel by viewModels<DiscoverViewModel> { DiscoverViewModel.factory(appContainer) }
 
-    private lateinit var cityAdapter: ExperienceCardAdapter
-    private lateinit var asksAdapter: ExperienceCardAdapter
-    private lateinit var themeAdapter: ExperienceCardAdapter
-    private lateinit var connectionsAdapter: ExperienceCardAdapter
+    // Granted: the fix is read. Refused: the same call answers "needs permission" at once (no dialog), with the button
+    // that can still help (ask again, or open settings after a permanent refusal).
+    private val locationAsk = LocationAsk(this) { viewModel.onNearMe() }
+
+    private lateinit var feedAdapter: DiscoverFeedAdapter
     private val placeResults = PersonRowAdapter()
     private val categoryResults = PersonRowAdapter()
+    private val nearResults = PersonRowAdapter()
     private lateinit var cityChips: ChoiceChips<City>
     private var cityPickerOpen = false
     private var searchOpen = false
+    private var nearOpen = false
+    private var retryNearOnReturn = false
     private var collapseStrongLanguage = false
+
+    /** Back closes the search or "Near me" panel first. */
+    private val closePanel = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            searchOpen = false
+            nearOpen = false
+            viewModel.onCloseNearby()
+            render(viewModel.uiState.value)
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val loader = appContainer.imageLoader
-        val photoUrl = appContainer.experienceRepository::photoUrl
-        cityAdapter = ExperienceCardAdapter(loader, photoUrl)
-        asksAdapter = ExperienceCardAdapter(loader, photoUrl)
-        themeAdapter = ExperienceCardAdapter(loader, photoUrl)
-        connectionsAdapter = ExperienceCardAdapter(loader, photoUrl)
-        binding.citySectionList.adapter = cityAdapter
-        binding.asksSectionList.adapter = asksAdapter
-        binding.themeSectionList.adapter = themeAdapter
-        binding.connectionsList.adapter = connectionsAdapter
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, closePanel)
+        feedAdapter = DiscoverFeedAdapter(appContainer.imageLoader, appContainer.experienceRepository::photoUrl, this)
+        binding.feed.adapter = feedAdapter
+        binding.feed.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                val manager = recyclerView.layoutManager as LinearLayoutManager
+                if (manager.findLastVisibleItemPosition() >= feedAdapter.itemCount - NEAR_END_ROWS) viewModel.onNearEnd()
+            }
+        })
         binding.searchPlaceList.adapter = placeResults
         binding.searchCategoryList.adapter = categoryResults
+        binding.nearList.adapter = nearResults
         cityChips = ChoiceChips(binding.cityGroup) { city ->
             if (city != null) {
                 cityPickerOpen = false
                 viewModel.onCity(city)
+                binding.feed.scrollToPosition(0)
             }
         }
-        binding.cityTitle.setOnClickListener {
-            cityPickerOpen = !cityPickerOpen
-            render(viewModel.uiState.value)
-        }
+        binding.cityButton.setOnClickListener { chooseCity() }
         binding.searchToggle.setOnClickListener {
             searchOpen = !searchOpen
+            nearOpen = false
             if (searchOpen) binding.searchInput.requestFocus()
             render(viewModel.uiState.value)
         }
-        binding.modeTabs.setTabs(listOf(getString(R.string.discover_tab_edition), getString(R.string.discover_tab_connections)),
-            selected = 0) { index -> viewModel.onMode(if (index == 1) DiscoverMode.CONNECTIONS else DiscoverMode.EDITION) }
-        binding.connectionsShowMore.setOnClickListener { viewModel.onShowMoreConnections() }
-        binding.editionShareButton.setOnClickListener { findNavController().navigate(R.id.composeFragment) }
-        binding.editionCocoonButton.setOnClickListener {
-            findNavController().navigate(R.id.cocoonFragment, null, navOptions {
-                launchSingleTop = true
-                restoreState = true
-                popUpTo(R.id.discoverFragment) { saveState = true }
-            })
+        binding.retryButton.setOnClickListener { viewModel.reload() }
+        binding.closeNearButton.setOnClickListener {
+            nearOpen = false
+            viewModel.onCloseNearby()
+            render(viewModel.uiState.value)
         }
         binding.searchInput.doAfterTextChanged { viewModel.onQuery(it?.toString().orEmpty()) }
         binding.searchInput.setOnEditorActionListener { _, action, _ ->
@@ -99,14 +109,6 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
             binding.searchInput.setText("")
             viewModel.onClearSearch()
         }
-        Interest.entries.forEach { interest ->
-            binding.categoryGroup.addView(Chip(requireContext()).apply {
-                text = getString(SocialLabels.of(interest))
-                isCheckable = false
-                contentDescription = getString(R.string.discover_open_category, text)
-                setOnClickListener { openCategory(interest) }
-            })
-        }
         collectWhenStarted(viewModel.uiState, ::render)
         collectWhenStarted(appContainer.viewerPreferences.collapseStrongLanguage) { on ->
             if (on != collapseStrongLanguage) {
@@ -117,83 +119,58 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         viewModel.start()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (retryNearOnReturn) {
+            retryNearOnReturn = false
+            viewModel.onNearMe()
+        }
+    }
+
     private fun render(state: DiscoverUiState) {
-        val edition = state.mode == DiscoverMode.EDITION
-        if (binding.modeTabs.selectedIndex != (if (edition) 0 else 1)) {
-            binding.modeTabs.setTabs(listOf(getString(R.string.discover_tab_edition),
-                getString(R.string.discover_tab_connections)), if (edition) 0 else 1) { index ->
-                viewModel.onMode(if (index == 1) DiscoverMode.CONNECTIONS else DiscoverMode.EDITION)
-            }
-        }
-        binding.editionBlock.isVisible = edition
-        binding.connectionsBlock.isVisible = !edition
-        binding.progress.isVisible = state.editionLoading || state.connectionsLoading || state.searching
+        if (view == null) return
+        feedAdapter.submitList(DiscoverFeed.build(state).map { FeedRow(it, collapseStrongLanguage) })
 
-        renderMasthead(state)
+        val city = state.city
+        binding.cityButton.text = city?.let(ExperienceLabels::cityName) ?: getString(R.string.discover_masthead_no_city)
+        binding.cityButton.contentDescription = city?.let {
+            getString(R.string.discover_city_description, ExperienceLabels.cityName(it))
+        } ?: getString(R.string.discover_masthead_no_city)
+        cityChips.show(City.entries.filter { it != City.OTHER }.map { it to ExperienceLabels.cityName(it) }, city)
+        binding.cityBlock.isVisible = (city == null && state.needsCity) || cityPickerOpen
 
-        val e = state.edition
-        if (e != null) {
-            binding.citySectionTitle.text = getString(R.string.discover_section_city, ExperienceLabels.cityName(e.city))
-        }
-        section(e?.sections?.firstOrNull { it.kind == EditionSectionKind.CITY }?.items, binding.citySectionTitle,
-            binding.citySectionList, cityAdapter)
-        section(e?.sections?.firstOrNull { it.kind == EditionSectionKind.ASKS }?.items, binding.asksSectionTitle,
-            binding.asksSectionList, asksAdapter)
-        section(e?.sections?.firstOrNull { it.kind == EditionSectionKind.THEME }?.items, binding.themeSectionTitle,
-            binding.themeSectionList, themeAdapter)
-        binding.editionEmpty.isVisible = e != null && e.isEmpty
-        binding.editionEndCard.isVisible = e != null && !e.isEmpty
-
-        connectionsAdapter.submitList(state.connections.map { row(it, withWhy = false) })
-        binding.connectionsEmpty.isVisible = state.connectionsLoaded && state.connections.isEmpty()
-        binding.connectionsShowMore.isVisible = state.connectionsHasMore
-        binding.connectionsShowMore.isEnabled = !state.connectionsLoading
-        binding.connectionsEnd.isVisible = state.connectionsLoaded && state.connections.isNotEmpty() && !state.connectionsHasMore
-
+        binding.panel.isVisible = searchOpen || nearOpen
+        binding.searchPanel.isVisible = searchOpen
+        binding.nearPanel.isVisible = nearOpen
+        closePanel.isEnabled = searchOpen || nearOpen
+        binding.searchToggle.contentDescription = getString(if (searchOpen) R.string.discover_search_close
+            else R.string.discover_search_open)
         renderSearch(state)
+        renderNear(state)
 
         val failure = state.failure
         binding.errorNotice.isVisible = failure != null
+        binding.retryButton.isVisible = failure != null
         if (failure != null) binding.errorNotice.setMessage(failure.toMessage(requireContext()))
+        if (state.savedNow) {
+            viewModel.onSavedShown()
+            binding.feed.announceForAccessibility(getString(R.string.butterfly_saved_announcement))
+            Haptics.confirm(binding.feed)
+        }
         if (state.sessionExpired) {
             viewModel.onSessionExpiredHandled()
             showSessionExpiredDialog()
         }
     }
 
-    /** "This week in / Chennai / Week of 19 Oct 2026 · Theme: Hidden gems". The city chips open from the city's name. */
-    private fun renderMasthead(state: DiscoverUiState) {
-        val city = state.city
-        binding.cityTitle.text = city?.let(ExperienceLabels::cityName) ?: getString(R.string.discover_masthead_no_city)
-        binding.cityTitle.contentDescription = city?.let {
-            getString(R.string.discover_city_description, ExperienceLabels.cityName(it))
-        } ?: getString(R.string.discover_masthead_no_city)
-        cityChips.show(City.entries.filter { it != City.OTHER }.map { it to ExperienceLabels.cityName(it) }, city)
-        binding.cityBlock.isVisible = city == null || cityPickerOpen
-        binding.cityHint.isVisible = state.needsCity && city == null
-
-        val week = state.edition?.weekOf
-            ?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()))
-        val theme = state.edition?.theme
-        binding.mastheadSub.isVisible = week != null
-        binding.mastheadSub.text = when {
-            week == null -> ""
-            theme != null -> getString(R.string.discover_masthead_sub_theme, week, getString(SocialLabels.of(theme)))
-            else -> getString(R.string.discover_masthead_sub, week)
-        }
-    }
-
     private fun renderSearch(state: DiscoverUiState) {
-        binding.searchPanel.isVisible = searchOpen
-        binding.searchToggle.contentDescription = getString(if (searchOpen) R.string.discover_search_close
-            else R.string.discover_search_open)
         val query = state.query.trim()
         val categories = if (query.length < DiscoverViewModel.SEARCH_MIN) emptyList() else Interest.entries.filter {
             getString(SocialLabels.of(it)).contains(query, ignoreCase = true) || it.name.contains(query.replace(' ', '_'), ignoreCase = true)
         }
         categoryResults.submitList(categories.map { interest ->
             val label = getString(SocialLabels.of(interest))
-            PersonRow(key = interest.name, title = label, subtitle = "", onOpen = { openCategory(interest) },
+            PersonRow(key = interest.name, title = label, subtitle = "", onOpen = { category(interest) },
                 openDescription = getString(R.string.discover_open_category, label))
         })
         placeResults.submitList(state.places.map { placeRow(it) })
@@ -205,17 +182,39 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         binding.searchButton.isEnabled = query.length >= DiscoverViewModel.SEARCH_MIN && !state.searching
     }
 
-    private fun section(items: List<DiscoverItem>?, title: View, list: RecyclerView, adapter: ExperienceCardAdapter) {
-        val shown = !items.isNullOrEmpty()
-        title.isVisible = shown
-        list.isVisible = shown
-        adapter.submitList(items.orEmpty().map { row(it, withWhy = true) })
-    }
-
-    private fun row(item: DiscoverItem, withWhy: Boolean): CardRow {
-        val card = ExperienceCards.of(item.post, item.reasons, collapseStrongLanguage)
-        return CardRow(card, onOpen = { openPost(item.post.publicId) },
-            onWhy = if (withWhy && item.reasons.isNotEmpty()) ({ explain(item) }) else null)
+    /** Phase 16: "Near me" results, or one notice with the one button that fixes it. */
+    private fun renderNear(state: DiscoverUiState) {
+        binding.nearProgress.isVisible = state.nearbyBusy
+        val nearby = state.nearby
+        nearResults.submitList(nearby.orEmpty().map { placeRow(it) })
+        binding.nearList.isVisible = !nearby.isNullOrEmpty()
+        binding.nearEmpty.isVisible = nearby != null && nearby.isEmpty()
+        val notice = state.nearNotice
+        binding.nearNotice.isVisible = notice != null
+        val button = binding.nearActionButton
+        button.isVisible = notice != null
+        when (notice) {
+            NearNotice.NEEDS_PERMISSION -> if (locationAsk.permanentlyDenied) {
+                binding.nearNotice.setMessage(getString(R.string.social_location_denied_settings))
+                button.setText(R.string.location_action_settings)
+                button.setOnClickListener { retryNearOnReturn = true; LocationSettings.openAppSettings(this) }
+            } else {
+                binding.nearNotice.setMessage(getString(R.string.discover_near_permission))
+                button.setText(R.string.action_allow_location)
+                button.setOnClickListener { locationAsk.ask() }
+            }
+            NearNotice.LOCATION_OFF -> {
+                binding.nearNotice.setMessage(getString(R.string.discover_near_location_off))
+                button.setText(R.string.location_action_turn_on)
+                button.setOnClickListener { retryNearOnReturn = true; LocationSettings.openLocationSettings(this) }
+            }
+            NearNotice.NOT_FOUND -> {
+                binding.nearNotice.setMessage(getString(R.string.discover_near_not_found))
+                button.setText(R.string.location_action_retry)
+                button.setOnClickListener { viewModel.onNearMe() }
+            }
+            null -> Unit
+        }
     }
 
     private fun placeRow(place: Place): PersonRow {
@@ -226,7 +225,14 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
             openDescription = getString(R.string.discover_open_place, place.name))
     }
 
-    private fun explain(item: DiscoverItem) {
+    // ---- FeedActions ----
+
+    override fun openPost(post: Post, toComments: Boolean) = findNavController().navigate(R.id.postFragment,
+        bundleOf(PostViewModel.ARG_POST_ID to post.publicId, PostViewModel.ARG_TO_COMMENTS to toComments))
+
+    override fun save(post: Post) = viewModel.onSave(post)
+
+    override fun why(item: DiscoverItem) {
         val lines = item.reasons.joinToString("\n") { "• " + getString(DiscoverTexts.of(it)) }
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.discover_why_title)
@@ -235,10 +241,34 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
             .show()
     }
 
-    private fun openPost(postId: String) =
-        findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to postId))
+    override fun nearMe() {
+        nearOpen = true
+        searchOpen = false
+        if (appContainer.screenLocationProvider.access() == LocationAccess.NONE && !locationAsk.permanentlyDenied) {
+            render(viewModel.uiState.value)
+            locationAsk.ask()
+        } else {
+            viewModel.onNearMe()
+        }
+    }
 
-    private fun openCategory(interest: Interest) = findNavController().navigate(R.id.postCollectionFragment,
+    override fun category(interest: Interest) = findNavController().navigate(R.id.postCollectionFragment,
         bundleOf(PostCollectionViewModel.ARG_CATEGORY to interest.name,
             PostCollectionViewModel.ARG_CITY to viewModel.uiState.value.city?.name))
+
+    override fun share() = findNavController().navigate(R.id.composeFragment)
+
+    override fun findPeople() = findNavController().navigate(R.id.connectionsFragment, null, navOptions {
+        launchSingleTop = true
+    })
+
+    override fun chooseCity() {
+        cityPickerOpen = !cityPickerOpen
+        render(viewModel.uiState.value)
+    }
+
+    private companion object {
+        /** Start loading the next page this many rows before the end. */
+        const val NEAR_END_ROWS = 4
+    }
 }

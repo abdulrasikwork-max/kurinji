@@ -1,41 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        Kurinji palette, light ("mist, ink and bloom", Phase 13F, docs/PHASE13F_PLAN.md §2).
-        Mist = the page (cool hill mist), ink = indigo night, bloom = Neelakurinji violet-blue (brand, actions,
-        postmarks), yeoman = the Tamil Yeoman butterfly's orange (intent only: the butterfly, "Want to go"),
-        ochre = moderation and caution (always with an icon and words), red = emergency UI ONLY.
-        Every text pair is at least 4.5:1 (ContrastTest).
+        Kurinji palette, light (Phase 16 UX reset, decision U4, docs/PHASE16.md): red, black and white.
+        The resource names stay from 13F so every layout keeps working; their ROLES are:
+        k_mist = the page (off-white), k_card = cards (white), k_ink = text (near-black),
+        k_bloom = the brand red (actions, the save, links), k_yeoman* = the save ("I want this") control,
+        ochre = moderation and caution (always with an icon and words).
+        Red is no longer reserved for emergencies: emergency UI is recognised by the siren icon, the words SOS /
+        Emergency and its black surface with a red ring (emergency_surface), never by the hue alone.
+        Every text pair is at least 4.5:1 and every control edge 3:1 (ContrastTest).
     -->
-    <color name="k_mist">#EEF1EF</color>
-    <color name="k_card">#FBFCFA</color>
-    <color name="k_sunk">#E3E8E5</color>
-    <color name="k_ink">#1A1D35</color>
-    <color name="k_ink_soft">#4A4F66</color>
-    <color name="k_outline">#7D8494</color>
-    <color name="k_line">#CDD4D1</color>
-    <color name="k_surface_low">#F5F7F6</color>
-    <color name="k_surface_container">#E9EDEB</color>
-    <color name="k_surface_high">#E3E8E5</color>
-    <color name="k_surface_highest">#DCE2DF</color>
+    <color name="k_mist">#F5F4F2</color>
+    <color name="k_card">#FFFFFF</color>
+    <color name="k_sunk">#ECEAE7</color>
+    <color name="k_ink">#121212</color>
+    <color name="k_ink_soft">#4A4A4A</color>
+    <color name="k_outline">#7A7A7A</color>
+    <color name="k_line">#E1DFDB</color>
+    <color name="k_surface_low">#FAF9F7</color>
+    <color name="k_surface_container">#EFEEEB</color>
+    <color name="k_surface_high">#E8E6E3</color>
+    <color name="k_surface_highest">#E0DEDA</color>
 
-    <color name="k_bloom">#4A46B0</color>
-    <color name="k_on_bloom">#FBFCFA</color>
-    <color name="k_bloom_soft">#E2E1F6</color>
-    <color name="k_on_bloom_soft">#23206B</color>
+    <color name="k_bloom">#D0102A</color>
+    <color name="k_on_bloom">#FFFFFF</color>
+    <color name="k_bloom_soft">#FDE2E4</color>
+    <color name="k_on_bloom_soft">#6B0614</color>
 
-    <color name="k_yeoman">#E58A2E</color>
-    <color name="k_yeoman_ink">#9A4A0B</color>
-    <color name="k_yeoman_soft">#FBE5CF</color>
-    <color name="k_on_yeoman_soft">#4A2004</color>
+    <color name="k_yeoman">#D0102A</color>
+    <color name="k_yeoman_ink">#A10C20</color>
+    <color name="k_yeoman_soft">#FDE2E4</color>
+    <color name="k_on_yeoman_soft">#5C0410</color>
 
-    <!-- Emergency (mapped to the Material "error" roles): red is reserved for emergency UI. -->
-    <color name="ss_emergency">#C62828</color>
+    <!-- Emergency (the Material "error" roles) and its own black surface with a red ring. -->
+    <color name="ss_emergency">#C8102E</color>
     <color name="ss_on_emergency">#FFFFFF</color>
-    <color name="ss_emergency_container">#FBE3E3</color>
-    <color name="ss_on_emergency_container">#5C0F0F</color>
+    <color name="ss_emergency_container">#FDE2E4</color>
+    <color name="ss_on_emergency_container">#5C0410</color>
+    <color name="emergency_surface">#0B0B0B</color>
 
-    <!-- Status colours of the safety screens (text and icons on mist) -->
+    <!-- Status colours of the safety screens (text and icons on the page) -->
     <color name="ss_safe">#187A4B</color>
     <color name="ss_safe_container">#D9F2E3</color>
     <color name="ss_on_safe_container">#0B3D24</color>
@@ -43,24 +47,33 @@
     <color name="ss_caution_container">#F3E6C4</color>
     <color name="ss_on_caution_container">#3D2700</color>
 
-    <!-- "Hero" panels (status card, splash): indigo night with mist text. -->
-    <color name="hero_background">#1A1D35</color>
-    <color name="hero_on">#EEF1EF</color>
-    <color name="hero_on_variant">#B8BDD0</color>
-    <color name="hero_accent">#ABA8F7</color>
+    <!-- "Hero" panels (status card, the safety hub head): black with white text and a CALM sky accent. Never red:
+         the status card says "Nothing running" in this colour, and red would read as danger (emulator finding). -->
+    <color name="hero_background">#121212</color>
+    <color name="hero_on">#F5F4F2</color>
+    <color name="hero_on_variant">#BDBDBD</color>
+    <color name="hero_accent">#A9C7E8</color>
     <color name="hero_caution">#F5B544</color>
 
-    <!-- Brand mark and launcher icon (always on mist) -->
-    <color name="mark_wing_fore">#4A46B0</color>
-    <color name="mark_wing_hind">#E58A2E</color>
-    <color name="mark_body">#1A1D35</color>
+    <!-- The in-app brand mark (the Go-K: a stem and a forward chevron) -->
+    <color name="mark_stem">#121212</color>
+    <color name="mark_chevron">#D0102A</color>
 
-    <!-- The launcher always draws the icon on its light background: fixed colours, no night variant. -->
-    <color name="launcher_wing_fore">#4A46B0</color>
-    <color name="launcher_wing_hind">#E58A2E</color>
-    <color name="launcher_body">#1A1D35</color>
-    <color name="launcher_sos">#C62828</color>
+    <!-- The launcher always draws the icon on its own background: fixed colours, no night variant. -->
+    <color name="launcher_red">#D0102A</color>
+    <color name="launcher_stem">#121212</color>
+    <color name="launcher_chevron">#FFFFFF</color>
+    <color name="launcher_sos">#121212</color>
 
-    <color name="splash_background">#EEF1EF</color>
-    <color name="ic_launcher_background">#EEF1EF</color>
+    <color name="splash_background">#D0102A</color>
+    <color name="ic_launcher_background">#D0102A</color>
+
+    <!-- Avatar circles (a person's initial): strong, distinct, white text reaches 4.5:1 on each. -->
+    <color name="avatar_1">#B0102A</color>
+    <color name="avatar_2">#121212</color>
+    <color name="avatar_3">#1E5AA8</color>
+    <color name="avatar_4">#1F7A4D</color>
+    <color name="avatar_5">#7A3EB1</color>
+    <color name="avatar_6">#A34E00</color>
+    <color name="avatar_on">#FFFFFF</color>
 </resources>

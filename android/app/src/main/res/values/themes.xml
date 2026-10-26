@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Kurinji theme (Phase 13F): Material 3 underneath, "mist, ink and bloom" on top. Follows the system light/dark
-         setting. Style names keep the SafeSphere prefix: code names are unchanged until a rename is approved. -->
+    <!-- Kurinji theme (Phase 16, U4): Material 3 underneath, red / black / white on top (colour roles in colors.xml).
+         Follows the system light/dark setting. Style names keep the SafeSphere prefix: code names are unchanged until a
+         rename is approved. -->
     <style name="Base.Theme.SafeSphere" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Material colour roles -->
         <item name="colorPrimary">@color/k_bloom</item>
@@ -31,11 +32,13 @@
         <item name="android:colorBackground">@color/k_mist</item>
         <item name="colorOnBackground">@color/k_ink</item>
 
-        <!-- Red is reserved for emergency UI, so it lives in the "error" roles. -->
+        <!-- Emergency colours (the "error" roles) and the emergency surface. Since Phase 16 the brand is red too, so
+             emergency UI is recognised by the siren icon, the words and the black surface with a red ring. -->
         <item name="colorError">@color/ss_emergency</item>
         <item name="colorOnError">@color/ss_on_emergency</item>
         <item name="colorErrorContainer">@color/ss_emergency_container</item>
         <item name="colorOnErrorContainer">@color/ss_on_emergency_container</item>
+        <item name="colorEmergencySurface">@color/emergency_surface</item>
 
         <!-- Status, hero and Kurinji colours (see attrs.xml) -->
         <item name="colorSafe">@color/ss_safe</item>
@@ -86,6 +89,8 @@
         <item name="materialCardViewStyle">@style/Widget.SafeSphere.Card</item>
         <item name="bottomNavigationStyle">@style/Widget.SafeSphere.BottomNavigation</item>
         <item name="chipStyle">@style/Widget.Kurinji.Chip</item>
+        <item name="contextChipStyle">@style/Widget.Kurinji.Chip.Context</item>
+        <item name="pillChipStyle">@style/Widget.Kurinji.Chip.Pill</item>
         <item name="bottomSheetDialogTheme">@style/ThemeOverlay.Kurinji.BottomSheet</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.Kurinji.Dialog</item>
     </style>
@@ -96,10 +101,12 @@
         <item name="android:textAppearance">@style/TextAppearance.Kurinji.Body.Medium</item>
     </style>
 
-    <!-- Shown by the system while the process starts: mist (or Kurinji night) with the butterfly, flowing into the splash. -->
+    <!-- Shown by the system while the process starts: brand red with the K drawing itself (Phase 16), flowing into
+         the in-app splash on the same red. -->
     <style name="Theme.SafeSphere.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_brand_mark</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_mark</item>
+        <item name="windowSplashScreenAnimationDuration">700</item>
         <item name="postSplashScreenTheme">@style/Theme.SafeSphere</item>
     </style>
 

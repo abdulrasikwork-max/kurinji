@@ -18,10 +18,11 @@ import com.safesphere.app.databinding.ViewSafetyStatusCardBinding
 /**
  * Colour of the card's label and icon. Never the only signal: every content also has its own words and icon.
  * Deliberately no green (it reads as "safe", which the app never claims: docs/PHASE8_DESIGN.md §5.6) and no red
- * (emergency UI only: during an SOS, Home hides this card and the red banner is the one emergency element).
+ * (Phase 16: red is the brand, and a calm fact in red reads as danger; during an SOS the hub hides this card and the
+ * emergency banner, black with a red ring and the siren, is the one emergency element).
  */
 enum class StatusTone(@ColorRes val colorRes: Int) {
-    /** Neutral teal: a plain fact. */
+    /** Calm sky blue: a plain fact. */
     CALM(R.color.hero_accent),
 
     /** Amber, always shown with a warning icon: something is waiting for the person's answer. */

@@ -1,43 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Launcher icon (Phase 13F): the Kurinji butterfly on mist. Fixed colours (launcher_*), never the night set,
-     because the launcher draws the icon on the light background in either theme. -->
+<!-- Phase 16 launcher icon, concept "Go-K" (docs/design/kurinji-16-icon.md): a K built from a black stem (someone
+     standing) and a white forward chevron (going out). Drawn inside the adaptive-icon safe circle (66 of 108). The
+     background layer is brand red (@color/ic_launcher_background). Fixed colours: the launcher has no night mode. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <group
-        android:scaleX="1.25"
-        android:scaleY="1.25"
-        android:translateX="24"
-        android:translateY="26.5">
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.86"
+        android:scaleY="0.86"
+        android:translateX="-2.5">
         <path
-            android:fillColor="@color/launcher_wing_fore"
-            android:pathData="M23,18C16,6 4,4 3,12C2,19 12,22 23,21Z"
-            android:strokeColor="@color/launcher_body"
-            android:strokeWidth="1.6" />
+            android:fillColor="@color/launcher_stem"
+            android:pathData="M29,30h9a3,3 0,0 1,3 3v42a3,3 0,0 1,-3 3h-9a3,3 0,0 1,-3 -3v-42a3,3 0,0 1,3 -3z" />
         <path
-            android:fillColor="@color/launcher_wing_fore"
-            android:pathData="M25,18C32,6 44,4 45,12C46,19 36,22 25,21Z"
-            android:strokeColor="@color/launcher_body"
-            android:strokeWidth="1.6" />
-        <path
-            android:fillColor="@color/launcher_wing_hind"
-            android:pathData="M23,22C14,22 6,27 9,34C12,39 20,33 23,25Z"
-            android:strokeColor="@color/launcher_body"
-            android:strokeWidth="1.6" />
-        <path
-            android:fillColor="@color/launcher_wing_hind"
-            android:pathData="M25,22C34,22 42,27 39,34C36,39 28,33 25,25Z"
-            android:strokeColor="@color/launcher_body"
-            android:strokeWidth="1.6" />
-        <path
-            android:fillColor="@color/launcher_body"
-            android:pathData="M22.2,22a1.8,9 0,1 0,3.6 0a1.8,9 0,1 0,-3.6 0Z" />
-        <path
-            android:pathData="M23.4,13.5L19.5,5M24.6,13.5L28.5,5"
-            android:strokeColor="@color/launcher_body"
-            android:strokeLineCap="round"
-            android:strokeWidth="1.4" />
+            android:fillColor="@color/launcher_chevron"
+            android:pathData="M47,30L63,30L87,54L63,78L47,78L71,54Z" />
     </group>
 </vector>

@@ -218,7 +218,7 @@
                 android:layout_marginTop="@dimen/space_xs"
                 android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
-            <!-- Level 2: no response. Red is reserved for this (emergency UI). -->
+            <!-- Level 2: no response. Emergency treatment (Phase 16, U4): black, red ring, siren, words. -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/noResponseCard"
                 style="@style/Widget.SafeSphere.Card.Emergency"
@@ -239,9 +239,13 @@
                         android:layout_height="wrap_content"
                         android:accessibilityHeading="true"
                         android:accessibilityLiveRegion="assertive"
+                        android:drawablePadding="@dimen/space_sm"
+                        android:gravity="center_vertical"
                         android:text="@string/safe_walk_no_response_title"
                         android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
-                        android:textColor="?attr/colorOnError" />
+                        android:textColor="?attr/colorOnError"
+                        app:drawableStartCompat="@drawable/ic_siren"
+                        app:drawableTint="?attr/colorOnError" />
 
                     <TextView
                         android:id="@+id/noResponseBody"

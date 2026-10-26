@@ -24,7 +24,11 @@ import com.safesphere.app.feature.social.domain.PostPage
 import com.safesphere.app.feature.social.domain.PostType
 import com.safesphere.app.feature.social.domain.TimeBand
 import com.safesphere.app.feature.social.ui.CocoonViewModel
-import com.safesphere.app.feature.social.ui.DiscoverMode
+import com.safesphere.app.feature.social.ui.DiscoverFeed
+import com.safesphere.app.feature.social.ui.DiscoverUiState
+import com.safesphere.app.feature.social.ui.FeedItem
+import com.safesphere.app.feature.social.ui.HeaderKind
+import com.safesphere.app.feature.social.ui.NearNotice
 import com.safesphere.app.feature.social.ui.DiscoverViewModel
 import com.safesphere.app.feature.social.ui.PostCollection
 import com.safesphere.app.feature.social.ui.PostCollectionViewModel
@@ -32,6 +36,11 @@ import com.safesphere.app.feature.social.ui.PostViewModel
 import com.safesphere.app.testing.FakeDiscoverRepository
 import com.safesphere.app.testing.FakeDiscoverRepository.Companion.cocoonItem
 import com.safesphere.app.testing.FakeExperienceRepository
+import com.safesphere.app.testing.FakeLocationProvider
+import com.safesphere.app.core.location.LocationAccess
+import com.safesphere.app.feature.social.domain.Edition
+import com.safesphere.app.feature.social.domain.EditionSection
+import kotlinx.coroutines.test.runCurrent
 import com.safesphere.app.testing.FakeSocialRepository
 import com.safesphere.app.testing.MainDispatcherRule
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -52,6 +61,9 @@ class DiscoverTest {
     private val experiences = FakeExperienceRepository()
     private val discover = FakeDiscoverRepository()
     private val social = FakeSocialRepository()
+    private val location = FakeLocationProvider()
+
+    private fun discoverVm() = DiscoverViewModel(discover, social, experiences, location)
 
     // ---- CityMatch ----------------------------------------------------------------------------------------------
 
@@ -209,7 +221,7 @@ class DiscoverTest {
     @Test
     fun `the edition city comes from the profile when it names a launch city`() = runTest {
         social.ownProfileResult = ApiResult.Success(FakeSocialRepository.ME.copy(city = "Madras"))
-        val vm = DiscoverViewModel(discover, social)
+        val vm = discoverVm()
         vm.start()
         advanceUntilIdle()
         assertEquals(City.CHENNAI, vm.uiState.value.city)
@@ -220,7 +232,7 @@ class DiscoverTest {
     @Test
     fun `without a launch city in the profile, the person chooses one`() = runTest {
         social.ownProfileResult = ApiResult.Success(FakeSocialRepository.ME.copy(city = "Mumbai"))
-        val vm = DiscoverViewModel(discover, social)
+        val vm = discoverVm()
         vm.start()
         advanceUntilIdle()
         assertTrue(vm.uiState.value.needsCity)
@@ -234,28 +246,119 @@ class DiscoverTest {
     }
 
     @Test
-    fun `from your connections loads on its tab and more only on tap, then ends`() = runTest {
+    fun `people you know load with the feed, the next page near the end, and then it ends (U3)`() = runTest {
         val item = DiscoverItem(FakeExperienceRepository.post(id = "c1"), listOf(DiscoverReason.FROM_A_CONNECTION))
         discover.connectionPages = mapOf(
             null to DiscoverPage(listOf(item), "c1"),
             "c1" to DiscoverPage(listOf(item.copy(post = FakeExperienceRepository.post(id = "c2"))), null))
-        val vm = DiscoverViewModel(discover, social)
-        vm.onMode(DiscoverMode.CONNECTIONS)
+        val vm = discoverVm()
+        vm.start()
         advanceUntilIdle()
         assertEquals(listOf<String?>(null), discover.connectionCursors)
         assertTrue(vm.uiState.value.connectionsHasMore)
-        vm.onShowMoreConnections()
+        assertEquals(FeedItem.Loading, DiscoverFeed.build(vm.uiState.value).last())
+        vm.onNearEnd()
         advanceUntilIdle()
         assertEquals(listOf("c1", "c2"), vm.uiState.value.connections.map { it.post.publicId })
         assertFalse(vm.uiState.value.connectionsHasMore)
-        vm.onShowMoreConnections()
+        assertEquals(FeedItem.End, DiscoverFeed.build(vm.uiState.value).last())
+        vm.onNearEnd()
         advanceUntilIdle()
         assertEquals("no request after the end", 2, discover.connectionCursors.size)
     }
 
     @Test
+    fun `saving from the feed marks the same post everywhere, and a second tap takes it out`() = runTest {
+        val post = FakeExperienceRepository.post(id = "s1")
+        discover.connectionPages = mapOf(null to DiscoverPage(listOf(DiscoverItem(post, emptyList())), null))
+        discover.butterflyResult = ApiResult.Success(ButterflyState.WANT)
+        val vm = discoverVm()
+        vm.start()
+        advanceUntilIdle()
+        vm.onSave(post)
+        vm.onSave(post) // a double tap sends nothing twice
+        advanceUntilIdle()
+        assertEquals(listOf("s1" to ButterflyState.WANT), discover.butterflyCalls)
+        val saved = vm.uiState.value.connections.single().post
+        assertEquals(ButterflyState.WANT, saved.yourButterfly)
+        assertTrue(vm.uiState.value.savedNow)
+        vm.onSavedShown()
+        vm.onSave(saved)
+        advanceUntilIdle()
+        assertEquals("s1" to null, discover.butterflyCalls.last())
+        assertNull(vm.uiState.value.connections.single().post.yourButterfly)
+        assertFalse(vm.uiState.value.savedNow)
+    }
+
+    @Test
+    fun `near me sends only the 6-character area, and says what to do when location cannot help`() = runTest {
+        experiences.nearby = listOf(FakeExperienceRepository.place())
+        val vm = discoverVm()
+        vm.onNearMe()
+        runCurrent()
+        location.emitFix(FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.2824, accuracy = 400f))
+        advanceUntilIdle()
+        assertEquals(1, experiences.nearbyAreas.size)
+        assertEquals(6, experiences.nearbyAreas.single().length)
+        assertEquals(1, vm.uiState.value.nearby?.size)
+
+        location.access = LocationAccess.NONE
+        vm.onNearMe()
+        advanceUntilIdle()
+        assertEquals(NearNotice.NEEDS_PERMISSION, vm.uiState.value.nearNotice)
+        location.access = LocationAccess.APPROXIMATE
+        location.locationEnabled = false
+        vm.onNearMe()
+        advanceUntilIdle()
+        assertEquals(NearNotice.LOCATION_OFF, vm.uiState.value.nearNotice)
+        assertEquals("no request without a fix", 1, experiences.nearbyAreas.size)
+    }
+
+    @Test
+    fun `the feed - talking now, the city with a question after every third post, the theme, then people you know`() {
+        fun item(id: String, type: PostType = PostType.EXPERIENCE) =
+            DiscoverItem(FakeExperienceRepository.post(id = id, type = type), listOf(DiscoverReason.IN_THIS_CITY))
+        val edition = Edition(City.CHENNAI, null, Interest.HIDDEN_GEMS, listOf(
+            EditionSection(EditionSectionKind.CITY, (1..4).map { item("c$it") }),
+            EditionSection(EditionSectionKind.ASKS, listOf(item("a1", PostType.ASK), item("a2", PostType.ASK))),
+            EditionSection(EditionSectionKind.THEME, listOf(item("c1"), item("t1"))),
+            EditionSection(EditionSectionKind.TALKING, listOf(item("c2")))))
+        val state = DiscoverUiState(city = City.CHENNAI, edition = edition,
+            connections = listOf(item("t1"), item("k1")), connectionsLoaded = true)
+        val feed = DiscoverFeed.build(state)
+        val order = feed.map {
+            when (it) {
+                is FeedItem.Header -> "#" + it.kind
+                is FeedItem.Talking -> "rail:" + it.items.joinToString { i -> i.post.publicId }
+                is FeedItem.PostRow -> it.item.post.publicId
+                else -> it.javaClass.simpleName
+            }
+        }
+        assertEquals(listOf("Shortcuts", "#TALKING", "rail:c2", "#CITY", "c1", "c2", "c3", "a1", "c4", "a2",
+            "#THEME", "t1", "#CONNECTIONS", "k1", "End"), order)
+        assertEquals(HeaderKind.THEME, (feed[10] as FeedItem.Header).kind)
+    }
+
+    @Test
+    fun `the feed ends with an invitation to find people when nobody you know has posted`() {
+        val state = DiscoverUiState(city = City.CHENNAI, edition = Edition(City.CHENNAI, null, null, emptyList()),
+            connectionsLoaded = true)
+        val feed = DiscoverFeed.build(state)
+        assertTrue(FeedItem.ConnectPrompt in feed)
+        assertEquals(FeedItem.Empty, feed.last())
+
+        // Emulator finding: a connection's posts already shown in the city list must not turn into "find people".
+        val shown = DiscoverItem(FakeExperienceRepository.post(id = "b1"), listOf(DiscoverReason.IN_THIS_CITY))
+        val connected = DiscoverUiState(city = City.CHENNAI, connectionsLoaded = true, connections = listOf(shown),
+            edition = Edition(City.CHENNAI, null, null, listOf(EditionSection(EditionSectionKind.CITY, listOf(shown)))))
+        val again = DiscoverFeed.build(connected)
+        assertFalse(FeedItem.ConnectPrompt in again)
+        assertEquals(FeedItem.End, again.last())
+    }
+
+    @Test
     fun `search needs two characters and searches places in the chosen city`() = runTest {
-        val vm = DiscoverViewModel(discover, social)
+        val vm = discoverVm()
         vm.onQuery("a")
         vm.onSearch()
         advanceUntilIdle()

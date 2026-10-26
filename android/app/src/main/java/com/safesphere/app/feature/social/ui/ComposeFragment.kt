@@ -28,7 +28,6 @@ import com.safesphere.app.feature.social.domain.Daypart
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.PostType
 import com.safesphere.app.feature.social.domain.Precision
-import com.safesphere.app.feature.social.domain.TimeBand
 
 /**
  * Phase 13B: Share (design §9.5). The Share button repeats the audience ("Share with Connections"); an exact place is
@@ -114,7 +113,7 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
                     photo.failed -> getString(R.string.social_photo_failed)
                     photo.uploading -> getString(R.string.social_photo_uploading)
                     else -> null
-                }) { viewModel.onRemovePhoto(photo.key) }
+                }, onRemove = { viewModel.onRemovePhoto(photo.key) })
         })
         binding.addPhotosButton.isEnabled = state.canAddPhotos
 
@@ -156,25 +155,17 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
 
         val shown = when (state.precision) {
             Precision.EXACT -> state.place?.name
-            Precision.AREA -> state.place?.let { getString(R.string.social_area_line, it.areaCell) }
+            Precision.AREA -> state.place?.let { place ->
+                com.safesphere.app.feature.social.domain.CityAreas.cityOf(place.areaCell)
+                    ?.let { getString(R.string.feed_area_in_city, ExperienceLabels.cityName(it)) }
+                    ?: getString(R.string.feed_area_unknown)
+            }
             Precision.CITY -> state.city?.let(ExperienceLabels::cityName)
             Precision.NONE -> getString(R.string.social_precision_none)
             null -> null
         }
         binding.summaryLine.text = shown?.let { getString(R.string.social_location_summary, it) }.orEmpty()
         binding.summaryLine.isVisible = shown != null
-        // Phase 13F (F17): the postmark others will see, live (only what the chosen precision reveals).
-        val stampPlace = when (state.precision) {
-            Precision.EXACT -> state.place?.let { StampPlace.Exact(it.name) }
-            Precision.AREA -> state.place?.let { StampPlace.Area(it.areaCell) }
-            Precision.CITY -> state.city?.let { StampPlace.InCity(it) }
-            Precision.NONE -> StampPlace.Withheld
-            null -> null
-        }
-        binding.stampPreview.isVisible = stampPlace != null
-        if (stampPlace != null) binding.stampPreview.content = CardTexts.postmark(requireContext(),
-            state.type == PostType.ASK, stampPlace, if (experience) state.month else null, state.daypart, TimeBand.THIS_WEEK)
-
         val issues = buildList {
             if (state.photosPending) add(getString(R.string.social_issue_photos_pending))
             state.issues.forEach { add(getString(ExperienceLabels.of(it))) }
@@ -193,30 +184,15 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         state.sharedPostId?.let { postId ->
             viewModel.onSharedHandled()
             Toast.makeText(requireContext(), R.string.social_shared, Toast.LENGTH_SHORT).show()
-            // Phase 13F, the third moment: the stamp presses onto the page (~280 ms), then the post opens.
-            stampThen { findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to postId),
-                androidx.navigation.NavOptions.Builder().setPopUpTo(R.id.composeFragment, true).build()) }
+            // Phase 16: one haptic, then the new post opens (replacing the composer).
+            com.safesphere.app.core.ui.Haptics.confirm(binding.shareButton)
+            findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to postId),
+                androidx.navigation.NavOptions.Builder().setPopUpTo(R.id.composeFragment, true).build())
             return
         }
         if (state.sessionExpired) {
             viewModel.onSessionExpiredHandled()
             showSessionExpiredDialog()
         }
-    }
-
-    private fun stampThen(next: () -> Unit) {
-        val stamp = binding.stampPreview
-        com.safesphere.app.core.ui.Haptics.confirm(stamp)
-        if (!stamp.isShown || !android.animation.ValueAnimator.areAnimatorsEnabled()) {
-            next()
-            return
-        }
-        stamp.scaleX = 1.35f
-        stamp.scaleY = 1.35f
-        stamp.rotation = -14f
-        stamp.alpha = 0.4f
-        stamp.animate().scaleX(1f).scaleY(1f).rotation(0f).alpha(1f).setDuration(280)
-            .setInterpolator(android.view.animation.OvershootInterpolator(1.6f))
-            .withEndAction { if (isAdded) next() }.start()
     }
 }

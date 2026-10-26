@@ -13,7 +13,7 @@ import com.safesphere.app.feature.social.domain.Precision
 import com.safesphere.app.feature.social.domain.TimeBand
 import java.time.YearMonth
 
-/** Where the postmark says the post is: exactly what the author chose to reveal (Phase 13B precision). */
+/** Where a post says it is: exactly what the author chose to reveal (Phase 13B precision). */
 sealed interface StampPlace {
     data class Exact(val name: String) : StampPlace
     data class Area(val gridRef: String) : StampPlace
@@ -22,18 +22,18 @@ sealed interface StampPlace {
 }
 
 /**
- * Phase 13F (docs/PHASE13F_PLAN.md F13): what one experience card shows, decided without Android so it can be tested.
- * A collapsed post shows its collapsed line only: no headline, words, photo or tip (13E-D2 kept). The headline is the
- * first line of the body (posts have no title field); the rest is the excerpt.
+ * Phase 16 (docs/PHASE16.md): what one feed card shows, decided without Android so it can be tested. Person first,
+ * then the photo, then their own words (the "thought"), where, and the actions. A collapsed post shows its collapsed
+ * line only: no words, photo or tip (13E-D2 kept). [commentCount] is the one public number (U1).
  */
 data class ExperienceCard(
     val id: String,
     val isAsk: Boolean,
     val category: Interest?,
-    /** Null when collapsed. */
-    val headline: String?,
-    val excerpt: String?,
-    val tip: String?,
+    /** The post's own words, tidied for a card; null when collapsed. */
+    val thought: String?,
+    /** Whether a tip is inside (the card says so; the tip itself is on the post). Never true when collapsed. */
+    val hasTip: Boolean,
     val photo: MediaRef?,
     /** Why it is collapsed, for the line shown instead of the words; null = not collapsed. */
     val collapse: CardCollapse?,
@@ -42,10 +42,15 @@ data class ExperienceCard(
     val daypart: Daypart?,
     val band: TimeBand,
     val authorName: String?,
+    val authorHandle: String?,
     val own: Boolean,
     /** Own posts only: who can see it. */
     val audience: Audience?,
+    /** The viewer's own save state (never anyone else's). */
     val intent: ButterflyState?,
+    /** Only someone else's Experience can be saved (13C: never your own post, never a Question). */
+    val canSave: Boolean,
+    val commentCount: Int,
     val reasons: List<DiscoverReason>
 )
 
@@ -57,8 +62,8 @@ sealed interface CardCollapse {
 
 object ExperienceCards {
 
-    const val HEADLINE_MAX = 90
-    const val EXCERPT_MAX = 180
+    /** Enough words for four lines on a phone; the card cuts at a word and the post shows everything. */
+    const val THOUGHT_MAX = 320
 
     fun of(post: Post, reasons: List<DiscoverReason> = emptyList(), collapseStrongLanguage: Boolean = false): ExperienceCard {
         val collapse = when {
@@ -66,14 +71,12 @@ object ExperienceCards {
             collapseStrongLanguage && post.strongLanguage && !post.own -> CardCollapse.StrongLanguage
             else -> null
         }
-        val (headline, excerpt) = if (collapse != null) null to null else split(post.body)
         return ExperienceCard(
             id = post.publicId,
             isAsk = post.type == PostType.ASK,
             category = post.category,
-            headline = headline,
-            excerpt = excerpt,
-            tip = if (collapse != null) null else post.tip?.trim()?.takeIf { it.isNotEmpty() },
+            thought = if (collapse != null) null else thought(post.body),
+            hasTip = collapse == null && !post.tip.isNullOrBlank(),
             photo = if (collapse != null) null else post.media.firstOrNull(),
             collapse = collapse,
             place = placeOf(post),
@@ -81,9 +84,12 @@ object ExperienceCards {
             daypart = post.daypart,
             band = post.postedPeriod,
             authorName = post.author?.displayName,
+            authorHandle = post.author?.handle,
             own = post.own,
             audience = if (post.own) post.audience else null,
             intent = post.yourButterfly,
+            canSave = post.type == PostType.EXPERIENCE && !post.own,
+            commentCount = post.commentCount.coerceAtLeast(0),
             reasons = reasons
         )
     }
@@ -95,27 +101,11 @@ object ExperienceCards {
         Precision.NONE -> StampPlace.Withheld
     }
 
-    /** The first line (cut at a word near [HEADLINE_MAX]) is the headline; the rest, squeezed to one paragraph, the excerpt. */
-    fun split(body: String): Pair<String, String?> {
-        val text = body.trim()
-        val firstLine = text.lineSequence().firstOrNull().orEmpty().trim()
-        val restOfText = text.substringAfter('\n', "").trim()
-        val headline: String
-        var spill = ""
-        if (firstLine.length <= HEADLINE_MAX) {
-            headline = firstLine
-        } else {
-            val cut = firstLine.lastIndexOf(' ', HEADLINE_MAX).takeIf { it > HEADLINE_MAX / 2 } ?: HEADLINE_MAX
-            headline = firstLine.take(cut).trimEnd() + "…"
-            spill = firstLine.drop(cut).trim()
-        }
-        val rest = listOf(spill, restOfText).filter { it.isNotEmpty() }.joinToString(" ")
-            .replace(Regex("\\s+"), " ").trim()
-        val excerpt = when {
-            rest.isEmpty() -> null
-            rest.length <= EXCERPT_MAX -> rest
-            else -> rest.take(EXCERPT_MAX).substringBeforeLast(' ').trimEnd() + "…"
-        }
-        return headline to excerpt
+    /** The post's words for a card: blank lines squeezed, cut at a word near [THOUGHT_MAX] with "…". */
+    fun thought(body: String): String {
+        val text = body.trim().lines().map { it.trim() }.filter { it.isNotEmpty() }.joinToString("\n")
+        if (text.length <= THOUGHT_MAX) return text
+        val cut = text.lastIndexOf(' ', THOUGHT_MAX).takeIf { it > THOUGHT_MAX / 2 } ?: THOUGHT_MAX
+        return text.take(cut).trimEnd() + "…"
     }
 }

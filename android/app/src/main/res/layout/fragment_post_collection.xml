@@ -71,9 +71,11 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <com.safesphere.app.core.ui.components.KolamView
-                android:layout_width="@dimen/kolam_size"
-                android:layout_height="@dimen/kolam_size" />
+            <ImageView
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_brand_mark" />
 
             <TextView
                 android:id="@+id/emptyText"

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 16: the static launch icon before Android 12 (drawable-v31/splash_mark.xml animates). Same as the launcher icon, concept "Go-K" (docs/design/kurinji-16-icon.md): a K built from a black stem (someone
+     standing) and a white forward chevron (going out). Drawn inside the adaptive-icon safe circle (66 of 108). The
+     background layer is brand red (@color/ic_launcher_background). Fixed colours: the launcher has no night mode. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.86"
+        android:scaleY="0.86"
+        android:translateX="-2.5">
+        <path
+            android:fillColor="@color/launcher_stem"
+            android:pathData="M29,30h9a3,3 0,0 1,3 3v42a3,3 0,0 1,-3 3h-9a3,3 0,0 1,-3 -3v-42a3,3 0,0 1,3 -3z" />
+        <path
+            android:fillColor="@color/launcher_chevron"
+            android:pathData="M47,30L63,30L87,54L63,78L47,78L71,54Z" />
+    </group>
+</vector>

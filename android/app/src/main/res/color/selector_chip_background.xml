@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13F: a chosen chip is filled with soft bloom; an unchosen one is the card colour. -->
+<!-- Phase 16: a chosen chip is solid brand red (with its check mark and white words); an unchosen one is the card colour. -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="?attr/colorPrimaryContainer" android:state_checked="true" />
+    <item android:color="?attr/colorPrimary" android:state_checked="true" />
     <item android:color="?attr/colorCard" />
 </selector>

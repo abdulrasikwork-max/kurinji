@@ -8,6 +8,7 @@ import com.safesphere.backend.social.dto.DiscoverDtos.EditionSection;
 import com.safesphere.backend.social.dto.DiscoverDtos.PlacePage;
 import com.safesphere.backend.social.dto.PostDtos.PostPage;
 import com.safesphere.backend.social.dto.PostDtos.PostResponse;
+import com.safesphere.backend.social.entity.Comment;
 import com.safesphere.backend.social.entity.Place;
 import com.safesphere.backend.social.entity.Post;
 import com.safesphere.backend.social.entity.PostEnums.Audience;
@@ -20,6 +21,7 @@ import com.safesphere.backend.social.policy.EditionPolicy.Picked;
 import com.safesphere.backend.social.policy.EditionPolicy.Reason;
 import com.safesphere.backend.social.policy.EditionPolicy.Section;
 import com.safesphere.backend.social.policy.ProfileLists;
+import com.safesphere.backend.social.policy.Visibility;
 import com.safesphere.backend.social.repository.CommentRepository;
 import com.safesphere.backend.social.repository.PostRepository;
 import com.safesphere.backend.social.repository.ProfileRepository;
@@ -31,9 +33,12 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -112,7 +117,33 @@ public class DiscoverService {
         add(sections, Section.THEME, viewerId,
                 EditionPolicy.pick(Section.THEME, candidates(themed, interests), EditionPolicy.THEME_CAP), now);
 
+        LocalDateTime since = now.minus(EditionPolicy.TALKING_WINDOW);
+        List<Post> talked = relationships.forEdition(viewer, posts.talkedAbout(city, viewerId,
+                now.minus(EditionPolicy.THEME_WINDOW), since, now, candidates), now);
+        add(sections, Section.TALKING, viewerId, EditionPolicy.pickTalking(talking(viewerId, talked, since),
+                EditionPolicy.TALKING_CAP), now);
+
         return new Edition(city.name(), monday.toString(), theme.name(), sections);
+    }
+
+    /**
+     * Phase 16 (U2): each post with the time of its newest perspective that the viewer can read (the one rule), written
+     * since [since] by someone other than the post's author. Only the order uses the time; it is never returned.
+     */
+    private List<EditionPolicy.Talked<Post>> talking(long viewerId, List<Post> list, LocalDateTime since) {
+        if (list.isEmpty()) return List.of();
+        Map<Long, List<Comment>> byPost = comments.findByPostIdIn(list.stream().map(Post::getId).toList()).stream()
+                .collect(Collectors.groupingBy(Comment::getPostId));
+        Map<Long, Visibility.Facts> writers = new HashMap<>();
+        List<EditionPolicy.Talked<Post>> out = new ArrayList<>(list.size());
+        for (Post post : list) {
+            LocalDateTime newest = CommentService.readable(byPost.getOrDefault(post.getId(), List.of()),
+                    c -> Visibility.canSeeComment(relationships.commentFacts(viewerId, post, c, writers))).stream()
+                    .filter(c -> !c.getAuthorId().equals(post.getAuthorId()) &&!c.getCreatedAt().isBefore(since))
+                    .map(Comment::getCreatedAt).max(LocalDateTime::compareTo).orElse(null);
+            out.add(new EditionPolicy.Talked<>(post, newest, post.getId()));
+        }
+        return out;
     }
 
     /** C9: connections' posts from the last 30 days, newest first, 20 per page; ends. */

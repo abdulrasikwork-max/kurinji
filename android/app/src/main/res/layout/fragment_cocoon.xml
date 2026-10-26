@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13C, redesigned in 13F (F16): the Cocoon. Want to go (chrysalises) and Been (butterflies). Private to the
-     person; nobody is told. "I've been" lets the butterfly out, then invites a word for the next person. -->
+<!-- Phase 16 (docs/PHASE16.md): Saved (was "Cocoon"). Everything saved with the butterfly, in two plain lists: Want to go
+     and Been there. Private to the person; nobody is told. -->
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -12,20 +12,13 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingStart="@dimen/screen_padding"
-        android:paddingTop="@dimen/space_lg"
+        android:paddingTop="@dimen/space_md"
         android:paddingEnd="@dimen/screen_padding"
         android:paddingBottom="@dimen/space_xl">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/cocoon_overline"
-            android:textAppearance="@style/TextAppearance.Kurinji.Overline" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xs"
             android:accessibilityHeading="true"
             android:text="@string/title_cocoon"
             android:textAppearance="@style/TextAppearance.Kurinji.Masthead" />
@@ -33,25 +26,27 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xs"
+            android:drawablePadding="6dp"
+            android:gravity="center_vertical"
             android:text="@string/cocoon_intro"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+            app:drawableStartCompat="@drawable/ic_lock"
+            app:drawableTint="?attr/colorOnSurfaceVariant" />
 
-        <com.safesphere.app.core.ui.components.TextTabsView
-            android:id="@+id/tabs"
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/tabGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/stroke_hairline"
-            android:background="?attr/colorOutlineVariant" />
+            android:layout_marginTop="@dimen/space_md"
+            app:selectionRequired="true"
+            app:singleLine="true"
+            app:singleSelection="true" />
 
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/progress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
             android:indeterminate="true"
             android:visibility="gone" />
 
@@ -73,7 +68,6 @@
             android:nestedScrollingEnabled="false"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-        <!-- Empty: a kolam for whoever comes next. -->
         <LinearLayout
             android:id="@+id/emptyBlock"
             android:layout_width="match_parent"
@@ -83,9 +77,11 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <com.safesphere.app.core.ui.components.KolamView
-                android:layout_width="@dimen/kolam_size"
-                android:layout_height="@dimen/kolam_size" />
+            <ImageView
+                android:id="@+id/emptyGlyph"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:importantForAccessibility="no" />
 
             <TextView
                 android:id="@+id/emptyText"
@@ -97,10 +93,11 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/emptyDiscoverButton"
-                style="@style/Widget.Kurinji.Button.Quiet"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_md"
+                android:paddingStart="28dp"
+                android:paddingEnd="28dp"
                 android:text="@string/cocoon_open_discover" />
         </LinearLayout>
 

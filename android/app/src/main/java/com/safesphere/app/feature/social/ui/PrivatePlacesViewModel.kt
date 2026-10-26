@@ -8,20 +8,18 @@ import com.safesphere.app.AppContainer
 import com.safesphere.app.core.location.GeoHash
 import com.safesphere.app.core.location.LocationAccess
 import com.safesphere.app.core.location.LocationProvider
-import com.safesphere.app.core.location.LocationUnavailableReason
-import com.safesphere.app.core.location.LocationUpdate
+import com.safesphere.app.core.location.OneFix
+import com.safesphere.app.core.location.oneFix
 import com.safesphere.app.feature.social.data.PlaceMemory
 import com.safesphere.app.feature.social.domain.PrivatePlace
 import com.safesphere.app.feature.social.domain.PrivatePlaceKind
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
-enum class PrivatePlacesNotice { ADDED, NEEDS_PERMISSION, LOCATION_UNAVAILABLE, NEEDS_PRECISE, NOT_SAVED }
+enum class PrivatePlacesNotice { ADDED, NEEDS_PERMISSION, LOCATION_OFF, LOCATION_UNAVAILABLE, NEEDS_PRECISE, NOT_SAVED }
 
 data class PrivatePlacesUiState(
     val isLoading: Boolean = true,
@@ -53,12 +51,14 @@ class PrivatePlacesViewModel(
         if (_uiState.value.isBusy) return
         viewModelScope.launch {
             _uiState.update { it.copy(isBusy = true) }
-            val notice = when (val update = awaitFix()) {
-                is LocationUpdate.Unavailable -> if (update.reason == LocationUnavailableReason.PERMISSION_DENIED)
-                    PrivatePlacesNotice.NEEDS_PERMISSION else PrivatePlacesNotice.LOCATION_UNAVAILABLE
-                is LocationUpdate.Fix -> {
-                    val fix = update.fix
-                    val good = locationProvider.access() == LocationAccess.PRECISE &&
+            val notice = when (val result = locationProvider.oneFix(PlacePickerViewModel.FRESH_FIX_MAX_AGE_MILLIS,
+                PlacePickerViewModel.FIX_TIMEOUT_MILLIS)) {
+                OneFix.NeedsPermission -> PrivatePlacesNotice.NEEDS_PERMISSION
+                OneFix.LocationOff -> PrivatePlacesNotice.LOCATION_OFF
+                OneFix.NotFound, OneFix.Unavailable -> PrivatePlacesNotice.LOCATION_UNAVAILABLE
+                is OneFix.Got -> {
+                    val fix = result.fix
+                    val good = result.access == LocationAccess.PRECISE &&
                         (fix.accuracyMeters ?: Float.MAX_VALUE) <= PlacePickerViewModel.MAX_ADD_ACCURACY_METERS
                     if (!good) PrivatePlacesNotice.NEEDS_PRECISE
                     else if (placeMemory.addPrivate(kind, GeoHash.encode(fix.latitude, fix.longitude, GeoHash.BLOCK)))
@@ -97,17 +97,6 @@ class PrivatePlacesViewModel(
         }
     }
 
-    private suspend fun awaitFix(): LocationUpdate {
-        if (locationProvider.access() == LocationAccess.NONE) {
-            return LocationUpdate.Unavailable(LocationUnavailableReason.PERMISSION_DENIED)
-        }
-        return withTimeoutOrNull(PlacePickerViewModel.FIX_TIMEOUT_MILLIS) {
-            locationProvider.updates(PlacePickerViewModel.FIX_INTERVAL_MILLIS).first { update ->
-                update is LocationUpdate.Fix ||
-                    (update is LocationUpdate.Unavailable && update.reason != LocationUnavailableReason.NO_FIX)
-            }
-        } ?: LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX)
-    }
 
     companion object {
         fun factory(container: AppContainer) = viewModelFactory {

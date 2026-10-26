@@ -82,6 +82,19 @@ public interface PostRepository extends JpaRepository<Post, Long> {
                                @Param("category") String category, @Param("from") LocalDateTime from,
                                @Param("now") LocalDateTime now, Pageable page);
 
+    /**
+     * Phase 16 (U2) "Talking now" candidates: Everyone posts (either type) in a city, not the viewer's, visible within
+     * [from, now], with a perspective written since [since] by someone other than the post's author. A pre-filter only:
+     * every perspective still passes the one rule before it can order anything.
+     */
+    @Query("SELECT p FROM Post p WHERE " + EVERYONE + " AND p.authorId <> :viewer"
+            + " AND p.visibleFrom >= :from AND p.visibleFrom <= :now AND " + IN_CITY
+            + " AND EXISTS (SELECT c.id FROM Comment c WHERE c.postId = p.id AND c.authorId <> p.authorId"
+            + " AND c.createdAt >= :since)"
+            + " ORDER BY p.visibleFrom DESC, p.id DESC")
+    List<Post> talkedAbout(@Param("city") City city, @Param("viewer") long viewer, @Param("from") LocalDateTime from,
+                           @Param("since") LocalDateTime since, @Param("now") LocalDateTime now, Pageable page);
+
     /** Open Asks: Everyone Asks in a city without an answer the asker marked "This helped". */
     @Query("SELECT p FROM Post p WHERE " + EVERYONE
             + " AND p.type = com.safesphere.backend.social.entity.PostEnums.PostType.ASK AND p.authorId <> :viewer"

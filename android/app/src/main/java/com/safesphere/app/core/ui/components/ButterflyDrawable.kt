@@ -94,11 +94,21 @@ class ButterflyDrawable(
         private val BODY: Path = PathParser.createPathFromPathData("M22.2,22a1.8,9 0,1 0,3.6 0a1.8,9 0,1 0,-3.6 0Z")
         private val ANTENNAE: Path = PathParser.createPathFromPathData("M23.4,13.5L19.5,5M24.6,13.5L28.5,5")
 
-        /** The intent butterfly in the theme's colours ("Want to go"), [sizeDp] wide. */
+        /** The saved butterfly in the theme's colours (Phase 16: brand red wings, ink edges), [sizeDp] wide. */
         fun intent(context: Context, sizeDp: Int = 28): ButterflyDrawable {
             val probe = android.view.View(context)
             return ButterflyDrawable(
                 wing = MaterialColors.getColor(probe, R.attr.colorIntent),
+                edge = MaterialColors.getColor(probe, com.google.android.material.R.attr.colorOnSurface),
+                intrinsicPx = (sizeDp * context.resources.displayMetrics.density).toInt()
+            )
+        }
+
+        /** Phase 16: the not-yet-saved butterfly: card-coloured wings, ink edges (the shape says "save"). */
+        fun outline(context: Context, sizeDp: Int = 28): ButterflyDrawable {
+            val probe = android.view.View(context)
+            return ButterflyDrawable(
+                wing = MaterialColors.getColor(probe, R.attr.colorCard),
                 edge = MaterialColors.getColor(probe, com.google.android.material.R.attr.colorOnSurface),
                 intrinsicPx = (sizeDp * context.resources.displayMetrics.density).toInt()
             )

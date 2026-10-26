@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13F: Discover · Share · Cocoon · You. Tab ids match the destination ids in nav_graph.xml; "share" is an action
+<!-- Phase 13F/16: Discover, Share, Saved (id cocoonFragment), You. Tab ids match the destination ids in nav_graph.xml; "share" is an action
      (it opens the composer and never becomes the selected item). -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item

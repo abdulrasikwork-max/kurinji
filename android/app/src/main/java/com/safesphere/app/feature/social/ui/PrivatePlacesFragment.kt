@@ -3,13 +3,14 @@ package com.safesphere.app.feature.social.ui
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
-import com.safesphere.app.core.location.LocationPermissions
+import com.safesphere.app.core.location.LocationPermissionStatus
+import com.safesphere.app.core.ui.LocationAsk
+import com.safesphere.app.core.ui.LocationSettings
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.databinding.FragmentPrivatePlacesBinding
@@ -25,12 +26,16 @@ class PrivatePlacesFragment : ViewBindingFragment<FragmentPrivatePlacesBinding>(
     private val adapter = PersonRowAdapter()
     private var pendingKind: PrivatePlaceKind? = null
 
-    private val locationLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            // Asked again only after a grant (a refusal must never loop back into another request).
-            if (result.values.any { it }) pendingKind?.let(viewModel::onPermissionResult)
-            else toast(R.string.social_private_needs_precise)
+    // Asked again only after a grant (a refusal must never loop back into another request).
+    private val locationAsk = LocationAsk(this) { status ->
+        when (status) {
+            LocationPermissionStatus.GRANTED_PRECISE, LocationPermissionStatus.GRANTED_APPROXIMATE ->
+                pendingKind?.let(viewModel::onPermissionResult)
+            LocationPermissionStatus.PERMANENTLY_DENIED -> offerSettings(R.string.social_location_denied_settings,
+                R.string.location_action_settings) { LocationSettings.openAppSettings(this) }
+            LocationPermissionStatus.DENIED -> toast(R.string.social_private_needs_precise)
         }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -71,7 +76,14 @@ class PrivatePlacesFragment : ViewBindingFragment<FragmentPrivatePlacesBinding>(
         binding.emptyText.isVisible = !state.isLoading && state.places.isEmpty() && !state.unreadable
         when (state.notice) {
             PrivatePlacesNotice.ADDED -> toast(R.string.social_private_added)
-            PrivatePlacesNotice.NEEDS_PERMISSION -> locationLauncher.launch(LocationPermissions.REQUESTED)
+            PrivatePlacesNotice.NEEDS_PERMISSION -> if (locationAsk.permanentlyDenied) {
+                offerSettings(R.string.social_location_denied_settings, R.string.location_action_settings) {
+                    LocationSettings.openAppSettings(this)
+                }
+            } else locationAsk.ask()
+            PrivatePlacesNotice.LOCATION_OFF -> offerSettings(R.string.social_location_off, R.string.location_action_turn_on) {
+                LocationSettings.openLocationSettings(this)
+            }
             PrivatePlacesNotice.LOCATION_UNAVAILABLE -> toast(R.string.social_location_unavailable)
             PrivatePlacesNotice.NEEDS_PRECISE -> toast(R.string.social_private_needs_precise)
             PrivatePlacesNotice.NOT_SAVED -> toast(R.string.social_private_not_saved)
@@ -81,4 +93,13 @@ class PrivatePlacesFragment : ViewBindingFragment<FragmentPrivatePlacesBinding>(
     }
 
     private fun toast(text: Int) = Toast.makeText(requireContext(), text, Toast.LENGTH_LONG).show()
+
+    /** Phase 16: when asking again cannot help, say why and offer the one settings page that can. */
+    private fun offerSettings(message: Int, action: Int, open: () -> Unit) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setMessage(message)
+            .setPositiveButton(action) { _, _ -> open() }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
 }

@@ -35,7 +35,7 @@ class Phase15IntegrationFixesTest {
     @Test
     fun postScreen_bringsNewFailuresIntoView_andCocoonInvitationOpensBeenHere() {
         val post = File("src/main/java/com/safesphere/app/feature/social/ui/PostFragment.kt").readText(Charsets.UTF_8)
-        assertTrue(post.contains("binding.root.smoothScrollTo(0, binding.errorNotice.top)"))
+        assertTrue(post.contains("binding.scroll.smoothScrollTo(0, 0)")) // Phase 16: the notice is at the top of the scroll
         assertTrue(post.contains("binding.errorNotice.announceForAccessibility(message)"))
         assertTrue(post.contains("PostViewModel.ARG_WRITE_BEEN_HERE"))
         val cocoon = File("src/main/java/com/safesphere/app/feature/social/ui/CocoonFragment.kt").readText(Charsets.UTF_8)
@@ -59,7 +59,7 @@ class Phase15IntegrationFixesTest {
     fun deletionExplainer_namesTheSocialContentToo() {
         val strings = File("src/main/res/values/strings.xml").readText(Charsets.UTF_8)
         val text = Regex("<string name=\"account_delete_explainer\">([^<]*)</string>").find(strings)!!.groupValues[1]
-        for (word in listOf("profile", "experiences", "photos", "perspectives", "connections", "Cocoon", "Evidence Vault")) {
+        for (word in listOf("profile", "posts", "photos", "comments", "connections", "saved list", "Evidence Vault")) {
             assertTrue("deletion text should name $word", text.contains(word))
         }
     }

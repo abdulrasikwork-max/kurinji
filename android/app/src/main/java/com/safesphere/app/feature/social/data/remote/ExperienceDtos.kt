@@ -137,7 +137,9 @@ data class PostDto(
     val approveFirst: Boolean? = null,
     val moderation: ModerationViewDto? = null,
     val collapsed: String? = null,
-    val strongLanguage: Boolean? = null
+    val strongLanguage: Boolean? = null,
+    /** Phase 16 (U1): comments this viewer can read; a missing or negative number counts as none. */
+    val commentCount: Int? = null
 ) {
     fun toDomain(): Post? {
         val author = author?.let { a ->
@@ -175,7 +177,8 @@ data class PostDto(
             approveFirst = approveFirst == true,
             ownModeration = if (own == true) moderation?.toDomain() else null,
             collapsed = if (own == true) null else collapsedOf(collapsed),
-            strongLanguage = strongLanguage == true
+            strongLanguage = strongLanguage == true,
+            commentCount = (commentCount ?: 0).coerceAtLeast(0)
         )
     }
 

@@ -133,6 +133,8 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
         binding.noProfileCard.isVisible = state.hasLoaded && me == null
         binding.editProfileButton.isVisible = me != null
         binding.youName.text = me?.displayName ?: getString(R.string.nav_you)
+        binding.youAvatar.isVisible = me != null
+        binding.youAvatar.set(me?.displayName, me?.handle)
         binding.youHandle.isVisible = me != null
         binding.youHandle.text = me?.let {
             if (it.city.isNullOrBlank()) getString(R.string.social_handle_line, it.handle)

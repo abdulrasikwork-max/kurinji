@@ -126,9 +126,10 @@ class DiscoverApiIntegrationTest {
         assertThat(sectionIds(edition, "ASKS")).contains(ask);
         assertThat(texts(item(edition, ask).get("reasons"))).contains("OPEN_ASK");
         String answer = social.commentId(bala, ask, "ANSWER", "Autos wait near the bus stand.", null);
-        assertThat(social.editionIds(social.edition(chitra, "ERODE"))).contains(ask); // answered, not yet helpful
+        assertThat(sectionIds(social.json(social.edition(chitra, "ERODE")), "ASKS")).contains(ask); // not yet helpful
         social.commentAction(asha, answer, "helped").andExpect(status().isNoContent());
-        assertThat(social.editionIds(social.edition(chitra, "ERODE"))).doesNotContain(ask);
+        // Phase 16: it leaves "Asks you could answer"; it may still be in "Talking now" (a recent perspective).
+        assertThat(sectionIds(social.json(social.edition(chitra, "ERODE")), "ASKS")).doesNotContain(ask);
     }
 
     @Test

@@ -25,12 +25,15 @@ data class ButterflyTally(val count: Int?, val fewerThanThree: Boolean) {
 /** Why a post was picked ("Why am I seeing this?"). Unknown codes from a newer server are dropped. */
 enum class DiscoverReason {
     IN_THIS_CITY, RECENT, HAS_PLACE, HAS_WHEN, HAS_TIP, MATCHES_YOUR_INTERESTS, BEEN_HERE_TOO, OPEN_ASK,
-    THEME_OF_THE_WEEK, FROM_A_CONNECTION
+    THEME_OF_THE_WEEK, FROM_A_CONNECTION,
+    /** Phase 16 (U2): someone commented recently ("Talking now"). */
+    NEW_PERSPECTIVES
 }
 
 data class DiscoverItem(val post: Post, val reasons: List<DiscoverReason>)
 
-enum class EditionSectionKind { CITY, ASKS, THEME }
+/** Phase 16 (U2): TALKING = "Talking now", ordered by the newest comment, never by totals. */
+enum class EditionSectionKind { CITY, ASKS, THEME, TALKING }
 
 data class EditionSection(val kind: EditionSectionKind, val items: List<DiscoverItem>)
 

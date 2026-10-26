@@ -13,13 +13,13 @@ data class OnboardingPage(
 )
 
 /**
- * Phase 13F (F19): what Kurinji is (written for the next one who goes), the butterfly and the private Cocoon, and what
- * the person controls. No safety pitch (design §5): one line says where trusted people and SOS live.
+ * Phase 13F (F19), words and pictures from Phase 16: see it first-hand, tap the butterfly to save (a private list), and
+ * what the person controls. No safety pitch: one line says where trusted people and SOS live.
  */
 object OnboardingPages {
     val all = listOf(
         OnboardingPage(R.drawable.ic_brand_mark, R.string.onboarding_connected_title, R.string.onboarding_connected_body),
-        OnboardingPage(R.drawable.ic_chrysalis, R.string.onboarding_aware_title, R.string.onboarding_aware_body),
+        OnboardingPage(R.drawable.ic_nav_cocoon, R.string.onboarding_aware_title, R.string.onboarding_aware_body, tinted = true),
         OnboardingPage(R.drawable.ic_lock, R.string.onboarding_safe_title, R.string.onboarding_safe_body, tinted = true)
     )
 }

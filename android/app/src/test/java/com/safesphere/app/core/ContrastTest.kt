@@ -23,6 +23,23 @@ class ContrastTest {
         assertTrue(problems.joinToString("\n"), problems.isEmpty())
     }
 
+    /**
+     * Phase 16 (emulator finding): the calm status ("Nothing running") must not be red, or a calm fact reads as an
+     * emergency now that red is also the brand.
+     */
+    @Test
+    fun `the calm status accent is not a red`() {
+        val day = colours(File("src/main/res/values/colors.xml"))
+        val night = day + colours(File("src/main/res/values-night/colors.xml"))
+        for (palette in listOf(day, night)) {
+            val rgb = palette.getValue("hero_accent")
+            val r = rgb shr 16 and 0xFF
+            val g = rgb shr 8 and 0xFF
+            val b = rgb and 0xFF
+            assertTrue("hero_accent looks red: #%06X".format(rgb), !(r > g + 40 && r > b + 40))
+        }
+    }
+
     private fun check(palette: Map<String, Int>, fg: String, bg: String, minimum: Double, theme: String,
                       problems: MutableList<String>) {
         val f = palette[fg] ?: return problems.let { it += "$theme: $fg missing" }
@@ -59,9 +76,16 @@ class ContrastTest {
             "ss_safe" to "k_mist", "ss_on_safe_container" to "ss_safe_container",
             "ss_on_emergency" to "ss_emergency", "ss_on_emergency_container" to "ss_emergency_container",
             "hero_on" to "hero_background", "hero_on_variant" to "hero_background", "hero_accent" to "hero_background",
-            "hero_caution" to "hero_background"
+            "hero_caution" to "hero_background",
+            // Phase 16 (U4): emergency words on the black emergency surface; white on every avatar; the splash line.
+            "ss_on_emergency" to "emergency_surface",
+            "avatar_on" to "avatar_1", "avatar_on" to "avatar_2", "avatar_on" to "avatar_3", "avatar_on" to "avatar_4",
+            "avatar_on" to "avatar_5", "avatar_on" to "avatar_6",
+            "launcher_chevron" to "splash_background"
         )
         // The butterfly button's edge is k_yeoman_ink (styles.xml); the bright k_yeoman is only a fill inside dark edges.
-        val OUTLINE_PAIRS = listOf("k_outline" to "k_mist", "k_outline" to "k_card", "k_yeoman_ink" to "k_card")
+        val OUTLINE_PAIRS = listOf("k_outline" to "k_mist", "k_outline" to "k_card", "k_yeoman_ink" to "k_card",
+            // Phase 16: the red ring must stand out from the black emergency surface; the icon's chevron from its red.
+            "ss_emergency" to "emergency_surface", "launcher_stem" to "launcher_red")
     }
 }

@@ -2,13 +2,7 @@ package com.safesphere.app.feature.social.ui
 
 import android.content.Context
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
-import androidx.core.content.ContextCompat
-import androidx.core.view.AccessibilityDelegateCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -16,54 +10,61 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.ImageLoader
 import coil.load
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.safesphere.app.R
 import com.safesphere.app.core.ui.components.ButterflyDrawable
-import com.safesphere.app.core.ui.components.PostmarkView
-import com.safesphere.app.databinding.ItemAskCardBinding
 import com.safesphere.app.databinding.ItemExperienceCardBinding
 import com.safesphere.app.feature.social.domain.ButterflyState
+import com.safesphere.app.feature.social.domain.CityAreas
 import java.util.Locale
 
-/** One card in a list: what it shows, what a tap does, and (Edition items) "Why am I seeing this?". */
-data class CardRow(val card: ExperienceCard, val onOpen: () -> Unit, val onWhy: (() -> Unit)? = null)
+/**
+ * One post in a list and what its buttons do. [onSave] saves (or un-saves) it with the butterfly, right from the feed;
+ * null where a list cannot (the button is then hidden). [onComments] opens the post at its comments.
+ */
+data class CardRow(
+    val card: ExperienceCard,
+    val onOpen: () -> Unit,
+    val onWhy: (() -> Unit)? = null,
+    val onSave: (() -> Unit)? = null,
+    val onComments: (() -> Unit)? = null
+)
 
 /**
- * Phase 13F (F13): experiences as postcards and Asks as question slips, in Discover, place and category pages,
- * profiles and "Your experiences". Photos come through the ONE Coil loader (memory cache only, JWT attached).
- * Each card is one TalkBack item with one sentence; "Why?" is also a TalkBack action.
+ * Phase 16: posts as social feed cards in Discover, place and category pages, profiles and "Your posts". Photos come
+ * through the ONE Coil loader (memory cache only, JWT attached).
  */
 class ExperienceCardAdapter(
     private val loader: ImageLoader,
     private val photoUrl: (String) -> String
-) : ListAdapter<CardRow, RecyclerView.ViewHolder>(Diff) {
+) : ListAdapter<CardRow, ExperienceCardAdapter.Holder>(Diff) {
 
-    class ExperienceHolder(val binding: ItemExperienceCardBinding) : RecyclerView.ViewHolder(binding.root)
-    class AskHolder(val binding: ItemAskCardBinding) : RecyclerView.ViewHolder(binding.root)
+    class Holder(val binding: ItemExperienceCardBinding) : RecyclerView.ViewHolder(binding.root)
 
-    override fun getItemViewType(position: Int) = if (getItem(position).card.isAsk) ASK else EXPERIENCE
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
+        Holder(ItemExperienceCardBinding.inflate(LayoutInflater.from(parent.context), parent, false))
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        val inflater = LayoutInflater.from(parent.context)
-        return if (viewType == ASK) AskHolder(ItemAskCardBinding.inflate(inflater, parent, false))
-        else ExperienceHolder(ItemExperienceCardBinding.inflate(inflater, parent, false))
+    override fun onBindViewHolder(holder: Holder, position: Int) =
+        CardBinder.bind(holder.binding, getItem(position), loader, photoUrl)
+
+    private object Diff : DiffUtil.ItemCallback<CardRow>() {
+        override fun areItemsTheSame(old: CardRow, new: CardRow) = old.card.id == new.card.id
+        override fun areContentsTheSame(old: CardRow, new: CardRow) = old.card == new.card &&
+            (old.onWhy == null) == (new.onWhy == null) && (old.onSave == null) == (new.onSave == null)
     }
+}
 
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val row = getItem(position)
-        when (holder) {
-            is ExperienceHolder -> bindExperience(holder.binding, row)
-            is AskHolder -> bindAsk(holder.binding, row)
-        }
-    }
+/** Phase 16: binds one feed card; shared by every list that shows posts (and Discover's own adapter). */
+object CardBinder {
 
-    private fun bindExperience(b: ItemExperienceCardBinding, row: CardRow) {
+    fun bind(b: ItemExperienceCardBinding, row: CardRow, loader: ImageLoader, photoUrl: (String) -> String) {
         val card = row.card
         val context = b.root.context
-        b.overline.text = CardTexts.overline(context, card)
-        showWords(b.headline, b.excerpt, b.collapsedLine, card, context)
-        b.ticket.isVisible = card.tip != null
-        b.tip.text = card.tip.orEmpty()
-        b.byline.text = CardTexts.byline(context, card)
+        b.avatar.set(card.authorName, card.authorHandle)
+        b.name.text = card.authorName ?: context.getString(R.string.feed_someone)
+        b.meta.text = CardTexts.meta(context, card)
+        b.questionBadge.isVisible = card.isAsk
 
         val photo = card.photo
         b.photo.isVisible = photo != null
@@ -73,96 +74,81 @@ class ExperienceCardAdapter(
         } else {
             b.photo.setImageDrawable(null)
         }
-        // With a photo the postmark is pressed half onto it, like a stamp on a postcard.
-        val stamp = context.resources.getDimension(R.dimen.postmark_size_small)
-        b.postmark.translationY = if (photo != null) -stamp * 0.55f else 0f
-        b.postmark.content = CardTexts.postmark(context, card)
 
-        b.intentGlyph.isVisible = card.intent != null
-        when (card.intent) {
-            ButterflyState.WANT -> b.intentGlyph.setImageResource(R.drawable.ic_chrysalis)
-            ButterflyState.BEEN -> b.intentGlyph.setImageDrawable(ButterflyDrawable.intent(context))
-            null -> b.intentGlyph.setImageDrawable(null)
-        }
-        bindActions(b.card, b.whyButton, row, context)
-    }
-
-    private fun bindAsk(b: ItemAskCardBinding, row: CardRow) {
-        val card = row.card
-        val context = b.root.context
-        b.overline.text = CardTexts.overline(context, card)
-        b.headline.isVisible = card.headline != null
-        b.headline.text = card.headline.orEmpty()
+        b.thought.isVisible = card.thought != null
+        b.thought.text = card.thought.orEmpty()
         b.collapsedLine.isVisible = card.collapse != null
         b.collapsedLine.text = card.collapse?.let { context.getString(CardTexts.collapsedLine(it)) }.orEmpty()
-        b.byline.text = listOfNotNull(CardTexts.whereLine(context, card), CardTexts.byline(context, card))
-            .joinToString(" · ")
-        bindActions(b.card, b.whyButton, row, context)
+        contextChips(b.contextChips, card, context)
+
+        b.content.setOnClickListener { row.onOpen() }
+        b.content.contentDescription = CardTexts.spoken(context, card)
+
+        bindSave(b.saveButton, card, row.onSave)
+        b.commentButton.text = if (card.commentCount > 0) String.format(Locale.getDefault(), "%d", card.commentCount)
+            else context.getString(R.string.feed_comment)
+        b.commentButton.contentDescription = CardTexts.commentsSpoken(context, card.commentCount)
+        b.commentButton.setOnClickListener { (row.onComments ?: row.onOpen)() }
+        b.whyButton.isVisible = row.onWhy != null
+        b.whyButton.setOnClickListener { row.onWhy?.invoke() }
     }
 
-    private fun showWords(headline: TextView, excerpt: TextView, collapsedLine: TextView, card: ExperienceCard, context: Context) {
-        headline.isVisible = card.headline != null
-        headline.text = card.headline.orEmpty()
-        excerpt.isVisible = card.excerpt != null
-        excerpt.text = card.excerpt.orEmpty()
-        collapsedLine.isVisible = card.collapse != null
-        collapsedLine.text = card.collapse?.let { context.getString(CardTexts.collapsedLine(it)) }.orEmpty()
-    }
-
-    private fun bindActions(root: View, why: MaterialButton, row: CardRow, context: Context) {
-        root.setOnClickListener { row.onOpen() }
-        root.contentDescription = CardTexts.spoken(context, row.card)
-        why.isVisible = row.onWhy != null
-        why.setOnClickListener { row.onWhy?.invoke() }
-        ViewCompat.setAccessibilityDelegate(root, object : AccessibilityDelegateCompat() {
-            override fun onInitializeAccessibilityNodeInfo(host: View, info: AccessibilityNodeInfoCompat) {
-                super.onInitializeAccessibilityNodeInfo(host, info)
-                info.addAction(AccessibilityNodeInfoCompat.AccessibilityActionCompat(
-                    AccessibilityNodeInfoCompat.ACTION_CLICK, context.getString(R.string.card_action_open)))
-                if (row.onWhy != null) info.addAction(AccessibilityNodeInfoCompat.AccessibilityActionCompat(
-                    R.id.card_action_why, context.getString(R.string.discover_why_title)))
-            }
-
-            override fun performAccessibilityAction(host: View, action: Int, args: android.os.Bundle?): Boolean {
-                if (action == R.id.card_action_why) {
-                    row.onWhy?.invoke()
-                    return true
-                }
-                return super.performAccessibilityAction(host, action, args)
-            }
+    /** The butterfly: outline = not saved, red = saved; the word says it too (never colour alone). */
+    fun bindSave(button: MaterialButton, card: ExperienceCard, onSave: (() -> Unit)?) {
+        val context = button.context
+        button.isVisible = card.canSave && onSave != null
+        val saved = card.intent != null
+        button.icon = if (saved) ButterflyDrawable.intent(context, 24) else ButterflyDrawable.outline(context, 24)
+        button.iconTint = null
+        button.text = context.getString(when (card.intent) {
+            null -> R.string.butterfly_want
+            ButterflyState.WANT -> R.string.butterfly_saved_want
+            ButterflyState.BEEN -> R.string.butterfly_saved_been
         })
+        button.contentDescription = context.getString(if (saved) R.string.butterfly_remove_description
+            else R.string.butterfly_want_description)
+        button.setOnClickListener { onSave?.invoke() }
     }
 
-    private object Diff : DiffUtil.ItemCallback<CardRow>() {
-        override fun areItemsTheSame(old: CardRow, new: CardRow) = old.card.id == new.card.id
-        override fun areContentsTheSame(old: CardRow, new: CardRow) =
-            old.card == new.card && (old.onWhy == null) == (new.onWhy == null)
+    private fun contextChips(group: ChipGroup, card: ExperienceCard, context: Context) {
+        group.removeAllViews()
+        CardTexts.placeChip(context, card)?.let { group.addView(chip(context, it, R.drawable.ic_place)) }
+        if (card.hasTip) group.addView(chip(context, context.getString(R.string.feed_tip_chip), R.drawable.ic_star))
+        group.isVisible = group.childCount > 0
     }
 
-    private companion object {
-        const val EXPERIENCE = 0
-        const val ASK = 1
-    }
+    private fun chip(context: Context, text: String, icon: Int) =
+        Chip(context, null, R.attr.contextChipStyle).apply {
+            this.text = text
+            setChipIconResource(icon)
+            isChipIconVisible = true
+            importantForAccessibility = android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
 }
 
-/** Phase 13F: the words of a card, built from the pure [ExperienceCard] (also used by the post screen). */
+/** The words of a card, built from the pure [ExperienceCard] (also used by the post screen). */
 object CardTexts {
 
-    fun overline(context: Context, card: ExperienceCard): String = listOfNotNull(
-        context.getString(if (card.isAsk) R.string.social_ask_badge else R.string.social_type_experience),
-        card.category?.let { context.getString(SocialLabels.of(it)) }
+    /** Under the name: what kind of post, and when it was shared (a band; own posts add who can see it). */
+    fun meta(context: Context, card: ExperienceCard): String = listOfNotNull(
+        card.category?.let { context.getString(SocialLabels.of(it)) },
+        context.getString(TimeBandTexts.of(card.band)),
+        card.audience?.let { context.getString(ExperienceLabels.of(it)) }
     ).joinToString(" · ")
 
-    fun whereLine(context: Context, card: ExperienceCard): String? = when (val place = card.place) {
-        is StampPlace.Exact -> context.getString(R.string.social_place_line, place.name)
-        is StampPlace.Area -> context.getString(R.string.card_area_line, place.gridRef.uppercase(Locale.ROOT))
-        is StampPlace.InCity -> context.getString(R.string.social_city_line_post, ExperienceLabels.cityName(place.city))
+    /** Where, in plain words and only as exactly as the author chose: a place, "Around <city>", a city, or nothing. */
+    fun placeChip(context: Context, card: ExperienceCard): String? = when (val place = card.place) {
+        is StampPlace.Exact -> place.name
+        is StampPlace.Area -> CityAreas.cityOf(place.gridRef)?.let {
+            context.getString(R.string.feed_area_in_city, ExperienceLabels.cityName(it))
+        } ?: context.getString(R.string.feed_area_unknown)
+        is StampPlace.InCity -> ExperienceLabels.cityName(place.city)
         StampPlace.Withheld -> null
     }
 
     /**
-     * Phase 13F: the place name "Going there?" may fill in (a named place or a city). An area's grid reference is not a
-     * destination anyone can look up, so it gives none; the person types one if they want.
+     * Phase 13F: the place name "Going there?" may fill in (a named place or a city). An area is not a destination
+     * anyone can look up, so it gives none; the person types one if they want.
      */
     fun goingLabel(card: ExperienceCard): String? = when (val place = card.place) {
         is StampPlace.Exact -> place.name
@@ -176,65 +162,24 @@ object CardTexts {
         return listOfNotNull(month, daypart).takeIf { it.isNotEmpty() }?.joinToString(", ")
     }
 
-    fun byline(context: Context, card: ExperienceCard): String = listOfNotNull(
-        card.authorName?.takeIf { !card.own },
-        context.getString(TimeBandTexts.of(card.band)),
-        card.audience?.let { context.getString(ExperienceLabels.of(it)) }
-    ).joinToString(" · ")
-
     fun collapsedLine(collapse: CardCollapse): Int = when (collapse) {
         is CardCollapse.ByModeration -> ModerationLabels.collapsedLine(collapse.collapsed)
         CardCollapse.StrongLanguage -> R.string.collapsed_strong_language
     }
 
-    /** The postmark: the place on the ring, the month (or "?" for an Ask) in the middle, year and time of day below. */
-    fun postmark(context: Context, card: ExperienceCard): PostmarkView.Content =
-        postmark(context, card.isAsk, card.place, card.month, card.daypart, card.band)
+    fun commentsSpoken(context: Context, count: Int): String = if (count == 0)
+        context.getString(R.string.feed_comment_first) else
+        context.resources.getQuantityString(R.plurals.feed_comments_open, count, count)
 
-    /** Also used live in the composer, before anything is shared. */
-    fun postmark(
-        context: Context,
-        isAsk: Boolean,
-        place: StampPlace,
-        month: java.time.YearMonth?,
-        daypart: com.safesphere.app.feature.social.domain.Daypart?,
-        band: com.safesphere.app.feature.social.domain.TimeBand
-    ): PostmarkView.Content {
-        val card = PostmarkFacts(isAsk, place, month, daypart, band)
-        val ring = when (val place = card.place) {
-            is StampPlace.Exact -> place.name
-            is StampPlace.Area -> context.getString(R.string.card_stamp_grid, place.gridRef.uppercase(Locale.ROOT))
-            is StampPlace.InCity -> ExperienceLabels.cityName(place.city)
-            StampPlace.Withheld -> ""
-        }
-        val daypart = card.daypart?.let { context.getString(ExperienceLabels.of(it)) }
-        val month = card.month
-        val centre = when {
-            card.isAsk -> context.getString(R.string.card_ask_mark)
-            month != null -> month.month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())
-            else -> null
-        }
-        val lower = listOfNotNull(month?.year?.toString(), daypart)
-            .ifEmpty { listOf(context.getString(TimeBandTexts.of(card.band))) }.joinToString(" · ")
-        return PostmarkView.Content(ring = ring, lower = lower, centre = centre, blank = card.place == StampPlace.Withheld)
-    }
-
-    private data class PostmarkFacts(
-        val isAsk: Boolean,
-        val place: StampPlace,
-        val month: java.time.YearMonth?,
-        val daypart: com.safesphere.app.feature.social.domain.Daypart?,
-        val band: com.safesphere.app.feature.social.domain.TimeBand
-    )
-
-    /** One sentence for TalkBack: type, headline (or why it is collapsed), where, when, by whom, the band, own state. */
+    /** One sentence for TalkBack: who, what kind, their words (or why collapsed), where, when, tip, own state. */
     fun spoken(context: Context, card: ExperienceCard): String = listOfNotNull(
-        overline(context, card),
-        card.headline ?: card.collapse?.let { context.getString(collapsedLine(it)) },
-        whereLine(context, card),
+        card.authorName,
+        if (card.isAsk) context.getString(R.string.feed_question_badge) else null,
+        meta(context, card),
+        card.thought ?: card.collapse?.let { context.getString(collapsedLine(it)) },
+        placeChip(context, card),
         whenLine(context, card),
-        card.tip?.let { context.getString(R.string.card_spoken_tip, it) },
-        byline(context, card),
+        if (card.hasTip) context.getString(R.string.feed_tip_chip) else null,
         when (card.intent) {
             ButterflyState.WANT -> context.getString(R.string.butterfly_saved_want)
             ButterflyState.BEEN -> context.getString(R.string.butterfly_saved_been)

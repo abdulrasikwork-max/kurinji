@@ -43,12 +43,12 @@
 
     <!-- Onboarding (Phase 10A: rewritten; it said nothing was available yet). Only what this build really does;
          OnboardingTextsTest forbids "not available", "future", "later" and safety promises. -->
-    <string name="onboarding_connected_title">Written for the next one who goes</string>
-    <string name="onboarding_connected_body">Kurinji is where people share what a place or an activity is really like, so the next person can go and see for themselves. Every experience carries a tip for whoever goes next.</string>
-    <string name="onboarding_aware_title">Want to go? Butterfly it.</string>
-    <string name="onboarding_aware_body">The butterfly saves an experience to your Cocoon, a private list of things you want to try. When you have been, tell the next person what you found. Nobody sees what is in your Cocoon.</string>
+    <string name="onboarding_connected_title">See it first-hand</string>
+    <string name="onboarding_connected_body">Real experiences from real people: places, food, walks and things to try. Scroll, react, ask, then go and see for yourself.</string>
+    <string name="onboarding_aware_title">Tap the butterfly to save</string>
+    <string name="onboarding_aware_body">Save anything you want to try. It goes to Saved, a list only you can see. Been there? Mark it and tell people how it was.</string>
     <string name="onboarding_safe_title">Yours to control</string>
-    <string name="onboarding_safe_body">No followers, no public counts, no messages from strangers. You choose who sees each post and how exactly its place is shown. Nobody can use Kurinji to track you. Trusted people and SOS live in You, under Safety; set them up any time.</string>
+    <string name="onboarding_safe_body">No followers, no messages from strangers. You choose who sees each post and how exactly its place is shown. Nobody can use Kurinji to track you. SOS and your trusted people are in You, under Safety; set them up any time.</string>
 
     <!-- Authentication (UI preview only) -->
     <string name="label_email">Email</string>
@@ -291,7 +291,7 @@
     <string name="title_moderation_case">Review case</string>
     <string name="profile_moderation_title">Moderation</string>
     <string name="profile_moderation_description">Review flagged signals and appeals</string>
-    <string name="moderation_intro">Cases about places, posts, perspectives and people\'s behaviour. Everyone in a case appears only under a name valid for that case. Every decision is recorded.</string>
+    <string name="moderation_intro">Cases about places, posts, comments and people\'s behaviour. Everyone in a case appears only under a name valid for that case. Every decision is recorded.</string>
     <string name="moderation_not_allowed">This account cannot moderate. If you were a moderator, an administrator has changed your role.</string>
     <string name="section_open_cases">Open cases</string>
     <string name="section_open_appeals">Appeals</string>
@@ -423,7 +423,7 @@
     <string name="account_password_same">Choose a password different from your current one.</string>
     <string name="account_password_required">Enter your password.</string>
     <string name="account_section_delete">Delete account</string>
-    <string name="account_delete_explainer">Your account is deleted 7 days after you ask, not at once. Until then everything keeps working, SOS included, and you can cancel with your password. Asking is not possible during an emergency or within 24 hours after one. Everything your account holds on the server is deleted, including your profile, experiences, photos and perspectives, your connections, your Cocoon, your Evidence Vault, your emergencies and walks, your Safety Circle and your Nearby reports; once it is gone it cannot be restored. Afterwards this phone removes the account\'s evidence and recovery key too.</string>
+    <string name="account_delete_explainer">Your account is deleted 7 days after you ask, not at once. Until then everything keeps working, SOS included, and you can cancel with your password. Asking is not possible during an emergency or within 24 hours after one. Everything your account holds on the server is deleted, including your profile, posts, photos and comments, your connections, your saved list, your Evidence Vault, your emergencies and walks, your Safety Circle and your Nearby reports; once it is gone it cannot be restored. Afterwards this phone removes the account\'s evidence and recovery key too.</string>
     <string name="account_delete_button">Delete my account…</string>
     <string name="account_delete_confirm_title">Delete your account?</string>
     <string name="account_delete_confirm_message">Enter your password. Nothing is deleted for 7 days; you can cancel until then.</string>
@@ -1141,25 +1141,25 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- Phase 13B: experiences (docs/PHASE13B_PLAN.md). No counts, no "live" or "now here" wording. -->
     <string name="title_compose">Share</string>
     <string name="title_place_picker">Where was it?</string>
-    <string name="title_post">Experience</string>
-    <string name="title_my_posts">Your experiences</string>
+    <string name="title_post">Post</string>
+    <string name="title_my_posts">Your posts</string>
     <string name="title_private_places">Private places</string>
 
     <string name="social_share_experience">Share an experience</string>
-    <string name="social_your_experiences">Your experiences</string>
+    <string name="social_your_experiences">Your posts</string>
     <string name="social_private_places">Private places</string>
-    <string name="social_experiences_title">Experiences</string>
+    <string name="social_experiences_title">Posts</string>
     <string name="social_experiences_empty">Nothing shared here yet.</string>
-    <string name="social_my_posts_empty">You have not shared anything yet. Share something you did, written for the next person.</string>
+    <string name="social_my_posts_empty">You have not shared anything yet. Tap Share to post your first experience.</string>
     <string name="social_show_more">Show more</string>
 
     <string name="social_type_experience">Experience</string>
-    <string name="social_type_ask">Ask</string>
-    <string name="social_type_experience_hint">Something you did, written for the next person.</string>
+    <string name="social_type_ask">Question</string>
+    <string name="social_type_experience_hint">Something you did or saw. Say how it really was.</string>
     <string name="social_type_ask_hint">A question for people who have been there.</string>
     <string name="social_body_label_experience">What happened?</string>
     <string name="social_body_label_ask">Your question</string>
-    <string name="social_tip_label">Tip for the next person (optional)</string>
+    <string name="social_tip_label">A tip (optional)</string>
     <string name="social_photos_title">Photos (optional, up to 6)</string>
     <string name="social_add_photos">Add photos</string>
     <string name="social_photos_note">Photos are made smaller and lose their hidden details, such as where and when they were taken, before they leave your phone.</string>
@@ -1197,7 +1197,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_audience_connections_line">Only the people you have connected with.</string>
     <string name="social_audience_only_me">Only me</string>
     <string name="social_audience_only_me_line">A note for yourself.</string>
-    <string name="social_comments_title">Who can add perspectives?</string>
+    <string name="social_comments_title">Who can comment?</string>
     <string name="social_comments_everyone">Anyone who can see it</string>
     <string name="social_comments_connections">Your connections</string>
     <string name="social_comments_nobody">No one</string>
@@ -1233,35 +1233,28 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_add_place_private">You are near one of your private places, so a public place cannot be added here.</string>
     <string name="social_add_place_needs_precise">Adding a place needs your precise location with a good signal. Try outside, or share only the city.</string>
     <string name="social_add_place_name_short">A place name has at least 2 characters.</string>
-    <string name="social_location_needed">Allow location to find places near you, or share only the city.</string>
-    <string name="social_location_unavailable">Your location is not available right now.</string>
+    <string name="social_location_needed">Allow location to find places near you, or share only the city. Kurinji checks once, only now.</string>
+    <string name="social_location_unavailable">Could not find your location just now. Try again, or share only the city.</string>
     <string name="social_place_near_private">Near one of your private places</string>
     <string name="social_place_row">%1$s, %2$s</string>
 
-    <string name="social_place_line">At %1$s</string>
-    <string name="social_area_line">In an area of about 1 km (%1$s)</string>
-    <string name="social_city_line_post">In %1$s</string>
-    <string name="social_no_place_line">No place shared</string>
-    <string name="social_when_line">%1$s, %2$s</string>
     <string name="social_band_this_week">Shared this week</string>
     <string name="social_band_this_month">Shared this month</string>
     <string name="social_band_earlier">Shared earlier</string>
     <string name="social_edited">Edited</string>
-    <string name="social_ask_badge">Ask</string>
-    <string name="social_by_line">By %1$s</string>
     <string name="social_own_audience_line">Who can see it: %1$s</string>
     <string name="social_own_delay_line">Others can see it from about %1$s.</string>
     <string name="social_post_not_found_title">Not available</string>
     <string name="social_post_not_found_message">This post was removed, or it is not shared with you.</string>
 
-    <string name="social_perspectives_title">Perspectives</string>
-    <string name="social_perspectives_empty">No perspectives yet.</string>
-    <string name="social_perspectives_closed">The author has not opened this to your perspectives.</string>
+    <string name="social_perspectives_title">Comments</string>
+    <string name="social_perspectives_empty">No comments yet. Start the conversation.</string>
+    <string name="social_perspectives_closed">The author has limited who can comment.</string>
     <string name="social_kind_been_here">Been here too</string>
     <string name="social_kind_question">Question</string>
     <string name="social_kind_reply">Reply</string>
     <string name="social_kind_answer">Answer</string>
-    <string name="social_write_perspective">Your perspective</string>
+    <string name="social_write_perspective">Add a comment</string>
     <string name="social_send">Add</string>
     <string name="social_reply">Reply</string>
     <string name="social_replying_to">Replying to %1$s</string>
@@ -1275,7 +1268,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_delete_perspective">Delete</string>
     <string name="social_delete_post">Delete this post</string>
     <string name="social_delete_post_title">Delete this post?</string>
-    <string name="social_delete_post_message">The post, its photos and its perspectives are removed. This cannot be undone.</string>
+    <string name="social_delete_post_message">The post, its photos and its comments are removed. This cannot be undone.</string>
     <string name="social_post_deleted">Post deleted</string>
 
     <string name="social_private_intro">Mark home, hostel or work so that your posts never show where they are. They stay on this phone, encrypted, and are never sent. Signing out removes them.</string>
@@ -1294,74 +1287,65 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_private_remove">Remove %1$s</string>
     <!-- Phase 13C: the butterfly, the Cocoon and Discover. No counts except the author's own private line; no ranking words. -->
     <string name="title_discover">Discover</string>
-    <string name="title_cocoon">Your Cocoon</string>
-    <string name="title_post_collection">Experiences</string>
-    <string name="cocoon_open">Your Cocoon</string>
-    <string name="butterfly_want">Want to go</string>
-    <string name="butterfly_want_description">Want to experience this. Saves to Cocoon.</string>
-    <string name="butterfly_saved_want">In your Cocoon: want to go</string>
-    <string name="butterfly_saved_been">In your Cocoon: been</string>
-    <string name="butterfly_saved_announcement">Saved to your Cocoon</string>
-    <string name="butterfly_remove_description">In your Cocoon. Tap to take it out.</string>
+    <string name="title_cocoon">Saved</string>
+    <string name="title_post_collection">Posts</string>
+    <string name="butterfly_want">Save</string>
+    <string name="butterfly_want_description">Save it: I want to go. Only you can see what you save.</string>
+    <string name="butterfly_saved_want">Saved</string>
+    <string name="butterfly_saved_been">Been there</string>
+    <string name="butterfly_saved_announcement">Saved. Only you can see it.</string>
+    <string name="butterfly_remove_description">Saved. Tap to remove it from your saved list.</string>
     <string name="butterfly_been">I\'ve been</string>
-    <string name="butterfly_private_note">Only you can see what is in your Cocoon. Nobody is told.</string>
-    <string name="butterfly_author_fewer">Fewer than 3 people want to experience this so far. Only you can see this line.</string>
-    <string name="butterfly_author_count">%1$d people want to experience this. Only you can see this line.</string>
+    <string name="butterfly_private_note">Only you can see what you save. Nobody is told.</string>
+    <string name="butterfly_author_fewer">Fewer than 3 people saved this so far. Only you can see this line.</string>
+    <string name="butterfly_author_count">%1$d people saved this. Only you can see this line.</string>
     <string name="been_invitation_title">You went</string>
-    <string name="been_invitation_message">Add what you found for the next person: a \"Been here too\" perspective on this post, or an experience of your own.</string>
-    <string name="been_invitation_perspective">Add a perspective</string>
+    <string name="been_invitation_message">How was it? Add a comment for people thinking of going, or share a post of your own.</string>
+    <string name="been_invitation_perspective">Add a comment</string>
     <string name="been_invitation_own">Share my own experience</string>
     <string name="been_invitation_later">Not now</string>
-    <string name="cocoon_tab_want">Want to experience</string>
-    <string name="cocoon_tab_been">Been</string>
-    <string name="cocoon_intro">Experiences you want to go and try, saved with the butterfly. Private to you: nobody is told.</string>
-    <string name="cocoon_empty_want">Your Cocoon is empty. Butterfly something you would love to experience.</string>
-    <string name="cocoon_empty_been">Nothing marked as been yet. When you go, mark it here and tell the next person what you found.</string>
+    <string name="cocoon_tab_want">Want to go</string>
+    <string name="cocoon_tab_been">Been there</string>
+    <string name="cocoon_intro">Things you saved with the butterfly. Only you can see this list.</string>
+    <string name="cocoon_empty_want">Nothing saved yet. Tap the butterfly on any post you would love to try.</string>
+    <string name="cocoon_empty_been">Nothing marked as been yet. When you go, mark it here and tell people how it was.</string>
     <string name="cocoon_mark_been">I\'ve been</string>
     <string name="cocoon_mark_been_description">Mark as been: %1$s</string>
     <string name="cocoon_want_again">Want again</string>
-    <string name="cocoon_want_again_description">Move back to want to experience: %1$s</string>
-    <string name="cocoon_remove">Take out</string>
-    <string name="cocoon_remove_description">Take out of your Cocoon: %1$s</string>
+    <string name="cocoon_want_again_description">Move back to want to go: %1$s</string>
+    <string name="cocoon_remove">Remove</string>
+    <string name="cocoon_remove_description">Remove from saved: %1$s</string>
     <string name="cocoon_saved_this_week">Saved this week</string>
     <string name="cocoon_saved_this_month">Saved this month</string>
     <string name="cocoon_saved_earlier">Saved earlier</string>
-    <string name="discover_tab_edition">This week\'s edition</string>
-    <string name="discover_tab_connections">From your connections</string>
-    <string name="discover_city_hint">Your profile does not name one of these cities, so choose one. It is not saved.</string>
     <string name="discover_section_city">New in %1$s</string>
-    <string name="discover_section_asks">Asks you could answer</string>
     <string name="discover_section_theme">This week\'s theme</string>
-    <string name="discover_edition_end">That\'s this week\'s edition. Go make your own.</string>
-    <string name="discover_edition_empty">Nothing in this week\'s edition yet. Be the first to share an experience here.</string>
+    <string name="discover_edition_end">You\'re all caught up.</string>
+    <string name="discover_edition_empty">Nothing here yet this week. Be the first to share something.</string>
     <string name="discover_why">Why?</string>
     <string name="discover_why_title">Why am I seeing this?</string>
-    <string name="discover_why_footer">The order uses only what a post contains and the interests you chose. It never uses how many people saved, read or answered anything.</string>
+    <string name="discover_why_footer">The order uses what a post contains and the interests you chose; Talking now uses how recently someone commented. It never uses how many people saved, read or commented.</string>
     <string name="discover_reason_in_this_city">It is in the city you chose.</string>
     <string name="discover_reason_recent">Shared since the start of last week.</string>
     <string name="discover_reason_has_place">It says where.</string>
     <string name="discover_reason_has_when">It says when: the month and the time of day.</string>
-    <string name="discover_reason_has_tip">It has a tip for the next person.</string>
+    <string name="discover_reason_has_tip">It has a tip.</string>
     <string name="discover_reason_matches_interests">It is about one of your interests.</string>
     <string name="discover_reason_been_here_too">Someone else has been there too.</string>
     <string name="discover_reason_open_ask">It is a question nobody has answered helpfully yet.</string>
     <string name="discover_reason_theme">It fits this week\'s theme.</string>
     <string name="discover_reason_from_connection">It is from one of your connections. This list is newest first.</string>
-    <string name="discover_connections_intro">Newest first, from the last 30 days.</string>
-    <string name="discover_connections_end">You have seen everything from your connections.</string>
-    <string name="discover_connections_empty">Nothing from your connections in the last 30 days.</string>
     <string name="discover_search_hint">Search a place or a category</string>
     <string name="discover_search_button">Search</string>
     <string name="discover_search_clear">Clear</string>
     <string name="discover_search_no_places">No place with that name. Only places can be searched, not people.</string>
     <string name="discover_search_places">Places</string>
     <string name="discover_search_categories">Categories</string>
-    <string name="discover_categories">Browse by category</string>
     <string name="discover_open_place">Open the place %1$s</string>
     <string name="discover_open_category">Open the category %1$s</string>
-    <string name="collection_place_line">Experiences shared for everyone, at this place, newest first.</string>
-    <string name="collection_category_line">Experiences shared for everyone, newest first.</string>
-    <string name="collection_category_city_line">Experiences shared for everyone in %1$s, newest first.</string>
+    <string name="collection_place_line">Posts shared for everyone at this place, newest first.</string>
+    <string name="collection_category_line">Posts shared for everyone, newest first.</string>
+    <string name="collection_category_city_line">Posts shared for everyone in %1$s, newest first.</string>
     <string name="collection_empty">Nothing shared here yet.</string>
     <string name="collection_not_found">This place is not available.</string>
     <string name="collection_end">That\'s all for now.</string>
@@ -1401,21 +1385,21 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="review_waiting">A review is waiting for another moderator.</string>
     <string name="review_upheld">Reviewed by another moderator: the decision stays.</string>
     <string name="review_overturned">Reviewed by another moderator: the decision was undone.</string>
-    <string name="approve_first_switch">Approve perspectives from people I\'m not connected with first</string>
-    <string name="approve_first_line">The author approves perspectives from people they are not connected with first.</string>
+    <string name="approve_first_switch">Approve comments from people I\'m not connected with first</string>
+    <string name="approve_first_line">The author approves comments from people they are not connected with first.</string>
     <string name="perspective_awaiting_yours">Waiting for your approval</string>
     <string name="perspective_awaiting_author">Waiting for the author\'s approval</string>
     <string name="perspective_approve">Approve</string>
-    <string name="standing_comments_paused">A moderator paused your perspectives until %1$s. Why: %2$s.</string>
-    <string name="standing_posting_paused">A moderator paused your posting and perspectives until %1$s. Why: %2$s.</string>
-    <string name="standing_suspended">A moderator paused your posting, perspectives and new connections until %1$s. Why: %2$s.</string>
+    <string name="standing_comments_paused">A moderator paused your comments until %1$s. Why: %2$s.</string>
+    <string name="standing_posting_paused">A moderator paused your posting and comments until %1$s. Why: %2$s.</string>
+    <string name="standing_suspended">A moderator paused your posting, comments and new connections until %1$s. Why: %2$s.</string>
     <string name="standing_unaffected">Reading, blocking, muting, reporting and your safety tools are not affected.</string>
     <string name="standing_warning">A moderator reminded you of the community guidelines. Why: %1$s.</string>
     <string name="my_reports_title">Your reports</string>
     <string name="my_reports_intro">Only you can see this list. Nobody is told who reported.</string>
     <string name="my_reports_empty">You haven\'t reported anything.</string>
     <string name="my_reports_post">A post</string>
-    <string name="my_reports_perspective">A perspective</string>
+    <string name="my_reports_perspective">A comment</string>
     <string name="my_reports_person">A person</string>
     <string name="my_reports_received">Received: a moderator will look at it</string>
     <string name="my_reports_sent_this_week">Sent this week</string>
@@ -1429,16 +1413,16 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="guidelines_not_allowed_title">Not allowed here</string>
     <string name="guidelines_not_allowed">• Harassment, insults and bullying\n• Hate, including caste, religion, gender, sexuality, region or language\n• Threats\n• Sexual content involving others without their consent\n• Sharing where someone lives or is, or who they are (doxxing)\n• Posting where someone else is right now\n• Spam and scams\n• Pretending to be someone else</string>
     <string name="guidelines_how_title">How moderation works</string>
-    <string name="guidelines_how">• Anyone can report a post, a perspective or a person. Nobody is told who reported.\n• When several people report something on their own, it is shown collapsed, behind a tap, until a moderator from the team looks at it.\n• Only a moderator can hide or remove something, or pause someone, and always with a reason you can see.\n• You can ask for a review of a decision. Another moderator looks at it.\n• Moderation never touches your SOS or your other safety tools: walks with check-ins, the Safety Circle and the Evidence Vault.</string>
+    <string name="guidelines_how">• Anyone can report a post, a comment or a person. Nobody is told who reported.\n• When several people report something on their own, it is shown collapsed, behind a tap, until a moderator from the team looks at it.\n• Only a moderator can hide or remove something, or pause someone, and always with a reason you can see.\n• You can ask for a review of a decision. Another moderator looks at it.\n• Moderation never touches your SOS or your other safety tools: walks with check-ins, the Safety Circle and the Evidence Vault.</string>
     <string name="guidelines_new_accounts">New accounts can share links after their first three days.</string>
 
     <!-- Phase 13D: moderators (posts, perspectives and people). Case pseudonyms, reason codes, no accusations. -->
-    <string name="content_cases_title">Posts, perspectives and people</string>
+    <string name="content_cases_title">Posts, comments and people</string>
     <string name="content_cases_empty">No reports waiting.</string>
     <string name="content_appeals_title">Requests to look again at a decision</string>
     <string name="content_appeals_empty">No review requests waiting.</string>
     <string name="content_target_post">Post</string>
-    <string name="content_target_comment">Perspective</string>
+    <string name="content_target_comment">Comment</string>
     <string name="content_target_person">Person</string>
     <string name="content_case_row">%1$s · %2$s</string>
     <string name="content_case_counts">Reports that count, from different people: %1$s</string>
@@ -1474,9 +1458,9 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="content_action_remove">Remove it</string>
     <string name="content_action_person_keep">No action: no guideline broken</string>
     <string name="content_action_warn">Remind of the guidelines</string>
-    <string name="content_action_pause_comments">Pause their perspectives for 3 days</string>
+    <string name="content_action_pause_comments">Pause their comments for 3 days</string>
     <string name="content_action_pause_posting">Pause their posting for 7 days</string>
-    <string name="content_action_suspend">Pause posting, perspectives and new connections for 30 days</string>
+    <string name="content_action_suspend">Pause posting, comments and new connections for 30 days</string>
     <string name="content_action_choose_reason">Which guideline?</string>
     <string name="content_action_confirm">This changes what others see or can do. It is recorded with your decision and can be reviewed by another moderator.</string>
     <string name="content_action_done">Decision recorded.</string>
@@ -1511,7 +1495,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="collapsed_strong_language">Collapsed: strong language (your setting).</string>
     <string name="moderation_reason_awaiting_check">Waiting for the automatic check</string>
     <string name="settings_strong_language_title">Collapse strong language</string>
-    <string name="settings_strong_language_summary">Posts and perspectives with strong words are shown behind a tap. Only this phone remembers this choice.</string>
+    <string name="settings_strong_language_summary">Posts and comments with strong words are shown behind a tap. Only this phone remembers this choice.</string>
     <string name="content_case_opened_by_system">Opened by the automatic check. It never removes anything and never restricts anyone: you decide.</string>
     <string name="content_case_opened_by_author">The author asked for a review of an automatic collapse.</string>
     <string name="content_case_state_system">Shown as: %1$s (by the automatic check)</string>
@@ -1522,17 +1506,16 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="content_case_check_guidance">The automatic check is evidence, not a verdict: it reads words, not their context.</string>
 
     <!-- ===== Phase 13F: Kurinji UI (docs/PHASE13F_PLAN.md). KurinjiTextsTest: no emoji, no slang or hype. ===== -->
-    <string name="a11y_tab">Tab</string>
-    <string name="motto">Written for the next one who goes.</string>
+    <string name="motto">Go. See. Tell.</string>
     <string name="app_name_tamil" translatable="false">குறிஞ்சி</string>
     <string name="nav_discover">Discover</string>
     <string name="nav_share">Share</string>
-    <string name="nav_cocoon">Cocoon</string>
+    <string name="nav_cocoon">Saved</string>
     <string name="nav_you">You</string>
     <string name="cd_feature_row_plain">%1$s. %2$s.</string>
 
     <!-- You -->
-    <string name="you_overline">Your journal</string>
+    <string name="you_overline">Your profile</string>
     <string name="you_handle_city">\@%1$s · %2$s</string>
     <string name="you_no_profile">Make a profile to share experiences and connect with people. Your safety tools work without one.</string>
     <string name="you_section_journal">Yours</string>
@@ -1558,11 +1541,8 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="safety_hub_nearby_description">Anonymous notes about places near you, confirmed by people nearby</string>
 
     <!-- Discover (F14) -->
-    <string name="discover_masthead_overline">This week in</string>
     <string name="discover_masthead_no_city">Choose a city</string>
-    <string name="discover_masthead_sub">Week of %1$s</string>
-    <string name="discover_masthead_sub_theme">Week of %1$s · Theme: %2$s</string>
-    <string name="discover_city_description">Edition city: %1$s. Tap to choose another city.</string>
+    <string name="discover_city_description">City: %1$s. Tap to choose another city.</string>
     <string name="discover_search_open">Search places and categories</string>
     <string name="discover_search_close">Close search</string>
 
@@ -1571,8 +1551,8 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="going_there_description">Going there? Ways to save it, tell someone, and set off with support if you want it</string>
     <string name="going_place_line">%1$s. Use what helps; none of it is needed.</string>
     <string name="going_no_place_line">The post does not show a place. Use what helps; none of it is needed.</string>
-    <string name="going_save">Save to your Cocoon</string>
-    <string name="going_saved">In your Cocoon</string>
+    <string name="going_save">Save it</string>
+    <string name="going_saved">Saved</string>
     <string name="going_tell">Let someone know</string>
     <string name="going_walk">Walk with check-ins</string>
     <string name="going_way">Check the way</string>
@@ -1581,21 +1561,15 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="going_heads_up_no_place">I\'m heading out to try something new. I\'ll message you when I\'m back.</string>
 
     <!-- Share (F17) -->
-    <string name="compose_heading">Write it for the next one who goes</string>
-    <string name="compose_subheading">How it really was, where, when, and one thing worth knowing. The stamp shows exactly what others will see of the place.</string>
+    <string name="compose_heading">Share an experience</string>
+    <string name="compose_subheading">What you did, how it was, and one tip. You choose who sees it and how exactly the place is shown.</string>
 
     <!-- Cocoon (F16) -->
-    <string name="cocoon_overline">Private to you</string>
-    <string name="cocoon_open_discover">Open this week\'s edition</string>
-    <string name="cocoon_item_description">%1$s. %2$s. %3$s. Opens the experience.</string>
+    <string name="cocoon_open_discover">Explore Discover</string>
+    <string name="cocoon_item_description">%1$s. %2$s. %3$s. Opens the post.</string>
 
     <!-- Cards (F13) -->
-    <string name="card_ticket_label">For the next person</string>
-    <string name="card_ask_mark">?</string>
-    <string name="card_area_line">In an area of about 1 km (grid %1$s)</string>
-    <string name="card_stamp_grid">Grid %1$s</string>
-    <string name="card_action_open">Open</string>
-    <string name="card_spoken_tip">For the next person: %1$s</string>
+    <string name="card_ticket_label">Tip</string>
 
     <!-- Ready check (F12): facts about this phone, never a verdict (ReadyCheckTest). -->
     <string name="ready_title">Before you need it</string>
@@ -1632,5 +1606,58 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- Rise retired (D9) -->
     <string name="rise_retired_title">Rise has been retired</string>
-    <string name="rise_retired_message">Its notes on this phone were deleted. Nothing from Rise was ever on a server. Your Cocoon and \"Only me\" experiences are the place for plans you keep to yourself.</string>
+    <string name="rise_retired_message">Its notes on this phone were deleted. Nothing from Rise was ever on a server. Your saved list and \"Only me\" posts are the place for plans you keep to yourself.</string>
+    <!-- ===== Phase 16: UX reset (docs/PHASE16.md) ===== -->
+    <string name="motto_go">Go.</string>
+    <string name="motto_see">See.</string>
+    <string name="motto_tell">Tell.</string>
+
+    <string name="feed_someone">Someone</string>
+    <string name="feed_question_badge">Question</string>
+    <string name="feed_comment">Comment</string>
+    <string name="feed_comment_first">No comments yet. Open to add the first.</string>
+    <string name="feed_tip_chip">Tip inside</string>
+    <string name="feed_area_in_city">Around %1$s</string>
+    <string name="feed_area_unknown">An area of about 1 km</string>
+    <string name="feed_loading">Loading more posts</string>
+    <string name="feed_header_talking">Talking now</string>
+    <string name="feed_header_talking_sub">Posts people commented on this week, newest comment first</string>
+    <string name="feed_header_theme">This week: %1$s</string>
+    <string name="feed_header_connections">From people you know</string>
+    <string name="feed_header_connections_sub">Newest first, from the last 30 days</string>
+    <string name="feed_end_message">Been somewhere good lately? Tell people how it was.</string>
+    <string name="feed_share_yours">Share yours</string>
+    <string name="feed_empty_title">Quiet here so far</string>
+    <string name="feed_connect_title">Find people you know</string>
+    <string name="feed_connect_message">Connect with friends to see what they share. Connections go both ways, and nobody else can see your list.</string>
+    <string name="feed_connect_action">Find people</string>
+    <string name="feed_choose_city_message">Pick a city above to see what people share there.</string>
+    <string name="discover_near_me">Near me</string>
+    <string name="discover_near_title">Places near you</string>
+    <string name="discover_near_note">From one location check, only when you tap. Just your area (about 1 km) is sent, never where exactly you are.</string>
+    <string name="discover_near_empty">No places added around here yet. Share an experience to add the first.</string>
+    <string name="discover_near_permission">Allow location to see places around you. Kurinji checks once, only now.</string>
+    <string name="discover_near_location_off">Location is switched off on this phone. Turn it on to see places around you.</string>
+    <string name="discover_near_not_found">Could not find your location just now. Try again, or search a place by name.</string>
+    <string name="discover_reason_new_comments">People commented on it this week.</string>
+    <string name="location_action_settings">Open settings</string>
+    <string name="location_action_turn_on">Turn on location</string>
+    <string name="location_action_retry">Try again</string>
+    <string name="location_action_precise">Use precise location</string>
+    <string name="social_location_off">Location is switched off on this phone. Turn it on, or share only the city.</string>
+    <string name="social_location_denied_settings">Location is not allowed for Kurinji. You can allow it in the app\'s settings, or share only the city.</string>
+    <string name="post_more_actions">More options for this post</string>
+    <string name="post_author_description">%1$s. Opens their profile</string>
+    <string name="post_comments_title_count">Comments · %1$d</string>
+    <string name="post_comments_none">No comments.</string>
+    <string name="post_open_place_description">%1$s. Opens the place</string>
+
+    <plurals name="feed_comments">
+        <item quantity="one">%d comment</item>
+        <item quantity="other">%d comments</item>
+    </plurals>
+    <plurals name="feed_comments_open">
+        <item quantity="one">%d comment. Opens the comments</item>
+        <item quantity="other">%d comments. Opens the comments</item>
+    </plurals>
 </resources>

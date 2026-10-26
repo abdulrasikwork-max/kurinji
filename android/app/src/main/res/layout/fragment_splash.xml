@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13F: the wordmark on mist (Kurinji night in the dark), in both scripts, with the motto. -->
+<!-- Phase 16: the opening moment on brand red, continuing the system launch screen: the Go-K, the wordmark in both
+     scripts and the line "Go. See. Tell.", one word at a time (SplashFragment; no motion with animations off). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/splash_background"
     android:gravity="center"
     android:orientation="vertical"
     android:padding="@dimen/space_lg">
@@ -12,17 +14,17 @@
         android:layout_width="@dimen/logo_size_splash"
         android:layout_height="@dimen/logo_size_splash"
         android:contentDescription="@string/cd_app_logo"
-        android:src="@drawable/ic_brand_mark" />
+        android:src="@drawable/ic_launcher_foreground" />
 
     <TextView
         android:id="@+id/splashName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_sm"
         android:text="@string/app_name"
-        android:textAppearance="@style/TextAppearance.Kurinji.Masthead"
-        android:textColor="?attr/colorPrimary"
-        android:textSize="48sp" />
+        android:textAppearance="@style/TextAppearance.Kurinji.Wordmark"
+        android:textColor="@color/launcher_chevron"
+        android:textSize="52sp" />
 
     <TextView
         android:id="@+id/splashNameTamil"
@@ -30,14 +32,32 @@
         android:layout_height="wrap_content"
         android:text="@string/app_name_tamil"
         android:textAppearance="@style/TextAppearance.Kurinji.Title.Large"
-        android:textColor="?attr/colorOnSurfaceVariant" />
+        android:textColor="@color/launcher_chevron" />
 
-    <TextView
+    <!-- The line, word by word: "Go." "See." "Tell." (one sentence for TalkBack). -->
+    <LinearLayout
         android:id="@+id/splashTagline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/space_lg"
-        android:gravity="center"
-        android:text="@string/motto"
-        android:textAppearance="@style/TextAppearance.Kurinji.Headline.Small" />
+        android:layout_marginTop="@dimen/space_xl"
+        android:contentDescription="@string/motto"
+        android:focusable="true"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/taglineGo"
+            style="@style/SplashWord"
+            android:text="@string/motto_go" />
+
+        <TextView
+            android:id="@+id/taglineSee"
+            style="@style/SplashWord"
+            android:text="@string/motto_see" />
+
+        <TextView
+            android:id="@+id/taglineTell"
+            style="@style/SplashWord"
+            android:layout_marginEnd="0dp"
+            android:text="@string/motto_tell" />
+    </LinearLayout>
 </LinearLayout>

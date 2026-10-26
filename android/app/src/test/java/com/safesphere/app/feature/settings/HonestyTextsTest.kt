@@ -33,10 +33,10 @@ class HonestyTextsTest {
         val all = onboarding.values.joinToString(" ").lowercase()
         // Phase 13F (F19): the Kurinji identity, no safety pitch; the SOS honesty line lives in the Safety hub now
         // (SafetyHubTextsTest), and onboarding says where the safety tools are.
-        assertTrue(all.contains("written for the next one who goes"))
-        assertTrue("the Cocoon is private", all.contains("nobody sees what is in your cocoon"))
+        assertTrue(all.contains("see it first-hand"))
+        assertTrue("saved items are private", all.contains("a list only you can see"))
         assertTrue("no-tracking promise", all.contains("nobody can use kurinji to track you"))
-        assertTrue("where the safety tools live", all.contains("trusted people and sos live in you"))
+        assertTrue("where the safety tools live", all.contains("sos and your trusted people are in you"))
         for (pitch in listOf("emergency", "danger", "protect", "stay safe")) assertFalse("safety pitch: $pitch", pitch in all)
     }
 
@@ -85,7 +85,7 @@ class HonestyTextsTest {
         assertTrue(strings.getValue("feature_safety_circle_description").contains("choose to keep in the loop"))
         assertTrue(strings.getValue("safety_circle_empty_message").contains("choose to keep in the loop"))
         assertTrue(strings.getValue("safe_walk_setup_body").contains("Using support is a choice, not a weakness."))
-        assertEquals("Written for the next one who goes.", strings["motto"])
+        assertEquals("Go. See. Tell.", strings["motto"])
         assertEquals("Kurinji", strings["app_name"])
         assertFalse(strings.values.any { it.contains("Safety, connected") })
         assertTrue(strings.getValue("privacy_policy_body").contains("not legal advice"))

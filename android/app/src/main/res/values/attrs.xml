@@ -20,6 +20,13 @@
     <attr name="colorIntentContainer" format="color" />
     <attr name="colorOnIntentContainer" format="color" />
 
+    <!-- Phase 16 (U4): the emergency treatment's own surface (black, with a red ring and the siren icon). -->
+    <attr name="colorEmergencySurface" format="color" />
+    <!-- Phase 16: the style of the small fact chips under a post (place, "Tip inside"). -->
+    <attr name="contextChipStyle" format="reference" />
+    <!-- Phase 16: the tappable pills at the top of Discover (Near me, categories, cities). -->
+    <attr name="pillChipStyle" format="reference" />
+
     <!-- Which badge a StatusBadgeView (or a SectionHeaderView) shows. -->
     <attr name="badgeStatus" format="enum">
         <enum name="none" value="-1" />

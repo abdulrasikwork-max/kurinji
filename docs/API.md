@@ -1164,3 +1164,16 @@ present only where an app must react (below) and absent everywhere else.
   `POST /api/blocks` / `POST /api/mutes` sent twice at once both answer 204 (were 500).
 - Moderators: on a perspective case, the author of the post it was written on now counts as taking part
   (`youTookPart: true`, 403 on detail / actions / photos, and kept out of that decision's appeal).
+
+## Phase 16 (UX reset, `docs/PHASE16.md`; no migration, no new endpoint)
+
+- **Every post answer** (`GET /api/posts/{id}`, lists, Discover, Saved/Cocoon, place and category pages, profile lists,
+  create/edit answers) adds `commentCount` (integer ≥ 0): how many perspectives **this viewer** can read on the post,
+  computed with the comment list's own rule (`Visibility.canSeeComment`, replies only under a readable parent), so it
+  always equals the length of `GET /api/posts/{id}/comments` for the same viewer. A hidden, held, blocked or
+  awaiting-approval perspective is not counted for those who cannot read it. Decision U1 (the only public number).
+- **`GET /api/discover/edition`** may add a section `kind: "TALKING"` ("Talking now", decision U2): up to 8 Everyone
+  posts of the city (Experiences or Asks, visible in the last 56 days, not the viewer's) with a perspective from
+  someone other than the author in the last 7 days, **ordered by the time of the newest perspective the viewer can
+  read** (never by totals). Its items carry the reasons `IN_THIS_CITY`, `NEW_PERSPECTIVES`. Older phones drop the
+  unknown section (DTOs fail closed). The order's time is never returned.

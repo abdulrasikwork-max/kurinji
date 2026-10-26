@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13F (F18): You. The person's journal header (no counts, ever), then everything that is theirs: experiences,
+<!-- Phase 13F (F18), Phase 16: You. The person's profile header (no counts, ever), then everything that is theirs: experiences,
      connections, private places, the safety tools, reading choices, community, account. -->
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -23,12 +23,19 @@
             android:indeterminate="true"
             android:visibility="gone" />
 
-        <!-- The journal header -->
+        <!-- The profile header (Phase 16: the person's initial in their colour, then the name, big and bold). -->
         <LinearLayout
             android:id="@+id/headerBlock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
+            <com.safesphere.app.core.ui.components.AvatarView
+                android:id="@+id/youAvatar"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_marginBottom="@dimen/space_sm"
+                android:visibility="gone" />
 
             <TextView
                 android:layout_width="match_parent"

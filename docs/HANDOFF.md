@@ -1,4 +1,18 @@
-# Handoff: V25 e-mail ownership verification (2026-10-26) — one local commit, NOT pushed
+# Handoff: Phase 16 Kurinji UX reset + stabilization (2026-10-26) — one local commit, NOT pushed
+
+**Implemented, compiled, tested, emulator-verified (API 37)** (`docs/PHASE16.md`). The user decided U1–U4 on
+2026-10-26 (comment count only; "Talking now" by newest comment; auto-load that ends; red brand with emergency UI by
+siren + words + black/red ring). New red/black/white identity, Go-K icon, "Go. See. Tell." splash, social feed cards,
+one-feed Discover, rebuilt post page, Saved tab (was Cocoon), plain vocabulary, shared one-shot location path.
+- **Results:** backend **756 / 0** (2 skipped); Android **712 / 0**; lint **0 errors / 99 warnings**; Python not
+  re-run (unchanged); live MySQL check of `commentCount` and `TALKING` PASS; emulator W1–W13 PASS with 4 findings fixed.
+- **NOT VERIFIED:** physical phone (none connected), TalkBack by ear, real e-mail delivery (`docs/EMAIL_SETUP.md`
+  explains Gmail app password / provider setup in `backend/.env`).
+- **State left:** `emu16a/b@example.com` deletion requested (due date moved to now; erased by `AccountDeletionJob`);
+  backend and emulator stopped; `adb reverse` removed; `android/local.properties` unchanged (127.0.0.1).
+- **Next:** the user's review and push; real-phone pass of the new UI (A23 sprint, D10); real e-mail provider.
+
+---# Handoff: V25 e-mail ownership verification (2026-10-26) — one local commit, NOT pushed
 
 **Implemented, compiled, tested, verified on MySQL, live API and emulator** (`docs/EMAIL_VERIFICATION.md`, EV1–EV16).
 A new account is UNVERIFIED and gets no session until its owner opens the e-mailed link (60 min, single use, only

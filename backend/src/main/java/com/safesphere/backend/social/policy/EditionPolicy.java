@@ -35,11 +35,35 @@ public final class EditionPolicy {
     /** C9: "From your connections" covers the last 30 days. */
     public static final Duration CONNECTIONS_WINDOW = Duration.ofDays(30);
 
-    public enum Section { CITY, ASKS, THEME }
+    /** Phase 16 (U2): "Talking now" holds up to 8 posts whose newest readable perspective is from the last 7 days. */
+    public static final int TALKING_CAP = 8;
+    public static final Duration TALKING_WINDOW = Duration.ofDays(7);
+
+    public enum Section { CITY, ASKS, THEME, TALKING }
 
     public enum Reason {
         IN_THIS_CITY, RECENT, HAS_PLACE, HAS_WHEN, HAS_TIP, MATCHES_YOUR_INTERESTS, BEEN_HERE_TOO, OPEN_ASK,
-        THEME_OF_THE_WEEK, FROM_A_CONNECTION
+        THEME_OF_THE_WEEK, FROM_A_CONNECTION, NEW_PERSPECTIVES
+    }
+
+    /** Phase 16 (U2): a post with the time of its newest perspective the viewer can read (null = none in the window). */
+    public record Talked<T>(T item, LocalDateTime newestPerspective, long id) {
+    }
+
+    /**
+     * Phase 16 (U2): "Talking now" in the order of the newest readable perspective, newest first (then the higher id).
+     * Never by how many perspectives, butterflies or people: no total takes part in the order.
+     */
+    public static <T> List<Picked<T>> pickTalking(List<Talked<T>> candidates, int cap) {
+        List<Talked<T>> sorted = new ArrayList<>(candidates.stream().filter(t -> t.newestPerspective() != null).toList());
+        sorted.sort(Comparator.<Talked<T>, LocalDateTime>comparing(Talked::newestPerspective, Comparator.reverseOrder())
+                .thenComparing(Talked::id, Comparator.reverseOrder()));
+        List<Picked<T>> out = new ArrayList<>();
+        for (Talked<T> t : sorted) {
+            if (out.size() >= cap) break;
+            out.add(new Picked<>(t.item(), List.of(Reason.IN_THIS_CITY, Reason.NEW_PERSPECTIVES)));
+        }
+        return out;
     }
 
     /**
@@ -105,6 +129,7 @@ public final class EditionPolicy {
             case CITY -> set.add(Reason.RECENT);
             case ASKS -> set.add(Reason.OPEN_ASK);
             case THEME -> set.add(Reason.THEME_OF_THE_WEEK);
+            case TALKING -> set.add(Reason.NEW_PERSPECTIVES);
         }
         if (c.hasPlace()) set.add(Reason.HAS_PLACE);
         if (c.hasWhen()) set.add(Reason.HAS_WHEN);

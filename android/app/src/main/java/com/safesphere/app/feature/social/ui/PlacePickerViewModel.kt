@@ -9,8 +9,9 @@ import com.safesphere.app.core.location.GeoHash
 import com.safesphere.app.core.location.LocationAccess
 import com.safesphere.app.core.location.LocationFix
 import com.safesphere.app.core.location.LocationProvider
-import com.safesphere.app.core.location.LocationUnavailableReason
-import com.safesphere.app.core.location.LocationUpdate
+import com.safesphere.app.core.location.OneFix
+import com.safesphere.app.core.location.OneFixes
+import com.safesphere.app.core.location.oneFix
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
 import com.safesphere.app.feature.social.data.PlaceMemory
@@ -21,15 +22,17 @@ import com.safesphere.app.feature.social.domain.PrivatePlacePolicy
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
 /** A place in a list, with whether it is near one of the person's private places. */
 data class PlaceRow(val place: Place, val nearPrivate: Boolean)
 
-enum class PickerNotice { NEEDS_PERMISSION, LOCATION_UNAVAILABLE, NEEDS_PRECISE, NEAR_PRIVATE }
+/**
+ * Phase 16 location audit: each problem has its own words and its own way out (allow, open settings, turn location on,
+ * try again, or pick "Only the city" / "No place").
+ */
+enum class PickerNotice { NEEDS_PERMISSION, LOCATION_OFF, LOCATION_UNAVAILABLE, NEEDS_PRECISE, NEAR_PRIVATE }
 
 data class PlacePickerUiState(
     val recent: List<PlaceRow> = emptyList(),
@@ -48,9 +51,10 @@ data class PlacePickerUiState(
 )
 
 /**
- * Phase 13B: choose where an experience happened. "Near me" takes ONE fresh fix (only when tapped, the location
- * permission asked in context), then stops; only its 6-character area goes to the server to list places, and only the
+ * Phase 13B: choose where an experience happened. "Near me" takes ONE fix (only when tapped, the location permission
+ * asked in context), then stops; only its 6-character area goes to the server to list places, and only the
  * 7-character cell to add one. Places near a private place are marked and cannot be added as public places.
+ * Phase 16: the fix comes from [oneFix] (a recent cached position at once, fresh only when it can become a place).
  */
 class PlacePickerViewModel(
     private val repository: ExperienceRepository,
@@ -77,12 +81,14 @@ class PlacePickerViewModel(
         if (_uiState.value.isBusy) return
         viewModelScope.launch {
             _uiState.update { it.copy(isBusy = true, notice = null, failure = null) }
-            when (val update = awaitFix()) {
-                is LocationUpdate.Unavailable -> _uiState.update {
-                    it.copy(isBusy = false, notice = if (update.reason == LocationUnavailableReason.PERMISSION_DENIED)
-                        PickerNotice.NEEDS_PERMISSION else PickerNotice.LOCATION_UNAVAILABLE)
-                }
-                is LocationUpdate.Fix -> showNearby(update.fix)
+            // A precise permission asks for a fresh fix (a place may be added at it); approximate takes a recent one.
+            val maxAge = if (locationProvider.access() == LocationAccess.PRECISE) FRESH_FIX_MAX_AGE_MILLIS
+                else OneFixes.AREA_MAX_AGE_MILLIS
+            when (val result = locationProvider.oneFix(maxAge, FIX_TIMEOUT_MILLIS)) {
+                is OneFix.Got -> showNearby(result.fix, result.access)
+                OneFix.NeedsPermission -> notice(PickerNotice.NEEDS_PERMISSION)
+                OneFix.LocationOff -> notice(PickerNotice.LOCATION_OFF)
+                OneFix.NotFound, OneFix.Unavailable -> notice(PickerNotice.LOCATION_UNAVAILABLE)
             }
         }
     }
@@ -115,9 +121,11 @@ class PlacePickerViewModel(
     fun onChosenHandled() = _uiState.update { it.copy(chosen = null) }
     fun onSessionExpiredHandled() = _uiState.update { it.copy(sessionExpired = false) }
 
-    private suspend fun showNearby(fix: LocationFix) {
+    private fun notice(notice: PickerNotice) = _uiState.update { it.copy(isBusy = false, notice = notice) }
+
+    private suspend fun showNearby(fix: LocationFix, access: LocationAccess) {
         val cell = GeoHash.encode(fix.latitude, fix.longitude, GeoHash.BLOCK)
-        val precise = locationProvider.access() == LocationAccess.PRECISE &&
+        val precise = access == LocationAccess.PRECISE &&
             (fix.accuracyMeters ?: Float.MAX_VALUE) <= MAX_ADD_ACCURACY_METERS
         val herePrivate = privateUnknown || PrivatePlacePolicy.isPrivate(cell, privateCells)
         _uiState.update {
@@ -133,18 +141,6 @@ class PlacePickerViewModel(
     private fun row(place: Place) =
         PlaceRow(place, privateUnknown || PrivatePlacePolicy.isPrivate(place.cell, privateCells))
 
-    /** The first usable answer from the provider, or "no fix" after a while; collection then stops. */
-    private suspend fun awaitFix(): LocationUpdate {
-        if (locationProvider.access() == LocationAccess.NONE) {
-            return LocationUpdate.Unavailable(LocationUnavailableReason.PERMISSION_DENIED)
-        }
-        return withTimeoutOrNull(FIX_TIMEOUT_MILLIS) {
-            locationProvider.updates(FIX_INTERVAL_MILLIS).first { update ->
-                update is LocationUpdate.Fix ||
-                    (update is LocationUpdate.Unavailable && update.reason != LocationUnavailableReason.NO_FIX)
-            }
-        } ?: LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX)
-    }
 
     private fun fail(failure: ApiResult.Failure) = _uiState.update {
         it.copy(isBusy = false, failure = failure, sessionExpired = failure.isSessionExpired())
@@ -152,8 +148,10 @@ class PlacePickerViewModel(
 
     companion object {
         const val MAX_ADD_ACCURACY_METERS = 100f
-        const val FIX_TIMEOUT_MILLIS = 20_000L
-        const val FIX_INTERVAL_MILLIS = 2_000L
+        /** Phase 16: 15 s instead of 20 s; the fused provider answers a one-time request much sooner. */
+        const val FIX_TIMEOUT_MILLIS = OneFixes.TIMEOUT_MILLIS
+        /** A fix up to 30 s old is "here" for adding a place (the ~150 m cell). */
+        const val FRESH_FIX_MAX_AGE_MILLIS = 30_000L
 
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {

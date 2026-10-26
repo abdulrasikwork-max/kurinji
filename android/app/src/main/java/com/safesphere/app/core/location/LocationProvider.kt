@@ -22,4 +22,11 @@ interface LocationProvider {
      * background location.
      */
     fun updates(intervalMillis: Long): Flow<LocationUpdate>
+
+    /**
+     * Phase 16: ONE position, at most [maxAgeMillis] old (a recent one comes back at once), or the reason there is
+     * none, within [timeoutMillis]. Screens use [oneFix] on top of it. The default reads [updates] once; the fused
+     * provider asks the platform for a single current location instead (faster, less battery).
+     */
+    suspend fun currentFix(maxAgeMillis: Long, timeoutMillis: Long): LocationUpdate = firstUpdate(timeoutMillis)
 }

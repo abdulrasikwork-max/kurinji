@@ -24,6 +24,12 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByPostIdOrderByCreatedAtAscIdAsc(long postId);
 
     /**
+     * Phase 16 (U1, U2): the perspectives of several posts at once, for the readable count and "Talking now". Every row
+     * still passes the one rule (Visibility.canSeeComment) before it counts or orders anything.
+     */
+    List<Comment> findByPostIdIn(Collection<Long> postIds);
+
+    /**
      * Phase 13C (C8): which of [postIds] have a "Been here too" (not hidden) by someone other than the post's author.
      * Only a yes/no per post leaves this query; never who, never how many.
      */

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 16: the Tip box: a soft panel with a brand-red bar on the leading edge. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/colorSurfaceContainer" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+    <item android:width="5dp" android:gravity="start|fill_vertical">
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/colorPrimary" />
+            <corners android:bottomLeftRadius="14dp" android:topLeftRadius="14dp" />
+        </shape>
+    </item>
+</layer-list>

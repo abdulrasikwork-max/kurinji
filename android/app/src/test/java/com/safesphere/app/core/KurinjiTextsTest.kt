@@ -46,12 +46,27 @@ class KurinjiTextsTest {
         assertTrue(manifest.contains("android:label=\"@string/app_name\""))
     }
 
+    /** Phase 16 (docs/PHASE16.md): the new line, plain words for the save and the tip, and an end to Discover (U3). */
     @Test
     fun `the lines the identity rests on are there`() {
-        assertEquals("Written for the next one who goes.", strings["motto"])
-        assertEquals("That\\'s this week\\'s edition. Go make your own.", strings["discover_edition_end"])
-        assertTrue(strings.getValue("cocoon_empty_want").contains("Butterfly something"))
-        assertEquals("For the next person", strings["card_ticket_label"])
+        assertEquals("Go. See. Tell.", strings["motto"])
+        assertEquals(listOf("Go.", "See.", "Tell."), listOf("motto_go", "motto_see", "motto_tell").map { strings[it] })
+        assertEquals("You\\'re all caught up.", strings["discover_edition_end"])
+        assertTrue(strings.getValue("cocoon_empty_want").contains("Tap the butterfly"))
+        assertEquals("Saved", strings["nav_cocoon"])
+        assertEquals("Tip", strings["card_ticket_label"])
+        assertEquals("Comments", strings["social_perspectives_title"])
         assertEquals("Going there?", strings["going_there"])
+    }
+
+    /** Phase 16: no invented words a first-time user would have to learn (the 13F vocabulary is gone from the UI). */
+    @Test
+    fun `no invented vocabulary in what people read`() {
+        val words = listOf("cocoon", "perspective", "postmark", "edition", "for the next person", "butterfly it")
+        val problems = strings.filter { (name, text) ->
+            // Moderators' and the deletion texts may name things plainly; nothing may use the retired words.
+            words.any { it in text.lowercase() } && !name.startsWith("content_case_")
+        }.keys
+        assertTrue("invented words in: $problems", problems.isEmpty())
     }
 }

@@ -1,7 +1,7 @@
 package com.safesphere.app.feature.social.ui
 
 import android.animation.ValueAnimator
-import android.graphics.Rect
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.View
@@ -12,6 +12,9 @@ import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.PagerSnapHelper
+import com.google.android.material.chip.Chip
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
@@ -19,8 +22,8 @@ import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.ui.ButterflyFlight
 import com.safesphere.app.core.ui.Haptics
 import com.safesphere.app.core.ui.ViewBindingFragment
-import com.safesphere.app.core.ui.components.ButterflyDrawable
 import com.safesphere.app.core.ui.collectWhenStarted
+import com.safesphere.app.core.ui.components.ButterflyDrawable
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentPostBinding
@@ -29,16 +32,16 @@ import com.safesphere.app.feature.social.domain.ButterflyState
 import com.safesphere.app.feature.social.domain.CommentKind
 import com.safesphere.app.feature.social.domain.ModerationState
 import com.safesphere.app.feature.social.domain.OwnModeration
-import com.safesphere.app.feature.social.domain.ReportTarget
 import com.safesphere.app.feature.social.domain.Perspective
 import com.safesphere.app.feature.social.domain.Post
-import com.safesphere.app.feature.social.domain.PostType
 import com.safesphere.app.feature.social.domain.Precision
+import com.safesphere.app.feature.social.domain.ReportTarget
 
 /**
- * Phase 13B: one post (design §9.4, §9.8). The place line says only what the author chose to show; times are bands;
- * the author sees who can see it and, for an exact place, from when others can. Perspectives: Been here too first;
- * a hidden one is marked "Hidden by the author" for its writer; more actions in a short menu on each row.
+ * Phase 13B, rebuilt in Phase 16 (docs/PHASE16.md): one post as a social page. Who first (tap for their profile), the
+ * photos large, every word of the post, where and when as chips (only what the author revealed), the Tip, then save /
+ * I've been / Going there?, and the comments with the comment box always at the bottom. Report, delete and the place
+ * page sit in the "more" menu. Times are bands; the comment count is the list the viewer reads (U1).
  */
 class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBinding::inflate) {
 
@@ -47,11 +50,11 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
     private var standingAskedFor: String? = null
     private var shownFailure: ApiResult.Failure? = null
     private var writeBeenHere = false
+    private var scrollToComments = false
 
     private lateinit var photoAdapter: PhotoAdapter
-    private val perspectiveAdapter = PersonRowAdapter()
+    private val commentAdapter = CommentAdapter()
     private lateinit var kindChips: ChoiceChips<CommentKind>
-    private lateinit var butterfly: ButterflyDrawable
 
     /** Phase 13F: the flight plays only when a tap's save has really been confirmed (null → WANT seen after the tap). */
     private var flyAfterSave = false
@@ -62,9 +65,11 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         super.onViewCreated(view, savedInstanceState)
         writeBeenHere = savedInstanceState == null &&
             arguments?.getBoolean(PostViewModel.ARG_WRITE_BEEN_HERE) == true
-        photoAdapter = PhotoAdapter(appContainer.imageLoader)
+        scrollToComments = savedInstanceState == null && arguments?.getBoolean(PostViewModel.ARG_TO_COMMENTS) == true
+        photoAdapter = PhotoAdapter(appContainer.imageLoader, large = true)
         binding.photoList.adapter = photoAdapter
-        binding.perspectiveList.adapter = perspectiveAdapter
+        PagerSnapHelper().attachToRecyclerView(binding.photoList)
+        binding.perspectiveList.adapter = commentAdapter
         kindChips = ChoiceChips(binding.kindGroup) { it?.let(viewModel::onKind) }
         binding.perspectiveInput.doAfterTextChanged { viewModel.onText(it?.toString().orEmpty()) }
         // Phase 13E: a private nudge first (the draft is checked on this phone only).
@@ -72,19 +77,13 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             DraftNudgeDialogs.beforeSharing(this, viewModel.uiState.value.text, onlyMe = false) { viewModel.onSend() }
         }
         binding.cancelReplyButton.setOnClickListener { viewModel.onCancelReply() }
-        binding.deletePostButton.setOnClickListener { confirmDelete() }
-        butterfly = ButterflyDrawable.intent(requireContext())
-        binding.butterflyButton.icon = butterfly
         binding.butterflyButton.setOnClickListener {
             flyAfterSave = viewModel.uiState.value.post?.yourButterfly == null
             viewModel.onButterfly()
         }
         binding.beenButton.setOnClickListener { viewModel.onBeen() }
         binding.showCollapsedButton.setOnClickListener { viewModel.onReveal() }
-        binding.reportPostButton.setOnClickListener {
-            val id = viewModel.uiState.value.post?.publicId ?: return@setOnClickListener
-            ReportDialogs.show(this, ReportTarget.POST) { reason, note -> reports.report(ReportTarget.POST, id, reason, note) }
-        }
+        binding.moreButton.setOnClickListener { showMoreMenu() }
         collectWhenStarted(viewModel.uiState, ::render)
         collectWhenStarted(reports.uiState, ::renderReports)
         collectWhenStarted(appContainer.viewerPreferences.collapseStrongLanguage, viewModel::onStrongLanguageFilter)
@@ -111,7 +110,7 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         viewModel.uiState.value.post?.let { showOwnModeration(it, state) }
     }
 
-    /** Phase 13D: the author's amber notice about their own post, with the reason and the review request. */
+    /** Phase 13D: the author's notice about their own post, with the reason and the review request. */
     private fun showOwnModeration(post: Post, reportState: ReportUiState) {
         val moderation = post.ownModeration
         binding.moderationNotice.isVisible = moderation != null
@@ -155,17 +154,18 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.notFound.isVisible = state.notFound
         val post = state.post
         binding.contentBlock.isVisible = post != null && !state.notFound
-        if (post != null) show(post, state)
+        binding.moreButton.isVisible = post != null
+        if (post != null) show(post, state) else binding.writeBlock.isVisible = false
 
         val failure = state.failure
         binding.errorNotice.isVisible = failure != null
         if (failure != null) {
             val message = failure.toMessage(requireContext())
             binding.errorNotice.setMessage(message)
-            // Phase 15: the notice is at the top, the perspective's Add button at the bottom; bring a NEW failure
-            // into view (and say it) so the tap does not look ignored.
+            // Phase 15: the notice is at the top, the comment box at the bottom; bring a NEW failure into view (and
+            // say it) so the tap does not look ignored.
             if (failure !== shownFailure) binding.errorNotice.post {
-                binding.root.smoothScrollTo(0, binding.errorNotice.top)
+                binding.scroll.smoothScrollTo(0, 0)
                 binding.errorNotice.announceForAccessibility(message)
             }
         }
@@ -184,49 +184,33 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
     }
 
     private fun show(post: Post, state: PostUiState) {
-        // Phase 13F: the same overline and postmark as the post's card; the postmark says only what the author revealed.
         val card = ExperienceCards.of(post)
-        binding.typeLine.text = CardTexts.overline(requireContext(), card)
-        binding.postmark.content = CardTexts.postmark(requireContext(), card)
         val author = post.author
-        binding.byLine.isVisible = author != null
-        binding.byLine.text = author?.let { getString(R.string.social_by_line, it.displayName) }.orEmpty()
-        binding.byLine.setOnClickListener {
-            if (author != null) findNavController().navigate(R.id.personProfileFragment,
+        binding.avatar.set(author?.displayName, author?.handle)
+        binding.authorName.text = author?.displayName ?: getString(R.string.feed_someone)
+        binding.meta.text = listOfNotNull(CardTexts.meta(requireContext(), card),
+            getString(R.string.social_edited).takeIf { post.edited }).joinToString(" · ")
+        binding.questionBadge.isVisible = card.isAsk
+        binding.authorRow.isClickable = author != null && !post.own
+        binding.authorRow.contentDescription = author?.let { getString(R.string.post_author_description, it.displayName) }
+        binding.authorRow.setOnClickListener {
+            if (author != null && !post.own) findNavController().navigate(R.id.personProfileFragment,
                 bundleOf(PersonProfileViewModel.ARG_PROFILE_ID to author.publicId))
         }
+
         // Phase 13D: a collapsed post shows why and "Show it"; its text and photos only after the tap.
         val hide = state.showCollapsed
         binding.collapsedBlock.isVisible = hide
         binding.collapsedNotice.setMessage(getString(ModerationLabels.collapsedLine(post.collapsed)))
-        val (headline, rest) = PostPageText.split(post.body)
-        binding.headline.isVisible = headline != null && !hide
-        binding.headline.text = headline.orEmpty()
-        binding.body.isVisible = !hide && rest.isNotEmpty()
+        binding.body.isVisible = !hide
+        binding.body.text = post.body.trim()
         photoAdapter.submitList(if (hide) emptyList() else
-            post.media.map { PhotoCell(it.mediaId, appContainer.experienceRepository.photoUrl(it.mediaId), null, null) })
+            post.media.map { PhotoCell(it.mediaId, appContainer.experienceRepository.photoUrl(it.mediaId), null, null,
+                it.width, it.height) })
         binding.photoList.isVisible = post.media.isNotEmpty() && !hide
         showOwnModeration(post, reports.uiState.value)
-        binding.reportPostButton.isVisible = !post.own
         binding.approveFirstLine.isVisible = post.approveFirst && post.canComment
-
-        binding.placeLine.text = when (post.precision) {
-            Precision.EXACT -> post.placeName?.let { getString(R.string.social_place_line, it) } ?: getString(R.string.social_no_place_line)
-            Precision.AREA -> post.areaCell?.let { getString(R.string.social_area_line, it) } ?: getString(R.string.social_no_place_line)
-            Precision.CITY -> post.city?.let { getString(R.string.social_city_line_post, ExperienceLabels.cityName(it)) }
-                ?: getString(R.string.social_no_place_line)
-            Precision.NONE -> getString(R.string.social_no_place_line)
-        }
-        val month = post.experiencedMonth?.let { ExperienceLabels.monthName(it) }
-        val daypart = post.daypart?.let { getString(ExperienceLabels.of(it)) }
-        binding.whenLine.text = when {
-            month != null && daypart != null -> getString(R.string.social_when_line, month, daypart)
-            else -> month ?: daypart.orEmpty()
-        }
-        binding.whenLine.isVisible = month != null || daypart != null
-        val band = getString(TimeBandTexts.of(post.postedPeriod))
-        binding.bandLine.text = if (post.edited) getString(R.string.social_when_line, band, getString(R.string.social_edited)) else band
-        binding.body.text = rest
+        factChips(post, card)
         binding.tipCard.isVisible = !post.tip.isNullOrBlank() && !hide
         binding.tip.text = post.tip.orEmpty()
 
@@ -241,26 +225,12 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         }
         binding.ownLine.text = ownLines.joinToString("\n")
         binding.ownLine.isVisible = ownLines.isNotEmpty()
-        binding.deletePostButton.isVisible = post.own
 
-        // Phase 13C: the butterfly on someone else's Experience; the author's private, thresholded line on their own.
+        // Phase 13C/16: save with the butterfly (someone else's Experience); the author's private line on their own.
         binding.butterflyBlock.isVisible = state.canButterfly
         binding.butterflyButton.isEnabled = !state.isBusy
         binding.beenButton.isEnabled = !state.isBusy
-        when (post.yourButterfly) {
-            null -> {
-                binding.butterflyButton.setText(R.string.butterfly_want)
-                binding.butterflyButton.contentDescription = getString(R.string.butterfly_want_description)
-            }
-            ButterflyState.WANT -> {
-                binding.butterflyButton.setText(R.string.butterfly_saved_want)
-                binding.butterflyButton.contentDescription = getString(R.string.butterfly_remove_description)
-            }
-            ButterflyState.BEEN -> {
-                binding.butterflyButton.setText(R.string.butterfly_saved_been)
-                binding.butterflyButton.contentDescription = getString(R.string.butterfly_remove_description)
-            }
-        }
+        renderSaveButton(post.yourButterfly)
         onButterflyState(post.yourButterfly)
         binding.beenButton.isVisible = post.yourButterfly == ButterflyState.WANT
         // Phase 13F (F9): from reading to going. The sheet only navigates; the save is this screen's own butterfly.
@@ -279,26 +249,29 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             tally.fewerThanThree -> getString(R.string.butterfly_author_fewer)
             else -> getString(R.string.butterfly_author_count, tally.count ?: 0)
         }
-        val placeId = post.placeId
-        binding.placePageButton.isVisible = post.precision == Precision.EXACT && placeId != null
-        binding.placePageButton.setOnClickListener {
-            if (placeId != null) findNavController().navigate(R.id.postCollectionFragment,
-                bundleOf(PostCollectionViewModel.ARG_PLACE_ID to placeId))
-        }
         if (state.beenInvitation) {
             viewModel.onBeenInvitationHandled()
-            showBeenInvitation(post)
+            showBeenInvitation()
         }
 
-        // Phase 15: opened to write "Been here too": once the perspectives are loaded (isLoading) AND their rows are in
+        // Comments: the title carries the number the viewer can read (U1), the same as the list below it.
+        val count = state.perspectives.size
+        binding.commentsTitle.text = if (count == 0) getString(R.string.social_perspectives_title)
+            else getString(R.string.post_comments_title_count, count)
+        // Phase 15: opened to write "Been here too": once the comments are loaded (isLoading) AND their rows are in
         // the list (the commit callback; the diff runs in the background), so the box is where it will stay.
         val beenHereNow = writeBeenHere && !state.isLoading
         if (beenHereNow) writeBeenHere = false
         val startWriting = beenHereNow && post.canComment && CommentKind.BEEN_HERE in state.kinds
-        perspectiveAdapter.submitList(state.perspectives.map { row(it, post, state) }) {
-            if (startWriting && view != null) startBeenHere()
+        val toComments = scrollToComments && !state.isLoading
+        if (toComments) scrollToComments = false
+        commentAdapter.submitList(state.perspectives.map { row(it, post, state) }) {
+            if (view == null) return@submitList
+            if (startWriting) startBeenHere() else if (toComments) scrollTo(binding.commentsTitle)
         }
-        binding.perspectivesEmpty.isVisible = state.perspectives.isEmpty()
+        binding.perspectivesEmpty.isVisible = state.perspectives.isEmpty() && !state.isLoading
+        binding.perspectivesEmpty.setText(if (post.canComment) R.string.social_perspectives_empty
+            else R.string.post_comments_none)
         binding.writeBlock.isVisible = post.canComment
         binding.perspectivesClosed.isVisible = !post.canComment && !post.own
         kindChips.show(state.kinds.map { it to getString(ExperienceLabels.of(it)) }, state.kind)
@@ -311,11 +284,65 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.sendButton.isEnabled = state.canSend
     }
 
-    private fun row(p: Perspective, post: Post, state: PostUiState): PersonRow {
+    /** Where, when and what kind, as chips; the place chip opens the place's page (exact places only). */
+    private fun factChips(post: Post, card: ExperienceCard) {
+        val group = binding.factChips
+        group.removeAllViews()
+        CardTexts.placeChip(requireContext(), card)?.let { place ->
+            val placeId = post.placeId
+            group.addView(Chip(requireContext(), null, R.attr.contextChipStyle).apply {
+                text = place
+                setChipIconResource(R.drawable.ic_place)
+                isChipIconVisible = true
+                if (post.precision == Precision.EXACT && placeId != null) {
+                    isClickable = true
+                    isFocusable = true
+                    contentDescription = getString(R.string.post_open_place_description, place)
+                    setOnClickListener {
+                        findNavController().navigate(R.id.postCollectionFragment,
+                            bundleOf(PostCollectionViewModel.ARG_PLACE_ID to placeId))
+                    }
+                }
+            })
+        }
+        CardTexts.whenLine(requireContext(), card)?.let { line ->
+            group.addView(Chip(requireContext(), null, R.attr.contextChipStyle).apply {
+                text = line
+                setChipIconResource(R.drawable.ic_schedule)
+                isChipIconVisible = true
+            })
+        }
+        group.isVisible = group.childCount > 0
+    }
+
+    /** Not saved: an outlined "Save" with an open butterfly. Saved: solid brand red with the word (never colour alone). */
+    private fun renderSaveButton(state: ButterflyState?) {
+        val button = binding.butterflyButton
+        val context = requireContext()
+        val saved = state != null
+        val fill = MaterialColors.getColor(button, if (saved) com.google.android.material.R.attr.colorPrimary
+            else R.attr.colorCard)
+        val ink = MaterialColors.getColor(button, if (saved) com.google.android.material.R.attr.colorOnPrimary
+            else com.google.android.material.R.attr.colorOnSurface)
+        button.backgroundTintList = ColorStateList.valueOf(fill)
+        button.setTextColor(ink)
+        button.strokeColor = ColorStateList.valueOf(MaterialColors.getColor(button,
+            if (saved) com.google.android.material.R.attr.colorPrimary else com.google.android.material.R.attr.colorOnSurface))
+        button.icon = if (saved) ButterflyDrawable(ink, ink, (24 * resources.displayMetrics.density).toInt())
+            else ButterflyDrawable.outline(context, 24)
+        button.setText(when (state) {
+            null -> R.string.butterfly_want
+            ButterflyState.WANT -> R.string.butterfly_saved_want
+            ButterflyState.BEEN -> R.string.butterfly_saved_been
+        })
+        button.contentDescription = getString(if (saved) R.string.butterfly_remove_description
+            else R.string.butterfly_want_description)
+    }
+
+    private fun row(p: Perspective, post: Post, state: PostUiState): CommentRow {
         val kind = getString(ExperienceLabels.of(p.kind))
         val name = p.author?.displayName.orEmpty()
-        val extras = buildList {
-            add(getString(TimeBandTexts.of(p.postedPeriod)))
+        val notes = buildList {
             if (p.helped) add(getString(R.string.social_helped))
             if (p.hidden) add(getString(R.string.social_hidden_by_author))
             // Phase 13D: waiting for approval (Q6); a moderator's state, to its writer only.
@@ -325,28 +352,62 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
                 add(getString(if (it.bySystem) R.string.own_perspective_system_line else R.string.own_perspective_line,
                     ownLine(it)))
             }
-        }
+        }.joinToString(" · ")
         val collapsed = state.perspectiveCollapsed(p)
         val text = if (!collapsed) p.body else getString(ModerationLabels.collapsedLine(p.collapsed))
+        val header = listOf(name, kind, getString(TimeBandTexts.of(p.postedPeriod))).filter { it.isNotEmpty() }
+            .joinToString(" · ")
         val actions = actionsFor(p, collapsed)
-        return PersonRow(
+        val canReply = post.canComment && p.parentId == null && !p.hidden
+        return CommentRow(
             key = p.publicId,
-            title = (if (p.parentId != null) "↳ " else "") + "$name · $kind",
-            subtitle = text + "\n" + extras.joinToString(" · "),
-            primary = if (post.canComment && p.parentId == null && !p.hidden) RowAction(getString(R.string.social_reply),
-                getString(R.string.social_replying_to, name)) { viewModel.onReplyTo(p) } else null,
-            secondary = if (actions.isNotEmpty()) RowAction(getString(R.string.action_more), getString(R.string.action_more)) {
+            name = p.author?.displayName,
+            handle = p.author?.handle,
+            header = header,
+            body = text,
+            notes = notes,
+            isReply = p.parentId != null,
+            spoken = listOf(header, text, notes).filter { it.isNotBlank() }.joinToString(". "),
+            replyDescription = getString(R.string.social_replying_to, name),
+            onReply = if (canReply) ({ startReply(p) }) else null,
+            onMore = if (actions.isNotEmpty()) ({
                 MaterialAlertDialogBuilder(requireContext())
                     .setItems(actions.map { it.first }.toTypedArray()) { _, which -> actions[which].second() }
                     .show()
-            } else null
+            }) else null
         )
+    }
+
+    private fun startReply(p: Perspective) {
+        viewModel.onReplyTo(p)
+        binding.perspectiveInput.requestFocus()
+    }
+
+    /** The post's own menu: report someone else's post; delete your own; open the place. */
+    private fun showMoreMenu() {
+        val post = viewModel.uiState.value.post ?: return
+        val items = buildList<Pair<String, () -> Unit>> {
+            val placeId = post.placeId
+            if (post.precision == Precision.EXACT && placeId != null) add(getString(R.string.post_open_place_page) to {
+                findNavController().navigate(R.id.postCollectionFragment,
+                    bundleOf(PostCollectionViewModel.ARG_PLACE_ID to placeId))
+            })
+            if (post.own) add(getString(R.string.social_delete_post) to { confirmDelete() })
+            else add(getString(R.string.report_post) to {
+                ReportDialogs.show(this@PostFragment, ReportTarget.POST) { reason, note ->
+                    reports.report(ReportTarget.POST, post.publicId, reason, note)
+                }
+            })
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setItems(items.map { it.first }.toTypedArray()) { _, which -> items[which].second() }
+            .show()
     }
 
     /**
      * Phase 13F, the first moment: when a tap's save is confirmed (no state → WANT), the butterfly beats its wings and
-     * flies into the Cocoon tab, with one haptic and a spoken confirmation. On BEEN it flutters once. With animations off,
-     * only the state, the haptic and the announcement change.
+     * flies into the Saved tab, with one haptic and a spoken confirmation. With animations off, only the state, the
+     * haptic and the announcement change.
      */
     private fun onButterflyState(state: ButterflyState?) {
         val previous = shownButterfly
@@ -360,9 +421,10 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             binding.butterflyButton.announceForAccessibility(getString(R.string.butterfly_saved_announcement))
             ButterflyFlight.fly(binding.butterflyButton, requireActivity().findViewById(R.id.cocoonFragment)) { }
         } else if (state == ButterflyState.BEEN && ValueAnimator.areAnimatorsEnabled()) {
+            val icon = binding.butterflyButton.icon as? ButterflyDrawable ?: return
             ValueAnimator.ofFloat(0f, 1f, 0f, 1f, 0f).apply {
                 duration = 420
-                addUpdateListener { butterfly.flap = it.animatedValue as Float }
+                addUpdateListener { icon.flap = it.animatedValue as Float }
             }.start()
         }
     }
@@ -370,7 +432,7 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
     /** Phase 13E: the text the server checked (body, a new line, the tip): flagged offsets point into it. */
     private fun ownText(post: Post): String = if (post.tip == null) post.body else post.body + "\n" + post.tip
 
-    /** Phase 13D: the short line a writer sees about their own moderated perspective. */
+    /** Phase 13D: the short line a writer sees about their own moderated comment. */
     private fun ownLine(moderation: OwnModeration): String {
         val state = getString(when (moderation.state) {
             ModerationState.COLLAPSED -> R.string.content_state_collapsed
@@ -402,8 +464,9 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         })
     }
 
-    /** Phase 13C (design §3.4.2): after "Been", the invitation to share what was found, for the next person. */
-    private fun showBeenInvitation(post: Post) {
+    /** Phase 13C (design §3.4.2): after "Been", the invitation to share what was found. */
+    private fun showBeenInvitation() {
+        val post = viewModel.uiState.value.post ?: return
         BeenInvitation.show(this, post.canComment,
             onPerspective = ::startBeenHere,
             onOwn = { findNavController().navigate(R.id.composeFragment) })
@@ -411,12 +474,18 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
 
     private fun startBeenHere() {
         viewModel.onKind(CommentKind.BEEN_HERE)
-        binding.root.doOnPreDraw {
-            val box = Rect()
-            binding.writeBlock.getDrawingRect(box)
-            binding.root.offsetDescendantRectToMyCoords(binding.writeBlock, box)
-            binding.root.scrollTo(0, (box.bottom - binding.root.height).coerceAtLeast(0))
-            binding.perspectiveInput.requestFocus()
+        binding.perspectiveInput.requestFocus()
+    }
+
+    private fun scrollTo(target: View) {
+        binding.scroll.doOnPreDraw {
+            var y = 0
+            var v: View? = target
+            while (v != null && v !== binding.scroll) {
+                y += v.top
+                v = v.parent as? View
+            }
+            binding.scroll.smoothScrollTo(0, y)
         }
     }
 

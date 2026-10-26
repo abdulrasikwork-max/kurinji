@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 16: the app-icon tile (brand red, the launcher's rounded square) under the Go-K on sign-in screens. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/launcher_red" />
+    <corners android:radius="18dp" />
+</shape>

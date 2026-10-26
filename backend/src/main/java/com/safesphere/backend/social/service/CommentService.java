@@ -78,7 +78,7 @@ public class CommentService {
         Post post = postService.requireVisible(viewerId, postId, now);
         List<Comment> all = comments.findByPostIdOrderByCreatedAtAscIdAsc(post.getId());
         Map<Long, Visibility.Facts> writers = new HashMap<>();
-        List<Comment> visible = all.stream().filter(c -> visibleTo(viewerId, post, c, writers)).toList();
+        List<Comment> visible = readable(all, c -> visibleTo(viewerId, post, c, writers));
         Set<Long> visibleIds = visible.stream().map(Comment::getId).collect(Collectors.toSet());
 
         Comparator<Comment> topOrder = Comparator.comparingInt((Comment c) -> rank(post, c))
@@ -221,6 +221,17 @@ public class CommentService {
         Post post = posts.findById(comment.getPostId()).orElse(null);
         if (post == null || post.getAuthorId() != userId) throw new ResourceNotFoundException(NOT_FOUND);
         return comment;
+    }
+
+    /**
+     * The perspectives of ONE post that the list shows: those that pass [visible], and replies only under a parent that
+     * passes too. Phase 16 (U1): the readable count on a post is the size of exactly this list, so a number never says
+     * more than the viewer could count by reading.
+     */
+    static List<Comment> readable(List<Comment> ofOnePost, java.util.function.Predicate<Comment> visible) {
+        List<Comment> passing = ofOnePost.stream().filter(visible).toList();
+        Set<Long> ids = passing.stream().map(Comment::getId).collect(Collectors.toSet());
+        return passing.stream().filter(c -> c.getParentId() == null || ids.contains(c.getParentId())).toList();
     }
 
     /** Whether [viewerId] may see [c] on a post they can see: the one rule (Visibility.canSeeComment). */

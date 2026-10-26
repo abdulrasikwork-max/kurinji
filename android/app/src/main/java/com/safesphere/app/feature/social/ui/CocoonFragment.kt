@@ -12,6 +12,8 @@ import androidx.navigation.navOptions
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
+import com.google.android.material.shape.ShapeAppearanceModel
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.ui.SpokenText
@@ -28,18 +30,20 @@ import com.safesphere.app.feature.social.domain.CocoonItem
 import com.safesphere.app.feature.social.domain.TimeBand
 
 /**
- * Phase 13C, redesigned in 13F (F16): the Cocoon tab. Want to go (chrysalises) / Been (butterflies). "I've been" lets
- * the butterfly out ([BeenInvitation.emerge]), moves the item, then invites a word for the next person. Private: nothing
- * here is shown to anyone. [CocoonViewModel] is unchanged.
+ * Phase 13C, simplified in Phase 16 (docs/PHASE16.md): the Saved tab (13F called it the Cocoon). Two plain lists, Want
+ * to go and Been there; "I've been" moves an item (the butterfly emerges) and invites a comment for others. Private:
+ * nothing here is shown to anyone. [CocoonViewModel] is unchanged.
  */
 class CocoonFragment : ViewBindingFragment<FragmentCocoonBinding>(FragmentCocoonBinding::inflate) {
 
     private val viewModel by viewModels<CocoonViewModel> { CocoonViewModel.factory(appContainer) }
     private val adapter = CocoonAdapter()
+    private lateinit var tabs: ChoiceChips<ButterflyState>
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.itemList.adapter = adapter
+        tabs = ChoiceChips(binding.tabGroup) { it?.let(viewModel::onTab) }
         binding.showMoreButton.setOnClickListener { viewModel.onShowMore() }
         binding.emptyDiscoverButton.setOnClickListener {
             findNavController().navigate(R.id.discoverFragment, null, navOptions {
@@ -48,6 +52,7 @@ class CocoonFragment : ViewBindingFragment<FragmentCocoonBinding>(FragmentCocoon
                 popUpTo(R.id.discoverFragment) { saveState = true }
             })
         }
+        binding.emptyGlyph.setImageDrawable(ButterflyDrawable.outline(requireContext(), 72))
         collectWhenStarted(viewModel.uiState, ::render)
     }
 
@@ -57,10 +62,8 @@ class CocoonFragment : ViewBindingFragment<FragmentCocoonBinding>(FragmentCocoon
     }
 
     private fun render(state: CocoonUiState) {
-        binding.tabs.setTabs(listOf(getString(R.string.cocoon_tab_want), getString(R.string.cocoon_tab_been)),
-            if (state.tab == ButterflyState.BEEN) 1 else 0) { index ->
-            viewModel.onTab(if (index == 1) ButterflyState.BEEN else ButterflyState.WANT)
-        }
+        tabs.show(listOf(ButterflyState.WANT to getString(R.string.cocoon_tab_want),
+            ButterflyState.BEEN to getString(R.string.cocoon_tab_been)), state.tab)
         binding.progress.isVisible = state.isLoading || state.isBusy
         adapter.busy = state.isBusy
         adapter.submitList(state.items)
@@ -94,27 +97,31 @@ class CocoonFragment : ViewBindingFragment<FragmentCocoonBinding>(FragmentCocoon
 
         inner class Holder(val binding: ItemCocoonBinding) : RecyclerView.ViewHolder(binding.root)
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
-            Holder(ItemCocoonBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
+            val holder = Holder(ItemCocoonBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+            holder.binding.photo.shapeAppearanceModel = ShapeAppearanceModel.builder()
+                .setAllCornerSizes(parent.resources.getDimension(R.dimen.space_md)).build()
+            return holder
+        }
 
         override fun onBindViewHolder(holder: Holder, position: Int) {
             val item = getItem(position)
             val b = holder.binding
             val context = b.root.context
             val card = ExperienceCards.of(item.post, collapseStrongLanguage = false)
-            val title = card.headline ?: card.collapse?.let { context.getString(CardTexts.collapsedLine(it)) }.orEmpty()
+            val title = card.thought ?: card.collapse?.let { context.getString(CardTexts.collapsedLine(it)) }.orEmpty()
             val saved = context.getString(when (item.savedPeriod) {
                 TimeBand.THIS_WEEK -> R.string.cocoon_saved_this_week
                 TimeBand.THIS_MONTH -> R.string.cocoon_saved_this_month
                 TimeBand.EARLIER -> R.string.cocoon_saved_earlier
             })
             b.headline.text = title
-            b.meta.text = listOfNotNull(CardTexts.whereLine(context, card), saved).joinToString(" · ")
-            b.glyph.scaleX = 1f
-            b.glyph.scaleY = 1f
-            b.glyph.rotation = 0f
-            if (item.state == ButterflyState.WANT) b.glyph.setImageResource(R.drawable.ic_chrysalis)
-            else b.glyph.setImageDrawable(ButterflyDrawable.intent(context, 40))
+            b.meta.text = listOfNotNull(card.authorName, CardTexts.placeChip(context, card), saved).joinToString(" · ")
+            b.avatar.set(card.authorName, card.authorHandle)
+            val photo = card.photo
+            b.photo.isVisible = photo != null
+            if (photo != null) b.photo.load(appContainer.experienceRepository.photoUrl(photo.mediaId), appContainer.imageLoader)
+            else b.photo.setImageDrawable(null)
             b.openArea.contentDescription = context.getString(R.string.cocoon_item_description,
                 SpokenText.part(title), SpokenText.part(b.meta.text),
                 context.getString(if (item.state == ButterflyState.WANT) R.string.cocoon_tab_want else R.string.cocoon_tab_been))
@@ -122,12 +129,15 @@ class CocoonFragment : ViewBindingFragment<FragmentCocoonBinding>(FragmentCocoon
 
             if (item.state == ButterflyState.WANT) {
                 b.moveButton.setText(R.string.cocoon_mark_been)
+                b.moveButton.setIconResource(R.drawable.ic_check)
                 b.moveButton.contentDescription = context.getString(R.string.cocoon_mark_been_description, title)
                 b.moveButton.setOnClickListener {
-                    if (!busy) BeenInvitation.emerge(b.glyph) { viewModel.onMarkBeen(item) }
+                    if (!busy) BeenInvitation.bounce(b.avatar.parent as View) { viewModel.onMarkBeen(item) }
                 }
             } else {
                 b.moveButton.setText(R.string.cocoon_want_again)
+                b.moveButton.icon = ButterflyDrawable.outline(context, 22)
+                b.moveButton.iconTint = null
                 b.moveButton.contentDescription = context.getString(R.string.cocoon_want_again_description, title)
                 b.moveButton.setOnClickListener { if (!busy) viewModel.onWantAgain(item) }
             }

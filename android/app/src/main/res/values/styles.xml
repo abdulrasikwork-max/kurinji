@@ -3,15 +3,15 @@
 
     <!-- ===== Shapes (Phase 13F) ===== -->
     <style name="ShapeAppearance.Kurinji.Small" parent="ShapeAppearance.Material3.Corner.Small">
-        <item name="cornerSize">8dp</item>
+        <item name="cornerSize">10dp</item>
     </style>
 
     <style name="ShapeAppearance.Kurinji.Medium" parent="ShapeAppearance.Material3.Corner.Medium">
-        <item name="cornerSize">14dp</item>
+        <item name="cornerSize">16dp</item>
     </style>
 
     <style name="ShapeAppearance.Kurinji.Large" parent="ShapeAppearance.Material3.Corner.Large">
-        <item name="cornerSize">18dp</item>
+        <item name="cornerSize">22dp</item>
     </style>
 
     <style name="ShapeAppearance.Kurinji.ExtraLarge" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
@@ -46,11 +46,17 @@
         <item name="iconTint">?attr/colorPrimary</item>
     </style>
 
-    <!-- The red "Start SOS" button. Red is reserved for emergency UI, and this is that. -->
+    <!-- The emergency button (Phase 16, U4): black with a thick red ring and the siren icon, never just "a red button"
+         (brand buttons are red too). The words on it always say what it does. -->
     <style name="Widget.SafeSphere.Button.Emergency" parent="Widget.SafeSphere.Button.Primary">
         <item name="android:minHeight">72dp</item>
-        <item name="backgroundTint">?attr/colorError</item>
+        <item name="backgroundTint">?attr/colorEmergencySurface</item>
         <item name="android:textColor">?attr/colorOnError</item>
+        <item name="strokeColor">?attr/colorError</item>
+        <item name="strokeWidth">3dp</item>
+        <item name="icon">@drawable/ic_siren</item>
+        <item name="iconTint">?attr/colorOnError</item>
+        <item name="iconGravity">textStart</item>
     </style>
 
     <style name="Widget.SafeSphere.Button.Text" parent="Widget.Material3.Button.TextButton">
@@ -110,6 +116,8 @@
     <!-- ===== Chips ===== -->
     <style name="Widget.Kurinji.Chip" parent="Widget.Material3.Chip.Filter">
         <item name="chipBackgroundColor">@color/selector_chip_background</item>
+        <item name="android:textColor">@color/selector_chip_text</item>
+        <item name="checkedIconTint">?attr/colorOnPrimary</item>
         <item name="chipStrokeColor">?attr/colorOutlineVariant</item>
         <item name="chipStrokeWidth">1dp</item>
         <item name="chipMinHeight">@dimen/min_touch_target</item>
@@ -126,22 +134,17 @@
         <item name="cardElevation">0dp</item>
     </style>
 
-    <!-- An experience card: a postcard (photo on top, postmark, ticket). Presses down slightly when touched. -->
-    <style name="Widget.Kurinji.Card.Postcard" parent="Widget.SafeSphere.Card">
-        <item name="android:stateListAnimator">@animator/press_settle</item>
-        <item name="android:foreground">?attr/selectableItemBackground</item>
-    </style>
-
     <!-- Indigo-night panel used for the safety status card -->
     <style name="Widget.SafeSphere.Card.Hero">
         <item name="cardBackgroundColor">?attr/colorHero</item>
         <item name="strokeWidth">0dp</item>
     </style>
 
-    <!-- The emergency action: the only solid-red surface in the app -->
+    <!-- Emergency surfaces (Phase 16, U4): black with a thick red ring; their layouts add the siren icon and words. -->
     <style name="Widget.SafeSphere.Card.Emergency">
-        <item name="cardBackgroundColor">?attr/colorError</item>
-        <item name="strokeWidth">0dp</item>
+        <item name="cardBackgroundColor">?attr/colorEmergencySurface</item>
+        <item name="strokeColor">?attr/colorError</item>
+        <item name="strokeWidth">3dp</item>
     </style>
 
     <!-- ===== Bottom navigation ===== -->
@@ -187,11 +190,11 @@
         <item name="tint">?attr/colorOnPrimaryContainer</item>
     </style>
 
-    <!-- The Kurinji butterfly on a soft tile -->
+    <!-- Phase 16: the app icon as a tile (the Go-K on brand red), as on the home screen. -->
     <style name="Widget.SafeSphere.BrandTile" parent="">
-        <item name="android:background">@drawable/bg_brand_tile</item>
+        <item name="android:background">@drawable/bg_app_tile</item>
         <item name="android:padding">@dimen/brand_tile_padding</item>
-        <item name="android:src">@drawable/ic_brand_mark</item>
+        <item name="android:src">@drawable/ic_launcher_foreground</item>
         <item name="android:contentDescription">@string/cd_app_logo</item>
     </style>
 
@@ -207,6 +210,117 @@
         <!-- Found on the emulator: Mukta's old-style "5" read as "s" at badge size. Emergency text keeps the phone's
              sans with lining figures, so "5 s to cancel" can never be misread. -->
         <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- ===== Phase 16: the social feed ===== -->
+
+    <!-- A post in a feed: a white card on the off-white page, no outline, soft corners. -->
+    <style name="Widget.Kurinji.Card.Feed" parent="Widget.SafeSphere.Card">
+        <item name="strokeWidth">0dp</item>
+        <item name="cardCornerRadius">@dimen/radius_card</item>
+    </style>
+
+    <!-- An action under a post (save, comment, why): icon + bold word, ink, 48 dp tall. -->
+    <style name="Widget.Kurinji.Button.Action" parent="Widget.Material3.Button.TextButton.Icon">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">@dimen/min_touch_target</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SafeSphere.Button</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="iconTint">?attr/colorOnSurface</item>
+        <item name="iconSize">22dp</item>
+        <item name="iconPadding">6dp</item>
+    </style>
+
+    <!-- The round send button of the comment box: a filled red circle with a paper plane. -->
+    <style name="Widget.Kurinji.Button.Send" parent="Widget.Material3.Button.Icon">
+        <item name="android:layout_width">@dimen/min_touch_target</item>
+        <item name="android:layout_height">@dimen/min_touch_target</item>
+        <item name="android:layout_marginStart">6dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:padding">0dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">0dp</item>
+        <item name="iconSize">22dp</item>
+        <item name="cornerRadius">24dp</item>
+    </style>
+
+    <!-- A small text action under a comment (Reply, More). -->
+    <style name="Widget.Kurinji.Button.Small" parent="Widget.Material3.Button.TextButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">@dimen/min_touch_target</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SafeSphere.Button</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- A small solid label ("Question"). -->
+    <style name="Widget.Kurinji.Badge" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/bg_badge_solid</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="android:paddingTop">3dp</item>
+        <item name="android:paddingBottom">3dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Overline</item>
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+    </style>
+
+    <!-- A fact under a post (where it is, "Tip inside"): not a button. -->
+    <style name="Widget.Kurinji.Chip.Context" parent="Widget.Material3.Chip.Assist">
+        <item name="chipBackgroundColor">?attr/colorSurfaceContainer</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="chipMinHeight">30dp</item>
+        <item name="ensureMinTouchTargetSize">false</item>
+        <item name="android:clickable">false</item>
+        <item name="android:focusable">false</item>
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Label.Medium</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="chipIconTint">?attr/colorPrimary</item>
+        <item name="chipIconSize">16dp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Kurinji.Medium</item>
+    </style>
+
+    <!-- A category or city pill at the top of Discover: tappable, bold. -->
+    <style name="Widget.Kurinji.Chip.Pill" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">@color/selector_chip_background</item>
+        <item name="chipStrokeColor">?attr/colorOutlineVariant</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipMinHeight">40dp</item>
+        <item name="chipIconTint">?attr/colorPrimary</item>
+        <item name="android:textColor">@color/selector_chip_text</item>
+        <item name="checkedIconTint">?attr/colorOnPrimary</item>
+        <item name="android:textAppearance">@style/TextAppearance.SafeSphere.Button</item>
+        <item name="android:textSize">14sp</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Kurinji.Pill</item>
+    </style>
+
+    <style name="ShapeAppearance.Kurinji.Pill" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- Phase 16: one word of "Go. See. Tell." on the splash (white on brand red, 5.5:1). -->
+    <style name="SplashWord" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginEnd">10dp</item>
+        <item name="android:importantForAccessibility">no</item>
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Wordmark</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:textColor">@color/launcher_chevron</item>
     </style>
 
     <!-- Phase 13A: section headings and "nothing here" lines of the social screens.
@@ -239,19 +353,5 @@
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
         <item name="android:textAppearance">@style/TextAppearance.Kurinji.Title.Medium</item>
-    </style>
-
-    <!-- Phase 13F: an editorial text tab ("Edition · Connections", "Want to go · Been"): a word, underlined when chosen. -->
-    <style name="Widget.Kurinji.TextTab" parent="">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:minHeight">@dimen/min_touch_target</item>
-        <item name="android:gravity">center</item>
-        <item name="android:layout_marginEnd">@dimen/space_lg</item>
-        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Title.Medium</item>
-        <item name="android:textColor">@color/selector_text_tab</item>
-        <item name="android:background">@drawable/bg_text_tab</item>
-        <item name="android:focusable">true</item>
-        <item name="android:clickable">true</item>
     </style>
 </resources>

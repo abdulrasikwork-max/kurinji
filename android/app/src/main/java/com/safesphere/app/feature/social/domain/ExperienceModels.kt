@@ -83,7 +83,9 @@ data class Post(
     /** Phase 13D: other people's posts only: shown behind a tap, and why (never who). */
     val collapsed: Collapsed? = null,
     /** Phase 13E: the automatic check found strong language (a viewer may collapse it on their own phone). */
-    val strongLanguage: Boolean = false
+    val strongLanguage: Boolean = false,
+    /** Phase 16 (U1): how many comments THIS viewer can read on the post (the server counts its own visible list). */
+    val commentCount: Int = 0
 )
 
 data class PostPage(val items: List<Post>, val nextCursor: String?)

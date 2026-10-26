@@ -13,6 +13,7 @@ import com.safesphere.backend.social.dto.PostDtos.PostRequest;
 import com.safesphere.backend.social.dto.PostDtos.PostResponse;
 import com.safesphere.backend.social.dto.PostDtos.Span;
 import com.safesphere.backend.social.entity.Butterfly;
+import com.safesphere.backend.social.entity.Comment;
 import com.safesphere.backend.social.entity.Place;
 import com.safesphere.backend.social.entity.Post;
 import com.safesphere.backend.social.entity.PostEnums.Audience;
@@ -369,6 +370,7 @@ public class PostService {
         if (!tallied.isEmpty()) {
             for (Object[] row : butterflies.countByPostIds(tallied)) counts.put((Long) row[0], (Long) row[1]);
         }
+        Map<Long, Integer> readable = readableCounts(viewerId, list);
         List<PostResponse> out = new ArrayList<>(list.size());
         for (Post post : list) {
             boolean own = post.getAuthorId() == viewerId;
@@ -399,9 +401,28 @@ public class PostService {
                     own ? moderationView(post.getModeration(), post.getModerationReason(), post.getModerationDecision(),
                             post.getModerationSource(), post.getModerationSpans()) : null,
                     own ? null : collapsed(post.getModeration(), post.getModerationSource()),
-                    post.isStrongLanguage(), null));
+                    post.isStrongLanguage(), null, readable.getOrDefault(post.getId(), 0)));
         }
         return out;
+    }
+
+    /**
+     * Phase 16 (U1): per post, how many perspectives [viewerId] can read: CommentService.readable with the one rule
+     * (Visibility.canSeeComment), so the number equals the length of the comment list this viewer would get.
+     */
+    private Map<Long, Integer> readableCounts(long viewerId, List<Post> list) {
+        Map<Long, List<Comment>> byPost = comments
+                .findByPostIdIn(list.stream().map(Post::getId).toList()).stream()
+                .collect(Collectors.groupingBy(Comment::getPostId));
+        Map<Long, Visibility.Facts> writers = new HashMap<>();
+        Map<Long, Integer> counts = new HashMap<>();
+        for (Post post : list) {
+            List<Comment> of = byPost.getOrDefault(post.getId(), List.of());
+            if (of.isEmpty()) continue;
+            counts.put(post.getId(), CommentService.readable(of,
+                    c -> Visibility.canSeeComment(relationships.commentFacts(viewerId, post, c, writers))).size());
+        }
+        return counts;
     }
 
     /**

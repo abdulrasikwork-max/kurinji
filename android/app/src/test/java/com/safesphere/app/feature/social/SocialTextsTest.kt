@@ -35,12 +35,14 @@ class SocialTextsTest {
         val problems = socialStringNames(strings).filter { name ->
             val text = strings[name].orEmpty()
             // %d placeholders would be counts; the only digits allowed are the fixed rules (18, 3 to 20, 7 days, ...).
-            name !in AUTHOR_ONLY_COUNTS && (text.contains("%d") || text.contains("%1\$d"))
+            name !in AUTHOR_ONLY_COUNTS && name !in COMMENT_COUNTS && (text.contains("%d") || text.contains("%1\$d"))
         }
         assertTrue("counts in: $problems", problems.isEmpty())
         // Phase 13C (C2): the one number, the author's own private line, says so, and only exists from 3 people up.
         for (name in AUTHOR_ONLY_COUNTS) assertTrue(name, strings[name].orEmpty().contains("Only you can see this line"))
         assertTrue(strings["butterfly_author_fewer"].orEmpty().startsWith("Fewer than 3 people"))
+        // Phase 16 (U1): the one public number counts comments the viewer can read, and says so.
+        for (name in COMMENT_COUNTS) assertTrue(name, strings[name].orEmpty().contains("Comments"))
         // Emulator finding (13C): the Cocoon's saved line has its own words, never a band sentence glued after "Saved".
         assertTrue(strings["cocoon_saved_this_week"] == "Saved this week")
     }
@@ -106,6 +108,8 @@ class SocialTextsTest {
             "fragment_my_reports.xml", "fragment_guidelines.xml")
         /** Phase 13C (C2): the only text with a number of people: the author's own private line. */
         val AUTHOR_ONLY_COUNTS = setOf("butterfly_author_count")
+        /** Phase 16 (U1, decided by the user 2026-10-26): comment counts, the only public number. */
+        val COMMENT_COUNTS = setOf("post_comments_title_count")
         val LIVE = listOf(Regex("\\blive\\b"), Regex("right now here"), Regex("\\bi'?m here\\b"), Regex("\\bhere now\\b"),
             Regex("\\bcheck[- ]?in\\b"), Regex("who is here"))
         val FORBIDDEN = listOf(

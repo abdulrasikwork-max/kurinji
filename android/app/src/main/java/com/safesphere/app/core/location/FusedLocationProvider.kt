@@ -7,22 +7,28 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
 import android.os.Looper
+import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import java.time.Instant
+import kotlin.coroutines.resume
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * [LocationProvider] backed by Google Play services' fused location provider (GPS + Wi-Fi + cell).
@@ -101,6 +107,77 @@ class FusedLocationProvider(context: Context) : LocationProvider {
         awaitClose { client.removeLocationUpdates(callback) }
     }
 
+    /**
+     * Phase 16: one current position from the fused provider ("getCurrentLocation": a recent cached fix comes back at
+     * once, otherwise one fresh fix, then it stops by itself). Without Play services the platform's own location
+     * manager is asked instead, so phones without Google services still work.
+     */
+    @SuppressLint("MissingPermission")
+    override suspend fun currentFix(maxAgeMillis: Long, timeoutMillis: Long): LocationUpdate {
+        val access = access()
+        if (access == LocationAccess.NONE) return LocationUpdate.Unavailable(LocationUnavailableReason.PERMISSION_DENIED)
+        if (!isLocationEnabled()) return LocationUpdate.Unavailable(LocationUnavailableReason.LOCATION_DISABLED)
+        // A safety net over the platform's own duration: never wait longer than asked (plus a little).
+        return withTimeoutOrNull(timeoutMillis + TIMEOUT_GRACE_MILLIS) {
+            try {
+                if (isPlayServicesAvailable()) fusedFix(access, maxAgeMillis, timeoutMillis)
+                else platformFix(access, maxAgeMillis)
+            } catch (e: SecurityException) {
+                LocationUpdate.Unavailable(LocationUnavailableReason.PERMISSION_DENIED)
+            }
+        } ?: LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX)
+    }
+
+    @SuppressLint("MissingPermission")
+    private suspend fun fusedFix(access: LocationAccess, maxAgeMillis: Long, timeoutMillis: Long): LocationUpdate {
+        val request = CurrentLocationRequest.Builder()
+            .setPriority(if (access == LocationAccess.PRECISE) Priority.PRIORITY_HIGH_ACCURACY
+                else Priority.PRIORITY_BALANCED_POWER_ACCURACY)
+            .setMaxUpdateAgeMillis(maxAgeMillis)
+            .setDurationMillis(timeoutMillis)
+            .build()
+        val cancel = CancellationTokenSource()
+        return suspendCancellableCoroutine { continuation ->
+            continuation.invokeOnCancellation { cancel.cancel() }
+            client.getCurrentLocation(request, cancel.token)
+                .addOnSuccessListener { location ->
+                    if (continuation.isActive) continuation.resume(location?.let { LocationUpdate.Fix(it.toFix()) }
+                        ?: LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX))
+                }
+                .addOnFailureListener { error ->
+                    if (continuation.isActive) continuation.resume(LocationUpdate.Unavailable(reasonFor(error)))
+                }
+        }
+    }
+
+    /** No Play services: the platform's last known position if recent enough, else one current position. */
+    @SuppressLint("MissingPermission")
+    private suspend fun platformFix(access: LocationAccess, maxAgeMillis: Long): LocationUpdate {
+        val manager = locationManager
+            ?: return LocationUpdate.Unavailable(LocationUnavailableReason.SERVICES_UNAVAILABLE)
+        val providers = buildList {
+            if (access == LocationAccess.PRECISE && manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                add(LocationManager.GPS_PROVIDER)
+            }
+            if (manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) add(LocationManager.NETWORK_PROVIDER)
+        }
+        if (providers.isEmpty()) return LocationUpdate.Unavailable(LocationUnavailableReason.SERVICES_UNAVAILABLE)
+        val nowNanos = SystemClock.elapsedRealtimeNanos()
+        providers.mapNotNull { manager.getLastKnownLocation(it) }
+            .filter { (nowNanos - it.elapsedRealtimeNanos) / 1_000_000 <= maxAgeMillis }
+            .minByOrNull { if (it.hasAccuracy()) it.accuracy else Float.MAX_VALUE }
+            ?.let { return LocationUpdate.Fix(it.toFix()) }
+        val signal = androidx.core.os.CancellationSignal()
+        return suspendCancellableCoroutine { continuation ->
+            continuation.invokeOnCancellation { signal.cancel() }
+            LocationManagerCompat.getCurrentLocation(manager, providers.first(), signal,
+                ContextCompat.getMainExecutor(appContext)) { location ->
+                if (continuation.isActive) continuation.resume(location?.let { LocationUpdate.Fix(it.toFix()) }
+                    ?: LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX))
+            }
+        }
+    }
+
     private fun isGranted(permission: String) =
         ContextCompat.checkSelfPermission(appContext, permission) == PackageManager.PERMISSION_GRANTED
 
@@ -112,6 +189,10 @@ class FusedLocationProvider(context: Context) : LocationProvider {
         error is ApiException && error.statusCode == CommonStatusCodes.API_NOT_CONNECTED ->
             LocationUnavailableReason.SERVICES_UNAVAILABLE
         else -> LocationUnavailableReason.NO_FIX
+    }
+
+    private companion object {
+        const val TIMEOUT_GRACE_MILLIS = 2_000L
     }
 
     private fun Location.toFix() = LocationFix(

@@ -19,8 +19,8 @@
     <dimen name="menu_row_min_height">56dp</dimen>
     <dimen name="button_height">56dp</dimen>
 
-    <dimen name="radius_card">18dp</dimen>
-    <dimen name="radius_button">16dp</dimen>
+    <dimen name="radius_card">22dp</dimen>
+    <dimen name="radius_button">28dp</dimen>
     <dimen name="radius_field">12dp</dimen>
     <dimen name="stroke_hairline">1dp</dimen>
 
@@ -28,10 +28,9 @@
     <dimen name="chip_padding_vertical">4dp</dimen>
     <dimen name="onboarding_dot_size">8dp</dimen>
 
-    <!-- Phase 13F: the Kurinji objects -->
-    <dimen name="postmark_size">88dp</dimen>
-    <dimen name="postmark_size_small">64dp</dimen>
-    <dimen name="ticket_notch_radius">9dp</dimen>
-    <dimen name="butterfly_size">28dp</dimen>
-    <dimen name="kolam_size">112dp</dimen>
+    <!-- Phase 16: the feed -->
+    <dimen name="avatar_size">40dp</dimen>
+    <dimen name="avatar_size_small">32dp</dimen>
+    <dimen name="rail_card_width">260dp</dimen>
+    <dimen name="reply_indent">42dp</dimen>
 </resources>

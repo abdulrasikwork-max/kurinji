@@ -1,32 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Kurinji night (Phase 13F): the kurinji landscape's hour in Sangam poetry is midnight. Same roles as light. -->
-    <color name="k_mist">#12142A</color>
-    <color name="k_card">#1B1E36</color>
-    <color name="k_sunk">#232746</color>
-    <color name="k_ink">#E8EAF2</color>
-    <color name="k_ink_soft">#B4B8CC</color>
-    <color name="k_outline">#8187A3</color>
-    <color name="k_line">#33385A</color>
-    <color name="k_surface_low">#171A33</color>
-    <color name="k_surface_container">#1F2240</color>
-    <color name="k_surface_high">#262A4A</color>
-    <color name="k_surface_highest">#2E3254</color>
+    <!-- Kurinji dark (Phase 16): near-black page, white text, a brighter red. Same roles as light. -->
+    <color name="k_mist">#0D0D0E</color>
+    <color name="k_card">#19191B</color>
+    <color name="k_sunk">#242427</color>
+    <color name="k_ink">#F4F4F4</color>
+    <color name="k_ink_soft">#BEBEBE</color>
+    <color name="k_outline">#8E8E93</color>
+    <color name="k_line">#2E2E31</color>
+    <color name="k_surface_low">#141416</color>
+    <color name="k_surface_container">#1C1C1F</color>
+    <color name="k_surface_high">#232326</color>
+    <color name="k_surface_highest">#2B2B2F</color>
 
-    <color name="k_bloom">#ABA8F7</color>
-    <color name="k_on_bloom">#12142A</color>
-    <color name="k_bloom_soft">#2C2A66</color>
-    <color name="k_on_bloom_soft">#E2E1F6</color>
+    <color name="k_bloom">#FF4F5E</color>
+    <color name="k_on_bloom">#12070A</color>
+    <color name="k_bloom_soft">#3A0E14</color>
+    <color name="k_on_bloom_soft">#FFD9DD</color>
 
-    <color name="k_yeoman">#F2A65A</color>
-    <color name="k_yeoman_ink">#F6B97A</color>
-    <color name="k_yeoman_soft">#4A2A10</color>
-    <color name="k_on_yeoman_soft">#FBE5CF</color>
+    <color name="k_yeoman">#FF4F5E</color>
+    <color name="k_yeoman_ink">#FF7A86</color>
+    <color name="k_yeoman_soft">#3A0E14</color>
+    <color name="k_on_yeoman_soft">#FFD9DD</color>
 
-    <color name="ss_emergency">#FF6B6B</color>
-    <color name="ss_on_emergency">#4A0505</color>
-    <color name="ss_emergency_container">#7A1A1A</color>
-    <color name="ss_on_emergency_container">#FFDADA</color>
+    <color name="ss_emergency">#D42A3D</color>
+    <color name="ss_on_emergency">#FFFFFF</color>
+    <color name="ss_emergency_container">#4A0A12</color>
+    <color name="ss_on_emergency_container">#FFD9DD</color>
+    <color name="emergency_surface">#000000</color>
 
     <color name="ss_safe">#5BD694</color>
     <color name="ss_safe_container">#123D2A</color>
@@ -36,13 +37,10 @@
     <color name="ss_on_caution_container">#FFE3A8</color>
 
     <!-- Slightly lighter than the page so hero panels stay visible in the dark. -->
-    <color name="hero_background">#262A4A</color>
-    <color name="hero_on">#E8EAF2</color>
-    <color name="hero_on_variant">#C3C7D9</color>
+    <color name="hero_background">#1E1E21</color>
+    <color name="hero_on">#F4F4F4</color>
+    <color name="hero_on_variant">#C4C4C4</color>
 
-    <color name="mark_wing_fore">#ABA8F7</color>
-    <color name="mark_wing_hind">#F2A65A</color>
-    <color name="mark_body">#E8EAF2</color>
-
-    <color name="splash_background">#12142A</color>
+    <color name="mark_stem">#F4F4F4</color>
+    <color name="mark_chevron">#FF4F5E</color>
 </resources>

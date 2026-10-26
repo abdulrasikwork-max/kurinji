@@ -90,6 +90,8 @@ public final class PostDtos {
      * [strongLanguage] (everyone) = the check found strong language (a viewer may choose to collapse it on their phone);
      * [supportSuggested] only in the author's own create / edit answer, never stored: the words suggest they may be
      * going through something hard, so the app shows a support line.
+     * Phase 16 (U1): [commentCount] = how many perspectives THIS viewer can read on the post (the length of the list
+     * GET /api/posts/{id}/comments gives them); the only public number on a post.
      */
     public record PostResponse(String publicId, String type, PersonSummary author, boolean own, String body, String tip,
                                String category, String precision, PostPlace place, String areaCell, String city,
@@ -97,14 +99,14 @@ public final class PostDtos {
                                List<MediaRef> media, String audience, String commentPolicy, boolean canComment,
                                Instant postedAt, Instant visibleFrom, String yourButterfly,
                                ButterflyTally butterflies, boolean approveFirst, ModerationView moderation,
-                               String collapsed, boolean strongLanguage, Boolean supportSuggested) {
+                               String collapsed, boolean strongLanguage, Boolean supportSuggested, int commentCount) {
 
         /** The same answer with the one-time support flag (the author's own write answer). */
         public PostResponse withSupport(boolean support) {
             return new PostResponse(publicId, type, author, own, body, tip, category, precision, place, areaCell, city,
                     experiencedMonth, daypart, postedPeriod, edited, media, audience, commentPolicy, canComment,
                     postedAt, visibleFrom, yourButterfly, butterflies, approveFirst, moderation, collapsed,
-                    strongLanguage, support ? Boolean.TRUE : null);
+                    strongLanguage, support ? Boolean.TRUE : null, commentCount);
         }
     }
 
