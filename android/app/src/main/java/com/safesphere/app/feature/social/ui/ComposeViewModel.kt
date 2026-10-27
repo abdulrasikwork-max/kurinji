@@ -67,6 +67,9 @@ data class ComposeUiState(
     val allowedPrecisions: List<Precision> get() = ComposerPolicy.allowedPrecisions(place, placeIsPrivate)
     val isDelayed: Boolean get() = ComposerPolicy.isDelayed(precision)
     val photosPending: Boolean get() = photos.any { it.uploading }
+
+    /** Phase 17A: a photo that could not be added stops sharing until it is tried again or removed (it used to be left out silently). */
+    val photosFailed: Boolean get() = photos.any { it.failed }
     val canAddPhotos: Boolean get() = photos.size < ComposerPolicy.MAX_PHOTOS
 
     /** Phase 13D (Q6): the switch exists only while everyone may add perspectives. */
@@ -92,6 +95,9 @@ class ComposeViewModel(
 
     private var privateCells: List<String> = emptyList()
     private var nextPhotoKey = 0
+
+    /** Phase 17A: the picked photo behind each key, for "try again" (memory only, never saved). */
+    private val photoUris = HashMap<String, Uri>()
 
     val currentMonth: YearMonth get() = YearMonth.now(clock)
 
@@ -137,18 +143,30 @@ class ComposeViewModel(
         val room = ComposerPolicy.MAX_PHOTOS - _uiState.value.photos.size
         uris.take(room.coerceAtLeast(0)).forEach { uri ->
             val key = "photo-${nextPhotoKey++}"
+            photoUris[key] = uri
             change { it.copy(photos = it.photos + ComposePhoto(key)) }
             viewModelScope.launch { upload(key, uri) }
         }
     }
 
-    fun onRemovePhoto(key: String) = change { it.copy(photos = it.photos.filterNot { p -> p.key == key }) }
+    /** Phase 17A: one more attempt for a photo that could not be added. */
+    fun onRetryPhoto(key: String) {
+        val uri = photoUris[key] ?: return
+        if (_uiState.value.photos.none { it.key == key && it.failed }) return
+        change { it.copy(photos = it.photos.map { p -> if (p.key == key) p.copy(failed = false) else p }) }
+        viewModelScope.launch { upload(key, uri) }
+    }
+
+    fun onRemovePhoto(key: String) {
+        photoUris.remove(key)
+        change { it.copy(photos = it.photos.filterNot { p -> p.key == key }) }
+    }
 
     fun onShare() {
         val state = _uiState.value
         if (state.isBusy) return
         val issues = issuesOf(state)
-        if (issues.isNotEmpty() || state.photosPending) {
+        if (issues.isNotEmpty() || state.photosPending || state.photosFailed) {
             _uiState.update { it.copy(issues = issues, showIssues = true) }
             return
         }

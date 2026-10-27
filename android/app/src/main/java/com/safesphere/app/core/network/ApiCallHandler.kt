@@ -16,7 +16,7 @@ import retrofit2.HttpException
  * (password changed, account deleted / disabled) still sign the phone out (Phase 10A); a refused refresh keeps the
  * session and all local safety data and reports UNAUTHORIZED ("sign in to sync").
  */
-class ApiCallHandler(private val sessionEnder: SessionEnder) {
+class ApiCallHandler(private val sessionEnder: SessionEnder, private val ageGate: AgeGate? = null) {
 
     constructor(sessionStorage: SessionStorage) : this(SessionEnder(sessionStorage))
 
@@ -47,19 +47,22 @@ class ApiCallHandler(private val sessionEnder: SessionEnder) {
     }
 
     private fun failureFor(e: HttpException, error: ApiError): ApiResult.Failure {
-        val message = if (error in SERVER_WORDED) readServerMessage(e) else null
-        return ApiResult.Failure(error, message)
+        if (error !in SERVER_WORDED) return ApiResult.Failure(error)
+        val body = readErrorBody(e) // the body can be read only once
+        // Phase 17A: one age state for the whole app (the screens still show the server's words as before).
+        if (error == ApiError.CONFLICT && body?.code == AgeGate.CODE) ageGate?.onRefused()
+        return ApiResult.Failure(error, body?.message, body?.code)
     }
 
-    private fun readServerMessage(e: HttpException): String? =
+    private fun readErrorBody(e: HttpException): ErrorBody? =
         try {
-            Gson().fromJson(e.response()?.errorBody()?.string(), ErrorBody::class.java)?.message
+            Gson().fromJson(e.response()?.errorBody()?.string(), ErrorBody::class.java)
         } catch (ignored: Exception) {
             null
         }
 
     /** The part of the backend's standard error JSON we care about. */
-    private data class ErrorBody(val message: String? = null)
+    private data class ErrorBody(val message: String? = null, val code: String? = null)
 
     private companion object {
         /** Errors whose text our own backend writes for people (safe to show); every other error uses app text. */

@@ -1,3 +1,17 @@
+# Handoff: Phase 17A stabilise (2026-10-27) — one local commit, NOT pushed
+
+**Implemented, compiled, tested, live-verified on MySQL, emulator-verified (API 37)** (`docs/PHASE17A.md`; audit and
+the whole Phase 17 plan with the user's decisions: `docs/PHASE17_PLAN.md`). One age state + banner, `PROFILE_NEEDED`
+next to Share, failed-photo retry, SOS location watchdog (60 s), debug cleartext list from `api.base.url`.
+- **Results:** backend **756 / 0** (2 skipped); Android **719 / 0**; lint **0 / 99**; live MySQL **6/6** (+ age stored
+  after the app's screen); emulator walk-through PASS (2 issues found there and fixed). No migration (next **V26**).
+- **NOT VERIFIED:** physical phone (none connected); TalkBack by ear; the SOS watchdog on a real GPS.
+- **For a real phone:** set `api.base.url=http://<PC LAN IP>:8080/` in `android/local.properties`, rebuild, allow TCP
+  8080 in Windows Firewall; or keep `127.0.0.1` with `adb reverse tcp:8080 tcp:8080` while on USB.
+- **State left:** test account deleted; app data cleared; `adb reverse` removed; emulator and backend stopped.
+- **Next:** 17B phone OTP (needs an SMS provider account: MSG91 or Twilio, plus DLT registration for India).
+
+---
 # Handoff: Phase 16 Kurinji UX reset + stabilization (2026-10-26) — one local commit, NOT pushed
 
 **Implemented, compiled, tested, emulator-verified (API 37)** (`docs/PHASE16.md`). The user decided U1–U4 on

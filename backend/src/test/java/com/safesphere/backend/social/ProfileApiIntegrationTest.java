@@ -86,7 +86,9 @@ class ProfileApiIntegrationTest {
         own(asha).andExpect(status().isNotFound());
         jdbc.update("UPDATE users SET age_confirmed_at = NULL WHERE id = ?", asha.id());
         save(asha, profile(unique("asha"), "Asha")).andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Confirm your age to use this"));
+                .andExpect(jsonPath("$.message").value("Confirm your age to use this"))
+                // Phase 17A: the code lets the app open its one age screen.
+                .andExpect(jsonPath("$.code").value("AGE_NOT_CONFIRMED"));
     }
 
     @Test

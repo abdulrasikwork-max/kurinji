@@ -249,7 +249,13 @@
         android:id="@+id/profileSetupFragment"
         android:name="com.safesphere.app.feature.social.ui.ProfileSetupFragment"
         android:label="@string/title_social_profile"
-        tools:layout="@layout/fragment_profile_setup" />
+        tools:layout="@layout/fragment_profile_setup">
+        <!-- Phase 17A: opened by the app only to confirm the age; closes after confirming. -->
+        <argument
+            android:name="ageOnly"
+            android:defaultValue="false"
+            app:argType="boolean" />
+    </fragment>
 
     <fragment
         android:id="@+id/personProfileFragment"

@@ -76,4 +76,18 @@
         android:visibility="gone"
         app:noticeText="@string/home_sign_in_banner"
         app:noticeType="info" />
+
+    <!-- Phase 17A: this account has not confirmed its age yet (social features only; opens the age screen) -->
+    <com.safesphere.app.core.ui.components.NoticeView
+        android:id="@+id/ageBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:clickable="true"
+        android:contentDescription="@string/cd_age_banner"
+        android:focusable="true"
+        android:minHeight="56dp"
+        android:visibility="gone"
+        app:noticeText="@string/age_banner"
+        app:noticeType="info" />
 </LinearLayout>

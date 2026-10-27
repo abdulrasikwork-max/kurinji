@@ -27,15 +27,6 @@
             android:text="@string/compose_subheading"
             android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
 
-        <com.safesphere.app.core.ui.components.NoticeView
-            android:id="@+id/errorNotice"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:accessibilityLiveRegion="polite"
-            android:visibility="gone"
-            app:noticeText="@string/error_unknown"
-            app:noticeType="warning" />
-
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/typeGroup"
             android:layout_width="match_parent"
@@ -268,6 +259,26 @@
             android:layout_marginTop="@dimen/space_sm"
             android:accessibilityLiveRegion="polite"
             android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
+            android:visibility="gone" />
+
+        <!-- Phase 17A: next to the Share button, where the person is when sharing fails (it was at the top). -->
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/errorNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone"
+            app:noticeText="@string/error_unknown"
+            app:noticeType="warning" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/makeProfileButton"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/menu_row_min_height"
+            android:text="@string/compose_make_profile"
             android:visibility="gone" />
 
         <com.google.android.material.progressindicator.LinearProgressIndicator

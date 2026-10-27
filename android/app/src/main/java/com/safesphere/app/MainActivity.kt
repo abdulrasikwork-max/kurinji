@@ -80,6 +80,7 @@ class MainActivity : AppCompatActivity() {
         // to a tab from a screen without banners (e.g. after starting a Safe Walk or asking to delete the account).
         binding.banners.sessionBanners.isVisible = bannersAllowed && anyBannerDue
         if (bannersStarted && bannersAllowed) session.onScreenVisible()
+        if (bannersAllowed) openAgeScreenIfDue()
         if (NavigationRules.opensSosFrom(destination.id)) openSosIfRequested()
         updateSystemBars(onHero = destination.id in NavigationRules.destinationsOnHero)
     }
@@ -101,6 +102,28 @@ class MainActivity : AppCompatActivity() {
             androidx.core.os.bundleOf(com.safesphere.app.feature.emergency.ui.EmergencyFragment.ARG_AUTO_START to true))
     }
 
+    /**
+     * Phase 17A: an account that has not confirmed its age is taken to the one age screen, at most once per sign-in
+     * ([com.safesphere.app.core.network.AgeGate.claimPrompt]) and only from a tab or reading screen (never the SOS
+     * screen or a task in progress). Afterwards it stays reachable from You → Edit profile.
+     */
+    private fun openAgeScreenIfDue() {
+        if (appContainer.ageGate.claimPrompt()) openAgeScreen()
+    }
+
+    private fun openAgeScreen() {
+        navController.navigate(R.id.profileSetupFragment,
+            androidx.core.os.bundleOf(com.safesphere.app.feature.social.ui.ProfileSetupFragment.ARG_AGE_ONLY to true))
+    }
+
+    /** What the session banners show (Phase 17A added [ageRequired]). */
+    private data class BannerState(
+        val active: ActiveSessionBanner?,
+        val deletion: com.safesphere.app.feature.account.domain.DeletionNotice?,
+        val signIn: Boolean,
+        val ageRequired: Boolean
+    )
+
     /** Phase 13F (F6): the banners of the old Home screen, with the same words, colours and destinations. */
     private fun startBanners() {
         if (bannersStarted) return
@@ -112,12 +135,14 @@ class MainActivity : AppCompatActivity() {
         banners.deletionBanner.setOnClickListener { navController.navigate(R.id.accountFragment) }
         // Phase 11 C1: "sign in to sync" (calm, not a forced dialog): SOS keeps working, only server sync waits.
         banners.signInBanner.setOnClickListener { navController.navigate(R.id.action_global_to_login) }
+        // Phase 17A: one calm way back to the age screen after the person closed it (instead of a refusal per screen).
+        banners.ageBanner.setOnClickListener { openAgeScreen() }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                combine(session.activeSession, session.deletion, session.signInNeeded) { active, deletion, signIn ->
-                    Triple(active, deletion, signIn)
-                }.collect { (active, deletion, signIn) ->
+                combine(session.activeSession, session.deletion, session.signInNeeded, appContainer.ageGate.required) {
+                        active, deletion, signIn, ageRequired -> BannerState(active, deletion, signIn, ageRequired)
+                }.collect { (active, deletion, signIn, ageRequired) ->
                     banners.activeEmergencyBanner.isVisible = active is ActiveSessionBanner.Emergency
                     banners.activeWalkBanner.isVisible = active is ActiveSessionBanner.SafeWalk
                     if (active is ActiveSessionBanner.SafeWalk) {
@@ -133,9 +158,16 @@ class MainActivity : AppCompatActivity() {
                         banners.deletionBanner.contentDescription = getString(R.string.cd_home_deletion_banner, text)
                     }
                     banners.signInBanner.isVisible = signIn
-                    anyBannerDue = active != null || deletion != null || signIn
+                    banners.ageBanner.isVisible = ageRequired
+                    anyBannerDue = active != null || deletion != null || signIn || ageRequired
                     banners.sessionBanners.isVisible = bannersAllowed && anyBannerDue
                 }
+            }
+        }
+        // Phase 17A: the age state can arrive while a tab is already showing (the check at sign-in, a refused call).
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                appContainer.ageGate.required.collect { required -> if (required && bannersAllowed) openAgeScreenIfDue() }
             }
         }
         // Phase 13F (D9): Rise was retired and its notes on this phone deleted; say so once.

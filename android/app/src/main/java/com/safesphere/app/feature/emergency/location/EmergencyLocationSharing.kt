@@ -23,6 +23,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -199,16 +200,21 @@ class EmergencyLocationSharing(
         restarts.collectLatest { collectLocations(startedAt, signal) }
     }
 
-    private suspend fun collectLocations(startedAt: Instant, uploadSignal: Channel<Unit>) {
+    private suspend fun collectLocations(startedAt: Instant, uploadSignal: Channel<Unit>) = coroutineScope {
         val access = locationProvider.access()
         if (access == LocationAccess.NONE) {
             update { it.copy(access = access, status = LocationSharingStatus.PERMISSION_NEEDED) }
-            return
+            return@coroutineScope
         }
         update { it.copy(access = access) }
+        // Phase 17A (R3): Play services says "no position right now" routinely while GPS warms up and indoors. That is
+        // not a problem yet: only NO_FIX_GRACE_MILLIS without any position is reported as UNAVAILABLE.
+        var watchdog = launch { reportUnavailableAfterGrace() }
         locationProvider.updates(LOCATION_INTERVAL_MILLIS).collect { locationUpdate ->
             when (locationUpdate) {
                 is LocationUpdate.Fix -> {
+                    watchdog.cancel()
+                    watchdog = launch { reportUnavailableAfterGrace() }
                     val fix = locationUpdate.fix
                     update { it.copy(status = LocationSharingStatus.AVAILABLE, lastFix = fix) }
                     if (samplingPolicy.shouldRecord(lastRecorded, fix, startedAt)) {
@@ -217,8 +223,24 @@ class EmergencyLocationSharing(
                         uploadSignal.trySend(Unit)
                     }
                 }
-                is LocationUpdate.Unavailable -> update { it.copy(status = statusFor(locationUpdate.reason)) }
+                is LocationUpdate.Unavailable -> update {
+                    if (locationUpdate.reason != LocationUnavailableReason.NO_FIX) it.copy(status = statusFor(locationUpdate.reason))
+                    // Location was switched back on and the first position is on its way.
+                    else if (it.status == LocationSharingStatus.LOCATION_DISABLED) it.copy(status = LocationSharingStatus.SEARCHING)
+                    else it // the watchdog decides
+                }
             }
+        }
+        watchdog.cancel()
+    }
+
+    /** Phase 17A (R3): still searching (or the last position is getting old) after the grace period: say so. */
+    private suspend fun reportUnavailableAfterGrace() {
+        delay(NO_FIX_GRACE_MILLIS)
+        update {
+            if (it.status == LocationSharingStatus.SEARCHING || it.status == LocationSharingStatus.AVAILABLE) {
+                it.copy(status = LocationSharingStatus.UNAVAILABLE)
+            } else it
         }
     }
 
@@ -297,6 +319,9 @@ class EmergencyLocationSharing(
 
     companion object {
         const val LOCATION_INTERVAL_MILLIS = 10_000L
+
+        /** Phase 17A (R3): how long without any position before the screen says location is unavailable. */
+        const val NO_FIX_GRACE_MILLIS = 60_000L
         const val MAX_PENDING = 500
         const val MAX_PARKED = 5
         const val INITIAL_RETRY_MILLIS = 5_000L

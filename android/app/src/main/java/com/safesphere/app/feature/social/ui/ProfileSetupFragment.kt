@@ -5,6 +5,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.safesphere.app.R
@@ -81,6 +82,12 @@ class ProfileSetupFragment :
         binding.errorNotice.isVisible = failure != null
         if (failure != null) binding.errorNotice.setMessage(failure.toMessage(requireContext()))
 
+        if (state.ageJustConfirmed) {
+            viewModel.onAgeConfirmedShown()
+            Toast.makeText(requireContext(), R.string.social_age_confirmed, Toast.LENGTH_SHORT).show()
+            // Phase 17A: opened by the app only to confirm the age; back to where the person was.
+            if (arguments?.getBoolean(ARG_AGE_ONLY) == true) findNavController().popBackStack()
+        }
         if (state.saved) {
             viewModel.onSavedShown()
             Toast.makeText(requireContext(), R.string.social_profile_saved, Toast.LENGTH_SHORT).show()
@@ -137,7 +144,10 @@ class ProfileSetupFragment :
     private fun checked(group: ChipGroup): List<String> =
         (0 until group.childCount).map { group.getChildAt(it) as Chip }.filter { it.isChecked }.map { it.tag as String }
 
-    private companion object {
-        const val PICKER_TAG = "profile_date_of_birth"
+    companion object {
+        private const val PICKER_TAG = "profile_date_of_birth"
+
+        /** Phase 17A: true when the app opened this screen only to confirm the age ([com.safesphere.app.core.network.AgeGate]). */
+        const val ARG_AGE_ONLY = "ageOnly"
     }
 }

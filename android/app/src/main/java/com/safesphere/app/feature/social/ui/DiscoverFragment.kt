@@ -53,6 +53,7 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
     private var searchOpen = false
     private var nearOpen = false
     private var retryNearOnReturn = false
+    private var ageRequiredWhenLeft = false
     private var collapseStrongLanguage = false
 
     /** Back closes the search or "Near me" panel first. */
@@ -125,6 +126,14 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
             retryNearOnReturn = false
             viewModel.onNearMe()
         }
+        // Phase 17A: the age was confirmed while this screen was away: what the server refused before is allowed now.
+        if (ageRequiredWhenLeft && !appContainer.ageGate.required.value) viewModel.reload()
+        ageRequiredWhenLeft = false
+    }
+
+    override fun onPause() {
+        super.onPause()
+        ageRequiredWhenLeft = appContainer.ageGate.required.value
     }
 
     private fun render(state: DiscoverUiState) {

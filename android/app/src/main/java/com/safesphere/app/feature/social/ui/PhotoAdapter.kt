@@ -19,7 +19,9 @@ data class PhotoCell(
     val onRemove: (() -> Unit)?,
     /** Phase 16: the photo's own size, so the post page keeps its shape (0 = unknown). */
     val width: Int = 0,
-    val height: Int = 0
+    val height: Int = 0,
+    /** Phase 17A: set for a photo that could not be added; tapping its status line tries again. */
+    val onRetry: (() -> Unit)? = null
 )
 
 /**
@@ -61,6 +63,8 @@ class PhotoAdapter(private val loader: ImageLoader, private val large: Boolean =
             if (cell.url != null) image.load(cell.url, loader) else image.setImageDrawable(null)
             status.text = cell.status
             status.isVisible = cell.status != null
+            status.setOnClickListener(cell.onRetry?.let { retry -> android.view.View.OnClickListener { retry() } })
+            status.isClickable = cell.onRetry != null // after the listener: setting one makes the view clickable
             removeButton.isVisible = cell.onRemove != null
             removeButton.setOnClickListener { cell.onRemove?.invoke() }
         }

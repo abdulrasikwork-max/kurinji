@@ -1,6 +1,5 @@
 package com.safesphere.backend.social.service;
 
-import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.common.exception.ResourceNotFoundException;
 import com.safesphere.backend.social.dto.CommentDtos.CommentRequest;
@@ -104,7 +103,7 @@ public class CommentService {
     @Transactional
     public CommentResponse create(long userId, String postId, CommentRequest request) {
         User user = access.requireCanComment(userId);
-        if (profiles.findByUserId(userId).isEmpty()) throw new ConflictException(PostService.PROFILE_NEEDED);
+        if (profiles.findByUserId(userId).isEmpty()) throw new com.safesphere.backend.common.exception.ProfileNeededException();
         LocalDateTime now = now();
         Post post = postService.requireVisible(userId, postId, now);
         if (!Visibility.canComment(relationships.postFacts(userId, post, now), post.getCommentPolicy())) {

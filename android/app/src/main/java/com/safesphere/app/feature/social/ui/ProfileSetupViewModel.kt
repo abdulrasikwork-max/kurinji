@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.safesphere.app.AppContainer
+import com.safesphere.app.core.network.AgeGate
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
 import com.safesphere.app.core.validation.FieldError
@@ -34,6 +35,8 @@ data class ProfileSetupUiState(
     val prefill: OwnProfile? = null,
     val problems: ProfileInputPolicy.Problems = ProfileInputPolicy.Problems(),
     val isSaving: Boolean = false,
+    /** Phase 17A, one-shot: the age was just confirmed here (the "age only" screen then closes). */
+    val ageJustConfirmed: Boolean = false,
     /** One-shot: the profile was saved. */
     val saved: Boolean = false,
     val failure: ApiResult.Failure? = null,
@@ -47,7 +50,9 @@ data class ProfileSetupUiState(
  */
 class ProfileSetupViewModel(
     private val repository: SocialRepository,
-    private val clock: Clock = Clock.systemUTC()
+    private val clock: Clock = Clock.systemUTC(),
+    /** Phase 17A: the app-wide age state, kept in step with what this screen learns. */
+    private val ageGate: AgeGate = AgeGate()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileSetupUiState())
@@ -65,8 +70,11 @@ class ProfileSetupViewModel(
             when (val age = repository.ageConfirmed()) {
                 is ApiResult.Failure -> return@launch fail(age)
                 is ApiResult.Success -> if (!age.data) {
+                    ageGate.onRefused()
                     _uiState.update { it.copy(isLoading = false, needsAgeConfirmation = true) }
                     return@launch
+                } else {
+                    ageGate.onConfirmed()
                 }
             }
             when (val result = repository.ownProfile()) {
@@ -94,7 +102,8 @@ class ProfileSetupViewModel(
             _uiState.update { it.copy(isSaving = true) }
             when (val result = repository.confirmAge(date)) {
                 is ApiResult.Success -> {
-                    _uiState.update { it.copy(isSaving = false, dateOfBirth = null) }
+                    ageGate.onConfirmed()
+                    _uiState.update { it.copy(isSaving = false, dateOfBirth = null, ageJustConfirmed = true) }
                     load()
                 }
                 is ApiResult.Failure -> fail(result)
@@ -122,6 +131,8 @@ class ProfileSetupViewModel(
 
     fun onSavedShown() = _uiState.update { it.copy(saved = false) }
 
+    fun onAgeConfirmedShown() = _uiState.update { it.copy(ageJustConfirmed = false) }
+
     fun onSessionExpiredHandled() = _uiState.update { it.copy(sessionExpired = false) }
 
     private fun fail(failure: ApiResult.Failure) {
@@ -138,7 +149,7 @@ class ProfileSetupViewModel(
 
     companion object {
         fun factory(container: AppContainer) = viewModelFactory {
-            initializer { ProfileSetupViewModel(container.socialRepository) }
+            initializer { ProfileSetupViewModel(container.socialRepository, ageGate = container.ageGate) }
         }
     }
 }

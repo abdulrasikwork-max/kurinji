@@ -147,7 +147,8 @@ class ConnectionApiIntegrationTest {
         String noProfile = social.accountWithoutProfile();
         Person nobody = new Person(noProfile, -1, UUID.randomUUID().toString(), "nobody");
         social.request(nobody, bala).andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Make your profile first"));
+                .andExpect(jsonPath("$.message").value("Make your profile first"))
+                .andExpect(jsonPath("$.code").value("PROFILE_NEEDED")); // Phase 17A
     }
 
     @Test

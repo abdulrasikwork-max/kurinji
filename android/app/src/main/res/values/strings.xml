@@ -596,7 +596,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="location_card_location_off">Your phone\'s location is turned off, so your position cannot be saved.</string>
     <string name="location_card_services_unavailable">Location is not available on this phone (Google Play services are missing or out of date).</string>
     <string name="location_card_searching">Finding your location…</string>
-    <string name="location_card_unavailable">Location is temporarily unavailable. Kurinji keeps trying.</string>
+    <string name="location_card_unavailable">No new position for a minute (indoors or a weak signal). Kurinji keeps trying; a window or open sky helps.</string>
     <string name="location_card_saving">Saving your location to your emergency record…</string>
     <string name="location_card_saved">Your location is being saved to your emergency record. Only your Safety Circle\'s SMS (if automatic SMS is on) contains a map link to it.</string>
     <string name="location_card_offline">No connection. Your location is kept on this phone for now and saved when you are back online.</string>
@@ -1026,6 +1026,10 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_age_title">Confirm your age</string>
     <string name="social_age_body">Profiles and connections are for people aged 18 and over. Your date of birth is only used to check your age and is not stored.</string>
     <string name="social_age_confirm">Confirm</string>
+    <string name="social_age_confirmed">Thanks. You\'re all set.</string>
+    <string name="compose_make_profile">Make your profile</string>
+    <string name="age_banner">Confirm your age once to see and share experiences. Tap to confirm.</string>
+    <string name="cd_age_banner">Confirm your age once to see and share experiences. Double-tap to confirm.</string>
 
     <string name="social_handle_label">Handle</string>
     <string name="social_handle_helper">3 to 20 lower-case letters, digits, _ or . starting with a letter. People find you by this exact handle.</string>
@@ -1164,7 +1168,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_add_photos">Add photos</string>
     <string name="social_photos_note">Photos are made smaller and lose their hidden details, such as where and when they were taken, before they leave your phone.</string>
     <string name="social_photo_uploading">Adding photo…</string>
-    <string name="social_photo_failed">This photo could not be added</string>
+    <string name="social_photo_failed">Not added. Tap to try again</string>
     <string name="social_remove_photo">Remove photo</string>
     <string name="social_photo_description">Photo %1$s of %2$s</string>
 
@@ -1220,6 +1224,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_issue_no_audience">Choose who can see this.</string>
     <string name="social_issue_too_many_photos">Add at most 6 photos.</string>
     <string name="social_issue_photos_pending">Wait until the photos are added.</string>
+    <string name="social_issue_photos_failed">A photo could not be added. Tap it to try again, or remove it.</string>
 
     <string name="social_near_me">Places near me</string>
     <string name="social_near_me_note">Your location is read once, on this phone, to find the area. Only the area code is sent, never your position.</string>

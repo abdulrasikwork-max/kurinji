@@ -43,7 +43,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ConnectionService {
 
-    static final String NEEDS_PROFILE = "Make your profile first";
     static final String SELF = "You cannot connect with yourself";
     static final String ALREADY_CONNECTED = "You are already connected";
     static final String TOO_MANY_PENDING = "You have many requests waiting. Cancel some first.";
@@ -245,7 +244,7 @@ public class ConnectionService {
     /** Phase 13D: new connections (request, accept, invite, redeem) also stop while a suspension is in force (M9). */
     private void requireMemberWithProfile(long userId) {
         access.requireCanConnect(userId);
-        if (profiles.findByUserId(userId).isEmpty()) throw new ConflictException(NEEDS_PROFILE);
+        if (profiles.findByUserId(userId).isEmpty()) throw new com.safesphere.backend.common.exception.ProfileNeededException();
     }
 
     /** A request waiting for the caller's answer, from someone the caller may see. */

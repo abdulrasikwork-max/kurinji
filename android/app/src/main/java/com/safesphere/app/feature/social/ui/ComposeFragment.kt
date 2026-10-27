@@ -70,6 +70,8 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
             pickPhotos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
         binding.choosePlaceButton.setOnClickListener { findNavController().navigate(R.id.placePickerFragment) }
+        // Phase 17A: the draft stays here (same ViewModel) while the person makes a profile, then Share again.
+        binding.makeProfileButton.setOnClickListener { findNavController().navigate(R.id.profileSetupFragment) }
         // Phase 13E: a private nudge first (the draft is checked on this phone only; the server checks again).
         binding.shareButton.setOnClickListener {
             val state = viewModel.uiState.value
@@ -113,7 +115,8 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
                     photo.failed -> getString(R.string.social_photo_failed)
                     photo.uploading -> getString(R.string.social_photo_uploading)
                     else -> null
-                }, onRemove = { viewModel.onRemovePhoto(photo.key) })
+                }, onRemove = { viewModel.onRemovePhoto(photo.key) },
+                onRetry = if (photo.failed) ({ viewModel.onRetryPhoto(photo.key) }) else null)
         })
         binding.addPhotosButton.isEnabled = state.canAddPhotos
 
@@ -168,6 +171,7 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         binding.summaryLine.isVisible = shown != null
         val issues = buildList {
             if (state.photosPending) add(getString(R.string.social_issue_photos_pending))
+            if (state.photosFailed) add(getString(R.string.social_issue_photos_failed))
             state.issues.forEach { add(getString(ExperienceLabels.of(it))) }
         }
         binding.issuesText.isVisible = state.showIssues && issues.isNotEmpty()
@@ -180,6 +184,8 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         val failure = state.failure
         binding.errorNotice.isVisible = failure != null
         if (failure != null) binding.errorNotice.setMessage(failure.toMessage(requireContext()))
+        // Phase 17A: the server needs a profile before the first post; the way there, right under the refusal.
+        binding.makeProfileButton.isVisible = failure?.code == PROFILE_NEEDED
 
         state.sharedPostId?.let { postId ->
             viewModel.onSharedHandled()
@@ -194,5 +200,10 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
             viewModel.onSessionExpiredHandled()
             showSessionExpiredDialog()
         }
+    }
+
+    private companion object {
+        /** The server's code (backend `ProfileNeededException.CODE`). */
+        const val PROFILE_NEEDED = "PROFILE_NEEDED"
     }
 }

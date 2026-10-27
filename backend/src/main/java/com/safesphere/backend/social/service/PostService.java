@@ -81,7 +81,6 @@ public class PostService {
 
     static final String NOT_FOUND = "Post not found";
     static final String MEDIA_NOT_FOUND = "Photo not found";
-    static final String PROFILE_NEEDED = "Make your profile first";
     static final String ONLY_NARROWER = "You can only make a post more private. To share it more widely, post it again.";
     static final String PLACE_GONE = "That place is no longer available";
     static final int PAGE_SIZE = 20;
@@ -135,7 +134,7 @@ public class PostService {
     @Transactional
     public PostResponse create(long userId, PostRequest request) {
         User user = access.requireCanPost(userId);
-        if (profiles.findByUserId(userId).isEmpty()) throw new ConflictException(PROFILE_NEEDED);
+        if (profiles.findByUserId(userId).isEmpty()) throw new com.safesphere.backend.common.exception.ProfileNeededException();
         boolean probation = access.onProbation(user);
         limits.post(userId, probation);
         PostType type = parse(PostType.class, request.type(), "Choose Experience or Ask");

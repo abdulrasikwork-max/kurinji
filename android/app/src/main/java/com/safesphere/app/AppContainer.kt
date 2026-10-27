@@ -8,7 +8,9 @@ import com.safesphere.app.core.location.FusedLocationProvider
 import com.safesphere.app.core.location.DestinationResolver
 import com.safesphere.app.core.location.GeocoderDestinationResolver
 import com.safesphere.app.core.location.LocationProvider
+import com.safesphere.app.core.network.AgeGate
 import com.safesphere.app.core.network.ApiCallHandler
+import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.SessionEndReason
 import com.safesphere.app.core.network.SessionEnder
 import com.safesphere.app.feature.account.data.DataStorePendingDeletionStore
@@ -126,6 +128,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -186,8 +189,11 @@ class AppContainer(context: Context) {
         sessionStorage.session.stateIn(applicationScope, SharingStarted.Eagerly, null)
     }
 
+    /** Phase 17A: the one age state of the signed-in account (fed by every social refusal and the age screen). */
+    val ageGate = AgeGate()
+
     /** Turns backend answers into results; refreshes and retries once on an expired token. Used by the repositories. */
-    private val apiCallHandler by lazy { ApiCallHandler(sessionEnder) }
+    private val apiCallHandler by lazy { ApiCallHandler(sessionEnder, ageGate) }
 
     val authRepository: AuthRepository by lazy {
         RemoteAuthRepository(authApi, sessionStorage, sessionEnder, onAccountSwitch = { clearAccountScopedData() })
@@ -584,6 +590,16 @@ class AppContainer(context: Context) {
                 if (user == null) return@collect
                 val due = user.deletionDueAt
                 if (due != null) pendingDeletion.set(PendingDeletion(user.id, due)) else pendingDeletion.clear(user.id)
+            }
+        }
+        // Phase 17A: the age state belongs to one account; a sign-out or another account starts it afresh, and a signed-in
+        // account is asked once (offline: the first refused social call sets it instead).
+        applicationScope.launch {
+            sessionStorage.session.map { it?.user?.id }.distinctUntilChanged().collectLatest { userId ->
+                ageGate.reset()
+                if (userId == null) return@collectLatest
+                val age = socialRepository.ageConfirmed()
+                if (age is ApiResult.Success) if (age.data) ageGate.onConfirmed() else ageGate.onRefused()
             }
         }
     }

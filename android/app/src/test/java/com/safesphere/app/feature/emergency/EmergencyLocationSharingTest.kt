@@ -149,13 +149,48 @@ class EmergencyLocationSharingTest {
 
         provider.emit(LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX))
         runCurrent()
+        // Phase 17A (R3): a "no position yet" while GPS warms up is still searching, not a problem.
+        assertEquals(LocationSharingStatus.SEARCHING, sharing.state.value.status)
+        advanceTimeBy(EmergencyLocationSharing.NO_FIX_GRACE_MILLIS + 1)
         assertEquals(LocationSharingStatus.UNAVAILABLE, sharing.state.value.status)
         assertTrue(sharing.state.value.isTracking)
+        provider.emitFix(fix())
+        runCurrent()
+        assertEquals(LocationSharingStatus.AVAILABLE, sharing.state.value.status)
 
         provider.emit(LocationUpdate.Unavailable(LocationUnavailableReason.SERVICES_UNAVAILABLE))
         runCurrent()
         assertEquals(LocationSharingStatus.SERVICES_UNAVAILABLE, sharing.state.value.status)
         assertFalse(sharing.state.value.isTracking)
+    }
+
+    @Test
+    fun `R3 - a brief no-position signal after a fix keeps the shared position, a minute without one does not`() = runTest {
+        val sharing = started()
+        provider.emitFix(fix())
+        runCurrent()
+
+        provider.emit(LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX))
+        runCurrent()
+        assertEquals(LocationSharingStatus.AVAILABLE, sharing.state.value.status)
+        advanceTimeBy(EmergencyLocationSharing.NO_FIX_GRACE_MILLIS - 1_000)
+        assertEquals(LocationSharingStatus.AVAILABLE, sharing.state.value.status)
+
+        advanceTimeBy(2_000)
+        assertEquals(LocationSharingStatus.UNAVAILABLE, sharing.state.value.status)
+        assertNotNull(sharing.state.value.lastFix) // the screen still shows the last position with its time
+    }
+
+    @Test
+    fun `R3 - location switched back on goes to searching while the first position comes`() = runTest {
+        val sharing = started()
+        provider.emit(LocationUpdate.Unavailable(LocationUnavailableReason.LOCATION_DISABLED))
+        runCurrent()
+
+        provider.emit(LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX))
+        runCurrent()
+
+        assertEquals(LocationSharingStatus.SEARCHING, sharing.state.value.status)
     }
 
     @Test

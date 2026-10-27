@@ -857,6 +857,8 @@ All endpoints below need a JWT. Identity only from the token. A person the calle
 way, disabled or erased account) answers `404`, exactly like one that does not exist. Ids in URLs are random public ids.
 No answer contains a count of anything. Social endpoints answer `409 "Confirm your age to use this"` for an account
 that has not declared an adult date of birth. Limits are per person, in memory (`app.social.*`).
+**Phase 17A:** that 409 carries `"code": "AGE_NOT_CONFIRMED"`; posting, perspectives and connection writes without a
+profile answer `409 "Make your profile first"` with `"code": "PROFILE_NEEDED"`. Words unchanged.
 
 ## Age (decision D6: 18+)
 - `POST /api/auth/register` now REQUIRES `"dateOfBirth": "yyyy-MM-dd"`. Under 18 (server's UTC date) → `400`

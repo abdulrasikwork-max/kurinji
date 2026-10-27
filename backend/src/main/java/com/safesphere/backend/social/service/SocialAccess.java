@@ -1,6 +1,6 @@
 package com.safesphere.backend.social.service;
 
-import com.safesphere.backend.common.exception.ConflictException;
+import com.safesphere.backend.common.exception.AgeNotConfirmedException;
 import com.safesphere.backend.common.exception.ForbiddenException;
 import com.safesphere.backend.common.exception.UnauthorizedException;
 import com.safesphere.backend.config.SocialProperties;
@@ -30,7 +30,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class SocialAccess {
 
-    public static final String CONFIRM_AGE_MESSAGE = "Confirm your age to use this";
     static final String COMMENTS_PAUSED = "A moderator has paused your perspectives for now. "
             + "Connections shows until when, and you can ask for a review there.";
     static final String POSTING_PAUSED = "A moderator has paused your posting for now. "
@@ -55,7 +54,7 @@ public class SocialAccess {
         User user = users.findById(userId)
                 .filter(u -> u.isEnabled() && !u.isErased())
                 .orElseThrow(() -> new UnauthorizedException("Account is not available"));
-        if (!user.isAgeConfirmed()) throw new ConflictException(CONFIRM_AGE_MESSAGE);
+        if (!user.isAgeConfirmed()) throw new AgeNotConfirmedException();
         return user;
     }
 

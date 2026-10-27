@@ -27,7 +27,8 @@ class RemoteSocialRepository(
 ) : SocialRepository {
 
     /** An old server without the field is treated as "confirmed": the server still refuses if it is not. */
-    override suspend fun ageConfirmed(): ApiResult<Boolean> = handler.execute { api.me().ageConfirmed ?: true }
+    // Phase 17A: fail closed (a missing field asks once; it used to count as confirmed and every social call then failed).
+    override suspend fun ageConfirmed(): ApiResult<Boolean> = handler.execute { api.me().ageConfirmed ?: false }
 
     override suspend fun confirmAge(dateOfBirth: LocalDate): ApiResult<Unit> =
         handler.execute { api.confirmAge(AgeConfirmationDto(dateOfBirth.toString())) }

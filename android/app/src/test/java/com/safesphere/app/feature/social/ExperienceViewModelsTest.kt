@@ -141,6 +141,16 @@ class ExperienceViewModelsTest {
         assertTrue(vm.uiState.value.isDelayed)
     }
 
+    @Test
+    fun `composer - 17A a photo that could not be added stops sharing instead of being left out`() {
+        val failed = com.safesphere.app.feature.social.ui.ComposeUiState(photos = listOf(
+            com.safesphere.app.feature.social.ui.ComposePhoto("photo-0", mediaId = "m1"),
+            com.safesphere.app.feature.social.ui.ComposePhoto("photo-1", failed = true)))
+        assertTrue(failed.photosFailed)
+        assertFalse(failed.photosPending)
+        assertFalse(failed.copy(photos = failed.photos.take(1)).photosFailed)
+    }
+
     // ---- place picker -----------------------------------------------------------------------------------------
 
     @Test

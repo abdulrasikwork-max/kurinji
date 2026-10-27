@@ -22,8 +22,9 @@ sealed interface ApiResult<out T> {
      * [message] is only set for CONFLICT, TOO_MANY_ATTEMPTS and FORBIDDEN (for example "This phone number is already
      * in your Safety Circle").
      * Those texts are written by our own backend and are safe to show; every other error uses app text.
+     * Phase 17A: [code] is the server's stable code for refusals the app reacts to (e.g. PROFILE_NEEDED), else null.
      */
-    data class Failure(val error: ApiError, val message: String? = null) : ApiResult<Nothing>
+    data class Failure(val error: ApiError, val message: String? = null, val code: String? = null) : ApiResult<Nothing>
 }
 
 /** True when the server rejected the saved token, so the person has to log in again. */
