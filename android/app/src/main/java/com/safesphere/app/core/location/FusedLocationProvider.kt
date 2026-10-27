@@ -113,14 +113,14 @@ class FusedLocationProvider(context: Context) : LocationProvider {
      * manager is asked instead, so phones without Google services still work.
      */
     @SuppressLint("MissingPermission")
-    override suspend fun currentFix(maxAgeMillis: Long, timeoutMillis: Long): LocationUpdate {
+    override suspend fun currentFix(maxAgeMillis: Long, timeoutMillis: Long, areaOnly: Boolean): LocationUpdate {
         val access = access()
         if (access == LocationAccess.NONE) return LocationUpdate.Unavailable(LocationUnavailableReason.PERMISSION_DENIED)
         if (!isLocationEnabled()) return LocationUpdate.Unavailable(LocationUnavailableReason.LOCATION_DISABLED)
         // A safety net over the platform's own duration: never wait longer than asked (plus a little).
         return withTimeoutOrNull(timeoutMillis + TIMEOUT_GRACE_MILLIS) {
             try {
-                if (isPlayServicesAvailable()) fusedFix(access, maxAgeMillis, timeoutMillis)
+                if (isPlayServicesAvailable()) fusedFix(access, maxAgeMillis, timeoutMillis, areaOnly)
                 else platformFix(access, maxAgeMillis)
             } catch (e: SecurityException) {
                 LocationUpdate.Unavailable(LocationUnavailableReason.PERMISSION_DENIED)
@@ -129,15 +129,21 @@ class FusedLocationProvider(context: Context) : LocationProvider {
     }
 
     @SuppressLint("MissingPermission")
-    private suspend fun fusedFix(access: LocationAccess, maxAgeMillis: Long, timeoutMillis: Long): LocationUpdate {
+    private suspend fun fusedFix(
+        access: LocationAccess,
+        maxAgeMillis: Long,
+        timeoutMillis: Long,
+        areaOnly: Boolean
+    ): LocationUpdate {
+        // Phase 17B: GPS only when the caller needs the block (adding a place); an area reading uses Wi-Fi / cell.
         val request = CurrentLocationRequest.Builder()
-            .setPriority(if (access == LocationAccess.PRECISE) Priority.PRIORITY_HIGH_ACCURACY
+            .setPriority(if (access == LocationAccess.PRECISE && !areaOnly) Priority.PRIORITY_HIGH_ACCURACY
                 else Priority.PRIORITY_BALANCED_POWER_ACCURACY)
             .setMaxUpdateAgeMillis(maxAgeMillis)
             .setDurationMillis(timeoutMillis)
             .build()
         val cancel = CancellationTokenSource()
-        return suspendCancellableCoroutine { continuation ->
+        val current: LocationUpdate = suspendCancellableCoroutine { continuation ->
             continuation.invokeOnCancellation { cancel.cancel() }
             client.getCurrentLocation(request, cancel.token)
                 .addOnSuccessListener { location ->
@@ -148,6 +154,21 @@ class FusedLocationProvider(context: Context) : LocationProvider {
                     if (continuation.isActive) continuation.resume(LocationUpdate.Unavailable(reasonFor(error)))
                 }
         }
+        if (current !is LocationUpdate.Unavailable || current.reason != LocationUnavailableReason.NO_FIX) return current
+        // Phase 17B: nothing new in time (indoors, GPS cold): the platform's last position, if recent enough.
+        return lastKnownWithin(maxAgeMillis)?.let { LocationUpdate.Fix(it.toFix()) } ?: current
+    }
+
+    @SuppressLint("MissingPermission")
+    private suspend fun lastKnownWithin(maxAgeMillis: Long): Location? = suspendCancellableCoroutine { continuation ->
+        client.lastLocation
+            .addOnSuccessListener { location ->
+                val fresh = location?.takeIf {
+                    (SystemClock.elapsedRealtimeNanos() - it.elapsedRealtimeNanos) / 1_000_000 <= maxAgeMillis
+                }
+                if (continuation.isActive) continuation.resume(fresh)
+            }
+            .addOnFailureListener { if (continuation.isActive) continuation.resume(null) }
     }
 
     /** No Play services: the platform's last known position if recent enough, else one current position. */

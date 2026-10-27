@@ -1,3 +1,22 @@
+# Handoff: Phase 17B account creation + phone OTP (2026-10-27) — one local commit, NOT pushed
+
+**Implemented, compiled, tested, verified on MySQL, the Galaxy A23 and the emulator** (`docs/PHASE17B.md`). Root cause
+of "cannot create an account": V25 waited for an e-mail that was never sent (no mail server). Phone OTP (V26) replaces
+it; interrupted sign-ups resume at sign-in; "Your profile" follows the first verification; a location bug found on the
+A23 (indoors, area lookups) is fixed in the shared layer.
+- **Results:** backend **755 / 0** (2 skipped; fresh reports: the V25 test classes were removed, 25 tests added);
+  Android **732 / 0**; lint **0 / 101**; V26 dry run **15/15 + 7/7** + applied;
+  live MySQL **20/20**; A23 + emulator walk-throughs PASS.
+- **NOT VERIFIED:** any real SMS (Fast2SMS not configured, no key); TalkBack by ear.
+- **To send real SMS:** Fast2SMS KYC + first Rs 100 top-up, Dev API key → `backend/.env`: `OTP_PROVIDER=FAST2SMS`,
+  `FAST2SMS_API_KEY=...` (template in `.env.example`); restart; the start-up log names the provider.
+- **Until then (DEV_FILE):** codes are written to `OTP_DEV_FILE` (default `%TEMP%\kurinji-dev-otp.txt`) on the PC.
+- **State left:** test accounts deleted (users 174 as before); the owner's account on the A23 was signed out through
+  the app (its age was confirmed by the owner); signing in again asks for a mobile number + code (dev file).
+  Backend and emulator stopped; `adb reverse` removed.
+- **Next:** the user's review and push; 17C media (not started).
+
+---
 # Handoff: Phase 17A stabilise (2026-10-27) — one local commit, NOT pushed
 
 **Implemented, compiled, tested, live-verified on MySQL, emulator-verified (API 37)** (`docs/PHASE17A.md`; audit and

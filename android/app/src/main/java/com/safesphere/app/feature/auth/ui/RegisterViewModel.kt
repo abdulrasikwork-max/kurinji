@@ -10,6 +10,8 @@ import com.safesphere.app.core.validation.FormValidator
 import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthRepository
 import com.safesphere.app.feature.auth.domain.AuthResult
+import com.safesphere.app.feature.auth.domain.PendingVerification
+import com.safesphere.app.feature.auth.domain.PhonePolicy
 import com.safesphere.app.feature.social.domain.AgePolicy
 import java.time.Clock
 import java.time.LocalDate
@@ -22,6 +24,8 @@ import kotlinx.coroutines.launch
 data class RegisterUiState(
     val fullNameError: FieldError? = null,
     val emailError: FieldError? = null,
+    /** Phase 17B: the mobile number the code goes to. */
+    val phoneError: FieldError? = null,
     /** Phase 13A: the chosen date of birth (kept only in this screen's memory; stored nowhere). */
     val dateOfBirth: LocalDate? = null,
     val dateOfBirthError: FieldError? = null,
@@ -29,18 +33,21 @@ data class RegisterUiState(
     val confirmPasswordError: FieldError? = null,
     val isLoading: Boolean = false,
     val authError: AuthError? = null,
-    /** V25: the account was created; its owner must open the link e-mailed to this (normalised) address first. */
-    val verificationSentTo: String? = null,
-    val resend: ResendStatus = ResendStatus.Idle
+    /** The server's own words, for errors whose text depends on the case (e.g. how long to wait). */
+    val authMessage: String? = null,
+    /** Phase 17B, one-shot: the account exists and a code is on its way: open the code screen. */
+    val navigateToVerification: Boolean = false
 )
 
 /**
  * Validates locally, then creates the account through [AuthRepository]. The confirmation field is
  * only a typing check: it is never sent to the server. Phase 13A: the date of birth must be 18+ ([AgePolicy], the same
- * rule as the server); it is sent once with the sign-up and kept nowhere.
+ * rule as the server); it is sent once and kept nowhere. Phase 17B: a mobile number ([PhonePolicy]) receives a code;
+ * the verification is handed to the code screen through [PendingVerification] (memory only).
  */
 class RegisterViewModel(
     private val authRepository: AuthRepository,
+    private val pendingVerification: PendingVerification = PendingVerification(),
     private val clock: Clock = Clock.systemUTC()
 ) : ViewModel() {
 
@@ -54,61 +61,52 @@ class RegisterViewModel(
         _uiState.update { it.copy(dateOfBirth = date, dateOfBirthError = dateOfBirthError(date)) }
     }
 
-    fun onRegisterClicked(fullName: String, email: String, password: String, confirmPassword: String) {
+    fun onRegisterClicked(fullName: String, email: String, phone: String, password: String, confirmPassword: String) {
         if (_uiState.value.isLoading) return
         val dateOfBirth = _uiState.value.dateOfBirth
+        val normalizedPhone = PhonePolicy.normalize(phone)
 
         val validation = RegisterUiState(
             fullNameError = FormValidator.validateFullName(fullName),
             emailError = FormValidator.validateEmail(email),
+            phoneError = when {
+                phone.isBlank() -> FieldError.REQUIRED
+                normalizedPhone == null -> FieldError.INVALID_PHONE
+                else -> null
+            },
             dateOfBirth = dateOfBirth,
             dateOfBirthError = dateOfBirthError(dateOfBirth),
             passwordError = FormValidator.validateNewPassword(password),
             confirmPasswordError = FormValidator.validateConfirmPassword(password, confirmPassword)
         )
         val hasErrors = validation.fullNameError != null || validation.emailError != null ||
-            validation.dateOfBirthError != null || validation.passwordError != null ||
+            validation.phoneError != null || validation.dateOfBirthError != null || validation.passwordError != null ||
             validation.confirmPasswordError != null
-        if (hasErrors || dateOfBirth == null) {
+        if (hasErrors || dateOfBirth == null || normalizedPhone == null) {
             _uiState.value = validation
             return
         }
 
         _uiState.value = RegisterUiState(dateOfBirth = dateOfBirth, isLoading = true)
         viewModelScope.launch {
-            val result = authRepository.register(fullName.trim(), email.trim(), password, dateOfBirth)
+            val result = authRepository.register(fullName.trim(), email.trim(), password, dateOfBirth, normalizedPhone)
             _uiState.value = when (result) {
                 is AuthResult.Success -> {
-                    // Kept in this ViewModel's memory only, for "send the email again"; cleared when the screen goes.
-                    pendingCredentials = result.data.email to password
-                    RegisterUiState(verificationSentTo = result.data.email)
+                    pendingVerification.begin(result.data)
+                    RegisterUiState(navigateToVerification = true) // the date of birth is forgotten once it was sent
                 }
-                is AuthResult.Failure -> RegisterUiState(dateOfBirth = dateOfBirth, authError = result.error)
+                is AuthResult.Failure -> RegisterUiState(
+                    dateOfBirth = dateOfBirth,
+                    // A number the server refuses belongs next to the number field, not in the notice.
+                    phoneError = if (result.error == AuthError.PHONE_INVALID) FieldError.INVALID_PHONE else null,
+                    authError = result.error.takeIf { it != AuthError.PHONE_INVALID },
+                    authMessage = result.message
+                )
             }
         }
     }
 
-    /** V25: a new verification e-mail for the account just created (the earlier link stops working). */
-    fun onResendVerificationClicked() {
-        val (email, password) = pendingCredentials ?: return
-        if (_uiState.value.resend == ResendStatus.Sending) return
-        _uiState.update { it.copy(resend = ResendStatus.Sending) }
-        viewModelScope.launch {
-            val status = when (val result = authRepository.resendVerification(email, password)) {
-                is AuthResult.Success -> ResendStatus.Sent
-                is AuthResult.Failure -> ResendStatus.Failed(result.error)
-            }
-            _uiState.update { it.copy(resend = status) }
-        }
-    }
-
-    override fun onCleared() {
-        pendingCredentials = null
-        super.onCleared()
-    }
-
-    /** V25: (normalised e-mail, password) of the account just created; memory only, never saved or logged. */
-    private var pendingCredentials: Pair<String, String>? = null
+    fun onNavigationHandled() = _uiState.update { it.copy(navigateToVerification = false) }
 
     private fun dateOfBirthError(date: LocalDate?): FieldError? = when (AgePolicy.check(date, today())) {
         AgePolicy.Result.ADULT -> null
@@ -118,7 +116,7 @@ class RegisterViewModel(
 
     companion object {
         fun factory(container: AppContainer) = viewModelFactory {
-            initializer { RegisterViewModel(container.authRepository) }
+            initializer { RegisterViewModel(container.authRepository, container.pendingVerification) }
         }
     }
 }

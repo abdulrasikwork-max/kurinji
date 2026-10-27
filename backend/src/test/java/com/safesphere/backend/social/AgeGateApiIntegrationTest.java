@@ -67,8 +67,8 @@ class AgeGateApiIntegrationTest {
         String email = email();
         register(email, today().minusYears(18).toString())
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value("VERIFICATION_REQUIRED"));
-        // V25: sign-up no longer answers with the user; the confirmation is on the account itself.
+                .andExpect(jsonPath("$.status").value("PHONE_VERIFICATION_REQUIRED"));
+        // Sign-up answers with a phone challenge, not the user; the confirmation is on the account itself.
         assertThat(users.findByEmail(email).orElseThrow().isAgeConfirmed()).isTrue();
     }
 
@@ -120,7 +120,8 @@ class AgeGateApiIntegrationTest {
     }
 
     private ResultActions register(String email, String dateOfBirth) throws Exception {
-        Map<String, Object> body = new HashMap<>(Map.of("name", "Age Test", "email", email, "password", PASSWORD));
+        Map<String, Object> body = new HashMap<>(Map.of("name", "Age Test", "email", email, "password", PASSWORD,
+                "phone", com.safesphere.backend.support.TestAccounts.phoneFor(email)));
         if (dateOfBirth != null) body.put("dateOfBirth", dateOfBirth);
         return mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)));

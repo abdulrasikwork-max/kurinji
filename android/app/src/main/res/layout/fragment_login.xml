@@ -109,27 +109,6 @@
             app:noticeText="@string/error_unknown"
             app:noticeType="warning" />
 
-        <!-- V25: shown after "Please verify your email": a new link for the account in the form -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/resendVerificationButton"
-            style="@style/Widget.SafeSphere.Button.Secondary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_sm"
-            android:minHeight="@dimen/min_touch_target"
-            android:text="@string/action_resend_verification"
-            android:visibility="gone" />
-
-        <com.safesphere.app.core.ui.components.NoticeView
-            android:id="@+id/resendNotice"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_sm"
-            android:accessibilityLiveRegion="polite"
-            android:visibility="gone"
-            app:noticeText="@string/verification_resent"
-            app:noticeType="info" />
-
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/progress"
             android:layout_width="match_parent"

@@ -24,6 +24,7 @@ fun FieldError.toMessage(context: Context): String = when (this) {
     FieldError.SELECTION_REQUIRED -> context.getString(R.string.error_selection_required)
     FieldError.UNDER_AGE -> context.getString(R.string.error_under_age)
     FieldError.INVALID_DATE_OF_BIRTH -> context.getString(R.string.error_invalid_date_of_birth)
+    FieldError.INVALID_CODE -> context.getString(R.string.error_invalid_code)
 }
 
 /** Shows [error] under the field, or clears the error when it is null. */

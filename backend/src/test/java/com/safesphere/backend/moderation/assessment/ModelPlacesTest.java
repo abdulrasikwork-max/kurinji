@@ -48,8 +48,12 @@ class ModelPlacesTest {
         }
     }
 
+    /**
+     * Every outbound HTTP call of the backend is pinned here. Phase 17B added exactly one more: the SMS provider
+     * adapter (it delivers verification codes; it never talks to the moderation service and never logs).
+     */
     @Test
-    void onlyTheClient_talksToTheModerationService() throws IOException {
+    void onlyTheTwoPinnedClients_makeOutboundCalls() throws IOException {
         Pattern outbound = Pattern.compile("java\\.net\\.http|HttpClient|RestTemplate|WebClient|\"/v1/assess");
         List<String> found = new ArrayList<>();
         try (Stream<Path> files = Files.walk(MAIN.resolve("java"))) {
@@ -57,7 +61,10 @@ class ModelPlacesTest {
                 if (outbound.matcher(Files.readString(file)).find()) found.add(file.getFileName().toString());
             }
         }
-        assertThat(found).containsExactly("ModerationServiceClient.java");
+        assertThat(found).containsExactlyInAnyOrder("ModerationServiceClient.java", "Fast2SmsOtpSender.java");
+        String sms = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "auth", "phone",
+                "Fast2SmsOtpSender.java")));
+        assertThat(sms).doesNotContain("/v1/assess").doesNotContain("Logger").doesNotContain("log.");
     }
 
     @Test

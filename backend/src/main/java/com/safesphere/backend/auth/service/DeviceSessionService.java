@@ -106,8 +106,8 @@ public class DeviceSessionService {
             session.revoke(SessionRevocation.ACCOUNT_DISABLED, now);
             return new RefreshOutcome.Refused(ActiveAccountCheck.ACCOUNT_UNAVAILABLE);
         }
-        // V25: an unverified account never gets a session; refuse a refresh anyway (defence in depth).
-        if (!user.isEmailVerified()) return new RefreshOutcome.Refused(ActiveAccountCheck.ACCOUNT_UNAVAILABLE);
+        // V25 / Phase 17B: an account never activated gets no session; refuse a refresh anyway (defence in depth).
+        if (!user.isActivated()) return new RefreshOutcome.Refused(ActiveAccountCheck.ACCOUNT_UNAVAILABLE);
         String secret = RefreshSecrets.newSecret();
         session.rotate(RefreshSecrets.hash(secret), now, now.plus(properties.refreshIdleTimeout()));
         return new RefreshOutcome.Refreshed(user, session.getSessionId(),

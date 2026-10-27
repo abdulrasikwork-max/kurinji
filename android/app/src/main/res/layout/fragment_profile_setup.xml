@@ -225,6 +225,18 @@
                 android:layout_marginTop="@dimen/space_lg"
                 android:minHeight="@dimen/menu_row_min_height"
                 android:text="@string/social_save_profile" />
+
+            <!-- Phase 17B: right after sign-up the profile can wait (You → Edit profile later) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/skipButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="@dimen/space_sm"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/action_skip_for_now"
+                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

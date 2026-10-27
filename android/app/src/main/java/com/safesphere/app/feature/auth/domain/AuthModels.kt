@@ -50,19 +50,47 @@ enum class AuthError {
     UNKNOWN,
     /** 429 (Phase 7): too many failed sign-ins for this account or network, or too many new accounts. */
     TOO_MANY_ATTEMPTS,
-    /** 403 + code EMAIL_NOT_VERIFIED (V25): the right password, but the e-mail address is not confirmed yet. */
-    EMAIL_NOT_VERIFIED
+
+    // ---- Phase 17B: phone verification (the server's code in ApiError.code) ----
+    /** 403: the right password, but this account has no verified phone yet: the code screen comes next. */
+    PHONE_NOT_VERIFIED,
+    /** Not a 10-digit Indian mobile number. */
+    PHONE_INVALID,
+    /** The account has no number yet: enter one first. */
+    PHONE_REQUIRED,
+    /** Another account already verified this number. */
+    PHONE_IN_USE,
+    /** Already verified: just sign in. */
+    PHONE_ALREADY_VERIFIED,
+    /** The code request ended (30 min, or replaced): sign in again for a new one. */
+    CHALLENGE_INVALID,
+    /** A wrong code; the server's words say how many tries are left. */
+    OTP_INVALID,
+    OTP_EXPIRED,
+    /** Too many wrong codes: ask for a new one. */
+    OTP_LOCKED,
+    /** Too soon or too many codes asked for; the server's words say how long to wait. */
+    OTP_WAIT
 }
 
 /**
- * V25: a new account waiting for its owner to open the link e-mailed to [email] (the server's normalised address).
- * Nothing is signed in and nothing is stored on the phone.
+ * Phase 17B: a phone verification in progress. [token] is a credential for this verification only: kept in memory
+ * ([PendingVerification]), never stored or logged. [phoneHint] shows only the last 4 digits. [needsPhone]: the account
+ * has no number yet. [codeSent]: a code is waiting at that number (false = the SMS could not be sent; ask again).
  */
-data class VerificationPending(val email: String) {
-    override fun toString() = "VerificationPending(email=<hidden>)"
+data class PhoneChallenge(
+    val token: String,
+    val phoneHint: String?,
+    val needsPhone: Boolean,
+    val codeSent: Boolean,
+    val resendInSeconds: Long,
+    val codeExpiresInSeconds: Long
+) {
+    override fun toString() = "PhoneChallenge(token=<hidden>, needsPhone=$needsPhone, codeSent=$codeSent)"
 }
 
+/** [message] (Phase 17B): the server's own words, only for errors whose text depends on the case (tries left, wait). */
 sealed interface AuthResult<out T> {
     data class Success<T>(val data: T) : AuthResult<T>
-    data class Failure(val error: AuthError) : AuthResult<Nothing>
+    data class Failure(val error: AuthError, val message: String? = null) : AuthResult<Nothing>
 }

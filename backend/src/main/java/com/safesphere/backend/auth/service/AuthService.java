@@ -2,11 +2,15 @@ package com.safesphere.backend.auth.service;
 
 import com.safesphere.backend.auth.dto.AuthResponse;
 import com.safesphere.backend.auth.dto.LoginRequest;
+import com.safesphere.backend.auth.dto.PhoneVerificationDtos.PhoneChallengeResponse;
+import com.safesphere.backend.auth.dto.PhoneVerificationDtos.StartRequest;
+import com.safesphere.backend.auth.dto.PhoneVerificationDtos.VerifyRequest;
 import com.safesphere.backend.auth.dto.RegisterRequest;
-import com.safesphere.backend.auth.dto.RegistrationResponse;
+import com.safesphere.backend.auth.phone.PhoneNumbers;
+import com.safesphere.backend.auth.phone.PhoneVerificationService;
 import com.safesphere.backend.common.exception.EmailAlreadyUsedException;
-import com.safesphere.backend.common.exception.EmailNotVerifiedException;
 import com.safesphere.backend.common.exception.InvalidCredentialsException;
+import com.safesphere.backend.common.exception.PhoneVerificationException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.common.exception.SessionRefusedException;
 import com.safesphere.backend.security.JwtService;
@@ -23,7 +27,9 @@ import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /** The business rules of registering and logging in. Controllers only call this class. */
 @Service
@@ -46,13 +52,16 @@ public class AuthService {
     private final AuthThrottle throttle;
     private final DeviceSessionService sessions;
     private final AgeGate ageGate;
-    private final EmailVerificationService verification;
+    private final PhoneVerificationService phoneVerification;
+    private final TransactionTemplate transactions;
     private final Clock clock;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
                        AuthThrottle throttle, DeviceSessionService sessions, AgeGate ageGate,
-                       EmailVerificationService verification, Clock clock) {
-        this.verification = verification;
+                       PhoneVerificationService phoneVerification, PlatformTransactionManager transactionManager,
+                       Clock clock) {
+        this.phoneVerification = phoneVerification;
+        this.transactions = new TransactionTemplate(transactionManager);
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -64,41 +73,74 @@ public class AuthService {
     }
 
     /**
-     * Creates the account with an UNVERIFIED e-mail and sends the verification link (after commit). V25: no session and
-     * no token: the account is usable only once its owner opens the link (until Phase 15 sign-up signed in at once).
-     * An unverified account whose last link expired may be replaced by a new sign-up with the same address
-     * ([EmailVerificationService.replaceableBySignUp]); any other existing account answers 409 as before.
-     * [clientAddress] is only used for the in-memory sign-up limit (Phase 7); it is never stored.
+     * Phase 17B: creates the account (not activated, no session) and sends a code to its phone; the answer carries the
+     * challenge the app needs for POST /api/auth/phone/verify. Replaces V25's e-mail link (no mail server = the account
+     * could never be used). An account never activated and with no verification in progress may be replaced by a new
+     * sign-up with the same e-mail; any other existing account answers 409 as before. The code is sent after the commit.
+     * [clientAddress] is only used for the in-memory limits; it is never stored.
      */
-    @Transactional
-    public RegistrationResponse register(RegisterRequest request, String clientAddress) {
+    public PhoneChallengeResponse register(RegisterRequest request, String clientAddress) {
         throttle.checkRegistration(clientAddress);
         // Phase 13A (D6): 18+ only. The date of birth is checked here and goes no further.
         ageGate.requireAdult(request.dateOfBirth());
         if (exceedsBcryptLimit(request.password())) {
             throw new InvalidRequestException("Password must be at most 72 bytes long");
         }
+        String phone = PhoneNumbers.normalize(request.phone());
+        if (phone == null) throw PhoneVerificationException.invalidNumber();
+        phoneVerification.requireStartAllowed(clientAddress);
         String email = normalizeEmail(request.email());
-        Optional<User> existing = userRepository.findByEmail(email);
-        if (existing.isPresent()) {
-            if (!verification.replaceableBySignUp(existing.get())) throw new EmailAlreadyUsedException();
-            verification.removeUnverified(existing.get());
-        }
+        String passwordHash = passwordEncoder.encode(request.password()); // slow: outside the transaction
+        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
 
-        User user = new User(
-                request.name().trim(),
-                email,
-                passwordEncoder.encode(request.password())
-        );
-        user.confirmAge(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC));
-        try {
-            // saveAndFlush so a race on the unique email fails right here, not later at commit.
-            user = userRepository.saveAndFlush(user);
-        } catch (DataIntegrityViolationException e) {
-            throw new EmailAlreadyUsedException();
+        PhoneVerificationService.Opened opened = transactions.execute(status -> {
+            Optional<User> existing = userRepository.findByEmail(email);
+            if (existing.isPresent()) {
+                if (!phoneVerification.replaceableBySignUp(existing.get())) throw new EmailAlreadyUsedException();
+                phoneVerification.removeUnactivated(existing.get());
+            }
+            User user = new User(request.name().trim(), email, passwordHash);
+            user.setUnverifiedPhone(phone);
+            user.confirmAge(now);
+            try {
+                // saveAndFlush so a race on the unique email fails right here (the whole transaction rolls back).
+                user = userRepository.saveAndFlush(user);
+            } catch (DataIntegrityViolationException e) {
+                throw new EmailAlreadyUsedException();
+            }
+            return phoneVerification.open(user, phone);
+        });
+        return phoneVerification.deliver(opened);
+    }
+
+    /**
+     * Phase 17B: an account with the right password but no verified phone (an interrupted sign-up, or an account from
+     * before 17B) gets a verification: for its number, or for [StartRequest.phone] if given (required when the account
+     * has none). Wrong passwords count exactly like failed sign-ins.
+     */
+    public PhoneChallengeResponse startPhoneVerification(StartRequest request, String clientAddress) {
+        String phone = null;
+        if (request.phone() != null && !request.phone().isBlank()) {
+            phone = PhoneNumbers.normalize(request.phone());
+            if (phone == null) throw PhoneVerificationException.invalidNumber();
         }
-        verification.issueAndSendAfterCommit(user);
-        return RegistrationResponse.verificationRequired(email);
+        User owner = checkPassword(request.email(), request.password(), clientAddress);
+        phoneVerification.requireStartAllowed(clientAddress);
+        String chosen = phone;
+        PhoneVerificationService.Opened opened = transactions.execute(status -> {
+            User user = userRepository.findById(owner.getId()).orElseThrow(InvalidCredentialsException::new);
+            if (user.isPhoneVerified()) throw PhoneVerificationException.alreadyVerified();
+            if (chosen != null) user.setUnverifiedPhone(chosen);
+            return phoneVerification.open(user, chosen != null ? chosen : user.getPhoneE164());
+        });
+        return phoneVerification.deliver(opened);
+    }
+
+    /** Phase 17B: the right code activates the account (if new) and signs this phone in at once. */
+    public AuthResponse verifyPhone(VerifyRequest request, String clientAddress) {
+        User user = phoneVerification.verify(request.challenge(), request.code(), clientAddress);
+        throttle.signInSucceeded(user.getEmail());
+        return toResponse(user);
     }
 
     /**
@@ -107,27 +149,15 @@ public class AuthService {
      */
     @Transactional
     public AuthResponse login(LoginRequest request, String clientAddress) {
-        String email = normalizeEmail(request.email());
-        throttle.checkSignIn(email, clientAddress);
-        Optional<User> found = userRepository.findByEmail(email);
-
-        String hashToCheck = found.map(User::getPasswordHash).orElse(timingHash);
-        boolean passwordMatches = !exceedsBcryptLimit(request.password())
-                && passwordEncoder.matches(request.password(), hashToCheck);
-
-        // One generic failure for: unknown email, wrong password, disabled account.
-        if (found.isEmpty() || !passwordMatches || !found.get().isEnabled()) {
-            throttle.signInFailed(email, clientAddress);
-            throw new InvalidCredentialsException();
-        }
-        throttle.signInSucceeded(email);
-        // V25: the right password, but the e-mail is not proven yet: no session. Only the password holder learns this.
-        if (!found.get().isEmailVerified()) throw new EmailNotVerifiedException();
-        AuthResponse response = toResponse(found.get());
+        User user = checkPassword(request.email(), request.password(), clientAddress);
+        // Phase 17B: the right password, but no verified phone yet: no session. Only the password holder learns this;
+        // the app then asks for the code (POST /api/auth/phone/start). Existing sessions of older accounts keep working.
+        if (!user.isPhoneVerified()) throw PhoneVerificationException.notVerified();
+        AuthResponse response = toResponse(user);
         if (request.previousRefreshToken() != null) {
             // Phase 11 C1: the same phone signing in again takes over its old sign-in (and its running SOS).
             String newSession = response.refreshToken().substring(0, response.refreshToken().indexOf('.'));
-            sessions.succeed(found.get().getId(), request.previousRefreshToken(), newSession);
+            sessions.succeed(user.getId(), request.previousRefreshToken(), newSession);
         }
         return response;
     }
@@ -152,6 +182,24 @@ public class AuthService {
     /** Phase 11 C1: ends the caller's device session (idempotent, same answer whatever happened). */
     public void signOut(String refreshToken) {
         sessions.signOut(refreshToken);
+    }
+
+    /**
+     * The password check shared by sign-in and phone/start: one generic 401 for an unknown e-mail, a wrong password and
+     * a disabled account, with the same BCrypt work in each case (timing), counted by the Phase 7 limits.
+     */
+    private User checkPassword(String rawEmail, String password, String clientAddress) {
+        String email = normalizeEmail(rawEmail);
+        throttle.checkSignIn(email, clientAddress);
+        Optional<User> found = userRepository.findByEmail(email);
+        String hashToCheck = found.map(User::getPasswordHash).orElse(timingHash);
+        boolean passwordMatches = !exceedsBcryptLimit(password) && passwordEncoder.matches(password, hashToCheck);
+        if (found.isEmpty() || !passwordMatches || !found.get().isEnabled()) {
+            throttle.signInFailed(email, clientAddress);
+            throw new InvalidCredentialsException();
+        }
+        throttle.signInSucceeded(email);
+        return found.get();
     }
 
     /** A new sign-in: a device session, and an access token carrying its id. */

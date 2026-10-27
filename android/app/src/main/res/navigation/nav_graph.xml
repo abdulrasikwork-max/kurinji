@@ -70,6 +70,10 @@
             app:destination="@id/discoverFragment"
             app:popUpTo="@id/loginFragment"
             app:popUpToInclusive="true" />
+        <!-- Phase 17B: the right password, no verified phone yet (back = this form) -->
+        <action
+            android:id="@+id/action_login_to_phone_verify"
+            app:destination="@id/phoneVerifyFragment" />
     </fragment>
 
     <fragment
@@ -77,11 +81,35 @@
         android:name="com.safesphere.app.feature.auth.ui.RegisterFragment"
         android:label="@string/title_register"
         tools:layout="@layout/fragment_register">
+        <!-- Phase 17B: the account exists; back from the code screen returns to sign-in, not to the filled form -->
         <action
-            android:id="@+id/action_register_to_start"
-            app:destination="@id/discoverFragment"
-            app:popUpTo="@id/loginFragment"
+            android:id="@+id/action_register_to_phone_verify"
+            app:destination="@id/phoneVerifyFragment"
+            app:popUpTo="@id/registerFragment"
             app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- Phase 17B: "Enter the code" (or add a number first); a right code signs in -->
+    <fragment
+        android:id="@+id/phoneVerifyFragment"
+        android:name="com.safesphere.app.feature.auth.ui.PhoneVerifyFragment"
+        android:label="@string/title_phone_verify"
+        tools:layout="@layout/fragment_phone_verify">
+        <action
+            android:id="@+id/action_phone_verify_to_start"
+            app:destination="@id/discoverFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_phone_verify_to_profile"
+            app:destination="@id/profileSetupFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true">
+            <argument
+                android:name="firstRun"
+                android:defaultValue="true"
+                app:argType="boolean" />
+        </action>
     </fragment>
 
     <fragment
@@ -255,6 +283,16 @@
             android:name="ageOnly"
             android:defaultValue="false"
             app:argType="boolean" />
+        <!-- Phase 17B: right after a new account's phone was verified: "Choose your handle", then Discover -->
+        <argument
+            android:name="firstRun"
+            android:defaultValue="false"
+            app:argType="boolean" />
+        <action
+            android:id="@+id/action_profile_setup_to_start"
+            app:destination="@id/discoverFragment"
+            app:popUpTo="@id/profileSetupFragment"
+            app:popUpToInclusive="true" />
     </fragment>
 
     <fragment

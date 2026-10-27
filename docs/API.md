@@ -1128,7 +1128,30 @@ check never removes anything and never restricts a person.
   (`{state}.{decision}`), version `lex-1`.
 
 
-# V25: e-mail ownership verification (`docs/EMAIL_VERIFICATION.md`)
+# Phase 17B: phone verification (`docs/PHASE17B.md`) — replaces the V25 e-mail flow below
+
+A new account gets **no session** until the 6-digit code texted to its mobile number is entered. E-mail + password stays
+the sign-in. All endpoints are public (the password or the challenge token is the credential) and limited in memory.
+
+- `POST /api/auth/register {name, email, password, dateOfBirth, phone}` → **201**
+  `{status: "PHONE_VERIFICATION_REQUIRED", challenge, phoneHint: "••••••3210", needsPhone: false, codeSent,
+  resendInSeconds, codeExpiresInSeconds}` (no token). `phone`: an Indian mobile number, any common way of typing it;
+  400 `PHONE_INVALID` otherwise. `codeSent: false` = the SMS provider refused; resend at once.
+- `POST /api/auth/login` of an account without a verified phone → **403** `code: PHONE_NOT_VERIFIED` (only after the
+  right password). Accounts from before 17B keep their existing sessions.
+- `POST /api/auth/phone/start {email, password, phone?}` → 200 the same challenge shape (an interrupted sign-up gets a
+  new token for the same verification; a code already sent still works). Wrong password = the generic 401.
+  `needsPhone: true` = the account has no number: send one with `/phone/change`. 409 `PHONE_ALREADY_VERIFIED`.
+- `POST /api/auth/phone/verify {challenge, code}` → **200** the sign-in answer (`accessToken`, `refreshToken`, `user`).
+  400 `OTP_INVALID` (message says the tries left), `OTP_EXPIRED`, `CHALLENGE_INVALID`, `PHONE_REQUIRED`; 429
+  `OTP_LOCKED` (5 wrong codes: resend); 409 `PHONE_IN_USE`.
+- `POST /api/auth/phone/resend {challenge}` → 200 challenge; 429 `OTP_WAIT` (60 s cooldown, 5 codes per challenge,
+  8 per number per day; the message says how long).
+- `POST /api/auth/phone/change {challenge, phone}` → 200 challenge (no cooldown; caps apply); 400 `PHONE_INVALID`.
+- Config `app.otp.*` (`OTP_PROVIDER` DEV_FILE|FAST2SMS, `FAST2SMS_API_KEY`, `OTP_SECRET`, `OTP_DEV_FILE`).
+- **Removed:** `POST /api/auth/verify-email`, `POST /api/auth/verification/resend`, `GET /verify-email(.js|.css)`.
+
+# V25: e-mail ownership verification (`docs/EMAIL_VERIFICATION.md`) — SUPERSEDED by Phase 17B (history)
 
 A new account has an unverified e-mail and gets **no session** until its owner opens the link e-mailed to that address.
 Accounts that existed before V25 are verified. Every error body (ApiError) may now carry an optional `code`; it is

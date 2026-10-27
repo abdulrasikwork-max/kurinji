@@ -64,22 +64,39 @@ class AuthApiIntegrationTest {
 
     // ---------------------------------------------------------------- registration
 
-    /** V25: sign-up creates an unverified account and starts NO session (no token of any kind in the answer). */
+    /** Phase 17B: sign-up creates an account that is not activated and starts NO session; a code goes to the phone. */
     @Test
-    void register_createsUnverifiedAccount_withoutAnySession() throws Exception {
+    void register_createsAccountWaitingForThePhoneCode_withoutAnySession() throws Exception {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerJson("Asha Devi", "Asha@Example.com", PASSWORD)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value("VERIFICATION_REQUIRED"))
-                .andExpect(jsonPath("$.email").value("asha@example.com"))
+                .andExpect(jsonPath("$.status").value("PHONE_VERIFICATION_REQUIRED"))
+                .andExpect(jsonPath("$.challenge", not(emptyOrNullString())))
+                .andExpect(jsonPath("$.codeSent").value(true))
+                .andExpect(jsonPath("$.needsPhone").value(false))
+                .andExpect(jsonPath("$.phoneHint").value(org.hamcrest.Matchers.endsWith(
+                        com.safesphere.backend.support.TestAccounts.phoneFor("asha@example.com").substring(6))))
                 .andExpect(jsonPath("$.accessToken").doesNotExist())
                 .andExpect(jsonPath("$.refreshToken").doesNotExist())
                 .andExpect(jsonPath("$.token").doesNotExist())
                 .andExpect(jsonPath("$.user").doesNotExist())
                 .andExpect(jsonPath("$.passwordHash").doesNotExist());
         User saved = userRepository.findByEmail("asha@example.com").orElseThrow();
-        assertFalse(saved.isEmailVerified());
+        assertFalse(saved.isActivated());
+        assertFalse(saved.isPhoneVerified());
+    }
+
+    @Test
+    void register_withoutAValidIndianMobileNumber_returns400() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of("name", "Asha", "email",
+                                "asha@example.com", "password", PASSWORD, "dateOfBirth",
+                                com.safesphere.backend.support.TestAccounts.ADULT_BIRTH_DATE, "phone", "12345"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("PHONE_INVALID"));
+        assertTrue(userRepository.findByEmail("asha@example.com").isEmpty());
     }
 
     @Test
@@ -281,8 +298,8 @@ class AuthApiIntegrationTest {
     // ---------------------------------------------------------------- helpers
 
     /**
-     * Registers a user through the real endpoint, marks the e-mail verified (V25; the link flow itself is in
-     * EmailVerificationApiIntegrationTest), signs in and returns the JWT.
+     * Registers a user through the real endpoint, marks the phone verified (Phase 17B; the code flow itself is in
+     * PhoneVerificationApiIntegrationTest), signs in and returns the JWT.
      */
     private String register(String name, String email, String password) throws Exception {
         mockMvc.perform(post("/api/auth/register")
@@ -306,7 +323,8 @@ class AuthApiIntegrationTest {
     private String registerJson(String name, String email, String password) throws Exception {
         return objectMapper.writeValueAsString(
                 java.util.Map.of("name", name, "email", email, "password", password,
-                        "dateOfBirth", com.safesphere.backend.support.TestAccounts.ADULT_BIRTH_DATE));
+                        "dateOfBirth", com.safesphere.backend.support.TestAccounts.ADULT_BIRTH_DATE,
+                        "phone", com.safesphere.backend.support.TestAccounts.phoneFor(email)));
     }
 
     private String loginJson(String email, String password) throws Exception {

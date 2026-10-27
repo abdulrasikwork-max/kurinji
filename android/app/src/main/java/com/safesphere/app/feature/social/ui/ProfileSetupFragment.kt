@@ -3,6 +3,7 @@ package com.safesphere.app.feature.social.ui
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -46,6 +47,13 @@ class ProfileSetupFragment :
         DateOfBirthPicker.reattach(this, PICKER_TAG, viewModel::onDateOfBirthChosen)
         binding.confirmAgeButton.setOnClickListener { viewModel.onConfirmAge() }
         binding.saveButton.setOnClickListener { viewModel.onSave(input()) }
+        // Phase 17B: the first screen after a new account's phone was verified ("Choose your handle"). Saving or
+        // skipping goes on to Discover; this screen is the root there, so Back skips too.
+        if (firstRun) {
+            binding.skipButton.isVisible = true
+            binding.skipButton.setOnClickListener { goOn() }
+            requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) { goOn() }
+        }
 
         collectWhenStarted(viewModel.uiState, ::render)
     }
@@ -91,11 +99,18 @@ class ProfileSetupFragment :
         if (state.saved) {
             viewModel.onSavedShown()
             Toast.makeText(requireContext(), R.string.social_profile_saved, Toast.LENGTH_SHORT).show()
+            if (firstRun) goOn()
         }
         if (state.sessionExpired) {
             viewModel.onSessionExpiredHandled()
             showSessionExpiredDialog()
         }
+    }
+
+    private val firstRun: Boolean get() = arguments?.getBoolean(ARG_FIRST_RUN) == true
+
+    private fun goOn() {
+        findNavController().navigate(R.id.action_profile_setup_to_start)
     }
 
     private fun fill(profile: OwnProfile) {
@@ -149,5 +164,8 @@ class ProfileSetupFragment :
 
         /** Phase 17A: true when the app opened this screen only to confirm the age ([com.safesphere.app.core.network.AgeGate]). */
         const val ARG_AGE_ONLY = "ageOnly"
+
+        /** Phase 17B: true right after a new account's phone was verified (then Discover follows). */
+        const val ARG_FIRST_RUN = "firstRun"
     }
 }

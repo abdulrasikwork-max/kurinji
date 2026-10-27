@@ -27,6 +27,11 @@ interface LocationProvider {
      * Phase 16: ONE position, at most [maxAgeMillis] old (a recent one comes back at once), or the reason there is
      * none, within [timeoutMillis]. Screens use [oneFix] on top of it. The default reads [updates] once; the fused
      * provider asks the platform for a single current location instead (faster, less battery).
+     *
+     * Phase 17B: [areaOnly] = the caller needs only the ~1 km area (listing places, "Near me"), so Wi-Fi / cell
+     * accuracy is enough. Found on the A23: a high-accuracy request indoors waits for GPS and returns nothing, even
+     * though a 300 m position from 48 s earlier was there.
      */
-    suspend fun currentFix(maxAgeMillis: Long, timeoutMillis: Long): LocationUpdate = firstUpdate(timeoutMillis)
+    suspend fun currentFix(maxAgeMillis: Long, timeoutMillis: Long, areaOnly: Boolean = false): LocationUpdate =
+        firstUpdate(timeoutMillis)
 }

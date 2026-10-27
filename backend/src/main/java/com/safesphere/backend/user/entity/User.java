@@ -68,11 +68,19 @@ public class User {
     private LocalDateTime ageConfirmedAt;
 
     /**
-     * V25: when the person proved they control [email] (opened the verification link). Null = not verified: such an
-     * account gets no session at all. Separate from [enabled], a pending deletion, moderation standing and sessions.
+     * V25: when the person opened an e-mail verification link. Phase 17B took e-mail links out of the sign-up flow: no
+     * new value is ever written; a set value now only means "activated before V26" (see [isActivated]).
      */
     @Column(name = "email_verified_at")
     private LocalDateTime emailVerifiedAt;
+
+    /** Phase 17B (V26): the account's mobile number, +91 and 10 digits; verified once [phoneVerifiedAt] is set. */
+    @Column(name = "phone_e164", length = 16)
+    private String phoneE164;
+
+    /** Phase 17B (V26): when a code sent to [phoneE164] was entered. Null = this account has not verified a phone. */
+    @Column(name = "phone_verified_at")
+    private LocalDateTime phoneVerifiedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -171,20 +179,33 @@ public class User {
         if (ageConfirmedAt == null) this.ageConfirmedAt = now.truncatedTo(ChronoUnit.MICROS);
     }
 
-    public LocalDateTime getEmailVerifiedAt() {
-        return emailVerifiedAt;
+    public String getPhoneE164() {
+        return phoneE164;
     }
 
-    public boolean isEmailVerified() {
-        return emailVerifiedAt != null;
+    public boolean isPhoneVerified() {
+        return phoneVerifiedAt != null;
     }
 
-    /** V25: the owner of [email] opened a valid verification link. Kept once set. */
-    public void markEmailVerified(LocalDateTime now) {
-        if (emailVerifiedAt != null) return;
-        // Never before created_at (V25 CHECK), even with a clock a little behind the one that stamped the row.
+    /**
+     * Phase 17B: the account was activated: a phone code was entered, or (accounts from before V26) the V25 e-mail link
+     * was opened. Only an activated account may hold a session; only a phone-verified one may start a new sign-in.
+     */
+    public boolean isActivated() {
+        return phoneVerifiedAt != null || emailVerifiedAt != null;
+    }
+
+    /** Phase 17B: the number a new account signed up with (not verified yet). */
+    public void setUnverifiedPhone(String phoneE164) {
+        if (phoneVerifiedAt == null) this.phoneE164 = phoneE164;
+    }
+
+    /** Phase 17B: a code sent to [phoneE164] was entered; the number becomes the account's verified number. */
+    public void markPhoneVerified(String phoneE164, LocalDateTime now) {
+        this.phoneE164 = phoneE164;
+        // Never before created_at (V26 CHECK), even with a clock a little behind the one that stamped the row.
         LocalDateTime at = createdAt != null && now.isBefore(createdAt) ? createdAt : now;
-        this.emailVerifiedAt = at.truncatedTo(ChronoUnit.MICROS);
+        this.phoneVerifiedAt = at.truncatedTo(ChronoUnit.MICROS);
     }
 
     /**
@@ -228,6 +249,8 @@ public class User {
         LocalDateTime at = now.truncatedTo(ChronoUnit.MICROS);
         this.name = "Deleted account";
         this.email = "erased-" + id + "@erased.invalid";
+        this.phoneE164 = null; // Phase 17B (V26 CHECK): a tombstone keeps no number
+        this.phoneVerifiedAt = null;
         this.passwordHash = unusablePasswordHash;
         this.enabled = false;
         this.role = UserRole.USER;

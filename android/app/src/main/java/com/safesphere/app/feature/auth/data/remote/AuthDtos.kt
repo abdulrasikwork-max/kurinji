@@ -5,10 +5,68 @@ import java.time.Instant
 
 // These classes mirror the JSON of the Spring Boot API (see docs/API.md).
 
-/** Phase 13A: [dateOfBirth] (yyyy-MM-dd) is checked for 18+ by the server and stored nowhere. */
-data class RegisterRequestDto(val name: String, val email: String, val password: String, val dateOfBirth: String) {
+/**
+ * Phase 13A: [dateOfBirth] (yyyy-MM-dd) is checked for 18+ by the server and stored nowhere. Phase 17B: [phone] is the
+ * mobile number the code goes to.
+ */
+data class RegisterRequestDto(
+    val name: String,
+    val email: String,
+    val password: String,
+    val dateOfBirth: String,
+    val phone: String
+) {
     // Data classes print all fields in toString(). Redact so a stray log line can never leak a password.
-    override fun toString() = "RegisterRequestDto(name=$name, email=<hidden>, password=<hidden>, dateOfBirth=<hidden>)"
+    override fun toString() =
+        "RegisterRequestDto(name=$name, email=<hidden>, password=<hidden>, dateOfBirth=<hidden>, phone=<hidden>)"
+}
+
+/**
+ * Phase 17B: the answer of register / phone start / resend / change. Fails closed: a missing token cannot be used
+ * (the caller treats it as an unreadable answer); unknown flags mean "no code waiting" and "no number yet".
+ */
+data class PhoneChallengeDto(
+    val status: String? = null,
+    val challenge: String? = null,
+    val phoneHint: String? = null,
+    val needsPhone: Boolean? = null,
+    val codeSent: Boolean? = null,
+    val resendInSeconds: Long? = null,
+    val codeExpiresInSeconds: Long? = null
+) {
+    fun toDomain(): com.safesphere.app.feature.auth.domain.PhoneChallenge {
+        val token = challenge?.takeIf { it.isNotBlank() } ?: throw IllegalStateException("no challenge")
+        return com.safesphere.app.feature.auth.domain.PhoneChallenge(
+            token = token,
+            phoneHint = phoneHint?.takeIf { it.isNotBlank() },
+            needsPhone = needsPhone ?: (phoneHint == null),
+            codeSent = codeSent ?: false,
+            resendInSeconds = (resendInSeconds ?: 0).coerceIn(0, MAX_WAIT_SECONDS),
+            codeExpiresInSeconds = (codeExpiresInSeconds ?: 0).coerceIn(0, MAX_WAIT_SECONDS)
+        )
+    }
+
+    override fun toString() = "PhoneChallengeDto(challenge=<hidden>, needsPhone=$needsPhone, codeSent=$codeSent)"
+
+    private companion object {
+        const val MAX_WAIT_SECONDS = 24L * 60 * 60
+    }
+}
+
+data class PhoneStartRequestDto(val email: String, val password: String, val phone: String? = null) {
+    override fun toString() = "PhoneStartRequestDto(<hidden>)"
+}
+
+data class PhoneVerifyRequestDto(val challenge: String, val code: String) {
+    override fun toString() = "PhoneVerifyRequestDto(<hidden>)"
+}
+
+data class PhoneResendRequestDto(val challenge: String) {
+    override fun toString() = "PhoneResendRequestDto(<hidden>)"
+}
+
+data class PhoneChangeRequestDto(val challenge: String, val phone: String) {
+    override fun toString() = "PhoneChangeRequestDto(<hidden>)"
 }
 
 /**
@@ -18,19 +76,6 @@ data class RegisterRequestDto(val name: String, val email: String, val password:
 data class LoginRequestDto(val email: String, val password: String, val previousRefreshToken: String? = null) {
     override fun toString() = "LoginRequestDto(email=<hidden>, password=<hidden>, previous=<hidden>)"
 }
-
-/** V25: answer of /api/auth/register: no session; [status] is "VERIFICATION_REQUIRED", [email] the normalised address. */
-data class RegistrationResponseDto(val status: String?, val email: String?) {
-    override fun toString() = "RegistrationResponseDto(status=$status, email=<hidden>)"
-}
-
-/** V25: body of /api/auth/verification/resend. The password proves the request comes from the account's owner. */
-data class ResendVerificationRequestDto(val email: String, val password: String) {
-    override fun toString() = "ResendVerificationRequestDto(<hidden>)"
-}
-
-/** V25: {"status": "RECEIVED"} (resend) — the same whatever the account's state. */
-data class VerificationStatusDto(val status: String?)
 
 /** Phase 11 C1: body of /api/auth/refresh and /api/auth/sign-out. The token is a credential. */
 data class RefreshRequestDto(val refreshToken: String) {

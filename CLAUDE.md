@@ -91,7 +91,7 @@ found and fixed); real phone, TalkBack speech and dark mode **not verified**. **
 | **15** | **Final integration + acceptance testing** (`docs/PHASE15.md`) | **PARTIAL 2026-10-26** (no feature, no migration, no backend change): acceptance matrix 31/36 PASS, 0 FAIL, 5 NOT VERIFIED (real phone — device unavailable, TalkBack by ear, device SOS/Safe Walk, Connections and moderator screens on the phone); live API **119 checks** against MySQL + the real Python service (118 PASS + 1 script fault re-verified), erasure incl. photo files verified; emulator (API 37) walk-through PASS after **6 Android fixes** (15-1 onboarding dots, 15-2 post failure off-screen, 15-3 Cocoon "Add a perspective", 15-4 report band words + doubled full stops in spoken labels (`core/ui/SpokenText`), **15-5 session banners not re-shown on return to a tab**, 15-6 deletion text names social content; `Phase15IntegrationFixesTest`); backend 728 / Android 692, lint 0 / 94, Python 38/38. Dev DB: 168 old phase6–9 test accounts and an ACTIVE SOS (id 24) on the owner's account found and left for the user |
 | **V25** | **E-mail ownership verification** (`docs/EMAIL_VERIFICATION.md`) | **Implemented, compiled, tested, verified 2026-10-26**: unverified accounts get no session; 60-min single-use links (SHA-256 only); resend (e-mail + password, always 202); login 403 `EMAIL_NOT_VERIFIED`; browser confirmation page; SMTP mailer (off without MAIL_HOST/MAIL_FROM); backend 752 / Android 701, lint 0 / 95, Python 38/38; **V25 dry run 11/11 + 6/6, applied** (171 accounts grandfathered verified); live API 16/16 via a local SMTP sink; emulator flow PASS. **Real external mailbox, physical phone: NOT VERIFIED** |
 | **16** | **Kurinji UX reset + stabilization** (`docs/PHASE16.md`) | **Implemented, compiled, tested, emulator-verified 2026-10-26** (decisions U1–U4 by the user): red/black/white identity (Mukta Malar Bold, Go-K icon `docs/design/kurinji-16-icon.md`, "Go. See. Tell." splash), feed cards (avatar, photo, words, Save, comment count), one-feed Discover (`DiscoverFeed`: Near me, Talking now, city, theme, people you know, auto-load, ends), rebuilt post page (large photos, chips, Tip, pinned comment box), Saved tab (was Cocoon), plain words, `core/location/OneFix` (cached/fresh one-shot fix, distinct notices, settings fallbacks, platform fallback), emergency UI = black + red ring + siren; backend `PostResponse.commentCount` + Edition `TALKING` (no migration, next still **V26**); backend 756 / Android 712, lint 0 / 99; `docs/EMAIL_SETUP.md`. Physical phone, TalkBack by ear, real e-mail **not verified** |
-| **17** | **Product reset + bug fixes + social UX + AI Explore** (`docs/PHASE17_PLAN.md`: audit R1–R4, sub-phases 17A–17J, decisions D-1…D-10) | **17A stabilise implemented, compiled, tested, emulator-verified 2026-10-27** (`docs/PHASE17A.md`): one age state (`AGE_NOT_CONFIRMED` code, `core/network/AgeGate`, age screen once + banner), `PROFILE_NEEDED` code + composer error next to Share with "Make your profile", failed photo blocks Share with retry, SOS location "unavailable" only after 60 s without a fix, debug cleartext list generated from `api.base.url`; no migration (next still **V26**); backend 756 / Android 719, lint 0 / 99, live MySQL 6/6, emulator PASS; physical phone **not verified**. 17B–17J planned |
+| **17** | **Product reset + bug fixes + social UX + AI Explore** (`docs/PHASE17_PLAN.md`: audit R1–R4, sub-phases 17A–17J, decisions D-1…D-10) | **17A stabilise implemented, compiled, tested, emulator-verified 2026-10-27** (`docs/PHASE17A.md`): one age state (`AGE_NOT_CONFIRMED` code, `core/network/AgeGate`, age screen once + banner), `PROFILE_NEEDED` code + composer error next to Share with "Make your profile", failed photo blocks Share with retry, SOS location "unavailable" only after 60 s without a fix, debug cleartext list generated from `api.base.url`; no migration (next still **V26**); backend 756 / Android 719, lint 0 / 99, live MySQL 6/6, emulator PASS; physical phone **not verified**. **17B account creation + phone OTP implemented, compiled, tested, verified on MySQL, the Galaxy A23 and the emulator 2026-10-27** (`docs/PHASE17B.md`, plan `PHASE17B_PLAN.md`): V25 e-mail links removed (new accounts were stuck: no mail server), V26 phone verification (`auth/phone`, provider-neutral `OtpSender`: `DevFileOtpSender` default, `Fast2SmsOtpSender` off until `FAST2SMS_API_KEY`), sign-in resumes an interrupted sign-up, first-run "Your profile", location `areaOnly` fix found on the A23; backend 755 / Android 732, lint 0 / 101, V26 dry run 15/15 + 7/7 + applied, live MySQL 20/20, A23 PASS; **no real SMS sent**. 17C–17J planned |
 
 **Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
 - **4A** — Location + permissions, notifications foundation, emergency location sharing, emergency/state recovery, battery + network readers.
@@ -607,7 +607,14 @@ cd android
   `AccountEraser` (postpone if an emergency is recent; evidence files first; owned rows children-first + 
   `CommunityService.eraseContributor`; delete the row, or anonymise it if the audit log names it as decider);
   `AccountEraserCoverageTest` compares the eraser with every `REFERENCES users` in the migrations.
-- **E-mail verification (V25, `docs/EMAIL_VERIFICATION.md`):** sign-up creates an UNVERIFIED account and NO session;
+- **Phone verification (Phase 17B, V26, `docs/PHASE17B.md`):** `auth/phone`: `PhoneVerificationService` (open inside
+  the sign-up/start transaction, `deliver` after commit with undo on provider refusal, `verify` under a row lock,
+  `resend`, `change`, `cleanUp`), `PhoneNumbers`, `PhoneChallenge`, `OtpProperties` (`app.otp.*`), `OtpSender` →
+  `DevFileOtpSender` (default) | `Fast2SmsOtpSender` (`OtpSenderConfig`); `PhoneVerificationException` codes;
+  `User.isActivated()` = phone OR (pre-V26) e-mail verified, used by `ActiveAccountCheck` and refresh; login and new
+  sign-ins need `isPhoneVerified()`. `TestAccounts.phoneFor/markVerified` for tests; `CapturingOtpSenderConfig` captures
+  codes. `ModelPlacesTest` pins the two outbound HTTP clients.
+- **E-mail verification (V25, REMOVED from the flow in 17B; history):** sign-up creates an UNVERIFIED account and NO session;
   `EmailVerificationService` issues a 256-bit token (only SHA-256 stored, one row per account, 60 min), the e-mail goes
   out after commit on the `verificationMailExecutor` thread (never logged); `POST /api/auth/verify-email` consumes it
   with one conditional DELETE (single use, race-safe) and sets `email_verified_at`; login of an unverified account =
@@ -670,9 +677,11 @@ cd android
 
 | V24 | `posts`/`comments` `moderation_source`, `moderation_spans`, `strong_language`; `content_cases.origin`; `content_assessments`; V15 metric list + `AI_CHECKED`, `AI_REVIEWED` | 13E: state CHECK replaced (NONE ⇔ no source/reason/decision/spans; REPORTS ⇒ COLLAPSED without reason/decision/spans; SYSTEM ⇒ COLLAPSED/HELD + reason, no decision; MODERATOR ⇒ reason + decision, no spans; `COALESCE(source,'-')` against UNKNOWN), reason list + `AWAITING_CHECK`, spans `start-end` list; origin REPORTS/SYSTEM/AUTHOR_REQUEST; assessments: one per post/comment (unique, FK cascade), status PENDING/DONE/UNAVAILABLE with consistent times/rule, action + rule + reason (`(action = 'PUBLISH') = (reason IS NULL)`), evidence `CATEGORY:sev:T|U:Q|-` list whose categories exclude self-harm, versions V15 pattern, **no text column**. Dry run 59/59 + 19/19, applied (2026-10-25) |
 
+| V26 | `users.phone_e164`, `phone_verified_at`, generated `verified_phone`; `phone_challenges` | Phase 17B: `+91[6-9]` + 9 digits (binary, CHECK), verified ⇒ number, verified ≥ created, tombstone keeps no number; UNIQUE `verified_phone` = one verified account per number; challenges: PK user_id (one per account), lower-case hex SHA-256 token hash (unique), code only as HMAC hex + expiry + send time + number (CHECK together), attempts/sends 0–20, expires > created, FK cascade; **no code, no IP, no text**. Dry run 15/15 rejected + 7/7 accepted + cascade on scratch copies, applied on MySQL 8.0 (2026-10-27, backup taken first) |
+
 | V25 | `users.email_verified_at`, `email_verification_tokens` | E-mail verification: NULL = unverified; existing non-erased accounts set verified at the migration (no production users); CHECK verified ≥ created; index (email_verified_at, created_at); tokens: PK user_id (one live token), UNIQUE lower-case hex SHA-256 (CHECK), expires > created (CHECK), FK cascade, **no token, no IP**. Dry run 11/11 rejected + 6/6 accepted, applied on MySQL 8.0 (2026-10-26, backup taken first) |
 
-Conventions: never edit an applied migration; next file is **V26**; snake_case; `DATETIME(6)` stored in UTC; constraint
+Conventions: never edit an applied migration; next file is **V27**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.
 
 ---
@@ -680,7 +689,11 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
 ## 8. API (details and examples in `docs/API.md`)
 
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/users/me`
-- V25 (`API.md` "V25"): register → 201 `{status: VERIFICATION_REQUIRED, email}` (no tokens); login of an unverified
+- Phase 17B (`API.md` "Phase 17B"): register needs `phone` → 201 `{status: PHONE_VERIFICATION_REQUIRED, challenge,
+  phoneHint, needsPhone, codeSent, resendInSeconds, codeExpiresInSeconds}`; login without a verified phone → 403
+  `PHONE_NOT_VERIFIED`; `POST /api/auth/phone/start|verify|resend|change` (verify answers like a sign-in). The V25
+  endpoints below are removed.
+- V25 (history): register → 201 `{status: VERIFICATION_REQUIRED, email}` (no tokens); login of an unverified
   account → 403 `code EMAIL_NOT_VERIFIED`; `POST /api/auth/verify-email {token}` (200 / 400 `VERIFICATION_LINK_INVALID`
   / 429); `POST /api/auth/verification/resend {email, password}` (202 always / 429); `GET /verify-email(.js|.css)`;
   `ApiError.code` optional. Config `PUBLIC_BASE_URL`, `MAIL_*`, `app.email-verification.*`.
@@ -830,7 +843,13 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
   author / connection / stranger / blocked users; connection lists, block lists and butterflies visible only to their
   owner; social packages never read safety data and safety never depends on social features; a posting restriction
   never touches SOS, Safe Walk, the Safety Circle or the vault. 18+ at launch, self-declared date of birth at sign-up (D6, decided 2026-10-22).
-- **E-mail ownership (V25, built):** no account gets a session before its owner opens the e-mailed link; verification,
+- **Phone ownership (Phase 17B, V26, built; replaces V25 e-mail links):** no new account gets a session before a code
+  texted to its number is entered; codes are 6 random digits, 5 min, stored only as an HMAC, never logged or returned;
+  5 wrong codes kill a code; cooldown + per-challenge, per-number and per-address limits; the challenge token is
+  256-bit, SHA-256 stored; one verified account per number; SMS only after commit, provider refusals undone; provider
+  credentials only from the environment; the dev sink writes codes to a local file only (never in production). Accounts
+  from before 17B keep their sessions and verify a number at their next sign-in.
+- **E-mail ownership (V25, SUPERSEDED by 17B, history):** no account gets a session before its owner opens the e-mailed link; verification,
   refresh and per-request checks all refuse an unverified account; tokens are 256-bit, single use, 60 min, stored only as
   SHA-256 and never logged or returned by an API; resend and verification answers reveal nothing about accounts; mail
   credentials only from the environment. A future password reset must use its own token table and refuse unverified
@@ -1074,4 +1093,7 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
 | U3 (2026-10-26, the user): Discover auto-loads pages but always ends ("You're all caught up") | Natural browsing without an endless feed |
 | U4 (2026-10-26, the user): red/black/white brand; emergency UI = siren icon + words + black/red treatment, never colour alone | A bold, recognisable social brand; the safety meaning of the SOS UI survives because it never depended on hue alone |
 | Phase 17 decisions (2026-10-27, the user; `PHASE17_PLAN.md` §3): D-1 phone OTP via a provider-neutral sender, e-mail + password stays the sign-in; D-2 AI Explore language understanding by the Claude API with request text + candidate place facts only (amends D2 for this one use), deterministic engine works without it; D-3 butterfly = reaction, Saved separate, no public count; D-4 shake SOS only (opt-in, app open or Safe Walk), voice deferred; D-5 cities table; D-6 video without metadata, tap to play, no new player library; D-7 daily state for connections only, clears at midnight; D-8/U5 ratings only from people who went, shown from 5, Bayesian, never a sort by rating/activity alone; D-9 Nearby reports stay without text/photos | Recorded as each sub-phase's ground rules; each still gets its own plan |
+| 17B: phone OTP replaces e-mail links; e-mail + password stays the sign-in; the server makes and checks codes, a provider only delivers (`OtpSender`); dev sink by default, Fast2SMS only with the user's key | Sign-ups were stuck (no mail server); a provider-neutral sender keeps codes, limits and privacy rules in our tested code; Rs 100 budget fits Fast2SMS (KYC + first top-up) |
+| 17B: an interrupted sign-up resumes by signing in (new challenge token, same live code, no second SMS); nothing about a verification is stored on the phone | A closed app must never leave an unusable account; the token is a credential, kept in memory only |
+| 17B: area-level location reads use balanced accuracy and the platform's recent fix (found on the A23 indoors) | A GPS-only request returned nothing indoors although a good Wi-Fi/cell position existed; adding a place still needs ≤ 100 m |
 | 17A: the server sends stable codes (`AGE_NOT_CONFIRMED`, `PROFILE_NEEDED`) for refusals the app must act on; the app keeps ONE age state and opens the age screen by itself at most once per sign-in | A refusal shown on every screen with no way forward was the reported bug; codes avoid matching on words |

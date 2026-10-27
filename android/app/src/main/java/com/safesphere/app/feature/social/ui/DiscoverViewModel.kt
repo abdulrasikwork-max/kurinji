@@ -148,7 +148,8 @@ class DiscoverViewModel(
         if (_uiState.value.nearbyBusy) return
         viewModelScope.launch {
             _uiState.update { it.copy(nearbyBusy = true, nearNotice = null) }
-            when (val fix = locationProvider.oneFix()) {
+            // Phase 17B: only the ~1 km area is needed, so Wi-Fi / cell is enough (works indoors without GPS).
+            when (val fix = locationProvider.oneFix(areaOnly = true)) {
                 is OneFix.Got -> {
                     val area = GeoHash.encode(fix.fix.latitude, fix.fix.longitude, GeoHash.AREA)
                     when (val result = experiences.nearbyPlaces(area)) {

@@ -221,6 +221,25 @@ class ExperienceViewModelsTest {
         assertTrue(vm.uiState.value.nearby != null)
     }
 
+    @Test
+    fun `picker - 17B no GPS fix in time still lists the area from a Wi-Fi or cell position, without adding`() = runTest {
+        val location = FakeLocationProvider()
+        val vm = PlacePickerViewModel(repository, memory, location)
+        advanceUntilIdle()
+        vm.onNearMe()
+        runCurrent()
+        // Indoors: the precise request gets nothing within its time...
+        testScheduler.advanceTimeBy(PlacePickerViewModel.FIX_TIMEOUT_MILLIS + 1)
+        testScheduler.runCurrent()
+        assertNull(vm.uiState.value.notice) // ...which is not shown as a failure yet
+        // ...then a 300 m network position arrives for the area.
+        location.emitFix(FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.3000, accuracy = 300f))
+        advanceUntilIdle()
+        assertEquals(listOf(farAway.take(6)), repository.nearbyAreas)
+        assertTrue(vm.uiState.value.nearby != null)
+        assertFalse(vm.uiState.value.canAddHere) // adding a place needs <= 100 m
+    }
+
     // ---- post view --------------------------------------------------------------------------------------------
 
     @Test

@@ -2,8 +2,8 @@ package com.safesphere.app.feature.auth
 
 import com.safesphere.app.core.validation.FieldError
 import com.safesphere.app.feature.auth.domain.AuthError
+import com.safesphere.app.feature.auth.domain.PendingVerification
 import com.safesphere.app.feature.auth.ui.LoginViewModel
-import com.safesphere.app.feature.auth.ui.ResendStatus
 import com.safesphere.app.testing.FakeAuthRepository
 import com.safesphere.app.testing.MainDispatcherRule
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -57,44 +57,48 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun `an unverified email does not sign in and offers to send the email again`() = runTest {
-        repository.loginResult = FakeAuthRepository.failure(AuthError.EMAIL_NOT_VERIFIED)
-        viewModel.onLoginClicked(email = "asha@example.com", password = "right-password")
+    fun `17B - an unverified phone does not sign in but opens the code screen with a fresh verification`() = runTest {
+        val pending = PendingVerification()
+        val vm = LoginViewModel(repository, pendingVerification = pending)
+        repository.loginResult = FakeAuthRepository.failure(AuthError.PHONE_NOT_VERIFIED)
+        vm.onLoginClicked(email = " asha@example.com ", password = "right-password")
         advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertEquals(AuthError.EMAIL_NOT_VERIFIED, state.authError)
+        val state = vm.uiState.value
+        assertTrue(state.navigateToVerification)
         assertFalse(state.navigateToHome)
-        assertTrue(state.canResendVerification)
+        assertNull(state.authError)
+        assertEquals(1, repository.startCalls)
+        assertEquals("right-password", repository.lastStartPassword)
+        assertEquals(FakeAuthRepository.CHALLENGE, pending.challenge.value)
+        assertNull(repository.currentUserNow()) // still signed out until the code
+        assertFalse(state.toString().contains("right-password"))
 
-        viewModel.onResendVerificationClicked(" asha@example.com ", "right-password")
-        advanceUntilIdle()
-        assertEquals(ResendStatus.Sent, viewModel.uiState.value.resend)
-        assertEquals("asha@example.com", repository.lastResendEmail)
-        assertEquals(AuthError.EMAIL_NOT_VERIFIED, viewModel.uiState.value.authError) // still not signed in
+        vm.onNavigationHandled()
+        assertFalse(vm.uiState.value.navigateToVerification)
     }
 
     @Test
-    fun `resend is not offered or sent after other errors`() = runTest {
+    fun `17B - if the verification cannot start, its reason is shown`() = runTest {
+        val vm = LoginViewModel(repository, pendingVerification = PendingVerification())
+        repository.loginResult = FakeAuthRepository.failure(AuthError.PHONE_NOT_VERIFIED)
+        repository.startResult = FakeAuthRepository.failure(AuthError.OTP_WAIT, "Too many codes asked for.")
+        vm.onLoginClicked(email = "asha@example.com", password = "right-password")
+        advanceUntilIdle()
+
+        assertEquals(AuthError.OTP_WAIT, vm.uiState.value.authError)
+        assertEquals("Too many codes asked for.", vm.uiState.value.authMessage)
+        assertFalse(vm.uiState.value.navigateToVerification)
+    }
+
+    @Test
+    fun `other errors never start a verification`() = runTest {
         repository.loginResult = FakeAuthRepository.failure(AuthError.INVALID_CREDENTIALS)
         viewModel.onLoginClicked(email = "asha@example.com", password = "wrong")
         advanceUntilIdle()
 
-        assertFalse(viewModel.uiState.value.canResendVerification)
-        viewModel.onResendVerificationClicked("asha@example.com", "wrong")
-        advanceUntilIdle()
-        assertEquals(0, repository.resendCalls)
-    }
-
-    @Test
-    fun `a failed resend shows why`() = runTest {
-        repository.loginResult = FakeAuthRepository.failure(AuthError.EMAIL_NOT_VERIFIED)
-        repository.resendResult = FakeAuthRepository.failure(AuthError.NO_CONNECTION)
-        viewModel.onLoginClicked(email = "asha@example.com", password = "right-password")
-        advanceUntilIdle()
-        viewModel.onResendVerificationClicked("asha@example.com", "right-password")
-        advanceUntilIdle()
-        assertEquals(ResendStatus.Failed(AuthError.NO_CONNECTION), viewModel.uiState.value.resend)
+        assertEquals(0, repository.startCalls)
+        assertFalse(viewModel.uiState.value.navigateToVerification)
     }
 
     @Test

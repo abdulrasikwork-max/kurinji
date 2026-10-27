@@ -25,10 +25,15 @@ public record RegisterRequest(
 
         // Phase 13A (D6): checked for 18+ and then discarded; never stored, never logged. Format yyyy-MM-dd.
         @NotNull(message = "Date of birth is required")
-        LocalDate dateOfBirth
+        LocalDate dateOfBirth,
+
+        // Phase 17B: an Indian mobile number (any common way of typing it); a code is sent to it before the first sign-in.
+        @NotBlank(message = "Mobile number is required")
+        @Size(max = 30, message = "Enter a 10-digit Indian mobile number")
+        String phone
 ) {
 
-    /** Never prints the password or the date of birth. */
+    /** Never prints the password, the date of birth or the number. */
     @Override
     public String toString() {
         return "RegisterRequest[name=" + name + ", email=" + email + "]";

@@ -2,23 +2,16 @@ package com.safesphere.backend.auth.repository;
 
 import com.safesphere.backend.auth.entity.EmailVerificationToken;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+/**
+ * V25 e-mail links. Phase 17B took e-mail verification out of the sign-up flow (no link is issued any more); the table
+ * stays (applied migrations are never edited) and the clean-up job removes the rows left from before.
+ */
 public interface EmailVerificationTokenRepository extends JpaRepository<EmailVerificationToken, Long> {
-
-    Optional<EmailVerificationToken> findByTokenHash(String tokenHash);
-
-    /**
-     * Consumes the token: 1 for exactly one caller, 0 for everyone else (already used, replaced or expired). Two
-     * simultaneous verifications of one link therefore cannot both succeed: the row lock serialises the deletes.
-     */
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("DELETE FROM EmailVerificationToken t WHERE t.userId = :userId AND t.tokenHash = :hash AND t.expiresAt > :now")
-    int consume(@Param("userId") long userId, @Param("hash") String hash, @Param("now") LocalDateTime now);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("DELETE FROM EmailVerificationToken t WHERE t.expiresAt <= :now")

@@ -20,21 +20,35 @@ interface AuthRepository {
     val signInNeeded: Flow<Boolean> get() = flowOf(false)
 
     /**
-     * Creates an account on the server. V25: it does NOT sign in: the server e-mails a link to [email], and the account
-     * works once its owner opens it. Phase 13A: [dateOfBirth] must be 18+ (checked on the phone and on the server); it
-     * is sent once and stored nowhere.
+     * Creates an account on the server. Phase 17B: it does NOT sign in: the server texts a code to [phone] and the
+     * answer is the verification to finish with [verifyPhone]. Phase 13A: [dateOfBirth] must be 18+ (checked on the
+     * phone and on the server); it is sent once and stored nowhere.
      */
-    suspend fun register(name: String, email: String, password: String, dateOfBirth: LocalDate): AuthResult<VerificationPending>
+    suspend fun register(
+        name: String,
+        email: String,
+        password: String,
+        dateOfBirth: LocalDate,
+        phone: String
+    ): AuthResult<PhoneChallenge>
 
-    /** Checks credentials on the server and signs in. V25: [AuthError.EMAIL_NOT_VERIFIED] while the e-mail is unconfirmed. */
+    /** Checks credentials on the server and signs in. Phase 17B: [AuthError.PHONE_NOT_VERIFIED] until a phone is verified. */
     suspend fun login(email: String, password: String): AuthResult<AuthUser>
 
     /**
-     * V25: asks for a new verification e-mail (the previous link stops working). The server answers the same for every
-     * address and password, so success only means "asked"; it sends only for the right password of an unconfirmed
-     * account. Nothing is stored.
+     * Phase 17B: the right password of an account without a verified phone (an interrupted sign-up, or an account from
+     * before 17B) gets a verification; [phone] is needed only when the account has no number yet.
      */
-    suspend fun resendVerification(email: String, password: String): AuthResult<Unit>
+    suspend fun startPhoneVerification(email: String, password: String, phone: String? = null): AuthResult<PhoneChallenge>
+
+    /** Phase 17B: the right code verifies the number and signs this phone in (saved like a sign-in). */
+    suspend fun verifyPhone(challenge: PhoneChallenge, code: String): AuthResult<AuthUser>
+
+    /** Phase 17B: a new code to the same number (a cooldown and caps apply). */
+    suspend fun resendCode(challenge: PhoneChallenge): AuthResult<PhoneChallenge>
+
+    /** Phase 17B: another number, before the first one was verified. */
+    suspend fun changePhone(challenge: PhoneChallenge, phone: String): AuthResult<PhoneChallenge>
 
     /** Asks the server (GET /api/users/me) who the stored token belongs to. Clears the session if the token was rejected. */
     suspend fun refreshProfile(): AuthResult<AuthUser>

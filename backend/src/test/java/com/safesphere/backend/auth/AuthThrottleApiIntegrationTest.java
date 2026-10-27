@@ -123,7 +123,7 @@ class AuthThrottleApiIntegrationTest {
     private String register() throws Exception {
         String email = "throttle." + UUID.randomUUID() + "@example.com";
         registerFrom(newAddress(), email).andExpect(status().isCreated());
-        TestAccounts.markVerified(mockMvc, email); // V25: sign-in needs a verified e-mail
+        TestAccounts.markVerified(mockMvc, email); // Phase 17B: sign-in needs a verified phone
         return email;
     }
 
@@ -133,7 +133,8 @@ class AuthThrottleApiIntegrationTest {
 
     private ResultActions registerFrom(String address, String email) throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("name", "Test User", "email", email,
-                "password", TestAccounts.PASSWORD, "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE));
+                "password", TestAccounts.PASSWORD, "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE,
+                "phone", TestAccounts.phoneFor(email)));
         return mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(body)
                 .with(request -> {
                     request.setRemoteAddr(address);

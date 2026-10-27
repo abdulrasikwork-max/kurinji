@@ -5,17 +5,21 @@ import com.safesphere.app.core.network.UnauthorizedOutcome
 import com.safesphere.app.feature.auth.data.remote.AuthApi
 import com.safesphere.app.feature.auth.data.remote.AuthResponseDto
 import com.safesphere.app.feature.auth.data.remote.LoginRequestDto
+import com.safesphere.app.feature.auth.data.remote.PhoneChallengeDto
+import com.safesphere.app.feature.auth.data.remote.PhoneChangeRequestDto
+import com.safesphere.app.feature.auth.data.remote.PhoneResendRequestDto
+import com.safesphere.app.feature.auth.data.remote.PhoneStartRequestDto
+import com.safesphere.app.feature.auth.data.remote.PhoneVerifyRequestDto
 import com.safesphere.app.feature.auth.data.remote.RefreshRequestDto
 import com.safesphere.app.feature.auth.data.remote.RegisterRequestDto
-import com.safesphere.app.feature.auth.data.remote.ResendVerificationRequestDto
 import com.google.gson.JsonParser
 import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthRepository
 import com.safesphere.app.feature.auth.domain.AuthResult
 import com.safesphere.app.feature.auth.domain.AuthSession
 import com.safesphere.app.feature.auth.domain.AuthUser
+import com.safesphere.app.feature.auth.domain.PhoneChallenge
 import com.safesphere.app.feature.auth.domain.SessionStorage
-import com.safesphere.app.feature.auth.domain.VerificationPending
 import java.io.IOException
 import java.time.LocalDate
 import kotlin.coroutines.cancellation.CancellationException
@@ -54,36 +58,48 @@ class RemoteAuthRepository(
         name: String,
         email: String,
         password: String,
-        dateOfBirth: LocalDate
-    ): AuthResult<VerificationPending> =
-        // V25: sign-up starts no session (nothing is saved here); the account works once the e-mailed link is opened.
-        try {
-            val answer = api.register(
-                RegisterRequestDto(name = name, email = email, password = password, dateOfBirth = dateOfBirth.toString())
-            )
-            AuthResult.Success(VerificationPending(answer.email?.takeIf { it.isNotBlank() } ?: email.trim().lowercase()))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: HttpException) {
-            AuthResult.Failure(errorForHttpCode(e.code(), unauthorizedMeans = AuthError.UNKNOWN))
-        } catch (e: IOException) {
-            AuthResult.Failure(AuthError.NO_CONNECTION)
-        } catch (e: Exception) {
-            AuthResult.Failure(AuthError.UNKNOWN)
+        dateOfBirth: LocalDate,
+        phone: String
+    ): AuthResult<PhoneChallenge> =
+        // Phase 17B: sign-up starts no session (nothing is saved here); the texted code finishes it (verifyPhone).
+        challengeCall(unauthorizedMeans = AuthError.UNKNOWN) {
+            api.register(RegisterRequestDto(name = name, email = email, password = password,
+                dateOfBirth = dateOfBirth.toString(), phone = phone))
         }
 
-    override suspend fun resendVerification(email: String, password: String): AuthResult<Unit> =
+    override suspend fun startPhoneVerification(email: String, password: String, phone: String?): AuthResult<PhoneChallenge> =
+        challengeCall(unauthorizedMeans = AuthError.INVALID_CREDENTIALS) {
+            api.startPhoneVerification(PhoneStartRequestDto(email = email, password = password, phone = phone))
+        }
+
+    override suspend fun verifyPhone(challenge: PhoneChallenge, code: String): AuthResult<AuthUser> {
+        val previous = sessionStorage.session.first()
+        return authenticate(previous) { api.verifyPhone(PhoneVerifyRequestDto(challenge = challenge.token, code = code)) }
+    }
+
+    override suspend fun resendCode(challenge: PhoneChallenge): AuthResult<PhoneChallenge> =
+        challengeCall(unauthorizedMeans = AuthError.UNKNOWN) { api.resendCode(PhoneResendRequestDto(challenge.token)) }
+
+    override suspend fun changePhone(challenge: PhoneChallenge, phone: String): AuthResult<PhoneChallenge> =
+        challengeCall(unauthorizedMeans = AuthError.UNKNOWN) {
+            api.changePhone(PhoneChangeRequestDto(challenge = challenge.token, phone = phone))
+        }
+
+    /** Phase 17B: one call that answers with a verification (nothing is saved on the phone). */
+    private suspend fun challengeCall(
+        unauthorizedMeans: AuthError,
+        call: suspend () -> PhoneChallengeDto
+    ): AuthResult<PhoneChallenge> =
         try {
-            api.resendVerification(ResendVerificationRequestDto(email = email, password = password))
-            AuthResult.Success(Unit)
+            AuthResult.Success(call().toDomain())
         } catch (e: CancellationException) {
             throw e
         } catch (e: HttpException) {
-            AuthResult.Failure(errorForHttpCode(e.code(), unauthorizedMeans = AuthError.UNKNOWN))
+            failureFor(e, unauthorizedMeans)
         } catch (e: IOException) {
             AuthResult.Failure(AuthError.NO_CONNECTION)
         } catch (e: Exception) {
-            AuthResult.Failure(AuthError.UNKNOWN)
+            AuthResult.Failure(AuthError.UNKNOWN) // includes an answer without a challenge token
         }
 
     override suspend fun login(email: String, password: String): AuthResult<AuthUser> {
@@ -143,23 +159,34 @@ class RemoteAuthRepository(
         } catch (e: CancellationException) {
             throw e // never swallow coroutine cancellation
         } catch (e: HttpException) {
-            // V25: the right password of an account whose e-mail is not confirmed yet (no session was started).
-            if (e.code() == 403 && errorCode(e) == EMAIL_NOT_VERIFIED_CODE) AuthResult.Failure(AuthError.EMAIL_NOT_VERIFIED)
-            else AuthResult.Failure(errorForHttpCode(e.code(), unauthorizedMeans = AuthError.INVALID_CREDENTIALS))
+            // Phase 17B: the right password of an account without a verified phone gives PHONE_NOT_VERIFIED (no session).
+            failureFor(e, unauthorizedMeans = AuthError.INVALID_CREDENTIALS)
         } catch (e: IOException) {
             AuthResult.Failure(AuthError.NO_CONNECTION)
         } catch (e: Exception) {
             AuthResult.Failure(AuthError.UNKNOWN) // for example an unreadable response body
         }
 
-    /** V25: the stable `code` of our error body (ApiError), or null. Never shown to the person. */
-    private fun errorCode(e: HttpException): String? = try {
+    /**
+     * The server's stable `code` (ApiError) decides first; only the codes whose words depend on the case (tries left,
+     * seconds to wait) keep the server's message. Everything else falls back to the HTTP status.
+     */
+    private fun failureFor(e: HttpException, unauthorizedMeans: AuthError): AuthResult.Failure {
+        val (code, message) = errorBody(e)
+        val coded = code?.let { CODES[it] }
+        if (coded != null) return AuthResult.Failure(coded, message?.takeIf { coded in SERVER_WORDED })
+        return AuthResult.Failure(errorForHttpCode(e.code(), unauthorizedMeans))
+    }
+
+    /** The stable `code` and the message of our error body, or nulls. The body can be read only once. */
+    private fun errorBody(e: HttpException): Pair<String?, String?> = try {
         val body = e.response()?.errorBody()?.string()
-        if (body.isNullOrBlank()) null
-        else JsonParser.parseString(body).takeIf { it.isJsonObject }?.asJsonObject?.get("code")
-            ?.takeIf { it.isJsonPrimitive }?.asString
+        val json = if (body.isNullOrBlank()) null
+        else JsonParser.parseString(body).takeIf { it.isJsonObject }?.asJsonObject
+        fun text(name: String) = json?.get(name)?.takeIf { it.isJsonPrimitive }?.asString
+        text("code") to text("message")
     } catch (e: Exception) {
-        null
+        null to null
     }
 
     /** Best effort: offline or slow, the sign-in simply ends on the server when its idle time runs out. */
@@ -184,6 +211,22 @@ class RemoteAuthRepository(
 
     private companion object {
         const val SIGN_OUT_TIMEOUT_MILLIS = 3_000L
-        const val EMAIL_NOT_VERIFIED_CODE = "EMAIL_NOT_VERIFIED"
+
+        /** Phase 17B: the backend's PhoneVerificationException codes. Unknown codes fall back to the HTTP status. */
+        val CODES = mapOf(
+            "PHONE_NOT_VERIFIED" to AuthError.PHONE_NOT_VERIFIED,
+            "PHONE_INVALID" to AuthError.PHONE_INVALID,
+            "PHONE_REQUIRED" to AuthError.PHONE_REQUIRED,
+            "PHONE_IN_USE" to AuthError.PHONE_IN_USE,
+            "PHONE_ALREADY_VERIFIED" to AuthError.PHONE_ALREADY_VERIFIED,
+            "CHALLENGE_INVALID" to AuthError.CHALLENGE_INVALID,
+            "OTP_INVALID" to AuthError.OTP_INVALID,
+            "OTP_EXPIRED" to AuthError.OTP_EXPIRED,
+            "OTP_LOCKED" to AuthError.OTP_LOCKED,
+            "OTP_WAIT" to AuthError.OTP_WAIT
+        )
+
+        /** Their words depend on the case ("2 tries left", "in 40 seconds"): the server's own text is shown. */
+        val SERVER_WORDED = setOf(AuthError.OTP_INVALID, AuthError.OTP_WAIT)
     }
 }

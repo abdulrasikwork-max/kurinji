@@ -82,9 +82,15 @@ class PlacePickerViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isBusy = true, notice = null, failure = null) }
             // A precise permission asks for a fresh fix (a place may be added at it); approximate takes a recent one.
-            val maxAge = if (locationProvider.access() == LocationAccess.PRECISE) FRESH_FIX_MAX_AGE_MILLIS
-                else OneFixes.AREA_MAX_AGE_MILLIS
-            when (val result = locationProvider.oneFix(maxAge, FIX_TIMEOUT_MILLIS)) {
+            val precise = locationProvider.access() == LocationAccess.PRECISE
+            var result = if (precise) locationProvider.oneFix(FRESH_FIX_MAX_AGE_MILLIS, FIX_TIMEOUT_MILLIS)
+                else locationProvider.oneFix(OneFixes.AREA_MAX_AGE_MILLIS, FIX_TIMEOUT_MILLIS, areaOnly = true)
+            // Phase 17B (found on the A23 indoors): no GPS fix in time still allows listing the area's places from a
+            // Wi-Fi / cell position; adding a place then waits for a better one (canAddHere needs <= 100 m).
+            if (precise && result == OneFix.NotFound) {
+                result = locationProvider.oneFix(OneFixes.AREA_MAX_AGE_MILLIS, AREA_FALLBACK_TIMEOUT_MILLIS, areaOnly = true)
+            }
+            when (result) {
                 is OneFix.Got -> showNearby(result.fix, result.access)
                 OneFix.NeedsPermission -> notice(PickerNotice.NEEDS_PERMISSION)
                 OneFix.LocationOff -> notice(PickerNotice.LOCATION_OFF)
@@ -152,6 +158,8 @@ class PlacePickerViewModel(
         const val FIX_TIMEOUT_MILLIS = OneFixes.TIMEOUT_MILLIS
         /** A fix up to 30 s old is "here" for adding a place (the ~150 m cell). */
         const val FRESH_FIX_MAX_AGE_MILLIS = 30_000L
+        /** Phase 17B: the area fallback after a precise fix did not come (Wi-Fi / cell answer within seconds). */
+        const val AREA_FALLBACK_TIMEOUT_MILLIS = 10_000L
 
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {

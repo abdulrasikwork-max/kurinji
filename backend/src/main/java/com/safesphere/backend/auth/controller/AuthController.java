@@ -2,14 +2,15 @@ package com.safesphere.backend.auth.controller;
 
 import com.safesphere.backend.auth.dto.AuthResponse;
 import com.safesphere.backend.auth.dto.LoginRequest;
+import com.safesphere.backend.auth.dto.PhoneVerificationDtos.ChangeRequest;
+import com.safesphere.backend.auth.dto.PhoneVerificationDtos.PhoneChallengeResponse;
+import com.safesphere.backend.auth.dto.PhoneVerificationDtos.ResendRequest;
+import com.safesphere.backend.auth.dto.PhoneVerificationDtos.StartRequest;
+import com.safesphere.backend.auth.dto.PhoneVerificationDtos.VerifyRequest;
 import com.safesphere.backend.auth.dto.RefreshRequest;
-import com.safesphere.backend.auth.dto.EmailVerificationDtos.ResendVerificationRequest;
-import com.safesphere.backend.auth.dto.EmailVerificationDtos.VerificationStatus;
-import com.safesphere.backend.auth.dto.EmailVerificationDtos.VerifyEmailRequest;
 import com.safesphere.backend.auth.dto.RegisterRequest;
-import com.safesphere.backend.auth.dto.RegistrationResponse;
+import com.safesphere.backend.auth.phone.PhoneVerificationService;
 import com.safesphere.backend.auth.service.AuthService;
-import com.safesphere.backend.auth.service.EmailVerificationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -28,39 +29,46 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
-    private final EmailVerificationService verification;
+    private final PhoneVerificationService phoneVerification;
 
-    public AuthController(AuthService authService, EmailVerificationService verification) {
+    public AuthController(AuthService authService, PhoneVerificationService phoneVerification) {
         this.authService = authService;
-        this.verification = verification;
+        this.phoneVerification = phoneVerification;
     }
 
-    /** V25: 201 VERIFICATION_REQUIRED and no session; the account works once the e-mailed link is opened. */
+    /** Phase 17B: 201 PHONE_VERIFICATION_REQUIRED and no session; the account works once the texted code is entered. */
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public RegistrationResponse register(@Valid @RequestBody RegisterRequest request, HttpServletRequest http) {
+    public PhoneChallengeResponse register(@Valid @RequestBody RegisterRequest request, HttpServletRequest http) {
         return authService.register(request, http.getRemoteAddr());
-    }
-
-    /** V25: called by the verification page with the token from the link. 200 VERIFIED or one generic 400. */
-    @PostMapping("/verify-email")
-    public VerificationStatus verifyEmail(@Valid @RequestBody VerifyEmailRequest request, HttpServletRequest http) {
-        verification.verify(request.token(), http.getRemoteAddr());
-        return VerificationStatus.VERIFIED;
-    }
-
-    /** V25: 202 RECEIVED whatever the account's state (sends only for the right password of an unverified account). */
-    @PostMapping("/verification/resend")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public VerificationStatus resendVerification(@Valid @RequestBody ResendVerificationRequest request,
-                                                 HttpServletRequest http) {
-        verification.resend(request.email(), request.password(), http.getRemoteAddr());
-        return VerificationStatus.RECEIVED;
     }
 
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
         return authService.login(request, http.getRemoteAddr());
+    }
+
+    /** Phase 17B: e-mail + password of an account without a verified phone (interrupted sign-up, older account). */
+    @PostMapping("/phone/start")
+    public PhoneChallengeResponse startPhone(@Valid @RequestBody StartRequest request, HttpServletRequest http) {
+        return authService.startPhoneVerification(request, http.getRemoteAddr());
+    }
+
+    /** Phase 17B: the right code verifies the number and signs in (the same answer as a sign-in). */
+    @PostMapping("/phone/verify")
+    public AuthResponse verifyPhone(@Valid @RequestBody VerifyRequest request, HttpServletRequest http) {
+        return authService.verifyPhone(request, http.getRemoteAddr());
+    }
+
+    @PostMapping("/phone/resend")
+    public PhoneChallengeResponse resendCode(@Valid @RequestBody ResendRequest request, HttpServletRequest http) {
+        return phoneVerification.resend(request.challenge(), http.getRemoteAddr());
+    }
+
+    /** Phase 17B: another number before the first one was verified (a typo, a lost SIM). */
+    @PostMapping("/phone/change")
+    public PhoneChallengeResponse changeNumber(@Valid @RequestBody ChangeRequest request, HttpServletRequest http) {
+        return phoneVerification.change(request.challenge(), request.phone(), http.getRemoteAddr());
     }
 
     /**

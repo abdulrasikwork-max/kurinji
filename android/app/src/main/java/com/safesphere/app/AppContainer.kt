@@ -9,6 +9,7 @@ import com.safesphere.app.core.location.DestinationResolver
 import com.safesphere.app.core.location.GeocoderDestinationResolver
 import com.safesphere.app.core.location.LocationProvider
 import com.safesphere.app.core.network.AgeGate
+import com.safesphere.app.feature.auth.domain.PendingVerification
 import com.safesphere.app.core.network.ApiCallHandler
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.SessionEndReason
@@ -191,6 +192,9 @@ class AppContainer(context: Context) {
 
     /** Phase 17A: the one age state of the signed-in account (fed by every social refusal and the age screen). */
     val ageGate = AgeGate()
+
+    /** Phase 17B: the phone verification handed from sign-up / sign-in to the code screen (memory only). */
+    val pendingVerification = PendingVerification()
 
     /** Turns backend answers into results; refreshes and retries once on an expired token. Used by the repositories. */
     private val apiCallHandler by lazy { ApiCallHandler(sessionEnder, ageGate) }

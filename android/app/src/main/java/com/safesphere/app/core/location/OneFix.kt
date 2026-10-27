@@ -34,15 +34,19 @@ object OneFixes {
     const val TIMEOUT_MILLIS = 15_000L
 }
 
-/** One position from this provider ([LocationProvider.currentFix]), read once; collection stops at once. */
+/**
+ * One position from this provider ([LocationProvider.currentFix]), read once; collection stops at once. [areaOnly]
+ * (Phase 17B): Wi-Fi / cell accuracy is enough (the ~1 km area), so it works indoors without GPS.
+ */
 suspend fun LocationProvider.oneFix(
     maxAgeMillis: Long = OneFixes.AREA_MAX_AGE_MILLIS,
-    timeoutMillis: Long = OneFixes.TIMEOUT_MILLIS
+    timeoutMillis: Long = OneFixes.TIMEOUT_MILLIS,
+    areaOnly: Boolean = false
 ): OneFix {
     val access = access()
     if (access == LocationAccess.NONE) return OneFix.NeedsPermission
     if (!isLocationEnabled()) return OneFix.LocationOff
-    return when (val update = currentFix(maxAgeMillis, timeoutMillis)) {
+    return when (val update = currentFix(maxAgeMillis, timeoutMillis, areaOnly)) {
         is LocationUpdate.Fix -> OneFix.Got(update.fix, access())
         is LocationUpdate.Unavailable -> when (update.reason) {
             LocationUnavailableReason.PERMISSION_DENIED -> OneFix.NeedsPermission

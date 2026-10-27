@@ -33,11 +33,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
                                                org.springframework.data.domain.Pageable page);
 
     /**
-     * V25: accounts whose e-mail was never verified, created before [before] (the clean-up removes them). Erased
-     * tombstones are excluded: they are kept on purpose for the moderation audit trail.
+     * Accounts never activated (Phase 17B: no verified phone AND no V25-verified e-mail), created before [before]: the
+     * clean-up removes them. Erased tombstones are excluded: they are kept on purpose for the moderation audit trail.
      */
-    @Query("select u.id from User u where u.emailVerifiedAt is null and u.erasedAt is null and u.createdAt < :before "
-            + "order by u.createdAt asc")
+    @Query("select u.id from User u where u.emailVerifiedAt is null and u.phoneVerifiedAt is null and u.erasedAt is null "
+            + "and u.createdAt < :before order by u.createdAt asc")
     java.util.List<Long> findIdsUnverifiedCreatedBefore(@Param("before") java.time.LocalDateTime before,
                                                         org.springframework.data.domain.Pageable page);
+
+    /** Phase 17B: another account already verified this number (MySQL also enforces it: uk_users_verified_phone). */
+    boolean existsByPhoneE164AndPhoneVerifiedAtIsNotNullAndIdNot(String phoneE164, Long id);
 }

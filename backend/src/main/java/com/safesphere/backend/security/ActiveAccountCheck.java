@@ -55,8 +55,9 @@ public class ActiveAccountCheck implements OAuth2TokenValidator<Jwt> {
         if (found.isEmpty() || found.get().isErased()) return fail(ACCOUNT_DELETED);
         User user = found.get();
         if (!user.isEnabled()) return fail(ACCOUNT_UNAVAILABLE);
-        // V25: no token is ever issued before the e-mail is verified; refuse one anyway (defence in depth).
-        if (!user.isEmailVerified()) return fail(ACCOUNT_UNAVAILABLE);
+        // V25 / Phase 17B: no token is ever issued before the account is activated; refuse one anyway (defence in depth).
+        // Accounts from before 17B without a phone stay activated (by e-mail): their sessions keep working.
+        if (!user.isActivated()) return fail(ACCOUNT_UNAVAILABLE);
         Object claim = token.getClaims().get(STAMP_CLAIM);
         Long stamp;
         if (claim == null) {

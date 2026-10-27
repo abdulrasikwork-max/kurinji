@@ -12,5 +12,7 @@ enum class FieldError {
     /** Phase 13A: the date of birth is less than 18 years ago. */
     UNDER_AGE,
     /** Phase 13A: no date of birth chosen, a future date, or more than 120 years ago. */
-    INVALID_DATE_OF_BIRTH
+    INVALID_DATE_OF_BIRTH,
+    /** Phase 17B: a verification code that is not 6 digits. */
+    INVALID_CODE
 }

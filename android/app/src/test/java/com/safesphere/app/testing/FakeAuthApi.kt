@@ -3,12 +3,14 @@ package com.safesphere.app.testing
 import com.safesphere.app.feature.auth.data.remote.AuthApi
 import com.safesphere.app.feature.auth.data.remote.AuthResponseDto
 import com.safesphere.app.feature.auth.data.remote.LoginRequestDto
+import com.safesphere.app.feature.auth.data.remote.PhoneChallengeDto
+import com.safesphere.app.feature.auth.data.remote.PhoneChangeRequestDto
+import com.safesphere.app.feature.auth.data.remote.PhoneResendRequestDto
+import com.safesphere.app.feature.auth.data.remote.PhoneStartRequestDto
+import com.safesphere.app.feature.auth.data.remote.PhoneVerifyRequestDto
 import com.safesphere.app.feature.auth.data.remote.RefreshRequestDto
 import com.safesphere.app.feature.auth.data.remote.RegisterRequestDto
-import com.safesphere.app.feature.auth.data.remote.RegistrationResponseDto
-import com.safesphere.app.feature.auth.data.remote.ResendVerificationRequestDto
 import com.safesphere.app.feature.auth.data.remote.UserDto
-import com.safesphere.app.feature.auth.data.remote.VerificationStatusDto
 import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.HttpException
 import retrofit2.Response
@@ -19,11 +21,17 @@ import retrofit2.Response
  */
 class FakeAuthApi : AuthApi {
 
-    var registerOutcome: () -> RegistrationResponseDto = { RegistrationResponseDto("VERIFICATION_REQUIRED", "asha@example.com") }
-    var resendOutcome: () -> VerificationStatusDto = { VerificationStatusDto("RECEIVED") }
-    var lastResendRequest: ResendVerificationRequestDto? = null
-        private set
+    var registerOutcome: () -> PhoneChallengeDto = { challengeDto() }
     var loginOutcome: () -> AuthResponseDto = { authResponse() }
+    // Phase 17B
+    var startOutcome: () -> PhoneChallengeDto = { challengeDto() }
+    var verifyOutcome: () -> AuthResponseDto = { authResponse(token = "verified-token", refresh = "new-refresh") }
+    var resendOutcome: () -> PhoneChallengeDto = { challengeDto() }
+    var changeOutcome: () -> PhoneChallengeDto = { challengeDto() }
+    var lastStartRequest: PhoneStartRequestDto? = null
+        private set
+    var lastVerifyRequest: PhoneVerifyRequestDto? = null
+        private set
     var meOutcome: () -> UserDto = { userDto() }
 
     var meCalls = 0
@@ -33,15 +41,24 @@ class FakeAuthApi : AuthApi {
     var lastRegisterRequest: RegisterRequestDto? = null
         private set
 
-    override suspend fun register(body: RegisterRequestDto): RegistrationResponseDto {
+    override suspend fun register(body: RegisterRequestDto): PhoneChallengeDto {
         lastRegisterRequest = body
         return registerOutcome()
     }
 
-    override suspend fun resendVerification(body: ResendVerificationRequestDto): VerificationStatusDto {
-        lastResendRequest = body
-        return resendOutcome()
+    override suspend fun startPhoneVerification(body: PhoneStartRequestDto): PhoneChallengeDto {
+        lastStartRequest = body
+        return startOutcome()
     }
+
+    override suspend fun verifyPhone(body: PhoneVerifyRequestDto): AuthResponseDto {
+        lastVerifyRequest = body
+        return verifyOutcome()
+    }
+
+    override suspend fun resendCode(body: PhoneResendRequestDto): PhoneChallengeDto = resendOutcome()
+
+    override suspend fun changePhone(body: PhoneChangeRequestDto): PhoneChallengeDto = changeOutcome()
 
     override suspend fun login(body: LoginRequestDto): AuthResponseDto {
         lastLoginRequest = body
@@ -84,12 +101,19 @@ class FakeAuthApi : AuthApi {
             accessToken = token, tokenType = "Bearer", expiresInSeconds = 3600, user = user, refreshToken = refresh
         )
 
+        /** Phase 17B: a verification answer (a code was sent to ••••••3210). */
+        fun challengeDto(token: String? = "c".repeat(43)) = PhoneChallengeDto(
+            status = "PHONE_VERIFICATION_REQUIRED", challenge = token, phoneHint = "••••••3210",
+            needsPhone = false, codeSent = true, resendInSeconds = 60, codeExpiresInSeconds = 300
+        )
+
         /** What Retrofit throws for a non-2xx answer. */
         fun httpError(code: Int) = HttpException(Response.error<Any>(code, "{}".toResponseBody(null)))
 
-        /** A non-2xx answer with our ApiError body and its stable `code` (V25). */
-        fun httpError(code: Int, errorCode: String) = HttpException(
-            Response.error<Any>(code, "{\"status\":$code,\"message\":\"x\",\"code\":\"$errorCode\"}".toResponseBody(null))
+        /** A non-2xx answer with our ApiError body, its stable `code` and the server's [message]. */
+        fun httpError(code: Int, errorCode: String, message: String = "x") = HttpException(
+            Response.error<Any>(code,
+                "{\"status\":$code,\"message\":\"$message\",\"code\":\"$errorCode\"}".toResponseBody(null))
         )
 
         /** A 401 with the server's RFC 6750 reason, as the refresh endpoint sends it. */

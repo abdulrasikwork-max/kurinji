@@ -10,16 +10,26 @@ import retrofit2.http.POST
  */
 interface AuthApi {
 
-    /** V25: 201 with no session; the account is usable once the e-mailed link is opened. */
+    /** Phase 17B: 201 with no session; a code goes to the phone and the answer is the verification to finish. */
     @POST("api/auth/register")
-    suspend fun register(@Body body: RegisterRequestDto): RegistrationResponseDto
-
-    /** V25: 202 always the same; 429 when asked too often. */
-    @POST("api/auth/verification/resend")
-    suspend fun resendVerification(@Body body: ResendVerificationRequestDto): VerificationStatusDto
+    suspend fun register(@Body body: RegisterRequestDto): PhoneChallengeDto
 
     @POST("api/auth/login")
     suspend fun login(@Body body: LoginRequestDto): AuthResponseDto
+
+    /** Phase 17B: e-mail + password of an account without a verified phone. */
+    @POST("api/auth/phone/start")
+    suspend fun startPhoneVerification(@Body body: PhoneStartRequestDto): PhoneChallengeDto
+
+    /** Phase 17B: the right code signs in (the same answer as a sign-in). */
+    @POST("api/auth/phone/verify")
+    suspend fun verifyPhone(@Body body: PhoneVerifyRequestDto): AuthResponseDto
+
+    @POST("api/auth/phone/resend")
+    suspend fun resendCode(@Body body: PhoneResendRequestDto): PhoneChallengeDto
+
+    @POST("api/auth/phone/change")
+    suspend fun changePhone(@Body body: PhoneChangeRequestDto): PhoneChallengeDto
 
     /** Needs the JWT; AuthInterceptor adds the Authorization header. */
     @GET("api/users/me")

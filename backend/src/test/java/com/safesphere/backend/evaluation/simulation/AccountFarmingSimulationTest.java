@@ -102,7 +102,7 @@ class AccountFarmingSimulationTest {
                         + "proxies), it cannot stop a farm"));
     }
 
-    /** V25: the farm also has to confirm each address (done directly here), then sign in. */
+    /** Phase 17B: the farm also has to verify a phone per account (done directly here), then sign in. */
     private Account register(String address) throws Exception {
         String email = "phase9.farm." + UUID.randomUUID() + "@example.com";
         assertEquals(201, status(registerRaw(address, email)));
@@ -123,7 +123,7 @@ class AccountFarmingSimulationTest {
     private MvcResult registerRaw(String address, String email) throws Exception {
         String body = objectMapper.writeValueAsString(Map.of("name", "Phase Nine Farm",
                 "email", email, "password", TestAccounts.PASSWORD,
-                "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE));
+                "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE, "phone", TestAccounts.phoneFor(email)));
         return mockMvc.perform(post("/api/auth/register").with(request -> {
             request.setRemoteAddr(address);
             return request;

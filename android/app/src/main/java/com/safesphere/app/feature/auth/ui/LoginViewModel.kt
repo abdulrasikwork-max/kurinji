@@ -10,6 +10,7 @@ import com.safesphere.app.core.validation.FormValidator
 import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthRepository
 import com.safesphere.app.feature.auth.domain.AuthResult
+import com.safesphere.app.feature.auth.domain.PendingVerification
 import com.safesphere.app.feature.account.domain.PendingDeletion
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
@@ -31,21 +32,25 @@ data class LoginUiState(
     val authError: AuthError? = null,
     /** True after a successful login: the screen then opens Home. */
     val navigateToHome: Boolean = false,
-    /** V25: where a "send the verification e-mail again" request stands (offered after EMAIL_NOT_VERIFIED). */
-    val resend: ResendStatus = ResendStatus.Idle
-) {
-    /** V25: the account exists and the password was right, but its e-mail is not confirmed yet. */
-    val canResendVerification: Boolean get() = authError == AuthError.EMAIL_NOT_VERIFIED
-}
+    /** The server's own words, for errors whose text depends on the case (e.g. how long to wait). */
+    val authMessage: String? = null,
+    /** Phase 17B, one-shot: the password was right but the phone is not verified yet: open the code screen. */
+    val navigateToVerification: Boolean = false
+)
 
 /**
  * Checks the form on the device first (same rules as Phase 1), then asks the backend through
  * [AuthRepository]. The password only lives inside this function call; it is never kept in state.
+ *
+ * Phase 17B: an account without a verified phone (an interrupted sign-up, or an account from before 17B) is not an
+ * error to show: the same call then asks for a verification and the code screen opens (it asks for a number first when
+ * the account has none). Nothing about the verification is stored on the phone.
  */
 class LoginViewModel(
     private val authRepository: AuthRepository,
     private val pendingDeletion: Flow<PendingDeletion?> = flowOf(null),
     private val removeAccountData: suspend (userId: Long) -> Boolean = { true },
+    private val pendingVerification: PendingVerification = PendingVerification(),
     private val now: () -> Instant = Instant::now
 ) : ViewModel() {
 
@@ -79,39 +84,32 @@ class LoginViewModel(
 
         _uiState.value = LoginUiState(isLoading = true)
         viewModelScope.launch {
-            _uiState.value = when (val result = authRepository.login(email.trim(), password)) {
-                is AuthResult.Success -> LoginUiState(navigateToHome = true)
-                is AuthResult.Failure -> LoginUiState(authError = result.error)
+            val result = authRepository.login(email.trim(), password)
+            _uiState.value = when {
+                result is AuthResult.Success -> LoginUiState(navigateToHome = true)
+                result is AuthResult.Failure && result.error == AuthError.PHONE_NOT_VERIFIED ->
+                    when (val started = authRepository.startPhoneVerification(email.trim(), password)) {
+                        is AuthResult.Success -> {
+                            pendingVerification.begin(started.data)
+                            LoginUiState(navigateToVerification = true)
+                        }
+                        is AuthResult.Failure -> LoginUiState(authError = started.error, authMessage = started.message)
+                    }
+                result is AuthResult.Failure -> LoginUiState(authError = result.error, authMessage = result.message)
+                else -> LoginUiState(authError = AuthError.UNKNOWN)
             }
-        }
-    }
-
-    /**
-     * V25: a new verification e-mail for the account in the form (offered only after EMAIL_NOT_VERIFIED). The password is
-     * sent once with the request and kept nowhere, like a sign-in.
-     */
-    fun onResendVerificationClicked(email: String, password: String) {
-        val state = _uiState.value
-        if (!state.canResendVerification || state.resend == ResendStatus.Sending) return
-        if (FormValidator.validateEmail(email) != null || password.isEmpty()) return
-        _uiState.update { it.copy(resend = ResendStatus.Sending) }
-        viewModelScope.launch {
-            val status = when (val result = authRepository.resendVerification(email.trim(), password)) {
-                is AuthResult.Success -> ResendStatus.Sent
-                is AuthResult.Failure -> ResendStatus.Failed(result.error)
-            }
-            _uiState.update { it.copy(resend = status) }
         }
     }
 
     fun onNavigationHandled() {
-        _uiState.update { it.copy(navigateToHome = false) }
+        _uiState.update { it.copy(navigateToHome = false, navigateToVerification = false) }
     }
 
     companion object {
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
-                LoginViewModel(container.authRepository, container.pendingDeletion.pending, container.accountDataWiper::wipe)
+                LoginViewModel(container.authRepository, container.pendingDeletion.pending, container.accountDataWiper::wipe,
+                    pendingVerification = container.pendingVerification)
             }
         }
     }
