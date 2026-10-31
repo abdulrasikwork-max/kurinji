@@ -261,9 +261,31 @@ public class ContentModerationService {
         return detail(load(c), moderatorId, now);
     }
 
-    /** A photo of the post a case is about (moderators only; the app shows it only after a tap, D15). */
+    /**
+     * A photo (or a video's poster frame) of the post a case is about (moderators only; the app shows it only after a
+     * tap, D15).
+     */
     @Transactional(readOnly = true)
     public byte[] media(long moderatorId, String caseId, String mediaId) {
+        PostMedia media = caseMedia(moderatorId, caseId, mediaId);
+        try {
+            return mediaStorage.read(media.getStorageKey());
+        } catch (UncheckedIOException e) {
+            throw new ResourceNotFoundException("Photo not found");
+        }
+    }
+
+    /** Phase 17C: a video of the post a case is about, as a file (played only after a tap, like photos). */
+    @Transactional(readOnly = true)
+    public java.nio.file.Path mediaVideo(long moderatorId, String caseId, String mediaId) {
+        PostMedia media = caseMedia(moderatorId, caseId, mediaId);
+        if (!media.isVideo() || !mediaStorage.hasVideo(media.getStorageKey())) {
+            throw new ResourceNotFoundException("Photo not found");
+        }
+        return mediaStorage.videoFile(media.getStorageKey());
+    }
+
+    private PostMedia caseMedia(long moderatorId, String caseId, String mediaId) {
         moderation.requireModerator(moderatorId);
         Loaded l = requireCase(cases.findByPublicId(caseId).orElse(null));
         if (l.tookPart(moderatorId)) throw tookPart();
@@ -272,12 +294,9 @@ public class ContentModerationService {
                 || !l.post.getId().equals(media.getPostId())) {
             throw new ResourceNotFoundException("Photo not found");
         }
-        try {
-            return mediaStorage.read(media.getStorageKey());
-        } catch (UncheckedIOException e) {
-            throw new ResourceNotFoundException("Photo not found");
-        }
+        return media;
     }
+
 
     // ---- Moderators: appeals about social decisions ------------------------------------------------------------------
 
@@ -588,7 +607,8 @@ public class ContentModerationService {
                     placeName = places.findById(p.getPlaceId()).map(Place::getName).orElse(null);
                 }
                 List<MediaView> media = mediaRows.findByPostIdOrderBySortOrderAsc(p.getId()).stream()
-                        .map(m -> new MediaView(m.getPublicId(), m.getWidth(), m.getHeight())).toList();
+                        .map(m -> new MediaView(m.getPublicId(), m.getWidth(), m.getHeight(), m.getKind().name(),
+                                m.getDurationMs())).toList();
                 return new ContentView(p.getType().name(), null, p.getBody(), p.getTip(), p.getCategory(),
                         p.getPrecision().name(), placeName,
                         p.getPrecision() == Precision.AREA ? p.getAreaCell() : null,

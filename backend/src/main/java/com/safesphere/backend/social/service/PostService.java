@@ -81,6 +81,8 @@ public class PostService {
 
     static final String NOT_FOUND = "Post not found";
     static final String MEDIA_NOT_FOUND = "Photo not found";
+    static final String ONE_VIDEO = "Add at most one video";
+    static final String MEDIA_NOT_READY = "A photo or video is not ready yet. Remove it and add it again.";
     static final String ONLY_NARROWER = "You can only make a post more private. To share it more widely, post it again.";
     static final String PLACE_GONE = "That place is no longer available";
     static final int PAGE_SIZE = 20;
@@ -335,10 +337,18 @@ public class PostService {
         if (mediaIds.isEmpty()) return;
         Map<String, PostMedia> found = mediaRows.findForAttach(mediaIds).stream()
                 .collect(Collectors.toMap(PostMedia::getPublicId, Function.identity()));
+        int videos = 0;
         for (int i = 0; i < mediaIds.size(); i++) {
             PostMedia media = found.get(mediaIds.get(i));
             if (media == null || media.getOwnerId() != userId || media.getPostId() != null) {
                 throw new ResourceNotFoundException(MEDIA_NOT_FOUND);
+            }
+            if (media.isVideo() && ++videos > 1) throw new InvalidRequestException(ONE_VIDEO);
+            // Phase 17C: no partial post. A video needs its poster, and every file must really be there (the rows
+            // are written only after a complete, sanitised file; this also catches a file lost on the server).
+            if (!media.isReady() || !storage.exists(media.getStorageKey())
+                    || (media.isVideo() && !storage.hasVideo(media.getStorageKey()))) {
+                throw new ConflictException(MEDIA_NOT_READY);
             }
             media.attach(post.getId(), i);
         }
@@ -377,7 +387,9 @@ public class PostService {
             Place place = post.getPlaceId() == null ? null : placeById.get(post.getPlaceId());
             List<MediaRef> media = mediaByPost.getOrDefault(post.getId(), List.of()).stream()
                     .sorted((a, b) -> Integer.compare(a.getSortOrder(), b.getSortOrder()))
-                    .map(m -> new MediaRef(m.getPublicId(), m.getWidth(), m.getHeight())).toList();
+                    .map(m -> new MediaRef(m.getPublicId(), m.getWidth(), m.getHeight(), m.getKind().name(),
+                            m.getDurationMs())).toList();
+
             boolean canComment = Visibility.canComment(relationships.postFacts(viewerId, post, now),
                     post.getCommentPolicy());
             LocalDateTime since = own ? post.getCreatedAt() : post.getVisibleFrom();

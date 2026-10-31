@@ -7,8 +7,10 @@ import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import coil.load
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -25,6 +27,7 @@ import com.safesphere.app.feature.moderation.domain.ContentAction
 import com.safesphere.app.feature.moderation.domain.ContentCaseDetail
 import com.safesphere.app.feature.moderation.domain.ContentModerationPolicy
 import com.safesphere.app.feature.moderation.domain.ContentTarget
+import com.safesphere.app.feature.social.ui.VideoPlayerFragment
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -133,21 +136,31 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
         binding.photosNote.isVisible = content.media.isNotEmpty()
         binding.photoBlock.removeAllViews()
         content.media.forEachIndexed { index, media ->
+            val number = (index + 1).toString()
             if (media.mediaId in state.shownPhotos) {
                 val image = ImageView(requireContext()).apply {
                     adjustViewBounds = true
-                    contentDescription = getString(R.string.content_case_show_photo, (index + 1).toString())
+                    contentDescription = getString(
+                        if (media.isVideo) R.string.content_case_show_video else R.string.content_case_show_photo, number)
                     layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT)
                 }
-                image.load(viewModel.photoUrl(media.mediaId), appContainer.imageLoader)
+                image.load(viewModel.photoUrl(media.mediaId), appContainer.imageLoader) // a video: its poster
                 binding.photoBlock.addView(image)
+                // Phase 17C: a video plays only on a second tap, on the (FLAG_SECURE) player screen.
+                if (media.isVideo) binding.photoBlock.addView(textButton(getString(R.string.content_case_play_video,
+                        number)) {
+                    findNavController().navigate(R.id.videoPlayerFragment, bundleOf(
+                        VideoPlayerFragment.ARG_MEDIA_ID to media.mediaId, VideoPlayerFragment.ARG_CASE_ID to viewModel.caseId))
+                })
             } else {
-                binding.photoBlock.addView(textButton(getString(R.string.content_case_show_photo, (index + 1).toString())) {
+                binding.photoBlock.addView(textButton(getString(
+                    if (media.isVideo) R.string.content_case_show_video else R.string.content_case_show_photo, number)) {
                     viewModel.onShowPhoto(media.mediaId)
                 })
             }
         }
+
 
         binding.peopleLines.text = detail.participants.joinToString("\n") { p ->
             val role = when (p.role) {

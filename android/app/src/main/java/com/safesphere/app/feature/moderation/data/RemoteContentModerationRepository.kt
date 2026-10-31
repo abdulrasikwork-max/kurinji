@@ -38,4 +38,7 @@ class RemoteContentModerationRepository(
 
     override fun photoUrl(caseId: String, mediaId: String): String =
         baseUrl.trimEnd('/') + "/api/moderation/content-cases/" + caseId + "/media/" + mediaId
+
+    override fun videoUrl(caseId: String, mediaId: String): String = photoUrl(caseId, mediaId) + "/video"
+
 }

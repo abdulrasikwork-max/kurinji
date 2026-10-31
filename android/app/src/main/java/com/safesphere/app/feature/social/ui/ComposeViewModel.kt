@@ -1,15 +1,19 @@
 package com.safesphere.app.feature.social.ui
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.safesphere.app.AppContainer
+import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
-import com.safesphere.app.feature.social.data.PhotoSource
+import com.safesphere.app.feature.social.data.MediaPick
+import com.safesphere.app.feature.social.data.MediaRefusal
+import com.safesphere.app.feature.social.data.MediaSource
 import com.safesphere.app.feature.social.data.PlaceMemory
+import com.safesphere.app.feature.social.data.PreparedVideo
+import com.safesphere.app.feature.social.data.VideoOutcome
 import com.safesphere.app.feature.social.domain.Audience
 import com.safesphere.app.feature.social.domain.City
 import com.safesphere.app.feature.social.domain.CommentPolicy
@@ -18,6 +22,7 @@ import com.safesphere.app.feature.social.domain.ComposerPolicy
 import com.safesphere.app.feature.social.domain.Daypart
 import com.safesphere.app.feature.social.domain.ExperienceRepository
 import com.safesphere.app.feature.social.domain.Interest
+import com.safesphere.app.feature.social.domain.MediaKind
 import com.safesphere.app.feature.social.domain.Place
 import com.safesphere.app.feature.social.domain.PostDraft
 import com.safesphere.app.feature.social.domain.PostType
@@ -25,16 +30,53 @@ import com.safesphere.app.feature.social.domain.Precision
 import com.safesphere.app.feature.social.domain.PrivatePlacePolicy
 import java.time.Clock
 import java.time.YearMonth
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** One picked photo: being prepared and uploaded, ready (with its server id), or failed. */
-data class ComposePhoto(val key: String, val mediaId: String? = null, val failed: Boolean = false) {
-    val uploading: Boolean get() = mediaId == null && !failed
+/** Phase 17C: where one picked item is on its way to the server. */
+enum class MediaStage {
+    /** Being made ready on this phone (a photo re-encoded, a video re-packed). */
+    PREPARING,
+    /** Being sent ([ComposeMedia.progress]). */
+    UPLOADING,
+    /** A video's poster frame is being sent. */
+    FINISHING,
+    READY,
+    /** The connection or the server failed: Retry or Remove. */
+    FAILED,
+    /** It cannot be shared as it is ([ComposeMedia.refusal]): Remove only. */
+    REFUSED
 }
+
+/**
+ * One picked photo or (Phase 17C) video. [mediaId] is the server's id once the main upload is done (a video then still
+ * needs its poster before it is READY). [preview] is shown until then: the picked photo, a video's poster frame.
+ */
+data class ComposeMedia(
+    val key: String,
+    val kind: MediaKind = MediaKind.PHOTO,
+    val stage: MediaStage = MediaStage.PREPARING,
+    val mediaId: String? = null,
+    /** 0..1 while UPLOADING. */
+    val progress: Float = 0f,
+    val refusal: MediaRefusal? = null,
+    val durationMs: Long? = null,
+    val preview: Any? = null
+) {
+    val isVideo: Boolean get() = kind == MediaKind.VIDEO
+    val ready: Boolean get() = stage == MediaStage.READY
+    val pending: Boolean get() = stage == MediaStage.PREPARING || stage == MediaStage.UPLOADING ||
+        stage == MediaStage.FINISHING
+    /** Stops sharing until it is tried again or removed (17A: never left out silently). */
+    val problem: Boolean get() = stage == MediaStage.FAILED || stage == MediaStage.REFUSED
+}
+
+/** Phase 17C: one-shot notes about what was picked. */
+enum class ComposeNotice { ONE_VIDEO_ONLY, TOO_MANY_ITEMS }
 
 data class ComposeUiState(
     val type: PostType = PostType.EXPERIENCE,
@@ -54,7 +96,9 @@ data class ComposeUiState(
     val commentPolicy: CommentPolicy = CommentPolicy.EVERYONE,
     /** Phase 13D (Q6): approve perspectives from people the author is not connected with first. */
     val approveFirst: Boolean = false,
-    val photos: List<ComposePhoto> = emptyList(),
+    val media: List<ComposeMedia> = emptyList(),
+    /** One-shot (Phase 17C): some picked items were not added. */
+    val notice: ComposeNotice? = null,
     val issues: List<ComposerIssue> = emptyList(),
     /** Set after the person tried to share: the issues are shown from then on. */
     val showIssues: Boolean = false,
@@ -66,11 +110,13 @@ data class ComposeUiState(
 ) {
     val allowedPrecisions: List<Precision> get() = ComposerPolicy.allowedPrecisions(place, placeIsPrivate)
     val isDelayed: Boolean get() = ComposerPolicy.isDelayed(precision)
-    val photosPending: Boolean get() = photos.any { it.uploading }
+    val mediaPending: Boolean get() = media.any { it.pending }
 
-    /** Phase 17A: a photo that could not be added stops sharing until it is tried again or removed (it used to be left out silently). */
-    val photosFailed: Boolean get() = photos.any { it.failed }
-    val canAddPhotos: Boolean get() = photos.size < ComposerPolicy.MAX_PHOTOS
+    /** Phase 17A: a photo that could not be added stops sharing until it is tried again or removed (it used to be left out silently). Phase 17C: videos too. */
+    val mediaFailed: Boolean get() = media.any { it.problem }
+    val canAddMedia: Boolean get() = media.size < ComposerPolicy.MAX_PHOTOS
+    val canAddVideo: Boolean get() = canAddMedia && media.count { it.isVideo } < ComposerPolicy.MAX_VIDEOS
+
 
     /** Phase 13D (Q6): the switch exists only while everyone may add perspectives. */
     val canApproveFirst: Boolean
@@ -86,7 +132,7 @@ data class ComposeUiState(
 class ComposeViewModel(
     private val repository: ExperienceRepository,
     private val placeMemory: PlaceMemory,
-    private val photoSource: PhotoSource,
+    private val mediaSource: MediaSource,
     private val clock: Clock
 ) : ViewModel() {
 
@@ -94,10 +140,16 @@ class ComposeViewModel(
     val uiState: StateFlow<ComposeUiState> = _uiState.asStateFlow()
 
     private var privateCells: List<String> = emptyList()
-    private var nextPhotoKey = 0
+    private var nextMediaKey = 0
 
-    /** Phase 17A: the picked photo behind each key, for "try again" (memory only, never saved). */
-    private val photoUris = HashMap<String, Uri>()
+    /** Phase 17A: the picked item behind each key, for "try again" (memory only, never saved). */
+    private val picks = HashMap<String, MediaPick>()
+
+    /** Phase 17C: re-packed videos (work files in the app's cache), kept for a retry; deleted on Remove/Share/close. */
+    private val preparedVideos = HashMap<String, PreparedVideo>()
+
+    /** Phase 17C: the running preparation / upload of each item (Remove cancels it). */
+    private val jobs = HashMap<String, Job>()
 
     val currentMonth: YearMonth get() = YearMonth.now(clock)
 
@@ -139,34 +191,59 @@ class ComposeViewModel(
 
     fun onNoPlace() = change { it.copy(place = null, placeIsPrivate = false, precision = Precision.NONE, city = null) }
 
-    fun onPhotosPicked(uris: List<Uri>) {
-        val room = ComposerPolicy.MAX_PHOTOS - _uiState.value.photos.size
-        uris.take(room.coerceAtLeast(0)).forEach { uri ->
-            val key = "photo-${nextPhotoKey++}"
-            photoUris[key] = uri
-            change { it.copy(photos = it.photos + ComposePhoto(key)) }
-            viewModelScope.launch { upload(key, uri) }
+    /**
+     * Phase 17C: photos and videos from the picker, in the order picked. At most 6 items and one video per post: the
+     * rest is not added, and [ComposeUiState.notice] says why.
+     */
+    fun onMediaPicked(items: List<MediaPick>) {
+        var notice: ComposeNotice? = null
+        for (pick in items) {
+            val state = _uiState.value
+            if (!state.canAddMedia) {
+                notice = notice ?: ComposeNotice.TOO_MANY_ITEMS
+                continue
+            }
+            if (pick.kind == MediaKind.VIDEO && !state.canAddVideo) {
+                notice = ComposeNotice.ONE_VIDEO_ONLY
+                continue
+            }
+            val key = "media-${nextMediaKey++}"
+            picks[key] = pick
+            change { it.copy(media = it.media + ComposeMedia(key, pick.kind, preview = pick.preview)) }
+            start(key)
         }
+        if (notice != null) _uiState.update { it.copy(notice = notice) }
     }
 
-    /** Phase 17A: one more attempt for a photo that could not be added. */
-    fun onRetryPhoto(key: String) {
-        val uri = photoUris[key] ?: return
-        if (_uiState.value.photos.none { it.key == key && it.failed }) return
-        change { it.copy(photos = it.photos.map { p -> if (p.key == key) p.copy(failed = false) else p }) }
-        viewModelScope.launch { upload(key, uri) }
+    fun onNoticeHandled() = _uiState.update { it.copy(notice = null) }
+
+    /** Phase 17A: one more attempt for an item that could not be added (from the step that failed). */
+    fun onRetryMedia(key: String) {
+        if (picks[key] == null) return
+        if (_uiState.value.media.none { it.key == key && it.stage == MediaStage.FAILED }) return
+        start(key)
     }
 
-    fun onRemovePhoto(key: String) {
-        photoUris.remove(key)
-        change { it.copy(photos = it.photos.filterNot { p -> p.key == key }) }
+    /** Stops its upload, forgets it, deletes its work files, and (best effort) the server's copy if there is one. */
+    fun onRemoveMedia(key: String) {
+        jobs.remove(key)?.cancel()
+        picks.remove(key)
+        preparedVideos.remove(key)?.let(mediaSource::discard)
+        val mediaId = _uiState.value.media.firstOrNull { it.key == key }?.mediaId
+        change { it.copy(media = it.media.filterNot { m -> m.key == key }) }
+        if (mediaId != null) viewModelScope.launch { repository.deleteUpload(mediaId) } // else the 24 h clean-up
+    }
+
+    override fun onCleared() {
+        preparedVideos.values.forEach(mediaSource::discard)
+        preparedVideos.clear()
     }
 
     fun onShare() {
         val state = _uiState.value
         if (state.isBusy) return
         val issues = issuesOf(state)
-        if (issues.isNotEmpty() || state.photosPending || state.photosFailed) {
+        if (issues.isNotEmpty() || state.mediaPending || state.mediaFailed) {
             _uiState.update { it.copy(issues = issues, showIssues = true) }
             return
         }
@@ -176,6 +253,8 @@ class ComposeViewModel(
                 is ApiResult.Success -> {
                     state.audience?.let { placeMemory.rememberAudience(it) }
                     state.place?.let { placeMemory.rememberUsed(it) }
+                    preparedVideos.values.forEach(mediaSource::discard)
+                    preparedVideos.clear()
                     _uiState.update { it.copy(isBusy = false, sharedPostId = result.data.publicId) }
                 }
                 is ApiResult.Failure -> _uiState.update {
@@ -188,16 +267,88 @@ class ComposeViewModel(
     fun onSharedHandled() = _uiState.update { it.copy(sharedPostId = null) }
     fun onSessionExpiredHandled() = _uiState.update { it.copy(sessionExpired = false) }
 
-    private suspend fun upload(key: String, uri: Uri) {
-        val jpeg = photoSource.prepare(uri)
-        val result = if (jpeg == null) null else repository.uploadPhoto(jpeg)
-        _uiState.update { state ->
-            state.copy(photos = state.photos.map { p ->
-                if (p.key != key) p
-                else if (result is ApiResult.Success) p.copy(mediaId = result.data.mediaId)
-                else p.copy(failed = true)
-            }, sessionExpired = state.sessionExpired || (result as? ApiResult.Failure)?.isSessionExpired() == true)
+    private fun start(key: String) {
+        jobs.remove(key)?.cancel()
+        jobs[key] = viewModelScope.launch {
+            val pick = picks[key] ?: return@launch
+            if (pick.kind == MediaKind.VIDEO) uploadVideo(key, pick) else uploadPhoto(key, pick)
         }
+    }
+
+    private suspend fun uploadPhoto(key: String, pick: MediaPick) {
+        set(key) { it.copy(stage = MediaStage.PREPARING, progress = 0f) }
+        val jpeg = mediaSource.preparePhoto(pick)
+        if (jpeg == null) {
+            set(key) { it.copy(stage = MediaStage.REFUSED, refusal = MediaRefusal.UNREADABLE) }
+            return
+        }
+        set(key) { it.copy(stage = MediaStage.UPLOADING) }
+        when (val result = repository.uploadPhoto(jpeg) { share -> progress(key, share) }) {
+            is ApiResult.Success -> set(key) {
+                it.copy(stage = MediaStage.READY, mediaId = result.data.mediaId, progress = 1f)
+            }
+            is ApiResult.Failure -> failed(key, result)
+        }
+    }
+
+    /** Re-pack (once), upload the video (unless the server already has it), then its poster. */
+    private suspend fun uploadVideo(key: String, pick: MediaPick) {
+        var video = preparedVideos[key]
+        if (video == null) {
+            set(key) { it.copy(stage = MediaStage.PREPARING, progress = 0f) }
+            when (val outcome = mediaSource.prepareVideo(pick)) {
+                is VideoOutcome.Refused -> {
+                    set(key) { it.copy(stage = MediaStage.REFUSED, refusal = outcome.reason) }
+                    return
+                }
+                is VideoOutcome.Ready -> {
+                    if (picks[key] == null) { // removed while it was being prepared
+                        mediaSource.discard(outcome.video)
+                        return
+                    }
+                    video = outcome.video
+                    preparedVideos[key] = outcome.video
+                    set(key) { it.copy(durationMs = outcome.video.durationMs, preview = outcome.video.posterFile) }
+                }
+            }
+        }
+        var mediaId = _uiState.value.media.firstOrNull { it.key == key }?.mediaId
+        if (mediaId == null) {
+            set(key) { it.copy(stage = MediaStage.UPLOADING, progress = 0f) }
+            when (val result = repository.uploadVideo(video.file) { share -> progress(key, share) }) {
+                is ApiResult.Success -> mediaId = result.data.mediaId
+                is ApiResult.Failure -> {
+                    failed(key, result)
+                    return
+                }
+            }
+            set(key) { it.copy(mediaId = mediaId) }
+        }
+        set(key) { it.copy(stage = MediaStage.FINISHING, progress = 1f) }
+        when (val result = repository.uploadPoster(mediaId, video.poster)) {
+            is ApiResult.Success -> set(key) { it.copy(stage = MediaStage.READY) }
+            is ApiResult.Failure -> failed(key, result)
+        }
+    }
+
+    /** The server refusing the item itself (400) or its daily limit (429) is final; anything else can be retried. */
+    private fun failed(key: String, failure: ApiResult.Failure) {
+        val refusal = when (failure.error) {
+            ApiError.VALIDATION -> MediaRefusal.NOT_ACCEPTED
+            ApiError.TOO_MANY_ATTEMPTS -> MediaRefusal.DAILY_LIMIT
+            else -> null
+        }
+        set(key) { it.copy(stage = if (refusal != null) MediaStage.REFUSED else MediaStage.FAILED, refusal = refusal) }
+        if (failure.isSessionExpired()) _uiState.update { it.copy(sessionExpired = true) }
+    }
+
+    /** Upload progress arrives on the network thread; only whole percents arrive (ProgressRequestBody). */
+    private fun progress(key: String, share: Float) = _uiState.update { s ->
+        s.copy(media = s.media.map { if (it.key == key && it.stage == MediaStage.UPLOADING) it.copy(progress = share) else it })
+    }
+
+    private fun set(key: String, block: (ComposeMedia) -> ComposeMedia) {
+        _uiState.update { s -> s.copy(media = s.media.map { if (it.key == key) block(it) else it }) }
         recheck()
     }
 
@@ -213,7 +364,7 @@ class ComposeViewModel(
         daypart = state.daypart,
         audience = state.audience,
         commentPolicy = ComposerPolicy.effectiveCommentPolicy(state.audience, state.commentPolicy),
-        mediaIds = state.photos.mapNotNull { it.mediaId },
+        mediaIds = state.media.filter { it.ready }.mapNotNull { it.mediaId },
         approveFirst = state.approveFirst && state.canApproveFirst
     )
 
@@ -230,8 +381,9 @@ class ComposeViewModel(
     companion object {
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
-                ComposeViewModel(container.experienceRepository, container.placeMemory, container.photoPreparer,
+                ComposeViewModel(container.experienceRepository, container.placeMemory, container.mediaSource,
                     Clock.systemDefaultZone())
+
             }
         }
     }

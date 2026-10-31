@@ -42,7 +42,22 @@ data class Place(
     val city: City? = null
 )
 
-data class MediaRef(val mediaId: String, val width: Int, val height: Int)
+/** Phase 17C: what a post's media item is. */
+enum class MediaKind { PHOTO, VIDEO }
+
+/**
+ * One photo or (Phase 17C) video of a post. A video's [mediaId] loads its poster frame like a photo; it plays from the
+ * repository's videoUrl. [durationMs] only for a video.
+ */
+data class MediaRef(
+    val mediaId: String,
+    val width: Int,
+    val height: Int,
+    val kind: MediaKind = MediaKind.PHOTO,
+    val durationMs: Int? = null
+) {
+    val isVideo: Boolean get() = kind == MediaKind.VIDEO
+}
 
 data class Post(
     val publicId: String,
@@ -133,5 +148,6 @@ data class PostDraft(
     val approveFirst: Boolean = false
 )
 
-/** A photo uploaded (sanitised) and ready to attach. */
+/** A photo uploaded (sanitised) and ready to attach; Phase 17C: also a video's answer (its poster comes after). */
 data class UploadedPhoto(val mediaId: String, val width: Int, val height: Int)
+

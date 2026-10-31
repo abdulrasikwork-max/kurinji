@@ -1128,7 +1128,29 @@ check never removes anything and never restricts a person.
   (`{state}.{decision}`), version `lex-1`.
 
 
+# Phase 17C: media — photos and one video per post (`docs/PHASE17C.md`, V27)
+
+- `POST /api/media` with `Content-Type: video/mp4`, the body the MP4 itself (≤ 50 MB, ≤ 60 s + 0.5 s rounding,
+  exactly one picture track, ≤ 1 sound track) → **201** `{mediaId, kind: "VIDEO", width, height, durationMs}`. The
+  server stores only its stripped copy (metadata boxes zeroed, times zeroed). 400 with words for anything it refuses
+  (not an MP4, damaged, too long, too large, extra tracks, fragmented, unknown codec; an oversized body too);
+  429 after `app.social.videos-per-day` (10). Photos unchanged (`image/jpeg|png`); every upload answer now also has
+  `kind` (and `durationMs` for a video).
+- `POST /api/media/{id}/poster` (`image/jpeg|png`, ≤ 5 MB): the poster frame of the caller's own video that no post
+  uses (sent again = replaced) → 200 the upload answer; anything else 404. Sanitised like a photo.
+- `GET /api/media/{id}`: a photo, or a video's poster (always `image/jpeg`; a video without a poster yet = 404).
+- `GET /api/media/{id}/video` → `video/mp4` from the file, `Accept-Ranges: bytes`, `Range` → 206; `no-store, private`,
+  `nosniff`. Same visibility as the post (owner only before it is attached).
+- `DELETE /api/media/{id}` → 204: the caller's own upload that no post uses (photo or video); else 404.
+- `POST /api/posts`: `mediaIds` ≤ 6 photos or videos, **at most one video** (400); a video without its poster, or any
+  item whose file is missing → **409** "not ready" (no post is created).
+- Post answers: `media[] {mediaId, width, height, kind: PHOTO|VIDEO, durationMs (video only)}`. Moderators: case
+  `content.media[]` gets the same `kind`/`durationMs`; `GET /api/moderation/content-cases/{id}/media/{mediaId}/video`.
+- Config: `app.social.max-video-bytes` (52428800, at most that), `app.social.videos-per-day` (10).
+
+
 # Phase 17B: phone verification (`docs/PHASE17B.md`) — replaces the V25 e-mail flow below
+
 
 A new account gets **no session** until the 6-digit code texted to its mobile number is entered. E-mail + password stays
 the sign-in. All endpoints are public (the password or the challenge token is the credential) and limited in memory.

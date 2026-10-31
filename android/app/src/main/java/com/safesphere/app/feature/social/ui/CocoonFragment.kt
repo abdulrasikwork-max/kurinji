@@ -122,6 +122,8 @@ class CocoonFragment : ViewBindingFragment<FragmentCocoonBinding>(FragmentCocoon
             b.photo.isVisible = photo != null
             if (photo != null) b.photo.load(appContainer.experienceRepository.photoUrl(photo.mediaId), appContainer.imageLoader)
             else b.photo.setImageDrawable(null)
+            b.videoMark.isVisible = photo?.isVideo == true // Phase 17C: the still of a video
+
             b.openArea.contentDescription = context.getString(R.string.cocoon_item_description,
                 SpokenText.part(title), SpokenText.part(b.meta.text),
                 context.getString(if (item.state == ButterflyState.WANT) R.string.cocoon_tab_want else R.string.cocoon_tab_been))

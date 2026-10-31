@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 17C: one video, played with the platform VideoView and its standard controls (opened by a tap only). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/videoFrame"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/k_ink">
+
+    <VideoView
+        android:id="@+id/video"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:contentDescription="@string/title_video" />
+
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:contentDescription="@string/video_loading"
+        android:indeterminate="true"
+        app:indicatorColor="@color/k_card" />
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="@dimen/space_lg">
+
+        <TextView
+            android:id="@+id/problem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+            android:textColor="@color/k_card"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tryAgainButton"
+            style="@style/Widget.Kurinji.Button.Quiet"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/video_try_again"
+            android:textColor="@color/k_card"
+            android:visibility="gone" />
+    </LinearLayout>
+</FrameLayout>

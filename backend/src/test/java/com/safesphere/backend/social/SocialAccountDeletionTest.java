@@ -112,6 +112,7 @@ class SocialAccountDeletionTest {
         // friend's post, an upload never attached; the friend's own perspective on their own post must stay.
         String photo = social.uploadId(p, TestImages.jpeg(8, 8));
         social.uploadId(p, TestImages.jpeg(9, 9));
+        social.videoId(p); // Phase 17C: a video (+ poster) never attached: its .mp4 must go too
         Map<String, Object> body = SocialClient.experienceBody("EVERYONE", "NONE");
         body.put("mediaIds", java.util.List.of(photo));
         String ownPost = social.json(social.createPost(p, body).andExpect(status().isCreated())).get("publicId").asText();
@@ -127,7 +128,8 @@ class SocialAccountDeletionTest {
         social.butterfly(friend, ownPost, "BEEN").andExpect(status().isOk());
         social.butterfly(asker, friendsPost, null).andExpect(status().isOk());
         photoKeys = jdbc.queryForList("SELECT storage_key FROM post_media WHERE owner_id = ?", String.class, p.id());
-        assertThat(photoKeys).hasSize(2).allMatch(media::exists);
+        assertThat(photoKeys).hasSize(3).allMatch(media::exists);
+        assertThat(photoKeys).anyMatch(media::hasVideo);
         friendsPostId = friendsPost;
         return friend;
     }
@@ -140,6 +142,8 @@ class SocialAccountDeletionTest {
         assertThat(count("SELECT COUNT(*) FROM post_media WHERE owner_id = ?", userId)).isZero();
         assertThat(count("SELECT COUNT(*) FROM comments WHERE author_id = ?", userId)).isZero();
         assertThat(photoKeys).noneMatch(media::exists);                       // the files went before the rows
+        assertThat(photoKeys).noneMatch(media::hasVideo);                     // Phase 17C: videos too
+
         // Only the friend's own perspective is left on the friend's post (the friend's reply to p went with p's).
         assertThat(count("SELECT COUNT(*) FROM comments c JOIN posts p ON p.id = c.post_id WHERE p.public_id = ?",
                 friendsPostId)).isEqualTo(1);

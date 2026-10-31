@@ -23,7 +23,14 @@ object ComposerPolicy {
     const val ASK_BODY_MIN = 10
     const val ASK_BODY_MAX = 1000
     const val TIP_MAX = 300
+    /** Photos and videos together (the server's limit). */
     const val MAX_PHOTOS = 6
+
+    /** Phase 17C (D-6): one video per post, at most 60 s (half a second of container rounding) and 50 MB. */
+    const val MAX_VIDEOS = 1
+    const val MAX_VIDEO_DURATION_MS = 60_500L
+    const val MAX_VIDEO_BYTES = 50L * 1024 * 1024
+
 
     /** How many months back the "when" picker offers (older experiences are rarely useful to the next person). */
     const val MONTHS_OFFERED = 24

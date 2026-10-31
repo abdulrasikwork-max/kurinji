@@ -93,8 +93,10 @@ public final class ContentModerationDtos {
                                 @NotNull(message = "Choose what to review") @Size(max = 40) String targetId) {
     }
 
-    public record MediaView(String mediaId, int width, int height) {
+    /** Phase 17C: [kind] PHOTO | VIDEO, [durationMs] only for a video (whose image is its poster frame). */
+    public record MediaView(String mediaId, int width, int height, String kind, Integer durationMs) {
     }
+
 
     /** The public profile of a PERSON case (or the author's handle is NOT shown for content cases). */
     public record PersonView(String displayName, String handle, String bio, String city, List<String> interests) {

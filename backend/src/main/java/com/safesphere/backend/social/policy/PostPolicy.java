@@ -67,7 +67,7 @@ public final class PostPolicy {
                 if (d.hasPlace() || d.city() != null) return Optional.of("No place was chosen, so send none");
             }
         }
-        if (d.photos() > MAX_PHOTOS) return Optional.of("Add at most 6 photos");
+        if (d.photos() > MAX_PHOTOS) return Optional.of("Add at most 6 photos or videos");
         return Optional.empty();
     }
 

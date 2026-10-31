@@ -42,8 +42,10 @@ import com.safesphere.app.feature.social.domain.ViewerPreferences
 import coil.ImageLoader
 import coil.memory.MemoryCache
 import com.safesphere.app.feature.social.data.EncryptedPlacesStore
+import com.safesphere.app.feature.social.data.AndroidMediaSource
+import com.safesphere.app.feature.social.data.MediaSource
 import com.safesphere.app.feature.social.data.PhotoPreparer
-import com.safesphere.app.feature.social.data.PhotoSource
+import com.safesphere.app.feature.social.data.VideoPreparer
 import com.safesphere.app.feature.social.data.PlaceMemory
 import com.safesphere.app.feature.social.data.PlacesStore
 import com.safesphere.app.feature.social.data.RemoteExperienceRepository
@@ -271,11 +273,23 @@ class AppContainer(context: Context) {
         PlaceMemory(placesStore, { currentSession.value?.user?.id }, Dispatchers.IO)
     }
 
-    /** Photos are made smaller and re-encoded without metadata on the phone before upload (the server does it again). */
-    val photoPreparer: PhotoSource by lazy {
-        val preparer = PhotoPreparer(appContext.contentResolver)
-        PhotoSource { uri -> withContext(Dispatchers.IO) { preparer.prepare(uri) } }
+    /**
+     * Photos are made smaller and re-encoded without metadata on the phone before upload (the server does it again).
+     * Phase 17C: videos are re-packed without metadata in the app's cache ("video-upload"); work files a previous run
+     * left behind are deleted the first time this is used (none of this run can exist yet).
+     */
+    val mediaSource: MediaSource by lazy {
+        val workDir = java.io.File(appContext.cacheDir, "video-upload")
+        VideoPreparer.sweep(workDir)
+        AndroidMediaSource(PhotoPreparer(appContext.contentResolver), VideoPreparer(appContext, workDir), Dispatchers.IO)
     }
+
+    /**
+     * Phase 17C: the platform video player streams through its own connection (not the shared client), so it is given
+     * the current sign-in header for one playback; nothing is stored. Empty when signed out.
+     */
+    fun videoHeaders(): Map<String, String> =
+        currentSession.value?.token?.let { mapOf("Authorization" to "Bearer $it") } ?: emptyMap()
 
     /**
      * Q3: ONE image loader on the shared client (so AuthInterceptor attaches the JWT), memory cache only: nothing about

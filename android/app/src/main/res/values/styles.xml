@@ -278,7 +278,24 @@
         <item name="android:textColor">?attr/colorOnPrimary</item>
     </style>
 
+    <!-- Phase 17C: "▶ 0:42" on a video's still (feed card, post page, composer). -->
+    <style name="Widget.Kurinji.VideoBadge" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/bg_video_badge</item>
+        <item name="android:drawablePadding">2dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">6dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingBottom">2dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Overline</item>
+        <item name="android:textColor">@color/k_card</item>
+        <item name="android:drawableTint">@color/k_card</item>
+    </style>
+
     <!-- A fact under a post (where it is, "Tip inside"): not a button. -->
+
     <style name="Widget.Kurinji.Chip.Context" parent="Widget.Material3.Chip.Assist">
         <item name="chipBackgroundColor">?attr/colorSurfaceContainer</item>
         <item name="chipStrokeWidth">0dp</item>

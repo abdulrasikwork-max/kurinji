@@ -15,6 +15,7 @@ import com.google.android.material.chip.ChipGroup
 import com.safesphere.app.R
 import com.safesphere.app.core.ui.components.ButterflyDrawable
 import com.safesphere.app.databinding.ItemExperienceCardBinding
+import com.safesphere.app.feature.social.data.VideoRules
 import com.safesphere.app.feature.social.domain.ButterflyState
 import com.safesphere.app.feature.social.domain.CityAreas
 import java.util.Locale
@@ -70,10 +71,14 @@ object CardBinder {
         b.photo.isVisible = photo != null
         if (photo != null) {
             b.photo.setPhotoSize(photo.width, photo.height)
-            b.photo.load(photoUrl(photo.mediaId), loader) { crossfade(true) }
+            b.photo.load(photoUrl(photo.mediaId), loader) { crossfade(true) } // a video: its poster frame
         } else {
             b.photo.setImageDrawable(null)
         }
+        // Phase 17C: a video shows "▶ 0:42" on its still; tapping the card opens the post, where it can be played.
+        val length = photo?.takeIf { it.isVideo }?.durationMs?.let { VideoRules.durationLabel(it.toLong()) }
+        b.videoBadge.isVisible = length != null
+        b.videoBadge.text = length.orEmpty()
 
         b.thought.isVisible = card.thought != null
         b.thought.text = card.thought.orEmpty()
@@ -177,6 +182,10 @@ object CardTexts {
         if (card.isAsk) context.getString(R.string.feed_question_badge) else null,
         meta(context, card),
         card.thought ?: card.collapse?.let { context.getString(collapsedLine(it)) },
+        card.photo?.takeIf { it.isVideo }?.durationMs?.let {
+            context.getString(R.string.feed_video_spoken, VideoRules.durationLabel(it.toLong()))
+        },
+
         placeChip(context, card),
         whenLine(context, card),
         if (card.hasTip) context.getString(R.string.feed_tip_chip) else null,

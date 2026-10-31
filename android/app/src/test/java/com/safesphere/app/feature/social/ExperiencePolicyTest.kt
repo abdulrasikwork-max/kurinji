@@ -106,11 +106,28 @@ class ExperiencePolicyTest {
     }
 
     @Test
-    fun `photos - the longer side ends at most 2048 px, never scaled up`() {
-        assertEquals(2048 to 1536, PhotoPreparer.targetSize(4096, 3072))
+    fun `photos - 17C the longer side ends at most 3072 px at quality 92, never scaled up`() {
+        assertEquals(3072, PhotoPreparer.MAX_SIDE)
+        assertEquals(92, PhotoPreparer.QUALITY)
+        assertEquals(92, PhotoPreparer.QUALITIES.first())                   // lower only to fit the server's 5 MB
+        assertEquals(3072 to 2304, PhotoPreparer.targetSize(4096, 3072))
+        assertEquals(2304 to 3072, PhotoPreparer.targetSize(3072 * 3, 3072 * 4))
         assertEquals(1000 to 800, PhotoPreparer.targetSize(1000, 800))
+        assertEquals(3072 to 3072, PhotoPreparer.targetSize(3072, 3072))
         assertEquals(1, PhotoPreparer.sampleSize(3000, 2000))
-        assertEquals(2, PhotoPreparer.sampleSize(4096, 3072))
-        assertEquals(4, PhotoPreparer.sampleSize(9000, 6000))
+        assertEquals(1, PhotoPreparer.sampleSize(4096, 3072))               // 12.6 MP decoded whole: full detail
+        assertEquals(2, PhotoPreparer.sampleSize(9000, 6000))
     }
+
+    @Test
+    fun `photos - 17C at most 16 million pixels are decoded, so a huge camera photo cannot run out of memory`() {
+        assertEquals(2, PhotoPreparer.sampleSize(6000, 4500))               // 27 MP -> 6.75 MP
+        assertEquals(2, PhotoPreparer.sampleSize(8160, 6120))               // 50 MP -> 12.5 MP, still >= 3072 px
+        assertEquals(4, PhotoPreparer.sampleSize(16320, 12240))             // 200 MP -> 12.5 MP
+        for ((w, h) in listOf(4000 to 3000, 6000 to 4500, 8160 to 6120, 12000 to 9000, 16320 to 12240, 20000 to 400)) {
+            val s = PhotoPreparer.sampleSize(w, h)
+            assertTrue("$w x $h", (w / s).toLong() * (h / s) <= PhotoPreparer.MAX_DECODED_PIXELS)
+        }
+    }
+
 }

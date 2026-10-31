@@ -1,12 +1,16 @@
 package com.safesphere.app.feature.social.data.remote
 
 import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.Streaming
+import retrofit2.http.Url
 
 /**
  * Phase 13B: places, posts, photos and perspectives. Created from the ONE Retrofit instance in AppContainer, so the JWT
@@ -20,9 +24,23 @@ interface ExperienceApi {
     @GET("api/places/nearby")
     suspend fun nearbyPlaces(@Query("area") areaCell: String): List<PlaceDto>
 
-    /** The body is the JPEG itself (image/jpeg). */
+    /** The body is the JPEG itself (image/jpeg); Phase 17C: or the MP4 itself (video/mp4). */
     @POST("api/media")
     suspend fun upload(@Body jpeg: RequestBody): UploadedDto
+
+    /** Phase 17C: a video's poster frame (image/jpeg). */
+    @POST("api/media/{id}/poster")
+    suspend fun uploadPoster(@Path("id") mediaId: String, @Body jpeg: RequestBody): UploadedDto
+
+    /** Phase 17C: an own upload no post uses (204). */
+    @DELETE("api/media/{id}")
+    suspend fun deleteMedia(@Path("id") mediaId: String)
+
+    /** Phase 17C: the first byte of a video (206), to check it can be played before the player opens it. */
+    @Streaming
+    @GET
+    suspend fun firstByte(@Url url: String, @Header("Range") range: String = "bytes=0-0"): ResponseBody
+
 
     @POST("api/posts")
     suspend fun createPost(@Body body: PostRequestDto): PostDto

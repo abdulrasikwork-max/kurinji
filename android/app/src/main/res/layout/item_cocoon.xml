@@ -43,7 +43,22 @@
                     android:importantForAccessibility="no"
                     android:scaleType="centerCrop"
                     android:visibility="gone" />
+
+                <!-- Phase 17C: a video's still (the poster) carries a small play mark. -->
+                <ImageView
+                    android:id="@+id/videoMark"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="bottom|start"
+                    android:layout_margin="4dp"
+                    android:background="@drawable/bg_video_badge"
+                    android:importantForAccessibility="no"
+                    android:padding="2dp"
+                    android:src="@drawable/ic_play"
+                    android:visibility="gone"
+                    app:tint="@color/k_card" />
             </FrameLayout>
+
 
             <LinearLayout
                 android:layout_width="0dp"

@@ -6,7 +6,7 @@ import com.safesphere.app.core.location.LocationUnavailableReason
 import com.safesphere.app.core.location.LocationUpdate
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
-import com.safesphere.app.feature.social.data.PhotoSource
+import com.safesphere.app.testing.FakeMediaSource
 import com.safesphere.app.feature.social.data.PlaceMemory
 import com.safesphere.app.feature.social.data.PlacesData
 import com.safesphere.app.feature.social.data.PlacesLoad
@@ -57,7 +57,7 @@ class ExperienceViewModelsTest {
     private val store = FakePlacesStore()
     private val memory = PlaceMemory(store, { 7L }, Dispatchers.Unconfined)
     private val clock = Clock.fixed(Instant.parse("2026-10-22T10:00:00Z"), ZoneOffset.UTC)
-    private val noPhotos = PhotoSource { null }
+    private val noPhotos = FakeMediaSource()
 
     private val home = GeoHash.encode(13.0500, 80.2824, GeoHash.BLOCK)
     private val nextDoor = PrivateCells.neighbourOf(home)
@@ -143,13 +143,16 @@ class ExperienceViewModelsTest {
 
     @Test
     fun `composer - 17A a photo that could not be added stops sharing instead of being left out`() {
-        val failed = com.safesphere.app.feature.social.ui.ComposeUiState(photos = listOf(
-            com.safesphere.app.feature.social.ui.ComposePhoto("photo-0", mediaId = "m1"),
-            com.safesphere.app.feature.social.ui.ComposePhoto("photo-1", failed = true)))
-        assertTrue(failed.photosFailed)
-        assertFalse(failed.photosPending)
-        assertFalse(failed.copy(photos = failed.photos.take(1)).photosFailed)
+        val failed = com.safesphere.app.feature.social.ui.ComposeUiState(media = listOf(
+            com.safesphere.app.feature.social.ui.ComposeMedia("photo-0", mediaId = "m1",
+                stage = com.safesphere.app.feature.social.ui.MediaStage.READY),
+            com.safesphere.app.feature.social.ui.ComposeMedia("photo-1",
+                stage = com.safesphere.app.feature.social.ui.MediaStage.FAILED)))
+        assertTrue(failed.mediaFailed)
+        assertFalse(failed.mediaPending)
+        assertFalse(failed.copy(media = failed.media.take(1)).mediaFailed)
     }
+
 
     // ---- place picker -----------------------------------------------------------------------------------------
 

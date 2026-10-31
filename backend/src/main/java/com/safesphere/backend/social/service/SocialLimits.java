@@ -22,6 +22,7 @@ public class SocialLimits {
     static final String TOO_MANY_PLACE_LOOKUPS = "Too many place look-ups. Please try again later.";
     static final String TOO_MANY_POSTS = "You have shared a lot today. Please try again tomorrow.";
     static final String TOO_MANY_PHOTOS = "You have added many photos today. Please try again tomorrow.";
+    static final String TOO_MANY_VIDEOS = "You have added many videos today. Please try again tomorrow.";
     static final String TOO_MANY_COMMENTS = "You have written many perspectives today. Please try again tomorrow.";
     static final String TOO_MANY_BUTTERFLIES = "You have changed your Cocoon many times today. Please try again tomorrow.";
     static final String TOO_MANY_DISCOVER = "You have opened a lot of lists this hour. Please try again later.";
@@ -35,6 +36,7 @@ public class SocialLimits {
     private final AttemptLimiter placeLookups;
     private final AttemptLimiter posts;
     private final AttemptLimiter media;
+    private final AttemptLimiter videos;
     private final AttemptLimiter comments;
     private final AttemptLimiter butterflies;
     private final AttemptLimiter discover;
@@ -52,6 +54,7 @@ public class SocialLimits {
         this.placeLookups = new AttemptLimiter(properties.placeLookupsPerHour(), Duration.ofHours(1), keys, clock);
         this.posts = new AttemptLimiter(properties.postsPerDay(), Duration.ofDays(1), keys, clock);
         this.media = new AttemptLimiter(properties.mediaPerDay(), Duration.ofDays(1), keys, clock);
+        this.videos = new AttemptLimiter(properties.videosPerDay(), Duration.ofDays(1), keys, clock);
         this.comments = new AttemptLimiter(properties.commentsPerDay(), Duration.ofDays(1), keys, clock);
         this.butterflies = new AttemptLimiter(properties.butterfliesPerDay(), Duration.ofDays(1), keys, clock);
         this.discover = new AttemptLimiter(properties.discoverReadsPerHour(), Duration.ofHours(1), keys, clock);
@@ -106,6 +109,12 @@ public class SocialLimits {
     public void media(long userId) {
         if (!media.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_PHOTOS);
     }
+
+    /** Phase 17C: a video upload (its own, lower daily limit). */
+    public void video(long userId) {
+        if (!videos.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_VIDEOS);
+    }
+
 
     public void comment(long userId) {
         if (!comments.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_COMMENTS);

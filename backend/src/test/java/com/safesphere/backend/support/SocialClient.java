@@ -265,6 +265,39 @@ public final class SocialClient {
         return perform(who.token(), get("/api/media/{id}", mediaId), null);
     }
 
+    // ---- Phase 17C: videos ----
+
+    public ResultActions uploadVideo(Person who, byte[] mp4) throws Exception {
+        return upload(who, mp4, "video/mp4");
+    }
+
+    public ResultActions poster(Person who, String mediaId, byte[] jpeg) throws Exception {
+        return mockMvc.perform(post("/api/media/{id}/poster", mediaId)
+                .header(HttpHeaders.AUTHORIZATION, bearer(who.token())).contentType("image/jpeg").content(jpeg));
+    }
+
+    /** A video (with the default metadata-laden fixture) and its poster, ready to attach. */
+    public String videoId(Person who) throws Exception {
+        String id = json(uploadVideo(who, TestVideos.video().build()).andExpect(status().isCreated()))
+                .get("mediaId").asText();
+        poster(who, id, TestImages.jpeg(64, 36)).andExpect(status().isOk());
+        return id;
+    }
+
+    public ResultActions video(Person who, String mediaId) throws Exception {
+        return perform(who.token(), get("/api/media/{id}/video", mediaId), null);
+    }
+
+    public ResultActions deleteMedia(Person who, String mediaId) throws Exception {
+        return perform(who.token(), delete("/api/media/{id}", mediaId), null);
+    }
+
+    public ResultActions caseVideo(Person moderator, String caseId, String mediaId) throws Exception {
+        return perform(moderator.token(), get("/api/moderation/content-cases/{id}/media/{m}/video", caseId, mediaId),
+                null);
+    }
+
+
     // ---- Phase 13C: butterflies, Cocoon, Discover ----
 
     public ResultActions butterfly(Person who, String postId, String state) throws Exception {

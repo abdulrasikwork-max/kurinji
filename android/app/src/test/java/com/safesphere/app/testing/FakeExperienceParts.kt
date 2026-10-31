@@ -49,7 +49,51 @@ class FakeExperienceRepository : ExperienceRepository {
         return ApiResult.Success(nearby)
     }
 
-    override suspend fun uploadPhoto(jpeg: ByteArray): ApiResult<UploadedPhoto> = ApiResult.Success(UploadedPhoto("m1", 10, 10))
+    // ---- Phase 17C: photos and videos ----
+    var photoResults: ArrayDeque<ApiResult<UploadedPhoto>> = ArrayDeque()
+    var videoResults: ArrayDeque<ApiResult<UploadedPhoto>> = ArrayDeque()
+    var posterResults: ArrayDeque<ApiResult<UploadedPhoto>> = ArrayDeque()
+    /** When set, the video upload waits for it (to test Remove during an upload). */
+    var videoGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+    val uploadedPhotos = mutableListOf<ByteArray>()
+    val uploadedVideos = mutableListOf<java.io.File>()
+    val posters = mutableListOf<Pair<String, ByteArray>>()
+    val deletedUploads = mutableListOf<String>()
+    val checkedVideos = mutableListOf<String>()
+    var checkVideoResult: ApiResult<Unit> = ApiResult.Success(Unit)
+    private var nextMedia = 1
+
+    override suspend fun uploadPhoto(jpeg: ByteArray, onProgress: (Float) -> Unit): ApiResult<UploadedPhoto> {
+        uploadedPhotos += jpeg
+        onProgress(0.5f)
+        onProgress(1f)
+        return photoResults.removeFirstOrNull() ?: ApiResult.Success(UploadedPhoto("m${nextMedia++}", 10, 10))
+    }
+
+    override suspend fun uploadVideo(mp4: java.io.File, onProgress: (Float) -> Unit): ApiResult<UploadedPhoto> {
+        uploadedVideos += mp4
+        onProgress(0.25f)
+        videoGate?.await()
+        return videoResults.removeFirstOrNull() ?: ApiResult.Success(UploadedPhoto("v${nextMedia++}", 640, 360))
+    }
+
+    override suspend fun uploadPoster(mediaId: String, jpeg: ByteArray): ApiResult<UploadedPhoto> {
+        posters += mediaId to jpeg
+        return posterResults.removeFirstOrNull() ?: ApiResult.Success(UploadedPhoto(mediaId, 640, 360))
+    }
+
+    override suspend fun deleteUpload(mediaId: String): ApiResult<Unit> {
+        deletedUploads += mediaId
+        return ApiResult.Success(Unit)
+    }
+
+    override suspend fun checkVideo(url: String): ApiResult<Unit> {
+        checkedVideos += url
+        return checkVideoResult
+    }
+
+    override fun videoUrl(mediaId: String) = "http://test/api/media/$mediaId/video"
+
 
     override suspend fun createPost(draft: PostDraft): ApiResult<Post> {
         drafts += draft
@@ -134,5 +178,37 @@ class FakePlacesStore(var load: PlacesLoad = PlacesLoad.Empty) : PlacesStore {
     override suspend fun clearAll() {
         cleared++
         load = PlacesLoad.Empty
+    }
+}
+
+/** Phase 17C: a picked item for tests (the app wraps picker addresses instead). */
+data class TestPick(
+    override val kind: com.safesphere.app.feature.social.domain.MediaKind,
+    override val preview: Any? = null
+) : com.safesphere.app.feature.social.data.MediaPick
+
+/** Phase 17C: prepares picked items without the platform; records what was discarded. */
+class FakeMediaSource : com.safesphere.app.feature.social.data.MediaSource {
+    var photo: ByteArray? = byteArrayOf(1, 2, 3)
+    var videoOutcome: com.safesphere.app.feature.social.data.VideoOutcome =
+        com.safesphere.app.feature.social.data.VideoOutcome.Ready(video())
+    var preparedVideos = 0
+    val discarded = mutableListOf<com.safesphere.app.feature.social.data.PreparedVideo>()
+
+    override suspend fun preparePhoto(pick: com.safesphere.app.feature.social.data.MediaPick): ByteArray? = photo
+
+    override suspend fun prepareVideo(pick: com.safesphere.app.feature.social.data.MediaPick):
+        com.safesphere.app.feature.social.data.VideoOutcome {
+        preparedVideos++
+        return videoOutcome
+    }
+
+    override fun discard(video: com.safesphere.app.feature.social.data.PreparedVideo) {
+        discarded += video
+    }
+
+    companion object {
+        fun video(name: String = "clip") = com.safesphere.app.feature.social.data.PreparedVideo(
+            java.io.File("$name.mp4"), byteArrayOf(9, 9), java.io.File("$name.jpg"), 42_000, 640, 360)
     }
 }

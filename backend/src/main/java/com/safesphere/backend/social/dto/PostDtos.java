@@ -31,7 +31,8 @@ public final class PostDtos {
             @Size(max = 12, message = "Unknown time of day") String daypart,
             @Size(max = 12, message = "Unknown audience") String audience,
             @Size(max = 12, message = "Unknown comment setting") String commentPolicy,
-            @Size(max = 6, message = "Add at most 6 photos") List<@Size(max = 40) String> mediaIds,
+            @Size(max = 6, message = "Add at most 6 photos or videos") List<@Size(max = 40) String> mediaIds,
+
             Boolean approveFirst) {
     }
 
@@ -71,7 +72,11 @@ public final class PostDtos {
     public record PostPlace(String publicId, String name) {
     }
 
-    public record MediaRef(String mediaId, int width, int height) {
+    /**
+     * One photo or (Phase 17C) video of a post, in order. [kind] PHOTO | VIDEO; [durationMs] only for a video. GET
+     * /api/media/{mediaId} is always an image (a video's poster frame); a video plays from /api/media/{mediaId}/video.
+     */
+    public record MediaRef(String mediaId, int width, int height, String kind, Integer durationMs) {
     }
 
     /**

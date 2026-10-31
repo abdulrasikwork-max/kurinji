@@ -33,7 +33,8 @@ import javax.imageio.stream.ImageOutputStream;
 public final class ImageSanitizer {
 
     public static final int MAX_SIDE = 4096;
-    private static final float[] QUALITIES = {0.85f, 0.7f, 0.5f};
+    /** Phase 17C: 0.92 first, the quality the phone writes (it was 0.85, which undid the better photo from the phone). */
+    private static final float[] QUALITIES = {0.92f, 0.85f, 0.7f, 0.5f};
 
     public record Result(byte[] jpeg, int width, int height) {
     }

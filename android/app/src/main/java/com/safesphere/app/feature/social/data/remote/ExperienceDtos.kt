@@ -13,6 +13,8 @@ import com.safesphere.app.feature.social.domain.CommentKind
 import com.safesphere.app.feature.social.domain.CommentPolicy
 import com.safesphere.app.feature.social.domain.Daypart
 import com.safesphere.app.feature.social.domain.Interest
+import com.safesphere.app.feature.social.domain.ComposerPolicy
+import com.safesphere.app.feature.social.domain.MediaKind
 import com.safesphere.app.feature.social.domain.MediaRef
 import com.safesphere.app.feature.social.domain.Perspective
 import com.safesphere.app.feature.social.domain.Place
@@ -109,7 +111,23 @@ data class PersonRefDto(val publicId: String? = null, val handle: String? = null
 
 data class PostPlaceDto(val publicId: String? = null, val name: String? = null)
 
-data class MediaRefDto(val mediaId: String? = null, val width: Int? = null, val height: Int? = null)
+data class MediaRefDto(
+    val mediaId: String? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+    /** Phase 17C: PHOTO | VIDEO; absent (a server from before 17C) = a photo. */
+    val kind: String? = null,
+    val durationMs: Int? = null
+) {
+    /** Fails closed: an unknown kind, or a video without a plausible length, is left out (never guessed). */
+    fun toDomain(): MediaRef? {
+        val id = mediaId ?: return null
+        val type = if (kind == null) MediaKind.PHOTO else enumOrNull<MediaKind>(kind) ?: return null
+        if (type == MediaKind.VIDEO && (durationMs == null || durationMs < 1
+                || durationMs > ComposerPolicy.MAX_VIDEO_DURATION_MS)) return null
+        return MediaRef(id, width ?: 0, height ?: 0, type, if (type == MediaKind.VIDEO) durationMs else null)
+    }
+}
 
 data class PostDto(
     val publicId: String? = null,
@@ -164,7 +182,8 @@ data class PostDto(
             // Unknown band: the vaguest one.
             postedPeriod = enumOrNull<TimeBand>(postedPeriod) ?: TimeBand.EARLIER,
             edited = edited == true,
-            media = media.orEmpty().mapNotNull { m -> m.mediaId?.let { MediaRef(it, m.width ?: 0, m.height ?: 0) } },
+            media = media.orEmpty().mapNotNull { it.toDomain() },
+
             audience = enumOrNull<Audience>(audience),
             // Unknown comment setting: the closed one.
             commentPolicy = enumOrNull<CommentPolicy>(commentPolicy) ?: CommentPolicy.NOBODY,

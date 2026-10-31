@@ -20,7 +20,10 @@ import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentComposeBinding
+import com.safesphere.app.feature.social.data.UriPick
+import com.safesphere.app.feature.social.data.VideoRules
 import com.safesphere.app.feature.social.domain.Audience
+
 import com.safesphere.app.feature.social.domain.City
 import com.safesphere.app.feature.social.domain.CommentPolicy
 import com.safesphere.app.feature.social.domain.ComposerPolicy
@@ -37,9 +40,11 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
 
     private val viewModel by viewModels<ComposeViewModel> { ComposeViewModel.factory(appContainer) }
 
-    private val pickPhotos =
+    /** Phase 17C: photos and videos (the system Photo Picker: no storage permission). */
+    private val pickMedia =
         registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(ComposerPolicy.MAX_PHOTOS)) { uris ->
-            if (uris.isNotEmpty()) viewModel.onPhotosPicked(uris)
+            val resolver = requireContext().contentResolver
+            if (uris.isNotEmpty()) viewModel.onMediaPicked(uris.map { UriPick.of(it, resolver) })
         }
 
     private lateinit var photoAdapter: PhotoAdapter
@@ -67,7 +72,10 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         binding.bodyInput.doAfterTextChanged { viewModel.onBody(it?.toString().orEmpty()) }
         binding.tipInput.doAfterTextChanged { viewModel.onTip(it?.toString().orEmpty()) }
         binding.addPhotosButton.setOnClickListener {
-            pickPhotos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            // One video per post: once there is one, the picker offers photos only.
+            val type = if (viewModel.uiState.value.canAddVideo) ActivityResultContracts.PickVisualMedia.ImageAndVideo
+            else ActivityResultContracts.PickVisualMedia.ImageOnly
+            pickMedia.launch(PickVisualMediaRequest(type))
         }
         binding.choosePlaceButton.setOnClickListener { findNavController().navigate(R.id.placePickerFragment) }
         // Phase 17A: the draft stays here (same ViewModel) while the person makes a profile, then Share again.
@@ -109,16 +117,26 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         binding.bodyLayout.hint = getString(if (experience) R.string.social_body_label_experience else R.string.social_body_label_ask)
         binding.tipLayout.isVisible = experience
 
-        photoAdapter.submitList(state.photos.map { photo ->
-            PhotoCell(photo.key, photo.mediaId?.let(appContainer.experienceRepository::photoUrl),
-                when {
-                    photo.failed -> getString(R.string.social_photo_failed)
-                    photo.uploading -> getString(R.string.social_photo_uploading)
-                    else -> null
-                }, onRemove = { viewModel.onRemovePhoto(photo.key) },
-                onRetry = if (photo.failed) ({ viewModel.onRetryPhoto(photo.key) }) else null)
+        photoAdapter.submitList(state.media.map { item ->
+            PhotoCell(item.key,
+                // The server's copy once it has one (a video: its poster, once that is there), else the phone's preview.
+                image = if (item.ready) item.mediaId?.let(appContainer.experienceRepository::photoUrl) else item.preview,
+                status = ComposeMediaTexts.status(requireContext(), item),
+                onRemove = { viewModel.onRemoveMedia(item.key) },
+                onRetry = if (item.stage == MediaStage.FAILED) ({ viewModel.onRetryMedia(item.key) }) else null,
+                progress = ComposeMediaTexts.progress(item),
+                videoLength = item.durationMs?.takeIf { item.isVideo }?.let(VideoRules::durationLabel),
+                isVideo = item.isVideo)
+
         })
-        binding.addPhotosButton.isEnabled = state.canAddPhotos
+        binding.addPhotosButton.isEnabled = state.canAddMedia
+        state.notice?.let { notice ->
+            viewModel.onNoticeHandled()
+            Toast.makeText(requireContext(), when (notice) {
+                ComposeNotice.ONE_VIDEO_ONLY -> R.string.social_media_one_video
+                ComposeNotice.TOO_MANY_ITEMS -> R.string.social_media_too_many
+            }, Toast.LENGTH_LONG).show()
+        }
 
         binding.placeText.text = when {
             state.place != null -> state.place.name
@@ -170,8 +188,8 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         binding.summaryLine.text = shown?.let { getString(R.string.social_location_summary, it) }.orEmpty()
         binding.summaryLine.isVisible = shown != null
         val issues = buildList {
-            if (state.photosPending) add(getString(R.string.social_issue_photos_pending))
-            if (state.photosFailed) add(getString(R.string.social_issue_photos_failed))
+            if (state.mediaPending) add(getString(R.string.social_issue_photos_pending))
+            if (state.mediaFailed) add(getString(R.string.social_issue_photos_failed))
             state.issues.forEach { add(getString(ExperienceLabels.of(it))) }
         }
         binding.issuesText.isVisible = state.showIssues && issues.isNotEmpty()

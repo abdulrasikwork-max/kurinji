@@ -261,6 +261,7 @@ class ModerationV2Test {
             return ApiResult.Success(ContentAppeal(appealId, false, null, ContentAction.CONTENT_REMOVE, null, null, null, false))
         }
         override fun photoUrl(caseId: String, mediaId: String) = "http://test/$caseId/$mediaId"
+        override fun videoUrl(caseId: String, mediaId: String) = "http://test/$caseId/$mediaId/video"
     }
 
     @Test

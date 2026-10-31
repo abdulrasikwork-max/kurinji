@@ -137,7 +137,18 @@ data class PersonInfoDto(
     val interests: List<String>? = null
 )
 
-data class MediaViewDto(val mediaId: String? = null, val width: Int? = null, val height: Int? = null)
+/** Phase 17C: [kind] PHOTO | VIDEO (absent = a photo); an unknown kind or a video without a length is left out. */
+data class MediaViewDto(val mediaId: String? = null, val width: Int? = null, val height: Int? = null,
+                        val kind: String? = null, val durationMs: Int? = null) {
+    fun toDomain(): CaseMedia? {
+        val id = mediaId ?: return null
+        return when (kind) {
+            null, "PHOTO" -> CaseMedia(id, width ?: 0, height ?: 0)
+            "VIDEO" -> durationMs?.takeIf { it > 0 }?.let { CaseMedia(id, width ?: 0, height ?: 0, true, it) }
+            else -> null
+        }
+    }
+}
 
 data class ContentViewDto(
     val postType: String? = null,
@@ -158,7 +169,8 @@ data class ContentViewDto(
 ) {
     fun toDomain() = CaseContent(
         postType, commentKind, body, tip, category, precision, placeName, areaCell, city, audience, experiencedMonth,
-        daypart, media.orEmpty().mapNotNull { m -> m.mediaId?.let { CaseMedia(it, m.width ?: 0, m.height ?: 0) } },
+        daypart, media.orEmpty().mapNotNull { it.toDomain() },
+
         contextBody,
         person?.let { p -> PersonInfo(p.displayName.orEmpty(), p.handle.orEmpty(), p.bio, p.city, p.interests.orEmpty()) }
     )

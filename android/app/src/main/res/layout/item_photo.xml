@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13B: one photo of a post (composer thumbnail with a remove button, or the post view). -->
+<!-- Phase 13B: one photo of a post (composer thumbnail with a remove button, or the post view).
+     Phase 17C: or a video's still with "▶ 0:42" (the post view opens the player on a tap; nothing plays by itself),
+     and the upload's progress in the composer. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
@@ -8,13 +11,40 @@
     android:gravity="center_horizontal"
     android:orientation="vertical">
 
-    <ImageView
-        android:id="@+id/image"
+    <FrameLayout
+        android:id="@+id/frame"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/image"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:background="?attr/colorSurfaceVariant"
+            android:scaleType="centerCrop"
+            tools:ignore="ContentDescription" /> <!-- set per item in PhotoAdapter ("Photo 1 of 3") -->
+
+        <TextView
+            android:id="@+id/videoBadge"
+            style="@style/Widget.Kurinji.VideoBadge"
+            android:layout_gravity="bottom|start"
+            android:layout_margin="@dimen/space_xs"
+            android:importantForAccessibility="no"
+            android:visibility="gone"
+            app:drawableStartCompat="@drawable/ic_play"
+            tools:text="0:42"
+            tools:visibility="visible" />
+    </FrameLayout>
+
+    <!-- Read by TalkBack (how much is sent); the status line under it says what is happening. -->
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progress"
         android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:background="?attr/colorSurfaceVariant"
-        android:scaleType="centerCrop"
-        tools:ignore="ContentDescription" /> <!-- set per photo in PhotoAdapter ("Photo 1 of 3") -->
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:max="100"
+
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/status"

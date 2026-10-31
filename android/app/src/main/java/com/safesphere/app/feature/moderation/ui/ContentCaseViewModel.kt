@@ -42,7 +42,7 @@ data class ContentCaseUiState(
  */
 class ContentCaseViewModel(
     private val repository: ContentModerationRepository,
-    private val caseId: String
+    val caseId: String
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContentCaseUiState())

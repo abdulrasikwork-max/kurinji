@@ -2,6 +2,8 @@ package com.safesphere.backend.social.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -14,6 +16,8 @@ import java.util.UUID;
 /**
  * Phase 13B (V21): one photo. The file (re-encoded JPEG, no metadata) is in MediaStorage under [storageKey]. Until it is
  * attached ([postId] null) only its owner can fetch it; the clean-up job deletes unattached photos after 24 h.
+ * Phase 17C (V27): or one video ([kind] VIDEO): the stripped MP4 under the same key, [durationMs], and its poster frame
+ * ([posterBytes], null until it arrives; a video without its poster is never attached).
  */
 @Entity
 @Table(name = "post_media", uniqueConstraints = {
@@ -38,6 +42,10 @@ public class PostMedia {
     @Column(name = "sort_order")
     private Integer sortOrder;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, updatable = false, length = 5)
+    private MediaKind kind;
+
     @Column(name = "storage_key", nullable = false, updatable = false, length = 36)
     private String storageKey;
 
@@ -50,6 +58,12 @@ public class PostMedia {
     @Column(nullable = false, updatable = false)
     private int bytes;
 
+    @Column(name = "duration_ms", updatable = false)
+    private Integer durationMs;
+
+    @Column(name = "poster_bytes")
+    private Integer posterBytes;
+
     @Column(nullable = false, updatable = false, length = 64)
     private String sha256;
 
@@ -60,8 +74,22 @@ public class PostMedia {
     protected PostMedia() {
     }
 
+    /** A photo. */
     public PostMedia(long ownerId, String storageKey, int width, int height, int bytes, String sha256,
                      LocalDateTime createdAt) {
+        this(MediaKind.PHOTO, ownerId, storageKey, width, height, bytes, null, sha256, createdAt);
+    }
+
+    /** Phase 17C: a video (its poster comes later, [setPoster]). */
+    public static PostMedia video(long ownerId, String storageKey, int width, int height, int bytes, int durationMs,
+                                  String sha256, LocalDateTime createdAt) {
+        return new PostMedia(MediaKind.VIDEO, ownerId, storageKey, width, height, bytes, durationMs, sha256, createdAt);
+    }
+
+    private PostMedia(MediaKind kind, long ownerId, String storageKey, int width, int height, int bytes,
+                      Integer durationMs, String sha256, LocalDateTime createdAt) {
+        this.kind = kind;
+        this.durationMs = durationMs;
         this.publicId = UUID.randomUUID().toString();
         this.ownerId = ownerId;
         this.storageKey = storageKey;
@@ -70,6 +98,21 @@ public class PostMedia {
         this.bytes = bytes;
         this.sha256 = sha256;
         this.createdAt = createdAt.truncatedTo(ChronoUnit.MICROS);
+    }
+
+    /** Phase 17C: the video's poster frame was (re)written as "<storageKey>.jpg". */
+    public void setPoster(int bytes) {
+        if (kind != MediaKind.VIDEO) throw new IllegalStateException("Only a video has a poster");
+        this.posterBytes = bytes;
+    }
+
+    public boolean isVideo() {
+        return kind == MediaKind.VIDEO;
+    }
+
+    /** A photo always; a video once its poster is there. */
+    public boolean isReady() {
+        return kind == MediaKind.PHOTO || posterBytes != null;
     }
 
     public void attach(long postId, int sortOrder) {
@@ -96,6 +139,19 @@ public class PostMedia {
     public Integer getSortOrder() {
         return sortOrder;
     }
+
+    public MediaKind getKind() {
+        return kind;
+    }
+
+    public Integer getDurationMs() {
+        return durationMs;
+    }
+
+    public Integer getPosterBytes() {
+        return posterBytes;
+    }
+
 
     public String getStorageKey() {
         return storageKey;

@@ -1186,13 +1186,37 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_body_label_experience">What happened?</string>
     <string name="social_body_label_ask">Your question</string>
     <string name="social_tip_label">A tip (optional)</string>
-    <string name="social_photos_title">Photos (optional, up to 6)</string>
-    <string name="social_add_photos">Add photos</string>
-    <string name="social_photos_note">Photos are made smaller and lose their hidden details, such as where and when they were taken, before they leave your phone.</string>
-    <string name="social_photo_uploading">Adding photo…</string>
+    <string name="social_photos_title">Photos or a video (optional, up to 6)</string>
+    <string name="social_add_photos">Add photos or a video</string>
+    <string name="social_photos_note">Photos and videos lose their hidden details, such as where and when they were taken, before they leave your phone. One video per post, up to 60 seconds and 50 MB.</string>
     <string name="social_photo_failed">Not added. Tap to try again</string>
     <string name="social_remove_photo">Remove photo</string>
+    <string name="social_remove_video">Remove video</string>
+
     <string name="social_photo_description">Photo %1$s of %2$s</string>
+    <!-- Phase 17C: videos in the composer, on the post page and in feed cards. -->
+    <string name="social_video_description">Video %1$s of %2$s, %3$s long</string>
+    <string name="social_video_play">Play video</string>
+    <string name="social_photo_preparing">Getting it ready…</string>
+    <string name="social_video_preparing">Preparing video…</string>
+    <string name="social_media_uploading">Adding…</string>
+    <string name="social_video_finishing">Almost done…</string>
+    <string name="social_media_too_long">Longer than 60 seconds. Trim it in your gallery, then add it again.</string>
+    <string name="social_media_too_large">Larger than 50 MB. Trim it, or record at a lower quality.</string>
+    <string name="social_media_unsupported">This video\'s format can\'t be shared. Try one recorded with your phone\'s camera.</string>
+    <string name="social_media_unreadable">This file can\'t be read.</string>
+    <string name="social_media_not_accepted">This file can\'t be shared.</string>
+    <string name="social_media_daily_limit">You\'ve added many today. Try again tomorrow.</string>
+    <string name="social_media_one_video">One video per post. The other videos were not added.</string>
+    <string name="social_media_too_many">Up to 6 photos or videos per post. The rest were not added.</string>
+    <string name="feed_video_spoken">Video, %1$s</string>
+    <string name="title_video">Video</string>
+    <string name="video_loading">Loading video…</string>
+    <string name="video_not_found">This video is no longer available.</string>
+    <string name="video_offline">No connection. Try again when the connection is back.</string>
+
+    <string name="video_cannot_play">This video can\'t be played right now.</string>
+    <string name="video_try_again">Try again</string>
 
     <string name="social_where_title">Where</string>
     <string name="social_choose_place">Choose a place</string>
@@ -1245,8 +1269,8 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_issue_private_place">This place is near one of your private places.</string>
     <string name="social_issue_no_audience">Choose who can see this.</string>
     <string name="social_issue_too_many_photos">Add at most 6 photos.</string>
-    <string name="social_issue_photos_pending">Wait until the photos are added.</string>
-    <string name="social_issue_photos_failed">A photo could not be added. Tap it to try again, or remove it.</string>
+    <string name="social_issue_photos_pending">Wait until the photos and video are added.</string>
+    <string name="social_issue_photos_failed">A photo or video could not be added. Tap it to try again, or remove it.</string>
 
     <string name="social_near_me">Places near me</string>
     <string name="social_near_me_note">Your location is read once, on this phone, to find the area. Only the area code is sent, never your position.</string>
@@ -1464,8 +1488,11 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="content_case_context">On the post: %1$s</string>
     <string name="content_case_person">%1$s (@%2$s)</string>
     <string name="content_case_earlier_text">Before an edit during this review: %1$s</string>
-    <string name="content_case_photos">Photos are hidden until you choose to see them.</string>
+    <string name="content_case_photos">Photos and videos are hidden until you choose to see them.</string>
     <string name="content_case_show_photo">Show photo %1$s</string>
+    <string name="content_case_show_video">Show video %1$s</string>
+    <string name="content_case_play_video">Play video %1$s</string>
+
     <string name="content_case_participant">Person %1$s · %2$s</string>
     <string name="content_role_author">wrote it</string>
     <string name="content_role_subject">reported person</string>

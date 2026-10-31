@@ -1,3 +1,21 @@
+# Handoff: Phase 17C media (2026-11-01) — one local commit, NOT pushed
+
+**Implemented, compiled, tested, live-verified on MySQL, emulator-verified (API 37)** (`docs/PHASE17C.md`). Photos at
+3072 px / q92; one video per post (<= 60 s, <= 50 MB) re-packed on the phone with MediaMuxer and stripped again by the
+server (`Mp4Sanitizer`); poster frame; upload progress, retry from the failed step, Remove deletes the server copy; no
+partial post; `VideoView` player on tap only. Migration **V27** (next **V28**). No new dependency.
+- **Results:** backend **773 / 0** (2 skipped); Android **749 / 0**; lint **0 / 102**; V27 dry run **15/15 + 5/5** +
+  applied (backup `safesphere-before-V27.sql` in the session scratchpad); live MySQL **21/21**; emulator walk-through PASS
+  (real H.264/AAC clips given a GPS atom, square and 90° portrait: the phone's and the server's copies carry no position or metadata box; rotation kept); 49 MiB upload 201 in 0.5 s.
+- **NOT VERIFIED:** physical phone; TalkBack by ear; rotation while playing; the phone's 60 s refusal on a device (unit + server only); videos over 50 MB are refused (no
+  transcoding yet).
+- **State left:** 17C test accounts and their files deleted; backend and emulator left running, `adb reverse tcp:8080`
+  active (the build still points at `127.0.0.1` from the A23 sprint). `gradle-wrapper.properties` (Gradle 9.7.1) was
+  already modified before 17C and is NOT part of the commit; the build and tests pass with it.
+- **Next:** the user's review and push; 17D location UX. Later recommendations: transcoding to fit 50 MB, resumable
+  uploads.
+
+---
 # Handoff: Phase 17B account creation + phone OTP (2026-10-27) — one local commit, NOT pushed
 
 **Implemented, compiled, tested, verified on MySQL, the Galaxy A23 and the emulator** (`docs/PHASE17B.md`). Root cause

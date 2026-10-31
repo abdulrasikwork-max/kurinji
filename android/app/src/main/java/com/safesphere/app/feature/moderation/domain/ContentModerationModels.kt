@@ -56,7 +56,9 @@ data class CaseCheck(val action: String, val rule: String, val findings: List<Ch
 data class PersonInfo(val displayName: String, val handle: String, val bio: String?, val city: String?,
                       val interests: List<String>)
 
-data class CaseMedia(val mediaId: String, val width: Int, val height: Int)
+/** Phase 17C: [isVideo] items show their poster after a tap and play on another tap ([durationMs] only for a video). */
+data class CaseMedia(val mediaId: String, val width: Int, val height: Int, val isVideo: Boolean = false,
+                     val durationMs: Int? = null)
 
 data class CaseContent(
     val postType: String?,
@@ -140,6 +142,10 @@ interface ContentModerationRepository {
 
     suspend fun decideAppeal(appealId: String, overturn: Boolean): ApiResult<ContentAppeal>
 
-    /** The address of a case photo (loaded only after a tap, D15). */
+    /** The address of a case photo (loaded only after a tap, D15); for a video, its poster frame. */
     fun photoUrl(caseId: String, mediaId: String): String
+
+    /** Phase 17C: the address of a case video (played only after a tap). */
+    fun videoUrl(caseId: String, mediaId: String): String
+
 }

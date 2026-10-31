@@ -12,8 +12,26 @@ interface ExperienceRepository {
 
     suspend fun nearbyPlaces(areaCell: String): ApiResult<List<Place>>
 
-    /** Uploads a JPEG the phone already re-encoded (PhotoPreparer); the server re-encodes it again. */
-    suspend fun uploadPhoto(jpeg: ByteArray): ApiResult<UploadedPhoto>
+    /**
+     * Uploads a JPEG the phone already re-encoded (PhotoPreparer); the server re-encodes it again. Phase 17C:
+     * [onProgress] hears the share of the body sent so far (0..1; from 0 again if the call is sent once more).
+     */
+    suspend fun uploadPhoto(jpeg: ByteArray, onProgress: (Float) -> Unit = {}): ApiResult<UploadedPhoto>
+
+    /** Phase 17C: uploads a video the phone re-packed (VideoPreparer); the server checks and strips it again. */
+    suspend fun uploadVideo(mp4: java.io.File, onProgress: (Float) -> Unit = {}): ApiResult<UploadedPhoto>
+
+    /** Phase 17C: the poster frame of the person's own video that no post uses yet (sent again: replaced). */
+    suspend fun uploadPoster(mediaId: String, jpeg: ByteArray): ApiResult<UploadedPhoto>
+
+    /** Phase 17C: removes the person's own upload that no post uses (Remove in the composer). */
+    suspend fun deleteUpload(mediaId: String): ApiResult<Unit>
+
+    /**
+     * Phase 17C: asks for the first byte of a video before the player opens it, through the shared client: a lapsed
+     * token is renewed on the way, and "not found" / "no connection" get the app's own words instead of a player error.
+     */
+    suspend fun checkVideo(url: String): ApiResult<Unit>
 
     suspend fun createPost(draft: PostDraft): ApiResult<Post>
 
@@ -38,6 +56,10 @@ interface ExperienceRepository {
     /** Phase 13D (Q6): the post's author lets a waiting perspective appear. */
     suspend fun approvePerspective(publicId: String): ApiResult<Unit>
 
-    /** The address the photo is loaded from (Coil, through the shared client so the JWT is attached). */
+    /** The address the photo (Phase 17C: or a video's poster frame) is loaded from (Coil, shared client: JWT attached). */
     fun photoUrl(mediaId: String): String
+
+    /** Phase 17C: the address a video is streamed from (the player sends the JWT itself; nothing is saved). */
+    fun videoUrl(mediaId: String): String
+
 }

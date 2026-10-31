@@ -71,7 +71,17 @@ public class ContentModerationController {
                 .body(service.media(CurrentUser.id(jwt), id, mediaId));
     }
 
+    /** Phase 17C: a video of the case's post (the stripped MP4, byte ranges; never cached anywhere). */
+    @GetMapping("/content-cases/{id}/media/{mediaId}/video")
+    public ResponseEntity<org.springframework.core.io.Resource> mediaVideo(@AuthenticationPrincipal Jwt jwt,
+                                                                          @PathVariable String id,
+                                                                          @PathVariable String mediaId) {
+        return com.safesphere.backend.social.controller.MediaController.videoAnswer(
+                service.mediaVideo(CurrentUser.id(jwt), id, mediaId));
+    }
+
     @GetMapping("/content-appeals")
+
     public List<AppealView> appeals(@AuthenticationPrincipal Jwt jwt) {
         return service.listAppeals(CurrentUser.id(jwt));
     }

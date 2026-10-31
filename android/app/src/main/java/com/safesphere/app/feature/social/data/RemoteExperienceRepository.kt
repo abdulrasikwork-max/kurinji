@@ -3,6 +3,7 @@ package com.safesphere.app.feature.social.data
 import com.safesphere.app.core.network.ApiCallHandler
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
+import com.safesphere.app.core.network.ProgressRequestBody
 import com.safesphere.app.feature.social.data.remote.CommentRequestDto
 import com.safesphere.app.feature.social.data.remote.ExperienceApi
 import com.safesphere.app.feature.social.data.remote.PlaceRequestDto
@@ -16,7 +17,9 @@ import com.safesphere.app.feature.social.domain.Post
 import com.safesphere.app.feature.social.domain.PostDraft
 import com.safesphere.app.feature.social.domain.PostPage
 import com.safesphere.app.feature.social.domain.UploadedPhoto
+import java.io.File
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
 /**
@@ -35,8 +38,19 @@ class RemoteExperienceRepository(
     override suspend fun nearbyPlaces(areaCell: String): ApiResult<List<Place>> =
         handler.execute { api.nearbyPlaces(areaCell).mapNotNull { it.toDomain() } }
 
-    override suspend fun uploadPhoto(jpeg: ByteArray): ApiResult<UploadedPhoto> =
-        orNotFound(handler.execute { api.upload(jpeg.toRequestBody(JPEG)).toDomain() })
+    override suspend fun uploadPhoto(jpeg: ByteArray, onProgress: (Float) -> Unit): ApiResult<UploadedPhoto> =
+        orNotFound(handler.execute { api.upload(ProgressRequestBody(jpeg.toRequestBody(JPEG), onProgress)).toDomain() })
+
+    override suspend fun uploadVideo(mp4: File, onProgress: (Float) -> Unit): ApiResult<UploadedPhoto> =
+        orNotFound(handler.execute { api.upload(ProgressRequestBody(mp4.asRequestBody(MP4), onProgress)).toDomain() })
+
+    override suspend fun uploadPoster(mediaId: String, jpeg: ByteArray): ApiResult<UploadedPhoto> =
+        orNotFound(handler.execute { api.uploadPoster(mediaId, jpeg.toRequestBody(JPEG)).toDomain() })
+
+    override suspend fun deleteUpload(mediaId: String): ApiResult<Unit> = handler.execute { api.deleteMedia(mediaId) }
+
+    override suspend fun checkVideo(url: String): ApiResult<Unit> =
+        handler.execute { api.firstByte(url).close() }
 
     override suspend fun createPost(draft: PostDraft): ApiResult<Post> =
         orNotFound(handler.execute { api.createPost(PostRequestDto.from(draft)).toDomain() })
@@ -68,6 +82,8 @@ class RemoteExperienceRepository(
 
     override fun photoUrl(mediaId: String): String = baseUrl.trimEnd('/') + "/api/media/" + mediaId
 
+    override fun videoUrl(mediaId: String): String = photoUrl(mediaId) + "/video"
+
     private fun <T : Any> orNotFound(result: ApiResult<T?>): ApiResult<T> = when (result) {
         is ApiResult.Success -> result.data?.let { ApiResult.Success(it) } ?: ApiResult.Failure(ApiError.NOT_FOUND)
         is ApiResult.Failure -> result
@@ -75,5 +91,7 @@ class RemoteExperienceRepository(
 
     private companion object {
         val JPEG = "image/jpeg".toMediaType()
+        val MP4 = "video/mp4".toMediaType()
+
     }
 }

@@ -14,6 +14,8 @@
     <color name="k_card">#FFFFFF</color>
     <color name="k_sunk">#ECEAE7</color>
     <color name="k_ink">#121212</color>
+    <!-- Phase 17C: the label on a video still (k_ink at 85 %): white text on it stays above 12:1 on any picture. -->
+    <color name="k_video_badge">#D9121212</color>
     <color name="k_ink_soft">#4A4A4A</color>
     <color name="k_outline">#7A7A7A</color>
     <color name="k_line">#E1DFDB</color>

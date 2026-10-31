@@ -26,6 +26,7 @@ import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.components.ButterflyDrawable
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
+import com.safesphere.app.feature.social.data.VideoRules
 import com.safesphere.app.databinding.FragmentPostBinding
 import com.safesphere.app.feature.going.GoingThere
 import com.safesphere.app.feature.social.domain.ButterflyState
@@ -205,8 +206,14 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.body.isVisible = !hide
         binding.body.text = post.body.trim()
         photoAdapter.submitList(if (hide) emptyList() else
-            post.media.map { PhotoCell(it.mediaId, appContainer.experienceRepository.photoUrl(it.mediaId), null, null,
-                it.width, it.height) })
+            post.media.map { media ->
+                PhotoCell(media.mediaId, appContainer.experienceRepository.photoUrl(media.mediaId), null, null,
+                    media.width, media.height,
+                    // Phase 17C: a video shows its still and plays only when tapped (its own screen).
+                    videoLength = media.durationMs?.takeIf { media.isVideo }?.let { VideoRules.durationLabel(it.toLong()) },
+                    onOpen = if (media.isVideo) ({ openVideo(media.mediaId) }) else null)
+            })
+
         binding.photoList.isVisible = post.media.isNotEmpty() && !hide
         showOwnModeration(post, reports.uiState.value)
         binding.approveFirstLine.isVisible = post.approveFirst && post.canComment
@@ -489,7 +496,13 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         }
     }
 
+    /** Phase 17C: the player screen, only ever from a tap on the video. */
+    private fun openVideo(mediaId: String) {
+        findNavController().navigate(R.id.videoPlayerFragment, bundleOf(VideoPlayerFragment.ARG_MEDIA_ID to mediaId))
+    }
+
     private fun confirmDelete() {
+
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.social_delete_post_title)
             .setMessage(R.string.social_delete_post_message)

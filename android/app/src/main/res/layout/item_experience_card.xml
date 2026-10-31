@@ -74,14 +74,30 @@
                     android:visibility="gone" />
             </LinearLayout>
 
-            <com.safesphere.app.core.ui.components.AspectRatioImageView
-                android:id="@+id/photo"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="?attr/colorSurfaceVariant"
-                android:importantForAccessibility="no"
-                android:scaleType="centerCrop"
-                android:visibility="gone" />
+                android:layout_height="wrap_content">
+
+                <com.safesphere.app.core.ui.components.AspectRatioImageView
+                    android:id="@+id/photo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/colorSurfaceVariant"
+                    android:importantForAccessibility="no"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone" />
+
+                <!-- Phase 17C: a video's still carries "▶ 0:42"; the card opens the post (nothing plays here). -->
+                <TextView
+                    android:id="@+id/videoBadge"
+                    style="@style/Widget.Kurinji.VideoBadge"
+                    android:layout_gravity="bottom|start"
+                    android:layout_margin="@dimen/space_sm"
+                    android:importantForAccessibility="no"
+                    android:visibility="gone"
+                    app:drawableStartCompat="@drawable/ic_play" />
+            </FrameLayout>
+
 
             <LinearLayout
                 android:layout_width="match_parent"
