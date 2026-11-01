@@ -45,6 +45,11 @@ class PrivatePlacesFragment : ViewBindingFragment<FragmentPrivatePlacesBinding>(
         collectWhenStarted(viewModel.uiState, ::render)
     }
 
+    override fun onStop() {
+        super.onStop()
+        viewModel.onScreenHidden() // location only while this screen is open
+    }
+
     private fun chooseKind() {
         val kinds = PrivatePlaceKind.entries
         MaterialAlertDialogBuilder(requireContext())
@@ -85,7 +90,17 @@ class PrivatePlacesFragment : ViewBindingFragment<FragmentPrivatePlacesBinding>(
                 LocationSettings.openLocationSettings(this)
             }
             PrivatePlacesNotice.LOCATION_UNAVAILABLE -> toast(R.string.social_location_unavailable)
-            PrivatePlacesNotice.NEEDS_PRECISE -> toast(R.string.social_private_needs_precise)
+            // Approximate only: Android's upgrade dialog once; when that came back approximate, the settings toggle.
+            PrivatePlacesNotice.NEEDS_PRECISE -> if (locationAsk.preciseDeclined) {
+                offerSettings(R.string.social_private_needs_precise, R.string.location_action_settings) {
+                    LocationSettings.openAppSettings(this)
+                }
+            } else {
+                offerSettings(R.string.social_private_needs_precise, R.string.location_action_precise) { locationAsk.askForPrecise() }
+            }
+            PrivatePlacesNotice.POSITION_ROUGH -> offerSettings(R.string.social_private_rough, R.string.location_action_retry) {
+                pendingKind?.let(viewModel::onMarkHere)
+            }
             PrivatePlacesNotice.NOT_SAVED -> toast(R.string.social_private_not_saved)
             null -> Unit
         }

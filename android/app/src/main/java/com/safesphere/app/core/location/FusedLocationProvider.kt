@@ -51,8 +51,14 @@ class FusedLocationProvider(context: Context) : LocationProvider {
         locationManager?.let { LocationManagerCompat.isLocationEnabled(it) } ?: false
 
     // The permission is checked by access() just before the request; a revocation race is still caught below.
+    override fun updates(intervalMillis: Long): Flow<LocationUpdate> = updatesFlow(intervalMillis, maxFixAgeMillis = null)
+
+    override fun freshUpdates(intervalMillis: Long): Flow<LocationUpdate> =
+        updatesFlow(intervalMillis, maxFixAgeMillis = FRESH_UPDATE_MAX_AGE_MILLIS)
+
+    // [maxFixAgeMillis] (Phase 17D): a position whose elapsed-realtime age is above it is not delivered.
     @SuppressLint("MissingPermission")
-    override fun updates(intervalMillis: Long): Flow<LocationUpdate> = callbackFlow {
+    private fun updatesFlow(intervalMillis: Long, maxFixAgeMillis: Long?): Flow<LocationUpdate> = callbackFlow {
         if (!isPlayServicesAvailable()) {
             trySend(LocationUpdate.Unavailable(LocationUnavailableReason.SERVICES_UNAVAILABLE))
             close()
@@ -81,7 +87,9 @@ class FusedLocationProvider(context: Context) : LocationProvider {
 
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.locations.forEach { trySend(LocationUpdate.Fix(it.toFix())) }
+                result.locations
+                    .filter { maxFixAgeMillis == null || ageMillis(it) <= maxFixAgeMillis }
+                    .forEach { trySend(LocationUpdate.Fix(it.toFix())) }
             }
 
             override fun onLocationAvailability(availability: LocationAvailability) {
@@ -212,8 +220,17 @@ class FusedLocationProvider(context: Context) : LocationProvider {
         else -> LocationUnavailableReason.NO_FIX
     }
 
+    /** How old a position is by the phone's boot clock (immune to a wrong phone date or time). */
+    private fun ageMillis(location: Location): Long =
+        // A position that carries no boot-clock time (some mock providers) has an unknown age: not treated as old.
+        if (location.elapsedRealtimeNanos <= 0L) 0L
+        else (SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos) / 1_000_000
+
     private companion object {
         const val TIMEOUT_GRACE_MILLIS = 2_000L
+
+        /** A position placing something must be from the last 30 seconds. */
+        const val FRESH_UPDATE_MAX_AGE_MILLIS = 30_000L
     }
 
     private fun Location.toFix() = LocationFix(

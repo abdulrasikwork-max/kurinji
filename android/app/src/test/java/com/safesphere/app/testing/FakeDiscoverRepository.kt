@@ -34,6 +34,7 @@ class FakeDiscoverRepository : DiscoverRepository {
     var categoryPages: Map<String?, PostPage> = mapOf(null to PostPage(emptyList(), null))
     var placePages: Map<String?, PlacePage> = emptyMap()
     var places: List<Place> = emptyList()
+    var searchFailure: ApiResult.Failure? = null
 
     override suspend fun setButterfly(postId: String, state: ButterflyState): ApiResult<ButterflyState> {
         butterflyCalls += postId to state
@@ -72,7 +73,7 @@ class FakeDiscoverRepository : DiscoverRepository {
 
     override suspend fun searchPlaces(query: String, city: City?): ApiResult<List<Place>> {
         searches += query to city
-        return ApiResult.Success(places)
+        return searchFailure ?: ApiResult.Success(places)
     }
 
     companion object {

@@ -3,6 +3,10 @@ package com.safesphere.app.feature.safewalk
 import com.safesphere.app.R
 import com.safesphere.app.core.escalation.EscalationLevel
 import com.safesphere.app.core.location.LocationAccess
+import com.safesphere.app.core.location.LocationStreamPolicy
+import com.safesphere.app.core.location.LocationStreamStatus
+import com.safesphere.app.core.location.LocationUnavailableReason
+import com.safesphere.app.core.location.LocationUpdate
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.feature.auth.domain.AuthSession
 import com.safesphere.app.feature.auth.domain.AuthUser
@@ -467,6 +471,122 @@ class SafeWalkSessionTest {
 
         assertEquals(JourneyStatus.COMPLETED, session.state.value.endedStatus)
         assertNull(store.record)
+    }
+
+    // ---- Phase 17D: location problems explain themselves and never touch the check-ins ---------------------------
+
+    @Test
+    fun `17D - the location stream is searching, then available, and a minute of silence is reported as no signal`() = runTest {
+        val session = walking()
+        assertEquals(LocationStreamStatus.SEARCHING, session.state.value.locationStatus)
+
+        // "No position right now" is routine while GPS warms up: not a problem yet.
+        provider.emit(LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX))
+        advance(Duration.ofSeconds(30))
+        assertEquals(LocationStreamStatus.SEARCHING, session.state.value.locationStatus)
+
+        provider.emitFix(fix(accuracy = 12f))
+        runCurrent()
+        assertEquals(LocationStreamStatus.AVAILABLE, session.state.value.locationStatus)
+
+        // Silence for longer than the grace: said once, plainly.
+        advance(Duration.ofMillis(LocationStreamPolicy.graceMillis(SafeWalkSession.LOCATION_INTERVAL_MILLIS) + 1_000))
+        assertEquals(LocationStreamStatus.NO_SIGNAL, session.state.value.locationStatus)
+
+        // The next position clears it.
+        provider.emitFix(fix(accuracy = 12f))
+        runCurrent()
+        assertEquals(LocationStreamStatus.AVAILABLE, session.state.value.locationStatus)
+    }
+
+    @Test
+    fun `17D - location switched off during the walk is told at once, and on again moves to searching then available`() = runTest {
+        val session = walking()
+        provider.emitFix(fix(accuracy = 12f))
+        runCurrent()
+
+        provider.locationEnabled = false
+        provider.emit(LocationUpdate.Unavailable(LocationUnavailableReason.LOCATION_DISABLED))
+        runCurrent()
+        assertEquals(LocationStreamStatus.LOCATION_OFF, session.state.value.locationStatus)
+        advance(Duration.ofMinutes(3)) // silence does not turn "off" into anything else
+        assertEquals(LocationStreamStatus.LOCATION_OFF, session.state.value.locationStatus)
+
+        provider.locationEnabled = true
+        provider.emit(LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX)) // switched back on, nothing yet
+        runCurrent()
+        assertEquals(LocationStreamStatus.SEARCHING, session.state.value.locationStatus)
+        provider.emitFix(fix(accuracy = 12f))
+        runCurrent()
+        assertEquals(LocationStreamStatus.AVAILABLE, session.state.value.locationStatus)
+    }
+
+    @Test
+    fun `17D - no location problem ever changes the check-in phase, a concern or the escalation level`() = runTest {
+        val session = walking(intervalMinutes = 10)
+        val phaseBefore = session.state.value.phase
+
+        for (reason in LocationUnavailableReason.entries) {
+            provider.emit(LocationUpdate.Unavailable(reason))
+            runCurrent()
+        }
+        advance(Duration.ofMinutes(3)) // location silent for a long time
+        assertEquals(phaseBefore, session.state.value.phase)
+        assertEquals(CheckInPhase.ON_TRACK, session.state.value.phase)
+        assertNull(session.state.value.concern)
+        assertNull(alerts.showing)
+        assertEquals(0, server.calls.count { it.startsWith("escalate") })
+
+        // The countdown itself still works exactly as before: missed at the deadline, then level 2 after 2 minutes.
+        advance(Duration.ofMinutes(8))
+        assertEquals(CheckInPhase.MISSED, session.state.value.phase)
+        advance(Duration.ofMinutes(2))
+        assertEquals(CheckInPhase.NO_RESPONSE, session.state.value.phase)
+    }
+
+    @Test
+    fun `17D - starting a walk with location switched off is not delayed by waiting for a position`() = runTest {
+        provider.locationEnabled = false
+        val session = newSession()
+        val started = session.start("Station", 10, movementChecks = true)
+        runCurrent()
+        assertTrue(started is ApiResult.Success)
+        assertEquals("no 3 second wait for a position that cannot come", 0L, testScheduler.currentTime)
+        assertTrue(session.state.value.isActive)
+    }
+
+    @Test
+    fun `17D - the location switch is looked at by the walk itself, when no platform callback says so`() = runTest {
+        val session = walking()
+        provider.emitFix(fix(accuracy = 12f))
+        runCurrent()
+        assertEquals(LocationStreamStatus.AVAILABLE, session.state.value.locationStatus)
+
+        provider.locationEnabled = false // no update is emitted at all
+        advance(Duration.ofMillis(LocationStreamPolicy.SWITCH_CHECK_MILLIS + 1))
+        assertEquals(LocationStreamStatus.LOCATION_OFF, session.state.value.locationStatus)
+        assertEquals(CheckInPhase.ON_TRACK, session.state.value.phase)
+
+        provider.locationEnabled = true
+        advance(Duration.ofMillis(LocationStreamPolicy.SWITCH_CHECK_MILLIS + 1))
+        assertEquals(LocationStreamStatus.SEARCHING, session.state.value.locationStatus)
+        // The silence watchdog started over: a minute and a half later, still nothing = no signal (not before).
+        advance(Duration.ofMillis(LocationStreamPolicy.graceMillis(SafeWalkSession.LOCATION_INTERVAL_MILLIS) + 1_000))
+        assertEquals(LocationStreamStatus.NO_SIGNAL, session.state.value.locationStatus)
+    }
+
+    @Test
+    fun `17D - a permission granted during the walk restarts the stream`() = runTest {
+        provider.access = LocationAccess.NONE
+        val session = walking()
+        assertEquals(LocationStreamStatus.NEEDS_PERMISSION, session.state.value.locationStatus)
+        provider.access = LocationAccess.PRECISE
+        session.refreshLocationAccess()
+        runCurrent()
+        assertEquals(LocationStreamStatus.SEARCHING, session.state.value.locationStatus)
+        provider.emitFix(fix(accuracy = 9f))
+        runCurrent()
+        assertEquals(LocationStreamStatus.AVAILABLE, session.state.value.locationStatus)
     }
 
     private fun SafeWalkSession.notice() = currentNotice()

@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.safesphere.app.AppContainer
+import com.safesphere.app.core.location.LocationAccess
+import com.safesphere.app.core.location.LocationProvider
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.feature.circlealert.domain.AlertTarget
@@ -43,7 +45,9 @@ class SafeWalkViewModel(
     val trackingServiceRunning: StateFlow<Boolean>,
     private val movementPolicy: MovementPolicy = MovementPolicy(),
     /** Phase 4D: what the Safety Circle was told about this walk, and the manual SMS fallback. */
-    private val circleAlerts: CircleAlertController? = null
+    private val circleAlerts: CircleAlertController? = null,
+    /** Phase 17D: for the set-up panel's location line (what the phone allows now). Null in tests that do not need it. */
+    private val locationProvider: LocationProvider? = null
 ) : ViewModel() {
 
     val circleAlertState: StateFlow<CircleAlertState> = circleAlerts?.state ?: MutableStateFlow(CircleAlertState()).asStateFlow()
@@ -116,6 +120,11 @@ class SafeWalkViewModel(
     /** For the status lines: whether the GPS is good enough for the movement checks right now. */
     fun gpsQuality(state: SafeWalkState, now: Instant): GpsQuality = movementPolicy.gpsQuality(state.movement, now)
 
+    /** Phase 17D: what the phone allows now (access, location switch), for the set-up panel. */
+    fun locationAccess(): LocationAccess = locationProvider?.access() ?: controller.state.value.access
+
+    fun locationEnabled(): Boolean = locationProvider?.isLocationEnabled() ?: true
+
     /** Back from a permission dialog or Settings. */
     fun onScreenVisible() = controller.refreshLocationAccess()
 
@@ -135,7 +144,8 @@ class SafeWalkViewModel(
 
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
-                SafeWalkViewModel(container.safeWalk, container.trackingServiceRunning, circleAlerts = container.circleAlerts)
+                SafeWalkViewModel(container.safeWalk, container.trackingServiceRunning, circleAlerts = container.circleAlerts,
+                    locationProvider = container.screenLocationProvider)
             }
         }
     }

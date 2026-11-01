@@ -11,7 +11,11 @@ import com.safesphere.app.core.location.LocationAccess
 import com.safesphere.app.core.location.LocationFix
 import com.safesphere.app.core.location.LocationProvider
 import com.safesphere.app.core.location.LocationUnavailableReason
-import com.safesphere.app.core.location.LocationUpdate
+import com.safesphere.app.core.location.OneFix
+import com.safesphere.app.core.location.OneFixes
+import com.safesphere.app.core.location.PreciseFix
+import com.safesphere.app.core.location.oneFix
+import com.safesphere.app.core.location.preciseFix
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
@@ -33,10 +37,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
 /** What the area part of the Community screen shows. */
 sealed interface AreaState {
@@ -55,7 +61,13 @@ sealed interface AreaState {
         val brief: AreaBrief,
         val origin: GeoPoint,
         val approximateLocation: Boolean,
-        val picture: AreaPicture? = null
+        val picture: AreaPicture? = null,
+        /**
+         * Phase 17D: how good the position behind this picture was (metres, null = not stated) and when it was taken
+         * (phone clock, compared only with the phone clock). Both in memory only; the screen says "Updated 14:05".
+         */
+        val accuracyMeters: Float? = null,
+        val loadedAtMillis: Long = 0L
     ) : AreaState
 
     data class Failed(val failure: ApiResult.Failure) : AreaState
@@ -67,8 +79,15 @@ sealed interface CommunityEvent {
     data object SavedOffline : CommunityEvent
     data class OutboxSent(val count: Int) : CommunityEvent
     data object Withdrawn : CommunityEvent
-    data class ReportNotReady(val readiness: ReportReadiness) : CommunityEvent
+    /**
+     * [accuracyMeters] (Phase 17D): for LOCATION_TOO_ROUGH, the best position seen in the search (null = not stated).
+     * Never used to place anything; the screen says "move outside or wait for a better signal" and offers Try again.
+     */
+    data class ReportNotReady(val readiness: ReportReadiness, val accuracyMeters: Float? = null) : CommunityEvent
     data class NoLocation(val reason: LocationUnavailableReason) : CommunityEvent
+
+    /** Phase 17D: the search for a precise position was stopped because the person left the screen. */
+    data object SearchStopped : CommunityEvent
     data class Failed(val failure: ApiResult.Failure) : CommunityEvent
     /** Phase 7: the flag was received (the same answer whatever it caused). */
     data object Flagged : CommunityEvent
@@ -77,11 +96,15 @@ sealed interface CommunityEvent {
     data object ContributionsPaused : CommunityEvent
 }
 
+/** Phase 17D: a search for a precise position is running; [accuracyMeters] = the best one so far (null = none yet). */
+data class Locating(val accuracyMeters: Float? = null)
+
 data class CommunityUiState(
     val area: AreaState = AreaState.Locating,
     val mine: List<MyContribution> = emptyList(),
     val pendingReports: Int = 0,
     val busy: Boolean = false,
+    val locating: Locating? = null,
     val event: CommunityEvent? = null,
     val sessionExpired: Boolean = false,
     val standing: CommunityStanding = CommunityStanding.ACTIVE
@@ -104,6 +127,9 @@ class CommunityViewModel(
 
     private var refreshJob: Job? = null
 
+    /** Phase 17D: the running search for a precise position (separate, so cancelling it never cuts a request). */
+    private var searchJob: Job? = null
+
     /** Called from onStart: the permission may have changed in Settings. */
     fun onScreenVisible() {
         if (locationProvider.access() == LocationAccess.NONE) {
@@ -117,14 +143,37 @@ class CommunityViewModel(
 
     fun onPermissionResult() = onScreenVisible()
 
+    /**
+     * Phase 17D: the screen is no longer visible. Location is used only while it is open (Phase 6), so a search for a
+     * precise position stops now and the person is told when they come back.
+     */
+    fun onScreenHidden() {
+        val stopped = searchJob?.isActive == true
+        searchJob?.cancel()
+        if (stopped) emit(CommunityEvent.SearchStopped)
+        // Still looking for the position of the area view (before any request to the server): stop; the next visit restarts.
+        if (_ui.value.area == AreaState.Locating) refreshJob?.cancel()
+    }
+
+    /** "Cancel" on the search for a precise position. */
+    fun onCancelLocating() {
+        searchJob?.cancel()
+    }
+
+    /** What the screen needs to choose the one location action to offer (see [com.safesphere.app.core.location.LocationNeeds]). */
+    fun locationAccess(): LocationAccess = locationProvider.access()
+
+    fun locationEnabled(): Boolean = locationProvider.isLocationEnabled()
+
     fun refresh() {
         refreshJob?.cancel()
         refreshJob = viewModelScope.launch {
             _ui.update { it.copy(area = AreaState.Locating) }
-            val fix = when (val update = awaitFix()) {
-                is LocationUpdate.Fix -> update.fix
-                is LocationUpdate.Unavailable -> {
-                    _ui.update { it.copy(area = locationState(update.reason)) }
+            // Phase 17B/17D: listing the area needs only ~1 km, so a Wi-Fi / cell position is enough (works indoors).
+            val fix = when (val got = locationProvider.oneFix(OneFixes.AREA_MAX_AGE_MILLIS, FIX_TIMEOUT_MILLIS, areaOnly = true)) {
+                is OneFix.Got -> got.fix
+                else -> {
+                    _ui.update { it.copy(area = locationState(got.reason())) }
                     loadMineAndOutbox()
                     return@launch
                 }
@@ -138,7 +187,9 @@ class CommunityViewModel(
                     _ui.update {
                         it.copy(area = AreaState.Ready(placed, CommunityPolicy.brief(placed), origin,
                             approximateLocation = locationProvider.access() != LocationAccess.PRECISE,
-                            picture = result.data.picture))
+                            picture = result.data.picture,
+                            accuracyMeters = fix.accuracyMeters,
+                            loadedAtMillis = nowMillis()))
                     }
                 }
                 is ApiResult.Failure -> _ui.update {
@@ -152,7 +203,8 @@ class CommunityViewModel(
     /** A new report "here". Needs a fresh, precise fix; without a connection it waits in the outbox. */
     fun onReport(category: SignalCategory) = runBusy {
         if (paused()) return@runBusy
-        val fix = freshFixOrEvent() ?: return@runBusy
+        // Phase 17D: waits (a short, visible, cancellable search) for a position good enough for the ~150 m block.
+        val fix = blockFixOrEvent() ?: return@runBusy
         val readiness = CommunityPolicy.reportReadiness(locationProvider.access(), fix.accuracyMeters)
         if (readiness != ReportReadiness.READY) {
             emit(CommunityEvent.ReportNotReady(readiness))
@@ -179,7 +231,7 @@ class CommunityViewModel(
     fun onAnswer(signal: AreaSignal, kind: ContributionKind) = runBusy {
         if (!CommunityPolicy.canAnswer(signal) || kind == ContributionKind.REPORT) return@runBusy
         if (paused()) return@runBusy
-        val fix = freshFixOrEvent() ?: return@runBusy
+        val fix = nearFixOrEvent(signal) ?: return@runBusy
         val near = GeoHash.encode(fix.latitude, fix.longitude, GeoHash.BLOCK)
         when (val result = repository.contribute(signal.id, kind, near)) {
             is ApiResult.Success -> {
@@ -208,7 +260,7 @@ class CommunityViewModel(
     fun onFlag(signal: AreaSignal, reason: FlagReason) = runBusy {
         if (!CommunityPolicy.canFlag(signal)) return@runBusy
         if (paused()) return@runBusy
-        val fix = freshFixOrEvent() ?: return@runBusy
+        val fix = nearFixOrEvent(signal) ?: return@runBusy
         val near = GeoHash.encode(fix.latitude, fix.longitude, GeoHash.BLOCK)
         when (val result = repository.flag(signal.id, reason, near)) {
             is ApiResult.Success -> {
@@ -299,27 +351,68 @@ class CommunityViewModel(
         return true
     }
 
-    /** The first usable answer from the provider, or "no fix" after [FIX_TIMEOUT_MILLIS]. */
-    private suspend fun awaitFix(): LocationUpdate {
-        if (locationProvider.access() == LocationAccess.NONE) {
-            return LocationUpdate.Unavailable(LocationUnavailableReason.PERMISSION_DENIED)
-        }
-        return withTimeoutOrNull(FIX_TIMEOUT_MILLIS) {
-            locationProvider.updates(FIX_INTERVAL_MILLIS).first { update ->
-                update is LocationUpdate.Fix ||
-                    (update is LocationUpdate.Unavailable && update.reason != LocationUnavailableReason.NO_FIX)
-            }
-        } ?: LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX)
-    }
-
-    private suspend fun freshFixOrEvent(): LocationFix? =
-        when (val update = awaitFix()) {
-            is LocationUpdate.Fix -> update.fix
-            is LocationUpdate.Unavailable -> {
-                emit(CommunityEvent.NoLocation(update.reason))
+    /**
+     * A position for answering or flagging. The server judges nearness against the cell the signal is SHOWN at: a
+     * block signal needs the same block-level position as a report, an area signal (~1 km) needs only an area-level one.
+     */
+    private suspend fun nearFixOrEvent(signal: AreaSignal): LocationFix? {
+        if (CommunityPolicy.needsBlockPosition(signal)) return blockFixOrEvent()
+        return when (val got = locationProvider.oneFix(OneFixes.AREA_MAX_AGE_MILLIS, FIX_TIMEOUT_MILLIS, areaOnly = true)) {
+            is OneFix.Got -> got.fix
+            else -> {
+                emit(CommunityEvent.NoLocation(got.reason()))
                 null
             }
         }
+    }
+
+    /**
+     * Phase 17D: a position good enough for the ~150 m block, or an event saying exactly what to do. The search is
+     * visible ([CommunityUiState.locating]) and cancellable; a position rougher than the target is NEVER used (Phase 6),
+     * the person is asked to move outside or wait for a better signal.
+     */
+    private suspend fun blockFixOrEvent(): LocationFix? {
+        _ui.update { it.copy(locating = Locating()) }
+        val result = try {
+            searchPrecise()
+        } finally {
+            _ui.update { it.copy(locating = null) }
+        } ?: return null // stopped by the person (Cancel, or leaving the screen)
+        return when (result) {
+            is PreciseFix.Good -> result.fix
+            is PreciseFix.Rough -> {
+                emit(CommunityEvent.ReportNotReady(ReportReadiness.LOCATION_TOO_ROUGH, result.fix.accuracyMeters))
+                null
+            }
+            PreciseFix.NeedsPrecisePermission -> {
+                emit(CommunityEvent.ReportNotReady(ReportReadiness.NEEDS_PRECISE_LOCATION))
+                null
+            }
+            PreciseFix.NeedsPermission -> noLocation(LocationUnavailableReason.PERMISSION_DENIED)
+            PreciseFix.LocationOff -> noLocation(LocationUnavailableReason.LOCATION_DISABLED)
+            PreciseFix.NotFound -> noLocation(LocationUnavailableReason.NO_FIX)
+            PreciseFix.Unavailable -> noLocation(LocationUnavailableReason.SERVICES_UNAVAILABLE)
+        }
+    }
+
+    private fun noLocation(reason: LocationUnavailableReason): LocationFix? {
+        emit(CommunityEvent.NoLocation(reason))
+        return null
+    }
+
+    /** The search runs in its own job so Cancel / leaving the screen stop only the search, never a request in flight. */
+    private suspend fun searchPrecise(): PreciseFix? {
+        val search = viewModelScope.async {
+            locationProvider.preciseFix { accuracy -> _ui.update { it.copy(locating = Locating(accuracy)) } }
+        }
+        searchJob = search
+        return try {
+            search.await()
+        } catch (e: CancellationException) {
+            if (!currentCoroutineContext().isActive) throw e // the caller itself was cancelled
+            null
+        }
+    }
 
     private fun locationState(reason: LocationUnavailableReason): AreaState =
         if (reason == LocationUnavailableReason.PERMISSION_DENIED) AreaState.NeedsPermission
@@ -346,8 +439,7 @@ class CommunityViewModel(
     }
 
     companion object {
-        const val FIX_TIMEOUT_MILLIS = 20_000L
-        private const val FIX_INTERVAL_MILLIS = 2_000L
+        const val FIX_TIMEOUT_MILLIS = OneFixes.TIMEOUT_MILLIS
 
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
@@ -355,4 +447,12 @@ class CommunityViewModel(
             }
         }
     }
+}
+
+/** The lasting reason behind an answer that is not a position. */
+private fun OneFix.reason(): LocationUnavailableReason = when (this) {
+    OneFix.NeedsPermission -> LocationUnavailableReason.PERMISSION_DENIED
+    OneFix.LocationOff -> LocationUnavailableReason.LOCATION_DISABLED
+    OneFix.Unavailable -> LocationUnavailableReason.SERVICES_UNAVAILABLE
+    OneFix.NotFound, is OneFix.Got -> LocationUnavailableReason.NO_FIX
 }

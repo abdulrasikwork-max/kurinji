@@ -6,7 +6,10 @@ import com.safesphere.app.core.location.LocationUnavailableReason
 import com.safesphere.app.core.location.LocationUpdate
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
+import com.safesphere.app.feature.community.domain.CommunityPolicy
 import com.safesphere.app.feature.community.domain.CommunityPolicy.ReportReadiness
+import com.safesphere.app.feature.community.domain.SignalPrecision
+import com.safesphere.app.feature.community.ui.Locating
 import com.safesphere.app.feature.community.domain.ContributionKind
 import com.safesphere.app.feature.community.domain.MyContribution
 import com.safesphere.app.feature.community.domain.MyContributionStatus
@@ -22,11 +25,14 @@ import com.safesphere.app.testing.MainDispatcherRule
 import com.safesphere.app.testing.ScriptedLocationProvider
 import com.safesphere.app.testing.areaSignal
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -117,9 +123,157 @@ class CommunityViewModelTest {
         location.next = LocationUpdate.Fix(FakeLocationProvider.fix(accuracy = 400f))
         vm.onEventShown()
         vm.onReport(SignalCategory.POOR_LIGHTING)
-        advanceUntilIdle()
-        assertEquals(CommunityEvent.ReportNotReady(ReportReadiness.LOCATION_TOO_ROUGH), vm.ui.value.event)
+        advanceUntilIdle() // the search keeps looking for a better position for its whole window, then gives up
+        assertEquals(CommunityEvent.ReportNotReady(ReportReadiness.LOCATION_TOO_ROUGH, 400f), vm.ui.value.event)
         assertTrue(repository.reports.isEmpty())
+        assertNull("the search is over", vm.ui.value.locating)
+    }
+
+    // ---- Phase 17D: a visible, cancellable search for a position good enough for the ~150 m block ------------------
+
+    private fun TestScope.withFake(): Pair<CommunityViewModel, FakeLocationProvider> {
+        val fake = FakeLocationProvider()
+        return CommunityViewModel(repository, outbox, fake) { now } to fake
+    }
+
+    @Test
+    fun `17D - a first rough position does not end the report, a good one a moment later places it`() = runTest {
+        val (vm, fake) = withFake()
+        vm.onReport(SignalCategory.POOR_LIGHTING)
+        runCurrent()
+        assertEquals(Locating(null), vm.ui.value.locating)                    // searching, visibly
+        fake.emitFix(FakeLocationProvider.fix(accuracy = 320f))               // Wi-Fi / cell first
+        runCurrent()
+        assertEquals(Locating(320f), vm.ui.value.locating)                    // progress: the best so far
+        assertTrue(repository.reports.isEmpty())
+        fake.emitFix(FakeLocationProvider.fix(accuracy = 18f))                // then GPS
+        advanceUntilIdle()
+        assertEquals(listOf(SignalCategory.POOR_LIGHTING to myBlock), repository.reports)
+        assertNull(vm.ui.value.locating)
+        assertEquals(CommunityEvent.Recorded(30), vm.ui.value.event)
+    }
+
+    @Test
+    fun `17D - Cancel stops the search quietly, nothing is sent`() = runTest {
+        val (vm, fake) = withFake()
+        vm.onReport(SignalCategory.POOR_LIGHTING)
+        runCurrent()
+        fake.emitFix(FakeLocationProvider.fix(accuracy = 320f))
+        runCurrent()
+        vm.onCancelLocating()
+        advanceUntilIdle()
+        assertNull(vm.ui.value.locating)
+        assertFalse(vm.ui.value.busy)
+        assertNull(vm.ui.value.event)
+        assertTrue(repository.reports.isEmpty())
+        // The same action can be started again afterwards.
+        vm.onReport(SignalCategory.POOR_LIGHTING)
+        runCurrent()
+        fake.emitFix(FakeLocationProvider.fix(accuracy = 10f))
+        advanceUntilIdle()
+        assertEquals(1, repository.reports.size)
+    }
+
+    @Test
+    fun `17D - leaving the screen stops the search and the person is told when they come back`() = runTest {
+        val (vm, fake) = withFake()
+        vm.onReport(SignalCategory.POOR_LIGHTING)
+        runCurrent()
+        vm.onScreenHidden()
+        advanceUntilIdle()
+        assertEquals(CommunityEvent.SearchStopped, vm.ui.value.event)
+        assertNull(vm.ui.value.locating)
+        assertFalse(vm.ui.value.busy)
+        assertTrue(repository.reports.isEmpty())
+        fake.emitFix(FakeLocationProvider.fix(accuracy = 5f)) // a late position after leaving changes nothing
+        advanceUntilIdle()
+        assertTrue(repository.reports.isEmpty())
+    }
+
+    @Test
+    fun `17D - a weak signal for the whole window is a rough result with the number, never a report`() = runTest {
+        val (vm, fake) = withFake()
+        vm.onReport(SignalCategory.ISOLATED_STRETCH)
+        runCurrent()
+        fake.emitFix(FakeLocationProvider.fix(accuracy = 250f))
+        runCurrent()
+        fake.emitFix(FakeLocationProvider.fix(accuracy = 140f))
+        advanceUntilIdle()
+        assertEquals(CommunityEvent.ReportNotReady(ReportReadiness.LOCATION_TOO_ROUGH, 140f), vm.ui.value.event)
+        assertTrue(repository.reports.isEmpty())
+    }
+
+    @Test
+    fun `17D - location switched off or not found during a report is told as such`() = runTest {
+        val (vm, fake) = withFake()
+        fake.locationEnabled = false
+        vm.onReport(SignalCategory.POOR_LIGHTING)
+        advanceUntilIdle()
+        assertEquals(CommunityEvent.NoLocation(LocationUnavailableReason.LOCATION_DISABLED), vm.ui.value.event)
+        fake.locationEnabled = true
+        vm.onEventShown()
+        vm.onReport(SignalCategory.POOR_LIGHTING)
+        advanceUntilIdle() // nothing at all in the window
+        assertEquals(CommunityEvent.NoLocation(LocationUnavailableReason.NO_FIX), vm.ui.value.event)
+        assertTrue(repository.reports.isEmpty())
+    }
+
+    @Test
+    fun `17D - answering a block signal needs the same precise position as a report, an area signal does not`() = runTest {
+        location.access = LocationAccess.APPROXIMATE
+        val vm = viewModel()
+        vm.onAnswer(areaSignal(id = "block", precision = SignalPrecision.BLOCK), ContributionKind.CONFIRM)
+        advanceUntilIdle()
+        assertEquals(CommunityEvent.ReportNotReady(ReportReadiness.NEEDS_PRECISE_LOCATION), vm.ui.value.event)
+        assertTrue(repository.contributions.isEmpty())
+
+        vm.onEventShown()
+        vm.onAnswer(areaSignal(id = "area", precision = SignalPrecision.AREA), ContributionKind.CONFIRM)
+        advanceUntilIdle() // an area signal (~1 km) is judged at area level: an approximate position is enough
+        assertEquals(listOf(Triple("area", ContributionKind.CONFIRM, myBlock)), repository.contributions)
+    }
+
+    @Test
+    fun `17D - the area picture remembers how good its position was and when it was taken`() = runTest {
+        location.next = LocationUpdate.Fix(FakeLocationProvider.fix(accuracy = 300f))
+        val vm = viewModel()
+        vm.onScreenVisible()
+        advanceUntilIdle()
+        val ready = vm.ui.value.area as AreaState.Ready
+        assertEquals(300f, ready.accuracyMeters)
+        assertEquals(now, ready.loadedAtMillis)
+        assertFalse("precise permission, but a rough position is told apart from approximate permission", ready.approximateLocation)
+        assertTrue(CommunityPolicy.isRough(ready.accuracyMeters))
+    }
+
+    @Test
+    fun `17D - the area is listed from an area-level position, so it works when GPS has nothing`() = runTest {
+        val fake = FakeLocationProvider()
+        val vm = CommunityViewModel(repository, outbox, fake) { now }
+        vm.onScreenVisible()
+        runCurrent()
+        fake.emitFix(FakeLocationProvider.fix(accuracy = 450f)) // Wi-Fi / cell only, indoors
+        advanceUntilIdle()
+        assertTrue(vm.ui.value.area is AreaState.Ready)
+        assertEquals(listOf(myArea), repository.areaCalls)
+    }
+
+    @Test
+    fun `17D - leaving while still finding the area stops that too, and coming back starts again`() = runTest {
+        val fake = FakeLocationProvider()
+        val vm = CommunityViewModel(repository, outbox, fake) { now }
+        vm.onScreenVisible()
+        runCurrent()
+        vm.onScreenHidden()
+        runCurrent()
+        fake.emitFix(FakeLocationProvider.fix(accuracy = 20f))
+        advanceUntilIdle()
+        assertTrue("no request went out after leaving", repository.areaCalls.isEmpty())
+        vm.onScreenVisible()
+        runCurrent()
+        fake.emitFix(FakeLocationProvider.fix(accuracy = 20f))
+        advanceUntilIdle()
+        assertTrue(vm.ui.value.area is AreaState.Ready)
     }
 
     @Test

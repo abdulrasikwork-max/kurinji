@@ -33,4 +33,26 @@ class CommunityTextsTest {
         return Regex("<string name=\"$name\">(.*?)</string>").find(xml)?.groupValues?.get(1)
             ?: error("string $name not found")
     }
+
+    /** Phase 17D: every location problem says what to do, in plain words, and no text claims a place is safe. */
+    @Test
+    fun `17D - location problems say what to do`() {
+        val rough = string("community_rough_message").lowercase()
+        assertTrue(rough.contains("about 100 m"))
+        assertTrue("says to move or wait", rough.contains("move outside or wait for a better signal"))
+        assertTrue(string("community_no_fix").lowercase().contains("move outside or wait for a better signal"))
+        assertTrue(string("community_needs_precise").lowercase().contains("precise location"))
+        assertTrue("the settings way is named", string("community_needs_precise_settings").contains("Use precise location"))
+        assertTrue(string("safe_walk_hint_no_signal").lowercase().contains("check-ins still work"))
+        assertTrue(string("safe_walk_hint_location_off").lowercase().contains("check-ins still work"))
+        assertTrue(string("safe_walk_movement_needs_precise").lowercase().contains("check-ins still work"))
+        for (name in listOf("community_rough_message", "community_rough_message_unknown", "community_stale", "community_updated",
+            "community_locating_precise", "community_locating_precise_accuracy", "community_search_stopped",
+            "community_rough_position", "community_rough_position_unknown", "community_permission_blocked",
+            "community_location_off_report", "safe_walk_hint_location_off", "safe_walk_hint_no_signal",
+            "safe_walk_setup_location_precise", "safe_walk_setup_location_approximate", "safe_walk_setup_location_off")) {
+            val text = string(name).lowercase()
+            assertTrue("$name claims safety", !Regex("\b(is|are|it's|you're) safe\b|\bsafest\b").containsMatchIn(text))
+        }
+    }
 }

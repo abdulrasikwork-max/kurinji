@@ -192,7 +192,7 @@
     <string name="community_permission_rationale">Kurinji turns your location into an area of about 1 km on this phone and asks only for signals there. It is used while this screen is open and is never stored.</string>
     <string name="community_location_off">Location is switched off. Turn it on to see your area.</string>
     <string name="community_location_unsupported">Location is not available on this phone.</string>
-    <string name="community_no_fix">Your location could not be found right now. Try again outdoors or near a window.</string>
+    <string name="community_no_fix">Your location could not be found right now. Move outside or wait for a better signal, then try again.</string>
     <string name="community_brief_empty">Nothing has been reported around you recently.</string>
     <string name="community_brief">Around you: %1$s.</string>
     <plurals name="brief_incidents">
@@ -271,9 +271,22 @@
         <item quantity="other">%d reports are waiting for a connection.</item>
     </plurals>
     <string name="community_withdrawn">Withdrawn.</string>
-    <string name="community_needs_precise">Reporting needs precise location, so the report lands in the right block. You can allow it in Settings.</string>
-    <string name="community_location_rough">Your location is too rough right now to place a report. Try again in a moment, outdoors if you can.</string>
-
+    <string name="community_needs_precise">Reporting needs your precise location, so the report lands in the right block. Kurinji reads it once, only when you add or answer a report.</string>
+    <!-- Phase 17D: location problems each say what to do -->
+    <string name="community_needs_precise_title">Precise location needed</string>
+    <string name="community_needs_precise_settings">Android did not give Kurinji precise location. In the app\'s settings, switch on \"Use precise location\", then come back and try again.</string>
+    <string name="community_location_off_report">Location is switched off on this phone. Turn it on to add or answer a report.</string>
+    <string name="community_permission_blocked">Location is blocked for Kurinji. Allow it in the app\'s settings to see your area and add reports.</string>
+    <string name="community_rough_title">Move outside or wait for a better signal</string>
+    <string name="community_rough_message">Your position is accurate to about %1$d m, and a report needs about 100 m or better, so it lands in the right block. Move outside or wait for a better signal, then try again.</string>
+    <string name="community_rough_message_unknown">Your position is not accurate enough yet to place a report in the right block. Move outside or wait for a better signal, then try again.</string>
+    <string name="community_locating_precise">Looking for a precise position…</string>
+    <string name="community_locating_precise_accuracy">Looking for a precise position. Right now it is accurate to about %1$d m.</string>
+    <string name="community_search_stopped">The search for your position stopped when you left this screen. Tap again to continue.</string>
+    <string name="community_updated">Updated %1$s</string>
+    <string name="community_stale">This view is from %1$s. Refresh to see where you are now.</string>
+    <string name="community_rough_position">Your position is only accurate to about %1$d m right now, so distances are rough.</string>
+    <string name="community_rough_position_unknown">Your position is rough right now, so distances are rough.</string>
     <!-- Phase 7: confidence, flags, paused contributions, appeals (trust is never shown as a score) -->
     <string name="confidence_low">Not yet confirmed</string>
     <string name="confidence_moderate">Confirmed by people nearby</string>
@@ -669,6 +682,16 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="safe_walk_confirm_cancel">Cancel this Safe Walk? You will not be asked to check in any more.</string>
     <string name="safe_walk_location_saved">Last location saved: %1$s (only the latest one is kept)</string>
     <string name="safe_walk_hint_no_location">Location is not shared with this walk.</string>
+    <!-- Phase 17D: why no position arrives; check-ins never depend on it -->
+    <string name="safe_walk_hint_location_off">Your phone\'s location is switched off, so Kurinji cannot see where you are. Check-ins still work.</string>
+    <string name="safe_walk_hint_no_signal">No position for a while (indoors or a weak signal). Move outside or wait for a better signal. Check-ins still work.</string>
+    <string name="safe_walk_hint_location_unsupported">Location is not available on this phone (Google Play services are missing or out of date). Check-ins still work.</string>
+    <string name="safe_walk_movement_needs_precise">Stop and route checks need precise location. They are paused until you allow it; check-ins still work.</string>
+    <string name="safe_walk_movement_paused_location_off">Stop and route checks are paused while location is switched off.</string>
+    <string name="safe_walk_setup_location_precise">Location: precise. Stop and route checks can run.</string>
+    <string name="safe_walk_setup_location_approximate">Location: approximate. Check-ins work; stop and route checks need precise location.</string>
+    <string name="safe_walk_setup_location_off">Location is switched off. Check-ins work; stop and route checks need location.</string>
+    <string name="safe_walk_setup_location_not_allowed">Location is not allowed. Check-ins work; stop and route checks need location.</string>
     <string name="safe_walk_hint_keep_open">Keep Kurinji open: without its background notification, check-in reminders may not reach you.</string>
     <string name="safe_walk_hint_notifications_off">Notifications are off, so check-in reminders only appear while Kurinji is open.</string>
     <string name="safe_walk_hint_offline">No connection. Your check-ins count on this phone and are sent when you are back online.</string>
@@ -1272,8 +1295,16 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_issue_photos_pending">Wait until the photos and video are added.</string>
     <string name="social_issue_photos_failed">A photo or video could not be added. Tap it to try again, or remove it.</string>
 
-    <string name="social_near_me">Places near me</string>
-    <string name="social_near_me_note">Your location is read once, on this phone, to find the area. Only the area code is sent, never your position.</string>
+    <string name="social_near_me">Use where I am</string>
+    <string name="social_near_me_note">Your location is read only when you tap this, on this phone, to find the area. Only the area code is sent, never your position.</string>
+    <!-- Phase 17D: three ways to choose a place: where I am, search, recent -->
+    <string name="social_search_hint">Search places by name</string>
+    <string name="social_search_title">Search</string>
+    <string name="social_search_none">No place has that name. Try other words, use where you are, or add it from where you are.</string>
+    <string name="social_search_too_many">Too many searches for now. You can still use where you are, or pick a place you used.</string>
+    <string name="social_search_failed">The search did not work just now. You can still use where you are, or pick a place you used.</string>
+    <string name="social_finding_precise">Looking for a precise position, so you can add a place here. Open sky or a window helps.</string>
+    <string name="social_add_place_rough">Your position is not accurate enough to add a place yet. Move outside or wait for a better signal, then try again. Places in the list can still be chosen.</string>
     <string name="social_places_used">Places you used</string>
     <string name="social_places_nearby">Near you</string>
     <string name="social_places_none_nearby">No places have been added near here yet.</string>
@@ -1282,7 +1313,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_add_place_note">A place is public: anyone can write about it. Do not add a home, a hostel room or a workplace.</string>
     <string name="social_add_place_button">Add place</string>
     <string name="social_add_place_private">You are near one of your private places, so a public place cannot be added here.</string>
-    <string name="social_add_place_needs_precise">Adding a place needs your precise location with a good signal. Try outside, or share only the city.</string>
+    <string name="social_add_place_needs_precise">Adding a place needs your precise location. You can still choose a place from the list, search, or share only the city.</string>
     <string name="social_add_place_name_short">A place name has at least 2 characters.</string>
     <string name="social_location_needed">Allow location to find places near you, or share only the city. Kurinji checks once, only now.</string>
     <string name="social_location_unavailable">Could not find your location just now. Try again, or share only the city.</string>
@@ -1332,7 +1363,8 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_private_empty">No private places yet.</string>
     <string name="social_private_added">Private place added</string>
     <string name="social_private_not_saved">It could not be saved on this phone.</string>
-    <string name="social_private_needs_precise">Marking a private place needs your precise location with a good signal.</string>
+    <string name="social_private_needs_precise">Marking a private place needs your precise location, so it covers the right block.</string>
+    <string name="social_private_rough">Your position is not accurate enough yet to mark a private place. Move outside or wait for a better signal, then try again.</string>
     <string name="social_private_unreadable">Your private places on this phone could not be read. Until you start the list again, every place is treated as private.</string>
     <string name="social_private_reset">Start the list again</string>
     <string name="social_private_remove">Remove %1$s</string>

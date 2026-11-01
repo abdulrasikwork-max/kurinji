@@ -8,6 +8,7 @@ import android.provider.Settings
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import com.safesphere.app.core.location.LocationNeed
 import com.safesphere.app.core.location.LocationPermissionStatus
 import com.safesphere.app.core.location.LocationPermissions
 
@@ -16,11 +17,21 @@ import com.safesphere.app.core.location.LocationPermissions
  * settings page when asking again would do nothing (a permanent "Don't allow") or when location is switched off.
  * Register it in the fragment's constructor phase (it registers an activity-result launcher).
  */
-class LocationAsk(fragment: Fragment, onResult: (LocationPermissionStatus) -> Unit) {
+class LocationAsk(private val fragment: Fragment, onResult: (LocationPermissionStatus) -> Unit) {
 
     /** Known only after the person answered once in this screen: Android cannot tell earlier. */
     var permanentlyDenied = false
         private set
+
+    /**
+     * Phase 17D: set when a request made to GET PRECISE location came back still approximate (the person chose
+     * "Approximate" again, or Android did not show the upgrade). Asking again would do nothing; the settings page is
+     * the way (see [askForPrecise]).
+     */
+    var preciseDeclined = false
+        private set
+
+    private var requestingPrecise = false
 
     private val launcher: ActivityResultLauncher<Array<String>> =
         fragment.registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -30,11 +41,41 @@ class LocationAsk(fragment: Fragment, onResult: (LocationPermissionStatus) -> Un
                 shouldShowRationale = fragment.shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)
             )
             permanentlyDenied = status == LocationPermissionStatus.PERMANENTLY_DENIED
+            if (requestingPrecise) preciseDeclined = status != LocationPermissionStatus.GRANTED_PRECISE
+            if (status == LocationPermissionStatus.GRANTED_PRECISE) preciseDeclined = false
+            requestingPrecise = false
             onResult(status)
         }
 
     /** Shows Android's dialog (on Android 12+ it also lets an approximate permission become precise). */
-    fun ask() = launcher.launch(LocationPermissions.REQUESTED)
+    fun ask() {
+        requestingPrecise = false
+        launcher.launch(LocationPermissions.REQUESTED)
+    }
+
+    /** Runs what [need] says is the one thing to do (nothing for NONE). */
+    fun act(need: LocationNeed) {
+        when (need) {
+            LocationNeed.NONE -> Unit
+            LocationNeed.ALLOW -> ask()
+            LocationNeed.OPEN_APP_SETTINGS, LocationNeed.UPGRADE_PRECISE_IN_SETTINGS -> LocationSettings.openAppSettings(fragment)
+            LocationNeed.TURN_ON -> LocationSettings.openLocationSettings(fragment)
+            LocationNeed.UPGRADE_PRECISE -> askForPrecise()
+        }
+    }
+
+    /**
+     * The upgrade from approximate to precise: Android's dialog the first time; once that came back still approximate
+     * the app's settings page (its "Use precise location" toggle), because the dialog would not change anything.
+     */
+    fun askForPrecise() {
+        if (preciseDeclined) {
+            LocationSettings.openAppSettings(fragment)
+        } else {
+            requestingPrecise = true
+            launcher.launch(LocationPermissions.REQUESTED)
+        }
+    }
 }
 
 object LocationSettings {

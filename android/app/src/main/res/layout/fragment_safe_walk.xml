@@ -155,6 +155,23 @@
                 android:text="@string/safe_walk_movement_checks_body"
                 android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
+            <!-- Phase 17D: what location can do for this walk right now, and the one tap that improves it -->
+            <TextView
+                android:id="@+id/setupLocationLine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:accessibilityLiveRegion="polite"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/setupLocationButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/min_touch_target"
+                android:visibility="gone" />
+
             <com.safesphere.app.core.ui.components.NoticeView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

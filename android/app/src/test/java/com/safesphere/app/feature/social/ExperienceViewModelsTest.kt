@@ -2,6 +2,7 @@ package com.safesphere.app.feature.social
 
 import com.safesphere.app.core.location.GeoHash
 import com.safesphere.app.core.location.LocationAccess
+import com.safesphere.app.core.location.LocationFix
 import com.safesphere.app.core.location.LocationUnavailableReason
 import com.safesphere.app.core.location.LocationUpdate
 import com.safesphere.app.core.network.ApiError
@@ -36,6 +37,7 @@ import java.time.Instant
 import java.time.YearMonth
 import java.time.ZoneOffset
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -156,18 +158,31 @@ class ExperienceViewModelsTest {
 
     // ---- place picker -----------------------------------------------------------------------------------------
 
+    private fun picker(location: FakeLocationProvider) = PlacePickerViewModel(repository, memory, location, discover)
+
+    /** "Use where I am": the quick area position, then (with precise permission) the search for a precise one. */
+    private fun TestScope.useWhereIAm(vm: PlacePickerViewModel, location: FakeLocationProvider, area: LocationFix,
+                                      precise: LocationFix? = null) {
+        vm.onNearMe()
+        runCurrent()
+        location.emitFix(area)
+        runCurrent()
+        if (precise != null) {
+            location.emitFix(precise)
+            runCurrent()
+        }
+    }
+
     @Test
-    fun `picker - one fix, only the 6-character area is sent, places near a private place are marked`() = runTest {
+    fun `picker - the area is listed from one quick position, only the 6-character area is sent, places near a private place are marked`() = runTest {
         homeIsPrivate()
         val location = FakeLocationProvider()
         repository.nearby = listOf(FakeExperienceRepository.place("near-home", cell = nextDoor),
             FakeExperienceRepository.place("elsewhere", cell = farAway))
-        val vm = PlacePickerViewModel(repository, memory, location)
+        val vm = picker(location)
         advanceUntilIdle()
-        vm.onNearMe()
-        runCurrent()
-        location.emitFix(FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.3000, accuracy = 10f))
-        advanceUntilIdle()
+        val here = FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.3000, accuracy = 10f)
+        useWhereIAm(vm, location, area = here, precise = here)
         assertEquals(listOf(farAway.take(6)), repository.nearbyAreas)
         val rows = vm.uiState.value.nearby!!
         assertTrue(rows.first { it.place.publicId == "near-home" }.nearPrivate)
@@ -183,11 +198,10 @@ class ExperienceViewModelsTest {
     fun `picker - at a private place no public place can be added`() = runTest {
         homeIsPrivate()
         val location = FakeLocationProvider()
-        val vm = PlacePickerViewModel(repository, memory, location)
+        val vm = picker(location)
         advanceUntilIdle()
-        vm.onNearMe()
-        runCurrent()
-        location.emitFix(FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.2824, accuracy = 10f))
+        val here = FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.2824, accuracy = 10f)
+        useWhereIAm(vm, location, area = here, precise = here)
         advanceUntilIdle()
         assertTrue(vm.uiState.value.hereIsPrivate)
         assertEquals(PickerNotice.NEAR_PRIVATE, vm.uiState.value.notice)
@@ -197,50 +211,147 @@ class ExperienceViewModelsTest {
     }
 
     @Test
-    fun `picker - permission denied, location off, and a rough fix are handled`() = runTest {
+    fun `picker - permission denied and location off are told at once`() = runTest {
         val location = FakeLocationProvider(access = LocationAccess.NONE)
-        val vm = PlacePickerViewModel(repository, memory, location)
+        val vm = picker(location)
         advanceUntilIdle()
         vm.onNearMe()
         advanceUntilIdle()
         assertEquals(PickerNotice.NEEDS_PERMISSION, vm.uiState.value.notice)
         location.access = LocationAccess.PRECISE
-        vm.onNearMe()
-        runCurrent()
-        location.emit(LocationUpdate.Unavailable(LocationUnavailableReason.LOCATION_DISABLED))
-        advanceUntilIdle()
-        assertEquals(PickerNotice.LOCATION_OFF, vm.uiState.value.notice)           // Phase 16: its own notice and button
         location.locationEnabled = false
         vm.onNearMe()
         advanceUntilIdle()
         assertEquals("switched off is known at once, no waiting", PickerNotice.LOCATION_OFF, vm.uiState.value.notice)
-        location.locationEnabled = true
-        location.access = LocationAccess.APPROXIMATE
-        vm.onNearMe()
-        runCurrent()
-        location.emitFix(FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.3000, accuracy = 900f))
-        advanceUntilIdle()
-        assertFalse(vm.uiState.value.canAddHere)                             // viewing works, adding does not
-        assertTrue(vm.uiState.value.nearby != null)
+        assertFalse(vm.uiState.value.isBusy)
     }
 
     @Test
-    fun `picker - 17B no GPS fix in time still lists the area from a Wi-Fi or cell position, without adding`() = runTest {
+    fun `picker - 17D approximate permission lists the area but offers the upgrade instead of adding`() = runTest {
+        val location = FakeLocationProvider(access = LocationAccess.APPROXIMATE)
+        val vm = picker(location)
+        advanceUntilIdle()
+        useWhereIAm(vm, location, area = FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.3000, accuracy = 900f))
+        advanceUntilIdle()
+        assertTrue(vm.uiState.value.nearby != null)                          // viewing works
+        assertEquals(PickerNotice.NEEDS_PRECISE, vm.uiState.value.notice)    // adding needs the upgrade
+        assertFalse(vm.uiState.value.canAddHere)
+        assertEquals(1, location.subscriptions)                              // no precise search was started
+    }
+
+    @Test
+    fun `picker - 17D a weak signal never adds a place, the list stays, and a second try can succeed`() = runTest {
         val location = FakeLocationProvider()
-        val vm = PlacePickerViewModel(repository, memory, location)
+        val vm = picker(location)
         advanceUntilIdle()
-        vm.onNearMe()
-        runCurrent()
-        // Indoors: the precise request gets nothing within its time...
-        testScheduler.advanceTimeBy(PlacePickerViewModel.FIX_TIMEOUT_MILLIS + 1)
-        testScheduler.runCurrent()
-        assertNull(vm.uiState.value.notice) // ...which is not shown as a failure yet
-        // ...then a 300 m network position arrives for the area.
-        location.emitFix(FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.3000, accuracy = 300f))
-        advanceUntilIdle()
-        assertEquals(listOf(farAway.take(6)), repository.nearbyAreas)
+        useWhereIAm(vm, location, area = FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.3000, accuracy = 300f))
+        // The precise search is running (visible), the list is already usable.
+        assertTrue(vm.uiState.value.findingPrecise)
         assertTrue(vm.uiState.value.nearby != null)
-        assertFalse(vm.uiState.value.canAddHere) // adding a place needs <= 100 m
+        location.emitFix(FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.3000, accuracy = 250f))
+        runCurrent()
+        testScheduler.advanceTimeBy(com.safesphere.app.core.location.PreciseFixes.WINDOW_MILLIS + 1)
+        runCurrent()
+        assertFalse(vm.uiState.value.findingPrecise)
+        assertEquals(PickerNotice.POSITION_ROUGH, vm.uiState.value.notice)
+        assertFalse(vm.uiState.value.canAddHere)
+        assertTrue(vm.uiState.value.nearby != null)                          // the list stays
+        vm.onAddPlace("Tea stall", Interest.CITY_LIFE)
+        advanceUntilIdle()
+        assertTrue("a rough position never creates a place", repository.createdPlaces.isEmpty())
+
+        vm.onFindPrecisePosition()
+        runCurrent()
+        location.emitFix(FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.3000, accuracy = 20f))
+        advanceUntilIdle()
+        assertTrue(vm.uiState.value.canAddHere)
+        assertNull(vm.uiState.value.notice)
+    }
+
+    @Test
+    fun `picker - 17D leaving the screen stops the position search`() = runTest {
+        val location = FakeLocationProvider()
+        val vm = picker(location)
+        advanceUntilIdle()
+        useWhereIAm(vm, location, area = FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.3000, accuracy = 300f))
+        assertTrue(vm.uiState.value.findingPrecise)
+        vm.onScreenHidden()
+        runCurrent()
+        assertFalse(vm.uiState.value.findingPrecise)
+        assertFalse(vm.uiState.value.isBusy)
+    }
+
+    @Test
+    fun `picker - 17D search sends only the typed words after a pause, never short text, and marks places near a private place`() = runTest {
+        homeIsPrivate()
+        val vm = picker(FakeLocationProvider())
+        advanceUntilIdle()
+        discover.places = listOf(FakeExperienceRepository.place("p1", cell = nextDoor), FakeExperienceRepository.place("p2", cell = farAway))
+        vm.onQuery("a")
+        testScheduler.advanceTimeBy(PlacePickerViewModel.SEARCH_DEBOUNCE_MILLIS * 3)
+        runCurrent()
+        assertTrue("one letter is never sent", discover.searches.isEmpty())
+
+        vm.onQuery("mar")
+        vm.onQuery("mari")                                                   // typing on: only the last words are sent
+        testScheduler.advanceTimeBy(PlacePickerViewModel.SEARCH_DEBOUNCE_MILLIS - 1)
+        runCurrent()
+        assertTrue(discover.searches.isEmpty())
+        testScheduler.advanceTimeBy(2)
+        runCurrent()
+        assertEquals(listOf("mari" to null), discover.searches)              // no city, no position
+        val rows = vm.uiState.value.searchResults!!
+        assertTrue(rows.first { it.place.publicId == "p1" }.nearPrivate)
+        assertFalse(rows.first { it.place.publicId == "p2" }.nearPrivate)
+
+        vm.onQuery("m")                                                      // back to short text: results go away
+        assertNull(vm.uiState.value.searchResults)
+    }
+
+    @Test
+    fun `picker - 17D words without a letter or digit, or too long, are never sent, and a server refusal reads as no place found`() = runTest {
+        val vm = picker(FakeLocationProvider())
+        advanceUntilIdle()
+        for (text in listOf("!!", "  ..  ", "x".repeat(41))) {
+            vm.onQuery(text)
+            testScheduler.advanceTimeBy(PlacePickerViewModel.SEARCH_DEBOUNCE_MILLIS * 2)
+            runCurrent()
+        }
+        assertTrue(discover.searches.isEmpty())
+        assertTrue(PlacePickerViewModel.isSearchable("Chitra Cafe"))
+        assertTrue(PlacePickerViewModel.isSearchable("மெரினா")) // Tamil letters count
+        assertFalse(PlacePickerViewModel.isSearchable("a"))
+
+        discover.searchFailure = ApiResult.Failure(ApiError.VALIDATION, "Search with letters or digits")
+        vm.onQuery("ok")
+        testScheduler.advanceTimeBy(PlacePickerViewModel.SEARCH_DEBOUNCE_MILLIS + 1)
+        runCurrent()
+        assertEquals(emptyList<Any>(), vm.uiState.value.searchResults)       // "no place has that name"
+        assertNull(vm.uiState.value.searchProblem)
+    }
+
+    @Test
+    fun `picker - 17D a refused or failed search shows one line and never blocks the other ways`() = runTest {
+        val location = FakeLocationProvider()
+        val vm = picker(location)
+        advanceUntilIdle()
+        discover.searchFailure = ApiResult.Failure(ApiError.TOO_MANY_ATTEMPTS, "Too many place searches.")
+        vm.onQuery("park")
+        testScheduler.advanceTimeBy(PlacePickerViewModel.SEARCH_DEBOUNCE_MILLIS + 1)
+        runCurrent()
+        assertEquals(com.safesphere.app.feature.social.ui.SearchProblem.TOO_MANY, vm.uiState.value.searchProblem)
+        assertNull(vm.uiState.value.failure)                                 // the shared error banner is not used
+        assertFalse(vm.uiState.value.sessionExpired)
+
+        discover.searchFailure = ApiResult.Failure(ApiError.NO_CONNECTION)
+        vm.onQuery("parks")
+        testScheduler.advanceTimeBy(PlacePickerViewModel.SEARCH_DEBOUNCE_MILLIS + 1)
+        runCurrent()
+        assertEquals(com.safesphere.app.feature.social.ui.SearchProblem.FAILED, vm.uiState.value.searchProblem)
+
+        // "Use where I am" still works while the search is failing.
+        useWhereIAm(vm, location, area = FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.3000, accuracy = 10f))
+        assertTrue(vm.uiState.value.nearby != null)
     }
 
     // ---- post view --------------------------------------------------------------------------------------------
@@ -349,15 +460,15 @@ class ExperienceViewModelsTest {
     }
 
     @Test
-    fun `private places - a rough or approximate fix is refused, an unreadable list can be started again`() = runTest {
+    fun `private places - 17D approximate permission offers the upgrade at once, an unreadable list can be started again`() = runTest {
         val location = FakeLocationProvider(access = LocationAccess.APPROXIMATE)
         val vm = PrivatePlacesViewModel(memory, location)
         advanceUntilIdle()
         vm.onMarkHere(PrivatePlaceKind.HOME)
-        runCurrent()
-        location.emitFix(FakeLocationProvider.fix(accuracy = 15f))
         advanceUntilIdle()
         assertEquals(PrivatePlacesNotice.NEEDS_PRECISE, vm.uiState.value.notice)
+        assertTrue(vm.uiState.value.places.isEmpty())
+        assertEquals("no position is even asked for", 0, location.subscriptions)
         store.load = PlacesLoad.Unreadable
         val unreadable = PrivatePlacesViewModel(memory, location)
         advanceUntilIdle()
@@ -365,6 +476,46 @@ class ExperienceViewModelsTest {
         unreadable.onReset()
         advanceUntilIdle()
         assertFalse(unreadable.uiState.value.unreadable)
+    }
+
+    @Test
+    fun `private places - 17D a weak signal marks nothing and says to move or wait, a better one then works`() = runTest {
+        val location = FakeLocationProvider()
+        val vm = PrivatePlacesViewModel(memory, location)
+        advanceUntilIdle()
+        vm.onMarkHere(PrivatePlaceKind.WORK)
+        runCurrent()
+        location.emitFix(FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.2824, accuracy = 400f)) // Wi-Fi / cell
+        runCurrent()
+        assertTrue(vm.uiState.value.isBusy)                                  // still looking, visibly
+        testScheduler.advanceTimeBy(com.safesphere.app.core.location.PreciseFixes.WINDOW_MILLIS + 1)
+        advanceUntilIdle()
+        assertEquals(PrivatePlacesNotice.POSITION_ROUGH, vm.uiState.value.notice)
+        assertTrue("a rough position marks nothing", vm.uiState.value.places.isEmpty())
+        assertFalse(vm.uiState.value.isBusy)
+
+        vm.onMarkHere(PrivatePlaceKind.WORK)
+        runCurrent()
+        location.emitFix(FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.2824, accuracy = 400f))
+        runCurrent()
+        location.emitFix(FakeLocationProvider.fix(latitude = 13.0500, longitude = 80.2824, accuracy = 25f))  // GPS arrives
+        advanceUntilIdle()
+        assertEquals(PrivatePlacesNotice.ADDED, vm.uiState.value.notice)
+        assertEquals(home, vm.uiState.value.places.single().cell)
+    }
+
+    @Test
+    fun `private places - 17D leaving the screen stops the search and the busy flag does not stay on`() = runTest {
+        val location = FakeLocationProvider()
+        val vm = PrivatePlacesViewModel(memory, location)
+        advanceUntilIdle()
+        vm.onMarkHere(PrivatePlaceKind.HOME)
+        runCurrent()
+        assertTrue(vm.uiState.value.isBusy)
+        vm.onScreenHidden()
+        advanceUntilIdle()
+        assertFalse(vm.uiState.value.isBusy)
+        assertTrue(vm.uiState.value.places.isEmpty())
     }
 
     private object PrivateCells {

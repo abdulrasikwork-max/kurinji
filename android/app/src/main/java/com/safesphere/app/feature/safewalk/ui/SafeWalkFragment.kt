@@ -25,6 +25,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.location.LocationAccess
+import com.safesphere.app.core.location.LocationNeed
+import com.safesphere.app.core.location.LocationNeeds
+import com.safesphere.app.core.location.LocationStreamStatus
+import com.safesphere.app.core.ui.LocationAsk
 import com.safesphere.app.core.location.LocationPermissions
 import com.safesphere.app.core.notifications.NotificationPermission
 import com.safesphere.app.core.tracking.TrackingServiceStarter
@@ -61,20 +65,26 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
     /** The walk the person asked to start (label, interval, movement checks), while the permission dialogs are open. */
     private var pendingStart: Triple<String?, Int, Boolean>? = null
 
-    private val locationLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { askNotificationsThenStart() }
-
     private val notificationLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { startPendingWalk() }
 
+    /** What to do once the location dialog is answered (start the walk, or run "Check the way"), whatever the answer. */
+    private var afterLocationAsk: (() -> Unit)? = null
+
+    /**
+     * Phase 17D: the one way to ask for location, to open the right settings page and to upgrade to precise, shared
+     * with the other screens. Every answer re-reads the permission (a running walk restarts its location updates).
+     */
+    private val locationAsk = LocationAsk(this) {
+        viewModel.onScreenVisible()
+        renderSetupLocation() // a grant or the location switch may have changed in Settings
+        renderSetupLocation()
+        afterLocationAsk?.invoke()
+        afterLocationAsk = null
+    }
+
     /** Phase 8D: "Check the way" lives in its own ViewModel, so it can never touch the walk itself. */
     private val wayCheck by viewModels<WayCheckViewModel> { WayCheckViewModel.factory(appContainer) }
-
-    /** Location asked for "Check the way" (moment of need); the check runs whatever the answer. */
-    private val wayLocationLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-            wayCheck.onCheck(binding.destinationInput.text?.toString())
-        }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -82,9 +92,16 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
 
         binding.startWalkButton.setOnClickListener { onStartTapped() }
         binding.checkWayButton.setOnClickListener {
-            if (hasLocationPermission()) wayCheck.onCheck(binding.destinationInput.text?.toString())
-            else wayLocationLauncher.launch(LocationPermissions.REQUESTED)
+            val label = binding.destinationInput.text?.toString()
+            if (hasLocationPermission() || locationAsk.permanentlyDenied) {
+                wayCheck.onCheck(label) // the check says what is missing; the set-up line below has the button
+            } else {
+                afterLocationAsk = { wayCheck.onCheck(label) } // asked at the moment of need; the check runs whatever the answer
+                locationAsk.ask()
+            }
         }
+        binding.movementChecksSwitch.setOnCheckedChangeListener { _, _ -> renderSetupLocation() }
+        binding.setupLocationButton.setOnClickListener { locationAsk.act(setupNeed()) }
         binding.destinationInput.doAfterTextChanged { wayCheck.onDestinationChanged() }
         // Phase 13F (F10): "Going there?" only fills in the place; nothing starts until the person presses a button.
         val prefill = arguments?.getString(ARG_DESTINATION_LABEL)
@@ -101,7 +118,9 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
         binding.cancelWalkButton.setOnClickListener { confirm(R.string.safe_walk_confirm_cancel, R.string.action_cancel_walk) { viewModel.onCancelConfirmed() } }
         // Opens the normal SOS screen (with its countdown). The server links the emergency to this walk.
         binding.walkSosButton.setOnClickListener { findNavController().navigate(R.id.emergencyFragment) }
-        binding.walkLocationButton.setOnClickListener { locationLauncher.launch(LocationPermissions.REQUESTED) }
+        binding.walkLocationButton.setOnClickListener {
+            (viewModel.uiState.value as? SafeWalkUiState.Active)?.let { locationAsk.act(walkNeed(it.walk)) }
+        }
         binding.movementChecksButton.setOnClickListener { viewModel.onMovementChecksToggled() }
         binding.textCircleButton.setOnClickListener { chooseContactToText() }
         binding.walkDoneButton.setOnClickListener {
@@ -149,7 +168,8 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
         val interval = selectedInterval()
         pendingStart = Triple(label, interval, binding.movementChecksSwitch.isChecked)
         if (!hasLocationPermission() && viewModel.consumeLocationPrompt()) {
-            locationLauncher.launch(LocationPermissions.REQUESTED) // the walk also works without it
+            afterLocationAsk = ::askNotificationsThenStart
+            locationAsk.ask() // the walk also works without it
         } else {
             askNotificationsThenStart()
         }
@@ -230,6 +250,44 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
         val failure = state.failure
         binding.setupErrorNotice.isVisible = failure != null
         if (failure != null) binding.setupErrorNotice.setMessage(failure.toMessage(requireContext()))
+        renderSetupLocation()
+    }
+
+    // ---- Phase 17D: location on the set-up panel and during the walk -------------------------------
+
+    private fun setupNeed(): LocationNeed = LocationNeeds.of(
+        access = viewModel.locationAccess(),
+        locationEnabled = viewModel.locationEnabled(),
+        wantsPrecise = binding.movementChecksSwitch.isChecked,
+        permanentlyDenied = locationAsk.permanentlyDenied,
+        preciseDeclined = locationAsk.preciseDeclined
+    )
+
+    private fun walkNeed(walk: SafeWalkState): LocationNeed = walkLocationNeed(
+        walk, permanentlyDenied = locationAsk.permanentlyDenied, preciseDeclined = locationAsk.preciseDeclined
+    )
+
+    private fun needLabel(need: LocationNeed): Int = when (need) {
+        LocationNeed.ALLOW -> R.string.action_allow_location
+        LocationNeed.OPEN_APP_SETTINGS, LocationNeed.UPGRADE_PRECISE_IN_SETTINGS -> R.string.location_action_settings
+        LocationNeed.TURN_ON -> R.string.location_action_turn_on
+        LocationNeed.UPGRADE_PRECISE -> R.string.location_action_precise
+        LocationNeed.NONE -> R.string.action_allow_location
+    }
+
+    /** What location can do for the walk about to start, in one line, with the one button that improves it. */
+    private fun renderSetupLocation() {
+        if (view == null) return
+        val line = when (setupLocationFor(viewModel.locationAccess(), viewModel.locationEnabled())) {
+            SetupLocation.PRECISE -> R.string.safe_walk_setup_location_precise
+            SetupLocation.APPROXIMATE -> R.string.safe_walk_setup_location_approximate
+            SetupLocation.OFF -> R.string.safe_walk_setup_location_off
+            SetupLocation.NOT_ALLOWED -> R.string.safe_walk_setup_location_not_allowed
+        }
+        binding.setupLocationLine.setText(line)
+        val need = setupNeed()
+        binding.setupLocationButton.isVisible = need != LocationNeed.NONE
+        if (need != LocationNeed.NONE) binding.setupLocationButton.setText(needLabel(need))
     }
 
     private fun renderActive(state: SafeWalkUiState.Active) {
@@ -272,7 +330,9 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
                 walk.access == LocationAccess.NONE -> Unit
                 walk.lastLocationSavedAt != null ->
                     add(getString(R.string.safe_walk_location_saved, EmergencyTimeFormatter.formatTime(walk.lastLocationSavedAt)))
-                fix == null -> add(getString(R.string.location_card_searching))
+                // Searching only while it is true: a switched-off phone or a minute of silence has its own line below.
+                fix == null && walk.locationStatus in SEARCHING_STATUSES -> add(getString(R.string.location_card_searching))
+                fix == null -> Unit
                 else -> add(getString(R.string.location_not_saved_yet))
             }
             walkHintsFor(walk, viewModel.trackingServiceRunning.value, NotificationPermission.isGranted(requireContext()))
@@ -280,7 +340,9 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
         }
         binding.walkStatusLines.text = lines.joinToString("\n")
         binding.walkStatusLines.isVisible = lines.isNotEmpty()
-        binding.walkLocationButton.isVisible = walk.access == LocationAccess.NONE
+        val need = walkNeed(walk)
+        binding.walkLocationButton.isVisible = need != LocationNeed.NONE
+        if (need != LocationNeed.NONE) binding.walkLocationButton.setText(needLabel(need))
 
         // Location updates need the foreground service to continue with the screen off.
         serviceStarter.startIfNeeded(journey.id, walk.isTracking, viewModel.trackingServiceRunning.value)
@@ -305,6 +367,8 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
                 MovementLine.NeedsLocation -> getString(R.string.safe_walk_movement_needs_location)
                 MovementLine.WaitingForGps -> getString(R.string.safe_walk_movement_waiting_gps)
                 MovementLine.WeakGps -> getString(R.string.safe_walk_movement_weak_gps)
+                MovementLine.NeedsPreciseLocation -> getString(R.string.safe_walk_movement_needs_precise)
+                MovementLine.PausedLocationOff -> getString(R.string.safe_walk_movement_paused_location_off)
                 is MovementLine.Destination -> getString(R.string.safe_walk_movement_destination, line.description)
                 is MovementLine.RouteOn -> line.distance?.let { getString(R.string.safe_walk_movement_route_on_distance, distance(it)) }
                     ?: getString(R.string.safe_walk_movement_route_on)
@@ -412,5 +476,7 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
 
         /** Phase 13F: opened from "Check the way": the screen scrolls to that button (nothing runs by itself). */
         const val ARG_CHECK_WAY = "checkWay"
+
+        private val SEARCHING_STATUSES = setOf(LocationStreamStatus.IDLE, LocationStreamStatus.SEARCHING, LocationStreamStatus.AVAILABLE)
     }
 }

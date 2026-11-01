@@ -13,6 +13,10 @@ import com.safesphere.app.core.location.GeoPoint
 import com.safesphere.app.core.location.LocationAccess
 import com.safesphere.app.core.location.LocationFix
 import com.safesphere.app.core.location.LocationProvider
+import com.safesphere.app.core.location.LocationStreamPolicy
+import com.safesphere.app.core.location.LocationStreamStatus
+import com.safesphere.app.core.location.OneFix
+import com.safesphere.app.core.location.oneFix
 import com.safesphere.app.core.location.LocationUpdate
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
@@ -44,8 +48,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -290,6 +292,7 @@ class SafeWalkSession(
                 journey = journey,
                 localDueAt = localDueAt,
                 access = locationProvider.access(),
+                locationStatus = LocationStreamPolicy.initial(locationProvider.access()),
                 isOnline = it.isOnline,
                 restoredOffline = restoredOffline,
                 pendingSync = commands.size,
@@ -377,21 +380,54 @@ class SafeWalkSession(
     private suspend fun collectLocation(journey: Journey) {
         locationRestarts.collectLatest {
             val access = locationProvider.access()
-            update { it.copy(access = access) }
+            update { it.copy(access = access, locationStatus = LocationStreamPolicy.initial(access)) }
             if (access == LocationAccess.NONE) return@collectLatest
             val interval = batteryPolicy.locationIntervalMillis(_state.value.battery.level, LOCATION_INTERVAL_MILLIS)
-            locationProvider.updates(interval).collect { locationUpdate ->
-                if (locationUpdate is LocationUpdate.Fix) {
-                    val fix = locationUpdate.fix
-                    update { it.copy(lastFix = fix) }
-                    if (samplingPolicy.shouldRecord(lastRecordedFix, fix, journey.startedAt)) {
-                        lastRecordedFix = fix
-                        enqueue(Command.Location(journey.id, fix))
+            coroutineScope {
+                // Phase 17D: "no position right now" is routine while GPS warms up and indoors; only a minute of silence
+                // (longer at a slow battery-saving rate) is reported. This explains; it never touches the check-ins.
+                var watchdog = launch { reportNoSignalAfterGrace(interval) }
+                // The phone's location switch, looked at every few seconds (found on the emulator: no callback came).
+                // Switched back on = searching again, so the silence watchdog starts over.
+                val switchWatch = launch {
+                    while (true) {
+                        delay(LocationStreamPolicy.SWITCH_CHECK_MILLIS)
+                        val before = _state.value.locationStatus
+                        val after = LocationStreamPolicy.afterSwitch(before, locationProvider.isLocationEnabled())
+                        if (after != before) {
+                            update { it.copy(locationStatus = after) }
+                            if (after == LocationStreamStatus.SEARCHING) {
+                                watchdog.cancel()
+                                watchdog = launch { reportNoSignalAfterGrace(interval) }
+                            }
+                        }
                     }
-                    checkMovement(fix)
                 }
+                locationProvider.updates(interval).collect { locationUpdate ->
+                    LocationStreamPolicy.after(_state.value.locationStatus, locationUpdate)?.let { status ->
+                        update { it.copy(locationStatus = status) }
+                    }
+                    if (locationUpdate is LocationUpdate.Fix) {
+                        watchdog.cancel()
+                        watchdog = launch { reportNoSignalAfterGrace(interval) }
+                        val fix = locationUpdate.fix
+                        update { it.copy(lastFix = fix) }
+                        if (samplingPolicy.shouldRecord(lastRecordedFix, fix, journey.startedAt)) {
+                            lastRecordedFix = fix
+                            enqueue(Command.Location(journey.id, fix))
+                        }
+                        checkMovement(fix)
+                    }
+                }
+                watchdog.cancel()
+                switchWatch.cancel()
             }
         }
+    }
+
+    private suspend fun reportNoSignalAfterGrace(intervalMillis: Long) {
+        delay(LocationStreamPolicy.graceMillis(intervalMillis))
+        update { it.copy(locationStatus = LocationStreamPolicy.afterSilence(it.locationStatus)) }
     }
 
     /** Phase 4C: feeds the pure movement checks; a NEW concern opens the "Are you OK?" prompt early. */
@@ -450,9 +486,9 @@ class SafeWalkSession(
     }
 
     /** One fresh fix for the destination search, or null after a short wait (the walk starts anyway). */
-    private suspend fun currentFix(): LocationFix? = withTimeoutOrNull(START_FIX_TIMEOUT_MILLIS) {
-        locationProvider.updates(START_FIX_INTERVAL_MILLIS).filterIsInstance<LocationUpdate.Fix>().first().fix
-    }
+    private suspend fun currentFix(): LocationFix? =
+        // Phase 17D: switched off / not allowed is known at once (no wait); a recent position is used as it is.
+        (locationProvider.oneFix(START_FIX_MAX_AGE_MILLIS, START_FIX_TIMEOUT_MILLIS) as? OneFix.Got)?.fix
 
     // ---- server sync ----------------------------------------------------------------------------
 
@@ -599,7 +635,7 @@ class SafeWalkSession(
         const val LOCATION_INTERVAL_MILLIS = 30_000L
         const val BATTERY_CHECK_MILLIS = 60_000L
         const val START_FIX_TIMEOUT_MILLIS = 3_000L
-        private const val START_FIX_INTERVAL_MILLIS = 1_000L
+        private const val START_FIX_MAX_AGE_MILLIS = 30_000L
         /** BroadcastReceiver.goAsync() allows about 10 s; stay well below. */
         const val NOTIFICATION_SYNC_WAIT_MILLIS = 5_000L
         const val INITIAL_RETRY_MILLIS = 5_000L

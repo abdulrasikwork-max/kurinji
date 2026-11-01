@@ -1,6 +1,6 @@
 # Phase 17 plan — product reset, bug fixes, social UX, AI Explore (DRAFT, awaiting the user's decisions)
 
-Status: **17A implemented, compiled, tested, emulator-verified 2026-10-27** (`PHASE17A.md`); **17B** done 2026-10-27 (`PHASE17B.md`); **17C media** implemented, compiled, tested, live- and emulator-verified 2026-11-01 (`PHASE17C.md`); 17D–17J planned. Written 2026-10-27 after a read-only inspection
+Status: **17A implemented, compiled, tested, emulator-verified 2026-10-27** (`PHASE17A.md`); **17B** done 2026-10-27 (`PHASE17B.md`); **17C media** implemented, compiled, tested, live- and emulator-verified 2026-11-01 (`PHASE17C.md`); 17D location UX implemented, compiled, tested, emulator-verified 2026-11-01 (`PHASE17D.md`); 17E–17J planned. Written 2026-10-27 after a read-only inspection
 (Phase A). The shell was unavailable during the inspection (the tool's safety check returned no verdict), so **no
 build, test, database query or device check was run**; every finding below comes from reading the code and the docs.
 
@@ -63,7 +63,7 @@ docs → one local commit. Nothing is pushed.
 | **17A Stabilise** | R1: `api.base.url` options documented + a debug "LAN IP" path (cleartext for one configured host, debug only); R2: one age state (`/me.ageConfirmed` read at session start, fail-closed; any 409 CONFIRM_AGE routes to a single age screen, asked once); R3: SEARCHING vs UNAVAILABLE after a grace period, last fix shown with its time; failed photo blocks Share with "Retry / Remove" | — | none |
 | **17B Phone OTP** | per D-1; email verification removed from the active flow (code kept until a later clean-up, routes removed) | 17A | V26 `phone_verifications` + `users.phone_*` |
 | **17C Media** | photo quality ≤ 3072 px q92; video (D-6); upload progress + retry; no partial posts (post only when every item is uploaded) | 17A | V27 media kind/duration |
-| **17D Location UX** | Nearby: "Move outside or wait for a better signal" path, approximate-permission upgrade prompt; Safe Walk on the shared states; post location = "Use where I am / Search / Recent" | 17A | none |
+| **17D Location UX** (done 2026-11-01, `PHASE17D.md`) | Nearby: "Move outside or wait for a better signal" path, approximate-permission upgrade prompt; Safe Walk on the shared states; post location = "Use where I am / Search / Recent" | 17A | none |
 | **17E Social UX** | butterfly = reaction (D-3), Saved separate; profile photo; profile redesign; Discover cards; city search + expanded list (D-5); daily state (D-7); You → Safety compact grid; "I went" follow-through (§4) | 17C | V28 butterfly reactions, profile photo, cities, daily state |
 | **17F Emergency** | auto-audio consent (first visit to You → Safety, stored per account on the phone); shake trigger (D-4); voice (D-4); Nearby simplified flow; radar readability; Safe Walk start→destination line on the app-drawn view; SOS last-known marked as such | 17A, 17D | V29 if SHAKE/VOICE triggers become accepted |
 | **17G AI Explore + ratings** | per D-2 and D-8 | 17E | V30 ratings, experience facets |

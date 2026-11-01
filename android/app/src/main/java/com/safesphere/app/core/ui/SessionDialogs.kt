@@ -18,6 +18,9 @@ import com.safesphere.app.core.network.SessionEndReason
  */
 fun Fragment.showSessionExpiredDialog() {
     val reason = appContainer.sessionEnder.lastReason.value
+    // Taken now, not when a button is tapped: the dialog can outlive this fragment (found on the emulator in 17D: a
+    // detached fragment crashed findNavController()). The NavController belongs to the activity and stays valid.
+    val navController = findNavController()
     // Found on the emulator: decide by whether a session is still on this phone, not by the last reason alone (a
     // signed-out phone must get the old forced dialog even when the last recorded reason was an expiry).
     if (forcedSignOutDialog(reason, appContainer.currentSession.value != null)) {
@@ -27,7 +30,7 @@ fun Fragment.showSessionExpiredDialog() {
             .setMessage(message)
             .setCancelable(false)
             .setPositiveButton(R.string.action_got_it) { _, _ ->
-                findNavController().navigate(R.id.action_global_to_login)
+                navController.navigate(R.id.action_global_to_login)
             }
             .show()
     } else {
@@ -36,7 +39,7 @@ fun Fragment.showSessionExpiredDialog() {
             .setTitle(title)
             .setMessage(message)
             .setPositiveButton(R.string.action_sign_in) { _, _ ->
-                findNavController().navigate(R.id.action_global_to_login)
+                navController.navigate(R.id.action_global_to_login)
             }
             .setNegativeButton(R.string.action_later, null)
             .show()

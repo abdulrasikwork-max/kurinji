@@ -1,3 +1,20 @@
+# Handoff: Phase 17D location UX (2026-11-01) — one local commit, NOT pushed
+
+**Implemented, compiled, tested, emulator-verified (API 37)** (`docs/PHASE17D.md`). Android only: no migration (next
+**V28**), no backend change, no new permission or dependency. Nearby report needs a precise position (visible,
+cancellable search; "move outside or wait for a better signal"; the 100 m rule is unchanged), one permission /
+precise-upgrade path for every screen, Safe Walk says why no position arrives (never touches check-ins), place picker
+"Use where I am / Search / Recent", private places use the same precise search, `showSessionExpiredDialog` crash fixed.
+- **Results:** Android **792 / 0**; lint **0 / 102**; backend **773 / 0** (2 skipped, unchanged code); emulator walk-through PASS (list in
+  `PHASE17D.md`); test account, its report and the test place deleted.
+- **NOT VERIFIED:** physical phone (none connected); the "Rough" weak-signal path, the accuracy progress number and the
+  cached-position filter are **unit-tested only** (the emulator's GPS always says 5 m); TalkBack; dark mode.
+- **State left:** backend stopped; emulator running with app data cleared, location switched on, `adb reverse tcp:8080` set; test users 353/354 deleted (users back to 174); the build still points
+  at `127.0.0.1`.
+- **Next:** the user's review and push; 17E social UX. Later: unify the SOS screen's location handling (17F), the
+  "about 1465 minutes" wording.
+
+---
 # Handoff: Phase 17C media (2026-11-01) — one local commit, NOT pushed
 
 **Implemented, compiled, tested, live-verified on MySQL, emulator-verified (API 37)** (`docs/PHASE17C.md`). Photos at

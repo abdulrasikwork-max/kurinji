@@ -24,6 +24,15 @@ interface LocationProvider {
     fun updates(intervalMillis: Long): Flow<LocationUpdate>
 
     /**
+     * Phase 17D: like [updates], but a position the platform itself says is old (a cached one delivered first) is
+     * dropped. For anything that PLACES something at the person's position (a report, a place, a private place): a
+     * perfectly accurate position from five minutes ago, from somewhere else, would put it in the wrong block. The
+     * age is measured with the platform's elapsed-realtime clock, never by comparing a GPS time with the phone clock.
+     * The default is [updates] (test fakes and providers that never deliver cached positions).
+     */
+    fun freshUpdates(intervalMillis: Long): Flow<LocationUpdate> = updates(intervalMillis)
+
+    /**
      * Phase 16: ONE position, at most [maxAgeMillis] old (a recent one comes back at once), or the reason there is
      * none, within [timeoutMillis]. Screens use [oneFix] on top of it. The default reads [updates] once; the fused
      * provider asks the platform for a single current location instead (faster, less battery).

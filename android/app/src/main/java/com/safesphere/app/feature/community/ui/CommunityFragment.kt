@@ -1,24 +1,21 @@
 package com.safesphere.app.feature.community.ui
 
-import android.content.Intent
 import android.graphics.Typeface
-import android.net.Uri
 import android.os.Bundle
-import android.provider.Settings
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.StyleSpan
 import android.view.View
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
-import com.safesphere.app.core.location.LocationPermissionStatus
-import com.safesphere.app.core.location.LocationPermissions
+import com.safesphere.app.core.location.LocationNeed
+import com.safesphere.app.core.location.LocationNeeds
 import com.safesphere.app.core.location.LocationUnavailableReason
+import com.safesphere.app.core.ui.LocationAsk
 import com.safesphere.app.core.ui.Motion
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
@@ -27,6 +24,7 @@ import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentCommunityBinding
 import com.safesphere.app.feature.community.domain.AppealStatus
 import com.safesphere.app.feature.community.domain.AreaSignal
+import com.safesphere.app.feature.community.domain.CommunityPolicy
 import com.safesphere.app.feature.community.domain.CommunityPolicy.ReportReadiness
 import com.safesphere.app.feature.community.domain.CommunityStanding
 import com.safesphere.app.feature.community.domain.ContributionKind
@@ -48,18 +46,11 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
 
     private val viewModel by viewModels<CommunityViewModel> { CommunityViewModel.factory(appContainer) }
 
-    private var permanentlyDenied = false
+    /** Phase 17D: the one way to ask for location, to open settings and to upgrade to precise (shared with other screens). */
+    private val locationAsk = LocationAsk(this) { viewModel.onPermissionResult() }
 
-    private val locationLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            val status = LocationPermissions.statusAfterRequest(
-                fineGranted = result[LocationPermissions.REQUESTED[0]] == true,
-                coarseGranted = result[LocationPermissions.REQUESTED[1]] == true,
-                shouldShowRationale = shouldShowRequestPermissionRationale(LocationPermissions.REQUESTED[0])
-            )
-            permanentlyDenied = status == LocationPermissionStatus.PERMANENTLY_DENIED
-            viewModel.onPermissionResult()
-        }
+    /** What "Try again" repeats after a position that was too rough (lost on rotation: the dialog then just closes). */
+    private var retryAction: (() -> Unit)? = null
 
     private val signalAdapter = AreaSignalAdapter(::confirmAnswer, ::showWhy, ::chooseFlagReason)
     private val myAdapter = MyContributionAdapter(::confirmWithdraw)
@@ -68,7 +59,8 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
         super.onViewCreated(view, savedInstanceState)
         binding.signalList.adapter = signalAdapter
         binding.myList.adapter = myAdapter
-        binding.reportButton.setOnClickListener { chooseCategory() }
+        binding.reportButton.setOnClickListener { onReportTapped() }
+        binding.locatingCancelButton.setOnClickListener { viewModel.onCancelLocating() }
         collectWhenStarted(viewModel.ui, ::render)
 
         if (savedInstanceState == null) {
@@ -83,8 +75,30 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
         viewModel.onScreenVisible()
     }
 
+    override fun onStop() {
+        super.onStop()
+        viewModel.onScreenHidden() // location only while this screen is open
+    }
+
+    /** The location action that would help, from what the phone says now and what the permission dialog answered. */
+    private fun locationNeed(wantsPrecise: Boolean): LocationNeed = LocationNeeds.of(
+        access = viewModel.locationAccess(),
+        locationEnabled = viewModel.locationEnabled(),
+        wantsPrecise = wantsPrecise,
+        permanentlyDenied = locationAsk.permanentlyDenied,
+        preciseDeclined = locationAsk.preciseDeclined
+    )
+
     private fun render(ui: CommunityUiState) {
         renderArea(ui.area)
+
+        val locating = ui.locating
+        binding.locatingBlock.isVisible = locating != null
+        if (locating != null) {
+            val accuracy = locating.accuracyMeters
+            binding.locatingText.text = if (accuracy == null) getString(R.string.community_locating_precise)
+            else getString(R.string.community_locating_precise_accuracy, accuracy.toInt().coerceAtLeast(1))
+        }
 
         myAdapter.submitList(ui.mine)
         binding.myList.isVisible = ui.mine.isNotEmpty()
@@ -116,22 +130,29 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
         binding.areaHint.isVisible = false
         binding.areaHint.text = ""
         binding.areaActionButton.isVisible = false
+        binding.areaSecondaryButton.isVisible = false
 
         when (area) {
             AreaState.Locating -> binding.areaStatus.setText(R.string.community_locating)
             AreaState.Loading -> binding.areaStatus.setText(R.string.community_loading)
             AreaState.NeedsPermission -> {
                 binding.areaStatus.setText(R.string.community_permission_title)
-                showHint(R.string.community_permission_rationale)
-                if (permanentlyDenied) {
-                    showAction(R.string.action_open_settings) { openAppSettings() }
+                showHint(if (locationAsk.permanentlyDenied) R.string.community_permission_blocked
+                    else R.string.community_permission_rationale)
+                if (locationAsk.permanentlyDenied) {
+                    showAction(R.string.action_open_settings) { locationAsk.act(LocationNeed.OPEN_APP_SETTINGS) }
                 } else {
-                    showAction(R.string.action_allow_location) { locationLauncher.launch(LocationPermissions.REQUESTED) }
+                    showAction(R.string.action_allow_location) { locationAsk.act(LocationNeed.ALLOW) }
                 }
             }
             is AreaState.LocationProblem -> {
                 binding.areaStatus.setText(locationProblemText(area.reason))
-                showAction(R.string.action_try_again) { viewModel.refresh() }
+                // Location off: the switch itself (coming back refreshes the view); no signal: wait or move, then retry.
+                if (area.reason == LocationUnavailableReason.LOCATION_DISABLED) {
+                    showAction(R.string.location_action_turn_on) { locationAsk.act(LocationNeed.TURN_ON) }
+                } else if (area.reason != LocationUnavailableReason.SERVICES_UNAVAILABLE) {
+                    showAction(R.string.action_try_again) { viewModel.refresh() }
+                }
             }
             is AreaState.Failed -> {
                 binding.areaStatus.text = area.failure.toMessage(requireContext())
@@ -153,9 +174,26 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
                 brief.nearestHavenMeters?.let { meters ->
                     showHint(getString(R.string.community_nearest_haven, CommunityTexts.distanceText(requireContext(), meters.toDouble())))
                 }
-                if (area.approximateLocation) showHint(R.string.community_approximate_location)
+                if (area.approximateLocation) {
+                    showHint(R.string.community_approximate_location)
+                } else if (CommunityPolicy.isRough(area.accuracyMeters)) {
+                    // Phase 17D: precise permission, but this particular position is rough (Wi-Fi / cell, indoors).
+                    val accuracy = area.accuracyMeters
+                    showHint(if (accuracy == null) getString(R.string.community_rough_position_unknown)
+                        else getString(R.string.community_rough_position, accuracy.toInt().coerceAtLeast(1)))
+                }
+                val loadedAt = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(area.loadedAtMillis))
+                showHint(getString(
+                    if (CommunityPolicy.isStale(area.loadedAtMillis, System.currentTimeMillis())) R.string.community_stale
+                    else R.string.community_updated, loadedAt))
                 binding.radar.contentDescription = getString(R.string.cd_radar, summary)
                 showAction(R.string.action_refresh) { viewModel.refresh() }
+                // Approximate permission: looking works, adding does not. One tap to the upgrade.
+                if (area.approximateLocation) {
+                    binding.areaSecondaryButton.isVisible = true
+                    binding.areaSecondaryButton.setText(upgradeLabel())
+                    binding.areaSecondaryButton.setOnClickListener { locationAsk.act(locationNeed(wantsPrecise = true)) }
+                }
             }
         }
     }
@@ -211,6 +249,48 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
 
     // ---- Reporting ---------------------------------------------------------------------------------------------
 
+    private fun upgradeLabel(): Int =
+        if (locationNeed(wantsPrecise = true) == LocationNeed.UPGRADE_PRECISE_IN_SETTINGS) R.string.location_action_settings
+        else R.string.location_action_precise
+
+    /**
+     * Phase 17D: before anyone fills in a report, check that location can do it. Approximate-only, switched off or
+     * blocked each get their one action here, so nobody chooses a category and then gets refused.
+     */
+    private fun onReportTapped() {
+        val need = locationNeed(wantsPrecise = true)
+        if (need == LocationNeed.NONE) chooseCategory() else showNeedDialog(need)
+    }
+
+    private fun showNeedDialog(need: LocationNeed) {
+        val (message, label) = when (need) {
+            LocationNeed.UPGRADE_PRECISE -> R.string.community_needs_precise to R.string.location_action_precise
+            LocationNeed.UPGRADE_PRECISE_IN_SETTINGS -> R.string.community_needs_precise_settings to R.string.location_action_settings
+            LocationNeed.TURN_ON -> R.string.community_location_off_report to R.string.location_action_turn_on
+            LocationNeed.OPEN_APP_SETTINGS -> R.string.community_permission_blocked to R.string.location_action_settings
+            else -> R.string.community_permission_rationale to R.string.action_allow_location
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.community_needs_precise_title)
+            .setMessage(message)
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(label) { _, _ -> locationAsk.act(need) }
+            .show()
+    }
+
+    /** The position was too rough to place anything: say how rough, what to do, and offer the same action again. */
+    private fun showRoughDialog(accuracyMeters: Float?) {
+        val message = if (accuracyMeters == null) getString(R.string.community_rough_message_unknown)
+        else getString(R.string.community_rough_message, accuracyMeters.toInt().coerceAtLeast(1))
+        val retry = retryAction
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.community_rough_title)
+            .setMessage(message)
+            .setNegativeButton(R.string.action_cancel, null)
+            .apply { if (retry != null) setPositiveButton(R.string.action_try_again) { _, _ -> retry() } }
+            .show()
+    }
+
     private fun chooseCategory() {
         val categories = SignalCategory.entries
         val labels = categories.map { category ->
@@ -229,7 +309,10 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
             .setTitle(CommunityTexts.category(category))
             .setMessage(R.string.report_confirm_message)
             .setNegativeButton(R.string.action_cancel, null)
-            .setPositiveButton(R.string.action_share_anonymously) { _, _ -> viewModel.onReport(category) }
+            .setPositiveButton(R.string.action_share_anonymously) { _, _ ->
+                retryAction = { viewModel.onReport(category) }
+                viewModel.onReport(category)
+            }
             .show()
     }
 
@@ -240,6 +323,7 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
             .setMessage(message)
             .setNegativeButton(R.string.action_cancel, null)
             .setPositiveButton(if (kind == ContributionKind.CONFIRM) R.string.action_saw_this_too else R.string.action_no_longer_true) { _, _ ->
+                retryAction = { viewModel.onAnswer(signal, kind) }
                 viewModel.onAnswer(signal, kind)
             }
             .show()
@@ -284,7 +368,10 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
                     .setTitle(R.string.flag_confirm_title)
                     .setMessage(R.string.flag_confirm_message)
                     .setNegativeButton(R.string.action_cancel, null)
-                    .setPositiveButton(R.string.action_flag_confirm) { _, _ -> viewModel.onFlag(signal, reasons[which]) }
+                    .setPositiveButton(R.string.action_flag_confirm) { _, _ ->
+                        retryAction = { viewModel.onFlag(signal, reasons[which]) }
+                        viewModel.onFlag(signal, reasons[which])
+                    }
                     .show()
             }
             .setNegativeButton(R.string.action_cancel, null)
@@ -301,6 +388,15 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
     }
 
     private fun showEvent(event: CommunityEvent) {
+        // The two events that need a decision are dialogs with a button, not a toast that disappears.
+        if (event is CommunityEvent.ReportNotReady) {
+            if (event.readiness == ReportReadiness.NEEDS_PRECISE_LOCATION) {
+                showNeedDialog(locationNeed(wantsPrecise = true).takeIf { it != LocationNeed.NONE } ?: LocationNeed.UPGRADE_PRECISE)
+            } else {
+                showRoughDialog(event.accuracyMeters)
+            }
+            return
+        }
         val text = when (event) {
             is CommunityEvent.Recorded -> resources.getQuantityString(
                 R.plurals.community_recorded, event.appearsWithinMinutes, event.appearsWithinMinutes
@@ -308,10 +404,8 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
             CommunityEvent.SavedOffline -> getString(R.string.community_saved_offline)
             is CommunityEvent.OutboxSent -> resources.getQuantityString(R.plurals.community_outbox_sent, event.count, event.count)
             CommunityEvent.Withdrawn -> getString(R.string.community_withdrawn)
-            is CommunityEvent.ReportNotReady -> getString(
-                if (event.readiness == ReportReadiness.NEEDS_PRECISE_LOCATION) R.string.community_needs_precise
-                else R.string.community_location_rough
-            )
+            is CommunityEvent.ReportNotReady -> return // handled above
+            CommunityEvent.SearchStopped -> getString(R.string.community_search_stopped)
             is CommunityEvent.NoLocation -> getString(locationProblemText(event.reason))
             is CommunityEvent.Failed -> event.failure.toMessage(requireContext())
             CommunityEvent.Flagged -> getString(R.string.community_flagged)
@@ -319,11 +413,5 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
             CommunityEvent.ContributionsPaused -> getString(R.string.community_paused_short)
         }
         Toast.makeText(requireContext(), text, Toast.LENGTH_LONG).show()
-    }
-
-    private fun openAppSettings() {
-        startActivity(
-            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", requireContext().packageName, null))
-        )
     }
 }

@@ -5,6 +5,7 @@ import com.safesphere.app.core.device.BatteryStatus
 import com.safesphere.app.core.escalation.EscalationLevel
 import com.safesphere.app.core.location.GeoPoint
 import com.safesphere.app.core.location.LocationAccess
+import com.safesphere.app.core.location.LocationStreamStatus
 import com.safesphere.app.feature.safewalk.domain.ArrivalState
 import com.safesphere.app.feature.safewalk.domain.CheckInPhase
 import com.safesphere.app.feature.safewalk.domain.CheckInStatus
@@ -175,6 +176,35 @@ class SafeWalkScreenTest {
             movementLinesFor(active.copy(movementChecks = true, access = LocationAccess.NONE), GpsQuality.WAITING)
         )
         assertTrue(movementLinesFor(SafeWalkState(), GpsQuality.GOOD).isEmpty())
+    }
+
+    // ---- Phase 17D ---------------------------------------------------------------------------------
+
+    @Test
+    fun `17D - hints say why no position arrives, and check-ins are never blamed on it`() {
+        fun hints(status: LocationStreamStatus, access: LocationAccess = LocationAccess.PRECISE) =
+            walkHintsFor(active.copy(access = access, locationStatus = status), serviceRunning = true, notificationsGranted = true)
+        assertEquals(listOf(WalkHint.LOCATION_OFF), hints(LocationStreamStatus.LOCATION_OFF))
+        assertEquals(listOf(WalkHint.NO_SIGNAL), hints(LocationStreamStatus.NO_SIGNAL))
+        assertEquals(listOf(WalkHint.LOCATION_UNSUPPORTED), hints(LocationStreamStatus.SERVICES_UNAVAILABLE))
+        assertEquals(emptyList<WalkHint>(), hints(LocationStreamStatus.SEARCHING))
+        assertEquals(emptyList<WalkHint>(), hints(LocationStreamStatus.AVAILABLE))
+        // With no permission the one existing line is enough (not a second one about the switch).
+        assertEquals(listOf(WalkHint.LOCATION_NOT_SHARED), hints(LocationStreamStatus.NEEDS_PERMISSION, LocationAccess.NONE))
+    }
+
+    @Test
+    fun `17D - approximate permission says the checks are paused instead of waiting for GPS forever`() {
+        val approximate = active.copy(movementChecks = true, access = LocationAccess.APPROXIMATE)
+        assertEquals(listOf(MovementLine.StopsOnly, MovementLine.NeedsPreciseLocation),
+            movementLinesFor(approximate, GpsQuality.WEAK))
+        assertEquals(listOf(MovementLine.StopsOnly, MovementLine.NeedsPreciseLocation),
+            movementLinesFor(approximate, GpsQuality.WAITING))
+        assertEquals("location off pauses them, with its own words",
+            listOf(MovementLine.StopsOnly, MovementLine.PausedLocationOff),
+            movementLinesFor(active.copy(movementChecks = true, locationStatus = LocationStreamStatus.LOCATION_OFF), GpsQuality.WAITING))
+        assertEquals("a weak signal keeps the GPS wording", listOf(MovementLine.StopsOnly, MovementLine.WeakGps),
+            movementLinesFor(active.copy(movementChecks = true, locationStatus = LocationStreamStatus.NO_SIGNAL), GpsQuality.WEAK))
     }
 
     @Test

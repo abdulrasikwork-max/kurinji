@@ -31,6 +31,21 @@ object CommunityPolicy {
         else -> ReportReadiness.READY
     }
 
+    /**
+     * Phase 17D: answering or flagging is judged by the server against the cell the signal is SHOWN at. An area signal
+     * (about 1 km) accepts an area-level position; a block signal needs the same block-level position as a report.
+     */
+    fun needsBlockPosition(signal: AreaSignal): Boolean = signal.precision == SignalPrecision.BLOCK
+
+    /** Phase 17D: the "Ready" picture is from a moment; after this long it is offered again as "refresh". */
+    const val AREA_STALE_AFTER_MILLIS = 10L * 60 * 1000
+
+    fun isStale(loadedAtMillis: Long, nowMillis: Long): Boolean = nowMillis - loadedAtMillis >= AREA_STALE_AFTER_MILLIS
+
+    /** The distances on the radar are only as good as the position they came from. */
+    fun isRough(accuracyMeters: Float?): Boolean =
+        accuracyMeters == null || accuracyMeters.isNaN() || accuracyMeters < 0f || accuracyMeters > MAX_REPORT_ACCURACY_METERS
+
     /** Adds a report to the outbox: the same place and category only once, newest [OUTBOX_MAX] kept. */
     fun addToOutbox(outbox: List<PendingReport>, report: PendingReport): List<PendingReport> =
         (outbox.filterNot { it.category == report.category && it.blockCell == report.blockCell } + report)

@@ -3,6 +3,7 @@ package com.safesphere.app.feature.safewalk.session
 import com.safesphere.app.core.device.BatteryStatus
 import com.safesphere.app.core.location.LocationAccess
 import com.safesphere.app.core.location.LocationFix
+import com.safesphere.app.core.location.LocationStreamStatus
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.feature.safewalk.domain.CheckInPhase
 import com.safesphere.app.feature.safewalk.domain.CheckInStatus
@@ -54,7 +55,13 @@ data class SafeWalkState(
     val destinationDescription: String? = null,
     val movement: MovementState = MovementState(),
     val concern: Concern? = null,
-    val battery: BatteryStatus = BatteryStatus()
+    val battery: BatteryStatus = BatteryStatus(),
+    /**
+     * Phase 17D: what the location stream is doing, in the SOS screen's words (searching / available / off / no signal
+     * after a minute of silence). Memory only. It explains; it NEVER changes the check-in phase, a concern or the
+     * escalation level (SafeWalkSessionTest pins this).
+     */
+    val locationStatus: LocationStreamStatus = LocationStreamStatus.IDLE
 ) {
     val isActive: Boolean get() = journey != null && endedStatus == null && !signedOut
 

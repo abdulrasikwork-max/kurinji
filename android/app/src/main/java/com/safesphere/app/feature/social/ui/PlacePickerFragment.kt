@@ -4,15 +4,17 @@ import android.os.Bundle
 import android.view.View
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.location.LocationAccess
+import com.safesphere.app.core.location.LocationNeed
+import com.safesphere.app.core.location.LocationNeeds
 import com.safesphere.app.core.location.LocationPermissionStatus
 import com.safesphere.app.core.ui.LocationAsk
-import com.safesphere.app.core.ui.LocationSettings
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog
@@ -22,10 +24,11 @@ import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.Place
 
 /**
- * Phase 13B: where it was. "Places near me" (location asked here, in context, and read once), "Places you used",
- * "Add this place" at the current ~150 m cell, "Only the city", "No place". The choice goes back to the composer.
- * Phase 16: tapping "Places near me" without permission asks at once; each problem has one button that fixes it
- * (allow, open settings, turn location on, use precise location, try again), and coming back from settings retries.
+ * Phase 13B: where it was. Phase 17D: three ways to choose: "Use where I am" (location asked here, in context, and read
+ * only when tapped), "Search" (place names; nothing but the words is sent) and "Places you used"; plus "Add this
+ * place" at the current ~150 m block, "Only the city" and "No place". The choice goes back to the composer.
+ * Each location problem has one button that fixes it (allow, open settings, turn location on, use precise location,
+ * try again), the permission is asked through the shared [LocationAsk], and coming back from settings retries.
  */
 class PlacePickerFragment : ViewBindingFragment<FragmentPlacePickerBinding>(FragmentPlacePickerBinding::inflate) {
 
@@ -41,6 +44,7 @@ class PlacePickerFragment : ViewBindingFragment<FragmentPlacePickerBinding>(Frag
 
     private val nearbyAdapter = PersonRowAdapter()
     private val recentAdapter = PersonRowAdapter()
+    private val searchAdapter = PersonRowAdapter()
     private lateinit var categoryChips: ChoiceChips<Interest>
     private var category: Interest? = null
     /** Sent to a settings page: try again when the person comes back. */
@@ -50,6 +54,7 @@ class PlacePickerFragment : ViewBindingFragment<FragmentPlacePickerBinding>(Frag
         super.onViewCreated(view, savedInstanceState)
         binding.nearbyList.adapter = nearbyAdapter
         binding.recentList.adapter = recentAdapter
+        binding.searchList.adapter = searchAdapter
         categoryChips = ChoiceChips(binding.placeCategoryGroup) { category = it }
         binding.nearMeButton.setOnClickListener {
             if (appContainer.screenLocationProvider.access() == LocationAccess.NONE && !locationAsk.permanentlyDenied) {
@@ -57,6 +62,10 @@ class PlacePickerFragment : ViewBindingFragment<FragmentPlacePickerBinding>(Frag
             } else {
                 viewModel.onNearMe()
             }
+        }
+        binding.searchInput.doAfterTextChanged {
+            val text = it?.toString().orEmpty()
+            if (text != viewModel.uiState.value.query) viewModel.onQuery(text)
         }
         binding.addPlaceButton.setOnClickListener {
             val name = binding.placeNameInput.text?.toString().orEmpty().trim()
@@ -78,8 +87,14 @@ class PlacePickerFragment : ViewBindingFragment<FragmentPlacePickerBinding>(Frag
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        viewModel.onScreenHidden() // location only while this screen is open
+    }
+
     private fun render(state: PlacePickerUiState) {
         binding.progress.isVisible = state.isBusy
+        binding.preciseBlock.isVisible = state.findingPrecise
         binding.nearMeButton.isEnabled = !state.isBusy
         recentAdapter.submitList(state.recent.map(::row))
         binding.recentBlock.isVisible = state.recent.isNotEmpty()
@@ -91,8 +106,9 @@ class PlacePickerFragment : ViewBindingFragment<FragmentPlacePickerBinding>(Frag
         binding.addPlaceButton.isEnabled = !state.isBusy && state.canAddHere
         categoryChips.show(Interest.entries.map { it to getString(SocialLabels.of(it)) }, category)
 
-        val notice = state.notice ?: if (state.hereCell != null && !state.canAddHere && !state.hereIsPrivate)
-            PickerNotice.NEEDS_PRECISE else null
+        renderSearch(state)
+
+        val notice = state.notice
         binding.pickerNotice.isVisible = notice != null
         renderNotice(notice)
 
@@ -112,26 +128,58 @@ class PlacePickerFragment : ViewBindingFragment<FragmentPlacePickerBinding>(Frag
         }
     }
 
+    /** Results, or one calm line saying why there are none; a failed search never hides the other two ways. */
+    private fun renderSearch(state: PlacePickerUiState) {
+        binding.searchProgress.isVisible = state.searching
+        val results = state.searchResults
+        searchAdapter.submitList(results.orEmpty().map(::row))
+        binding.searchList.isVisible = !results.isNullOrEmpty()
+        val message = when {
+            state.searchProblem == SearchProblem.TOO_MANY -> R.string.social_search_too_many
+            state.searchProblem == SearchProblem.FAILED -> R.string.social_search_failed
+            results != null && results.isEmpty() && !state.searching -> R.string.social_search_none
+            else -> null
+        }
+        binding.searchMessage.isVisible = message != null
+        if (message != null) binding.searchMessage.setText(message)
+    }
+
+    /** What would help now, from the phone's facts and what the permission dialog answered (pure: [LocationNeeds]). */
+    private fun need(wantsPrecise: Boolean): LocationNeed = LocationNeeds.of(
+        access = appContainer.screenLocationProvider.access(),
+        locationEnabled = appContainer.screenLocationProvider.isLocationEnabled(),
+        wantsPrecise = wantsPrecise,
+        permanentlyDenied = locationAsk.permanentlyDenied,
+        preciseDeclined = locationAsk.preciseDeclined
+    )
+
     /** The words of the notice and the one button that fixes it (none for a private place). */
     private fun renderNotice(notice: PickerNotice?) {
         val button = binding.allowLocationButton
-        val approximate = appContainer.screenLocationProvider.access() == LocationAccess.APPROXIMATE
         val (message, action) = when (notice) {
             PickerNotice.NEEDS_PERMISSION -> if (locationAsk.permanentlyDenied)
                 R.string.social_location_denied_settings to Action(R.string.location_action_settings) {
                     retryOnReturn = true
-                    LocationSettings.openAppSettings(this)
+                    locationAsk.act(LocationNeed.OPEN_APP_SETTINGS)
                 }
-            else R.string.social_location_needed to Action(R.string.action_allow_location) { locationAsk.ask() }
+            else R.string.social_location_needed to Action(R.string.action_allow_location) { locationAsk.act(LocationNeed.ALLOW) }
             PickerNotice.LOCATION_OFF -> R.string.social_location_off to Action(R.string.location_action_turn_on) {
                 retryOnReturn = true
-                LocationSettings.openLocationSettings(this)
+                locationAsk.act(LocationNeed.TURN_ON)
             }
             PickerNotice.LOCATION_UNAVAILABLE ->
                 R.string.social_location_unavailable to Action(R.string.location_action_retry) { viewModel.onNearMe() }
-            PickerNotice.NEEDS_PRECISE -> R.string.social_add_place_needs_precise to if (approximate)
-                Action(R.string.location_action_precise) { locationAsk.ask() }
-                else Action(R.string.location_action_retry) { viewModel.onNearMe() }
+            // Approximate only: one tap to Android's upgrade dialog; once it came back approximate, the settings toggle.
+            PickerNotice.NEEDS_PRECISE -> R.string.social_add_place_needs_precise to when (need(wantsPrecise = true)) {
+                LocationNeed.UPGRADE_PRECISE_IN_SETTINGS -> Action(R.string.location_action_settings) {
+                    retryOnReturn = true
+                    locationAsk.act(LocationNeed.UPGRADE_PRECISE_IN_SETTINGS)
+                }
+                else -> Action(R.string.location_action_precise) { locationAsk.askForPrecise() }
+            }
+            // Precise permission but a weak signal: move or wait, then look again (the list stays).
+            PickerNotice.POSITION_ROUGH ->
+                R.string.social_add_place_rough to Action(R.string.location_action_retry) { viewModel.onFindPrecisePosition() }
             PickerNotice.NEAR_PRIVATE -> R.string.social_add_place_private to null
             null -> null to null
         }

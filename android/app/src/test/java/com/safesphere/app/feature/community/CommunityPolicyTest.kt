@@ -100,4 +100,23 @@ class CommunityPolicyTest {
         assertFalse(ReportRequestDto("POOR_LIGHTING", "tdr1v9q").toString().contains("tdr1v9q"))
         assertFalse(ContributionRequestDto("CONFIRM", "tdr1v9q").toString().contains("tdr1v9q"))
     }
+
+    // ---- Phase 17D ----------------------------------------------------------------------------------------------
+
+    @Test
+    fun `17D - a block signal needs a block-level position, an area signal does not`() {
+        assertTrue(CommunityPolicy.needsBlockPosition(areaSignal(precision = com.safesphere.app.feature.community.domain.SignalPrecision.BLOCK)))
+        assertFalse(CommunityPolicy.needsBlockPosition(areaSignal(precision = com.safesphere.app.feature.community.domain.SignalPrecision.AREA)))
+    }
+
+    @Test
+    fun `17D - the area view is stale after ten minutes, by the phone clock only, and a rough position is told apart`() {
+        val start = 1_000_000L
+        assertFalse(CommunityPolicy.isStale(start, start + CommunityPolicy.AREA_STALE_AFTER_MILLIS - 1))
+        assertTrue(CommunityPolicy.isStale(start, start + CommunityPolicy.AREA_STALE_AFTER_MILLIS))
+        assertFalse(CommunityPolicy.isRough(100f))
+        assertTrue(CommunityPolicy.isRough(100.5f))
+        assertTrue(CommunityPolicy.isRough(null))
+        assertTrue(CommunityPolicy.isRough(Float.NaN))
+    }
 }

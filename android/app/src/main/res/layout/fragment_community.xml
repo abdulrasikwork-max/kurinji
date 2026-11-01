@@ -159,6 +159,15 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_md"
                         android:visibility="gone" />
+
+                    <!-- Phase 17D: the second way forward (e.g. "Use precise location" next to "Refresh") -->
+                    <Button
+                        android:id="@+id/areaSecondaryButton"
+                        style="@style/Widget.SafeSphere.Button.Text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -178,6 +187,38 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/section_spacing"
             android:orientation="vertical">
+
+            <!-- Phase 17D: a visible, cancellable search for a precise position (reports need about 100 m or better) -->
+            <LinearLayout
+                android:id="@+id/locatingBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/space_md"
+                android:accessibilityLiveRegion="polite"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/locatingText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/community_locating_precise"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:indeterminate="true" />
+
+                <Button
+                    android:id="@+id/locatingCancelButton"
+                    style="@style/Widget.SafeSphere.Button.Secondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:text="@string/action_cancel" />
+            </LinearLayout>
 
             <Button
                 android:id="@+id/reportButton"
