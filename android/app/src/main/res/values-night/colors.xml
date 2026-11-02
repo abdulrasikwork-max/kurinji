@@ -1,27 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Kurinji dark (Phase 16): near-black page, white text, a brighter red. Same roles as light. -->
-    <color name="k_mist">#0D0D0E</color>
-    <color name="k_card">#19191B</color>
-    <color name="k_sunk">#242427</color>
-    <color name="k_ink">#F4F4F4</color>
-    <color name="k_ink_soft">#BEBEBE</color>
-    <color name="k_outline">#8E8E93</color>
-    <color name="k_line">#2E2E31</color>
-    <color name="k_surface_low">#141416</color>
-    <color name="k_surface_container">#1C1C1F</color>
-    <color name="k_surface_high">#232326</color>
-    <color name="k_surface_highest">#2B2B2F</color>
+    <!-- Kurinji "Ink & Lime", dark (Phase 17E): a near-black page, light ink, lime as the action colour. Same roles. -->
+    <color name="k_page">#0B0C0A</color>
+    <color name="k_surface">#161814</color>
+    <color name="k_surface_sunk">#21241D</color>
+    <color name="k_surface_low">#121410</color>
+    <color name="k_surface_container">#1A1C17</color>
+    <color name="k_surface_high">#22251E</color>
+    <color name="k_surface_highest">#2A2D25</color>
+    <color name="k_ink">#F1F4EA</color>
+    <color name="k_ink_soft">#B7BDAB</color>
+    <color name="k_outline">#878D7C</color>
+    <color name="k_line">#2C3027</color>
 
-    <color name="k_bloom">#FF4F5E</color>
-    <color name="k_on_bloom">#12070A</color>
-    <color name="k_bloom_soft">#3A0E14</color>
-    <color name="k_on_bloom_soft">#FFD9DD</color>
-
-    <color name="k_yeoman">#FF4F5E</color>
-    <color name="k_yeoman_ink">#FF7A86</color>
-    <color name="k_yeoman_soft">#3A0E14</color>
-    <color name="k_on_yeoman_soft">#FFD9DD</color>
+    <color name="k_action">#ADFF2F</color>
+    <color name="k_on_action">#0E100C</color>
+    <color name="k_lime_soft">#26380B</color>
+    <color name="k_on_lime_soft">#D7FF99</color>
+    <color name="k_leaf">#ADFF2F</color>
+    <color name="k_panel">#1B1E17</color>
+    <color name="k_on_panel">#F1F4EA</color>
+    <color name="k_on_panel_soft">#BFC5B4</color>
 
     <color name="ss_emergency">#D42A3D</color>
     <color name="ss_on_emergency">#FFFFFF</color>
@@ -41,6 +40,6 @@
     <color name="hero_on">#F4F4F4</color>
     <color name="hero_on_variant">#C4C4C4</color>
 
-    <color name="mark_stem">#F4F4F4</color>
-    <color name="mark_chevron">#FF4F5E</color>
+    <color name="mark_stem">#F1F4EA</color>
+    <color name="mark_chevron">#ADFF2F</color>
 </resources>

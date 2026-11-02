@@ -3,7 +3,6 @@ package com.safesphere.backend.social;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.safesphere.backend.social.entity.PostEnums.Audience;
-import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.entity.PostEnums.PostType;
 import com.safesphere.backend.social.entity.PostEnums.Precision;
 import com.safesphere.backend.social.policy.PostDelay;
@@ -31,7 +30,7 @@ class PostPolicyTest {
             String body = "A long enough body for an Ask too";
             for (Precision precision : Precision.values()) {
                 for (boolean hasPlace : new boolean[] {false, true}) {
-                    for (City city : new City[] {null, City.CHENNAI}) {
+                    for (String city : new String[] {null, "CHENNAI"}) {
                         boolean valid = switch (precision) {
                             case EXACT, AREA -> hasPlace && city == null;
                             case CITY -> !hasPlace && city != null;

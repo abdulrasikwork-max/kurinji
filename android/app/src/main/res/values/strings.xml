@@ -45,8 +45,8 @@
          OnboardingTextsTest forbids "not available", "future", "later" and safety promises. -->
     <string name="onboarding_connected_title">See it first-hand</string>
     <string name="onboarding_connected_body">Real experiences from real people: places, food, walks and things to try. Scroll, react, ask, then go and see for yourself.</string>
-    <string name="onboarding_aware_title">Tap the butterfly to save</string>
-    <string name="onboarding_aware_body">Save anything you want to try. It goes to Saved, a list only you can see. Been there? Mark it and tell people how it was.</string>
+    <string name="onboarding_aware_title">A butterfly says it inspired you</string>
+    <string name="onboarding_aware_body">Its author only learns how many, and never who. Save anything you want to try: Saved is a list only you can see. Went there? Tap I went and tell people how it was.</string>
     <string name="onboarding_safe_title">Yours to control</string>
     <string name="onboarding_safe_body">No followers, no messages from strangers. You choose who sees each post and how exactly its place is shown. Nobody can use Kurinji to track you. SOS and your trusted people are in You, under Safety; set them up any time.</string>
 
@@ -1372,32 +1372,9 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="title_discover">Discover</string>
     <string name="title_cocoon">Saved</string>
     <string name="title_post_collection">Posts</string>
-    <string name="butterfly_want">Save</string>
-    <string name="butterfly_want_description">Save it: I want to go. Only you can see what you save.</string>
-    <string name="butterfly_saved_want">Saved</string>
-    <string name="butterfly_saved_been">Been there</string>
     <string name="butterfly_saved_announcement">Saved. Only you can see it.</string>
-    <string name="butterfly_remove_description">Saved. Tap to remove it from your saved list.</string>
-    <string name="butterfly_been">I\'ve been</string>
-    <string name="butterfly_private_note">Only you can see what you save. Nobody is told.</string>
-    <string name="butterfly_author_fewer">Fewer than 3 people saved this so far. Only you can see this line.</string>
-    <string name="butterfly_author_count">%1$d people saved this. Only you can see this line.</string>
-    <string name="been_invitation_title">You went</string>
-    <string name="been_invitation_message">How was it? Add a comment for people thinking of going, or share a post of your own.</string>
-    <string name="been_invitation_perspective">Add a comment</string>
-    <string name="been_invitation_own">Share my own experience</string>
-    <string name="been_invitation_later">Not now</string>
-    <string name="cocoon_tab_want">Want to go</string>
-    <string name="cocoon_tab_been">Been there</string>
-    <string name="cocoon_intro">Things you saved with the butterfly. Only you can see this list.</string>
-    <string name="cocoon_empty_want">Nothing saved yet. Tap the butterfly on any post you would love to try.</string>
-    <string name="cocoon_empty_been">Nothing marked as been yet. When you go, mark it here and tell people how it was.</string>
-    <string name="cocoon_mark_been">I\'ve been</string>
-    <string name="cocoon_mark_been_description">Mark as been: %1$s</string>
-    <string name="cocoon_want_again">Want again</string>
-    <string name="cocoon_want_again_description">Move back to want to go: %1$s</string>
-    <string name="cocoon_remove">Remove</string>
-    <string name="cocoon_remove_description">Remove from saved: %1$s</string>
+    <string name="butterfly_author_fewer">Fewer than 3 people gave this a butterfly so far. Only you can see this line.</string>
+    <string name="butterfly_author_count">%1$d people gave this a butterfly. Only you can see this line.</string>
     <string name="cocoon_saved_this_week">Saved this week</string>
     <string name="cocoon_saved_this_month">Saved this month</string>
     <string name="cocoon_saved_earlier">Saved earlier</string>
@@ -1426,7 +1403,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="discover_search_categories">Categories</string>
     <string name="discover_open_place">Open the place %1$s</string>
     <string name="discover_open_category">Open the category %1$s</string>
-    <string name="collection_place_line">Posts shared for everyone at this place, newest first.</string>
     <string name="collection_category_line">Posts shared for everyone, newest first.</string>
     <string name="collection_category_city_line">Posts shared for everyone in %1$s, newest first.</string>
     <string name="collection_empty">Nothing shared here yet.</string>
@@ -1547,6 +1523,10 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="content_action_pause_comments">Pause their comments for 3 days</string>
     <string name="content_action_pause_posting">Pause their posting for 7 days</string>
     <string name="content_action_suspend">Pause posting, comments and new connections for 30 days</string>
+    <string name="standing_photo_removed">A moderator removed your profile photo (%1$s). You can add another one that follows the community guidelines.</string>
+    <string name="content_action_remove_photo">Remove their profile photo (the case stays open)</string>
+    <string name="content_case_show_person_photo">Show their profile photo</string>
+    <string name="content_case_person_photo">Their profile photo</string>
     <string name="content_action_choose_reason">Which guideline?</string>
     <string name="content_action_confirm">This changes what others see or can do. It is recorded with your decision and can be reviewed by another moderator.</string>
     <string name="content_action_done">Decision recorded.</string>
@@ -1601,10 +1581,8 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="cd_feature_row_plain">%1$s. %2$s.</string>
 
     <!-- You -->
-    <string name="you_overline">Your profile</string>
     <string name="you_handle_city">\@%1$s · %2$s</string>
     <string name="you_no_profile">Make a profile to share experiences and connect with people. Your safety tools work without one.</string>
-    <string name="you_section_journal">Yours</string>
     <string name="you_section_safety">Safety</string>
     <string name="you_section_reading">Reading</string>
     <string name="you_section_community">Community</string>
@@ -1612,8 +1590,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="you_experiences_description">Everything you shared, and who can see each one</string>
     <string name="you_connections_description">Requests, invite codes and the people you are connected with. Only you see this list.</string>
     <string name="you_private_places_description">Home, hostel or work: kept on this phone, never sent</string>
-    <string name="you_safety_title">Your safety tools</string>
-    <string name="you_safety_description">SOS, Safe Walk, your Safety Circle, the Evidence Vault and Nearby heads-ups</string>
     <string name="you_guidelines_description">What is and is not allowed, and why</string>
     <string name="you_reports_description">What you reported and what happened to it</string>
     <string name="you_blocked_description">People you blocked or muted. They are not told.</string>
@@ -1651,8 +1627,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="compose_subheading">What you did, how it was, and one tip. You choose who sees it and how exactly the place is shown.</string>
 
     <!-- Cocoon (F16) -->
-    <string name="cocoon_open_discover">Explore Discover</string>
-    <string name="cocoon_item_description">%1$s. %2$s. %3$s. Opens the post.</string>
 
     <!-- Cards (F13) -->
     <string name="card_ticket_label">Tip</string>
@@ -1746,4 +1720,80 @@ A complete privacy policy will be written and reviewed before any public release
         <item quantity="one">%d comment. Opens the comments</item>
         <item quantity="other">%d comments. Opens the comments</item>
     </plurals>
+
+    <!-- ===== Phase 17E: social redesign (docs/PHASE17E.md) ===== -->
+    <!-- D-3: the butterfly is a reaction; Save is a private bookmark. -->
+    <string name="reaction_label">Inspired</string>
+    <string name="reaction_give_description">Give a butterfly: this inspires you. The author never learns who.</string>
+    <string name="reaction_given_description">You gave this a butterfly. Tap to take it back.</string>
+    <string name="reaction_given_short">You gave a butterfly</string>
+    <string name="save_label">Save</string>
+    <string name="saved_label">Saved</string>
+    <string name="save_description">Save it to come back to. Only you can see what you save.</string>
+    <string name="save_remove_description">Saved. Tap to take it out of Saved.</string>
+    <string name="save_announcement">Saved. Only you can see it.</string>
+    <string name="marks_private_note">Only you see your butterflies and what you save. Nobody is told who.</string>
+    <string name="feed_media_count">1 / %1$d</string>
+    <string name="feed_media_count_spoken">%1$d photos or videos inside</string>
+    <!-- "I went" (plan §4): from reading to sharing your own experience. -->
+    <string name="went_label">I went</string>
+    <string name="went_description">I went: share your own experience of this place</string>
+    <!-- Saved -->
+    <string name="saved_intro">Only you can see what you save. Nobody is told.</string>
+    <string name="saved_empty_title">Nothing saved yet</string>
+    <string name="saved_empty_message">Tap Save on any post you want to come back to: places to try, questions you want answered.</string>
+    <string name="saved_empty_action">Explore Discover</string>
+    <string name="saved_remove">Remove</string>
+    <string name="saved_remove_description">Remove from Saved: %1$s</string>
+    <!-- D-5: cities -->
+    <string name="discover_title">Discover</string>
+    <string name="city_picker_title">Choose a city</string>
+    <string name="city_picker_hint">Search cities</string>
+    <string name="city_picker_note">Searched on your phone. What you type is not sent anywhere.</string>
+    <string name="city_picker_empty">No city on our list matches. Try another spelling, or the name of a nearby city.</string>
+    <string name="city_picker_chosen">chosen</string>
+    <string name="city_other">Another city</string>
+    <string name="city_other_note">A city that is not on the list</string>
+    <string name="profile_city_choose">Choose your city</string>
+    <!-- D-7: today's state (connections only, ends at midnight) -->
+    <string name="daily_state_set">Set today\'s state</string>
+    <string name="daily_state_sheet_title">How is today?</string>
+    <string name="daily_state_sheet_note">Only your connections see it, on your profile. It ends at midnight and is never kept. Nobody is notified.</string>
+    <string name="daily_state_clear">Clear today\'s state</string>
+    <string name="daily_state_line">Today: %1$s</string>
+    <string name="daily_state_own_note">Seen by your connections until midnight</string>
+    <string name="daily_state_curious">Curious</string>
+    <string name="daily_state_planning">Planning something</string>
+    <string name="daily_state_inspired">Inspired</string>
+    <string name="daily_state_learning">Learning something new</string>
+    <string name="daily_state_celebrating">Celebrating</string>
+    <string name="daily_state_slow_day">Taking it slow</string>
+    <string name="daily_state_busy_day">A busy day</string>
+    <string name="daily_state_quiet_day">A quiet day</string>
+    <string name="daily_state_saved">Today\'s state is set. Your connections see it until midnight.</string>
+    <!-- Profile photo -->
+    <string name="profile_photo_change">Change photo</string>
+    <string name="profile_photo_add">Add a photo</string>
+    <string name="profile_photo_remove">Remove photo</string>
+    <string name="profile_photo_note">Anyone who can see your profile sees your photo. It is made square and sent without its location or camera details.</string>
+    <string name="profile_photo_uploading">Uploading your photo…</string>
+    <string name="profile_photo_failed">The photo could not be added. Check your connection and try again.</string>
+    <string name="profile_photo_unreadable">This photo could not be read. Try another one.</string>
+    <string name="profile_photo_description">Your profile photo</string>
+    <!-- You -->
+    <string name="you_section_social">Your experiences</string>
+    <string name="you_safety_note">Everything here works even if you never post.</string>
+    <string name="you_safety_all">All safety tools</string>
+    <string name="you_tile_sos">SOS</string>
+    <string name="you_tile_sos_sub">5 seconds to cancel</string>
+    <string name="you_tile_walk">Safe Walk</string>
+    <string name="you_tile_walk_sub">Check-ins on the way</string>
+    <string name="you_tile_circle">Safety Circle</string>
+    <string name="you_tile_circle_sub">Your trusted people</string>
+    <string name="you_tile_nearby">Nearby</string>
+    <string name="you_tile_nearby_sub">Heads-ups about places</string>
+    <!-- Place page -->
+    <string name="place_share_yours">I went here</string>
+    <string name="place_share_yours_description">I went here: share your own experience of %1$s</string>
+    <string name="place_page_note">Experiences shared with everyone, newest first.</string>
 </resources>

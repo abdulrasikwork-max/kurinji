@@ -13,7 +13,7 @@ data class RowAction(val label: String, val contentDescription: String, val onCl
 
 /**
  * One row of the social lists (requests, connections, invite codes, blocks, mutes): a title, a second line, up to two
- * buttons, and optionally a tap on the text (opens the person). No counts, no pictures.
+ * buttons, and optionally a tap on the text (opens the person). Phase 17E: a person's photo or initial. No counts.
  */
 data class PersonRow(
     val key: String,
@@ -22,10 +22,12 @@ data class PersonRow(
     val primary: RowAction? = null,
     val secondary: RowAction? = null,
     val onOpen: (() -> Unit)? = null,
-    val openDescription: String? = null
+    val openDescription: String? = null,
+    /** Phase 17E: the person this row is about (their photo or initial is shown); null for codes and places. */
+    val person: com.safesphere.app.feature.social.domain.PersonSummary? = null
 )
 
-class PersonRowAdapter : ListAdapter<PersonRow, PersonRowAdapter.Holder>(Diff) {
+class PersonRowAdapter(private val images: CardImages? = null) : ListAdapter<PersonRow, PersonRowAdapter.Holder>(Diff) {
 
     class Holder(val binding: ItemPersonRowBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -36,6 +38,11 @@ class PersonRowAdapter : ListAdapter<PersonRow, PersonRowAdapter.Holder>(Diff) {
         val row = getItem(position)
         with(holder.binding) {
             title.text = row.title
+            val person = row.person
+            avatar.isVisible = person != null && images != null
+            if (person != null && images != null) {
+                images.avatar(avatar, person.displayName, person.handle, person.publicId, person.photo)
+            }
             subtitle.text = row.subtitle
             textBlock.isClickable = row.onOpen != null
             textBlock.isFocusable = row.onOpen != null
@@ -60,7 +67,7 @@ class PersonRowAdapter : ListAdapter<PersonRow, PersonRowAdapter.Holder>(Diff) {
 
         // Lambdas are not compared; the visible text decides whether the row is redrawn.
         override fun areContentsTheSame(old: PersonRow, new: PersonRow) =
-            old.title == new.title && old.subtitle == new.subtitle &&
+            old.title == new.title && old.subtitle == new.subtitle && old.person == new.person &&
                 old.primary?.label == new.primary?.label && old.secondary?.label == new.secondary?.label
     }
 }

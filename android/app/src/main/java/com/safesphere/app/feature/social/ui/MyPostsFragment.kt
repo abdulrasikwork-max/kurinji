@@ -22,7 +22,7 @@ class MyPostsFragment : ViewBindingFragment<FragmentMyPostsBinding>(FragmentMyPo
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        adapter = ExperienceCardAdapter(appContainer.imageLoader, appContainer.experienceRepository::photoUrl)
+        adapter = ExperienceCardAdapter(cardImages())
         binding.postList.adapter = adapter
         binding.shareButton.setOnClickListener { findNavController().navigate(R.id.composeFragment) }
         binding.showMoreButton.setOnClickListener { viewModel.onShowMore() }

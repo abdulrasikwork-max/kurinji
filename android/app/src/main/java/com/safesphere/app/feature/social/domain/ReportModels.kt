@@ -89,7 +89,9 @@ enum class AppealState { NONE, OPEN, UPHELD, OVERTURNED }
 
 enum class DecisionAction {
     CONTENT_HOLD, CONTENT_COLLAPSE, CONTENT_REMOVE, PERSON_WARN, PERSON_PAUSE_COMMENTS, PERSON_PAUSE_POSTING,
-    PERSON_SUSPEND
+    PERSON_SUSPEND,
+    /** Phase 17E: a moderator removed the person's profile photo (shown to them; not appealable: they can add another). */
+    PERSON_REMOVE_PHOTO
 }
 
 /** The pause in force for the caller. [until] is their own information (shown as a date). */

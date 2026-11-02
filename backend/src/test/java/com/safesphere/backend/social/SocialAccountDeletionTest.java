@@ -122,11 +122,18 @@ class SocialAccountDeletionTest {
         String byP = social.commentId(p, friendsPost, "BEEN_HERE", "p on the friend's post", null);
         social.commentId(friend, friendsPost, "REPLY", "Friend replies to p", byP);
         social.commentId(p, friendsPost, "REPLY", "p replies to the friend", friendsOwn);
-        // Phase 13C: p's Cocoon holds the friend's post; the friend saved p's post; the asker's butterfly on the
-        // friend's post must stay.
-        social.butterfly(p, friendsPost, null).andExpect(status().isOk());
-        social.butterfly(friend, ownPost, "BEEN").andExpect(status().isOk());
-        social.butterfly(asker, friendsPost, null).andExpect(status().isOk());
+        // Phase 13C / 17E: p reacted to and saved the friend's post; the friend reacted to and saved p's post; the
+        // asker's reaction and save on the friend's post must stay. p also has a daily state and a profile photo.
+        social.react(p, friendsPost).andExpect(status().isOk());
+        social.save(p, friendsPost).andExpect(status().isOk());
+        social.react(friend, ownPost).andExpect(status().isOk());
+        social.save(friend, ownPost).andExpect(status().isOk());
+        social.react(asker, friendsPost).andExpect(status().isOk());
+        social.save(asker, friendsPost).andExpect(status().isOk());
+        social.setDailyState(p, "CURIOUS").andExpect(status().isOk());
+        social.uploadProfilePhoto(p, com.safesphere.backend.support.TestImages.jpeg(400, 300)).andExpect(status().isOk());
+        profilePhotoKey = jdbc.queryForObject("SELECT photo_key FROM profiles WHERE user_id = ?", String.class, p.id());
+        assertThat(media.exists(profilePhotoKey)).isTrue();
         photoKeys = jdbc.queryForList("SELECT storage_key FROM post_media WHERE owner_id = ?", String.class, p.id());
         assertThat(photoKeys).hasSize(3).allMatch(media::exists);
         assertThat(photoKeys).anyMatch(media::hasVideo);
@@ -135,6 +142,7 @@ class SocialAccountDeletionTest {
     }
 
     private java.util.List<String> photoKeys;
+    private String profilePhotoKey;
     private String friendsPostId;
 
     private void assertNothingLeft(long userId) {
@@ -157,6 +165,13 @@ class SocialAccountDeletionTest {
         assertThat(count("SELECT COUNT(*) FROM butterflies b JOIN posts p ON p.id = b.post_id WHERE p.public_id = ?",
                 friendsPostId)).isEqualTo(1);
         assertThat(count("SELECT COUNT(*) FROM butterflies WHERE post_id NOT IN (SELECT id FROM posts)")).isZero();
+        // Phase 17E: saves the same way; the daily state and the profile photo file are gone.
+        assertThat(count("SELECT COUNT(*) FROM saved_posts WHERE user_id = ?", userId)).isZero();
+        assertThat(count("SELECT COUNT(*) FROM saved_posts s JOIN posts p ON p.id = s.post_id WHERE p.public_id = ?",
+                friendsPostId)).isEqualTo(1);
+        assertThat(count("SELECT COUNT(*) FROM saved_posts WHERE post_id NOT IN (SELECT id FROM posts)")).isZero();
+        assertThat(count("SELECT COUNT(*) FROM daily_states WHERE user_id = ?", userId)).isZero();
+        assertThat(media.exists(profilePhotoKey)).isFalse();
     }
 
     private void assertOthersKept(Person friend) throws Exception {

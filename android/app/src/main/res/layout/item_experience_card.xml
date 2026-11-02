@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 16: one post in a feed, read in a second: who (avatar, name, kind, when), the photo, their own words, where,
-     then the actions: save (the butterfly), comments (the one public number, U1), and "Why?" for Discover picks.
-     Experiences and Questions share this card; a Question carries a badge. The card body is one TalkBack item
-     (CardTexts.spoken); the save and comment buttons are their own items. -->
+<!-- Phase 17E ("Ink & Lime"): one post in a feed. The place comes first: the photo (inset, rounded) with the category on
+     a lime tag; then who shared it (photo avatar, name, when) and "Why?" for Discover picks; their own words (a quote
+     panel with a lime rule when there is no photo); where and "Tip inside"; then the marks: the butterfly (a
+     reaction), comments (the one public number, U1) and Save. The readable part is one TalkBack item
+     (CardTexts.spoken); each mark is its own item and says its state in words. -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/card"
     style="@style/Widget.Kurinji.Card.Feed"
     android:layout_width="match_parent"
@@ -24,7 +26,61 @@
             android:background="?attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingBottom="4dp">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/photoFrame"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="10dp"
+                android:importantForAccessibility="noHideDescendants"
+                android:visibility="gone"
+                app:cardBackgroundColor="?attr/colorSurfaceVariant"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                tools:visibility="visible">
+
+                <com.safesphere.app.core.ui.components.AspectRatioImageView
+                    android:id="@+id/photo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:importantForAccessibility="no"
+                    android:scaleType="centerCrop" />
+
+                <TextView
+                    android:id="@+id/categoryTag"
+                    style="@style/Widget.Kurinji.Tag"
+                    android:layout_gravity="top|start"
+                    android:layout_margin="10dp"
+                    android:visibility="gone"
+                    tools:text="Food &amp; cafés"
+                    tools:visibility="visible" />
+
+                <!-- Phase 17C: a video's still carries "▶ 0:42"; the card opens the post (nothing plays here). -->
+                <TextView
+                    android:id="@+id/videoBadge"
+                    style="@style/Widget.Kurinji.VideoBadge"
+                    android:layout_gravity="bottom|start"
+                    android:layout_margin="10dp"
+                    android:visibility="gone"
+                    app:drawableStartCompat="@drawable/ic_play" />
+
+                <!-- More than one photo or video: "1 / 3" so people know there is more inside. -->
+                <TextView
+                    android:id="@+id/mediaCount"
+                    style="@style/Widget.Kurinji.VideoBadge"
+                    android:layout_gravity="bottom|end"
+                    android:layout_margin="10dp"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:visibility="gone"
+                    tools:text="1 / 3"
+                    tools:visibility="visible" />
+            </com.google.android.material.card.MaterialCardView>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -33,19 +89,18 @@
                 android:importantForAccessibility="noHideDescendants"
                 android:orientation="horizontal"
                 android:paddingStart="@dimen/space_md"
-                android:paddingTop="14dp"
-                android:paddingEnd="@dimen/space_md"
-                android:paddingBottom="12dp">
+                android:paddingTop="12dp"
+                android:paddingEnd="6dp">
 
                 <com.safesphere.app.core.ui.components.AvatarView
                     android:id="@+id/avatar"
-                    android:layout_width="@dimen/avatar_size"
-                    android:layout_height="@dimen/avatar_size" />
+                    android:layout_width="36dp"
+                    android:layout_height="36dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
+                    android:layout_marginStart="10dp"
                     android:layout_weight="1"
                     android:orientation="vertical">
 
@@ -55,7 +110,8 @@
                         android:layout_height="wrap_content"
                         android:ellipsize="end"
                         android:maxLines="1"
-                        android:textAppearance="@style/TextAppearance.Kurinji.Name" />
+                        android:textAppearance="@style/TextAppearance.Kurinji.Name"
+                        tools:text="Meena" />
 
                     <TextView
                         android:id="@+id/meta"
@@ -63,83 +119,81 @@
                         android:layout_height="wrap_content"
                         android:ellipsize="end"
                         android:maxLines="1"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                        tools:text="This week" />
                 </LinearLayout>
 
                 <TextView
                     android:id="@+id/questionBadge"
                     style="@style/Widget.Kurinji.Badge"
                     android:layout_marginStart="@dimen/space_sm"
+                    android:layout_marginEnd="10dp"
                     android:text="@string/feed_question_badge"
                     android:visibility="gone" />
             </LinearLayout>
 
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <com.safesphere.app.core.ui.components.AspectRatioImageView
-                    android:id="@+id/photo"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/colorSurfaceVariant"
-                    android:importantForAccessibility="no"
-                    android:scaleType="centerCrop"
-                    android:visibility="gone" />
-
-                <!-- Phase 17C: a video's still carries "▶ 0:42"; the card opens the post (nothing plays here). -->
-                <TextView
-                    android:id="@+id/videoBadge"
-                    style="@style/Widget.Kurinji.VideoBadge"
-                    android:layout_gravity="bottom|start"
-                    android:layout_margin="@dimen/space_sm"
-                    android:importantForAccessibility="no"
-                    android:visibility="gone"
-                    app:drawableStartCompat="@drawable/ic_play" />
-            </FrameLayout>
-
-
-            <LinearLayout
+            <TextView
+                android:id="@+id/thought"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="@dimen/space_md"
+                android:ellipsize="end"
+                android:importantForAccessibility="no"
+                android:maxLines="4"
+                android:textAppearance="@style/TextAppearance.Kurinji.CardHeadline"
+                tools:text="Went at sunrise; the light on the water was lovely and the tea stall had opened." />
+
+            <!-- No photo: the words are the picture (a quote panel with a lime rule). -->
+            <TextView
+                android:id="@+id/quote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/bg_quote_rule"
+                android:ellipsize="end"
+                android:importantForAccessibility="no"
+                android:maxLines="6"
+                android:paddingStart="30dp"
+                android:paddingTop="16dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="16dp"
+                android:textAppearance="@style/TextAppearance.Kurinji.Quote"
+                android:visibility="gone" />
+
+            <!-- Collapsed (13D/13E): only the reason; the words stay behind a tap on the post. -->
+            <TextView
+                android:id="@+id/collapsedLine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="@dimen/space_md"
+                android:drawablePadding="@dimen/space_sm"
+                android:gravity="center_vertical"
+                android:importantForAccessibility="no"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                android:visibility="gone"
+                app:drawableStartCompat="@drawable/ic_info"
+                app:drawableTint="?attr/colorOnSurfaceVariant" />
+
+            <!-- Where (only what the author revealed) and whether there is a tip inside. -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/contextChips"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="@dimen/space_md"
                 android:importantForAccessibility="noHideDescendants"
-                android:orientation="vertical"
-                android:paddingStart="@dimen/space_md"
-                android:paddingTop="12dp"
-                android:paddingEnd="@dimen/space_md">
-
-                <TextView
-                    android:id="@+id/thought"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:maxLines="4"
-                    android:textAppearance="@style/TextAppearance.Kurinji.CardHeadline" />
-
-                <!-- Collapsed (13D/13E): only the reason; the words stay behind a tap on the post. -->
-                <TextView
-                    android:id="@+id/collapsedLine"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:drawablePadding="@dimen/space_sm"
-                    android:gravity="center_vertical"
-                    android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-                    android:visibility="gone"
-                    app:drawableStartCompat="@drawable/ic_info"
-                    app:drawableTint="?attr/colorOnSurfaceVariant" />
-
-                <!-- Where (only what the author revealed) and whether there is a tip inside. -->
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/contextChips"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    app:chipSpacingHorizontal="6dp"
-                    app:chipSpacingVertical="4dp" />
-            </LinearLayout>
+                app:chipSpacingHorizontal="6dp"
+                app:chipSpacingVertical="4dp" />
         </LinearLayout>
 
-        <!-- Actions: save, comments, and "Why?" on Discover picks. -->
+        <!-- The marks: the butterfly (a reaction), comments, Why? and Save. -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -147,17 +201,17 @@
             android:orientation="horizontal"
             android:paddingStart="6dp"
             android:paddingEnd="6dp"
-            android:paddingBottom="4dp">
+            android:paddingBottom="6dp">
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/saveButton"
-                style="@style/Widget.Kurinji.Button.Action"
-                android:text="@string/butterfly_want"
+                android:id="@+id/reactButton"
+                style="@style/Widget.Kurinji.Button.Mark"
+                android:text="@string/reaction_label"
                 android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/commentButton"
-                style="@style/Widget.Kurinji.Button.Action"
+                style="@style/Widget.Kurinji.Button.Mark"
                 android:text="@string/feed_comment"
                 app:icon="@drawable/ic_comment" />
 
@@ -168,10 +222,17 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/whyButton"
-                style="@style/Widget.Kurinji.Button.Action"
+                style="@style/Widget.Kurinji.Button.Small"
                 android:contentDescription="@string/discover_why_title"
                 android:text="@string/discover_why"
                 android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/saveButton"
+                style="@style/Widget.Kurinji.Button.Mark"
+                android:text="@string/save_label"
+                android:visibility="gone"
+                app:icon="@drawable/ic_bookmark" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

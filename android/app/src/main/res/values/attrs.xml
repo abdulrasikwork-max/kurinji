@@ -12,13 +12,17 @@
     <attr name="colorOnHeroVariant" format="color" />
     <attr name="colorHeroAccent" format="color" />
 
-    <!-- Phase 13F (Kurinji): raised cards, hairlines, and the intent colour (the butterfly, "Want to go"). -->
+    <!-- Phase 13F (Kurinji): raised cards and hairlines. -->
     <attr name="colorCard" format="color" />
     <attr name="colorLine" format="color" />
-    <attr name="colorIntent" format="color" />
-    <attr name="colorIntentInk" format="color" />
-    <attr name="colorIntentContainer" format="color" />
-    <attr name="colorOnIntentContainer" format="color" />
+    <!-- Phase 17E ("Ink & Lime"): lime as a fill with ink on it; the accent that can be read on a light page; the ink
+         panel (profile heads, the Safety entry on You). -->
+    <attr name="colorLime" format="color" />
+    <attr name="colorOnLime" format="color" />
+    <attr name="colorAccentText" format="color" />
+    <attr name="colorPanel" format="color" />
+    <attr name="colorOnPanel" format="color" />
+    <attr name="colorOnPanelVariant" format="color" />
 
     <!-- Phase 16 (U4): the emergency treatment's own surface (black, with a red ring and the siren icon). -->
     <attr name="colorEmergencySurface" format="color" />

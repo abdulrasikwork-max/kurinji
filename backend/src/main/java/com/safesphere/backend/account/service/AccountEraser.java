@@ -58,13 +58,15 @@ public class AccountEraser {
             "blocks.blocker_id", "blocks.blocked_id", "mutes.muter_id", "mutes.muted_id",
             // Phase 13B (V21): experiences, their photos and perspectives. Places record no person (Q12).
             "posts.author_id", "post_media.owner_id", "comments.author_id",
-            // Phase 13C (V22): the person's Cocoon (their butterflies).
+            // Phase 13C (V22): the person's butterflies (since 17E: reactions).
             "butterflies.user_id",
             // Phase 13D (V23): reports by or about the person, cases about them, their strikes and pause.
             "content_reports.reporter_id", "content_reports.person_id", "content_cases.person_id",
             "social_strikes.user_id", "social_standing.user_id",
             // V25: a pending e-mail verification link. Phase 17B (V26): a phone verification in progress.
-            "email_verification_tokens.user_id", "phone_challenges.user_id");
+            "email_verification_tokens.user_id", "phone_challenges.user_id",
+            // Phase 17E (V28): the person's saved posts and today's state (butterflies are now reactions, above).
+            "saved_posts.user_id", "daily_states.user_id");
 
     /** References that keep the account row (anonymised): the moderation audit trail of decisions this person took. */
     public static final Set<String> KEPT_REFERENCES = Set.of("moderation_actions.actor_id", "moderation_appeals.decided_by");
@@ -98,9 +100,13 @@ public class AccountEraser {
             "DELETE FROM connection_invites WHERE owner_id = ?",
             "DELETE FROM blocks WHERE blocker_id = ? OR blocked_id = ?",
             "DELETE FROM mutes WHERE muter_id = ? OR muted_id = ?",
-            // Phase 13C: the person's Cocoon, and everyone's butterflies on the person's posts (before the posts).
+            // Phase 13C / 17E: the person's reactions and saved posts, and everyone's reactions and saves on the person's
+            // posts (before the posts); their daily state.
             "DELETE FROM butterflies WHERE user_id = ?",
             "DELETE FROM butterflies WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)",
+            "DELETE FROM saved_posts WHERE user_id = ?",
+            "DELETE FROM saved_posts WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)",
+            "DELETE FROM daily_states WHERE user_id = ?",
             // Phase 13D: the person's reports; every case (and its reports) about the person, their posts, their
             // perspectives and the perspectives on their posts; earlier texts of their posts; their strikes and pause.
             "DELETE FROM content_reports WHERE reporter_id = ?",
@@ -203,8 +209,11 @@ public class AccountEraser {
         Outcome blocked = blocked(user);
         if (blocked != null) return new Check(blocked, List.of(), List.of());
         // Phase 13B: every photo the person uploaded (attached to their posts or not); a photo is always its owner's.
-        List<String> mediaKeys = jdbc.queryForList("SELECT storage_key FROM post_media WHERE owner_id = ?", String.class,
-                userId);
+        // Phase 17E: and their profile photo (stored the same way, its key on the profile).
+        List<String> mediaKeys = new java.util.ArrayList<>(jdbc.queryForList(
+                "SELECT storage_key FROM post_media WHERE owner_id = ?", String.class, userId));
+        mediaKeys.addAll(jdbc.queryForList("SELECT photo_key FROM profiles WHERE user_id = ? AND photo_key IS NOT NULL",
+                String.class, userId));
         return new Check(null, evidence.storageKeysOf(userId), mediaKeys);
     }
 

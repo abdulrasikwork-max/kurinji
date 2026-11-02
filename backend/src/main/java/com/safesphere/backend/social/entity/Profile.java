@@ -63,6 +63,10 @@ public class Profile {
     @Column(length = 60)
     private String city;
 
+    /** Phase 17E (V28): the storage key of the profile photo (a new random key per upload); null = no photo. */
+    @Column(name = "photo_key", length = 36)
+    private String photoKey;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -100,6 +104,18 @@ public class Profile {
         this.handle = newHandle;
         this.handleChangedAt = at;
         this.updatedAt = at;
+    }
+
+    /** Phase 17E: a new photo (a fresh key), or none (null). Returns the key it replaced, whose file must go. */
+    public String replacePhoto(String key, LocalDateTime now) {
+        String old = this.photoKey;
+        this.photoKey = key;
+        this.updatedAt = now.truncatedTo(ChronoUnit.MICROS);
+        return old;
+    }
+
+    public String getPhotoKey() {
+        return photoKey;
     }
 
     /** Ends a reservation whose time is over (so the handle can be taken again). */

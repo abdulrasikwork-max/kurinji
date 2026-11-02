@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13C: a place page or a category page. Newest first; more only on an explicit tap; no ratings, no counts. -->
+<!-- Phase 13C, redesigned in 17E: a place page or a category page. An ink head (the place or category, its city, and for a
+     place: "I went here" and "Going there?"), then its posts newest first; more only on an explicit tap; no ratings, no
+     counts, never ordered by numbers (E17-10). -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -21,30 +23,78 @@
             app:noticeText="@string/error_unknown"
             app:noticeType="warning" />
 
-        <TextView
-            android:id="@+id/heading"
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Kurinji.Card.Panel"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:accessibilityHeading="true"
-            android:textAppearance="@style/TextAppearance.Kurinji.Headline.Large" />
+            android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@+id/detailLine"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xs"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
 
-        <!-- Phase 13F (F9): from reading to going (place pages only). -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/goingButton"
-            style="@style/Widget.Kurinji.Button.Quiet"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:text="@string/going_there"
-            android:visibility="gone"
-            app:icon="@drawable/ic_route" />
+                <TextView
+                    android:id="@+id/kindTag"
+                    style="@style/Widget.Kurinji.Tag"
+                    android:drawablePadding="4dp"
+                    android:gravity="center_vertical"
+                    app:drawableStartCompat="@drawable/ic_place"
+                    app:drawableTint="?attr/colorOnLime" />
+
+                <TextView
+                    android:id="@+id/heading"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:accessibilityHeading="true"
+                    android:textAppearance="@style/TextAppearance.Kurinji.Headline.Large"
+                    android:textColor="?attr/colorOnPanel" />
+
+                <TextView
+                    android:id="@+id/detailLine"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                    android:textColor="?attr/colorOnPanelVariant" />
+
+                <!-- Phase 13F (F9) + 17E ("I went"): from reading to going, and to sharing (place pages only). -->
+                <LinearLayout
+                    android:id="@+id/placeActions"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/wentButton"
+                        style="@style/Widget.Kurinji.Button.Tonal"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/place_share_yours"
+                        android:textColor="?attr/colorOnLime"
+                        app:backgroundTint="?attr/colorLime"
+                        app:icon="@drawable/ic_flag"
+                        app:iconTint="?attr/colorOnLime" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/goingButton"
+                        style="@style/Widget.Kurinji.Button.Quiet"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_sm"
+                        android:layout_weight="1"
+                        android:text="@string/going_there"
+                        android:textColor="?attr/colorOnPanel"
+                        app:icon="@drawable/ic_route"
+                        app:iconTint="?attr/colorOnPanel"
+                        app:strokeColor="?attr/colorOnPanelVariant" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/progress"

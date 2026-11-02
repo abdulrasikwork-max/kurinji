@@ -183,6 +183,15 @@
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Phase 17E (D-5): choose from the catalog (searched on the phone); the name is written into the field. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cityPickButton"
+                style="@style/Widget.SafeSphere.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/profile_city_choose"
+                app:icon="@drawable/ic_city" />
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

@@ -2,7 +2,6 @@ package com.safesphere.backend.social.repository;
 
 import com.safesphere.backend.social.entity.Post;
 import com.safesphere.backend.social.entity.PostEnums.Audience;
-import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.entity.PostEnums.ModerationState;
 import com.safesphere.backend.social.entity.PostEnums.PostType;
 import jakarta.persistence.LockModeType;
@@ -71,14 +70,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("SELECT p FROM Post p WHERE " + EVERYONE + " AND p.type = :type AND p.authorId <> :viewer"
             + " AND p.visibleFrom >= :from AND p.visibleFrom <= :now AND " + IN_CITY
             + " ORDER BY p.visibleFrom DESC, p.id DESC")
-    List<Post> editionCandidates(@Param("type") PostType type, @Param("city") City city, @Param("viewer") long viewer,
+    List<Post> editionCandidates(@Param("type") PostType type, @Param("city") String city, @Param("viewer") long viewer,
                                  @Param("from") LocalDateTime from, @Param("now") LocalDateTime now, Pageable page);
 
     /** Theme candidates: as above, one category. */
     @Query("SELECT p FROM Post p WHERE " + EVERYONE + " AND p.type = :type AND p.authorId <> :viewer"
             + " AND p.category = :category AND p.visibleFrom >= :from AND p.visibleFrom <= :now AND " + IN_CITY
             + " ORDER BY p.visibleFrom DESC, p.id DESC")
-    List<Post> themeCandidates(@Param("type") PostType type, @Param("city") City city, @Param("viewer") long viewer,
+    List<Post> themeCandidates(@Param("type") PostType type, @Param("city") String city, @Param("viewer") long viewer,
                                @Param("category") String category, @Param("from") LocalDateTime from,
                                @Param("now") LocalDateTime now, Pageable page);
 
@@ -92,7 +91,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             + " AND EXISTS (SELECT c.id FROM Comment c WHERE c.postId = p.id AND c.authorId <> p.authorId"
             + " AND c.createdAt >= :since)"
             + " ORDER BY p.visibleFrom DESC, p.id DESC")
-    List<Post> talkedAbout(@Param("city") City city, @Param("viewer") long viewer, @Param("from") LocalDateTime from,
+    List<Post> talkedAbout(@Param("city") String city, @Param("viewer") long viewer, @Param("from") LocalDateTime from,
                            @Param("since") LocalDateTime since, @Param("now") LocalDateTime now, Pageable page);
 
     /** Open Asks: Everyone Asks in a city without an answer the asker marked "This helped". */
@@ -101,7 +100,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             + " AND p.visibleFrom >= :from AND p.visibleFrom <= :now AND " + IN_CITY
             + " AND NOT EXISTS (SELECT c.id FROM Comment c WHERE c.postId = p.id AND c.helpedAt IS NOT NULL)"
             + " ORDER BY p.visibleFrom DESC, p.id DESC")
-    List<Post> openAsks(@Param("city") City city, @Param("viewer") long viewer, @Param("from") LocalDateTime from,
+    List<Post> openAsks(@Param("city") String city, @Param("viewer") long viewer, @Param("from") LocalDateTime from,
                         @Param("now") LocalDateTime now, Pageable page);
 
     /** C9: connections' posts the viewer's audiences allow, newest visible first, within [from, now]. */
@@ -136,7 +135,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             + " AND " + IN_CITY
             + " AND (p.visibleFrom < :cursorAt OR (p.visibleFrom = :cursorAt AND p.id < :cursorId))"
             + " ORDER BY p.visibleFrom DESC, p.id DESC")
-    List<Post> categoryCityPage(@Param("category") String category, @Param("city") City city,
+    List<Post> categoryCityPage(@Param("category") String category, @Param("city") String city,
                                 @Param("now") LocalDateTime now, @Param("cursorAt") LocalDateTime cursorAt,
                                 @Param("cursorId") long cursorId, Pageable page);
 

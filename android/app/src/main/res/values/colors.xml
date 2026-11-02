@@ -1,47 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        Kurinji palette, light (Phase 16 UX reset, decision U4, docs/PHASE16.md): red, black and white.
-        The resource names stay from 13F so every layout keeps working; their ROLES are:
-        k_mist = the page (off-white), k_card = cards (white), k_ink = text (near-black),
-        k_bloom = the brand red (actions, the save, links), k_yeoman* = the save ("I want this") control,
-        ochre = moderation and caution (always with an icon and words).
-        Red is no longer reserved for emergencies: emergency UI is recognised by the siren icon, the words SOS /
-        Emergency and its black surface with a red ring (emergency_surface), never by the hue alone.
-        Every text pair is at least 4.5:1 and every control edge 3:1 (ContrastTest).
+        Kurinji "Ink & Lime", light (Phase 17E, decision E17-1, docs/PHASE17E.md, docs/DESIGN_SYSTEM.md).
+        Lime (#ADFF2F) is the young growth on the Kurinji hills; ink is the night sky over them.
+        Rules:
+          * Lime is a FILL (chosen, reacted, saved, the active tab) with ink on it - never text or an icon on a light page
+            (it is 1.2:1 on white). On light pages, actions are INK with lime words; accents that must be read are LEAF.
+          * In the dark, lime is the action colour with ink words.
+          * Red is emergency only again; emergency UI still never relies on colour (U4: black surface, red ring, siren,
+            the words). The ss_* / hero_* / emergency_* values below are the Safety section's and are unchanged.
+        Every text pair is at least 4.5:1 and every control edge 3:1, day and night (ContrastTest).
     -->
-    <color name="k_mist">#F5F4F2</color>
-    <color name="k_card">#FFFFFF</color>
-    <color name="k_sunk">#ECEAE7</color>
-    <color name="k_ink">#121212</color>
-    <!-- Phase 17C: the label on a video still (k_ink at 85 %): white text on it stays above 12:1 on any picture. -->
-    <color name="k_video_badge">#D9121212</color>
-    <color name="k_ink_soft">#4A4A4A</color>
-    <color name="k_outline">#7A7A7A</color>
-    <color name="k_line">#E1DFDB</color>
-    <color name="k_surface_low">#FAF9F7</color>
-    <color name="k_surface_container">#EFEEEB</color>
-    <color name="k_surface_high">#E8E6E3</color>
-    <color name="k_surface_highest">#E0DEDA</color>
 
-    <color name="k_bloom">#D0102A</color>
-    <color name="k_on_bloom">#FFFFFF</color>
-    <color name="k_bloom_soft">#FDE2E4</color>
-    <color name="k_on_bloom_soft">#6B0614</color>
+    <!-- Neutrals -->
+    <color name="k_page">#F3F4EE</color>
+    <color name="k_surface">#FFFFFF</color>
+    <color name="k_surface_sunk">#E8EAE1</color>
+    <color name="k_surface_low">#F9FAF5</color>
+    <color name="k_surface_container">#EDEFE6</color>
+    <color name="k_surface_high">#E6E8DE</color>
+    <color name="k_surface_highest">#DEE1D5</color>
+    <color name="k_ink">#0E100C</color>
+    <color name="k_ink_soft">#4A4F44</color>
+    <color name="k_outline">#73786C</color>
+    <color name="k_line">#DCDFD3</color>
+    <!-- Phase 17C: the label on a video still (ink at 85 %): white text on it stays above 12:1 on any picture. -->
+    <color name="k_video_badge">#D90E100C</color>
 
-    <color name="k_yeoman">#D0102A</color>
-    <color name="k_yeoman_ink">#A10C20</color>
-    <color name="k_yeoman_soft">#FDE2E4</color>
-    <color name="k_on_yeoman_soft">#5C0410</color>
+    <!-- Brand -->
+    <color name="k_lime">#ADFF2F</color>
+    <color name="k_on_lime">#0E100C</color>
+    <!-- The action colour: ink in the day (lime words on it), lime at night (ink words on it). -->
+    <color name="k_action">#0E100C</color>
+    <color name="k_on_action">#ADFF2F</color>
+    <!-- A quiet lime container (tonal buttons, today's state, the selected tab's pill). -->
+    <color name="k_lime_soft">#E4F8C4</color>
+    <color name="k_on_lime_soft">#1D3000</color>
+    <!-- Lime that can be READ on a light page: links, small accents, "Saved". -->
+    <color name="k_leaf">#3A6100</color>
+    <!-- The ink panel (profile heads, the Safety entry on You): ink with light words and a lime accent. -->
+    <color name="k_panel">#0E100C</color>
+    <color name="k_on_panel">#F3F4EE</color>
+    <color name="k_on_panel_soft">#BFC5B4</color>
 
-    <!-- Emergency (the Material "error" roles) and its own black surface with a red ring. -->
+    <!-- Emergency (the Material "error" roles) and its own black surface with a red ring. Unchanged since Phase 16. -->
     <color name="ss_emergency">#C8102E</color>
     <color name="ss_on_emergency">#FFFFFF</color>
     <color name="ss_emergency_container">#FDE2E4</color>
     <color name="ss_on_emergency_container">#5C0410</color>
     <color name="emergency_surface">#0B0B0B</color>
 
-    <!-- Status colours of the safety screens (text and icons on the page) -->
+    <!-- Status colours of the safety screens (text and icons on the page). Unchanged. -->
     <color name="ss_safe">#187A4B</color>
     <color name="ss_safe_container">#D9F2E3</color>
     <color name="ss_on_safe_container">#0B3D24</color>
@@ -49,32 +58,33 @@
     <color name="ss_caution_container">#F3E6C4</color>
     <color name="ss_on_caution_container">#3D2700</color>
 
-    <!-- "Hero" panels (status card, the safety hub head): black with white text and a CALM sky accent. Never red:
-         the status card says "Nothing running" in this colour, and red would read as danger (emulator finding). -->
+    <!-- "Hero" panels of the safety screens (status card, the safety hub head): unchanged. Never red. -->
     <color name="hero_background">#121212</color>
     <color name="hero_on">#F5F4F2</color>
     <color name="hero_on_variant">#BDBDBD</color>
     <color name="hero_accent">#A9C7E8</color>
     <color name="hero_caution">#F5B544</color>
 
-    <!-- The in-app brand mark (the Go-K: a stem and a forward chevron) -->
-    <color name="mark_stem">#121212</color>
-    <color name="mark_chevron">#D0102A</color>
+    <!-- The in-app brand mark (a stem and a forward chevron) -->
+    <color name="mark_stem">#0E100C</color>
+    <color name="mark_chevron">#3A6100</color>
 
     <!-- The launcher always draws the icon on its own background: fixed colours, no night variant. -->
+    <color name="launcher_background">#0E100C</color>
+    <color name="launcher_stem">#FFFFFF</color>
+    <color name="launcher_chevron">#ADFF2F</color>
+    <!-- The SOS shortcut keeps its emergency look (black disc, red ring). -->
     <color name="launcher_red">#D0102A</color>
-    <color name="launcher_stem">#121212</color>
-    <color name="launcher_chevron">#FFFFFF</color>
     <color name="launcher_sos">#121212</color>
 
-    <color name="splash_background">#D0102A</color>
-    <color name="ic_launcher_background">#D0102A</color>
+    <color name="splash_background">#0E100C</color>
+    <color name="ic_launcher_background">#0E100C</color>
 
-    <!-- Avatar circles (a person's initial): strong, distinct, white text reaches 4.5:1 on each. -->
-    <color name="avatar_1">#B0102A</color>
-    <color name="avatar_2">#121212</color>
+    <!-- Avatar circles (a person's initial when there is no photo): white text reaches 4.5:1 on each. No red. -->
+    <color name="avatar_1">#3A6100</color>
+    <color name="avatar_2">#0E100C</color>
     <color name="avatar_3">#1E5AA8</color>
-    <color name="avatar_4">#1F7A4D</color>
+    <color name="avatar_4">#00696B</color>
     <color name="avatar_5">#7A3EB1</color>
     <color name="avatar_6">#A34E00</color>
     <color name="avatar_on">#FFFFFF</color>

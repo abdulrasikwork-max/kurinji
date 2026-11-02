@@ -12,7 +12,6 @@ import com.safesphere.backend.social.entity.Comment;
 import com.safesphere.backend.social.entity.Place;
 import com.safesphere.backend.social.entity.Post;
 import com.safesphere.backend.social.entity.PostEnums.Audience;
-import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.entity.PostEnums.PostType;
 import com.safesphere.backend.social.entity.PostEnums.Precision;
 import com.safesphere.backend.social.policy.EditionPolicy;
@@ -86,7 +85,7 @@ public class DiscoverService {
     @Transactional(readOnly = true)
     public Edition edition(long viewerId, String cityCode) {
         access.requireMember(viewerId);
-        City city = PlaceService.editionCity(cityCode, false);
+        String city = PlaceService.editionCity(cityCode, false);
         limits.discover(viewerId);
         Instant instant = clock.instant();
         LocalDateTime now = now(instant);
@@ -123,7 +122,7 @@ public class DiscoverService {
         add(sections, Section.TALKING, viewerId, EditionPolicy.pickTalking(talking(viewerId, talked, since),
                 EditionPolicy.TALKING_CAP), now);
 
-        return new Edition(city.name(), monday.toString(), theme.name(), sections);
+        return new Edition(city, monday.toString(), theme.name(), sections);
     }
 
     /**
@@ -191,7 +190,7 @@ public class DiscoverService {
     public PostPage category(long viewerId, String categoryCode, String cityCode, String cursor) {
         access.requireMember(viewerId);
         String category = PlaceService.category(categoryCode);
-        City city = PlaceService.editionCity(cityCode, true);
+        String city = PlaceService.editionCity(cityCode, true);
         limits.discover(viewerId);
         LocalDateTime now = now(clock.instant());
         Relationships.Viewer viewer = relationships.viewer(viewerId);

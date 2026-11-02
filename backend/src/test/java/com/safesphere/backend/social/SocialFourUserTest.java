@@ -229,20 +229,25 @@ class SocialFourUserTest {
                     .doesNotContain(everyone);
         }
 
-        // Butterflies: anyone who can see it; never the blocked; the muter by a deliberate visit.
-        social.butterfly(connection, connectionsOnly, null).andExpect(status().isOk());
-        social.butterfly(stranger, connectionsOnly, null).andExpect(status().isNotFound());
-        social.butterfly(stranger, everyone, null).andExpect(status().isOk());
-        social.butterfly(blocked, everyone, null).andExpect(status().isNotFound());
-        social.butterfly(muter, everyone, null).andExpect(status().isOk());
-        social.butterfly(owner, everyone, null).andExpect(status().isBadRequest());
+        // Saves (17E): anyone who can see it; never the blocked; the muter by a deliberate visit.
+        social.save(connection, connectionsOnly).andExpect(status().isOk());
+        social.save(stranger, connectionsOnly).andExpect(status().isNotFound());
+        social.save(stranger, everyone).andExpect(status().isOk());
+        social.save(blocked, everyone).andExpect(status().isNotFound());
+        social.save(muter, everyone).andExpect(status().isOk());
+        social.save(owner, everyone).andExpect(status().isBadRequest());
+        // Reactions follow the same rule.
+        social.react(stranger, connectionsOnly).andExpect(status().isNotFound());
+        social.react(blocked, everyone).andExpect(status().isNotFound());
+        social.react(stranger, everyone).andExpect(status().isOk());
         // The muter's own Cocoon still shows what they saved (mute hides lists of others, not one's own choices).
-        assertThat(social.cocoonIds(social.cocoon(muter, "WANT", null))).containsExactly(everyone);
-        assertThat(social.cocoonIds(social.cocoon(stranger, "WANT", null))).containsExactly(everyone);
+        assertThat(social.savedIds(social.saved(muter, null))).containsExactly(everyone);
+        assertThat(social.savedIds(social.saved(stranger, null))).containsExactly(everyone);
         // Each sees only their own state; only the owner gets the (thresholded) number.
-        social.getPost(connection, everyone).andExpect(jsonPath("$.yourButterfly").isEmpty())
+        social.getPost(connection, everyone).andExpect(jsonPath("$.saved").value(false))
                 .andExpect(jsonPath("$.butterflies").isEmpty());
-        social.getPost(stranger, everyone).andExpect(jsonPath("$.yourButterfly").value("WANT"))
+        social.getPost(stranger, everyone).andExpect(jsonPath("$.saved").value(true))
+                .andExpect(jsonPath("$.youReacted").value(true))
                 .andExpect(jsonPath("$.butterflies").isEmpty());
         social.getPost(owner, everyone).andExpect(jsonPath("$.butterflies.fewerThanThree").value(true))
                 .andExpect(jsonPath("$.butterflies.count").isEmpty());

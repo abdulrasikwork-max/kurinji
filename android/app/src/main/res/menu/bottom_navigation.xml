@@ -12,7 +12,7 @@
         android:title="@string/nav_share" />
     <item
         android:id="@+id/cocoonFragment"
-        android:icon="@drawable/ic_nav_cocoon"
+        android:icon="@drawable/ic_bookmark"
         android:title="@string/nav_cocoon" />
     <item
         android:id="@+id/youFragment"

@@ -24,7 +24,8 @@ public class SocialLimits {
     static final String TOO_MANY_PHOTOS = "You have added many photos today. Please try again tomorrow.";
     static final String TOO_MANY_VIDEOS = "You have added many videos today. Please try again tomorrow.";
     static final String TOO_MANY_COMMENTS = "You have written many perspectives today. Please try again tomorrow.";
-    static final String TOO_MANY_BUTTERFLIES = "You have changed your Cocoon many times today. Please try again tomorrow.";
+    static final String TOO_MANY_BUTTERFLIES =
+            "You have given or taken back many butterflies and saves today. Please try again tomorrow.";
     static final String TOO_MANY_DISCOVER = "You have opened a lot of lists this hour. Please try again later.";
     static final String TOO_MANY_SEARCHES = "Too many place searches. Please try again later.";
 

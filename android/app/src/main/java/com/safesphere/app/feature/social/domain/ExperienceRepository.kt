@@ -12,6 +12,9 @@ interface ExperienceRepository {
 
     suspend fun nearbyPlaces(areaCell: String): ApiResult<List<Place>>
 
+    /** Phase 17E: one public place by id (a merged place answers with the place it became). */
+    suspend fun place(publicId: String): ApiResult<Place>
+
     /**
      * Uploads a JPEG the phone already re-encoded (PhotoPreparer); the server re-encodes it again. Phase 17C:
      * [onProgress] hears the share of the body sent so far (0..1; from 0 again if the call is sent once more).
@@ -61,5 +64,8 @@ interface ExperienceRepository {
 
     /** Phase 17C: the address a video is streamed from (the player sends the JWT itself; nothing is saved). */
     fun videoUrl(mediaId: String): String
+
+    /** Phase 17E: a profile photo (served only to people who may see the profile; the key changes with every photo). */
+    fun personPhotoUrl(profileId: String, key: String): String
 
 }

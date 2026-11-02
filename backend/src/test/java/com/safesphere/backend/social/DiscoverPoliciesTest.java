@@ -3,9 +3,8 @@ package com.safesphere.backend.social;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.safesphere.backend.community.service.GeoCell;
-import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.policy.ButterflyTally;
-import com.safesphere.backend.social.policy.CityAreas;
+import com.safesphere.backend.social.policy.CityCatalog;
 import com.safesphere.backend.social.policy.EditionPolicy;
 import com.safesphere.backend.social.policy.EditionPolicy.Candidate;
 import com.safesphere.backend.social.policy.EditionPolicy.Picked;
@@ -28,37 +27,42 @@ class DiscoverPoliciesTest {
 
     @Test
     void cityCentres_fallInTheirOwnCity() {
-        assertThat(city(13.0827, 80.2707)).isEqualTo(City.CHENNAI);       // Chennai Central
-        assertThat(city(12.9010, 80.2279)).isEqualTo(City.CHENNAI);       // Sholinganallur
-        assertThat(city(11.0168, 76.9558)).isEqualTo(City.COIMBATORE);
-        assertThat(city(9.9252, 78.1198)).isEqualTo(City.MADURAI);
-        assertThat(city(10.7905, 78.7047)).isEqualTo(City.TIRUCHIRAPPALLI);
-        assertThat(city(11.6643, 78.1460)).isEqualTo(City.SALEM);
-        assertThat(city(8.7139, 77.7567)).isEqualTo(City.TIRUNELVELI);
-        assertThat(city(12.9165, 79.1325)).isEqualTo(City.VELLORE);
-        assertThat(city(11.3410, 77.7172)).isEqualTo(City.ERODE);
-        assertThat(city(8.7642, 78.1348)).isEqualTo(City.THOOTHUKUDI);
-        assertThat(city(10.7870, 79.1378)).isEqualTo(City.THANJAVUR);
-        assertThat(city(11.9416, 79.8083)).isEqualTo(City.PUDUCHERRY);
-        assertThat(city(12.9716, 77.5946)).isEqualTo(City.BENGALURU);
+        assertThat(city(13.0827, 80.2707)).isEqualTo("CHENNAI");       // Chennai Central
+        assertThat(city(12.9010, 80.2279)).isEqualTo("CHENNAI");       // Sholinganallur
+        assertThat(city(11.0168, 76.9558)).isEqualTo("COIMBATORE");
+        assertThat(city(9.9252, 78.1198)).isEqualTo("MADURAI");
+        assertThat(city(10.7905, 78.7047)).isEqualTo("TIRUCHIRAPPALLI");
+        assertThat(city(11.6643, 78.1460)).isEqualTo("SALEM");
+        assertThat(city(8.7139, 77.7567)).isEqualTo("TIRUNELVELI");
+        assertThat(city(12.9165, 79.1325)).isEqualTo("VELLORE");
+        assertThat(city(11.3410, 77.7172)).isEqualTo("ERODE");
+        assertThat(city(8.7642, 78.1348)).isEqualTo("THOOTHUKUDI");
+        assertThat(city(10.7870, 79.1378)).isEqualTo("THANJAVUR");
+        assertThat(city(11.9416, 79.8083)).isEqualTo("PUDUCHERRY");
+        assertThat(city(12.9716, 77.5946)).isEqualTo("BENGALURU");
     }
 
     @Test
-    void outsideEveryBox_isNoCity() {
-        assertThat(CityAreas.cityOf(GeoCell.encode(28.6139, 77.2090, 7))).isEmpty();    // Delhi
-        assertThat(CityAreas.cityOf(GeoCell.encode(11.4102, 76.6950, 7))).isEmpty();    // Ooty
-        assertThat(CityAreas.cityOf(GeoCell.encode(0, 0, 7))).isEmpty();
+    void outsideEveryBox_isNoCity_andPhase17eCitiesAreFound() {
+        assertThat(city(28.6139, 77.2090)).isEqualTo("DELHI");                // Phase 17E catalog
+        assertThat(city(11.4102, 76.6950)).isEqualTo("OOTY");
+        assertThat(CityCatalog.cityOf(GeoCell.encode(20.5, 79.0, 7))).isEmpty(); // open country
+        assertThat(CityCatalog.cityOf(GeoCell.encode(0, 0, 7))).isEmpty();
     }
 
     @Test
-    void other_hasNoArea_everyOtherCityHasOne() {
-        for (City city : City.values()) assertThat(CityAreas.hasArea(city)).isEqualTo(city != City.OTHER);
+    void other_isAPostCityOnly() {
+        assertThat(CityCatalog.find(CityCatalog.OTHER)).isEmpty();
+        assertThat(CityCatalog.listCity("other")).isEmpty();
+        assertThat(CityCatalog.postCity("other")).contains("OTHER");
+        assertThat(CityCatalog.listCity(" chennai ")).contains("CHENNAI");
+        assertThat(CityCatalog.postCity("ATLANTIS")).isEmpty();
     }
 
     @Test
     void anAreaCellAndItsBlocks_agreeOnTheCity() {
         String block = GeoCell.encode(13.0500, 80.2500, 7);
-        assertThat(CityAreas.cityOf(block.substring(0, 6))).isEqualTo(CityAreas.cityOf(block));
+        assertThat(CityCatalog.cityOf(block.substring(0, 6))).isEqualTo(CityCatalog.cityOf(block));
     }
 
     // ---- Edition week and theme ----
@@ -125,7 +129,7 @@ class DiscoverPoliciesTest {
         assertThat(ButterflyTally.of(41)).isEqualTo(new ButterflyTally(41, false));
     }
 
-    private static City city(double lat, double lng) {
-        return CityAreas.cityOf(GeoCell.encode(lat, lng, 7)).orElse(null);
+    private static String city(double lat, double lng) {
+        return CityCatalog.cityOf(GeoCell.encode(lat, lng, 7)).orElse(null);
     }
 }

@@ -21,6 +21,10 @@ interface ExperienceApi {
     @POST("api/places")
     suspend fun createPlace(@Body body: PlaceRequestDto): PlaceDto
 
+    /** Phase 17E: one place ("I went" fills it into the composer). */
+    @GET("api/places/{id}")
+    suspend fun place(@Path("id") placeId: String): PlaceDto
+
     @GET("api/places/nearby")
     suspend fun nearbyPlaces(@Query("area") areaCell: String): List<PlaceDto>
 

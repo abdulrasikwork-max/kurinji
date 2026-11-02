@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 17E: today: a slow day (a cup) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:tint="?attr/colorControlNormal"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:fillType="evenOdd"
+        android:pathData="M3,9h14v5a5,5 0,0 1,-5 5H8a5,5 0,0 1,-5 -5z M5,11v3a3,3 0,0 0,3 3h4a3,3 0,0 0,3 -3v-3z M17,10h1.5a2.5,2.5 0,0 1,0 5H17v-2h1.5a0.5,0.5 0,0 0,0 -1H17z M7,3h2v4H7z M11,3h2v4h-2z M3,20h14v2H3z" />
+</vector>

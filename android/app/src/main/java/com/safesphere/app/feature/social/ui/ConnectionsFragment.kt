@@ -37,9 +37,9 @@ class ConnectionsFragment : ViewBindingFragment<FragmentConnectionsBinding>(Frag
 
     private val viewModel by viewModels<ConnectionsViewModel> { ConnectionsViewModel.factory(appContainer) }
 
-    private val incomingAdapter = PersonRowAdapter()
-    private val outgoingAdapter = PersonRowAdapter()
-    private val connectionAdapter = PersonRowAdapter()
+    private val incomingAdapter by lazy { PersonRowAdapter(cardImages()) }
+    private val outgoingAdapter by lazy { PersonRowAdapter(cardImages()) }
+    private val connectionAdapter by lazy { PersonRowAdapter(cardImages()) }
     private val inviteAdapter = PersonRowAdapter()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -129,7 +129,8 @@ class ConnectionsFragment : ViewBindingFragment<FragmentConnectionsBinding>(Frag
         title = person.displayName,
         subtitle = getString(R.string.social_handle_line, person.handle),
         onOpen = { openPerson(person) },
-        openDescription = getString(R.string.social_open_profile_cd, person.displayName)
+        openDescription = getString(R.string.social_open_profile_cd, person.displayName),
+        person = person
     )
 
     private fun inviteRow(invite: InviteItem): PersonRow {

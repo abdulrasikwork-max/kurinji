@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13A: someone's profile. No counts, no presence, no messages. -->
+<!-- Phase 13A, redesigned in 17E: someone's profile on the ink panel (photo in a lime ring, name, handle, how you are
+     connected, today's state for connections only, bio, city, languages, interests). No counts, no presence, no
+     messages. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -47,55 +49,100 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <TextView
-                android:id="@+id/displayName"
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Kurinji.Card.Panel"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:accessibilityHeading="true"
-                android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle" />
+                android:layout_height="wrap_content">
 
-            <TextView
-                android:id="@+id/handle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
 
-            <TextView
-                android:id="@+id/relationship"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:accessibilityLiveRegion="polite"
-                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+                    <FrameLayout
+                        android:layout_width="84dp"
+                        android:layout_height="84dp"
+                        android:background="@drawable/bg_ring_lime"
+                        android:importantForAccessibility="noHideDescendants"
+                        android:padding="5dp">
 
-            <TextView
-                android:id="@+id/bio"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+                        <com.safesphere.app.core.ui.components.AvatarView
+                            android:id="@+id/avatar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
+                    </FrameLayout>
 
-            <TextView
-                android:id="@+id/city"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+                    <TextView
+                        android:id="@+id/displayName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:accessibilityHeading="true"
+                        android:textAppearance="@style/TextAppearance.Kurinji.Headline.Large"
+                        android:textColor="?attr/colorOnPanel" />
 
-            <TextView
-                android:id="@+id/languages"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+                    <TextView
+                        android:id="@+id/handle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                        android:textColor="?attr/colorOnPanelVariant" />
 
-            <TextView
-                android:id="@+id/interests"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+                    <TextView
+                        android:id="@+id/relationship"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:accessibilityLiveRegion="polite"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
+                        android:textColor="?attr/colorLime" />
+
+                    <!-- Phase 17E (D-7): today's state, only when the viewer is a connection. -->
+                    <TextView
+                        android:id="@+id/dailyState"
+                        style="@style/Widget.Kurinji.Tag"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:drawablePadding="6dp"
+                        android:gravity="center_vertical"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:visibility="gone"
+                        app:drawableTint="?attr/colorOnLime" />
+
+                    <TextView
+                        android:id="@+id/bio"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:textAppearance="@style/TextAppearance.Kurinji.Body.Large"
+                        android:textColor="?attr/colorOnPanel" />
+
+                    <TextView
+                        android:id="@+id/city"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_sm"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                        android:textColor="?attr/colorOnPanelVariant" />
+
+                    <TextView
+                        android:id="@+id/languages"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                        android:textColor="?attr/colorOnPanelVariant" />
+
+                    <TextView
+                        android:id="@+id/interests"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                        android:textColor="?attr/colorOnPanelVariant" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/primaryButton"
@@ -118,7 +165,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_md"
-                android:gravity="end"
+                android:gravity="start"
                 android:orientation="horizontal">
 
                 <com.google.android.material.button.MaterialButton

@@ -262,6 +262,7 @@ class ModerationV2Test {
         }
         override fun photoUrl(caseId: String, mediaId: String) = "http://test/$caseId/$mediaId"
         override fun videoUrl(caseId: String, mediaId: String) = "http://test/$caseId/$mediaId/video"
+        override fun personPhotoUrl(caseId: String) = "http://test/$caseId/person-photo"
     }
 
     @Test

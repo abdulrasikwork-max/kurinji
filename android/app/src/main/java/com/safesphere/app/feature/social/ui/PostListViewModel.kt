@@ -30,7 +30,10 @@ data class PostListUiState(
  * Phase 13B: a list of posts, newest first, 20 at a time: the person's own ("Your experiences", [profileId] null) or
  * the ones of someone's profile the viewer may see. More only on an explicit tap.
  */
-class PostListViewModel(private val repository: ExperienceRepository) : ViewModel() {
+class PostListViewModel(
+    private val repository: ExperienceRepository,
+    discover: com.safesphere.app.feature.social.domain.DiscoverRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PostListUiState())
     val uiState: StateFlow<PostListUiState> = _uiState.asStateFlow()
@@ -38,6 +41,11 @@ class PostListViewModel(private val repository: ExperienceRepository) : ViewMode
     private var profileId: String? = null
     private var own = false
     private var nextCursor: String? = null
+
+    /** Phase 17E: the butterfly and Save on someone else's posts in the list. */
+    val marks = PostMarks(discover, viewModelScope, { id, f ->
+        _uiState.update { s -> s.copy(items = s.items.map { if (it.publicId == id) f(it) else it }) }
+    }) { failure -> _uiState.update { it.copy(failure = failure, sessionExpired = failure.isSessionExpired()) } }
 
     fun showOwn() {
         own = true
@@ -91,7 +99,7 @@ class PostListViewModel(private val repository: ExperienceRepository) : ViewMode
 
     companion object {
         fun factory(container: AppContainer) = viewModelFactory {
-            initializer { PostListViewModel(container.experienceRepository) }
+            initializer { PostListViewModel(container.experienceRepository, container.discoverRepository) }
         }
     }
 }

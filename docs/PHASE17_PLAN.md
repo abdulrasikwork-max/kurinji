@@ -1,6 +1,6 @@
 # Phase 17 plan — product reset, bug fixes, social UX, AI Explore (DRAFT, awaiting the user's decisions)
 
-Status: **17A implemented, compiled, tested, emulator-verified 2026-10-27** (`PHASE17A.md`); **17B** done 2026-10-27 (`PHASE17B.md`); **17C media** implemented, compiled, tested, live- and emulator-verified 2026-11-01 (`PHASE17C.md`); 17D location UX implemented, compiled, tested, emulator-verified 2026-11-01 (`PHASE17D.md`); 17E–17J planned. Written 2026-10-27 after a read-only inspection
+Status: **17A implemented, compiled, tested, emulator-verified 2026-10-27** (`PHASE17A.md`); **17B** done 2026-10-27 (`PHASE17B.md`); **17C media** implemented, compiled, tested, live- and emulator-verified 2026-11-01 (`PHASE17C.md`); 17D location UX implemented, compiled, tested, emulator-verified 2026-11-01 (`PHASE17D.md`); **17E PAUSED — awaiting resumption 2026-11-02** (`PHASE17E.md` §2: backend + V28 applied + Android redesign implemented and unit-tested; emulator walk-through, review, docs and commit remain); 17F–17J planned. Written 2026-10-27 after a read-only inspection
 (Phase A). The shell was unavailable during the inspection (the tool's safety check returned no verdict), so **no
 build, test, database query or device check was run**; every finding below comes from reading the code and the docs.
 

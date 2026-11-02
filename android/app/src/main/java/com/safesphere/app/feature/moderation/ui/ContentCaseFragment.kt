@@ -133,8 +133,25 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
             ).joinToString("\n\n")
         }
 
-        binding.photosNote.isVisible = content.media.isNotEmpty()
+        binding.photosNote.isVisible = content.media.isNotEmpty() || content.person?.hasPhoto == true
         binding.photoBlock.removeAllViews()
+        // Phase 17E: the profile photo of a person case, only after a tap (like every photo here).
+        if (summary.target == ContentTarget.PERSON && content.person?.hasPhoto == true) {
+            if (PERSON_PHOTO in state.shownPhotos) {
+                val image = ImageView(requireContext()).apply {
+                    adjustViewBounds = true
+                    contentDescription = getString(R.string.content_case_person_photo)
+                    layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT)
+                }
+                image.load(viewModel.personPhotoUrl(), appContainer.imageLoader)
+                binding.photoBlock.addView(image)
+            } else {
+                binding.photoBlock.addView(textButton(getString(R.string.content_case_show_person_photo)) {
+                    viewModel.onShowPhoto(PERSON_PHOTO)
+                })
+            }
+        }
         content.media.forEachIndexed { index, media ->
             val number = (index + 1).toString()
             if (media.mediaId in state.shownPhotos) {
@@ -239,4 +256,9 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
                 ViewGroup.LayoutParams.WRAP_CONTENT)
             setOnClickListener { onClick() }
         }
+
+    private companion object {
+        /** Phase 17E: the key of the person photo among the "shown after a tap" items. */
+        const val PERSON_PHOTO = "person-photo"
+    }
 }

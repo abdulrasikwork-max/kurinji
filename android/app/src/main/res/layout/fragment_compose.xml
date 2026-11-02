@@ -145,11 +145,17 @@
             android:text="@string/social_city_title"
             android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/cityGroup"
+        <!-- Phase 17E (D-5): any catalog city or "Another city", from the city picker (searched on the phone). -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cityButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:singleSelection="true" />
+            android:layout_marginTop="@dimen/space_xs"
+            android:gravity="start|center_vertical"
+            android:text="@string/city_picker_title"
+            app:icon="@drawable/ic_city"
+            app:iconTint="?attr/colorOnSurface" />
 
         <com.safesphere.app.core.ui.components.NoticeView
             android:id="@+id/delayNotice"

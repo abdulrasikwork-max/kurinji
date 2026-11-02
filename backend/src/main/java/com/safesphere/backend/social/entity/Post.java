@@ -1,7 +1,6 @@
 package com.safesphere.backend.social.entity;
 
 import com.safesphere.backend.social.entity.PostEnums.Audience;
-import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.entity.PostEnums.CommentPolicy;
 import com.safesphere.backend.social.entity.PostEnums.Daypart;
 import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
@@ -64,9 +63,9 @@ public class Post {
     @Column(name = "area_cell", length = 6)
     private String areaCell;
 
-    @Enumerated(EnumType.STRING)
+    /** CITY only: a CityCatalog code or OTHER (V28: a foreign key to cities). */
     @Column(length = 20)
-    private City city;
+    private String city;
 
     @Column(name = "experienced_month")
     private LocalDate experiencedMonth;
@@ -145,7 +144,7 @@ public class Post {
     }
 
     /** Where (checked by PostPolicy): a place for EXACT/AREA, the place's area for AREA, a city for CITY. */
-    public void setLocation(Precision precision, Long placeId, String areaCell, City city) {
+    public void setLocation(Precision precision, Long placeId, String areaCell, String city) {
         this.precision = precision;
         this.placeId = placeId;
         this.areaCell = areaCell;
@@ -272,7 +271,7 @@ public class Post {
         return areaCell;
     }
 
-    public City getCity() {
+    public String getCity() {
         return city;
     }
 

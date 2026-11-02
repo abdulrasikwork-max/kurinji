@@ -2,10 +2,7 @@ package com.safesphere.app.testing
 
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
-import com.safesphere.app.feature.social.domain.ButterflyState
 import com.safesphere.app.feature.social.domain.City
-import com.safesphere.app.feature.social.domain.CocoonItem
-import com.safesphere.app.feature.social.domain.CocoonPage
 import com.safesphere.app.feature.social.domain.DiscoverPage
 import com.safesphere.app.feature.social.domain.DiscoverRepository
 import com.safesphere.app.feature.social.domain.Edition
@@ -13,42 +10,50 @@ import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.Place
 import com.safesphere.app.feature.social.domain.PlacePage
 import com.safesphere.app.feature.social.domain.PostPage
+import com.safesphere.app.feature.social.domain.SavedItem
+import com.safesphere.app.feature.social.domain.SavedPage
 import com.safesphere.app.feature.social.domain.TimeBand
 
-/** Test double (Phase 13C): an in-memory Discover server that records what the phone asked for. */
+/** Test double (Phase 13C, 17E): an in-memory Discover server that records what the phone asked for. */
 class FakeDiscoverRepository : DiscoverRepository {
 
-    val butterflyCalls = mutableListOf<Pair<String, ButterflyState?>>() // null state = removed
+    /** Phase 17E: every mark call, as "react:<id>", "unreact:<id>", "save:<id>", "unsave:<id>". */
+    val markCalls = mutableListOf<String>()
     val editionCities = mutableListOf<City>()
     val connectionCursors = mutableListOf<String?>()
-    val cocoonRequests = mutableListOf<Pair<ButterflyState, String?>>()
+    val savedCursors = mutableListOf<String?>()
     val categoryRequests = mutableListOf<Triple<Interest, City?, String?>>()
     val placeRequests = mutableListOf<Pair<String, String?>>()
     val searches = mutableListOf<Pair<String, City?>>()
 
-    var butterflyResult: ApiResult<ButterflyState>? = null
-    var removeResult: ApiResult<Unit> = ApiResult.Success(Unit)
+    /** The answer of every mark call (react, unreact, save, unsave). */
+    var markResult: ApiResult<Unit> = ApiResult.Success(Unit)
     var edition: ApiResult<Edition>? = null
     var connectionPages: Map<String?, DiscoverPage> = mapOf(null to DiscoverPage(emptyList(), null))
-    var cocoonPages: Map<Pair<ButterflyState, String?>, CocoonPage> = emptyMap()
+    var savedPages: Map<String?, SavedPage> = emptyMap()
+    var savedFailure: ApiResult.Failure? = null
     var categoryPages: Map<String?, PostPage> = mapOf(null to PostPage(emptyList(), null))
     var placePages: Map<String?, PlacePage> = emptyMap()
     var places: List<Place> = emptyList()
     var searchFailure: ApiResult.Failure? = null
 
-    override suspend fun setButterfly(postId: String, state: ButterflyState): ApiResult<ButterflyState> {
-        butterflyCalls += postId to state
-        return butterflyResult ?: ApiResult.Success(state)
+    override suspend fun react(postId: String): ApiResult<Unit> = mark("react:$postId")
+
+    override suspend fun unreact(postId: String): ApiResult<Unit> = mark("unreact:$postId")
+
+    override suspend fun save(postId: String): ApiResult<Unit> = mark("save:$postId")
+
+    override suspend fun unsave(postId: String): ApiResult<Unit> = mark("unsave:$postId")
+
+    private fun mark(call: String): ApiResult<Unit> {
+        markCalls += call
+        return markResult
     }
 
-    override suspend fun removeButterfly(postId: String): ApiResult<Unit> {
-        butterflyCalls += postId to null
-        return removeResult
-    }
-
-    override suspend fun cocoon(state: ButterflyState, cursor: String?): ApiResult<CocoonPage> {
-        cocoonRequests += state to cursor
-        return ApiResult.Success(cocoonPages[state to cursor] ?: CocoonPage(emptyList(), null))
+    override suspend fun saved(cursor: String?): ApiResult<SavedPage> {
+        savedCursors += cursor
+        savedFailure?.let { return it }
+        return ApiResult.Success(savedPages[cursor] ?: SavedPage(emptyList(), null))
     }
 
     override suspend fun edition(city: City): ApiResult<Edition> {
@@ -77,7 +82,7 @@ class FakeDiscoverRepository : DiscoverRepository {
     }
 
     companion object {
-        fun cocoonItem(id: String, state: ButterflyState = ButterflyState.WANT) =
-            CocoonItem(FakeExperienceRepository.post(id = id), state, TimeBand.THIS_WEEK)
+        fun savedItem(id: String, band: TimeBand = TimeBand.THIS_WEEK) =
+            SavedItem(FakeExperienceRepository.post(id = id), band)
     }
 }

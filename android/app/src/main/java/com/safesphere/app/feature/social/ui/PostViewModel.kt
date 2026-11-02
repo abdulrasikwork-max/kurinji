@@ -9,7 +9,6 @@ import com.safesphere.app.AppContainer
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
-import com.safesphere.app.feature.social.domain.ButterflyState
 import com.safesphere.app.feature.social.domain.CommentKind
 import com.safesphere.app.feature.social.domain.DiscoverRepository
 import com.safesphere.app.feature.social.domain.ExperienceRepository
@@ -35,8 +34,10 @@ data class PostUiState(
     val isBusy: Boolean = false,
     /** One-shot: the post was deleted; the screen closes. */
     val closed: Boolean = false,
-    /** Phase 13C, one-shot: the viewer just marked it Been; invite a Been-here-too perspective or their own post. */
-    val beenInvitation: Boolean = false,
+    /** Phase 17E: marks in flight ("react", "save"), so a double tap sends nothing twice. */
+    val marking: Set<String> = emptySet(),
+    /** Phase 17E, one-shot: a save was confirmed (the butterfly flies to Saved, TalkBack hears "Saved"). */
+    val savedNow: Boolean = false,
     val failure: ApiResult.Failure? = null,
     val sessionExpired: Boolean = false,
     /** Phase 13D: the viewer tapped "Show it" on a collapsed post (kept only on this screen). */
@@ -66,9 +67,13 @@ data class PostUiState(
     val canSend: Boolean
         get() = !isBusy && post?.canComment == true && text.isNotBlank() && (replyTo != null || kind != null)
 
-    /** Phase 13C (C3): only someone else's Experience can be saved to the Cocoon. */
-    val canButterfly: Boolean
+    /** Phase 17E (D-3): the butterfly goes on someone else's Experience only. */
+    val canReact: Boolean
         get() = post?.let { it.type == PostType.EXPERIENCE && !it.own } == true
+
+    /** Phase 17E (D-3): anything of someone else's can be saved. */
+    val canSave: Boolean
+        get() = post?.let { !it.own } == true
 }
 
 /**
@@ -160,45 +165,45 @@ class PostViewModel(
     }
 
     /**
-     * Phase 13C: the butterfly. Not saved: saved as Want. Saved (Want or Been): removed from the Cocoon. The screen
-     * shows the state the server answered.
+     * Phase 17E (D-3): the butterfly (a reaction) given or taken back. Shown at once, put back if the server says no
+     * (idempotent on the server, so a double tap or a lost answer is harmless).
      */
-    fun onButterfly() {
+    fun onReact() {
         val post = _uiState.value.post ?: return
-        if (!_uiState.value.canButterfly || _uiState.value.isBusy) return
+        if (!_uiState.value.canReact || "react" in _uiState.value.marking) return
+        toggle("react", { it.copy(youReacted = !post.youReacted) }, { it.copy(youReacted = post.youReacted) }) {
+            if (post.youReacted) discover.unreact(postId) else discover.react(postId)
+        }
+    }
+
+    /** Phase 17E (D-3): Save (a private bookmark), or take it out of Saved again. */
+    fun onSave() {
+        val post = _uiState.value.post ?: return
+        if (!_uiState.value.canSave || "save" in _uiState.value.marking) return
+        toggle("save", { it.copy(saved = !post.saved) }, { it.copy(saved = post.saved) },
+            confirmed = { if (!post.saved) _uiState.update { it.copy(savedNow = true) } }) {
+            if (post.saved) discover.unsave(postId) else discover.save(postId)
+        }
+    }
+
+    fun onSavedShown() = _uiState.update { it.copy(savedNow = false) }
+
+    private fun toggle(key: String, apply: (Post) -> Post, undo: (Post) -> Post, confirmed: () -> Unit = {},
+                       call: suspend () -> ApiResult<Unit>) {
+        _uiState.update { it.copy(post = it.post?.let(apply), marking = it.marking + key, failure = null) }
         viewModelScope.launch {
-            _uiState.update { it.copy(isBusy = true, failure = null) }
-            if (post.yourButterfly == null) {
-                applyButterfly(discover.setButterfly(postId, ButterflyState.WANT), invite = false)
-            } else {
-                when (val result = discover.removeButterfly(postId)) {
-                    is ApiResult.Success -> applyButterfly(ApiResult.Success(null), invite = false)
-                    is ApiResult.Failure -> applyButterfly(result, invite = false)
+            when (val result = call()) {
+                is ApiResult.Success -> {
+                    _uiState.update { it.copy(marking = it.marking - key) }
+                    confirmed()
+                }
+                is ApiResult.Failure -> {
+                    _uiState.update { it.copy(post = it.post?.let(undo), marking = it.marking - key) }
+                    if (result.error == ApiError.NOT_FOUND) {
+                        _uiState.update { it.copy(post = null, notFound = true) }
+                    } else fail(result)
                 }
             }
-        }
-    }
-
-    /** Phase 13C: "I've been" (Want to Been), then the invitation to add a perspective or an own Experience. */
-    fun onBeen() {
-        if (!_uiState.value.canButterfly || _uiState.value.isBusy) return
-        viewModelScope.launch {
-            _uiState.update { it.copy(isBusy = true, failure = null) }
-            applyButterfly(discover.setButterfly(postId, ButterflyState.BEEN), invite = true)
-        }
-    }
-
-    fun onBeenInvitationHandled() = _uiState.update { it.copy(beenInvitation = false) }
-
-    private fun applyButterfly(result: ApiResult<ButterflyState?>, invite: Boolean) {
-        when (result) {
-            is ApiResult.Success -> _uiState.update {
-                it.copy(isBusy = false, post = it.post?.copy(yourButterfly = result.data),
-                    beenInvitation = invite && result.data == ButterflyState.BEEN)
-            }
-            is ApiResult.Failure -> if (result.error == ApiError.NOT_FOUND) {
-                _uiState.update { it.copy(isBusy = false, post = null, notFound = true) }
-            } else fail(result)
         }
     }
 
@@ -231,9 +236,6 @@ class PostViewModel(
 
     companion object {
         const val ARG_POST_ID = "postId"
-
-        /** Phase 15: opened from the Cocoon's "You went" invitation: start with a "Been here too" perspective. */
-        const val ARG_WRITE_BEEN_HERE = "writeBeenHere"
 
         /** Phase 16: opened from a card's comment button: scroll to the comments. */
         const val ARG_TO_COMMENTS = "toComments"

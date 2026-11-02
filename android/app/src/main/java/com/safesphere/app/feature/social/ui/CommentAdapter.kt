@@ -18,6 +18,9 @@ data class CommentRow(
     val key: String,
     val name: String?,
     val handle: String?,
+    /** Phase 17E: the writer's profile id and photo key (null = the initial). */
+    val profileId: String? = null,
+    val photo: String? = null,
     val header: String,
     val body: String,
     val notes: String,
@@ -28,7 +31,7 @@ data class CommentRow(
     val onMore: (() -> Unit)?
 )
 
-class CommentAdapter : ListAdapter<CommentRow, CommentAdapter.Holder>(Diff) {
+class CommentAdapter(private val images: CardImages? = null) : ListAdapter<CommentRow, CommentAdapter.Holder>(Diff) {
 
     class Holder(val binding: ItemCommentBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -40,7 +43,8 @@ class CommentAdapter : ListAdapter<CommentRow, CommentAdapter.Holder>(Diff) {
         val b = holder.binding
         val indent = if (row.isReply) b.root.resources.getDimensionPixelSize(R.dimen.reply_indent) else 0
         b.row.updatePaddingRelative(start = indent)
-        b.avatar.set(row.name, row.handle)
+        if (images != null) images.avatar(b.avatar, row.name, row.handle, row.profileId, row.photo)
+        else b.avatar.set(row.name, row.handle)
         b.header.text = row.header
         b.body.text = row.body
         b.notes.text = row.notes

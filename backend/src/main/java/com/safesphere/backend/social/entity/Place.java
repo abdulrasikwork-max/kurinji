@@ -2,14 +2,11 @@ package com.safesphere.backend.social.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import com.safesphere.backend.social.entity.PostEnums.City;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -45,10 +42,9 @@ public class Place {
     @Column(name = "area_cell", nullable = false, updatable = false, length = 6)
     private String areaCell;
 
-    /** Phase 13C (V22): the launch city whose box holds the cell (CityAreas); null outside every one. */
-    @Enumerated(EnumType.STRING)
+    /** Phase 13C (V22), 17E (V28): the catalog city whose box holds the cell (CityCatalog); null outside every one. */
     @Column(length = 20)
-    private City city;
+    private String city;
 
     @Column(name = "created_on", nullable = false, updatable = false)
     private LocalDate createdOn;
@@ -60,7 +56,7 @@ public class Place {
     protected Place() {
     }
 
-    public Place(String name, String normalizedName, String category, String cell, City city, LocalDate createdOn) {
+    public Place(String name, String normalizedName, String category, String cell, String city, LocalDate createdOn) {
         this.publicId = UUID.randomUUID().toString();
         this.name = name;
         this.normalizedName = normalizedName;
@@ -71,12 +67,17 @@ public class Place {
         this.createdOn = createdOn;
     }
 
+    /** Phase 17E: a place outside every box until V28 that a newer catalog city now covers (start-up backfill only). */
+    public void placeInCity(String city) {
+        if (this.city == null) this.city = city;
+    }
+
     /** Phase 13D (M17): a moderator found this to be the same place as [placeId] (never itself; checked by the caller). */
     public void mergeInto(long placeId) {
         this.mergedInto = placeId;
     }
 
-    public City getCity() {
+    public String getCity() {
         return city;
     }
 

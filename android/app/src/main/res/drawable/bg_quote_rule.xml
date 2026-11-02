@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 17E: a post without a photo: its words sit on a quiet panel with a lime rule on the left. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/colorSurfaceContainer" />
+            <corners android:radius="18dp" />
+        </shape>
+    </item>
+    <item android:width="5dp" android:gravity="start|fill_vertical" android:top="14dp" android:bottom="14dp"
+        android:start="12dp">
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/colorLime" />
+            <corners android:radius="3dp" />
+        </shape>
+    </item>
+</layer-list>

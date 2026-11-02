@@ -1,7 +1,6 @@
 package com.safesphere.backend.social.policy;
 
 import com.safesphere.backend.social.entity.PostEnums.Audience;
-import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.entity.PostEnums.PostType;
 import com.safesphere.backend.social.entity.PostEnums.Precision;
 import java.text.Normalizer;
@@ -29,7 +28,7 @@ public final class PostPolicy {
     public static final int MAX_PHOTOS = 6;
 
     /** A post as the person asked for it, after parsing and cleaning. */
-    public record Draft(PostType type, String body, String tip, Precision precision, boolean hasPlace, City city,
+    public record Draft(PostType type, String body, String tip, Precision precision, boolean hasPlace, String city,
                         YearMonth month, Audience audience, int photos) {
     }
 

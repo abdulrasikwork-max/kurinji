@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 16 (docs/PHASE16.md): one post as a social page. Who (avatar, name, kind, when, a "more" menu), the photos edge
-     to edge, their words, where and when as chips (only what the author revealed), the Tip, then the actions: save with
-     the butterfly, "I've been", "Going there?". Comments follow; the comment box stays at the bottom of the screen.
+<!-- Phase 16, redesigned in 17E: one post as a social page. Who (photo avatar, name, kind, when, a "more" menu), the
+     photos edge to edge, their words, where and when as chips (only what the author revealed), the Tip, then the marks
+     (the butterfly, Save) and from reading to going ("I went", "Going there?"). Comments follow; the comment box stays at the bottom of the screen.
      Times are bands; the only public number is the comment count (U1). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -257,9 +257,9 @@
                             android:gravity="center_vertical"
                             android:text="@string/card_ticket_label"
                             android:textAppearance="@style/TextAppearance.Kurinji.Overline"
-                            android:textColor="?attr/colorPrimary"
+                            android:textColor="?attr/colorAccentText"
                             app:drawableStartCompat="@drawable/ic_star"
-                            app:drawableTint="?attr/colorPrimary" />
+                            app:drawableTint="?attr/colorAccentText" />
 
                         <TextView
                             android:id="@+id/tip"
@@ -287,9 +287,10 @@
                         android:textAppearance="@style/TextAppearance.SafeSphere.Body"
                         android:visibility="gone" />
 
-                    <!-- Phase 13C/16: save with the butterfly (someone else's Experience), I've been, Going there? -->
+                    <!-- Phase 17E (D-3): the marks (the butterfly = a reaction; Save = a private bookmark), then from reading
+                         to going: "I went" (share your own experience of this place) and "Going there?". -->
                     <LinearLayout
-                        android:id="@+id/butterflyBlock"
+                        android:id="@+id/marksBlock"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_md"
@@ -299,16 +300,46 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <com.google.android.material.button.MaterialButton
-                                android:id="@+id/butterflyButton"
-                                style="@style/Widget.Kurinji.Button.Intent"
+                                android:id="@+id/reactButton"
+                                style="@style/Widget.Kurinji.Button.Mark"
+                                android:text="@string/reaction_label"
+                                android:visibility="gone" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/saveButton"
+                                style="@style/Widget.Kurinji.Button.Mark"
+                                android:layout_marginStart="@dimen/space_xs"
+                                android:text="@string/save_label"
+                                app:icon="@drawable/ic_bookmark" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="@string/marks_private_note"
+                            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_md"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/wentButton"
+                                style="@style/Widget.Kurinji.Button.Tonal"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
+                                android:contentDescription="@string/went_description"
                                 android:minHeight="@dimen/button_height"
-                                android:text="@string/butterfly_want" />
+                                android:text="@string/went_label"
+                                app:icon="@drawable/ic_flag" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/goingButton"
@@ -320,26 +351,8 @@
                                 android:contentDescription="@string/going_there_description"
                                 android:minHeight="@dimen/button_height"
                                 android:text="@string/going_there"
-                                android:visibility="gone"
                                 app:icon="@drawable/ic_route" />
                         </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/beenButton"
-                            style="@style/Widget.Kurinji.Button.Quiet"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/space_sm"
-                            android:text="@string/butterfly_been"
-                            android:visibility="gone"
-                            app:icon="@drawable/ic_check" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/space_xs"
-                            android:text="@string/butterfly_private_note"
-                            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
                     </LinearLayout>
 
                     <!-- Comments -->

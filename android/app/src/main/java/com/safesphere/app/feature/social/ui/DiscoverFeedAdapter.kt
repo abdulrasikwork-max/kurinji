@@ -6,7 +6,6 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import coil.ImageLoader
 import com.google.android.material.chip.Chip
 import com.safesphere.app.R
 import com.safesphere.app.databinding.ItemExperienceCardBinding
@@ -23,6 +22,7 @@ import com.safesphere.app.feature.social.domain.Post
 /** What the Discover feed's buttons do (the fragment navigates; the ViewModel saves). */
 interface FeedActions {
     fun openPost(post: Post, toComments: Boolean)
+    fun react(post: Post)
     fun save(post: Post)
     fun why(item: DiscoverItem)
     fun nearMe()
@@ -36,11 +36,10 @@ interface FeedActions {
 data class FeedRow(val item: FeedItem, val collapseStrongLanguage: Boolean)
 
 /**
- * Phase 16: the ONE RecyclerView of Discover (no nested scrolling lists): every row type of [DiscoverFeed], recycled.
+ * Phase 16 (restyled in 17E): the ONE RecyclerView of Discover (no nested scrolling lists): every row type of [DiscoverFeed], recycled.
  */
 class DiscoverFeedAdapter(
-    private val loader: ImageLoader,
-    private val photoUrl: (String) -> String,
+    private val images: CardImages,
     private val actions: FeedActions
 ) : ListAdapter<FeedRow, RecyclerView.ViewHolder>(Diff) {
 
@@ -61,7 +60,7 @@ class DiscoverFeedAdapter(
             SHORTCUTS -> Bound(ItemFeedShortcutsBinding.inflate(inflater, parent, false)).also { fillShortcuts(it.binding) }
             HEADER -> Bound(ItemFeedHeaderBinding.inflate(inflater, parent, false))
             RAIL -> Bound(ItemFeedRailBinding.inflate(inflater, parent, false)).also {
-                it.binding.rail.adapter = RailAdapter(actions)
+                it.binding.rail.adapter = RailAdapter(images, actions)
             }
             POST -> Bound(ItemExperienceCardBinding.inflate(inflater, parent, false)).also {
                 val margin = parent.resources.getDimensionPixelSize(R.dimen.screen_padding)
@@ -83,8 +82,7 @@ class DiscoverFeedAdapter(
             is FeedItem.Header -> (holder as Bound<ItemFeedHeaderBinding>).binding.let { b ->
                 b.title.text = when (item.kind) {
                     HeaderKind.TALKING -> context.getString(R.string.feed_header_talking)
-                    HeaderKind.CITY -> context.getString(R.string.discover_section_city,
-                        item.city?.let(ExperienceLabels::cityName).orEmpty())
+                    HeaderKind.CITY -> context.getString(R.string.discover_section_city, item.city?.name.orEmpty())
                     HeaderKind.THEME -> item.theme?.let { context.getString(R.string.feed_header_theme,
                         context.getString(SocialLabels.of(it))) } ?: context.getString(R.string.discover_section_theme)
                     HeaderKind.CONNECTIONS -> context.getString(R.string.feed_header_connections)
@@ -107,8 +105,9 @@ class DiscoverFeedAdapter(
                     onWhy = if (item.item.reasons.isNotEmpty() &&
                         item.item.reasons != listOf(com.safesphere.app.feature.social.domain.DiscoverReason.FROM_A_CONNECTION))
                         ({ actions.why(item.item) }) else null,
+                    onReact = { actions.react(post) },
                     onSave = { actions.save(post) },
-                    onComments = { actions.openPost(post, toComments = true) }), loader, photoUrl)
+                    onComments = { actions.openPost(post, toComments = true) }), images)
             }
             FeedItem.End -> message(holder, R.string.discover_edition_end, R.string.feed_end_message,
                 R.string.feed_share_yours) { actions.share() }
@@ -117,7 +116,7 @@ class DiscoverFeedAdapter(
             FeedItem.ConnectPrompt -> message(holder, R.string.feed_connect_title, R.string.feed_connect_message,
                 R.string.feed_connect_action) { actions.findPeople() }
             FeedItem.ChooseCity -> message(holder, R.string.discover_masthead_no_city, R.string.feed_choose_city_message,
-                null) { }
+                R.string.city_picker_title) { actions.chooseCity() }
             FeedItem.Shortcuts, FeedItem.Loading -> Unit
         }
     }
@@ -139,6 +138,14 @@ class DiscoverFeedAdapter(
             text = context.getString(R.string.discover_near_me)
             setChipIconResource(R.drawable.ic_place)
             isChipIconVisible = true
+            // Phase 17E: "Near me" leads, as a lime pill (ink words and pin on it).
+            chipBackgroundColor = android.content.res.ColorStateList.valueOf(
+                com.google.android.material.color.MaterialColors.getColor(this, R.attr.colorLime))
+            setTextColor(com.google.android.material.color.MaterialColors.getColor(this, R.attr.colorOnLime))
+            chipIconTint = android.content.res.ColorStateList.valueOf(
+                com.google.android.material.color.MaterialColors.getColor(this, R.attr.colorOnLime))
+            chipStrokeColor = android.content.res.ColorStateList.valueOf(
+                com.google.android.material.color.MaterialColors.getColor(this, R.attr.colorOnLime))
             isCheckable = false
             setOnClickListener { actions.nearMe() }
         })
@@ -175,7 +182,7 @@ class DiscoverFeedAdapter(
 }
 
 /** Phase 16 (U2): the small cards of "Talking now". */
-private class RailAdapter(private val actions: FeedActions) :
+private class RailAdapter(private val images: CardImages, private val actions: FeedActions) :
     ListAdapter<DiscoverItem, RailAdapter.Holder>(RailDiff) {
 
     class Holder(val binding: ItemRailCardBinding) : RecyclerView.ViewHolder(binding.root)
@@ -188,7 +195,7 @@ private class RailAdapter(private val actions: FeedActions) :
         val b = holder.binding
         val context = b.root.context
         val card = ExperienceCards.of(item.post, item.reasons)
-        b.avatar.set(card.authorName, card.authorHandle)
+        images.avatar(b.avatar, card.authorName, card.authorHandle, card.authorId, card.authorPhoto)
         b.name.text = card.authorName ?: context.getString(R.string.feed_someone)
         b.thought.text = card.thought ?: card.collapse?.let { context.getString(CardTexts.collapsedLine(it)) }.orEmpty()
         b.comments.text = context.resources.getQuantityString(R.plurals.feed_comments, card.commentCount,

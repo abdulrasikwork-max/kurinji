@@ -37,7 +37,7 @@ class PersonProfileFragment :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        postAdapter = ExperienceCardAdapter(appContainer.imageLoader, appContainer.experienceRepository::photoUrl)
+        postAdapter = ExperienceCardAdapter(cardImages())
         collectWhenStarted(appContainer.viewerPreferences.collapseStrongLanguage) { on ->
             if (on != collapseStrongLanguage) {
                 collapseStrongLanguage = on
@@ -75,7 +75,7 @@ class PersonProfileFragment :
         postAdapter.submitList(state.items.map { post ->
             CardRow(ExperienceCards.of(post, collapseStrongLanguage = collapseStrongLanguage), onOpen = {
                 findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to post.publicId))
-            })
+            }, onReact = { posts.marks.react(post) }, onSave = { posts.marks.save(post) })
         })
         binding.postsEmpty.isVisible = state.loaded && state.items.isEmpty()
         binding.showMoreButton.isVisible = state.hasMore
@@ -114,6 +114,14 @@ class PersonProfileFragment :
 
     private fun show(person: PersonProfile, busy: Boolean) {
         binding.displayName.text = person.displayName
+        cardImages().avatar(binding.avatar, person.displayName, person.handle, person.publicId, person.photo)
+        // Phase 17E (D-7): only a connection gets a state from the server (and the phone drops it for anyone else).
+        val today = person.dailyState.takeIf { person.relationship == Relationship.CONNECTED }
+        binding.dailyState.isVisible = today != null
+        if (today != null) {
+            binding.dailyState.text = getString(R.string.daily_state_line, getString(DailyStates.label(today)))
+            binding.dailyState.setCompoundDrawablesRelativeWithIntrinsicBounds(DailyStates.icon(today), 0, 0, 0)
+        }
         binding.handle.text = getString(R.string.social_handle_line, person.handle)
         binding.bio.text = person.bio.orEmpty()
         binding.bio.isVisible = !person.bio.isNullOrBlank()

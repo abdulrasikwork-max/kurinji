@@ -59,6 +59,44 @@ class PhotoPreparer(private val resolver: ContentResolver) {
         jpeg.takeIf { it.size <= MAX_BYTES }
     }.getOrNull()
 
+    /**
+     * Phase 17E: a profile photo: upright, the centred square, at most [AVATAR_SIDE] pixels, a new JPEG (no metadata:
+     * no location, no camera). The server checks and re-encodes it again. Null when the file cannot be read as an image.
+     */
+    fun prepareAvatar(uri: Uri): ByteArray? = runCatching {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        val stream = resolver.openInputStream(uri) ?: return null
+        stream.use { BitmapFactory.decodeStream(it, null, bounds) }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        var sample = 1
+        while (minOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= AVATAR_SIDE) sample *= 2
+        while ((bounds.outWidth / sample).toLong() * (bounds.outHeight / sample) > MAX_DECODED_PIXELS) sample *= 2
+        val options = BitmapFactory.Options().apply { inSampleSize = sample }
+        val decoded = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) } ?: return null
+        val rotation = runCatching {
+            resolver.openInputStream(uri)?.use { s ->
+                when (ExifInterface(s).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+                    ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                    ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                    ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                    else -> 0f
+                }
+            }
+        }.getOrNull() ?: 0f
+        val (x, y, side) = squareCrop(decoded.width, decoded.height)
+        val scale = minOf(1f, AVATAR_SIDE.toFloat() / side)
+        val matrix = Matrix().apply {
+            postScale(scale, scale)
+            if (rotation != 0f) postRotate(rotation)
+        }
+        val square = Bitmap.createBitmap(decoded, x, y, side, side, matrix, true)
+        val out = ByteArrayOutputStream()
+        square.compress(Bitmap.CompressFormat.JPEG, AVATAR_QUALITY, out)
+        if (square !== decoded) square.recycle()
+        decoded.recycle()
+        out.toByteArray().takeIf { it.isNotEmpty() && it.size <= MAX_BYTES }
+    }.getOrNull()
+
     companion object {
         const val MAX_SIDE = 3072
         const val QUALITY = 92
@@ -88,6 +126,16 @@ class PhotoPreparer(private val resolver: ContentResolver) {
             return sample
         }
 
+
+        /** Phase 17E: the profile photo's largest side (the server keeps at most 720 too). */
+        const val AVATAR_SIDE = 720
+        const val AVATAR_QUALITY = 90
+
+        /** Phase 17E: the centred square of a [width] x [height] image: (left, top, side). Pure. */
+        fun squareCrop(width: Int, height: Int): Triple<Int, Int, Int> {
+            val side = minOf(width, height)
+            return Triple((width - side) / 2, (height - side) / 2, side)
+        }
 
         /** The size after scaling the longer side down to [MAX_SIDE] (never up). Pure. */
         fun targetSize(width: Int, height: Int): Pair<Int, Int> {

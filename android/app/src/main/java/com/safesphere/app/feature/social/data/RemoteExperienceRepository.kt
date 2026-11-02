@@ -38,6 +38,12 @@ class RemoteExperienceRepository(
     override suspend fun nearbyPlaces(areaCell: String): ApiResult<List<Place>> =
         handler.execute { api.nearbyPlaces(areaCell).mapNotNull { it.toDomain() } }
 
+    override suspend fun place(publicId: String): ApiResult<Place> =
+        when (val result = handler.execute { api.place(publicId).toDomain() }) {
+            is ApiResult.Success -> result.data?.let { ApiResult.Success(it) } ?: ApiResult.Failure(ApiError.NOT_FOUND)
+            is ApiResult.Failure -> result
+        }
+
     override suspend fun uploadPhoto(jpeg: ByteArray, onProgress: (Float) -> Unit): ApiResult<UploadedPhoto> =
         orNotFound(handler.execute { api.upload(ProgressRequestBody(jpeg.toRequestBody(JPEG), onProgress)).toDomain() })
 
@@ -83,6 +89,9 @@ class RemoteExperienceRepository(
     override fun photoUrl(mediaId: String): String = baseUrl.trimEnd('/') + "/api/media/" + mediaId
 
     override fun videoUrl(mediaId: String): String = photoUrl(mediaId) + "/video"
+
+    override fun personPhotoUrl(profileId: String, key: String): String =
+        baseUrl.trimEnd('/') + "/api/profiles/" + profileId + "/photo/" + key
 
     private fun <T : Any> orNotFound(result: ApiResult<T?>): ApiResult<T> = when (result) {
         is ApiResult.Success -> result.data?.let { ApiResult.Success(it) } ?: ApiResult.Failure(ApiError.NOT_FOUND)

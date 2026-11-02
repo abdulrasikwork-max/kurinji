@@ -187,6 +187,27 @@ class ComposeViewModel(
         it.copy(place = place, placeIsPrivate = private, precision = if (private) Precision.CITY else Precision.AREA)
     }
 
+    private var prefilled = false
+
+    /**
+     * Phase 17E ("I went", plan §4): the composer opened from a post the person went to. The place is filled in when
+     * the post named an exact place the person could see (read again from the server: it may have been merged); the
+     * category too. Nothing is posted or stored by itself; a place that cannot be read is simply left out.
+     */
+    fun prefill(placeId: String?, category: Interest?) {
+        if (prefilled) return
+        prefilled = true
+        if (placeId == null && category == null) return
+        change { it.copy(type = PostType.EXPERIENCE, category = category ?: it.category) }
+        if (placeId == null) return
+        viewModelScope.launch {
+            when (val result = repository.place(placeId)) {
+                is ApiResult.Success -> if (_uiState.value.place == null) onPlaceChosen(result.data)
+                is ApiResult.Failure -> Unit
+            }
+        }
+    }
+
     fun onCityOnly() = change { it.copy(place = null, placeIsPrivate = false, precision = Precision.CITY) }
 
     fun onNoPlace() = change { it.copy(place = null, placeIsPrivate = false, precision = Precision.NONE, city = null) }

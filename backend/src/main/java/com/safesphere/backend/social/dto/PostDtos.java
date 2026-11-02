@@ -83,9 +83,9 @@ public final class PostDtos {
      * A post as the viewer may see it. [place] only for EXACT, [areaCell] (6 characters) only for AREA, [city] only for
      * CITY. [audience], [postedAt] and [visibleFrom] only for the author (null for everyone else); [postedPeriod] is the
      * band others see (THIS_WEEK / THIS_MONTH / EARLIER).
-     * Phase 13C: [yourButterfly] is the viewer's OWN Cocoon state for this post (null / WANT / BEEN), never anyone
-     * else's; [butterflies] only for the author of an Experience shared with others (C2: a number from 3 people up),
-     * null for everyone else.
+     * Phase 17E (D-3): [youReacted] = the viewer put their OWN butterfly on it, [saved] = the viewer saved it (never anyone
+     * else's marks); [butterflies] only for the author of an Experience shared with others: how many people reacted, a
+     * number from 3 people up (C2), null for everyone else. Nobody learns how often a post was saved.
      * Phase 13D: [approveFirst] = perspectives from people not connected with the author wait for approval (Q6);
      * [moderation] only for the author (null when nothing happened); [collapsed] for everyone else: null, UNDER_REVIEW
      * (collapsed while a moderator looks at it) or BY_MODERATOR (a moderator decided to keep it collapsed). Nothing
@@ -102,7 +102,7 @@ public final class PostDtos {
                                String category, String precision, PostPlace place, String areaCell, String city,
                                String experiencedMonth, String daypart, String postedPeriod, boolean edited,
                                List<MediaRef> media, String audience, String commentPolicy, boolean canComment,
-                               Instant postedAt, Instant visibleFrom, String yourButterfly,
+                               Instant postedAt, Instant visibleFrom, boolean youReacted, boolean saved,
                                ButterflyTally butterflies, boolean approveFirst, ModerationView moderation,
                                String collapsed, boolean strongLanguage, Boolean supportSuggested, int commentCount) {
 
@@ -110,7 +110,7 @@ public final class PostDtos {
         public PostResponse withSupport(boolean support) {
             return new PostResponse(publicId, type, author, own, body, tip, category, precision, place, areaCell, city,
                     experiencedMonth, daypart, postedPeriod, edited, media, audience, commentPolicy, canComment,
-                    postedAt, visibleFrom, yourButterfly, butterflies, approveFirst, moderation, collapsed,
+                    postedAt, visibleFrom, youReacted, saved, butterflies, approveFirst, moderation, collapsed,
                     strongLanguage, support ? Boolean.TRUE : null, commentCount);
         }
     }

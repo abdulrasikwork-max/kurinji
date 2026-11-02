@@ -1,18 +1,14 @@
 package com.safesphere.app.feature.social.domain
 
-import java.text.Normalizer
 import java.time.LocalDate
-import java.util.Locale
 
 /**
- * Phase 13C: the butterfly, the Cocoon and Discover as the app sees them. Nothing here is stored on the phone; every
- * screen loads what it shows. No model carries a count except [ButterflyTally], which only the author of a post gets.
+ * Phase 13C: Discover as the app sees it; Phase 17E (D-3): the butterfly is a reaction and Save a private bookmark.
+ * Nothing here is stored on the phone; every screen loads what it shows. No model carries a count except
+ * [ButterflyTally], which only the author of a post gets.
  */
 
-/** A Cocoon item: "want to experience" until the person marks it "been". */
-enum class ButterflyState { WANT, BEEN }
-
-/** What the author of an Experience may learn: a number only from 3 people up (C2). */
+/** What the author of an Experience may learn about its butterflies (reactions): a number only from 3 people up (C2). */
 data class ButterflyTally(val count: Int?, val fewerThanThree: Boolean) {
     /** A tally the app can trust: a number of at least 3, or "fewer than 3" without a number. */
     val isConsistent: Boolean get() = if (fewerThanThree) count == null else count != null && count >= FLOOR
@@ -44,41 +40,10 @@ data class Edition(val city: City, val weekOf: LocalDate?, val theme: Interest?,
 
 data class DiscoverPage(val items: List<DiscoverItem>, val nextCursor: String?)
 
-data class CocoonItem(val post: Post, val state: ButterflyState, val savedPeriod: TimeBand)
+/** Phase 17E: one saved post as the owner may see it now, and when it was saved (a band). */
+data class SavedItem(val post: Post, val savedPeriod: TimeBand)
 
-data class CocoonPage(val items: List<CocoonItem>, val nextCursor: String?)
+data class SavedPage(val items: List<SavedItem>, val nextCursor: String?)
 
 data class PlacePage(val place: Place, val items: List<Post>, val nextCursor: String?)
 
-/**
- * Phase 13C (C5): the Edition city a profile's free-text city names, if it names one of the launch cities. Compares
- * letters only, case- and accent-insensitive, and knows a few common other names ("Madras", "Trichy", "Pondy",
- * "Bangalore", "Tuticorin", "Tanjore"). Pure.
- */
-object CityMatch {
-
-    private val ALIASES: Map<String, City> = buildMap {
-        for (city in City.entries) if (city != City.OTHER) put(key(city.name), city)
-        put("madras", City.CHENNAI)
-        put("trichy", City.TIRUCHIRAPPALLI)
-        put("tiruchi", City.TIRUCHIRAPPALLI)
-        put("trichinopoly", City.TIRUCHIRAPPALLI)
-        put("kovai", City.COIMBATORE)
-        put("pondicherry", City.PUDUCHERRY)
-        put("pondy", City.PUDUCHERRY)
-        put("bangalore", City.BENGALURU)
-        put("bengaluru", City.BENGALURU)
-        put("tuticorin", City.THOOTHUKUDI)
-        put("tanjore", City.THANJAVUR)
-        put("nellai", City.TIRUNELVELI)
-    }
-
-    /** The city [text] names, or null (blank, unknown, or "Other"). */
-    fun of(text: String?): City? {
-        if (text.isNullOrBlank()) return null
-        return ALIASES[key(text)]
-    }
-
-    private fun key(text: String): String =
-        Normalizer.normalize(text, Normalizer.Form.NFD).lowercase(Locale.ROOT).filter { it in 'a'..'z' }
-}

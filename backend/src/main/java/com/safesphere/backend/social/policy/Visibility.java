@@ -75,7 +75,7 @@ public final class Visibility {
     /**
      * Phase 13C (13B Q8, C13): whether a post appears in a LIST of other people's posts (Edition, From your connections,
      * place and category pages): it must be visible, and its author must not be muted by the viewer. A mute never hides
-     * a post opened deliberately (a profile visit, a link, the viewer's own Cocoon); those ask [canSeePost].
+     * a post opened deliberately (a profile visit, a link, the viewer's own Saved list); those ask [canSeePost].
      */
     public static boolean showInLists(PostFacts facts, boolean authorMuted) {
         return canSeePost(facts) && (facts.people().self() || !authorMuted);

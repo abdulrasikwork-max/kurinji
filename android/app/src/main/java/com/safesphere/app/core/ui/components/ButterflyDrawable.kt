@@ -13,7 +13,7 @@ import com.google.android.material.color.MaterialColors
 import com.safesphere.app.R
 
 /**
- * Phase 13F: the butterfly, drawn (never an emoji, which looks different on every phone). The Tamil Yeoman, Tamil
+ * Phase 13F: the butterfly, drawn (Phase 17E: a reaction, "this inspires me"; lime when given) (never an emoji, which looks different on every phone). The Tamil Yeoman, Tamil
  * Nadu's state butterfly: orange wings with dark edges. [flap] folds the wings (0 = open, 1 = almost closed) so the
  * flight and the emergence can beat its wings; it is just a number, so a test or a reduced-motion phone can ignore it.
  */
@@ -94,17 +94,20 @@ class ButterflyDrawable(
         private val BODY: Path = PathParser.createPathFromPathData("M22.2,22a1.8,9 0,1 0,3.6 0a1.8,9 0,1 0,-3.6 0Z")
         private val ANTENNAE: Path = PathParser.createPathFromPathData("M23.4,13.5L19.5,5M24.6,13.5L28.5,5")
 
-        /** The saved butterfly in the theme's colours (Phase 16: brand red wings, ink edges), [sizeDp] wide. */
-        fun intent(context: Context, sizeDp: Int = 28): ButterflyDrawable {
+        /**
+         * Phase 17E: the butterfly someone put on a post (a reaction): lime wings with ink edges. Drawn on the lime pill
+         * of the reacted button it reads as a solid ink outline; anywhere else (the flight) as the brand's lime.
+         */
+        fun reacted(context: Context, sizeDp: Int = 28): ButterflyDrawable {
             val probe = android.view.View(context)
             return ButterflyDrawable(
-                wing = MaterialColors.getColor(probe, R.attr.colorIntent),
-                edge = MaterialColors.getColor(probe, com.google.android.material.R.attr.colorOnSurface),
+                wing = MaterialColors.getColor(probe, R.attr.colorLime),
+                edge = MaterialColors.getColor(probe, R.attr.colorOnLime),
                 intrinsicPx = (sizeDp * context.resources.displayMetrics.density).toInt()
             )
         }
 
-        /** Phase 16: the not-yet-saved butterfly: card-coloured wings, ink edges (the shape says "save"). */
+        /** The butterfly not yet given: card-coloured wings, ink edges. */
         fun outline(context: Context, sizeDp: Int = 28): ButterflyDrawable {
             val probe = android.view.View(context)
             return ButterflyDrawable(

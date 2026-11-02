@@ -2,11 +2,10 @@ package com.safesphere.backend.social.dto;
 
 import com.safesphere.backend.social.dto.PlaceDtos.PlaceResponse;
 import com.safesphere.backend.social.dto.PostDtos.PostResponse;
-import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
- * Phase 13C: Discover, the Cocoon and butterflies. No answer carries a count (the author's thresholded number lives in
+ * Phase 13C: Discover; Phase 17E: butterfly reactions and Saved. No answer carries a count (the author's thresholded number lives in
  * PostResponse.butterflies), a coordinate, or another person's timestamp.
  */
 public final class DiscoverDtos {
@@ -14,18 +13,15 @@ public final class DiscoverDtos {
     private DiscoverDtos() {
     }
 
-    /** Body of PUT /api/posts/{id}/butterfly; a missing state means WANT. */
-    public record ButterflyRequest(@Size(max = 10, message = "Unknown state") String state) {
+    /** Phase 17E: the answer to PUT /api/posts/{id}/reaction and /save (always true: the mark is there). */
+    public record MarkResponse(boolean marked) {
     }
 
-    public record ButterflyResponse(String state) {
+    /** Phase 17E: one saved post as the owner may see it now, and when it was saved (a band). */
+    public record SavedItem(PostResponse post, String savedPeriod) {
     }
 
-    /** One Cocoon item: the post as the owner may see it now, its state, and when it was saved (a band). */
-    public record CocoonItem(PostResponse post, String state, String savedPeriod) {
-    }
-
-    public record CocoonPage(List<CocoonItem> items, String nextCursor) {
+    public record SavedPage(List<SavedItem> items, String nextCursor) {
     }
 
     /** A post picked for a list, with the reason codes that explain why ("Why am I seeing this?"). */

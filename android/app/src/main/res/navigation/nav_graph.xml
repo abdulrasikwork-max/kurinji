@@ -127,7 +127,7 @@
 
     <fragment
         android:id="@+id/cocoonFragment"
-        android:name="com.safesphere.app.feature.social.ui.CocoonFragment"
+        android:name="com.safesphere.app.feature.social.ui.SavedFragment"
         android:label="@string/title_cocoon"
         tools:layout="@layout/fragment_cocoon" />
 

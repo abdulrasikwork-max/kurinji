@@ -58,7 +58,7 @@ class ExperienceDtosTest {
     fun `the request sends the place only for EXACT or AREA, the city only for CITY, no month or tip for an Ask`() {
         val place = FakeExperienceRepository.place()
         fun draft(type: PostType, precision: Precision, audience: Audience = Audience.EVERYONE) = PostDraft(type, " Body ",
-            " Tip ", null, place, precision, com.safesphere.app.feature.social.domain.City.CHENNAI, YearMonth.of(2026, 10),
+            " Tip ", null, place, precision, com.safesphere.app.feature.social.domain.Cities.find("CHENNAI"), YearMonth.of(2026, 10),
             null, audience, CommentPolicy.EVERYONE, emptyList())
         val area = PostRequestDto.from(draft(PostType.EXPERIENCE, Precision.AREA))
         assertEquals(place.publicId, area.placeId)

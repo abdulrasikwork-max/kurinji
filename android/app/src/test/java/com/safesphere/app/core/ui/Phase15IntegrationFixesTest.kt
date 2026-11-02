@@ -31,15 +31,19 @@ class Phase15IntegrationFixesTest {
         }
     }
 
-    /** 15-2 and 15-3: wiring checks for the post screen (UI code without a ViewModel rule to test). */
+    /**
+     * 15-2 and 15-3: wiring checks for the post screen (UI code without a ViewModel rule to test). Phase 17E: the 13C
+     * "You went" invitation (15-3) is replaced by "I went", which opens the composer with the post's place, from the
+     * post page and from Saved.
+     */
     @Test
-    fun postScreen_bringsNewFailuresIntoView_andCocoonInvitationOpensBeenHere() {
+    fun postScreen_bringsNewFailuresIntoView_andIWentOpensTheComposerWithThePlace() {
         val post = File("src/main/java/com/safesphere/app/feature/social/ui/PostFragment.kt").readText(Charsets.UTF_8)
         assertTrue(post.contains("binding.scroll.smoothScrollTo(0, 0)")) // Phase 16: the notice is at the top of the scroll
         assertTrue(post.contains("binding.errorNotice.announceForAccessibility(message)"))
-        assertTrue(post.contains("PostViewModel.ARG_WRITE_BEEN_HERE"))
-        val cocoon = File("src/main/java/com/safesphere/app/feature/social/ui/CocoonFragment.kt").readText(Charsets.UTF_8)
-        assertTrue(cocoon.contains("openPost(item.post.publicId, writeBeenHere = true)"))
+        assertTrue(post.contains("ComposeFragment.ARG_PLACE_ID to placeId"))
+        val saved = File("src/main/java/com/safesphere/app/feature/social/ui/SavedFragment.kt").readText(Charsets.UTF_8)
+        assertTrue(saved.contains("ComposeFragment.ARG_PLACE_ID to post.placeId.takeIf { post.precision == Precision.EXACT }"))
     }
 
     /**

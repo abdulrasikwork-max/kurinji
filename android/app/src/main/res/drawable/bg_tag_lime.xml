@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 17E: a small lime tag (the category on a post's photo, "Today"); ink words on it, 15:1. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="?attr/colorLime" />
+    <corners android:radius="10dp" />
+</shape>

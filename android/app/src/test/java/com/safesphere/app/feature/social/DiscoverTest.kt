@@ -3,17 +3,15 @@ package com.safesphere.app.feature.social
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.feature.social.data.remote.ButterflyTallyDto
-import com.safesphere.app.feature.social.data.remote.CocoonItemDto
 import com.safesphere.app.feature.social.data.remote.DiscoverItemDto
 import com.safesphere.app.feature.social.data.remote.EditionDto
 import com.safesphere.app.feature.social.data.remote.EditionSectionDto
 import com.safesphere.app.feature.social.data.remote.PlaceDto
 import com.safesphere.app.feature.social.data.remote.PostDto
-import com.safesphere.app.feature.social.domain.ButterflyState
+import com.safesphere.app.feature.social.data.remote.SavedItemDto
 import com.safesphere.app.feature.social.domain.ButterflyTally
+import com.safesphere.app.feature.social.domain.Cities
 import com.safesphere.app.feature.social.domain.City
-import com.safesphere.app.feature.social.domain.CityMatch
-import com.safesphere.app.feature.social.domain.CocoonPage
 import com.safesphere.app.feature.social.domain.DiscoverItem
 import com.safesphere.app.feature.social.domain.DiscoverPage
 import com.safesphere.app.feature.social.domain.DiscoverReason
@@ -22,8 +20,8 @@ import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.PlacePage
 import com.safesphere.app.feature.social.domain.PostPage
 import com.safesphere.app.feature.social.domain.PostType
+import com.safesphere.app.feature.social.domain.SavedPage
 import com.safesphere.app.feature.social.domain.TimeBand
-import com.safesphere.app.feature.social.ui.CocoonViewModel
 import com.safesphere.app.feature.social.ui.DiscoverFeed
 import com.safesphere.app.feature.social.ui.DiscoverUiState
 import com.safesphere.app.feature.social.ui.FeedItem
@@ -33,8 +31,9 @@ import com.safesphere.app.feature.social.ui.DiscoverViewModel
 import com.safesphere.app.feature.social.ui.PostCollection
 import com.safesphere.app.feature.social.ui.PostCollectionViewModel
 import com.safesphere.app.feature.social.ui.PostViewModel
+import com.safesphere.app.feature.social.ui.SavedViewModel
 import com.safesphere.app.testing.FakeDiscoverRepository
-import com.safesphere.app.testing.FakeDiscoverRepository.Companion.cocoonItem
+import com.safesphere.app.testing.FakeDiscoverRepository.Companion.savedItem
 import com.safesphere.app.testing.FakeExperienceRepository
 import com.safesphere.app.testing.FakeLocationProvider
 import com.safesphere.app.core.location.LocationAccess
@@ -52,7 +51,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-/** Phase 13C: the butterfly, the Cocoon, Discover and place/category pages, against in-memory fakes; DTOs fail closed. */
+/**
+ * Phase 13C, 17E: the butterfly (a reaction), Saved (a bookmark), Discover and place/category pages, against in-memory
+ * fakes; DTOs fail closed.
+ */
 class DiscoverTest {
 
     @get:Rule
@@ -65,20 +67,23 @@ class DiscoverTest {
 
     private fun discoverVm() = DiscoverViewModel(discover, social, experiences, location)
 
-    // ---- CityMatch ----------------------------------------------------------------------------------------------
+    private fun city(code: String): City = Cities.find(code)!!
+
+    // ---- Cities.match (was CityMatch) --------------------------------------------------------------------------
 
     @Test
-    fun `profile city text names a launch city or none`() {
-        assertEquals(City.CHENNAI, CityMatch.of("Chennai"))
-        assertEquals(City.CHENNAI, CityMatch.of("  madras "))
-        assertEquals(City.TIRUCHIRAPPALLI, CityMatch.of("Trichy"))
-        assertEquals(City.BENGALURU, CityMatch.of("Bangalore"))
-        assertEquals(City.PUDUCHERRY, CityMatch.of("Pondicherry"))
-        assertEquals(City.THOOTHUKUDI, CityMatch.of("Tuticorin"))
-        assertNull(CityMatch.of("Other"))
-        assertNull(CityMatch.of("Mumbai"))
-        assertNull(CityMatch.of(""))
-        assertNull(CityMatch.of(null))
+    fun `profile city text names a catalog city or none`() {
+        assertEquals("CHENNAI", Cities.match("Chennai")?.code)
+        assertEquals("CHENNAI", Cities.match("  madras ")?.code)
+        assertEquals("TIRUCHIRAPPALLI", Cities.match("Trichy")?.code)
+        assertEquals("BENGALURU", Cities.match("Bangalore")?.code)
+        assertEquals("PUDUCHERRY", Cities.match("Pondicherry")?.code)
+        assertEquals("THOOTHUKUDI", Cities.match("Tuticorin")?.code)
+        assertEquals("MUMBAI", Cities.match("Bombay")?.code)          // Phase 17E: the catalog reaches beyond Tamil Nadu
+        assertNull(Cities.match("Other"))
+        assertNull(Cities.match("Atlantis"))
+        assertNull(Cities.match(""))
+        assertNull(Cities.match(null))
     }
 
     // ---- DTOs fail closed -----------------------------------------------------------------------------------------
@@ -99,10 +104,15 @@ class DiscoverTest {
 
     @Test
     fun `unknown states, kinds, reasons and cities are never guessed`() {
-        assertNull(PostDto(publicId = "p", type = "EXPERIENCE", yourButterfly = "MAYBE").toDomain()!!.yourButterfly)
-        assertNull(CocoonItemDto(PostDto(publicId = "p", type = "EXPERIENCE"), "MAYBE", "THIS_WEEK").toDomain())
-        assertEquals(TimeBand.EARLIER,
-            CocoonItemDto(PostDto(publicId = "p", type = "EXPERIENCE"), "WANT", "SOON").toDomain()!!.savedPeriod)
+        // Phase 17E: the viewer's marks are read only as a clear true; on one's own post they never count.
+        val plain = PostDto(publicId = "p", type = "EXPERIENCE").toDomain()!!
+        assertFalse(plain.youReacted || plain.saved)
+        val marked = PostDto(publicId = "p", type = "EXPERIENCE", youReacted = true, saved = true).toDomain()!!
+        assertTrue(marked.youReacted && marked.saved)
+        val own = PostDto(publicId = "p", type = "EXPERIENCE", own = true, youReacted = true, saved = true).toDomain()!!
+        assertFalse(own.youReacted || own.saved)
+        assertNull(SavedItemDto(null, "THIS_WEEK").toDomain())
+        assertEquals(TimeBand.EARLIER, SavedItemDto(PostDto(publicId = "p", type = "EXPERIENCE"), "SOON").toDomain()!!.savedPeriod)
         val item = DiscoverItemDto(PostDto(publicId = "p", type = "EXPERIENCE"), listOf("HAS_TIP", "MOST_LIKED", "HAS_TIP"))
         assertEquals(listOf(DiscoverReason.HAS_TIP), item.toDomain()!!.reasons)
         val edition = EditionDto("SALEM", "2026-10-19", "HIDDEN_GEMS", listOf(
@@ -114,67 +124,89 @@ class DiscoverTest {
         assertEquals(Interest.HIDDEN_GEMS, parsed.theme)
         assertNull(EditionDto("OTHER", null, null, null).toDomain())
         assertNull(EditionDto("ATLANTIS", null, null, null).toDomain())
+        assertEquals("KOCHI", EditionDto("KOCHI", null, null, null).toDomain()!!.city.code)
         assertNull(PlaceDto("pl", "Fort", "FOOD_CAFES", "tf2c1xz", "tf2c1x", "OTHER").toDomain()!!.city)
-        assertEquals(City.MADURAI, PlaceDto("pl", "Fort", "FOOD_CAFES", "tf2c1xz", "tf2c1x", "MADURAI").toDomain()!!.city)
+        assertNull(PlaceDto("pl", "Fort", "FOOD_CAFES", "tf2c1xz", "tf2c1x", "ATLANTIS").toDomain()!!.city)
+        assertEquals(city("MADURAI"), PlaceDto("pl", "Fort", "FOOD_CAFES", "tf2c1xz", "tf2c1x", "MADURAI").toDomain()!!.city)
+        // A CITY post may name OTHER; an unknown code is no city.
+        assertTrue(PostDto(publicId = "p", type = "EXPERIENCE", precision = "CITY", city = "OTHER").toDomain()!!.city!!.isOther)
+        assertNull(PostDto(publicId = "p", type = "EXPERIENCE", precision = "CITY", city = "ATLANTIS").toDomain()!!.city)
     }
 
-    // ---- Post view: the butterfly -----------------------------------------------------------------------------
+    // ---- Post view: the butterfly and Save --------------------------------------------------------------------
 
     @Test
-    fun `butterfly saves, marks been with an invitation, and removes`() = runTest {
+    fun `the butterfly and save are shown at once, sent once, and taken back`() = runTest {
         val vm = PostViewModel(experiences, discover, "post-1")
         advanceUntilIdle()
-        assertTrue(vm.uiState.value.canButterfly)
-        vm.onButterfly()
+        assertTrue(vm.uiState.value.canReact && vm.uiState.value.canSave)
+        vm.onReact()
+        assertTrue("shown before the answer", vm.uiState.value.post!!.youReacted)
+        vm.onReact() // a double tap while the first is on its way sends nothing
         advanceUntilIdle()
-        assertEquals(ButterflyState.WANT, vm.uiState.value.post!!.yourButterfly)
-        vm.onBeen()
+        vm.onSave()
         advanceUntilIdle()
-        assertEquals(ButterflyState.BEEN, vm.uiState.value.post!!.yourButterfly)
-        assertTrue(vm.uiState.value.beenInvitation)
-        vm.onBeenInvitationHandled()
-        vm.onButterfly()
+        assertTrue(vm.uiState.value.post!!.saved)
+        assertTrue(vm.uiState.value.savedNow)
+        vm.onSavedShown()
+        vm.onReact()
+        vm.onSave()
         advanceUntilIdle()
-        assertNull(vm.uiState.value.post!!.yourButterfly)
-        assertEquals(listOf("post-1" to ButterflyState.WANT, "post-1" to ButterflyState.BEEN, "post-1" to null),
-            discover.butterflyCalls)
+        assertFalse(vm.uiState.value.post!!.youReacted || vm.uiState.value.post!!.saved)
+        assertFalse(vm.uiState.value.savedNow)
+        assertEquals(listOf("react:post-1", "save:post-1", "unreact:post-1", "unsave:post-1"), discover.markCalls)
     }
 
     @Test
-    fun `own posts and Asks have no butterfly`() = runTest {
+    fun `a refused mark is put back and says why`() = runTest {
+        val vm = PostViewModel(experiences, discover, "post-1")
+        advanceUntilIdle()
+        discover.markResult = ApiResult.Failure(ApiError.NO_CONNECTION)
+        vm.onSave()
+        advanceUntilIdle()
+        assertFalse(vm.uiState.value.post!!.saved)
+        assertFalse(vm.uiState.value.savedNow)
+        assertEquals(ApiError.NO_CONNECTION, vm.uiState.value.failure!!.error)
+    }
+
+    @Test
+    fun `own posts have no marks, and Questions are saved but get no butterfly`() = runTest {
         experiences.postResult = ApiResult.Success(FakeExperienceRepository.post(own = true))
         val own = PostViewModel(experiences, discover, "post-1")
         advanceUntilIdle()
-        assertFalse(own.uiState.value.canButterfly)
-        own.onButterfly()
+        assertFalse(own.uiState.value.canReact || own.uiState.value.canSave)
+        own.onReact()
+        own.onSave()
         experiences.postResult = ApiResult.Success(FakeExperienceRepository.post(type = PostType.ASK))
         val ask = PostViewModel(experiences, discover, "post-1")
         advanceUntilIdle()
-        assertFalse(ask.uiState.value.canButterfly)
-        ask.onBeen()
+        assertFalse(ask.uiState.value.canReact)
+        assertTrue(ask.uiState.value.canSave)
+        ask.onReact()
+        ask.onSave()
         advanceUntilIdle()
-        assertTrue(discover.butterflyCalls.isEmpty())
+        assertEquals(listOf("save:post-1"), discover.markCalls)
     }
 
     @Test
     fun `a post that became invisible shows as not found`() = runTest {
         val vm = PostViewModel(experiences, discover, "post-1")
         advanceUntilIdle()
-        discover.butterflyResult = ApiResult.Failure(ApiError.NOT_FOUND)
-        vm.onButterfly()
+        discover.markResult = ApiResult.Failure(ApiError.NOT_FOUND)
+        vm.onReact()
         advanceUntilIdle()
         assertTrue(vm.uiState.value.notFound)
         assertNull(vm.uiState.value.post)
     }
 
-    // ---- Cocoon -----------------------------------------------------------------------------------------------
+    // ---- Saved ------------------------------------------------------------------------------------------------
 
     @Test
-    fun `cocoon lists, pages on tap, moves and removes`() = runTest {
-        discover.cocoonPages = mapOf(
-            (ButterflyState.WANT to null) to CocoonPage(listOf(cocoonItem("a"), cocoonItem("b")), "b"),
-            (ButterflyState.WANT to "b") to CocoonPage(listOf(cocoonItem("c")), null))
-        val vm = CocoonViewModel(discover)
+    fun `saved lists newest first, loads more near the end, and removes at once`() = runTest {
+        discover.savedPages = mapOf(
+            null to SavedPage(listOf(savedItem("a"), savedItem("b")), "b"),
+            "b" to SavedPage(listOf(savedItem("c"), savedItem("a")), null)) // a repeat is shown once
+        val vm = SavedViewModel(discover)
         vm.reload()
         advanceUntilIdle()
         assertEquals(listOf("a", "b"), vm.uiState.value.items.map { it.post.publicId })
@@ -183,66 +215,70 @@ class DiscoverTest {
         advanceUntilIdle()
         assertEquals(listOf("a", "b", "c"), vm.uiState.value.items.map { it.post.publicId })
         assertFalse(vm.uiState.value.hasMore)
-
-        vm.onMarkBeen(vm.uiState.value.items[0])
+        vm.onShowMore()
         advanceUntilIdle()
-        assertEquals(listOf("b", "c"), vm.uiState.value.items.map { it.post.publicId })
-        assertEquals("a", vm.uiState.value.beenInvitation!!.post.publicId)
-        vm.onBeenInvitationHandled()
-        assertNull(vm.uiState.value.beenInvitation)
+        assertEquals("no request after the end", listOf(null, "b"), discover.savedCursors)
 
-        discover.removeResult = ApiResult.Failure(ApiError.NOT_FOUND) // already gone elsewhere: the list catches up
-        vm.onRemove(vm.uiState.value.items[0])
+        vm.onRemove(vm.uiState.value.items[1])
+        assertEquals(listOf("a", "c"), vm.uiState.value.items.map { it.post.publicId })
         advanceUntilIdle()
-        assertEquals(listOf("c"), vm.uiState.value.items.map { it.post.publicId })
-        assertNull(vm.uiState.value.failure)
-
-        vm.onTab(ButterflyState.BEEN)
-        advanceUntilIdle()
-        assertEquals(ButterflyState.BEEN to null, discover.cocoonRequests.last())
-        assertTrue(vm.uiState.value.loaded && vm.uiState.value.items.isEmpty())
+        assertEquals(listOf("unsave:b"), discover.markCalls)
     }
 
     @Test
-    fun `want again moves an item back without an invitation`() = runTest {
-        discover.cocoonPages = mapOf((ButterflyState.BEEN to null) to CocoonPage(listOf(cocoonItem("x", ButterflyState.BEEN)), null))
-        val vm = CocoonViewModel(discover)
-        vm.onTab(ButterflyState.BEEN)
+    fun `a removal the server refused comes back where it was`() = runTest {
+        discover.savedPages = mapOf(null to SavedPage(listOf(savedItem("a"), savedItem("b"), savedItem("c")), null))
+        val vm = SavedViewModel(discover)
+        vm.reload()
         advanceUntilIdle()
-        vm.onWantAgain(vm.uiState.value.items[0])
+        discover.markResult = ApiResult.Failure(ApiError.NO_CONNECTION)
+        vm.onRemove(vm.uiState.value.items[1])
         advanceUntilIdle()
-        assertTrue(vm.uiState.value.items.isEmpty())
-        assertNull(vm.uiState.value.beenInvitation)
-        assertEquals("x" to ButterflyState.WANT, discover.butterflyCalls.last())
+        assertEquals(listOf("a", "b", "c"), vm.uiState.value.items.map { it.post.publicId })
+        assertEquals(ApiError.NO_CONNECTION, vm.uiState.value.failure!!.error)
+    }
+
+    @Test
+    fun `an empty saved list says so, a failure does not look empty`() = runTest {
+        val vm = SavedViewModel(discover)
+        vm.reload()
+        advanceUntilIdle()
+        assertTrue(vm.uiState.value.isEmpty)
+        discover.savedFailure = ApiResult.Failure(ApiError.SERVER)
+        val failing = SavedViewModel(discover)
+        failing.reload()
+        advanceUntilIdle()
+        assertFalse(failing.uiState.value.isEmpty)
+        assertEquals(ApiError.SERVER, failing.uiState.value.failure!!.error)
     }
 
     // ---- Discover ---------------------------------------------------------------------------------------------
 
     @Test
-    fun `the edition city comes from the profile when it names a launch city`() = runTest {
+    fun `the edition city comes from the profile when it names a catalog city`() = runTest {
         social.ownProfileResult = ApiResult.Success(FakeSocialRepository.ME.copy(city = "Madras"))
         val vm = discoverVm()
         vm.start()
         advanceUntilIdle()
-        assertEquals(City.CHENNAI, vm.uiState.value.city)
+        assertEquals(city("CHENNAI"), vm.uiState.value.city)
         assertFalse(vm.uiState.value.needsCity)
-        assertEquals(listOf(City.CHENNAI), discover.editionCities)
+        assertEquals(listOf(city("CHENNAI")), discover.editionCities)
     }
 
     @Test
-    fun `without a launch city in the profile, the person chooses one`() = runTest {
-        social.ownProfileResult = ApiResult.Success(FakeSocialRepository.ME.copy(city = "Mumbai"))
+    fun `without a known city in the profile, the person chooses one`() = runTest {
+        social.ownProfileResult = ApiResult.Success(FakeSocialRepository.ME.copy(city = "Atlantis"))
         val vm = discoverVm()
         vm.start()
         advanceUntilIdle()
         assertTrue(vm.uiState.value.needsCity)
         assertTrue(discover.editionCities.isEmpty())
-        vm.onCity(City.OTHER)
+        vm.onCity(Cities.other)
         assertTrue("OTHER has no edition", discover.editionCities.isEmpty())
-        vm.onCity(City.MADURAI)
+        vm.onCity(city("MADURAI"))
         advanceUntilIdle()
-        assertEquals(listOf(City.MADURAI), discover.editionCities)
-        assertEquals(City.MADURAI, vm.uiState.value.edition!!.city)
+        assertEquals(listOf(city("MADURAI")), discover.editionCities)
+        assertEquals(city("MADURAI"), vm.uiState.value.edition!!.city)
     }
 
     @Test
@@ -267,29 +303,32 @@ class DiscoverTest {
         assertEquals("no request after the end", 2, discover.connectionCursors.size)
     }
 
+
     @Test
-    fun `saving from the feed marks the same post everywhere, and a second tap takes it out`() = runTest {
+    fun `marks from the feed change the same post everywhere, once per tap, and are put back when refused`() = runTest {
         val post = FakeExperienceRepository.post(id = "s1")
         discover.connectionPages = mapOf(null to DiscoverPage(listOf(DiscoverItem(post, emptyList())), null))
-        discover.butterflyResult = ApiResult.Success(ButterflyState.WANT)
         val vm = discoverVm()
         vm.start()
         advanceUntilIdle()
         vm.onSave(post)
         vm.onSave(post) // a double tap sends nothing twice
+        vm.onReact(post)
         advanceUntilIdle()
-        assertEquals(listOf("s1" to ButterflyState.WANT), discover.butterflyCalls)
-        val saved = vm.uiState.value.connections.single().post
-        assertEquals(ButterflyState.WANT, saved.yourButterfly)
-        assertTrue(vm.uiState.value.savedNow)
+        assertEquals(listOf("save:s1", "react:s1"), discover.markCalls)
+        val marked = vm.uiState.value.connections.single().post
+        assertTrue(marked.saved && marked.youReacted)
+        assertEquals("s1", vm.uiState.value.savedNow)
         vm.onSavedShown()
-        vm.onSave(saved)
-        advanceUntilIdle()
-        assertEquals("s1" to null, discover.butterflyCalls.last())
-        assertNull(vm.uiState.value.connections.single().post.yourButterfly)
-        assertFalse(vm.uiState.value.savedNow)
-    }
+        assertNull(vm.uiState.value.savedNow)
 
+        discover.markResult = ApiResult.Failure(ApiError.NO_CONNECTION)
+        vm.onSave(marked)
+        assertFalse("shown at once", vm.uiState.value.connections.single().post.saved)
+        advanceUntilIdle()
+        assertTrue("put back", vm.uiState.value.connections.single().post.saved)
+        assertEquals("unsave:s1", discover.markCalls.last())
+    }
     @Test
     fun `near me sends only the 6-character area, and says what to do when location cannot help`() = runTest {
         experiences.nearby = listOf(FakeExperienceRepository.place())
@@ -318,12 +357,12 @@ class DiscoverTest {
     fun `the feed - talking now, the city with a question after every third post, the theme, then people you know`() {
         fun item(id: String, type: PostType = PostType.EXPERIENCE) =
             DiscoverItem(FakeExperienceRepository.post(id = id, type = type), listOf(DiscoverReason.IN_THIS_CITY))
-        val edition = Edition(City.CHENNAI, null, Interest.HIDDEN_GEMS, listOf(
+        val edition = Edition(city("CHENNAI"), null, Interest.HIDDEN_GEMS, listOf(
             EditionSection(EditionSectionKind.CITY, (1..4).map { item("c$it") }),
             EditionSection(EditionSectionKind.ASKS, listOf(item("a1", PostType.ASK), item("a2", PostType.ASK))),
             EditionSection(EditionSectionKind.THEME, listOf(item("c1"), item("t1"))),
             EditionSection(EditionSectionKind.TALKING, listOf(item("c2")))))
-        val state = DiscoverUiState(city = City.CHENNAI, edition = edition,
+        val state = DiscoverUiState(city = city("CHENNAI"), edition = edition,
             connections = listOf(item("t1"), item("k1")), connectionsLoaded = true)
         val feed = DiscoverFeed.build(state)
         val order = feed.map {
@@ -341,7 +380,7 @@ class DiscoverTest {
 
     @Test
     fun `the feed ends with an invitation to find people when nobody you know has posted`() {
-        val state = DiscoverUiState(city = City.CHENNAI, edition = Edition(City.CHENNAI, null, null, emptyList()),
+        val state = DiscoverUiState(city = city("CHENNAI"), edition = Edition(city("CHENNAI"), null, null, emptyList()),
             connectionsLoaded = true)
         val feed = DiscoverFeed.build(state)
         assertTrue(FeedItem.ConnectPrompt in feed)
@@ -349,8 +388,8 @@ class DiscoverTest {
 
         // Emulator finding: a connection's posts already shown in the city list must not turn into "find people".
         val shown = DiscoverItem(FakeExperienceRepository.post(id = "b1"), listOf(DiscoverReason.IN_THIS_CITY))
-        val connected = DiscoverUiState(city = City.CHENNAI, connectionsLoaded = true, connections = listOf(shown),
-            edition = Edition(City.CHENNAI, null, null, listOf(EditionSection(EditionSectionKind.CITY, listOf(shown)))))
+        val connected = DiscoverUiState(city = city("CHENNAI"), connectionsLoaded = true, connections = listOf(shown),
+            edition = Edition(city("CHENNAI"), null, null, listOf(EditionSection(EditionSectionKind.CITY, listOf(shown)))))
         val again = DiscoverFeed.build(connected)
         assertFalse(FeedItem.ConnectPrompt in again)
         assertEquals(FeedItem.End, again.last())
@@ -363,11 +402,11 @@ class DiscoverTest {
         vm.onSearch()
         advanceUntilIdle()
         assertTrue(discover.searches.isEmpty())
-        vm.onCity(City.THANJAVUR)
+        vm.onCity(city("THANJAVUR"))
         vm.onQuery(" fort ")
         vm.onSearch()
         advanceUntilIdle()
-        assertEquals(listOf("fort" to City.THANJAVUR), discover.searches)
+        assertEquals(listOf("fort" to city("THANJAVUR")), discover.searches)
         assertTrue(vm.uiState.value.searched)
         vm.onClearSearch()
         assertFalse(vm.uiState.value.searched)
@@ -405,9 +444,9 @@ class DiscoverTest {
     fun `a category page asks for its category and city`() = runTest {
         discover.categoryPages = mapOf(null to PostPage(listOf(FakeExperienceRepository.post(id = "g1")), null))
         val vm = PostCollectionViewModel(discover)
-        vm.show(PostCollection.OfCategory(Interest.HIDDEN_GEMS, City.VELLORE))
+        vm.show(PostCollection.OfCategory(Interest.HIDDEN_GEMS, city("VELLORE")))
         advanceUntilIdle()
-        assertEquals(Triple(Interest.HIDDEN_GEMS, City.VELLORE, null), discover.categoryRequests.single())
+        assertEquals(Triple(Interest.HIDDEN_GEMS, city("VELLORE"), null), discover.categoryRequests.single())
         assertEquals(listOf("g1"), vm.uiState.value.items.map { it.publicId })
     }
 }

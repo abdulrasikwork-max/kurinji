@@ -49,6 +49,11 @@ class PostCollectionViewModel(private val repository: DiscoverRepository) : View
 
     private var nextCursor: String? = null
 
+    /** Phase 17E: the butterfly and Save from the list. */
+    val marks = PostMarks(repository, viewModelScope, { id, f ->
+        _uiState.update { s -> s.copy(items = s.items.map { if (it.publicId == id) f(it) else it }) }
+    }) { failure -> _uiState.update { it.copy(failure = failure, sessionExpired = failure.isSessionExpired()) } }
+
     fun show(collection: PostCollection) {
         if (_uiState.value.collection == collection && _uiState.value.loaded) return
         _uiState.value = PostCollectionUiState(collection = collection)

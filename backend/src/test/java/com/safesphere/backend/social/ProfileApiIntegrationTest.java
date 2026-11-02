@@ -156,7 +156,7 @@ class ProfileApiIntegrationTest {
         JsonNode seen = json(byHandle(bala, handle).andExpect(status().isOk()));
         assertThat(seen.get("relationship").asText()).isEqualTo("NONE");
         assertThat(fieldNames(seen)).containsExactlyInAnyOrder("publicId", "handle", "displayName", "bio", "languages",
-                "interests", "city", "relationship");
+                "interests", "city", "relationship", "photo", "dailyState"); // 17E
         byPublicId(bala, publicId).andExpect(status().isOk()).andExpect(jsonPath("$.handle").value(handle));
         byHandle(asha, handle).andExpect(status().isOk()).andExpect(jsonPath("$.relationship").value("SELF"));
         byHandle(bala, "@" + handle.toUpperCase()).andExpect(status().isOk());
@@ -173,7 +173,7 @@ class ProfileApiIntegrationTest {
         Person asha = person();
         JsonNode body = json(save(asha, profile(unique("asha"), "Asha")).andExpect(status().isOk()));
         assertThat(fieldNames(body)).containsExactlyInAnyOrder("publicId", "handle", "displayName", "bio", "languages",
-                "interests", "city", "handleChangeAvailableAt");
+                "interests", "city", "handleChangeAvailableAt", "photo", "dailyState"); // 17E
     }
 
     @Test

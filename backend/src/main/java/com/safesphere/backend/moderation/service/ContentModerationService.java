@@ -116,7 +116,7 @@ public class ContentModerationService {
     /** What the person concerned sees in their standing (never a KEEP: they were not told anything was reported). */
     static final Set<ActionType> SHOWN_TO_PERSON = EnumSet.of(ActionType.CONTENT_HOLD, ActionType.CONTENT_COLLAPSE,
             ActionType.CONTENT_REMOVE, ActionType.PERSON_WARN, ActionType.PERSON_PAUSE_COMMENTS,
-            ActionType.PERSON_PAUSE_POSTING, ActionType.PERSON_SUSPEND);
+            ActionType.PERSON_PAUSE_POSTING, ActionType.PERSON_SUSPEND, ActionType.PERSON_REMOVE_PHOTO);
 
     static final Set<ActionType> APPEALABLE = EnumSet.of(ActionType.CONTENT_COLLAPSE, ActionType.CONTENT_REMOVE,
             ActionType.PERSON_PAUSE_COMMENTS, ActionType.PERSON_PAUSE_POSTING, ActionType.PERSON_SUSPEND);
@@ -144,6 +144,7 @@ public class ContentModerationService {
     private final CaseRefs refs;
     private final ModerationProperties properties;
     private final AssessmentService assessmentService;
+    private final com.safesphere.backend.social.service.ProfilePhotoService photos;
     private final Clock clock;
 
     public ContentModerationService(ModerationService moderation, ReportService reportService,
@@ -155,7 +156,8 @@ public class ContentModerationService {
                                     ProfileRepository profiles, SocialStandingRepository standings,
                                     SocialAccess access, UserRepository users, CaseRefs refs,
                                     ModerationProperties properties, AssessmentService assessmentService,
-                                    Clock clock) {
+                                    com.safesphere.backend.social.service.ProfilePhotoService photos, Clock clock) {
+        this.photos = photos;
         this.assessmentService = assessmentService;
         this.moderation = moderation;
         this.reportService = reportService;
@@ -248,6 +250,7 @@ public class ContentModerationService {
                 close(l, ContentOutcome.ACTION_TAKEN, now);
             }
             case PERSON_KEEP -> close(l, ContentOutcome.NO_VIOLATION, now);
+            case PERSON_REMOVE_PHOTO -> photos.removeByModerator(l.subjectId, now);
             case PERSON_WARN, PERSON_PAUSE_COMMENTS, PERSON_PAUSE_POSTING, PERSON_SUSPEND -> {
                 if (pause != null) applyPause(l.subjectId, pause, until, why, decision, now);
                 if (c.getTargetKind() == TargetKind.PERSON) close(l, ContentOutcome.ACTION_TAKEN, now);
@@ -259,6 +262,16 @@ public class ContentModerationService {
         cases.saveAndFlush(c);
         if (systemState != null && CONTENT_ACTIONS.contains(action)) assessmentService.reviewed(c, systemState, action);
         return detail(load(c), moderatorId, now);
+    }
+
+    /** Phase 17E: the profile photo of the person a PERSON case is about (moderators only; shown after a tap). */
+    @Transactional(readOnly = true)
+    public byte[] personPhoto(long moderatorId, String caseId) {
+        moderation.requireModerator(moderatorId);
+        Loaded l = requireCase(cases.findByPublicId(caseId).orElse(null));
+        if (l.tookPart(moderatorId)) throw tookPart();
+        if (l.c.getTargetKind() != TargetKind.PERSON) throw new ResourceNotFoundException("No photo");
+        return photos.photoOf(l.subjectId);
     }
 
     /**
@@ -612,7 +625,7 @@ public class ContentModerationService {
                 return new ContentView(p.getType().name(), null, p.getBody(), p.getTip(), p.getCategory(),
                         p.getPrecision().name(), placeName,
                         p.getPrecision() == Precision.AREA ? p.getAreaCell() : null,
-                        p.getCity() == null ? null : p.getCity().name(), p.getAudience().name(),
+                        p.getCity(), p.getAudience().name(),
                         p.getExperiencedMonth() == null ? null : p.getExperiencedMonth().toString().substring(0, 7),
                         p.getDaypart() == null ? null : p.getDaypart().name(), media, null, null);
             }
@@ -629,7 +642,7 @@ public class ContentModerationService {
                 Profile profile = profiles.findByUserId(l.subjectId).orElse(null);
                 PersonView person = profile == null ? null : new PersonView(profile.getDisplayName(),
                         profile.getHandle(), profile.getBio(), profile.getCity(),
-                        ProfileLists.decode(profile.getInterests()));
+                        ProfileLists.decode(profile.getInterests()), profile.getPhotoKey() != null);
                 return new ContentView(null, null, null, null, null, null, null, null, null, null, null, null,
                         List.of(), null, person);
             }
@@ -648,6 +661,8 @@ public class ContentModerationService {
                 }
             } else {
                 out.add(ActionType.PERSON_KEEP);
+                // Phase 17E: a photo can be removed on its own; the case stays open for the decision about the person.
+                if (photos.hasPhoto(l.subjectId)) out.add(ActionType.PERSON_REMOVE_PHOTO);
             }
             out.addAll(PERSON_STEPS);
         } else if (content && l.c.getOutcome() == ContentOutcome.ACTION_TAKEN) {

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 17E: a chosen pill has no separate edge (ink by day, lime at night, both 3:1+ on the page); others a hairline. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="?attr/colorPrimary" android:state_checked="true" />
+    <item android:color="?attr/colorOutlineVariant" />
+</selector>

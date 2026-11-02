@@ -24,7 +24,6 @@ import com.safesphere.app.feature.social.data.UriPick
 import com.safesphere.app.feature.social.data.VideoRules
 import com.safesphere.app.feature.social.domain.Audience
 
-import com.safesphere.app.feature.social.domain.City
 import com.safesphere.app.feature.social.domain.CommentPolicy
 import com.safesphere.app.feature.social.domain.ComposerPolicy
 import com.safesphere.app.feature.social.domain.Daypart
@@ -50,7 +49,6 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
     private lateinit var photoAdapter: PhotoAdapter
     private lateinit var typeChips: ChoiceChips<PostType>
     private lateinit var precisionChips: ChoiceChips<Precision>
-    private lateinit var cityChips: ChoiceChips<City>
     private lateinit var daypartChips: ChoiceChips<Daypart>
     private lateinit var categoryChips: ChoiceChips<Interest>
     private lateinit var audienceChips: ChoiceChips<Audience>
@@ -63,7 +61,14 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         binding.photoList.adapter = photoAdapter
         typeChips = ChoiceChips(binding.typeGroup) { it?.let(viewModel::onType) }
         precisionChips = ChoiceChips(binding.precisionGroup) { it?.let(viewModel::onPrecision) }
-        cityChips = ChoiceChips(binding.cityGroup) { it?.let(viewModel::onCity) }
+        binding.cityButton.setOnClickListener {
+            CityPicker.show(this, viewModel.uiState.value.city, allowOther = true) { viewModel.onCity(it) }
+        }
+        // Phase 17E: "I went" opened the composer for a place the person saw on a post (once, not after a rotation).
+        if (savedInstanceState == null) {
+            viewModel.prefill(arguments?.getString(ARG_PLACE_ID),
+                arguments?.getString(ARG_CATEGORY)?.let(Interest::fromCode))
+        }
         daypartChips = ChoiceChips(binding.daypartGroup) { viewModel.onDaypart(it) }
         categoryChips = ChoiceChips(binding.categoryGroup) { viewModel.onCategory(it) }
         audienceChips = ChoiceChips(binding.audienceGroup) { it?.let(viewModel::onAudience) }
@@ -153,8 +158,9 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
             else R.string.social_precision_private_notice))
         val needsCity = state.precision == Precision.CITY
         binding.cityTitle.isVisible = needsCity
-        binding.cityGroup.isVisible = needsCity
-        cityChips.show(City.entries.map { it to ExperienceLabels.cityName(it) }, state.city)
+        binding.cityButton.isVisible = needsCity
+        binding.cityButton.text = state.city?.let { if (it.isOther) getString(R.string.city_other) else it.name }
+            ?: getString(R.string.city_picker_title)
         binding.delayNotice.isVisible = state.isDelayed
 
         binding.whenTitle.isVisible = experience
@@ -177,11 +183,11 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         val shown = when (state.precision) {
             Precision.EXACT -> state.place?.name
             Precision.AREA -> state.place?.let { place ->
-                com.safesphere.app.feature.social.domain.CityAreas.cityOf(place.areaCell)
-                    ?.let { getString(R.string.feed_area_in_city, ExperienceLabels.cityName(it)) }
+                com.safesphere.app.feature.social.domain.Cities.cityOf(place.areaCell)
+                    ?.let { getString(R.string.feed_area_in_city, it.name) }
                     ?: getString(R.string.feed_area_unknown)
             }
-            Precision.CITY -> state.city?.let(ExperienceLabels::cityName)
+            Precision.CITY -> state.city?.let { if (it.isOther) getString(R.string.city_other) else it.name }
             Precision.NONE -> getString(R.string.social_precision_none)
             null -> null
         }
@@ -220,8 +226,13 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         }
     }
 
-    private companion object {
+    companion object {
         /** The server's code (backend `ProfileNeededException.CODE`). */
-        const val PROFILE_NEEDED = "PROFILE_NEEDED"
+        private const val PROFILE_NEEDED = "PROFILE_NEEDED"
+
+        /** Phase 17E ("I went"): the place of the post the person went to (an exact, public place) and its category. */
+        const val ARG_PLACE_ID = "placeId"
+        const val ARG_CATEGORY = "category"
     }
+
 }

@@ -1,3 +1,20 @@
+# Handoff: Phase 17E social redesign (2026-11-03) — one local commit, NOT pushed
+
+**Implemented, compiled, tested, live-verified on MySQL, emulator-verified (API 37, light + dark, 320 dp at 2.0x
+text)** (`docs/PHASE17E.md`). V28 (next **V29**): "Ink & Lime" palette, butterfly = reaction + Save = private
+bookmark (Saved tab), 85-city catalog searched on the phone, profile photo, today's state for connections only, "I went",
+compact Safety grid on You, `MarksFit` for narrow screens / large text.
+- **Results:** backend **790 / 0** (2 skipped); Android **808 / 0**; lint **0 / 104**; V28 dry run + constraint checks on
+  MySQL (applied 2026-11-02); live API **49/49** + moderator photo path **9/9**; emulator walk-through PASS after 10
+  fixes found on the way (17E-V1…V10: overflowing marks at 2.0x, You head at 2.0x, onboarding icon, a "Cocoon" 429 text…).
+- **NOT VERIFIED:** the A23 beyond install + launch (nobody signed in); TalkBack by ear; a photo upload on a weak network.
+- **State left:** backend stopped; emulator running, display reset, signed in as a throwaway account; five
+  `p17e-*@example.com` accounts queued for deletion (due 2026-11-09, erased when the backend next runs after that);
+  the build still points at `127.0.0.1`; the A23 has the 17E debug APK.
+- **Next:** the user's review and push; 17F (SOS location handling, shake SOS per D-4), 17G ratings (V30, D-8).
+
+---
+
 # Handoff: Phase 17D location UX (2026-11-01) — one local commit, NOT pushed
 
 **Implemented, compiled, tested, emulator-verified (API 37)** (`docs/PHASE17D.md`). Android only: no migration (next

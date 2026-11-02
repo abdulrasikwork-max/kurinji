@@ -64,23 +64,6 @@
         <item name="android:textAppearance">@style/TextAppearance.SafeSphere.Button</item>
     </style>
 
-    <!-- The butterfly button: the one place the intent colour fills a control (Phase 13F). -->
-    <style name="Widget.Kurinji.Button.Intent" parent="Widget.Material3.Button.OutlinedButton">
-        <item name="android:minHeight">@dimen/min_touch_target</item>
-        <item name="android:insetTop">0dp</item>
-        <item name="android:insetBottom">0dp</item>
-        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Label.Large</item>
-        <item name="android:textColor">?attr/colorOnIntentContainer</item>
-        <item name="backgroundTint">?attr/colorIntentContainer</item>
-        <!-- The ink shade, not the bright orange: the edge must reach 3:1 to mark the control (ContrastTest). -->
-        <item name="strokeColor">?attr/colorIntentInk</item>
-        <item name="strokeWidth">1.5dp</item>
-        <item name="cornerRadius">@dimen/radius_button</item>
-        <item name="iconTint">@null</item>
-        <item name="iconSize">28dp</item>
-        <item name="iconPadding">8dp</item>
-    </style>
-
     <!-- A quiet, outlined action next to the butterfly ("Going there?"). -->
     <style name="Widget.Kurinji.Button.Quiet" parent="Widget.Material3.Button.OutlinedButton">
         <item name="android:minHeight">@dimen/min_touch_target</item>
@@ -90,6 +73,7 @@
         <item name="android:textColor">?attr/colorOnSurface</item>
         <item name="strokeColor">?attr/colorOutline</item>
         <item name="iconTint">?attr/colorPrimary</item>
+        <item name="iconGravity">textStart</item>
         <item name="cornerRadius">@dimen/radius_button</item>
     </style>
 
@@ -118,7 +102,7 @@
         <item name="chipBackgroundColor">@color/selector_chip_background</item>
         <item name="android:textColor">@color/selector_chip_text</item>
         <item name="checkedIconTint">?attr/colorOnPrimary</item>
-        <item name="chipStrokeColor">?attr/colorOutlineVariant</item>
+        <item name="chipStrokeColor">@color/selector_chip_stroke</item>
         <item name="chipStrokeWidth">1dp</item>
         <item name="chipMinHeight">@dimen/min_touch_target</item>
         <item name="android:textAppearance">@style/TextAppearance.Kurinji.Label.Large</item>
@@ -151,7 +135,7 @@
     <style name="Widget.SafeSphere.BottomNavigation" parent="Widget.Material3.BottomNavigationView">
         <item name="android:background">@drawable/bg_bottom_bar</item>
         <item name="elevation">0dp</item>
-        <item name="itemIconTint">@color/selector_nav_item</item>
+        <item name="itemIconTint">@color/selector_nav_icon</item>
         <item name="itemTextColor">@color/selector_nav_item</item>
         <item name="itemTextAppearanceActive">@style/TextAppearance.SafeSphere.Nav.Active</item>
         <item name="itemTextAppearanceInactive">@style/TextAppearance.SafeSphere.Nav.Inactive</item>
@@ -160,7 +144,7 @@
     </style>
 
     <style name="Widget.SafeSphere.BottomNavigation.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <item name="android:color">?attr/colorPrimaryContainer</item>
+        <item name="android:color">?attr/colorLime</item>
         <item name="android:width">60dp</item>
         <item name="android:height">32dp</item>
     </style>
@@ -220,22 +204,6 @@
         <item name="cardCornerRadius">@dimen/radius_card</item>
     </style>
 
-    <!-- An action under a post (save, comment, why): icon + bold word, ink, 48 dp tall. -->
-    <style name="Widget.Kurinji.Button.Action" parent="Widget.Material3.Button.TextButton.Icon">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:minWidth">0dp</item>
-        <item name="android:minHeight">@dimen/min_touch_target</item>
-        <item name="android:paddingStart">12dp</item>
-        <item name="android:paddingEnd">12dp</item>
-        <item name="android:textAppearance">@style/TextAppearance.SafeSphere.Button</item>
-        <item name="android:textSize">14sp</item>
-        <item name="android:textColor">?attr/colorOnSurface</item>
-        <item name="iconTint">?attr/colorOnSurface</item>
-        <item name="iconSize">22dp</item>
-        <item name="iconPadding">6dp</item>
-    </style>
-
     <!-- The round send button of the comment box: a filled red circle with a paper plane. -->
     <style name="Widget.Kurinji.Button.Send" parent="Widget.Material3.Button.Icon">
         <item name="android:layout_width">@dimen/min_touch_target</item>
@@ -290,8 +258,8 @@
         <item name="android:paddingTop">2dp</item>
         <item name="android:paddingBottom">2dp</item>
         <item name="android:textAppearance">@style/TextAppearance.Kurinji.Overline</item>
-        <item name="android:textColor">@color/k_card</item>
-        <item name="android:drawableTint">@color/k_card</item>
+        <item name="android:textColor">@color/k_surface</item>
+        <item name="android:drawableTint">@color/k_surface</item>
     </style>
 
     <!-- A fact under a post (where it is, "Tip inside"): not a button. -->
@@ -313,7 +281,7 @@
     <!-- A category or city pill at the top of Discover: tappable, bold. -->
     <style name="Widget.Kurinji.Chip.Pill" parent="Widget.Material3.Chip.Filter">
         <item name="chipBackgroundColor">@color/selector_chip_background</item>
-        <item name="chipStrokeColor">?attr/colorOutlineVariant</item>
+        <item name="chipStrokeColor">@color/selector_chip_stroke</item>
         <item name="chipStrokeWidth">1dp</item>
         <item name="chipMinHeight">40dp</item>
         <item name="chipIconTint">?attr/colorPrimary</item>
@@ -370,5 +338,78 @@
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
         <item name="android:textAppearance">@style/TextAppearance.Kurinji.Title.Medium</item>
+    </style>
+    <!-- ===== Phase 17E: "Ink & Lime" components (docs/DESIGN_SYSTEM.md) ===== -->
+
+    <!-- A mark under a post (the butterfly, save): icon + word, a pill that fills with lime when given. -->
+    <style name="Widget.Kurinji.Button.Mark" parent="Widget.Material3.Button.TextButton.Icon">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">@dimen/min_touch_target</item>
+        <item name="android:insetTop">2dp</item>
+        <item name="android:insetBottom">2dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">14dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SafeSphere.Button</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="iconTint">?attr/colorOnSurface</item>
+        <item name="iconSize">22dp</item>
+        <item name="iconPadding">6dp</item>
+        <item name="cornerRadius">22dp</item>
+    </style>
+
+    <!-- A quiet filled button (lime-soft): secondary actions that still invite ("I went", "Set today's state"). -->
+    <style name="Widget.Kurinji.Button.Tonal" parent="Widget.Material3.Button.TonalButton">
+        <item name="android:minHeight">@dimen/min_touch_target</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SafeSphere.Button</item>
+        <item name="android:textSize">15sp</item>
+        <item name="backgroundTint">?attr/colorPrimaryContainer</item>
+        <item name="android:textColor">?attr/colorOnPrimaryContainer</item>
+        <item name="iconTint">?attr/colorOnPrimaryContainer</item>
+        <item name="iconGravity">textStart</item>
+        <item name="cornerRadius">@dimen/radius_button</item>
+    </style>
+
+    <!-- A lime tag with ink words (the category on a photo, "Today"). -->
+    <style name="Widget.Kurinji.Tag" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/bg_tag_lime</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Overline</item>
+        <item name="android:textColor">?attr/colorOnLime</item>
+    </style>
+
+    <!-- The ink panel (a profile head, the Safety entry on You): light words, lime accents. -->
+    <style name="Widget.Kurinji.Card.Panel" parent="Widget.SafeSphere.Card">
+        <item name="cardBackgroundColor">?attr/colorPanel</item>
+        <item name="strokeWidth">0dp</item>
+        <item name="cardCornerRadius">28dp</item>
+    </style>
+
+    <!-- A tile of the compact Safety grid on You (opens the existing Safety screens; never changes them). -->
+    <style name="Widget.Kurinji.Card.Tile" parent="Widget.SafeSphere.Card">
+        <item name="cardBackgroundColor">?attr/colorCard</item>
+        <item name="strokeColor">?attr/colorOutlineVariant</item>
+        <item name="cardCornerRadius">20dp</item>
+    </style>
+
+    <!-- A screen's big title on the social tabs. -->
+    <style name="TextAppearance.Kurinji.ScreenTitle" parent="TextAppearance.Kurinji.Headline.Large">
+        <item name="android:textSize">32sp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- A post's own words on a card without a photo: larger, like a quote. -->
+    <style name="TextAppearance.Kurinji.Quote" parent="TextAppearance.Kurinji.CardHeadline">
+        <item name="android:textSize">19sp</item>
+        <item name="android:lineSpacingMultiplier">1.15</item>
     </style>
 </resources>

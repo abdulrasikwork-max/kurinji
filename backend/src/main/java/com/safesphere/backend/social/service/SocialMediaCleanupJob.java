@@ -20,7 +20,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Phase 13B (Q10): the one scheduled task of the social package. Every hour it deletes photos that were uploaded but
+ * Phase 13B (Q10): the one scheduled task of the social package. Phase 17E: it also keeps profile photos (their keys are
+ * on the profile, not in post_media) and deletes daily states of earlier IST days (D-7). Every hour it deletes photos that were uploaded but
  * never attached to a post within 24 h (rows first, then files), and photo files that no row refers to any more (a
  * post deletion whose file removal failed, a crash between writing a file and its row). It only deletes; it never sends
  * anything. Turned off with app.social.media-cleanup-enabled=false (the tests call [run] directly).
@@ -30,22 +31,27 @@ public class SocialMediaCleanupJob {
 
     private static final Logger log = LoggerFactory.getLogger(SocialMediaCleanupJob.class);
 
-    public record Outcome(int unattachedRows, int files) {
+    public record Outcome(int unattachedRows, int files, int dailyStates) {
     }
 
     private final PostMediaRepository mediaRows;
+    private final com.safesphere.backend.social.repository.ProfileRepository profiles;
     private final MediaStorage storage;
     private final SocialProperties properties;
+    private final DailyStateService dailyStates;
     private final Clock clock;
     private final TransactionTemplate tx;
     private final boolean enabled;
 
-    public SocialMediaCleanupJob(PostMediaRepository mediaRows, MediaStorage storage, SocialProperties properties,
-                                 Clock clock, PlatformTransactionManager transactions,
+    public SocialMediaCleanupJob(PostMediaRepository mediaRows,
+                                 com.safesphere.backend.social.repository.ProfileRepository profiles, MediaStorage storage, SocialProperties properties,
+                                 DailyStateService dailyStates, Clock clock, PlatformTransactionManager transactions,
                                  @Value("${app.social.media-cleanup-enabled:true}") boolean enabled) {
         this.mediaRows = mediaRows;
+        this.profiles = profiles;
         this.storage = storage;
         this.properties = properties;
+        this.dailyStates = dailyStates;
         this.clock = clock;
         this.tx = new TransactionTemplate(transactions);
         this.enabled = enabled;
@@ -79,6 +85,8 @@ public class SocialMediaCleanupJob {
                 for (int i = 0; i < old.size(); i += 500) {
                     mediaRows.findByStorageKeyIn(old.subList(i, Math.min(old.size(), i + 500)))
                             .forEach(m -> known.add(m.getStorageKey()));
+                    // Phase 17E: a profile photo has no post_media row; its key is on the profile.
+                    known.addAll(profiles.photoKeysIn(old.subList(i, Math.min(old.size(), i + 500))));
                 }
                 for (String key : old) {
                     if (!known.contains(key)) {
@@ -90,7 +98,14 @@ public class SocialMediaCleanupJob {
         } catch (RuntimeException e) {
             log.warn("Photo clean-up failed ({}); trying again next run", e.getClass().getSimpleName());
         }
+        // Phase 17E (D-7): earlier days' daily states (they stopped counting at midnight IST; no history is kept).
+        int states = 0;
+        try {
+            states = dailyStates.purge();
+        } catch (RuntimeException e) {
+            log.warn("Daily state clean-up failed ({}); trying again next run", e.getClass().getSimpleName());
+        }
         if (rows > 0 || files > 0) log.info("Photo clean-up: {} unattached uploads, {} files removed", rows, files);
-        return new Outcome(rows, files);
+        return new Outcome(rows, files, states);
     }
 }

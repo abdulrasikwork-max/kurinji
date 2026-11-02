@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 16: a chosen chip is solid brand red (with its check mark and white words); an unchosen one is the card colour. -->
+<!-- Phase 17E: a chosen chip is the action colour (ink by day, lime at night) with its check mark; others are the card colour. -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:color="?attr/colorPrimary" android:state_checked="true" />
     <item android:color="?attr/colorCard" />

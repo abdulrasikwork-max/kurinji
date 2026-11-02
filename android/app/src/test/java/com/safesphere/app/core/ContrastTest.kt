@@ -40,6 +40,25 @@ class ContrastTest {
         }
     }
 
+    /** Phase 17E: the brand never uses red, so red keeps meaning emergency; the emergency values are unchanged. */
+    @Test
+    fun `the brand is not red and the emergency colours are unchanged`() {
+        val day = colours(File("src/main/res/values/colors.xml"))
+        val night = day + colours(File("src/main/res/values-night/colors.xml"))
+        for (palette in listOf(day, night)) {
+            for (name in listOf("k_action", "k_lime", "k_leaf", "k_panel")) {
+                val rgb = palette.getValue(name)
+                val r = rgb shr 16 and 0xFF
+                val g = rgb shr 8 and 0xFF
+                val b = rgb and 0xFF
+                assertTrue("$name looks red: #%06X".format(rgb), !(r > g + 40 && r > b + 40))
+            }
+        }
+        assertTrue(day.getValue("ss_emergency") == 0xC8102E && day.getValue("emergency_surface") == 0x0B0B0B)
+        assertTrue(night.getValue("ss_emergency") == 0xD42A3D && night.getValue("emergency_surface") == 0x000000)
+        assertTrue(day.getValue("launcher_red") == 0xD0102A) // the SOS shortcut's ring
+    }
+
     private fun check(palette: Map<String, Int>, fg: String, bg: String, minimum: Double, theme: String,
                       problems: MutableList<String>) {
         val f = palette[fg] ?: return problems.let { it += "$theme: $fg missing" }
@@ -67,13 +86,14 @@ class ContrastTest {
 
     private companion object {
         val TEXT_PAIRS = listOf(
-            "k_ink" to "k_mist", "k_ink" to "k_card", "k_ink" to "k_sunk",
-            "k_ink_soft" to "k_mist", "k_ink_soft" to "k_card", "k_ink_soft" to "k_sunk",
-            "k_bloom" to "k_mist", "k_bloom" to "k_card",
-            "k_on_bloom" to "k_bloom", "k_on_bloom_soft" to "k_bloom_soft",
-            "k_yeoman_ink" to "k_mist", "k_yeoman_ink" to "k_card", "k_on_yeoman_soft" to "k_yeoman_soft",
-            "ss_caution" to "k_mist", "ss_caution" to "k_card", "ss_on_caution_container" to "ss_caution_container",
-            "ss_safe" to "k_mist", "ss_on_safe_container" to "ss_safe_container",
+            "k_ink" to "k_page", "k_ink" to "k_surface", "k_ink" to "k_surface_sunk",
+            "k_ink_soft" to "k_page", "k_ink_soft" to "k_surface", "k_ink_soft" to "k_surface_sunk",
+            // Phase 17E ("Ink & Lime"): actions (ink + lime by day, lime + ink at night), lime fills, the readable accent.
+            "k_on_action" to "k_action", "k_on_lime" to "k_lime", "k_on_lime_soft" to "k_lime_soft",
+            "k_leaf" to "k_page", "k_leaf" to "k_surface", "k_leaf" to "k_surface_sunk",
+            "k_on_panel" to "k_panel", "k_on_panel_soft" to "k_panel", "k_lime" to "k_panel",
+            "ss_caution" to "k_page", "ss_caution" to "k_surface", "ss_on_caution_container" to "ss_caution_container",
+            "ss_safe" to "k_page", "ss_on_safe_container" to "ss_safe_container",
             "ss_on_emergency" to "ss_emergency", "ss_on_emergency_container" to "ss_emergency_container",
             "hero_on" to "hero_background", "hero_on_variant" to "hero_background", "hero_accent" to "hero_background",
             "hero_caution" to "hero_background",
@@ -83,9 +103,11 @@ class ContrastTest {
             "avatar_on" to "avatar_5", "avatar_on" to "avatar_6",
             "launcher_chevron" to "splash_background"
         )
-        // The butterfly button's edge is k_yeoman_ink (styles.xml); the bright k_yeoman is only a fill inside dark edges.
-        val OUTLINE_PAIRS = listOf("k_outline" to "k_mist", "k_outline" to "k_card", "k_yeoman_ink" to "k_card",
-            // Phase 16: the red ring must stand out from the black emergency surface; the icon's chevron from its red.
-            "ss_emergency" to "emergency_surface", "launcher_stem" to "launcher_red")
+        // Control edges: outlines on the page and cards; an action (ink by day) must stand out from the page; a chosen
+        // lime pill gets an ink edge (lime alone is 1.2:1 on white).
+        val OUTLINE_PAIRS = listOf("k_outline" to "k_page", "k_outline" to "k_surface", "k_action" to "k_page",
+            "k_action" to "k_surface", "k_on_lime" to "k_lime",
+            // Phase 16: the red ring must stand out from the black emergency surface; the icon's stem from its background.
+            "ss_emergency" to "emergency_surface", "launcher_stem" to "launcher_background")
     }
 }

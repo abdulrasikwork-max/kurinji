@@ -15,7 +15,9 @@ enum class ContentTarget { POST, COMMENT, PERSON }
 /** The decisions of the server, in the order a moderator reads them. */
 enum class ContentAction {
     CONTENT_KEEP, CONTENT_HOLD, CONTENT_COLLAPSE, CONTENT_REMOVE,
-    PERSON_KEEP, PERSON_WARN, PERSON_PAUSE_COMMENTS, PERSON_PAUSE_POSTING, PERSON_SUSPEND;
+    PERSON_KEEP, PERSON_WARN, PERSON_PAUSE_COMMENTS, PERSON_PAUSE_POSTING, PERSON_SUSPEND,
+    /** Phase 17E: remove the person's profile photo (shown to them; not a strike; the case stays open). */
+    PERSON_REMOVE_PHOTO;
 
     val aboutPerson: Boolean get() = name.startsWith("PERSON_")
 }
@@ -54,7 +56,7 @@ data class CheckFinding(val category: String, val severity: Int, val targeted: B
 data class CaseCheck(val action: String, val rule: String, val findings: List<CheckFinding>, val versions: String)
 
 data class PersonInfo(val displayName: String, val handle: String, val bio: String?, val city: String?,
-                      val interests: List<String>)
+                      val interests: List<String>, /** Phase 17E: shown only after a tap. */ val hasPhoto: Boolean = false)
 
 /** Phase 17C: [isVideo] items show their poster after a tap and play on another tap ([durationMs] only for a video). */
 data class CaseMedia(val mediaId: String, val width: Int, val height: Int, val isVideo: Boolean = false,
@@ -147,5 +149,8 @@ interface ContentModerationRepository {
 
     /** Phase 17C: the address of a case video (played only after a tap). */
     fun videoUrl(caseId: String, mediaId: String): String
+
+    /** Phase 17E: the profile photo of the person a PERSON case is about. */
+    fun personPhotoUrl(caseId: String): String
 
 }

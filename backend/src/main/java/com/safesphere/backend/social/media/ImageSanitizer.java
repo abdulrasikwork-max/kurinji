@@ -71,6 +71,38 @@ public final class ImageSanitizer {
         throw new Refused("A photo can be at most 5 MB");
     }
 
+    /**
+     * Phase 17E: a profile photo. The same checks and decoder as [sanitize] (magic bytes, header size, warnings refuse),
+     * then the centred square, scaled down to at most [side] pixels, re-encoded as a JPEG without metadata.
+     */
+    public static Result sanitizeSquare(byte[] input, int maxBytes, int side) {
+        if (input == null || input.length == 0) throw new Refused("The photo is empty");
+        if (input.length > maxBytes) throw new Refused("A photo can be at most 5 MB");
+        String format = format(input);
+        if (format == null) throw new Refused("Only JPEG and PNG photos can be added");
+        BufferedImage decoded = decode(input, format);
+        int square = Math.min(decoded.getWidth(), decoded.getHeight());
+        int x = (decoded.getWidth() - square) / 2;
+        int y = (decoded.getHeight() - square) / 2;
+        int target = Math.max(1, Math.min(side, square));
+        BufferedImage out = new BufferedImage(target, target, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = out.createGraphics();
+        try {
+            g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+                    java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, target, target);
+            g.drawImage(decoded, 0, 0, target, target, x, y, x + square, y + square, null);
+        } finally {
+            g.dispose();
+        }
+        for (float quality : QUALITIES) {
+            byte[] bytes = encode(out, quality);
+            if (bytes.length <= maxBytes) return new Result(bytes, target, target);
+        }
+        throw new Refused("A photo can be at most 5 MB");
+    }
+
     /** "jpeg" or "png" from the magic bytes; null for anything else. */
     static String format(byte[] b) {
         if (b.length >= 3 && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF) return "jpeg";

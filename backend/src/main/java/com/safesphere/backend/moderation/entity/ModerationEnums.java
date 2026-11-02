@@ -34,7 +34,9 @@ public final class ModerationEnums {
         QUARANTINE, DISMISS, REMOVE, RESTRICT, APPEAL_UPHELD, APPEAL_OVERTURNED, ROLE_GRANTED, ROLE_REVOKED,
         CONTENT_KEEP, CONTENT_HOLD, CONTENT_COLLAPSE, CONTENT_REMOVE,
         PERSON_KEEP, PERSON_WARN, PERSON_PAUSE_COMMENTS, PERSON_PAUSE_POSTING, PERSON_SUSPEND,
-        PLACE_MERGED;
+        PLACE_MERGED,
+        /** Phase 17E (V28): a moderator removed a person's profile photo (shown to them; not a strike, not appealable). */
+        PERSON_REMOVE_PHOTO;
 
         /** 13D: a decision about a person (adds a strike unless it is PERSON_KEEP). */
         public boolean aboutPerson() {

@@ -30,7 +30,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param mediaDir             13B: folder of the photo files (never served statically)
  * @param maxMediaBytes        13B: largest photo upload accepted
  * @param unattachedMediaLifetime 13B: an uploaded photo never attached to a post is deleted after this
- * @param butterfliesPerDay   13C: butterfly changes (save, Been, remove) a person may make per day
+ * @param butterfliesPerDay   13C, 17E: marks a person may change per day (butterfly reactions and saves, given or taken back)
  * @param discoverReadsPerHour 13C: Edition, connections, place and category pages a person may load per hour
  * @param placeSearchesPerHour 13C: place-name searches per person per hour
  * @param probation            13D (M16): how long a new account is on probation (its reports do not count yet, lower

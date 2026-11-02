@@ -1,9 +1,7 @@
 package com.safesphere.app.feature.social
 
 import com.safesphere.app.feature.social.domain.Audience
-import com.safesphere.app.feature.social.domain.ButterflyState
-import com.safesphere.app.feature.social.domain.City
-import com.safesphere.app.feature.social.domain.CityAreas
+import com.safesphere.app.feature.social.domain.Cities
 import com.safesphere.app.feature.social.domain.Collapsed
 import com.safesphere.app.feature.social.domain.CommentPolicy
 import com.safesphere.app.feature.social.domain.MediaRef
@@ -37,9 +35,9 @@ class ExperienceCardTest {
     ) = Post(
         publicId = "p1", type = type, author = PersonSummary("a1", "asha", "Asha"), own = own, body = body,
         tip = "Go before 7.", category = null, precision = precision, placeName = "Elliot's Beach", areaCell = areaCell,
-        city = City.CHENNAI, experiencedMonth = null, daypart = null, postedPeriod = TimeBand.THIS_WEEK, edited = false,
+        city = Cities.find("CHENNAI"), experiencedMonth = null, daypart = null, postedPeriod = TimeBand.THIS_WEEK, edited = false,
         media = listOf(MediaRef("m1", 1600, 1200)), audience = if (own) Audience.CONNECTIONS else null,
-        commentPolicy = CommentPolicy.EVERYONE, canComment = true, visibleFrom = null, yourButterfly = ButterflyState.WANT,
+        commentPolicy = CommentPolicy.EVERYONE, canComment = true, visibleFrom = null, saved = true,
         collapsed = collapsed, strongLanguage = strong, commentCount = comments
     )
 
@@ -65,16 +63,16 @@ class ExperienceCardTest {
     fun `the card says only what the author revealed about the place`() {
         assertEquals(StampPlace.Exact("Elliot's Beach"), ExperienceCards.of(post(precision = Precision.EXACT)).place)
         assertEquals(StampPlace.Area("tf3rq5"), ExperienceCards.of(post(precision = Precision.AREA)).place)
-        assertEquals(StampPlace.InCity(City.CHENNAI), ExperienceCards.of(post(precision = Precision.CITY)).place)
+        assertEquals(StampPlace.InCity(Cities.find("CHENNAI")!!), ExperienceCards.of(post(precision = Precision.CITY)).place)
         assertEquals(StampPlace.Withheld, ExperienceCards.of(post(precision = Precision.NONE)).place)
     }
 
     @Test
-    fun `an area says its launch city from the area cell alone, on the phone, like the server`() {
-        assertEquals(City.CHENNAI, CityAreas.cityOf("tf31fw"))       // Chennai's box (the 13F emulator walk-through)
-        assertNull(CityAreas.cityOf("u4pruy"))                        // far from every launch city
-        assertNull(CityAreas.cityOf("not-a-cell!"))
-        assertNull(CityAreas.cityOf(null))
+    fun `an area says its city from the area cell alone, on the phone, like the server`() {
+        assertEquals("CHENNAI", Cities.cityOf("tf31fw")?.code)      // Chennai's box (the 13F emulator walk-through)
+        assertNull(Cities.cityOf("u4pruy"))                          // far from every catalog city
+        assertNull(Cities.cityOf("not-a-cell!"))
+        assertNull(Cities.cityOf(null))
     }
 
     @Test
@@ -89,10 +87,16 @@ class ExperienceCardTest {
     }
 
     @Test
-    fun `only someone else's Experience can be saved, and the comment count is never negative`() {
+    fun `the butterfly goes on someone else's Experience, Save on anything of someone else's, never your own`() {
+        assertTrue(ExperienceCards.of(post()).canReact)
         assertTrue(ExperienceCards.of(post()).canSave)
+        assertFalse(ExperienceCards.of(post(own = true)).canReact)
         assertFalse(ExperienceCards.of(post(own = true)).canSave)
-        assertFalse(ExperienceCards.of(post(type = PostType.ASK)).canSave)
+        assertFalse(ExperienceCards.of(post(type = PostType.ASK)).canReact)
+        assertTrue(ExperienceCards.of(post(type = PostType.ASK)).canSave)
+        // The viewer's own marks only; a server that sent marks on the viewer's own post is ignored.
+        assertTrue(ExperienceCards.of(post()).saved)
+        assertFalse(ExperienceCards.of(post(own = true)).saved)
         assertEquals(4, ExperienceCards.of(post(comments = 4)).commentCount)
         assertEquals(0, ExperienceCards.of(post(comments = -3)).commentCount)
     }

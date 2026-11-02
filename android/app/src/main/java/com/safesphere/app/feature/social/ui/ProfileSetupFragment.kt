@@ -39,6 +39,10 @@ class ProfileSetupFragment :
         addChips(binding.interestChips, Interest.entries.map { it.name to SocialLabels.of(it) })
         listOf(binding.handleLayout, binding.displayNameLayout, binding.bioLayout, binding.cityLayout)
             .forEach { it.clearErrorOnTextChange() }
+        binding.cityPickButton.setOnClickListener {
+            CityPicker.show(this, com.safesphere.app.feature.social.domain.Cities.match(binding.cityInput.text?.toString()),
+                allowOther = false) { city -> binding.cityInput.setText(city.name) }
+        }
 
         binding.dateOfBirthInput.setOnClickListener {
             DateOfBirthPicker.show(this, PICKER_TAG, viewModel.uiState.value.dateOfBirth, viewModel.today(),

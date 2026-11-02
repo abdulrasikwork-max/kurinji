@@ -44,6 +44,16 @@ class FakeExperienceRepository : ExperienceRepository {
         return ApiResult.Success(place("new-place", name, cell))
     }
 
+    /** Phase 17E: places "I went" reads by id. */
+    var placeById: Map<String, Place> = emptyMap()
+    val placeReads = mutableListOf<String>()
+
+    override suspend fun place(publicId: String): ApiResult<Place> {
+        placeReads += publicId
+        return placeById[publicId]?.let { ApiResult.Success(it) }
+            ?: ApiResult.Failure(com.safesphere.app.core.network.ApiError.NOT_FOUND)
+    }
+
     override suspend fun nearbyPlaces(areaCell: String): ApiResult<List<Place>> {
         nearbyAreas += areaCell
         return ApiResult.Success(nearby)
@@ -93,6 +103,8 @@ class FakeExperienceRepository : ExperienceRepository {
     }
 
     override fun videoUrl(mediaId: String) = "http://test/api/media/$mediaId/video"
+
+    override fun personPhotoUrl(profileId: String, key: String) = "http://test/api/profiles/$profileId/photo/$key"
 
 
     override suspend fun createPost(draft: PostDraft): ApiResult<Post> {
@@ -196,6 +208,10 @@ class FakeMediaSource : com.safesphere.app.feature.social.data.MediaSource {
     val discarded = mutableListOf<com.safesphere.app.feature.social.data.PreparedVideo>()
 
     override suspend fun preparePhoto(pick: com.safesphere.app.feature.social.data.MediaPick): ByteArray? = photo
+
+    /** Phase 17E: the square profile photo (null = the photo cannot be read). */
+    var avatar: ByteArray? = byteArrayOf(9, 8, 7)
+    override suspend fun prepareAvatar(pick: com.safesphere.app.feature.social.data.MediaPick): ByteArray? = avatar
 
     override suspend fun prepareVideo(pick: com.safesphere.app.feature.social.data.MediaPick):
         com.safesphere.app.feature.social.data.VideoOutcome {

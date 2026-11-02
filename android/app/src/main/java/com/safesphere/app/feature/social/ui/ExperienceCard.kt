@@ -1,7 +1,6 @@
 package com.safesphere.app.feature.social.ui
 
 import com.safesphere.app.feature.social.domain.Audience
-import com.safesphere.app.feature.social.domain.ButterflyState
 import com.safesphere.app.feature.social.domain.City
 import com.safesphere.app.feature.social.domain.Daypart
 import com.safesphere.app.feature.social.domain.DiscoverReason
@@ -22,8 +21,8 @@ sealed interface StampPlace {
 }
 
 /**
- * Phase 16 (docs/PHASE16.md): what one feed card shows, decided without Android so it can be tested. Person first,
- * then the photo, then their own words (the "thought"), where, and the actions. A collapsed post shows its collapsed
+ * Phase 16, redesigned in 17E: what one feed card shows, decided without Android so it can be tested. The photo first
+ * (with its category), then who shared it, their own words (the "thought"), where, and the marks. A collapsed post shows its collapsed
  * line only: no words, photo or tip (13E-D2 kept). [commentCount] is the one public number (U1).
  */
 data class ExperienceCard(
@@ -43,13 +42,21 @@ data class ExperienceCard(
     val band: TimeBand,
     val authorName: String?,
     val authorHandle: String?,
+    /** Phase 17E: the author's profile id and photo key (null = no photo: the initial is shown). */
+    val authorId: String? = null,
+    val authorPhoto: String? = null,
     val own: Boolean,
     /** Own posts only: who can see it. */
     val audience: Audience?,
-    /** The viewer's own save state (never anyone else's). */
-    val intent: ButterflyState?,
-    /** Only someone else's Experience can be saved (13C: never your own post, never a Question). */
+    /** Phase 17E (D-3): the viewer's OWN marks (never anyone else's): their butterfly and their save. */
+    val reacted: Boolean,
+    val saved: Boolean,
+    /** The butterfly goes on someone else's Experience only (not a Question, not your own post). */
+    val canReact: Boolean,
+    /** Anything of someone else's can be saved (Experiences and Questions). */
     val canSave: Boolean,
+    /** How many photos and videos are inside (the card shows the first). */
+    val mediaCount: Int = 0,
     val commentCount: Int,
     val reasons: List<DiscoverReason>
 )
@@ -85,10 +92,15 @@ object ExperienceCards {
             band = post.postedPeriod,
             authorName = post.author?.displayName,
             authorHandle = post.author?.handle,
+            authorId = post.author?.publicId,
+            authorPhoto = post.author?.photo,
             own = post.own,
             audience = if (post.own) post.audience else null,
-            intent = post.yourButterfly,
-            canSave = post.type == PostType.EXPERIENCE && !post.own,
+            reacted = post.youReacted && !post.own,
+            saved = post.saved && !post.own,
+            canReact = post.type == PostType.EXPERIENCE && !post.own,
+            canSave = !post.own,
+            mediaCount = if (collapse != null) 0 else post.media.size,
             commentCount = post.commentCount.coerceAtLeast(0),
             reasons = reasons
         )

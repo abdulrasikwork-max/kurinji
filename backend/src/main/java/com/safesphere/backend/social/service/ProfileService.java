@@ -8,6 +8,7 @@ import com.safesphere.backend.social.dto.ProfileDtos.OwnProfileResponse;
 import com.safesphere.backend.social.dto.ProfileDtos.PersonProfileResponse;
 import com.safesphere.backend.social.dto.ProfileDtos.PersonSummary;
 import com.safesphere.backend.social.dto.ProfileDtos.ProfileRequest;
+import com.safesphere.backend.social.dto.Relationship;
 import com.safesphere.backend.social.entity.Profile;
 import com.safesphere.backend.social.policy.HandlePolicy;
 import com.safesphere.backend.social.policy.ProfileLists;
@@ -42,10 +43,13 @@ public class ProfileService {
     private final Relationships relationships;
     private final SocialLimits limits;
     private final SocialProperties properties;
+    private final DailyStateService dailyStates;
     private final Clock clock;
 
     public ProfileService(ProfileRepository profiles, SocialAccess access, Relationships relationships,
-                          SocialLimits limits, SocialProperties properties, Clock clock) {
+                          SocialLimits limits, SocialProperties properties, DailyStateService dailyStates,
+                          Clock clock) {
+        this.dailyStates = dailyStates;
         this.profiles = profiles;
         this.access = access;
         this.relationships = relationships;
@@ -134,16 +138,19 @@ public class ProfileService {
     }
 
     public static PersonSummary summary(Profile profile) {
-        return new PersonSummary(profile.getPublicId(), profile.getHandle(), profile.getDisplayName());
+        return new PersonSummary(profile.getPublicId(), profile.getHandle(), profile.getDisplayName(),
+                profile.getPhotoKey());
     }
 
     private PersonProfileResponse visible(long viewerId, Profile profile) {
         if (profile == null || !relationships.canSeeProfile(viewerId, profile.getUserId())) {
             throw new ResourceNotFoundException(NOT_FOUND);
         }
+        Relationship relationship = relationships.relationship(viewerId, profile.getUserId());
         return new PersonProfileResponse(profile.getPublicId(), profile.getHandle(), profile.getDisplayName(),
                 profile.getBio(), ProfileLists.decode(profile.getLanguages()), ProfileLists.decode(profile.getInterests()),
-                profile.getCity(), relationships.relationship(viewerId, profile.getUserId()));
+                profile.getCity(), relationship, profile.getPhotoKey(),
+                dailyStates.visibleTo(relationship, profile.getUserId()));
     }
 
     /**
@@ -168,7 +175,8 @@ public class ProfileService {
         boolean waiting = availableAt != null && now().isBefore(availableAt);
         return new OwnProfileResponse(profile.getPublicId(), profile.getHandle(), profile.getDisplayName(),
                 profile.getBio(), ProfileLists.decode(profile.getLanguages()), ProfileLists.decode(profile.getInterests()),
-                profile.getCity(), waiting ? availableAt.toInstant(ZoneOffset.UTC) : null);
+                profile.getCity(), waiting ? availableAt.toInstant(ZoneOffset.UTC) : null, profile.getPhotoKey(),
+                dailyStates.own(profile.getUserId()));
     }
 
     private static void requireText(ProfileTextPolicy.Result result, String message) {

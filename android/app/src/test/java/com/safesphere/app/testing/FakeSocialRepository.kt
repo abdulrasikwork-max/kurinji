@@ -56,6 +56,34 @@ class FakeSocialRepository : SocialRepository {
 
     override suspend fun ownProfile() = ownProfileResult.also { calls += "ownProfile" }
 
+    // Phase 17E: profile photo and today's state.
+    var uploadPhotoResult: ApiResult<String> = ApiResult.Success("0a0a0a0a-0000-4000-8000-000000000001")
+    val uploadedAvatars = mutableListOf<ByteArray>()
+    var dailyStateResult: ApiResult<Unit> = ApiResult.Success(Unit)
+    val dailyStates = mutableListOf<com.safesphere.app.feature.social.domain.DailyState?>()
+
+    override suspend fun uploadProfilePhoto(jpeg: ByteArray): ApiResult<String> {
+        uploadedAvatars += jpeg
+        calls += "uploadPhoto"
+        return uploadPhotoResult
+    }
+
+    override suspend fun removeProfilePhoto(): ApiResult<Unit> = ApiResult.Success(Unit).also { calls += "removePhoto" }
+
+    override suspend fun setDailyState(state: com.safesphere.app.feature.social.domain.DailyState):
+        ApiResult<com.safesphere.app.feature.social.domain.DailyState> {
+        dailyStates += state
+        return when (val r = dailyStateResult) {
+            is ApiResult.Success -> ApiResult.Success(state)
+            is ApiResult.Failure -> r
+        }
+    }
+
+    override suspend fun clearDailyState(): ApiResult<Unit> {
+        dailyStates += null
+        return dailyStateResult
+    }
+
     override suspend fun saveProfile(input: ProfileInput): ApiResult<OwnProfile> {
         calls += "saveProfile"
         savedInput = input

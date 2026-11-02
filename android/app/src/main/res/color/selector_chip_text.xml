@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 16: words on a chip: on-red when chosen, ink otherwise. -->
+<!-- Phase 17E: words on a chip: lime on ink by day, ink on lime at night when chosen; ink otherwise. -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:color="?attr/colorOnPrimary" android:state_checked="true" />
     <item android:color="?attr/colorOnSurface" />

@@ -1224,3 +1224,44 @@ present only where an app must react (below) and absent everywhere else.
   someone other than the author in the last 7 days, **ordered by the time of the newest perspective the viewer can
   read** (never by totals). Its items carry the reasons `IN_THIS_CITY`, `NEW_PERSPECTIVES`. Older phones drop the
   unknown section (DTOs fail closed). The order's time is never returned.
+
+## Phase 17E (social redesign, `docs/PHASE17E.md`; migration V28)
+
+**Butterfly = a reaction, Save = a private bookmark (D-3).** Both idempotent, so a feed can toggle optimistically.
+- `PUT /api/posts/{id}/reaction` → 200 `{marked: true}` (again = the same 200, one row). Someone else's **Experience**
+  the caller can see; own post or an Ask → 400; invisible or unknown → 404. `DELETE /api/posts/{id}/reaction` → 204
+  always (also when there was none or the post is gone).
+- `PUT /api/posts/{id}/save` → 200 `{marked: true}`: someone else's Experience **or Ask** the caller can see; own post →
+  400; invisible → 404. `DELETE /api/posts/{id}/save` → 204 always (works after a block: it is the caller's row).
+- `GET /api/saved?cursor=` → `{items[{post, savedPeriod}], nextCursor}`: newest saved first, 20 per page, posts the
+  caller can no longer see are skipped (the one visibility rule).
+- Shared limit `app.social.butterflies-per-day` (200 changes of either mark) → 429.
+- Post answers: `youReacted`, `saved` (the viewer's own marks only); `butterflies {count, fewerThanThree}` only for the
+  author of an Experience shared with others (count from 3 people, never who). Saves are counted for nobody.
+- **Removed:** `PUT|DELETE /api/posts/{id}/butterfly`, `GET /api/cocoon` (404/405).
+
+**Profile photo.**
+- `PUT /api/profiles/me/photo` (body `image/jpeg` or `image/png`, ≤ 5 MB) → 200 `{photo: "<uuid>"}`: centred square, at
+  most 720 px, re-encoded without metadata, a **new key every upload** (the old file is deleted after the commit).
+  Not an image → 400; no profile → 404; suspended → 403. `DELETE /api/profiles/me/photo` → 204 always.
+- `GET /api/profiles/{profileId}/photo/{key}` → the JPEG (`no-store, private`, `nosniff`) only for someone who may see
+  that profile and only under its current key; blocked, wrong key, replaced or removed → 404; no sign-in → 401.
+- `photo` (key or null) in every person summary (`publicId, handle, displayName, photo`), in `GET /api/profiles/me` and
+  in a person's profile.
+
+**Today's state (D-7).**
+- `PUT /api/profiles/me/daily-state {state}` → 200 `{dailyState}`; `state` one of `CURIOUS, PLANNING, INSPIRED,
+  LEARNING, CELEBRATING, SLOW_DAY, BUSY_DAY, QUIET_DAY` (moods and intents only; anything else → 400).
+  `DELETE /api/profiles/me/daily-state` → 204.
+- `dailyState` in `GET /api/profiles/me` and in a person's profile **only when the viewer is a connection** (null for
+  everyone else, exactly as if there were none). Never in posts, lists, people rows or notifications. It counts only on
+  the India (IST) day it was chosen: null from midnight IST, rows of earlier days deleted by the hourly clean-up.
+
+**Cities (D-5).** `places.city` and a CITY post's `city` are codes from the catalog `cities-v1.tsv` (85 Indian cities;
+`OTHER` = "Another city", posts only). Unknown codes → 400. The phone searches the same bundled catalog; there is no
+city search endpoint (search words never leave the phone).
+
+**Moderation.** Person cases: detail adds `person.hasPhoto`; `GET /api/moderation/content-cases/{id}/person-photo` (the
+JPEG; moderators who did not take part; other kinds → 404); action `PERSON_REMOVE_PHOTO` (with a violation reason): the
+photo goes, the case stays OPEN, no strike, not appealable, shown to the person in `GET /api/social-standing` as a
+decision with `canAppeal: false`, audited in `moderation_actions`.

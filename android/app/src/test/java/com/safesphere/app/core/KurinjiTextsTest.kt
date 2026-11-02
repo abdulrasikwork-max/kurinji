@@ -52,7 +52,10 @@ class KurinjiTextsTest {
         assertEquals("Go. See. Tell.", strings["motto"])
         assertEquals(listOf("Go.", "See.", "Tell."), listOf("motto_go", "motto_see", "motto_tell").map { strings[it] })
         assertEquals("You\\'re all caught up.", strings["discover_edition_end"])
-        assertTrue(strings.getValue("cocoon_empty_want").contains("Tap the butterfly"))
+        // Phase 17E (D-3): the butterfly is a reaction; Save keeps a post; "I went" leads to sharing.
+        assertEquals("Inspired", strings["reaction_label"])
+        assertTrue(strings.getValue("saved_empty_message").startsWith("Tap Save"))
+        assertEquals("I went", strings["went_label"])
         assertEquals("Saved", strings["nav_cocoon"])
         assertEquals("Tip", strings["card_ticket_label"])
         assertEquals("Comments", strings["social_perspectives_title"])

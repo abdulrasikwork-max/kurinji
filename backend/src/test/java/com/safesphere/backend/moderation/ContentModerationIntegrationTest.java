@@ -101,7 +101,7 @@ class ContentModerationIntegrationTest {
     @Test
     void hold_remove_strike_appeal_overturn() throws Exception {
         String post = social.experience(asha, "EVERYONE");
-        social.butterfly(chitra, post, null).andExpect(status().isOk());
+        social.save(chitra, post).andExpect(status().isOk());
         social.report(chitra, "POST", post, "THREAT", null).andExpect(status().isAccepted());
         String caseId = postCase(post);
 
@@ -110,7 +110,7 @@ class ContentModerationIntegrationTest {
                 .andExpect(jsonPath("$.summary.contentState").value("HELD"));
         social.getPost(chitra, post).andExpect(status().isNotFound());
         social.getPost(bala, post).andExpect(status().isNotFound());
-        assertThat(social.cocoonIds(social.cocoon(chitra, "WANT", null))).isEmpty();
+        assertThat(social.savedIds(social.saved(chitra, null))).isEmpty();
         assertThat(social.postIds(social.profilePosts(bala, asha, null))).doesNotContain(post);
         social.getPost(asha, post).andExpect(status().isOk()).andExpect(jsonPath("$.moderation.state").value("HELD"))
                 .andExpect(jsonPath("$.moderation.reason").value("NEEDS_REVIEW"));
@@ -188,6 +188,34 @@ class ContentModerationIntegrationTest {
         assertThat(social.json(social.contentAppeals(mod2)).toString()).doesNotContain(appealId);
         social.decideContentAppeal(mod2, appealId, "OVERTURNED").andExpect(status().isForbidden());
         social.decideContentAppeal(mod3, appealId, "UPHELD").andExpect(status().isOk());
+    }
+
+    /** Phase 17E: a profile photo can be removed by a moderator in a person case; shown to the person, not a strike. */
+    @Test
+    void aModerator_canRemoveAProfilePhoto_theCaseStaysOpen() throws Exception {
+        social.uploadProfilePhoto(asha, com.safesphere.backend.support.TestImages.jpeg(300, 300))
+                .andExpect(status().isOk());
+        social.report(bala, "PERSON", asha.publicId(), "NUDITY_OR_VIOLENCE", null).andExpect(status().isAccepted());
+        String caseId = personCase(asha);
+        JsonNode detail = social.json(social.contentCase(mod, caseId).andExpect(status().isOk()));
+        assertThat(detail.get("content").get("person").get("hasPhoto").asBoolean()).isTrue();
+        assertThat(detail.get("possibleActions").toString()).contains("PERSON_REMOVE_PHOTO");
+        social.perform(mod, org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .get("/api/moderation/content-cases/{id}/person-photo", caseId)).andExpect(status().isOk());
+        social.perform(chitra, org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                .get("/api/moderation/content-cases/{id}/person-photo", caseId)).andExpect(status().isForbidden());
+        social.act(mod, caseId, "PERSON_REMOVE_PHOTO", "NO_VIOLATION").andExpect(status().isBadRequest());
+
+        social.act(mod, caseId, "PERSON_REMOVE_PHOTO", "NUDITY_OR_VIOLENCE").andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary.status").value("OPEN"));
+        social.ownProfile(asha).andExpect(jsonPath("$.photo").isEmpty());
+        assertThat(strikes(asha)).isZero();
+        assertThat(social.json(social.contentCase(mod, caseId)).get("possibleActions").toString())
+                .doesNotContain("PERSON_REMOVE_PHOTO");             // no photo left to remove
+        JsonNode standing = social.json(social.standing(asha).andExpect(status().isOk()));
+        assertThat(standing.toString()).contains("PERSON_REMOVE_PHOTO");
+        social.act(mod, caseId, "PERSON_KEEP", "NO_VIOLATION").andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary.status").value("CLOSED"));
     }
 
     @Test

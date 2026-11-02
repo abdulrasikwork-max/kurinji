@@ -11,9 +11,8 @@ import com.safesphere.app.core.location.OneFix
 import com.safesphere.app.core.location.oneFix
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
-import com.safesphere.app.feature.social.domain.ButterflyState
+import com.safesphere.app.feature.social.domain.Cities
 import com.safesphere.app.feature.social.domain.City
-import com.safesphere.app.feature.social.domain.CityMatch
 import com.safesphere.app.feature.social.domain.DiscoverItem
 import com.safesphere.app.feature.social.domain.DiscoverRepository
 import com.safesphere.app.feature.social.domain.Edition
@@ -49,10 +48,10 @@ data class DiscoverUiState(
     val nearby: List<Place>? = null,
     val nearbyBusy: Boolean = false,
     val nearNotice: NearNotice? = null,
-    /** Phase 16: saves in flight (post ids), so a double tap sends nothing twice. */
-    val saving: Set<String> = emptySet(),
-    /** One-shot: a save was confirmed by the server (the screen says "Saved" once). */
-    val savedNow: Boolean = false,
+    /** Phase 17E: marks in flight ("react:<id>", "save:<id>"), so a double tap sends nothing twice. */
+    val marking: Set<String> = emptySet(),
+    /** One-shot: a save was confirmed by the server (the screen says "Saved" once and the butterfly flies). */
+    val savedNow: String? = null,
     val failure: ApiResult.Failure? = null,
     val sessionExpired: Boolean = false
 )
@@ -83,7 +82,7 @@ class DiscoverViewModel(
         reloadConnections()
         viewModelScope.launch {
             val city = when (val profile = social.ownProfile()) {
-                is ApiResult.Success -> CityMatch.of(profile.data?.city)
+                is ApiResult.Success -> Cities.match(profile.data?.city)
                 is ApiResult.Failure -> {
                     fail(profile)
                     null
@@ -94,7 +93,7 @@ class DiscoverViewModel(
     }
 
     fun onCity(city: City) {
-        if (city == City.OTHER) return
+        if (city.isOther) return
         _uiState.update { it.copy(city = city, needsCity = false, edition = null, nearby = null, nearNotice = null) }
         loadEdition()
     }
@@ -112,36 +111,40 @@ class DiscoverViewModel(
         if (state.connectionsHasMore && !state.connectionsLoading && state.failure == null) loadConnections()
     }
 
-    /** The butterfly on a feed card: save (want to go), or take a saved post out again. */
-    fun onSave(post: Post) {
-        if (post.publicId in _uiState.value.saving) return
-        _uiState.update { it.copy(saving = it.saving + post.publicId) }
+    /**
+     * Phase 17E (D-3): the butterfly (a reaction) on a feed card, given or taken back. Shown at once everywhere the post
+     * appears; put back if the server says no (the server is idempotent, so a lost answer is harmless).
+     */
+    fun onReact(post: Post) = mark("react:" + post.publicId, post.publicId, { it.copy(youReacted = !post.youReacted) },
+        { it.copy(youReacted = post.youReacted) }) {
+        if (post.youReacted) repository.unreact(post.publicId) else repository.react(post.publicId)
+    }
+
+    /** Phase 17E (D-3): Save (a private bookmark) from a feed card, or take it out of Saved again. */
+    fun onSave(post: Post) = mark("save:" + post.publicId, post.publicId, { it.copy(saved = !post.saved) },
+        { it.copy(saved = post.saved) }, confirmed = { if (!post.saved) _uiState.update { s -> s.copy(savedNow = post.publicId) } }) {
+        if (post.saved) repository.unsave(post.publicId) else repository.save(post.publicId)
+    }
+
+    private fun mark(key: String, postId: String, apply: (Post) -> Post, undo: (Post) -> Post,
+                     confirmed: () -> Unit = {}, call: suspend () -> ApiResult<Unit>) {
+        if (key in _uiState.value.marking) return
+        _uiState.update { it.withPost(postId, apply).copy(marking = it.marking + key) }
         viewModelScope.launch {
-            val result: ApiResult<ButterflyState?> = if (post.yourButterfly == null) {
-                when (val r = repository.setButterfly(post.publicId, ButterflyState.WANT)) {
-                    is ApiResult.Success -> ApiResult.Success(r.data)
-                    is ApiResult.Failure -> r
-                }
-            } else {
-                when (val r = repository.removeButterfly(post.publicId)) {
-                    is ApiResult.Success -> ApiResult.Success(null)
-                    is ApiResult.Failure -> r
-                }
-            }
-            when (result) {
-                is ApiResult.Success -> _uiState.update {
-                    it.withButterfly(post.publicId, result.data).copy(saving = it.saving - post.publicId,
-                        savedNow = result.data != null)
+            when (val result = call()) {
+                is ApiResult.Success -> {
+                    _uiState.update { it.copy(marking = it.marking - key) }
+                    confirmed()
                 }
                 is ApiResult.Failure -> {
-                    _uiState.update { it.copy(saving = it.saving - post.publicId) }
+                    _uiState.update { it.withPost(postId, undo).copy(marking = it.marking - key) }
                     fail(result)
                 }
             }
         }
     }
 
-    fun onSavedShown() = _uiState.update { it.copy(savedNow = false) }
+    fun onSavedShown() = _uiState.update { it.copy(savedNow = null) }
 
     /** Phase 16: places around the person's ~1 km area from ONE fix. */
     fun onNearMe() {
@@ -252,9 +255,9 @@ class DiscoverViewModel(
     }
 }
 
-/** The same post everywhere in the feed shows the viewer's new save state. */
-private fun DiscoverUiState.withButterfly(postId: String, state: ButterflyState?): DiscoverUiState {
-    fun DiscoverItem.mark() = if (post.publicId == postId) copy(post = post.copy(yourButterfly = state)) else this
+/** The same post everywhere in the feed shows the viewer's new marks. */
+internal fun DiscoverUiState.withPost(postId: String, change: (Post) -> Post): DiscoverUiState {
+    fun DiscoverItem.mark() = if (post.publicId == postId) copy(post = change(post)) else this
     return copy(
         edition = edition?.let { e -> e.copy(sections = e.sections.map { s -> s.copy(items = s.items.map { it.mark() }) }) },
         connections = connections.map { it.mark() }

@@ -26,6 +26,19 @@ interface SocialApi {
     @PUT("api/profiles/me")
     suspend fun saveProfile(@Body body: ProfileRequestDto): OwnProfileDto
 
+    /** Phase 17E: a square JPEG made on the phone (re-encoded again by the server); answers {"photo": key}. */
+    @PUT("api/profiles/me/photo")
+    suspend fun uploadPhoto(@Body body: okhttp3.RequestBody): Map<String, String>
+
+    @DELETE("api/profiles/me/photo")
+    suspend fun removePhoto()
+
+    @PUT("api/profiles/me/daily-state")
+    suspend fun setDailyState(@Body body: DailyStateRequestDto): Map<String, String>
+
+    @DELETE("api/profiles/me/daily-state")
+    suspend fun clearDailyState()
+
     @GET("api/profiles/by-handle/{handle}")
     suspend fun byHandle(@Path("handle") handle: String): PersonProfileDto
 

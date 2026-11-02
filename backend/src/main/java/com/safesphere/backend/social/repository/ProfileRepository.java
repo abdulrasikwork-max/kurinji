@@ -22,6 +22,15 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
 
     List<Profile> findByUserIdIn(Collection<Long> userIds);
 
+    /** Phase 17E: the photo keys among [keys] that a profile still uses (the media clean-up keeps their files). */
+    @Query("SELECT p.photoKey FROM Profile p WHERE p.photoKey IN :keys")
+    List<String> photoKeysIn(@Param("keys") Collection<String> keys);
+
+    /** Phase 17E: locks the person's profile row while its photo changes. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM Profile p WHERE p.userId = :userId")
+    Optional<Profile> lockByUserId(@Param("userId") long userId);
+
     /** Phase 14: locks the row, so that reports about one person are handled one after the other. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Profile p WHERE p.id = :id")

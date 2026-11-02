@@ -1,0 +1,89 @@
+# Kurinji city catalog v1 (Phase 17E, D-5). One line per city: code, name, state, latMin, latMax, lngMin, lngMax, aliases.
+# Read by the backend (CityCatalog), seeded into the cities table by V28, and bundled byte-identical in the app
+# (android/app/src/main/resources/cities/cities-v1.tsv). Boxes never overlap (CityCatalogTest). Codes <= 20 characters.
+# A city is added by a new migration and this file together; a box never changes once places use it.
+CHENNAI	Chennai	Tamil Nadu	12.75	13.35	79.95	80.35	Madras
+COIMBATORE	Coimbatore	Tamil Nadu	10.85	11.20	76.80	77.15	Kovai
+MADURAI	Madurai	Tamil Nadu	9.80	10.05	77.98	78.25	
+TIRUCHIRAPPALLI	Tiruchirappalli	Tamil Nadu	10.70	10.92	78.58	78.82	Trichy,Tiruchi,Trichinopoly
+SALEM	Salem	Tamil Nadu	11.55	11.78	78.05	78.25	
+TIRUNELVELI	Tirunelveli	Tamil Nadu	8.62	8.80	77.62	77.82	Nellai
+VELLORE	Vellore	Tamil Nadu	12.85	13.00	79.05	79.22	
+ERODE	Erode	Tamil Nadu	11.27	11.42	77.65	77.80	
+THOOTHUKUDI	Thoothukudi	Tamil Nadu	8.70	8.85	78.05	78.20	Tuticorin
+THANJAVUR	Thanjavur	Tamil Nadu	10.72	10.86	79.05	79.22	Tanjore
+PUDUCHERRY	Puducherry	Puducherry	11.85	12.05	79.70	79.90	Pondicherry,Pondy
+BENGALURU	Bengaluru	Karnataka	12.75	13.20	77.35	77.85	Bangalore
+KANCHIPURAM	Kanchipuram	Tamil Nadu	12.78	12.88	79.65	79.76	Kanchi
+MAMALLAPURAM	Mamallapuram	Tamil Nadu	12.57	12.67	80.14	80.24	Mahabalipuram
+KUMBAKONAM	Kumbakonam	Tamil Nadu	10.92	11.00	79.33	79.43	
+DINDIGUL	Dindigul	Tamil Nadu	10.32	10.40	77.93	78.02	
+KODAIKANAL	Kodaikanal	Tamil Nadu	10.20	10.28	77.44	77.53	Kodai
+OOTY	Ooty	Tamil Nadu	11.36	11.45	76.65	76.75	Udhagamandalam,Udagamandalam
+TIRUPPUR	Tiruppur	Tamil Nadu	11.05	11.17	77.28	77.40	Tirupur
+NAGERCOIL	Nagercoil	Tamil Nadu	8.12	8.24	77.36	77.47	Kanyakumari
+RAMESWARAM	Rameswaram	Tamil Nadu	9.25	9.32	79.25	79.35	
+MUMBAI	Mumbai	Maharashtra	18.88	19.30	72.77	73.05	Bombay,Thane,Navi Mumbai
+DELHI	Delhi	Delhi	28.40	28.88	76.84	77.45	New Delhi,Gurugram,Gurgaon,Noida,Faridabad
+KOLKATA	Kolkata	West Bengal	22.40	22.75	88.20	88.50	Calcutta,Howrah
+HYDERABAD	Hyderabad	Telangana	17.20	17.60	78.25	78.70	Secunderabad
+PUNE	Pune	Maharashtra	18.40	18.70	73.70	74.05	Poona,Pimpri-Chinchwad
+AHMEDABAD	Ahmedabad	Gujarat	22.90	23.15	72.45	72.70	Amdavad
+SURAT	Surat	Gujarat	21.05	21.28	72.70	72.95	
+VADODARA	Vadodara	Gujarat	22.22	22.40	73.08	73.28	Baroda
+RAJKOT	Rajkot	Gujarat	22.24	22.36	70.73	70.87	
+JAIPUR	Jaipur	Rajasthan	26.78	27.05	75.65	75.95	Pink City
+JODHPUR	Jodhpur	Rajasthan	26.18	26.32	72.95	73.10	
+UDAIPUR	Udaipur	Rajasthan	24.52	24.65	73.64	73.78	
+LUCKNOW	Lucknow	Uttar Pradesh	26.72	26.98	80.82	81.08	
+KANPUR	Kanpur	Uttar Pradesh	26.35	26.55	80.20	80.45	Cawnpore
+AGRA	Agra	Uttar Pradesh	27.10	27.25	77.92	78.10	
+VARANASI	Varanasi	Uttar Pradesh	25.25	25.40	82.90	83.05	Banaras,Benares,Kashi
+PRAYAGRAJ	Prayagraj	Uttar Pradesh	25.38	25.50	81.78	81.92	Allahabad
+MEERUT	Meerut	Uttar Pradesh	28.93	29.03	77.65	77.76	
+NAGPUR	Nagpur	Maharashtra	21.03	21.25	78.95	79.20	
+NASHIK	Nashik	Maharashtra	19.92	20.08	73.70	73.88	Nasik
+SAMBHAJINAGAR	Chhatrapati Sambhajinagar	Maharashtra	19.82	19.95	75.25	75.42	Aurangabad
+KOLHAPUR	Kolhapur	Maharashtra	16.65	16.75	74.18	74.30	
+INDORE	Indore	Madhya Pradesh	22.62	22.82	75.75	75.98	
+BHOPAL	Bhopal	Madhya Pradesh	23.15	23.35	77.30	77.52	
+JABALPUR	Jabalpur	Madhya Pradesh	23.10	23.25	79.88	80.02	
+GWALIOR	Gwalior	Madhya Pradesh	26.15	26.28	78.10	78.25	
+RAIPUR	Raipur	Chhattisgarh	21.17	21.33	81.55	81.72	
+PATNA	Patna	Bihar	25.55	25.66	85.00	85.30	
+RANCHI	Ranchi	Jharkhand	23.26	23.45	85.22	85.40	
+BHUBANESWAR	Bhubaneswar	Odisha	20.20	20.40	85.72	85.92	
+VISAKHAPATNAM	Visakhapatnam	Andhra Pradesh	17.60	17.85	83.10	83.40	Vizag,Vishakhapatnam
+VIJAYAWADA	Vijayawada	Andhra Pradesh	16.45	16.58	80.57	80.72	Bezawada
+GUNTUR	Guntur	Andhra Pradesh	16.25	16.36	80.38	80.50	
+TIRUPATI	Tirupati	Andhra Pradesh	13.57	13.70	79.35	79.48	Tirumala
+WARANGAL	Warangal	Telangana	17.90	18.05	79.50	79.65	
+KOCHI	Kochi	Kerala	9.85	10.10	76.20	76.40	Cochin,Ernakulam
+THIRUVANANTHAPURAM	Thiruvananthapuram	Kerala	8.42	8.62	76.85	77.02	Trivandrum
+KOZHIKODE	Kozhikode	Kerala	11.18	11.33	75.73	75.86	Calicut
+THRISSUR	Thrissur	Kerala	10.47	10.58	76.15	76.27	Trichur
+ALAPPUZHA	Alappuzha	Kerala	9.45	9.55	76.30	76.38	Alleppey
+MUNNAR	Munnar	Kerala	10.05	10.12	77.03	77.10	
+MYSURU	Mysuru	Karnataka	12.22	12.38	76.55	76.72	Mysore
+MANGALURU	Mangaluru	Karnataka	12.82	13.00	74.78	74.92	Mangalore
+HUBBALLI	Hubballi	Karnataka	15.30	15.42	75.05	75.20	Hubli
+BELAGAVI	Belagavi	Karnataka	15.80	15.92	74.45	74.56	Belgaum
+MADIKERI	Madikeri	Karnataka	12.39	12.45	75.70	75.78	Coorg,Kodagu
+HAMPI	Hampi	Karnataka	15.30	15.36	76.42	76.50	
+GOA	Goa	Goa	15.00	15.80	73.65	74.30	Panaji,Panjim,Margao,Vasco
+CHANDIGARH	Chandigarh	Chandigarh	30.65	30.80	76.68	76.88	Mohali,Panchkula
+LUDHIANA	Ludhiana	Punjab	30.82	30.98	75.75	75.98	
+AMRITSAR	Amritsar	Punjab	31.57	31.70	74.80	74.95	
+JAMMU	Jammu	Jammu and Kashmir	32.66	32.80	74.78	74.95	
+SRINAGAR	Srinagar	Jammu and Kashmir	34.00	34.15	74.70	74.90	
+LEH	Leh	Ladakh	34.12	34.20	77.53	77.62	Ladakh
+SHIMLA	Shimla	Himachal Pradesh	31.05	31.15	77.10	77.25	Simla
+MANALI	Manali	Himachal Pradesh	32.20	32.28	77.15	77.22	
+DEHRADUN	Dehradun	Uttarakhand	30.25	30.40	77.95	78.12	Doon
+RISHIKESH	Rishikesh	Uttarakhand	30.05	30.14	78.24	78.32	
+HARIDWAR	Haridwar	Uttarakhand	29.90	29.99	78.10	78.20	Hardwar
+GUWAHATI	Guwahati	Assam	26.05	26.25	91.60	91.90	Gauhati
+SHILLONG	Shillong	Meghalaya	25.53	25.62	91.84	91.95	
+GANGTOK	Gangtok	Sikkim	27.29	27.37	88.57	88.65	
+DARJEELING	Darjeeling	West Bengal	27.00	27.07	88.23	88.30	
+SILIGURI	Siliguri	West Bengal	26.68	26.77	88.36	88.46	

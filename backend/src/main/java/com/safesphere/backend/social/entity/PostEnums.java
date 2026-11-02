@@ -26,9 +26,6 @@ public final class PostEnums {
     /** BEEN_HERE / QUESTION on an Experience, ANSWER / QUESTION on an Ask; REPLY only under one of those. */
     public enum CommentKind { BEEN_HERE, QUESTION, REPLY, ANSWER }
 
-    /** Phase 13C (V22): a Cocoon item, "want to experience" until the person marks it "been". */
-    public enum ButterflyState { WANT, BEEN }
-
     /**
      * Phase 13D (V23): the moderation state of a post or a perspective. COLLAPSED = shown behind a tap (by independent
      * reports while a moderator looks, or by a moderator's decision); HELD = hidden from everyone but its author while
@@ -67,9 +64,4 @@ public final class PostEnums {
         }
     }
 
-    /** Q2: the launch cities (D5) and Other. Free text would split one city into many spellings. */
-    public enum City {
-        CHENNAI, COIMBATORE, MADURAI, TIRUCHIRAPPALLI, SALEM, TIRUNELVELI, VELLORE, ERODE, THOOTHUKUDI, THANJAVUR,
-        PUDUCHERRY, BENGALURU, OTHER
-    }
 }

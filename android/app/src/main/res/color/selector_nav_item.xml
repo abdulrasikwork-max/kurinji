@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 17E: the chosen tab's word is ink (bold, styles.xml); the others are soft ink. -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="?attr/colorPrimary" android:state_checked="true" />
+    <item android:color="?attr/colorOnSurface" android:state_checked="true" />
     <item android:color="?attr/colorOnSurfaceVariant" />
 </selector>

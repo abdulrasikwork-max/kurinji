@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 17E (D-3): Saved, the person's private bookmarks. Each saved post shows its photo (or its first words), who
+     shared it and where, and two ways into the world: "I went" (share your own experience of it) and "Going there?".
+     Private: nobody, not even the author, learns what was saved. The list ends (more only on "Show more"). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/screen_padding"
+        android:paddingTop="@dimen/space_md"
+        android:paddingEnd="@dimen/screen_padding">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityHeading="true"
+            android:text="@string/title_cocoon"
+            android:textAppearance="@style/TextAppearance.Kurinji.ScreenTitle" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:drawablePadding="6dp"
+            android:gravity="center_vertical"
+            android:text="@string/saved_intro"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+            app:drawableStartCompat="@drawable/ic_lock"
+            app:drawableTint="?attr/colorOnSurfaceVariant" />
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/errorNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone"
+            app:noticeText="@string/error_unknown"
+            app:noticeType="warning" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/retryButton"
+            style="@style/Widget.SafeSphere.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/location_action_retry"
+            android:visibility="gone" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:indeterminate="true"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="@dimen/screen_padding"
+            android:paddingTop="@dimen/space_md"
+            android:paddingEnd="@dimen/screen_padding"
+            android:paddingBottom="@dimen/space_xl"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        <!-- Nothing saved yet -->
+        <LinearLayout
+            android:id="@+id/emptyBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="@dimen/space_xl"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:background="@drawable/bg_tag_lime"
+                android:importantForAccessibility="no"
+                android:padding="16dp"
+                android:src="@drawable/ic_bookmark"
+                app:tint="?attr/colorOnLime" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:gravity="center"
+                android:text="@string/saved_empty_title"
+                android:textAppearance="@style/TextAppearance.Kurinji.Headline.Small" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:gravity="center"
+                android:text="@string/saved_empty_message"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/emptyDiscoverButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:paddingStart="28dp"
+                android:paddingEnd="28dp"
+                android:text="@string/saved_empty_action" />
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>

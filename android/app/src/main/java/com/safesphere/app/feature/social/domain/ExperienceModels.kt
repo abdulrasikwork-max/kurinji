@@ -25,12 +25,6 @@ enum class CommentKind { BEEN_HERE, QUESTION, REPLY, ANSWER }
 /** When others could first see something: a band, never a time. */
 enum class TimeBand { THIS_WEEK, THIS_MONTH, EARLIER }
 
-/** The launch cities (Q2): same codes as the server. */
-enum class City {
-    CHENNAI, COIMBATORE, MADURAI, TIRUCHIRAPPALLI, SALEM, TIRUNELVELI, VELLORE, ERODE, THOOTHUKUDI, THANJAVUR,
-    PUDUCHERRY, BENGALURU, OTHER
-}
-
 /** A public place: a name, a category and its ~150 m cell (never a coordinate). */
 data class Place(
     val publicId: String,
@@ -38,7 +32,7 @@ data class Place(
     val category: Interest,
     val cell: String,
     val areaCell: String,
-    /** Phase 13C: the launch city the server placed it in, or null. */
+    /** Phase 13C / 17E: the catalog city the server placed it in, or null (never OTHER). */
     val city: City? = null
 )
 
@@ -85,9 +79,11 @@ data class Post(
     val canComment: Boolean,
     /** Own posts only: when others can see it (the delay of an exact-place post). */
     val visibleFrom: Instant?,
-    /** Phase 13C: the viewer's OWN Cocoon state for this post (never anyone else's). */
-    val yourButterfly: ButterflyState? = null,
-    /** Phase 13C: only on the author's own Experiences shared with others (C2). */
+    /** Phase 17E (D-3): the viewer put their OWN butterfly (a reaction) on it; never anyone else's. */
+    val youReacted: Boolean = false,
+    /** Phase 17E (D-3): the viewer saved it (their own private bookmark). */
+    val saved: Boolean = false,
+    /** Only on the author's own Experiences shared with others: how many people reacted, from 3 (C2). */
     val butterflies: ButterflyTally? = null,
     /** Phase 13C: EXACT only, the place's id (opens its place page). */
     val placeId: String? = null,

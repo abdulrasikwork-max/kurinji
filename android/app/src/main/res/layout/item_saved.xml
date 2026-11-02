@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 17E: one saved post: its photo (or a lime tile with the first letter of its words), its first words, who and
+     where, when it was saved (a band), then "I went", "Going there?" and Remove. The top part is one TalkBack item. -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.Kurinji.Card.Feed"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:baselineAligned="false"
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:orientation="horizontal"
+            android:padding="12dp">
+
+            <FrameLayout
+                android:layout_width="84dp"
+                android:layout_height="84dp"
+                android:importantForAccessibility="noHideDescendants">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/photo"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="?attr/colorSurfaceVariant"
+                    android:scaleType="centerCrop"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Kurinji.Medium" />
+
+                <TextView
+                    android:id="@+id/tile"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_tag_lime"
+                    android:gravity="center"
+                    android:textAppearance="@style/TextAppearance.Kurinji.Headline.Medium"
+                    android:textColor="?attr/colorOnLime"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_weight="1"
+                android:importantForAccessibility="noHideDescendants"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textAppearance="@style/TextAppearance.Kurinji.Title.Medium" />
+
+                <TextView
+                    android:id="@+id/who"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+                <TextView
+                    android:id="@+id/savedWhen"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:drawablePadding="4dp"
+                    android:gravity="center_vertical"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                    android:textColor="?attr/colorAccentText"
+                    app:drawableStartCompat="@drawable/ic_bookmark_filled"
+                    app:drawableTint="?attr/colorAccentText" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- The actions: one row; stacked by SavedFragment when the text is large (MarksFit ICONS budget). -->
+        <LinearLayout
+            android:id="@+id/actions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="10dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/wentButton"
+                style="@style/Widget.Kurinji.Button.Tonal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/went_label"
+                app:icon="@drawable/ic_flag" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/goingButton"
+                style="@style/Widget.Kurinji.Button.Small"
+                android:layout_marginStart="@dimen/space_xs"
+                android:text="@string/going_there"
+                android:textColor="?attr/colorOnSurface" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/removeButton"
+                style="@style/Widget.Kurinji.Button.Small"
+                android:text="@string/saved_remove" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

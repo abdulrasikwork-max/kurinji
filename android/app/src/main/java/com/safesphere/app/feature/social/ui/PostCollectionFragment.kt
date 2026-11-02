@@ -14,7 +14,7 @@ import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentPostCollectionBinding
 import com.safesphere.app.feature.going.GoingThere
-import com.safesphere.app.feature.social.domain.City
+import com.safesphere.app.feature.social.domain.Cities
 import com.safesphere.app.feature.social.domain.Interest
 
 /**
@@ -29,7 +29,7 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        adapter = ExperienceCardAdapter(appContainer.imageLoader, appContainer.experienceRepository::photoUrl)
+        adapter = ExperienceCardAdapter(cardImages())
         binding.postList.adapter = adapter
         collectWhenStarted(appContainer.viewerPreferences.collapseStrongLanguage) { on ->
             if (on != collapseStrongLanguage) {
@@ -42,10 +42,10 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
         val args = arguments
         val placeId = args?.getString(PostCollectionViewModel.ARG_PLACE_ID)
         val category = args?.getString(PostCollectionViewModel.ARG_CATEGORY)?.let(Interest::fromCode)
-        val city = args?.getString(PostCollectionViewModel.ARG_CITY)?.let { c -> City.entries.firstOrNull { it.name == c } }
+        val city = Cities.listCity(args?.getString(PostCollectionViewModel.ARG_CITY))
         when {
             placeId != null -> viewModel.show(PostCollection.OfPlace(placeId))
-            category != null -> viewModel.show(PostCollection.OfCategory(category, city?.takeIf { it != City.OTHER }))
+            category != null -> viewModel.show(PostCollection.OfCategory(category, city))
         }
     }
 
@@ -54,20 +54,28 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
             is PostCollection.OfPlace -> {
                 val place = state.place
                 binding.heading.text = place?.name.orEmpty()
-                // Phase 13F (F9): a place page is where someone decides to go.
-                binding.goingButton.isVisible = place != null
+                // Phase 13F (F9): a place page is where someone decides to go; 17E: or shares their own experience.
+                binding.kindTag.text = place?.let { getString(SocialLabels.of(it.category)) }.orEmpty()
+                binding.kindTag.isVisible = place != null
+                binding.placeActions.isVisible = place != null
                 binding.goingButton.setOnClickListener {
                     if (place != null) GoingThere.show(this, GoingThere.Target(listOfNotNull(place.name,
-                        place.city?.let(ExperienceLabels::cityName)).joinToString(", ")), cocoon = null)
+                        place.city?.name).joinToString(", ")), cocoon = null)
                 }
-                binding.detailLine.text = if (place == null) "" else listOfNotNull(
-                    getString(SocialLabels.of(place.category)), place.city?.let(ExperienceLabels::cityName),
-                    getString(R.string.collection_place_line)).joinToString(" · ")
+                binding.wentButton.contentDescription = place?.let { getString(R.string.place_share_yours_description, it.name) }
+                binding.wentButton.setOnClickListener {
+                    if (place != null) findNavController().navigate(R.id.composeFragment, bundleOf(
+                        ComposeFragment.ARG_PLACE_ID to place.publicId, ComposeFragment.ARG_CATEGORY to place.category.name))
+                }
+                binding.detailLine.text = if (place == null) "" else listOfNotNull(place.city?.name,
+                    getString(R.string.place_page_note)).joinToString(" · ")
             }
             is PostCollection.OfCategory -> {
                 binding.heading.text = getString(SocialLabels.of(c.category))
-                binding.detailLine.text = c.city?.let { getString(R.string.collection_category_city_line,
-                    ExperienceLabels.cityName(it)) } ?: getString(R.string.collection_category_line)
+                binding.kindTag.isVisible = false
+                binding.placeActions.isVisible = false
+                binding.detailLine.text = c.city?.let { getString(R.string.collection_category_city_line, it.name) }
+                    ?: getString(R.string.collection_category_line)
             }
             null -> Unit
         }
@@ -75,6 +83,9 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
         adapter.submitList(state.items.map { post ->
             CardRow(ExperienceCards.of(post, collapseStrongLanguage = collapseStrongLanguage), onOpen = {
                 findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to post.publicId))
+            }, onReact = { viewModel.marks.react(post) }, onSave = { viewModel.marks.save(post) }, onComments = {
+                findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to post.publicId,
+                    PostViewModel.ARG_TO_COMMENTS to true))
             })
         })
         binding.emptyBlock.isVisible = state.loaded && state.items.isEmpty()

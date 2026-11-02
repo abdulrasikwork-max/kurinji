@@ -27,6 +27,7 @@ object ContentModerationTexts {
         ContentAction.PERSON_PAUSE_COMMENTS -> R.string.content_action_pause_comments
         ContentAction.PERSON_PAUSE_POSTING -> R.string.content_action_pause_posting
         ContentAction.PERSON_SUSPEND -> R.string.content_action_suspend
+        ContentAction.PERSON_REMOVE_PHOTO -> R.string.content_action_remove_photo
     }
 
     @StringRes

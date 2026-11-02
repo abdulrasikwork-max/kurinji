@@ -298,26 +298,59 @@ public final class SocialClient {
     }
 
 
-    // ---- Phase 13C: butterflies, Cocoon, Discover ----
+    // ---- Phase 17E: profile photo and daily state ----
 
-    public ResultActions butterfly(Person who, String postId, String state) throws Exception {
-        return perform(who.token(), put("/api/posts/{id}/butterfly", postId),
-                state == null ? Map.of() : Map.of("state", state));
+    public ResultActions ownProfile(Person who) throws Exception {
+        return perform(who.token(), get("/api/profiles/me"), null);
     }
 
-    public ResultActions removeButterfly(Person who, String postId) throws Exception {
-        return perform(who.token(), delete("/api/posts/{id}/butterfly", postId), null);
+    public ResultActions uploadProfilePhoto(Person who, byte[] bytes) throws Exception {
+        return mockMvc.perform(put("/api/profiles/me/photo").header(HttpHeaders.AUTHORIZATION, bearer(who.token()))
+                .contentType("image/jpeg").content(bytes));
     }
 
-    public ResultActions cocoon(Person who, String state, String cursor) throws Exception {
-        var builder = get("/api/cocoon");
-        if (state != null) builder.param("state", state);
+    public ResultActions removeProfilePhoto(Person who) throws Exception {
+        return perform(who.token(), delete("/api/profiles/me/photo"), null);
+    }
+
+    public ResultActions profilePhoto(Person viewer, Person owner, String key) throws Exception {
+        return perform(viewer.token(), get("/api/profiles/{id}/photo/{key}", owner.publicId(), key), null);
+    }
+
+    public ResultActions setDailyState(Person who, String state) throws Exception {
+        return perform(who.token(), put("/api/profiles/me/daily-state"), Map.of("state", state));
+    }
+
+    public ResultActions clearDailyState(Person who) throws Exception {
+        return perform(who.token(), delete("/api/profiles/me/daily-state"), null);
+    }
+
+    // ---- Phase 17E: butterfly reactions and Saved; Phase 13C: Discover ----
+
+    public ResultActions react(Person who, String postId) throws Exception {
+        return perform(who.token(), put("/api/posts/{id}/reaction", postId), null);
+    }
+
+    public ResultActions unreact(Person who, String postId) throws Exception {
+        return perform(who.token(), delete("/api/posts/{id}/reaction", postId), null);
+    }
+
+    public ResultActions save(Person who, String postId) throws Exception {
+        return perform(who.token(), put("/api/posts/{id}/save", postId), null);
+    }
+
+    public ResultActions unsave(Person who, String postId) throws Exception {
+        return perform(who.token(), delete("/api/posts/{id}/save", postId), null);
+    }
+
+    public ResultActions saved(Person who, String cursor) throws Exception {
+        var builder = get("/api/saved");
         if (cursor != null) builder.param("cursor", cursor);
         return perform(who.token(), builder, null);
     }
 
-    /** The post ids of a Cocoon page ({items[{post, state, savedPeriod}], nextCursor}). */
-    public List<String> cocoonIds(ResultActions page) throws Exception {
+    /** The post ids of a Saved page ({items[{post, savedPeriod}], nextCursor}). */
+    public List<String> savedIds(ResultActions page) throws Exception {
         List<String> ids = new ArrayList<>();
         for (JsonNode item : json(page.andExpect(status().isOk())).get("items")) {
             ids.add(item.get("post").get("publicId").asText());
@@ -450,6 +483,13 @@ public final class SocialClient {
 
     public JsonNode json(ResultActions actions) throws Exception {
         return objectMapper.readTree(actions.andReturn().getResponse().getContentAsString());
+    }
+
+    /** Phase 17E: any request as [who] (for routes the client has no helper for). */
+    public ResultActions perform(Person who,
+                                 org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder builder)
+            throws Exception {
+        return perform(who.token(), builder, null);
     }
 
     private ResultActions perform(String token,

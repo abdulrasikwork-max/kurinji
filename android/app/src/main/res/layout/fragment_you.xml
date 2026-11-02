@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13F (F18), Phase 16: You. The person's profile header (no counts, ever), then everything that is theirs: experiences,
-     connections, private places, the safety tools, reading choices, community, account. -->
+<!-- Phase 13F (F18), Phase 16, redesigned in 17E: You. The profile head on the ink panel (photo in a lime ring, name,
+     handle and city, bio, interests, today's state; no counts, ever), then everything that is theirs: experiences,
+     connections, private places; the compact Safety grid (SOS with its emergency look, Safe Walk, Safety Circle,
+     Nearby, and all safety tools: it only opens the existing Safety screens); reading choices, community, account. -->
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
@@ -12,7 +15,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingStart="@dimen/screen_padding"
-        android:paddingTop="@dimen/space_lg"
+        android:paddingTop="@dimen/space_md"
         android:paddingEnd="@dimen/screen_padding"
         android:paddingBottom="@dimen/space_xl">
 
@@ -23,67 +26,161 @@
             android:indeterminate="true"
             android:visibility="gone" />
 
-        <!-- The profile header (Phase 16: the person's initial in their colour, then the name, big and bold). -->
-        <LinearLayout
+        <!-- The profile head: the ink panel. -->
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/headerBlock"
+            style="@style/Widget.Kurinji.Card.Panel"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_height="wrap_content">
 
-            <com.safesphere.app.core.ui.components.AvatarView
-                android:id="@+id/youAvatar"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:layout_marginBottom="@dimen/space_sm"
-                android:visibility="gone" />
-
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/you_overline"
-                android:textAppearance="@style/TextAppearance.Kurinji.Overline" />
+                android:orientation="vertical"
+                android:padding="20dp">
 
-            <TextView
-                android:id="@+id/youName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs"
-                android:accessibilityHeading="true"
-                android:text="@string/nav_you"
-                android:textAppearance="@style/TextAppearance.Kurinji.Masthead" />
+                <!-- Photo beside the name; stacked by YouFragment when the text is large (MarksFit ICONS budget). -->
+                <LinearLayout
+                    android:id="@+id/youHeadRow"
+                    android:baselineAligned="false"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/youHandle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
-                android:visibility="gone" />
+                    <!-- The photo (or the initial) in a lime ring; tap to change it. -->
+                    <FrameLayout
+                        android:id="@+id/photoBlock"
+                        android:layout_width="92dp"
+                        android:layout_height="92dp"
+                        android:background="@drawable/bg_ring_lime"
+                        android:clickable="true"
+                        android:contentDescription="@string/profile_photo_change"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless"
+                        android:padding="5dp">
 
-            <TextView
-                android:id="@+id/youBio"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-                android:visibility="gone" />
+                        <com.safesphere.app.core.ui.components.AvatarView
+                            android:id="@+id/youAvatar"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent" />
 
-            <TextView
-                android:id="@+id/youInterests"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
-                android:visibility="gone" />
+                        <com.google.android.material.progressindicator.CircularProgressIndicator
+                            android:id="@+id/photoProgress"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:indeterminate="true"
+                            android:visibility="gone"
+                            app:indicatorColor="?attr/colorLime" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/editProfileButton"
-                style="@style/Widget.Kurinji.Button.Quiet"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:text="@string/social_edit_profile"
-                android:visibility="gone" />
-        </LinearLayout>
+                        <ImageView
+                            android:id="@+id/photoBadge"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:layout_gravity="bottom|end"
+                            android:background="@drawable/bg_tag_lime"
+                            android:importantForAccessibility="no"
+                            android:padding="5dp"
+                            android:src="@drawable/ic_camera"
+                            app:tint="?attr/colorOnLime" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:id="@+id/youNameColumn"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/youName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:accessibilityHeading="true"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:textAppearance="@style/TextAppearance.Kurinji.Headline.Large"
+                            android:textColor="?attr/colorOnPanel"
+                            tools:text="Meena" />
+
+                        <TextView
+                            android:id="@+id/youHandle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                            android:textColor="?attr/colorOnPanelVariant"
+                            tools:text="\@meena · Chennai" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/youBio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:textAppearance="@style/TextAppearance.Kurinji.Body.Large"
+                    android:textColor="?attr/colorOnPanel"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/youInterests"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                    android:textColor="?attr/colorOnPanelVariant"
+                    android:visibility="gone" />
+
+                <!-- Phase 17E (D-7): today's state, for connections only, until midnight. -->
+                <LinearLayout
+                    android:id="@+id/dailyStateRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="start"
+                    android:minHeight="@dimen/min_touch_target"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/dailyStateChip"
+                        style="@style/Widget.Kurinji.Tag"
+                        android:drawablePadding="6dp"
+                        android:gravity="center_vertical"
+                        android:importantForAccessibility="no"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:text="@string/daily_state_set"
+                        app:drawableTint="?attr/colorOnLime" />
+
+                    <TextView
+                        android:id="@+id/dailyStateNote"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:importantForAccessibility="no"
+                        android:text="@string/daily_state_own_note"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                        android:textColor="?attr/colorOnPanelVariant" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/editProfileButton"
+                    style="@style/Widget.Kurinji.Button.Tonal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:text="@string/social_edit_profile"
+                    app:backgroundTint="?attr/colorLime"
+                    app:icon="@drawable/ic_person_outline"
+                    app:iconTint="?attr/colorOnLime"
+                    android:textColor="?attr/colorOnLime" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- No profile yet (or the age is not confirmed yet): the profile screen handles both. -->
         <com.google.android.material.card.MaterialCardView
@@ -151,9 +248,10 @@
             android:text="@string/review_ask"
             android:visibility="gone" />
 
+
         <TextView
             style="@style/SocialSectionTitle"
-            android:text="@string/you_section_journal" />
+            android:text="@string/you_section_social" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/journalList"
@@ -163,17 +261,114 @@
             android:nestedScrollingEnabled="false"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
+        <!-- Phase 17E: the compact Safety grid. It only opens the existing Safety screens (never changes them); the SOS
+             tile keeps the emergency look (black, red ring, siren, the word SOS). -->
         <TextView
             style="@style/SocialSectionTitle"
             android:text="@string/you_section_safety" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/safetyList"
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/you_safety_note"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_sm"
-            android:nestedScrollingEnabled="false"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/tileSos"
+                style="@style/Widget.SafeSphere.Card.Emergency"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:clickable="true"
+                android:contentDescription="@string/cd_sos_tile"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="112dp"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/bg_icon_circle"
+                        android:backgroundTint="?attr/colorOnError"
+                        android:importantForAccessibility="no"
+                        android:padding="9dp"
+                        android:src="@drawable/ic_siren"
+                        app:tint="?attr/colorError" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/you_tile_sos"
+                        android:textAppearance="@style/TextAppearance.Kurinji.Headline.Small"
+                        android:textColor="?attr/colorOnError" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/you_tile_sos_sub"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                        android:textColor="?attr/colorOnError" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <include
+                android:id="@+id/tileWalk"
+                layout="@layout/item_safety_tile"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <include
+                android:id="@+id/tileCircle"
+                layout="@layout/item_safety_tile"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1" />
+
+            <include
+                android:id="@+id/tileNearby"
+                layout="@layout/item_safety_tile"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/allSafetyButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/you_safety_all"
+            app:icon="@drawable/ic_shield_outline"
+            app:iconGravity="textStart"
+            app:iconTint="?attr/colorOnSurface" />
 
         <TextView
             style="@style/SocialSectionTitle"

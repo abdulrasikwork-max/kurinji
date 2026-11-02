@@ -13,12 +13,11 @@ import com.safesphere.backend.social.dto.PostDtos.PostRequest;
 import com.safesphere.backend.social.dto.PostDtos.PostResponse;
 import com.safesphere.backend.social.dto.PostDtos.Span;
 import com.safesphere.backend.social.entity.Butterfly;
+import com.safesphere.backend.social.entity.SavedPost;
 import com.safesphere.backend.social.entity.Comment;
 import com.safesphere.backend.social.entity.Place;
 import com.safesphere.backend.social.entity.Post;
 import com.safesphere.backend.social.entity.PostEnums.Audience;
-import com.safesphere.backend.social.entity.PostEnums.ButterflyState;
-import com.safesphere.backend.social.entity.PostEnums.City;
 import com.safesphere.backend.social.entity.PostEnums.CommentPolicy;
 import com.safesphere.backend.social.entity.PostEnums.Daypart;
 import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
@@ -32,11 +31,13 @@ import com.safesphere.backend.social.entity.Profile;
 import com.safesphere.backend.social.event.ContentWritten;
 import com.safesphere.backend.social.media.MediaStorage;
 import com.safesphere.backend.social.policy.ButterflyTally;
+import com.safesphere.backend.social.policy.CityCatalog;
 import com.safesphere.backend.social.policy.PostDelay;
 import com.safesphere.backend.social.policy.PostPolicy;
 import com.safesphere.backend.social.policy.TimeBands;
 import com.safesphere.backend.social.policy.Visibility;
 import com.safesphere.backend.social.repository.ButterflyRepository;
+import com.safesphere.backend.social.repository.SavedPostRepository;
 import com.safesphere.backend.social.repository.CommentRepository;
 import com.safesphere.backend.social.repository.PlaceRepository;
 import com.safesphere.backend.social.repository.PostMediaRepository;
@@ -96,6 +97,7 @@ public class PostService {
     private final PostMediaRepository mediaRows;
     private final CommentRepository comments;
     private final ButterflyRepository butterflies;
+    private final SavedPostRepository savedPosts;
     private final PlaceService placeService;
     private final PlaceRepository places;
     private final ProfileRepository profiles;
@@ -111,7 +113,7 @@ public class PostService {
     private final SecureRandom random = new SecureRandom();
 
     public PostService(PostRepository posts, PostMediaRepository mediaRows, CommentRepository comments,
-                       ButterflyRepository butterflies, PlaceService placeService, PlaceRepository places, ProfileRepository profiles,
+                       ButterflyRepository butterflies, SavedPostRepository savedPosts, PlaceService placeService, PlaceRepository places, ProfileRepository profiles,
                        ProfileService profileService, Relationships relationships, SocialAccess access,
                        SocialLimits limits, SocialProperties properties, MediaStorage storage,
                        PostRevisionRepository revisions, ApplicationEventPublisher events, Clock clock) {
@@ -121,6 +123,7 @@ public class PostService {
         this.mediaRows = mediaRows;
         this.comments = comments;
         this.butterflies = butterflies;
+        this.savedPosts = savedPosts;
         this.placeService = placeService;
         this.places = places;
         this.profiles = profiles;
@@ -145,7 +148,7 @@ public class PostService {
         CommentPolicy commentPolicy = audience == Audience.ONLY_ME ? CommentPolicy.NOBODY
                 : parse(CommentPolicy.class, request.commentPolicy(), "Choose who can add perspectives");
         boolean approveFirst = approveFirst(request.approveFirst(), false, commentPolicy);
-        City city = parseOptional(City.class, request.city(), "Choose a city from the list");
+        String city = postCity(request.city());
         Daypart daypart = parseOptional(Daypart.class, request.daypart(), "Choose a time of day from the list");
         String category = blank(request.category()) ? null : PlaceService.category(request.category());
         YearMonth month = month(request.experiencedMonth());
@@ -200,11 +203,11 @@ public class PostService {
         Daypart daypart = parseOptional(Daypart.class, request.daypart(), "Choose a time of day from the list");
         String category = blank(request.category()) ? null : PlaceService.category(request.category());
         YearMonth month = month(request.experiencedMonth());
-        City city = parseOptional(City.class, request.city(), "Choose a city from the list");
+        String city = postCity(request.city());
 
         Long placeId = null;
         String areaCell = null;
-        City newCity = null;
+        String newCity = null;
         switch (precision) {
             case EXACT -> placeId = post.getPlaceId();
             case AREA -> {
@@ -219,7 +222,7 @@ public class PostService {
             }
             case CITY -> {
                 newCity = city;
-                if (post.getPrecision() == Precision.CITY && city != post.getCity()) throw new ConflictException(ONLY_NARROWER);
+                if (post.getPrecision() == Precision.CITY && !java.util.Objects.equals(city, post.getCity())) throw new ConflictException(ONLY_NARROWER);
             }
             case NONE -> {
             }
@@ -266,6 +269,7 @@ public class PostService {
         // Phase 13D (M14): always allowed, also during a review (a refusal would tell the author that someone reported
         // it). A case and its reports about this post go with it (V23 cascades; the clean-up job removes any left).
         butterflies.deleteAllOfPost(post.getId());
+        savedPosts.deleteAllOfPost(post.getId());
         revisions.deleteByPost(post.getId());
         comments.deleteRepliesOfPost(post.getId());
         comments.deleteAllOfPost(post.getId());
@@ -371,9 +375,11 @@ public class PostService {
         List<Long> postIds = list.stream().map(Post::getId).toList();
         Map<Long, List<PostMedia>> mediaByPost = mediaRows.findByPostIdIn(postIds)
                 .stream().collect(Collectors.groupingBy(PostMedia::getPostId));
-        // Phase 13C: the viewer's own Cocoon states, and (author only) how many people saved their Experiences.
-        Map<Long, ButterflyState> yours = butterflies.findByUserIdAndPostIdIn(viewerId, postIds).stream()
-                .collect(Collectors.toMap(Butterfly::getPostId, Butterfly::getState));
+        // Phase 17E: the viewer's OWN butterflies and saves, and (author only) how many people reacted to their Experiences.
+        Set<Long> reacted = butterflies.findByUserIdAndPostIdIn(viewerId, postIds).stream()
+                .map(Butterfly::getPostId).collect(Collectors.toSet());
+        Set<Long> savedIds = savedPosts.findByUserIdAndPostIdIn(viewerId, postIds).stream()
+                .map(SavedPost::getPostId).collect(Collectors.toSet());
         List<Long> tallied = list.stream().filter(p -> showsTally(viewerId, p)).map(Post::getId).toList();
         Map<Long, Long> counts = new HashMap<>();
         if (!tallied.isEmpty()) {
@@ -399,14 +405,14 @@ public class PostService {
                     post.getPrecision() == Precision.EXACT && place != null
                             ? new PostPlace(place.getPublicId(), place.getName()) : null,
                     post.getPrecision() == Precision.AREA ? post.getAreaCell() : null,
-                    post.getPrecision() == Precision.CITY && post.getCity() != null ? post.getCity().name() : null,
+                    post.getPrecision() == Precision.CITY && post.getCity() != null ? post.getCity() : null,
                     post.getExperiencedMonth() == null ? null : YearMonth.from(post.getExperiencedMonth()).toString(),
                     post.getDaypart() == null ? null : post.getDaypart().name(),
                     TimeBands.band(since, now).name(), post.getEditedAt() != null, media,
                     own ? post.getAudience().name() : null, post.getCommentPolicy().name(), canComment,
                     own ? post.getCreatedAt().toInstant(ZoneOffset.UTC) : null,
                     own ? post.getVisibleFrom().toInstant(ZoneOffset.UTC) : null,
-                    yours.containsKey(post.getId()) ? yours.get(post.getId()).name() : null,
+                    reacted.contains(post.getId()), savedIds.contains(post.getId()),
                     showsTally(viewerId, post) ? ButterflyTally.of(counts.getOrDefault(post.getId(), 0L)) : null,
                     post.isApproveFirst(),
                     own ? moderationView(post.getModeration(), post.getModerationReason(), post.getModerationDecision(),
@@ -490,7 +496,7 @@ public class PostService {
         return value;
     }
 
-    /** C2: only the author of an Experience shared with others learns anything about its butterflies. */
+    /** C2: only the author of an Experience shared with others learns anything about its butterflies (reactions). */
     private static boolean showsTally(long viewerId, Post post) {
         return post.getAuthorId() == viewerId && post.getType() == PostType.EXPERIENCE
                 && post.getAudience() != Audience.ONLY_ME;
@@ -536,6 +542,12 @@ public class PostService {
         } catch (IllegalArgumentException e) {
             throw new InvalidRequestException(message);
         }
+    }
+
+    /** Phase 17E: a city for a CITY-precision post (a catalog city or OTHER); blank = none; unknown = 400. */
+    static String postCity(String raw) {
+        if (blank(raw)) return null;
+        return CityCatalog.postCity(raw).orElseThrow(() -> new InvalidRequestException("Choose a city from the list"));
     }
 
     private static boolean blank(String text) {

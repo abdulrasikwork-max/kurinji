@@ -67,7 +67,7 @@ class ExperiencePolicyTest {
         assertEquals(listOf(ComposerIssue.PRIVATE_PLACE),
             ComposerPolicy.issues(draft(precision = Precision.EXACT, withPlace = true), month, placeIsPrivate = true))
         assertEquals(listOf(ComposerIssue.NO_CITY), ComposerPolicy.issues(draft(precision = Precision.CITY), month, false))
-        assertTrue(ComposerPolicy.issues(draft(precision = Precision.CITY, city = City.MADURAI), month, true).isEmpty())
+        assertTrue(ComposerPolicy.issues(draft(precision = Precision.CITY, city = com.safesphere.app.feature.social.domain.Cities.find("MADURAI")), month, true).isEmpty())
         assertEquals(Precision.entries.toList(), ComposerPolicy.allowedPrecisions(place, false))
         assertEquals(listOf(Precision.CITY, Precision.NONE), ComposerPolicy.allowedPrecisions(place, true))
         assertEquals(listOf(Precision.CITY, Precision.NONE), ComposerPolicy.allowedPrecisions(null, false))

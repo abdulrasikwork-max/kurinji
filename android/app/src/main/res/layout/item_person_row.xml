@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13A: one person (or invite code) in a social list. No counts, no pictures. -->
+<!-- Phase 13A: one person (or invite code, or place) in a social list. Phase 17E: a person shows their photo or initial.
+     No counts. -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     style="@style/Widget.SafeSphere.Card"
     android:layout_width="match_parent"
@@ -18,7 +19,21 @@
             android:layout_height="wrap_content"
             android:background="?attr/selectableItemBackground"
             android:minHeight="@dimen/min_touch_target"
-            android:orientation="vertical">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.safesphere.app.core.ui.components.AvatarView
+                android:id="@+id/avatar"
+                android:layout_width="@dimen/avatar_size"
+                android:layout_height="@dimen/avatar_size"
+                android:layout_marginEnd="12dp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
 
             <TextView
                 android:id="@+id/title"
@@ -32,6 +47,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_xs"
                 android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+        </LinearLayout>
         </LinearLayout>
 
         <LinearLayout

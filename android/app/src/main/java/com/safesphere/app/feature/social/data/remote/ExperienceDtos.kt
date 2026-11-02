@@ -1,9 +1,8 @@
 package com.safesphere.app.feature.social.data.remote
 
 import com.safesphere.app.feature.social.domain.Audience
-import com.safesphere.app.feature.social.domain.ButterflyState
 import com.safesphere.app.feature.social.domain.ButterflyTally
-import com.safesphere.app.feature.social.domain.City
+import com.safesphere.app.feature.social.domain.Cities
 import com.safesphere.app.feature.social.domain.Collapsed
 import com.safesphere.app.feature.social.domain.ModerationReason
 import com.safesphere.app.feature.social.domain.ModerationSource
@@ -52,7 +51,7 @@ data class PlaceDto(
             cell = cell ?: return null,
             areaCell = areaCell ?: return null,
             // Phase 13C: an unknown city is no city (never guessed).
-            city = enumOrNull<City>(city)?.takeIf { it != City.OTHER }
+            city = Cities.listCity(city)
         )
     }
 
@@ -94,7 +93,7 @@ data class PostRequestDto(
                 category = draft.category?.name,
                 placeId = if (precision == Precision.EXACT || precision == Precision.AREA) draft.place?.publicId else null,
                 precision = precision.name,
-                city = if (precision == Precision.CITY) draft.city?.name else null,
+                city = if (precision == Precision.CITY) draft.city?.code else null,
                 experiencedMonth = if (experience) draft.month?.toString() else null,
                 daypart = draft.daypart?.name,
                 audience = audience.name,
@@ -107,7 +106,13 @@ data class PostRequestDto(
     }
 }
 
-data class PersonRefDto(val publicId: String? = null, val handle: String? = null, val displayName: String? = null)
+data class PersonRefDto(
+    val publicId: String? = null,
+    val handle: String? = null,
+    val displayName: String? = null,
+    /** Phase 17E: the profile photo's key. */
+    val photo: String? = null
+)
 
 data class PostPlaceDto(val publicId: String? = null, val name: String? = null)
 
@@ -150,7 +155,8 @@ data class PostDto(
     val commentPolicy: String? = null,
     val canComment: Boolean? = null,
     val visibleFrom: String? = null,
-    val yourButterfly: String? = null,
+    val youReacted: Boolean? = null,
+    val saved: Boolean? = null,
     val butterflies: ButterflyTallyDto? = null,
     val approveFirst: Boolean? = null,
     val moderation: ModerationViewDto? = null,
@@ -162,7 +168,8 @@ data class PostDto(
     fun toDomain(): Post? {
         val author = author?.let { a ->
             val id = a.publicId ?: return@let null
-            com.safesphere.app.feature.social.domain.PersonSummary(id, a.handle.orEmpty(), a.displayName.orEmpty())
+            com.safesphere.app.feature.social.domain.PersonSummary(id, a.handle.orEmpty(), a.displayName.orEmpty(),
+                photoKey(a.photo))
         }
         return Post(
             publicId = publicId ?: return null,
@@ -176,7 +183,8 @@ data class PostDto(
             precision = enumOrNull<Precision>(precision) ?: Precision.NONE,
             placeName = place?.name,
             areaCell = areaCell,
-            city = enumOrNull<City>(city),
+            // Phase 17E: a catalog city or OTHER; an unknown code is no city (never guessed).
+            city = Cities.find(city),
             experiencedMonth = experiencedMonth?.let { runCatching { YearMonth.parse(it) }.getOrNull() },
             daypart = enumOrNull<Daypart>(daypart),
             // Unknown band: the vaguest one.
@@ -189,7 +197,8 @@ data class PostDto(
             commentPolicy = enumOrNull<CommentPolicy>(commentPolicy) ?: CommentPolicy.NOBODY,
             canComment = canComment == true,
             visibleFrom = visibleFrom?.let { runCatching { Instant.parse(it) }.getOrNull() },
-            yourButterfly = enumOrNull<ButterflyState>(yourButterfly),
+            youReacted = youReacted == true && own != true,
+            saved = saved == true && own != true,
             // Phase 13C: only the author's own posts carry a tally; anything else, or an inconsistent one, is dropped.
             butterflies = if (own == true) butterflies?.toDomain()?.takeIf { it.isConsistent } else null,
             placeId = if (precision == Precision.EXACT.name) place?.publicId else null,

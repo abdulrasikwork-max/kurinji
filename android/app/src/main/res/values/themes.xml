@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Kurinji theme (Phase 16, U4): Material 3 underneath, red / black / white on top (colour roles in colors.xml).
+    <!-- Kurinji theme (Phase 17E, E17-1): Material 3 underneath, "Ink & Lime" on top (colour roles in colors.xml).
          Follows the system light/dark setting. Style names keep the SafeSphere prefix: code names are unchanged until a
          rename is approved. -->
     <style name="Base.Theme.SafeSphere" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Material colour roles -->
-        <item name="colorPrimary">@color/k_bloom</item>
-        <item name="colorOnPrimary">@color/k_on_bloom</item>
-        <item name="colorPrimaryContainer">@color/k_bloom_soft</item>
-        <item name="colorOnPrimaryContainer">@color/k_on_bloom_soft</item>
-        <item name="colorSecondary">@color/k_ink_soft</item>
-        <item name="colorOnSecondary">@color/k_card</item>
-        <item name="colorSecondaryContainer">@color/k_bloom_soft</item>
-        <item name="colorOnSecondaryContainer">@color/k_on_bloom_soft</item>
-        <item name="colorTertiary">@color/k_yeoman_ink</item>
-        <item name="colorOnTertiary">@color/k_card</item>
-        <item name="colorTertiaryContainer">@color/k_yeoman_soft</item>
-        <item name="colorOnTertiaryContainer">@color/k_on_yeoman_soft</item>
-        <item name="colorSurface">@color/k_mist</item>
+        <item name="colorPrimary">@color/k_action</item>
+        <item name="colorOnPrimary">@color/k_on_action</item>
+        <item name="colorPrimaryContainer">@color/k_lime_soft</item>
+        <item name="colorOnPrimaryContainer">@color/k_on_lime_soft</item>
+        <item name="colorSecondary">@color/k_leaf</item>
+        <item name="colorOnSecondary">@color/k_surface</item>
+        <item name="colorSecondaryContainer">@color/k_lime_soft</item>
+        <item name="colorOnSecondaryContainer">@color/k_on_lime_soft</item>
+        <item name="colorTertiary">@color/k_leaf</item>
+        <item name="colorOnTertiary">@color/k_surface</item>
+        <item name="colorTertiaryContainer">@color/k_lime</item>
+        <item name="colorOnTertiaryContainer">@color/k_on_lime</item>
+        <item name="colorSurface">@color/k_page</item>
         <item name="colorOnSurface">@color/k_ink</item>
-        <item name="colorSurfaceVariant">@color/k_sunk</item>
+        <item name="colorSurfaceVariant">@color/k_surface_sunk</item>
         <item name="colorOnSurfaceVariant">@color/k_ink_soft</item>
         <item name="colorOutline">@color/k_outline</item>
         <item name="colorOutlineVariant">@color/k_line</item>
-        <item name="colorSurfaceContainerLowest">@color/k_card</item>
+        <item name="colorSurfaceContainerLowest">@color/k_surface</item>
         <item name="colorSurfaceContainerLow">@color/k_surface_low</item>
         <item name="colorSurfaceContainer">@color/k_surface_container</item>
         <item name="colorSurfaceContainerHigh">@color/k_surface_high</item>
         <item name="colorSurfaceContainerHighest">@color/k_surface_highest</item>
-        <item name="android:colorBackground">@color/k_mist</item>
+        <item name="android:colorBackground">@color/k_page</item>
         <item name="colorOnBackground">@color/k_ink</item>
 
-        <!-- Emergency colours (the "error" roles) and the emergency surface. Since Phase 16 the brand is red too, so
-             emergency UI is recognised by the siren icon, the words and the black surface with a red ring. -->
+        <!-- Emergency colours (the "error" roles) and the emergency surface: unchanged since Phase 16 (U4). Emergency UI
+             is recognised by the siren icon, the words and the black surface with a red ring, never by colour alone. -->
         <item name="colorError">@color/ss_emergency</item>
         <item name="colorOnError">@color/ss_on_emergency</item>
         <item name="colorErrorContainer">@color/ss_emergency_container</item>
@@ -51,12 +51,15 @@
         <item name="colorOnHero">@color/hero_on</item>
         <item name="colorOnHeroVariant">@color/hero_on_variant</item>
         <item name="colorHeroAccent">@color/hero_accent</item>
-        <item name="colorCard">@color/k_card</item>
+        <item name="colorCard">@color/k_surface</item>
         <item name="colorLine">@color/k_line</item>
-        <item name="colorIntent">@color/k_yeoman</item>
-        <item name="colorIntentInk">@color/k_yeoman_ink</item>
-        <item name="colorIntentContainer">@color/k_yeoman_soft</item>
-        <item name="colorOnIntentContainer">@color/k_on_yeoman_soft</item>
+        <!-- Phase 17E: lime as a fill (chosen, reacted), the readable accent, and the ink panel. -->
+        <item name="colorLime">@color/k_lime</item>
+        <item name="colorOnLime">@color/k_on_lime</item>
+        <item name="colorAccentText">@color/k_leaf</item>
+        <item name="colorPanel">@color/k_panel</item>
+        <item name="colorOnPanel">@color/k_on_panel</item>
+        <item name="colorOnPanelVariant">@color/k_on_panel_soft</item>
 
         <!-- Type: Mukta Malar everywhere, Young Serif for headlines; the Material type scale points at ours.
              Not android:fontFamily on the theme: a theme value acts as a view attribute and would override every
@@ -101,8 +104,8 @@
         <item name="android:textAppearance">@style/TextAppearance.Kurinji.Body.Medium</item>
     </style>
 
-    <!-- Shown by the system while the process starts: brand red with the K drawing itself (Phase 16), flowing into
-         the in-app splash on the same red. -->
+    <!-- Shown by the system while the process starts: ink with the K drawing itself (Phase 16; colours 17E), flowing
+         into the in-app splash on the same ink. -->
     <style name="Theme.SafeSphere.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_mark</item>
@@ -128,8 +131,8 @@
     </style>
 
     <style name="ThemeOverlay.Kurinji.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="colorSurface">@color/k_card</item>
-        <item name="colorSurfaceContainerHigh">@color/k_card</item>
+        <item name="colorSurface">@color/k_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/k_surface</item>
         <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.Kurinji.Title</item>
         <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.Kurinji.ExtraLarge</item>
     </style>

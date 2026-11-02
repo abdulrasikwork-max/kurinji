@@ -6,8 +6,7 @@ import com.safesphere.backend.community.service.GeoCell;
 import com.safesphere.backend.social.dto.PlaceDtos.PlaceRequest;
 import com.safesphere.backend.social.dto.PlaceDtos.PlaceResponse;
 import com.safesphere.backend.social.entity.Place;
-import com.safesphere.backend.social.entity.PostEnums.City;
-import com.safesphere.backend.social.policy.CityAreas;
+import com.safesphere.backend.social.policy.CityCatalog;
 import com.safesphere.backend.social.policy.PlaceNamePolicy;
 import com.safesphere.backend.social.policy.ProfileLists;
 import com.safesphere.backend.social.repository.PlaceRepository;
@@ -71,7 +70,7 @@ public class PlaceService {
         if (existing != null) return toResponse(resolve(existing));
         try {
             return toResponse(places.saveAndFlush(
-                    new Place(name, normalized, category, cell, CityAreas.cityOf(cell).orElse(null),
+                    new Place(name, normalized, category, cell, CityCatalog.cityOf(cell).orElse(null),
                             LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC))));
         } catch (DataIntegrityViolationException e) {
             // Someone created the same place at the same moment: it exists, which is what was asked.
@@ -103,7 +102,7 @@ public class PlaceService {
         }
         String part = PlaceNamePolicy.normalize(cleaned);
         if (part.isEmpty()) throw new InvalidRequestException("Search with letters or digits");
-        City inCity = editionCity(city, true);
+        String inCity = editionCity(city, true);
         limits.search(userId);
         PageRequest page = PageRequest.of(0, SEARCH_RESULTS);
         List<Place> found = inCity == null
@@ -116,18 +115,13 @@ public class PlaceService {
      * Phase 13C: a city an Edition or a list can be made for (the closed list without OTHER). Blank is allowed only
      * when [optional]; then null.
      */
-    public static City editionCity(String raw, boolean optional) {
+    public static String editionCity(String raw, boolean optional) {
         if (raw == null || raw.isBlank()) {
             if (optional) return null;
             throw new InvalidRequestException("Choose a city from the list");
         }
-        try {
-            City city = City.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-            if (CityAreas.hasArea(city)) return city;
-        } catch (IllegalArgumentException e) {
-            // falls through to the same answer as OTHER
-        }
-        throw new InvalidRequestException("Choose a city from the list");
+        // Phase 17E: any catalog city (OTHER is no list city).
+        return CityCatalog.listCity(raw).orElseThrow(() -> new InvalidRequestException("Choose a city from the list"));
     }
 
     @Transactional(readOnly = true)
@@ -145,7 +139,7 @@ public class PlaceService {
 
     public static PlaceResponse toResponse(Place place) {
         return new PlaceResponse(place.getPublicId(), place.getName(), place.getCategory(), place.getCell(),
-                place.getAreaCell(), place.getCity() == null ? null : place.getCity().name());
+                place.getAreaCell(), place.getCity());
     }
 
     /** Follows merged_into (at most a few hops; a loop stops at the first repeat). */

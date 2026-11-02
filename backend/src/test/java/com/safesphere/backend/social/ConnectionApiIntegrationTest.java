@@ -186,6 +186,6 @@ class ConnectionApiIntegrationTest {
         JsonNode result = social.json(social.request(asha, bala).andExpect(status().isAccepted()));
         assertThat(result.fieldNames()).toIterable().containsExactlyInAnyOrder("status", "person");
         assertThat(result.get("person").fieldNames()).toIterable()
-                .containsExactlyInAnyOrder("publicId", "handle", "displayName");
+                .containsExactlyInAnyOrder("publicId", "handle", "displayName", "photo"); // 17E: a photo key, not a count
     }
 }

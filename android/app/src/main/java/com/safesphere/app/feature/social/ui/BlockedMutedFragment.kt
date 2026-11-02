@@ -19,8 +19,8 @@ class BlockedMutedFragment : ViewBindingFragment<FragmentBlockedMutedBinding>(Fr
 
     private val viewModel by viewModels<BlockedMutedViewModel> { BlockedMutedViewModel.factory(appContainer) }
 
-    private val blockedAdapter = PersonRowAdapter()
-    private val mutedAdapter = PersonRowAdapter()
+    private val blockedAdapter by lazy { PersonRowAdapter(cardImages()) }
+    private val mutedAdapter by lazy { PersonRowAdapter(cardImages()) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -57,7 +57,8 @@ class BlockedMutedFragment : ViewBindingFragment<FragmentBlockedMutedBinding>(Fr
         key = person.publicId,
         title = person.displayName,
         subtitle = getString(R.string.social_handle_line, person.handle),
-        secondary = action
+        secondary = action,
+        person = person
     )
 
     private fun confirmUnblock(person: PersonSummary) {

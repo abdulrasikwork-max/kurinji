@@ -131,6 +131,8 @@ private val CHECK_CATEGORIES = setOf("PROFANITY", "HARASSMENT", "SEXUAL_HARASSME
 
 data class PersonInfoDto(
     val displayName: String? = null,
+    /** Phase 17E */
+    val hasPhoto: Boolean? = null,
     val handle: String? = null,
     val bio: String? = null,
     val city: String? = null,
@@ -172,7 +174,8 @@ data class ContentViewDto(
         daypart, media.orEmpty().mapNotNull { it.toDomain() },
 
         contextBody,
-        person?.let { p -> PersonInfo(p.displayName.orEmpty(), p.handle.orEmpty(), p.bio, p.city, p.interests.orEmpty()) }
+        person?.let { p -> PersonInfo(p.displayName.orEmpty(), p.handle.orEmpty(), p.bio, p.city, p.interests.orEmpty(),
+            p.hasPhoto == true) }
     )
 }
 

@@ -99,7 +99,8 @@ public final class ContentModerationDtos {
 
 
     /** The public profile of a PERSON case (or the author's handle is NOT shown for content cases). */
-    public record PersonView(String displayName, String handle, String bio, String city, List<String> interests) {
+    public record PersonView(String displayName, String handle, String bio, String city, List<String> interests,
+                             boolean hasPhoto) {
     }
 
     /**

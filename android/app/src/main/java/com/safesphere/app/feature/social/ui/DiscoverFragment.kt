@@ -24,7 +24,6 @@ import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentDiscoverBinding
-import com.safesphere.app.feature.social.domain.City
 import com.safesphere.app.feature.social.domain.DiscoverItem
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.Place
@@ -48,8 +47,6 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
     private val placeResults = PersonRowAdapter()
     private val categoryResults = PersonRowAdapter()
     private val nearResults = PersonRowAdapter()
-    private lateinit var cityChips: ChoiceChips<City>
-    private var cityPickerOpen = false
     private var searchOpen = false
     private var nearOpen = false
     private var retryNearOnReturn = false
@@ -69,7 +66,7 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, closePanel)
-        feedAdapter = DiscoverFeedAdapter(appContainer.imageLoader, appContainer.experienceRepository::photoUrl, this)
+        feedAdapter = DiscoverFeedAdapter(cardImages(), this)
         binding.feed.adapter = feedAdapter
         binding.feed.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -80,13 +77,6 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         binding.searchPlaceList.adapter = placeResults
         binding.searchCategoryList.adapter = categoryResults
         binding.nearList.adapter = nearResults
-        cityChips = ChoiceChips(binding.cityGroup) { city ->
-            if (city != null) {
-                cityPickerOpen = false
-                viewModel.onCity(city)
-                binding.feed.scrollToPosition(0)
-            }
-        }
         binding.cityButton.setOnClickListener { chooseCity() }
         binding.searchToggle.setOnClickListener {
             searchOpen = !searchOpen
@@ -141,12 +131,9 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         feedAdapter.submitList(DiscoverFeed.build(state).map { FeedRow(it, collapseStrongLanguage) })
 
         val city = state.city
-        binding.cityButton.text = city?.let(ExperienceLabels::cityName) ?: getString(R.string.discover_masthead_no_city)
-        binding.cityButton.contentDescription = city?.let {
-            getString(R.string.discover_city_description, ExperienceLabels.cityName(it))
-        } ?: getString(R.string.discover_masthead_no_city)
-        cityChips.show(City.entries.filter { it != City.OTHER }.map { it to ExperienceLabels.cityName(it) }, city)
-        binding.cityBlock.isVisible = (city == null && state.needsCity) || cityPickerOpen
+        binding.cityTitle.text = city?.name ?: getString(R.string.discover_masthead_no_city)
+        binding.cityButton.contentDescription = city?.let { getString(R.string.discover_city_description, it.name) }
+            ?: getString(R.string.discover_masthead_no_city)
 
         binding.panel.isVisible = searchOpen || nearOpen
         binding.searchPanel.isVisible = searchOpen
@@ -161,7 +148,7 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         binding.errorNotice.isVisible = failure != null
         binding.retryButton.isVisible = failure != null
         if (failure != null) binding.errorNotice.setMessage(failure.toMessage(requireContext()))
-        if (state.savedNow) {
+        if (state.savedNow != null) {
             viewModel.onSavedShown()
             binding.feed.announceForAccessibility(getString(R.string.butterfly_saved_announcement))
             Haptics.confirm(binding.feed)
@@ -227,7 +214,7 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
     }
 
     private fun placeRow(place: Place): PersonRow {
-        val details = listOfNotNull(getString(SocialLabels.of(place.category)), place.city?.let(ExperienceLabels::cityName))
+        val details = listOfNotNull(getString(SocialLabels.of(place.category)), place.city?.name)
         return PersonRow(key = place.publicId, title = place.name, subtitle = details.joinToString(" · "),
             onOpen = { findNavController().navigate(R.id.postCollectionFragment,
                 bundleOf(PostCollectionViewModel.ARG_PLACE_ID to place.publicId)) },
@@ -238,6 +225,8 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
 
     override fun openPost(post: Post, toComments: Boolean) = findNavController().navigate(R.id.postFragment,
         bundleOf(PostViewModel.ARG_POST_ID to post.publicId, PostViewModel.ARG_TO_COMMENTS to toComments))
+
+    override fun react(post: Post) = viewModel.onReact(post)
 
     override fun save(post: Post) = viewModel.onSave(post)
 
@@ -263,7 +252,7 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
 
     override fun category(interest: Interest) = findNavController().navigate(R.id.postCollectionFragment,
         bundleOf(PostCollectionViewModel.ARG_CATEGORY to interest.name,
-            PostCollectionViewModel.ARG_CITY to viewModel.uiState.value.city?.name))
+            PostCollectionViewModel.ARG_CITY to viewModel.uiState.value.city?.code))
 
     override fun share() = findNavController().navigate(R.id.composeFragment)
 
@@ -271,9 +260,9 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         launchSingleTop = true
     })
 
-    override fun chooseCity() {
-        cityPickerOpen = !cityPickerOpen
-        render(viewModel.uiState.value)
+    override fun chooseCity() = CityPicker.show(this, viewModel.uiState.value.city, allowOther = false) { city ->
+        viewModel.onCity(city)
+        binding.feed.scrollToPosition(0)
     }
 
     private companion object {

@@ -1,7 +1,5 @@
 package com.safesphere.app.feature.social.ui
 
-import android.animation.ValueAnimator
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.View
@@ -14,7 +12,6 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.PagerSnapHelper
 import com.google.android.material.chip.Chip
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
@@ -23,13 +20,11 @@ import com.safesphere.app.core.ui.ButterflyFlight
 import com.safesphere.app.core.ui.Haptics
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
-import com.safesphere.app.core.ui.components.ButterflyDrawable
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.feature.social.data.VideoRules
 import com.safesphere.app.databinding.FragmentPostBinding
 import com.safesphere.app.feature.going.GoingThere
-import com.safesphere.app.feature.social.domain.ButterflyState
 import com.safesphere.app.feature.social.domain.CommentKind
 import com.safesphere.app.feature.social.domain.ModerationState
 import com.safesphere.app.feature.social.domain.OwnModeration
@@ -41,7 +36,7 @@ import com.safesphere.app.feature.social.domain.ReportTarget
 /**
  * Phase 13B, rebuilt in Phase 16 (docs/PHASE16.md): one post as a social page. Who first (tap for their profile), the
  * photos large, every word of the post, where and when as chips (only what the author revealed), the Tip, then save /
- * I've been / Going there?, and the comments with the comment box always at the bottom. Report, delete and the place
+ * (17E) the butterfly and Save, "I went" and Going there?, and the comments with the comment box always at the bottom. Report, delete and the place
  * page sit in the "more" menu. Times are bands; the comment count is the list the viewer reads (U1).
  */
 class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBinding::inflate) {
@@ -50,24 +45,18 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
     private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
     private var standingAskedFor: String? = null
     private var shownFailure: ApiResult.Failure? = null
-    private var writeBeenHere = false
     private var scrollToComments = false
 
     private lateinit var photoAdapter: PhotoAdapter
-    private val commentAdapter = CommentAdapter()
+    private lateinit var commentAdapter: CommentAdapter
     private lateinit var kindChips: ChoiceChips<CommentKind>
 
-    /** Phase 13F: the flight plays only when a tap's save has really been confirmed (null → WANT seen after the tap). */
-    private var flyAfterSave = false
-    private var shownButterfly: ButterflyState? = null
-    private var butterflyKnown = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        writeBeenHere = savedInstanceState == null &&
-            arguments?.getBoolean(PostViewModel.ARG_WRITE_BEEN_HERE) == true
         scrollToComments = savedInstanceState == null && arguments?.getBoolean(PostViewModel.ARG_TO_COMMENTS) == true
         photoAdapter = PhotoAdapter(appContainer.imageLoader, large = true)
+        commentAdapter = CommentAdapter(cardImages())
         binding.photoList.adapter = photoAdapter
         PagerSnapHelper().attachToRecyclerView(binding.photoList)
         binding.perspectiveList.adapter = commentAdapter
@@ -78,11 +67,6 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             DraftNudgeDialogs.beforeSharing(this, viewModel.uiState.value.text, onlyMe = false) { viewModel.onSend() }
         }
         binding.cancelReplyButton.setOnClickListener { viewModel.onCancelReply() }
-        binding.butterflyButton.setOnClickListener {
-            flyAfterSave = viewModel.uiState.value.post?.yourButterfly == null
-            viewModel.onButterfly()
-        }
-        binding.beenButton.setOnClickListener { viewModel.onBeen() }
         binding.showCollapsedButton.setOnClickListener { viewModel.onReveal() }
         binding.moreButton.setOnClickListener { showMoreMenu() }
         collectWhenStarted(viewModel.uiState, ::render)
@@ -187,7 +171,7 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
     private fun show(post: Post, state: PostUiState) {
         val card = ExperienceCards.of(post)
         val author = post.author
-        binding.avatar.set(author?.displayName, author?.handle)
+        cardImages().avatar(binding.avatar, author?.displayName, author?.handle, author?.publicId, author?.photo)
         binding.authorName.text = author?.displayName ?: getString(R.string.feed_someone)
         binding.meta.text = listOfNotNull(CardTexts.meta(requireContext(), card),
             getString(R.string.social_edited).takeIf { post.edited }).joinToString(" · ")
@@ -233,21 +217,16 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.ownLine.text = ownLines.joinToString("\n")
         binding.ownLine.isVisible = ownLines.isNotEmpty()
 
-        // Phase 13C/16: save with the butterfly (someone else's Experience); the author's private line on their own.
-        binding.butterflyBlock.isVisible = state.canButterfly
-        binding.butterflyButton.isEnabled = !state.isBusy
-        binding.beenButton.isEnabled = !state.isBusy
-        renderSaveButton(post.yourButterfly)
-        onButterflyState(post.yourButterfly)
-        binding.beenButton.isVisible = post.yourButterfly == ButterflyState.WANT
-        // Phase 13F (F9): from reading to going. The sheet only navigates; the save is this screen's own butterfly.
-        binding.goingButton.isVisible = state.canButterfly
+        // Phase 17E (D-3): the butterfly (Experiences) and Save on someone else's post; the author's private line on
+        // their own. Then from reading to going: "I went" and "Going there?".
+        binding.marksBlock.isVisible = !post.own
+        CardBinder.bindReaction(binding.reactButton, post.youReacted, state.canReact) { viewModel.onReact() }
+        CardBinder.bindSave(binding.saveButton, post.saved, state.canSave) { viewModel.onSave() }
+        binding.wentButton.setOnClickListener { iWent(post) }
+        // Phase 13F (F9): the sheet only navigates; its "Save" is this screen's own Save.
         binding.goingButton.setOnClickListener {
             GoingThere.show(this, GoingThere.Target(CardTexts.goingLabel(card)),
-                GoingThere.CocoonChoice(saved = post.yourButterfly != null) {
-                    flyAfterSave = true
-                    viewModel.onButterfly()
-                })
+                GoingThere.CocoonChoice(saved = post.saved) { viewModel.onSave() })
         }
         val tally = post.butterflies
         binding.authorTallyLine.isVisible = post.own && tally != null
@@ -256,25 +235,22 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             tally.fewerThanThree -> getString(R.string.butterfly_author_fewer)
             else -> getString(R.string.butterfly_author_count, tally.count ?: 0)
         }
-        if (state.beenInvitation) {
-            viewModel.onBeenInvitationHandled()
-            showBeenInvitation()
+        if (state.savedNow) {
+            viewModel.onSavedShown()
+            Haptics.confirm(binding.saveButton)
+            binding.saveButton.announceForAccessibility(getString(R.string.save_announcement))
+            ButterflyFlight.fly(binding.saveButton, requireActivity().findViewById(R.id.cocoonFragment)) { }
         }
 
         // Comments: the title carries the number the viewer can read (U1), the same as the list below it.
         val count = state.perspectives.size
         binding.commentsTitle.text = if (count == 0) getString(R.string.social_perspectives_title)
             else getString(R.string.post_comments_title_count, count)
-        // Phase 15: opened to write "Been here too": once the comments are loaded (isLoading) AND their rows are in
-        // the list (the commit callback; the diff runs in the background), so the box is where it will stay.
-        val beenHereNow = writeBeenHere && !state.isLoading
-        if (beenHereNow) writeBeenHere = false
-        val startWriting = beenHereNow && post.canComment && CommentKind.BEEN_HERE in state.kinds
         val toComments = scrollToComments && !state.isLoading
         if (toComments) scrollToComments = false
         commentAdapter.submitList(state.perspectives.map { row(it, post, state) }) {
             if (view == null) return@submitList
-            if (startWriting) startBeenHere() else if (toComments) scrollTo(binding.commentsTitle)
+            if (toComments) scrollTo(binding.commentsTitle)
         }
         binding.perspectivesEmpty.isVisible = state.perspectives.isEmpty() && !state.isLoading
         binding.perspectivesEmpty.setText(if (post.canComment) R.string.social_perspectives_empty
@@ -322,30 +298,6 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         group.isVisible = group.childCount > 0
     }
 
-    /** Not saved: an outlined "Save" with an open butterfly. Saved: solid brand red with the word (never colour alone). */
-    private fun renderSaveButton(state: ButterflyState?) {
-        val button = binding.butterflyButton
-        val context = requireContext()
-        val saved = state != null
-        val fill = MaterialColors.getColor(button, if (saved) com.google.android.material.R.attr.colorPrimary
-            else R.attr.colorCard)
-        val ink = MaterialColors.getColor(button, if (saved) com.google.android.material.R.attr.colorOnPrimary
-            else com.google.android.material.R.attr.colorOnSurface)
-        button.backgroundTintList = ColorStateList.valueOf(fill)
-        button.setTextColor(ink)
-        button.strokeColor = ColorStateList.valueOf(MaterialColors.getColor(button,
-            if (saved) com.google.android.material.R.attr.colorPrimary else com.google.android.material.R.attr.colorOnSurface))
-        button.icon = if (saved) ButterflyDrawable(ink, ink, (24 * resources.displayMetrics.density).toInt())
-            else ButterflyDrawable.outline(context, 24)
-        button.setText(when (state) {
-            null -> R.string.butterfly_want
-            ButterflyState.WANT -> R.string.butterfly_saved_want
-            ButterflyState.BEEN -> R.string.butterfly_saved_been
-        })
-        button.contentDescription = getString(if (saved) R.string.butterfly_remove_description
-            else R.string.butterfly_want_description)
-    }
-
     private fun row(p: Perspective, post: Post, state: PostUiState): CommentRow {
         val kind = getString(ExperienceLabels.of(p.kind))
         val name = p.author?.displayName.orEmpty()
@@ -370,6 +322,8 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             key = p.publicId,
             name = p.author?.displayName,
             handle = p.author?.handle,
+            profileId = p.author?.publicId,
+            photo = p.author?.photo,
             header = header,
             body = text,
             notes = notes,
@@ -411,31 +365,6 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             .show()
     }
 
-    /**
-     * Phase 13F, the first moment: when a tap's save is confirmed (no state → WANT), the butterfly beats its wings and
-     * flies into the Saved tab, with one haptic and a spoken confirmation. With animations off, only the state, the
-     * haptic and the announcement change.
-     */
-    private fun onButterflyState(state: ButterflyState?) {
-        val previous = shownButterfly
-        val known = butterflyKnown
-        shownButterfly = state
-        butterflyKnown = true
-        if (!known || previous == state) return
-        if (previous == null && state == ButterflyState.WANT && flyAfterSave) {
-            flyAfterSave = false
-            Haptics.confirm(binding.butterflyButton)
-            binding.butterflyButton.announceForAccessibility(getString(R.string.butterfly_saved_announcement))
-            ButterflyFlight.fly(binding.butterflyButton, requireActivity().findViewById(R.id.cocoonFragment)) { }
-        } else if (state == ButterflyState.BEEN && ValueAnimator.areAnimatorsEnabled()) {
-            val icon = binding.butterflyButton.icon as? ButterflyDrawable ?: return
-            ValueAnimator.ofFloat(0f, 1f, 0f, 1f, 0f).apply {
-                duration = 420
-                addUpdateListener { icon.flap = it.animatedValue as Float }
-            }.start()
-        }
-    }
-
     /** Phase 13E: the text the server checked (body, a new line, the tip): flagged offsets point into it. */
     private fun ownText(post: Post): String = if (post.tip == null) post.body else post.body + "\n" + post.tip
 
@@ -471,17 +400,14 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         })
     }
 
-    /** Phase 13C (design §3.4.2): after "Been", the invitation to share what was found. */
-    private fun showBeenInvitation() {
-        val post = viewModel.uiState.value.post ?: return
-        BeenInvitation.show(this, post.canComment,
-            onPerspective = ::startBeenHere,
-            onOwn = { findNavController().navigate(R.id.composeFragment) })
-    }
-
-    private fun startBeenHere() {
-        viewModel.onKind(CommentKind.BEEN_HERE)
-        binding.perspectiveInput.requestFocus()
+    /**
+     * Phase 17E ("I went", plan §4): the composer, with this post's place filled in when it named an exact place (and
+     * its category). The person writes their own experience; nothing is posted or stored by itself; no rating (17G).
+     */
+    private fun iWent(post: Post) {
+        val placeId = post.placeId.takeIf { post.precision == Precision.EXACT }
+        findNavController().navigate(R.id.composeFragment, bundleOf(ComposeFragment.ARG_PLACE_ID to placeId,
+            ComposeFragment.ARG_CATEGORY to post.category?.name))
     }
 
     private fun scrollTo(target: View) {

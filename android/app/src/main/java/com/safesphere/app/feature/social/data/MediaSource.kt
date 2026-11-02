@@ -34,6 +34,9 @@ interface MediaSource {
     /** A new JPEG without metadata, or null if the item cannot be read as a photo. */
     suspend fun preparePhoto(pick: MediaPick): ByteArray?
 
+    /** Phase 17E: a square profile photo (a new JPEG without metadata), or null if the item cannot be read. */
+    suspend fun prepareAvatar(pick: MediaPick): ByteArray?
+
     suspend fun prepareVideo(pick: MediaPick): VideoOutcome
 
     /** Deletes a prepared video's work files. */
@@ -57,6 +60,11 @@ class AndroidMediaSource(
         return decoding.withLock { withContext(io) { photos.prepare(uri) } }
     }
 
+
+    override suspend fun prepareAvatar(pick: MediaPick): ByteArray? {
+        val uri = (pick as? UriPick)?.uri ?: return null
+        return decoding.withLock { withContext(io) { photos.prepareAvatar(uri) } }
+    }
 
     override suspend fun prepareVideo(pick: MediaPick): VideoOutcome {
         val uri = (pick as? UriPick)?.uri ?: return VideoOutcome.Refused(MediaRefusal.UNREADABLE)

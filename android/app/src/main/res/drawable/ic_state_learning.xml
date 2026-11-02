@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 17E: today: learning (an open book) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:tint="?attr/colorControlNormal"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:fillType="evenOdd"
+        android:pathData="M12,6.5C10,5 7,4.5 3,5v14c4,-0.5 7,0 9,1.5c2,-1.5 5,-2 9,-1.5V5c-4,-0.5 -7,0 -9,1.5z M5,7c2.5,0 4.5,0.4 6,1.4v9.2C9.5,16.8 7.5,16.5 5,16.6z M19,7v9.6c-2.5,-0.1 -4.5,0.2 -6,1V8.4C14.5,7.4 16.5,7 19,7z" />
+</vector>

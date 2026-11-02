@@ -415,7 +415,7 @@ class ExperienceViewModelsTest {
             null to PostPage(listOf(FakeExperienceRepository.post("a")), "a"),
             "a" to PostPage(listOf(FakeExperienceRepository.post("b")), null)
         )
-        val vm = PostListViewModel(repository)
+        val vm = PostListViewModel(repository, com.safesphere.app.testing.FakeDiscoverRepository())
         vm.showProfile("profile-1")
         advanceUntilIdle()
         assertEquals(listOf("a"), vm.uiState.value.items.map { it.publicId })
@@ -431,7 +431,7 @@ class ExperienceViewModelsTest {
     @Test
     fun `lists - a profile the viewer may not see shows an empty list, not an error`() = runTest {
         repository.pages = emptyMap()
-        val vm = PostListViewModel(repository)
+        val vm = PostListViewModel(repository, com.safesphere.app.testing.FakeDiscoverRepository())
         vm.showProfile("hidden")
         advanceUntilIdle()
         assertTrue(vm.uiState.value.loaded)

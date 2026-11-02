@@ -71,6 +71,13 @@ public class ContentModerationController {
                 .body(service.media(CurrentUser.id(jwt), id, mediaId));
     }
 
+    /** Phase 17E: the profile photo of the person a PERSON case is about (never cached anywhere). */
+    @GetMapping("/content-cases/{id}/person-photo")
+    public ResponseEntity<byte[]> personPhoto(@AuthenticationPrincipal Jwt jwt, @PathVariable String id) {
+        return com.safesphere.backend.social.controller.ProfileController.image(
+                service.personPhoto(CurrentUser.id(jwt), id));
+    }
+
     /** Phase 17C: a video of the case's post (the stripped MP4, byte ranges; never cached anywhere). */
     @GetMapping("/content-cases/{id}/media/{mediaId}/video")
     public ResponseEntity<org.springframework.core.io.Resource> mediaVideo(@AuthenticationPrincipal Jwt jwt,

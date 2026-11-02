@@ -12,7 +12,7 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /**
- * Phase 13F, the first of Kurinji's four moments: saving to the Cocoon. Two wing beats, then a curved flight from the
+ * Phase 13F, the first of Kurinji's four moments: saving (Phase 17E: to Saved; the lime butterfly carries it). Two wing beats, then a curved flight from the
  * button into the Cocoon tab, which pulses once (~600 ms). Drawn in the window's overlay, so no layout changes.
  * Without animations (system setting) or without a visible target, it only calls [onLanded]: the caller then changes the
  * button's state and TalkBack announces it, so nobody depends on the motion.
@@ -33,7 +33,7 @@ object ButterflyFlight {
         val lift = 96f * density
         val controlX = start.first + (end.first - start.first) * 0.2f
         val controlY = min(start.second, end.second) - lift
-        val drawable = ButterflyDrawable.intent(source.context, 30)
+        val drawable = ButterflyDrawable.reacted(source.context, 30)
         val w = drawable.intrinsicWidth
         val h = drawable.intrinsicHeight
         root.overlay.add(drawable)

@@ -2,6 +2,7 @@ package com.safesphere.app.feature.social.data.remote
 
 import com.safesphere.app.feature.social.domain.ConnectResult
 import com.safesphere.app.feature.social.domain.ConnectStatus
+import com.safesphere.app.feature.social.domain.DailyState
 import com.safesphere.app.feature.social.domain.InviteItem
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.Language
@@ -52,7 +53,9 @@ data class OwnProfileDto(
     val languages: List<String>? = null,
     val interests: List<String>? = null,
     val city: String? = null,
-    val handleChangeAvailableAt: String? = null
+    val handleChangeAvailableAt: String? = null,
+    val photo: String? = null,
+    val dailyState: String? = null
 ) {
     fun toDomain() = OwnProfile(
         publicId = publicId,
@@ -62,7 +65,9 @@ data class OwnProfileDto(
         languages = languages.orEmpty().mapNotNull(Language::fromCode),
         interests = interests.orEmpty().mapNotNull(Interest::fromCode),
         city = city,
-        handleChangeAvailableAt = handleChangeAvailableAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
+        handleChangeAvailableAt = handleChangeAvailableAt?.let { runCatching { Instant.parse(it) }.getOrNull() },
+        photo = photoKey(photo),
+        dailyState = DailyState.entries.firstOrNull { it.name == dailyState }
     )
 }
 
@@ -74,7 +79,9 @@ data class PersonProfileDto(
     val languages: List<String>? = null,
     val interests: List<String>? = null,
     val city: String? = null,
-    val relationship: String? = null
+    val relationship: String? = null,
+    val photo: String? = null,
+    val dailyState: String? = null
 ) {
     fun toDomain() = PersonProfile(
         publicId = publicId,
@@ -84,12 +91,21 @@ data class PersonProfileDto(
         languages = languages.orEmpty().mapNotNull(Language::fromCode),
         interests = interests.orEmpty().mapNotNull(Interest::fromCode),
         city = city,
-        relationship = Relationship.entries.firstOrNull { it.name == relationship } ?: Relationship.NONE
+        relationship = Relationship.entries.firstOrNull { it.name == relationship } ?: Relationship.NONE,
+        photo = photoKey(photo),
+        // D-7: only a connection may see it; anything sent to someone else is ignored (fail closed).
+        dailyState = if (relationship == Relationship.CONNECTED.name) DailyState.entries.firstOrNull { it.name == dailyState }
+            else null
     )
 }
 
-data class PersonSummaryDto(val publicId: String, val handle: String, val displayName: String) {
-    fun toDomain() = PersonSummary(publicId, handle, displayName)
+data class PersonSummaryDto(
+    val publicId: String,
+    val handle: String,
+    val displayName: String,
+    val photo: String? = null
+) {
+    fun toDomain() = PersonSummary(publicId, handle, displayName, photoKey(photo))
 }
 
 data class PersonTargetDto(val profileId: String)
@@ -118,3 +134,11 @@ data class InviteItemDto(val id: String, val expiresAt: String) {
 data class RedeemDto(val code: String) {
     override fun toString() = "RedeemDto(<hidden>)"
 }
+
+/** Phase 17E: body of PUT /api/profiles/me/daily-state. */
+data class DailyStateRequestDto(val state: String)
+
+/** Phase 17E: a photo key is a lower-case UUID; anything else is no photo (never put into a URL). */
+fun photoKey(raw: String?): String? = raw?.takeIf { PHOTO_KEY.matches(it) }
+
+private val PHOTO_KEY = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
