@@ -75,8 +75,11 @@ object NavigationRules {
     fun opensSosFrom(destinationId: Int?): Boolean =
         destinationId != null && destinationId !in signedOutDestinations && destinationId != R.id.emergencyFragment
 
-    /** Screens drawn on the hero colour, so the system-bar icons must be light. None since 13F (the splash is mist). */
+    /** Screens drawn on the hero colour, so the system-bar icons must be light. None since 13F. */
     val destinationsOnHero = emptySet<Int>()
+
+    /** IRL (2026-11-03): screens drawn edge to edge on the launch ink (the opening screen): ink behind the system bars. */
+    val destinationsOnInk = setOf(R.id.splashFragment)
 }
 
 /**

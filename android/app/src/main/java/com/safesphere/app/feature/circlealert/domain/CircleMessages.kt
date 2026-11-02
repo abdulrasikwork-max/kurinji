@@ -31,7 +31,7 @@ object CircleMessages {
         concern: ConcernKind? = null,
         automatic: Boolean
     ): String {
-        val name = personName.trim().ifBlank { "A Kurinji user" }.take(MAX_NAME_LENGTH)
+        val name = personName.trim().ifBlank { "An IRL user" }.take(MAX_NAME_LENGTH)
         val time = TIME.format(at.atZone(zone))
         val place = if (location != null) {
             val when_ = locationAt?.let { " (${TIME.format(it.atZone(zone))})" } ?: ""
@@ -41,22 +41,22 @@ object CircleMessages {
         }
         val body = when (kind) {
             CircleMessageKind.WALK_NO_RESPONSE ->
-                "Kurinji alert: $name did not answer a Safe Walk safety check at $time${reason(concern)}. " +
+                "IRL alert: $name did not answer a Safe Walk safety check at $time${reason(concern)}. " +
                     "This is not a confirmed emergency. $place Please try to call $name. " +
                     "If you cannot reach them and are worried, call 112."
             CircleMessageKind.SOS_STARTED ->
-                "Kurinji SOS: $name started an emergency alert at $time. $place " +
+                "IRL SOS: $name started an emergency alert at $time. $place " +
                     "Please call $name now. If you cannot reach them, call 112."
             CircleMessageKind.SOS_LOCATION ->
-                "Kurinji SOS update for $name. $place"
+                "IRL SOS update for $name. $place"
             CircleMessageKind.ALL_CLEAR ->
-                "Kurinji: $name responded at $time and is OK. You can ignore the earlier Safe Walk alert."
+                "IRL: $name responded at $time and is OK. You can ignore the earlier Safe Walk alert."
             CircleMessageKind.SOS_RESOLVED ->
-                "Kurinji: $name ended the SOS at $time and marked themselves safe."
+                "IRL: $name ended the SOS at $time and marked themselves safe."
             CircleMessageKind.SOS_CANCELLED ->
-                "Kurinji: $name cancelled the SOS at $time. It was a false alarm."
+                "IRL: $name cancelled the SOS at $time. It was a false alarm."
         }
-        return if (automatic) "$body (Sent automatically by Kurinji.)" else body
+        return if (automatic) "$body (Sent automatically by IRL.)" else body
     }
 
     /** Google Maps URLs format: opens in any browser or maps app, no account needed. 5 decimals is about 1 m. */

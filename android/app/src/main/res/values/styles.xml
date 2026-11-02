@@ -174,11 +174,10 @@
         <item name="tint">?attr/colorOnPrimaryContainer</item>
     </style>
 
-    <!-- Phase 16: the app icon as a tile (the Go-K on brand red), as on the home screen. -->
+    <!-- The app icon as a tile, exactly as on the home screen (IRL 2026-11-03: the adaptive icon itself, masked by the
+         phone's own icon shape). -->
     <style name="Widget.SafeSphere.BrandTile" parent="">
-        <item name="android:background">@drawable/bg_app_tile</item>
-        <item name="android:padding">@dimen/brand_tile_padding</item>
-        <item name="android:src">@drawable/ic_launcher_foreground</item>
+        <item name="android:src">@mipmap/ic_launcher</item>
         <item name="android:contentDescription">@string/cd_app_logo</item>
     </style>
 
@@ -297,15 +296,43 @@
         <item name="cornerSize">50%</item>
     </style>
 
-    <!-- Phase 16: one word of "Go. See. Tell." on the splash (white on brand red, 5.5:1). -->
-    <style name="SplashWord" parent="">
+    <!-- IRL opening screen (2026-11-03; always ink, so fixed colours; ContrastTest checks each pair). -->
+    <style name="Opening.Eyebrow" parent="">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginEnd">10dp</item>
-        <item name="android:importantForAccessibility">no</item>
         <item name="android:textAppearance">@style/TextAppearance.Kurinji.Wordmark</item>
-        <item name="android:textSize">30sp</item>
-        <item name="android:textColor">@color/launcher_chevron</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:letterSpacing">0.16</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">@color/launcher_lime</item>
+    </style>
+
+    <!-- One line of "Your world. Your people. Your freedom.": big, bold, tight. -->
+    <style name="Opening.Headline" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:importantForAccessibility">no</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Wordmark</item>
+        <item name="android:textSize">@dimen/opening_headline</item>
+        <item name="android:letterSpacing">-0.03</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">@color/launcher_white</item>
+    </style>
+
+    <!-- "Let's go →": the one lime button, ink words, a full-width pill. -->
+    <style name="Widget.IRL.Button.Opening" parent="Widget.Material3.Button">
+        <item name="android:minHeight">60dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.Kurinji.Wordmark</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">@color/launcher_background</item>
+        <item name="backgroundTint">@color/launcher_lime</item>
+        <item name="rippleColor">@color/launcher_ground</item>
+        <item name="cornerRadius">30dp</item>
     </style>
 
     <!-- Phase 13A: section headings and "nothing here" lines of the social screens.

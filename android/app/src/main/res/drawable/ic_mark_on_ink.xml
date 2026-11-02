@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- IRL (2026-11-03): "the Meet" in its launcher colours (lime, white), cropped like ic_brand_mark, for surfaces that are
+     always ink (the opening screen). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+    <group
+        android:translateX="-18"
+        android:translateY="-18">
+        <path
+            android:fillColor="@color/launcher_lime"
+            android:pathData="M20,108L20,94C24,66 38,56 49.5,49.5L51.5,52.5C44,59 36,70 36,94L36,108Z" />
+        <path
+            android:fillColor="@color/launcher_white"
+            android:pathData="M80,108L80,94C78,66 64,56 54.5,49.5L52.5,52.5C58,59 65,70 65,94L65,108Z" />
+        <path
+            android:fillColor="@color/launcher_lime"
+            android:pathData="M58,35a9,9 0,1 0,18 0a9,9 0,1 0,-18 0Z" />
+    </group>
+</vector>

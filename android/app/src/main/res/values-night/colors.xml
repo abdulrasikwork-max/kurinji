@@ -40,6 +40,6 @@
     <color name="hero_on">#F4F4F4</color>
     <color name="hero_on_variant">#C4C4C4</color>
 
-    <color name="mark_stem">#F1F4EA</color>
-    <color name="mark_chevron">#ADFF2F</color>
+    <color name="mark_path">#F1F4EA</color>
+    <color name="mark_accent">#ADFF2F</color>
 </resources>

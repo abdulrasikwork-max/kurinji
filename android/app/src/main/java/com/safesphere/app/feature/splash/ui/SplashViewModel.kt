@@ -55,6 +55,12 @@ class SplashViewModel(
     companion object {
         const val SPLASH_MINIMUM_DURATION_MS = 1_200L
 
+        /**
+         * IRL opening screen (2026-11-03): only a first run waits for "Let's go" (it leads to the onboarding). Everyone
+         * else is taken on by themselves, so the opening never adds a tap between a returning person and SOS.
+         */
+        fun waitsForStart(destination: StartDestination): Boolean = destination == StartDestination.Onboarding
+
         fun factory(container: AppContainer) = viewModelFactory {
             initializer { SplashViewModel(container.onboardingRepository, container.authRepository) }
         }

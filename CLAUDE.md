@@ -40,9 +40,11 @@ the user instead of guessing. Detailed history is in `docs/` — read only what 
 >   today's state is visible to connections only (D-7).
 > - Do **not** treat this as a planning/outings app or return to `AUDIT_NEXT.md` Part II ("Go further, prepared"): that
 >   direction is superseded. Do not keep re-opening the core concept.
-> - Brand: **Kurinji** (குறிஞ்சி; D1, chosen 2026-10-22; trademark, domain and store checks still to do; design doc
->   §14). **Since 13F the visible name is Kurinji (F1, 2026-10-25); package, applicationId and code names stay
->   SafeSphere** until a rename is approved. Decisions D1–D15: design doc §15 (all decided 2026-10-22).
+> - Brand: **IRL — In Real Life** (the user's decision, 2026-11-03; replaces Kurinji, D1/F1; trademark, domain and
+>   store checks for IRL are still to do). Line **"OUT THERE. TOGETHER."**; icon **"the Meet"**
+>   (`docs/design/irl-icon.md`); opening screen and name rules in `docs/DESIGN_SYSTEM.md` ("Name", "Icon", "Opening").
+>   **Package, applicationId (`com.safesphere.app`), signing, database, API and code names stay SafeSphere** (a
+>   rebrand, not a new app; `KurinjiTextsTest` pins it). Decisions D1–D15: design doc §15 (all decided 2026-10-22).
 >
 > Everything below in §1 describes the product as built up to Phase 11 (history; still the truth for existing code).
 
@@ -1156,3 +1158,6 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
 | 17E (E17-8): profile photo square, re-encoded twice, a new random key per upload, served only through the profile visibility rule; moderators can remove it (not a strike, case stays open) | Caches can never show an old photo; a kept URL stops working on a change or a block; new public imagery needs a moderation path |
 | 17E (D-5, E17-7): one city catalog file read by the backend, bundled in the app and seeded by V28 (tested equal); city search runs on the phone | H2 tests run without Flyway; search words never leave the phone |
 | 17E (17E-V2): on narrow screens / large text the marks lose their words before any button (`MarksFit`), spoken labels unchanged | Found on the emulator at 320 dp / 2.0x: Save was pushed off the card |
+| IRL rebrand (2026-11-03, the user): visible name IRL everywhere a person reads it (strings, SMS, one server message); package, applicationId, signing and code names unchanged | A rebrand must update the installed app in place; renaming identifiers would make a new app and break existing installs and data |
+| IRL icon "the Meet": two paths meeting under an off-axis sun; adaptive icon only (no density PNGs at minSdk 26) | Real-world connection, togetherness and exploring in one silhouette that holds at 48 px; a centred dot read as a figure, which the brief ruled out |
+| IRL opening screen: "LET'S GO →" only on the first run; returning people are routed on by themselves; the button is pinned and never scrolls away | The opening must never add a tap between a returning person and SOS; a first-run call to action must always be reachable |

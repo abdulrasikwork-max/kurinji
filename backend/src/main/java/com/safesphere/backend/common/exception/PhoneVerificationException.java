@@ -68,7 +68,7 @@ public class PhoneVerificationException extends ApiException {
 
     public static PhoneVerificationException inUse() {
         return new PhoneVerificationException(HttpStatus.CONFLICT,
-                "This number is already used by another Kurinji account. Use another number, or sign in to that account.",
+                "This number is already used by another IRL account. Use another number, or sign in to that account.",
                 PHONE_IN_USE);
     }
 

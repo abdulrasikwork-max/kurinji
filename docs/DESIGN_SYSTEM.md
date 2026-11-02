@@ -1,9 +1,42 @@
-# Kurinji design system ("Ink & Lime", Phase 17E; structure from Phase 16)
+# IRL design system ("Ink & Lime", Phase 17E; structure from Phase 16; renamed IRL 2026-11-03)
 
 Concept: **a social app for first-hand experiences: open it, see something, react, comment, explore, share.**
-Line: **Go. See. Tell.** Results and decisions: `docs/PHASE17E.md` (17E), `docs/PHASE16.md` (structure, U1–U4).
-Icon concepts: `docs/design/kurinji-16-icon.md`. (Phase 13F's "field journal" system and Phase 16's red brand are
-retired; decision E17-1 superseded the colour part of U4, its emergency rule stands.)
+Line: **OUT THERE. TOGETHER.** Results and decisions: `docs/PHASE17E.md` (17E), `docs/PHASE16.md` (structure, U1–U4).
+Icon: `docs/design/irl-icon.md` (the Phase 16 Go-K, `kurinji-16-icon.md`, is history). (Phase 13F's "field journal"
+system and Phase 16's red brand are retired; decision E17-1 superseded the colour part of U4, its emergency rule stands.)
+
+## Name (2026-11-03)
+
+The visible name is **IRL** (In Real Life), everywhere a person reads the app's name: launcher label, strings, the
+Safety Circle SMS ("IRL SOS: …"), the server's one user-facing message that named the app. The **package,
+`applicationId` (`com.safesphere.app`), signing, database, API and code names stay SafeSphere**: this is a rebrand,
+not a new app (the installed app updates in place). `KurinjiTextsTest` (class name kept) fails if any string value
+still says Kurinji or SafeSphere, or if the `applicationId` changes. IRL takes "an": "an IRL account".
+
+## Icon (2026-11-03, `docs/design/irl-icon.md`)
+
+**"The Meet"**: a lime path and a white path rise from different places beyond the icon's edge and meet at one point,
+under a lime sun placed off-axis (a sun, never a head: the mark is not a figure). Adaptive icon on an ink-to-deep-leaf
+ground, themed (monochrome) layer, animated system launch mark. In the app: `ic_brand_mark` (leaf + ink by day, lime +
+light at night), `ic_mark_on_ink` on the always-ink opening screen; the sign-in screen shows the adaptive icon itself.
+
+## Opening (2026-11-03, `fragment_splash`, `SplashFragment`)
+
+Always ink, edge to edge (`NavigationRules.destinationsOnInk`: ink behind the system bars, light bar icons), in light
+and dark mode alike: the IRL lockup ("IN REAL LIFE"), the hero (`art_opening_meet`: the paths rise, the sun comes up,
+two rings open), **OUT THERE. TOGETHER.** (lime eyebrow), **YOUR WORLD. / YOUR PEOPLE. / YOUR FREEDOM.** (white, the
+last line lime), the supporting line, and **LET'S GO →** (the lime pill with ink words, pinned to the bottom).
+
+- The button appears **only on the first run** (it opens the onboarding). A returning person is taken on by
+  themselves after the usual short launch time (`SplashViewModel.waitsForStart`), so the opening never adds a tap on
+  the way to SOS.
+- Capitals come from `textAllCaps`; the strings are sentence case, so TalkBack reads words, not letters. The three
+  lines are one spoken heading; the button says "Let's go: see how IRL works".
+- Fit: the headline lines never wrap (all three shrink to one size that fits); the hero takes at most 30 % of the
+  screen height and hides with large text on a narrow screen (the `MarksFit` ICONS budget); the words scroll if they
+  must, the button never does.
+- Motion: words rise in sequence (`Motion.revealInSequence`), the hero is an animated vector; with animations off,
+  everything is simply shown.
 
 ## Colour (`res/values/colors.xml`, `values-night/colors.xml`; `ContrastTest` checks every pair)
 

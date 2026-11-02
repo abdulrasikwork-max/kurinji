@@ -6,8 +6,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Phase 13F (docs/PHASE13F_PLAN.md §2 "Voice", F1): Kurinji's words are plain, warm and specific. No emoji in UI text
- * (the butterfly is drawn), no slang or hype, the visible brand is Kurinji, and the lines the identity rests on exist.
+ * Phase 13F (docs/PHASE13F_PLAN.md §2 "Voice", F1; the brand is IRL since 2026-11-03): the words are plain, warm and
+ * specific. No emoji in UI text (the butterfly is drawn), no slang or hype, the visible brand is IRL, and the lines the
+ * identity rests on exist.
  */
 class KurinjiTextsTest {
 
@@ -37,20 +38,31 @@ class KurinjiTextsTest {
         assertTrue(problems.joinToString("\n"), problems.isEmpty())
     }
 
+    /**
+     * The IRL rebrand (2026-11-03, docs/DESIGN_SYSTEM.md "Name"): the visible name is IRL; no string a person reads may
+     * still say Kurinji or SafeSphere (code names, the package and the applicationId stay SafeSphere on purpose).
+     */
     @Test
-    fun `the visible brand is Kurinji`() {
-        assertEquals("Kurinji", strings["app_name"])
-        val old = strings.filterValues { it.contains("SafeSphere") }.keys
+    fun `the visible brand is IRL`() {
+        assertEquals("IRL", strings["app_name"])
+        val old = strings.filterValues { it.contains("SafeSphere") || it.contains("Kurinji") || it.contains("குறிஞ்சி") }.keys
         assertTrue("old brand in: $old", old.isEmpty())
         val manifest = File("src/main/AndroidManifest.xml").readText(Charsets.UTF_8)
         assertTrue(manifest.contains("android:label=\"@string/app_name\""))
+        assertTrue(manifest.contains("android:icon=\"@mipmap/ic_launcher\""))
+        val gradle = File("build.gradle.kts").readText(Charsets.UTF_8)
+        assertTrue("the installation identity must not change", gradle.contains("applicationId = \"com.safesphere.app\""))
     }
 
-    /** Phase 16 (docs/PHASE16.md): the new line, plain words for the save and the tip, and an end to Discover (U3). */
+    /** The IRL opening (2026-11-03): the brand line and the opening screen's exact words. */
     @Test
     fun `the lines the identity rests on are there`() {
-        assertEquals("Go. See. Tell.", strings["motto"])
-        assertEquals(listOf("Go.", "See.", "Tell."), listOf("motto_go", "motto_see", "motto_tell").map { strings[it] })
+        assertEquals("Out there. Together.", strings["motto"])
+        assertEquals(listOf("Your world.", "Your people.", "Your freedom."),
+            listOf("opening_line_world", "opening_line_people", "opening_line_freedom").map { strings[it] })
+        assertEquals("Discover places. Connect with people. Share experiences. Look out for each other.",
+            strings["opening_supporting"])
+        assertEquals("Let\\'s go →", strings["opening_cta"])
         assertEquals("You\\'re all caught up.", strings["discover_edition_end"])
         // Phase 17E (D-3): the butterfly is a reaction; Save keeps a post; "I went" leads to sharing.
         assertEquals("Inspired", strings["reaction_label"])

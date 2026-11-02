@@ -465,6 +465,7 @@
             android:layout_marginTop="@dimen/space_sm"
             android:gravity="center"
             android:text="@string/motto"
+            android:textAllCaps="true"
             android:textAppearance="@style/TextAppearance.Kurinji.Headline.Small" />
 
         <TextView

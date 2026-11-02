@@ -65,20 +65,25 @@
     <color name="hero_accent">#A9C7E8</color>
     <color name="hero_caution">#F5B544</color>
 
-    <!-- The in-app brand mark (a stem and a forward chevron) -->
-    <color name="mark_stem">#0E100C</color>
-    <color name="mark_chevron">#3A6100</color>
+    <!-- The in-app IRL mark ("the Meet": two paths and the sun): the white path in ink, the lime path and the sun in
+         leaf green on light pages (lime is never drawn on a light page). Night: values-night. -->
+    <color name="mark_path">#0E100C</color>
+    <color name="mark_accent">#3A6100</color>
 
     <!-- The launcher always draws the icon on its own background: fixed colours, no night variant. -->
     <color name="launcher_background">#0E100C</color>
-    <color name="launcher_stem">#FFFFFF</color>
-    <color name="launcher_chevron">#ADFF2F</color>
+    <color name="launcher_white">#FFFFFF</color>
+    <color name="launcher_lime">#ADFF2F</color>
+    <!-- The ground the two paths rise from: ink fading into deep leaf at the bottom of the icon. -->
+    <color name="launcher_ground">#1A2A05</color>
+    <!-- The IRL opening screen (always ink, like the launch screen): soft words and the rings around the sun. -->
+    <color name="opening_soft">#B7BDAB</color>
+    <color name="opening_ring">#3A6100</color>
     <!-- The SOS shortcut keeps its emergency look (black disc, red ring). -->
     <color name="launcher_red">#D0102A</color>
     <color name="launcher_sos">#121212</color>
 
     <color name="splash_background">#0E100C</color>
-    <color name="ic_launcher_background">#0E100C</color>
 
     <!-- Avatar circles (a person's initial when there is no photo): white text reaches 4.5:1 on each. No red. -->
     <color name="avatar_1">#3A6100</color>

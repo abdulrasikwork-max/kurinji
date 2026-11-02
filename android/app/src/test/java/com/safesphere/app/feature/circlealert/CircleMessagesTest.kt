@@ -25,10 +25,10 @@ class CircleMessagesTest {
     fun `SOS message - name, local time, what happened and a map link, nothing else`() {
         val text = compose(CircleMessageKind.SOS_STARTED)
 
-        assertTrue(text.startsWith("Kurinji SOS: Asha started an emergency alert at 19:01, 20 Oct."))
+        assertTrue(text.startsWith("IRL SOS: Asha started an emergency alert at 19:01, 20 Oct."))
         assertTrue(text.contains("https://www.google.com/maps/search/?api=1&query=12.97160,77.59460"))
         assertTrue(text.contains("call 112"))
-        assertTrue(text.endsWith("(Sent automatically by Kurinji.)"))
+        assertTrue(text.endsWith("(Sent automatically by IRL.)"))
     }
 
     @Test
@@ -74,8 +74,8 @@ class CircleMessagesTest {
     @Test
     fun `a blank or very long name is handled`() {
         assertTrue(CircleMessages.compose(CircleMessageKind.SOS_STARTED, "  ", at, zone, null, null, automatic = true)
-            .contains("A Kurinji user started"))
+            .contains("An IRL user started"))
         val long = CircleMessages.compose(CircleMessageKind.SOS_CANCELLED, "x".repeat(200), at, zone, null, null, automatic = false)
-        assertEquals(40, long.substringAfter("Kurinji: ").substringBefore(" cancelled").length)
+        assertEquals(40, long.substringAfter("IRL: ").substringBefore(" cancelled").length)
     }
 }

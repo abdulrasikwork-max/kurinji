@@ -26,6 +26,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_lg"
             android:text="@string/motto"
+            android:textAllCaps="true"
             android:textAppearance="@style/TextAppearance.Kurinji.Masthead"
             android:accessibilityHeading="true" />
 

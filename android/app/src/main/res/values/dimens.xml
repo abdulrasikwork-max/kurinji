@@ -13,8 +13,11 @@
     <dimen name="icon_size_small">14dp</dimen>
     <dimen name="icon_circle_size">48dp</dimen>
     <dimen name="icon_circle_size_small">40dp</dimen>
-    <dimen name="brand_tile_padding">6dp</dimen>
-    <dimen name="logo_size_splash">104dp</dimen>
+    <!-- IRL opening screen: the headline lines (code drops to opening_headline_tight with large text on a narrow screen). -->
+    <dimen name="opening_headline">46sp</dimen>
+    <dimen name="opening_headline_tight">34sp</dimen>
+    <!-- Mukta Malar's tall line box (room for Tamil) leaves wide gaps between capital lines: pull them together. -->
+    <dimen name="opening_headline_overlap">-16dp</dimen>
     <dimen name="illustration_size">104dp</dimen>
     <dimen name="menu_row_min_height">56dp</dimen>
     <dimen name="button_height">56dp</dimen>

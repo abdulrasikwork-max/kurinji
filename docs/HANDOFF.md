@@ -1,3 +1,22 @@
+# Handoff: IRL rebrand + opening screen (2026-11-03) — one local commit, NOT pushed
+
+**Implemented, compiled, tested, emulator-verified (API 37)**, a focused branding update before 17F (no phase, no
+migration, no new dependency). Visible name **IRL** (In Real Life) everywhere a person reads it, incl. the Safety
+Circle SMS and the one server message that named the app; package / `applicationId` / signing / code names unchanged
+(the app updates in place). New launcher icon **"the Meet"** (adaptive + themed + animated launch mark; concepts and
+choice in `docs/design/irl-icon.md`). New opening screen: **OUT THERE. TOGETHER. / YOUR WORLD. YOUR PEOPLE. YOUR
+FREEDOM. / LET'S GO →** (`docs/DESIGN_SYSTEM.md` "Opening").
+- **Results:** Android **809 / 0**; lint **0 / 104**; backend: the 5 affected classes **45 / 0** (one message reworded).
+- **Emulator:** launcher label + icon (circle mask) and long-press SOS shortcut; opening screen light and dark (always
+  ink, edge to edge), 320 dp at 1.0x and 2.0x (headline never wraps, hero hides, button pinned); CTA → onboarding;
+  a returning person is routed on with no tap; sign-in tile, Discover head mark, You sign-off.
+- **NOT VERIFIED:** physical phone; TalkBack by ear; other launchers' mask shapes beyond circle/squircle previews.
+- **Known limit:** on a 640 dp-tall screen at 1.0x the supporting line needs one short scroll (the button stays in view).
+- **State left:** backend stopped; emulator signed in as a throwaway account (queued for deletion), display reset.
+- **Next:** the user's review and push; 17F.
+
+---
+
 # Handoff: Phase 17E social redesign (2026-11-03) — one local commit, NOT pushed
 
 **Implemented, compiled, tested, live-verified on MySQL, emulator-verified (API 37, light + dark, 320 dp at 2.0x

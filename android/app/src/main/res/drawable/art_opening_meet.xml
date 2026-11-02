@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- IRL opening screen (2026-11-03): "the Meet" at hero scale (the launcher mark x 4.4 around its meeting point), with
+     two faint leaf-green rings radiating from the sun. SplashFragment starts it once: the lime path rises, the white path
+     follows and meets it, the sun comes up and the rings open. With animations switched off the system jumps to the end
+     state. Decorative only (no words for TalkBack). Fixed colours: the opening screen is always ink. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="360dp"
+            android:height="280dp"
+            android:viewportWidth="360"
+            android:viewportHeight="280">
+            <group
+                android:name="rings"
+                android:pivotX="262"
+                android:pivotY="78"
+                android:scaleX="0.6"
+                android:scaleY="0.6">
+                <path
+                    android:name="ringInner"
+                    android:pathData="M214,78a48,48 0,1 0,96 0a48,48 0,1 0,-96 0Z"
+                    android:strokeAlpha="0"
+                    android:strokeColor="@color/opening_ring"
+                    android:strokeWidth="2" />
+                <path
+                    android:name="ringOuter"
+                    android:pathData="M188,78a74,74 0,1 0,148 0a74,74 0,1 0,-148 0Z"
+                    android:strokeAlpha="0"
+                    android:strokeColor="@color/opening_ring"
+                    android:strokeWidth="1.5" />
+            </group>
+            <group
+                android:name="lime"
+                android:translateY="70">
+                <path
+                    android:name="limePath"
+                    android:fillAlpha="0"
+                    android:fillColor="@color/launcher_lime"
+                    android:pathData="M29.2,280L29.2,263.6C46.8,140.4 108.4,96.4 159,67.8L167.8,81C134.8,107.4 99.6,158 99.6,263.6L99.6,280Z" />
+            </group>
+            <group
+                android:name="white"
+                android:translateY="70">
+                <path
+                    android:name="whitePath"
+                    android:fillAlpha="0"
+                    android:fillColor="@color/launcher_white"
+                    android:pathData="M293.2,280L293.2,263.6C284.4,140.4 222.8,96.4 181,67.8L172.2,81C196.4,107.4 227.2,158 227.2,263.6L227.2,280Z" />
+            </group>
+            <group
+                android:name="sun"
+                android:pivotX="262"
+                android:pivotY="78"
+                android:scaleX="0"
+                android:scaleY="0">
+                <path
+                    android:fillColor="@color/launcher_lime"
+                    android:pathData="M234,78a28,28 0,1 0,56 0a28,28 0,1 0,-56 0Z" />
+            </group>
+        </vector>
+    </aapt:attr>
+
+    <target android:name="lime">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="520"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="translateY"
+                android:startOffset="80"
+                android:valueFrom="70"
+                android:valueTo="0" />
+        </aapt:attr>
+    </target>
+    <target android:name="limePath">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="260"
+                android:propertyName="fillAlpha"
+                android:startOffset="80"
+                android:valueFrom="0"
+                android:valueTo="1" />
+        </aapt:attr>
+    </target>
+    <target android:name="white">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="520"
+                android:interpolator="@android:interpolator/fast_out_slow_in"
+                android:propertyName="translateY"
+                android:startOffset="220"
+                android:valueFrom="70"
+                android:valueTo="0" />
+        </aapt:attr>
+    </target>
+    <target android:name="whitePath">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="260"
+                android:propertyName="fillAlpha"
+                android:startOffset="220"
+                android:valueFrom="0"
+                android:valueTo="1" />
+        </aapt:attr>
+    </target>
+    <target android:name="sun">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="380"
+                    android:interpolator="@android:interpolator/overshoot"
+                    android:propertyName="scaleX"
+                    android:startOffset="620"
+                    android:valueFrom="0"
+                    android:valueTo="1" />
+                <objectAnimator
+                    android:duration="380"
+                    android:interpolator="@android:interpolator/overshoot"
+                    android:propertyName="scaleY"
+                    android:startOffset="620"
+                    android:valueFrom="0"
+                    android:valueTo="1" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="rings">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="700"
+                    android:interpolator="@android:interpolator/decelerate_cubic"
+                    android:propertyName="scaleX"
+                    android:startOffset="760"
+                    android:valueFrom="0.6"
+                    android:valueTo="1" />
+                <objectAnimator
+                    android:duration="700"
+                    android:interpolator="@android:interpolator/decelerate_cubic"
+                    android:propertyName="scaleY"
+                    android:startOffset="760"
+                    android:valueFrom="0.6"
+                    android:valueTo="1" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="ringInner">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="500"
+                android:propertyName="strokeAlpha"
+                android:startOffset="760"
+                android:valueFrom="0"
+                android:valueTo="0.8" />
+        </aapt:attr>
+    </target>
+    <target android:name="ringOuter">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="500"
+                android:propertyName="strokeAlpha"
+                android:startOffset="840"
+                android:valueFrom="0"
+                android:valueTo="0.5" />
+        </aapt:attr>
+    </target>
+</animated-vector>

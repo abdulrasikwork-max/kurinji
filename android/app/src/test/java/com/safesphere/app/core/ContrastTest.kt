@@ -101,13 +101,20 @@ class ContrastTest {
             "ss_on_emergency" to "emergency_surface",
             "avatar_on" to "avatar_1", "avatar_on" to "avatar_2", "avatar_on" to "avatar_3", "avatar_on" to "avatar_4",
             "avatar_on" to "avatar_5", "avatar_on" to "avatar_6",
-            "launcher_chevron" to "splash_background"
+            // IRL opening screen (always ink): the line and the lime words, the white headline, the soft words, and the
+            // ink words on the lime button.
+            "launcher_lime" to "splash_background", "launcher_white" to "splash_background",
+            "opening_soft" to "splash_background", "launcher_background" to "launcher_lime"
         )
         // Control edges: outlines on the page and cards; an action (ink by day) must stand out from the page; a chosen
         // lime pill gets an ink edge (lime alone is 1.2:1 on white).
         val OUTLINE_PAIRS = listOf("k_outline" to "k_page", "k_outline" to "k_surface", "k_action" to "k_page",
             "k_action" to "k_surface", "k_on_lime" to "k_lime",
-            // Phase 16: the red ring must stand out from the black emergency surface; the icon's stem from its background.
-            "ss_emergency" to "emergency_surface", "launcher_stem" to "launcher_background")
+            // Phase 16: the red ring must stand out from the black emergency surface. IRL: both paths of the icon
+            // stand out from both ends of its ground; the in-app mark from the page (day and night).
+            "ss_emergency" to "emergency_surface", "launcher_white" to "launcher_background",
+            "launcher_white" to "launcher_ground", "launcher_lime" to "launcher_background",
+            "launcher_lime" to "launcher_ground",
+            "mark_path" to "k_page", "mark_accent" to "k_page", "mark_accent" to "k_surface")
     }
 }

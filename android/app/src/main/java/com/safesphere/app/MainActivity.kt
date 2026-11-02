@@ -82,7 +82,10 @@ class MainActivity : AppCompatActivity() {
         if (bannersStarted && bannersAllowed) session.onScreenVisible()
         if (bannersAllowed) openAgeScreenIfDue()
         if (NavigationRules.opensSosFrom(destination.id)) openSosIfRequested()
-        updateSystemBars(onHero = destination.id in NavigationRules.destinationsOnHero)
+        updateSystemBars(
+            onHero = destination.id in NavigationRules.destinationsOnHero,
+            onInk = destination.id in NavigationRules.destinationsOnInk
+        )
     }
 
     /** The SOS shortcut or tile while the app was already open (SosEntryActivity brings this activity to the front). */
@@ -198,20 +201,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Every screen sits on the mist (or Kurinji night) surface. Status-bar and navigation-bar icons are switched
-     * between light and dark to stay readable.
+     * Every screen sits on the page (or night) surface; the IRL opening screen sits on the launch ink edge to edge.
+     * Status-bar and navigation-bar icons are switched between light and dark to stay readable.
      */
-    private fun updateSystemBars(onHero: Boolean) {
+    private fun updateSystemBars(onHero: Boolean, onInk: Boolean) {
         val isNightMode = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
-        val needsLightIcons = onHero || isNightMode
+        val needsLightIcons = onHero || onInk || isNightMode
 
         WindowCompat.getInsetsController(window, binding.root).apply {
             isAppearanceLightStatusBars = !needsLightIcons
             isAppearanceLightNavigationBars = !needsLightIcons
         }
         val backgroundAttr = if (onHero) R.attr.colorHero else com.google.android.material.R.attr.colorSurface
-        binding.root.setBackgroundColor(MaterialColors.getColor(binding.root, backgroundAttr))
+        binding.root.setBackgroundColor(
+            if (onInk) getColor(R.color.splash_background) else MaterialColors.getColor(binding.root, backgroundAttr)
+        )
     }
 
     /**
