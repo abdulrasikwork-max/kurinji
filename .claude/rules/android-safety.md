@@ -50,6 +50,23 @@ Vault (5), Nearby place signals (6), trust UI + community moderation (7), safety
   the SOS screen (`state`) and `SafetyTrackingService` (`notice`; null ⇒ service stops). Queue in memory only (newest 500),
   batches ≤ 50, backoff 5→60 s. `ActiveEmergencyStore` keeps `{userId, emergencyId, startedAt}` for offline recovery
   (cleared on end/logout). Location asked once automatically when the emergency is ACTIVE, then via the card.
+- **SOS options, shake, audio consent, last known, Safe Walk line (Phase 17F, `docs/PHASE17F.md`):** `feature/emergency/trigger`:
+  pure `ShakePolicy` (3 firm back-and-forth shakes in 2 s; the reversal separates a shake from running or a knock) and
+  `ShakeArming` (listen only for an opted-in, signed-in person with no SOS running, while IRL is on the screen OR a Safe
+  Walk runs and notifications are allowed); `ShakeSos` (application scope, the ONE holder; `ShakeSensor` registers the
+  accelerometer, wake-up variant when available; nothing else may register it - `Phase17FGuardsTest`). A shake only opens
+  the SAME cancellable 5 s countdown: on the screen `foregroundShakes` -> `MainActivity` navigates with
+  `EmergencyFragment.ARG_AUTO_START` + `ARG_TRIGGER=SHAKE` (or the SOS screen's view model starts its own); off the screen a
+  `sos_countdown` notification with Cancel (non-exported `ShakeCountdownCancelReceiver`) and at zero `AppContainer.shakeSos`'s
+  `startSos` runs the SOS screen's steps (`SosRecorder.startLocal(userId, SHAKE)`, `safeWalk.onEmergencyStarted`, location
+  sharing, Safety Circle). The trigger lives in `ActiveEmergencyRecord.trigger` (unsent-endings lines: 9th field, one digit)
+  and goes to the server in `SosRecordRequest`. Per-account choices in `SosOptionsStore` (`sos_options` DataStore: shake,
+  audio NOT_ASKED/ON/OFF, last SOS a recording was started for), screen `SosOptionsFragment` (You -> Safety -> SOS options,
+  Settings -> Safety), the one-time audio question in `SafetyFragment`. `AutoAudioPolicy` (pure) + `EvidenceCardController.autoStartIfDue`
+  start audio only from the visible SOS screen, once per SOS, with the permission already granted. Voice SOS is not built and
+  the options screen says so. `EmergencyLocationUi.nowMillis` + `lastKnownOf` mark a position >= 60 s old as LAST KNOWN with
+  its age. Nearby: `ReportChoices` + `dialog_report_sheet` (one-step report), `RadarLayout.spread` (marks apart, drawing only),
+  numbered marks matching the list. Safe Walk: `WalkLineGeometry` (pure) + `WalkLineView` (straight line, band, you; memory only).
 - **Safe Walk (4B):** `SafeWalkSession` (application scope) is the one holder for the screen, Home, the notification
   "I'm OK" action (`CheckInActionReceiver`, not exported) and the service. `CheckInPolicy` is pure: ON_TRACK → DUE_SOON
   (1 min before) → MISSED = L1 → NO_RESPONSE = L2 (+2 min); never L3 by itself. Local deadline = phoneNow + (due − serverTime).
@@ -81,7 +98,7 @@ Vault (5), Nearby place signals (6), trust UI + community moderation (7), safety
   optional pin `evidence.vault.key.id` in local.properties). Files: `files/evidence` (ciphertext + `index.json`),
   `files/evidence-capture` (plaintext staging + note; `recover()` seals after a crash), `cache/evidence-view` (playback
   only). Upload: declare → resumable pieces → server seal; refusals keep the item. `EvidenceRecorder`: audio only on tap
-  during ACTIVE SOS, 30 s AAC/ADTS parts, stops at 60 min / low storage / emergency end / logout / mic loss.
+  during ACTIVE SOS (or, since 17F, by itself after the person's advance consent - see "SOS options" below), 30 s AAC/ADTS parts, stops at 60 min / low storage / emergency end / logout / mic loss.
   Photo/video via camera-app intents + FileProvider (no CAMERA permission — never declare it). Vault screen
   FLAG_SECURE; delete everywhere = server password check, refused while ACTIVE. Items belong to the capturing account.
   Tests: background holders need `runCurrent()`/`advanceTimeBy()`, NOT `advanceUntilIdle()` (it ignores backgroundScope).

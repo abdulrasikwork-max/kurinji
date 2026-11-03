@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import com.safesphere.app.R
 import com.safesphere.app.core.tracking.SafetyTrackingService
 import com.safesphere.app.databinding.ViewEvidenceCardBinding
+import com.safesphere.app.feature.evidence.domain.AutoAudioPolicy
 import com.safesphere.app.feature.evidence.domain.EvidenceKind
 import com.safesphere.app.feature.evidence.domain.RecordingStopReason
 import kotlinx.coroutines.launch
@@ -34,6 +35,7 @@ class EvidenceCardController(
 ) {
     private var binding: ViewEvidenceCardBinding? = null
     private var askedForMicrophone = false
+    private var autoStartInFlight = false
 
     private val microphoneLauncher = fragment.registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
@@ -89,6 +91,38 @@ class EvidenceCardController(
             else -> context.getString(
                 R.string.evidence_summary, ui.sealedOnPhone, ui.verifiedInVault, ui.waitingForUpload
             ) + if (ui.uploading) " " + context.getString(R.string.evidence_summary_uploading) else ""
+        }
+    }
+
+    /**
+     * Phase 17F: called by the SOS screen (in front, so Android allows the microphone service) whenever the SOS state
+     * changes. Starts audio by itself only when [AutoAudioPolicy] says so: the person agreed earlier, the microphone is
+     * already allowed (never asked here), the server has the SOS, and it was not started before for this SOS.
+     * Never asks for a permission; says plainly that it started, and Stop works exactly as before.
+     */
+    fun autoStartIfDue() {
+        if (autoStartInFlight) return
+        autoStartInFlight = true
+        val vm = viewModel()
+        val context = fragment.requireContext()
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        fragment.viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                if (vm.autoAudioDecision(granted) != AutoAudioPolicy.Decision.START) return@launch
+                startAutomatically(vm, context)
+            } finally {
+                autoStartInFlight = false
+            }
+        }
+    }
+
+    private fun startAutomatically(vm: EvidenceCaptureViewModel, context: android.content.Context) {
+        when (val refusal = vm.startRecording()) {
+            null -> {
+                SafetyTrackingService.start(context)
+                toast(R.string.evidence_recording_started_auto)
+            }
+            else -> toast(refusalText(refusal))
         }
     }
 

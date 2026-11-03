@@ -12,7 +12,9 @@ import java.time.Instant
  * @param onServer      the server has this SOS (its id is [emergencyId])
  * @param ended         the person ended it on this phone while the server could not be told yet (only in the
  *                      store's "unsent" list; the running record never has it)
+
  * @param dialPromptOpened "Call 112" was tapped before the server had the SOS (recorded once it has)
+ * @param trigger      Phase 17F: what started it (MANUAL, or SHAKE after its countdown); records from before 17F are MANUAL
  */
 data class ActiveEmergencyRecord(
     val userId: Long,
@@ -21,7 +23,8 @@ data class ActiveEmergencyRecord(
     val clientRef: String? = null,
     val onServer: Boolean = true,
     val ended: LocalEnd? = null,
-    val dialPromptOpened: Boolean = false
+    val dialPromptOpened: Boolean = false,
+    val trigger: EmergencyTrigger = EmergencyTrigger.MANUAL
 ) {
     /** Nothing left to tell the server about this SOS (it may still be running). */
     val inSync: Boolean get() = onServer && ended == null

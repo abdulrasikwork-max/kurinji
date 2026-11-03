@@ -1,3 +1,29 @@
+# Handoff: Phase 17F emergency (2026-11-03) — one local commit, NOT pushed
+
+**Implemented, compiled, tested, emulator-verified (API 37)** (`docs/PHASE17F.md`, decisions F17-1…F17-7). **No migration**
+(next stays **V29**: `emergency_events.trigger_type` has no CHECK, confirmed on MySQL), no new permission, service or dependency.
+Opt-in **shake SOS** (3 firm back-and-forth shakes → the same cancellable 5 s countdown; server trigger `SHAKE`; voice stays
+unavailable and the app says so), **audio in an SOS after advance consent** (one question on the first visit to You → Safety,
+default No, microphone asked then; once per SOS, Stop is final), **"last known position"** with its age on the SOS screen,
+**one-step Nearby report** (no text, no photo) + "about 24 hours" instead of "1465 minutes", **readable radar** (sp labels,
+numbered marks matching the list, marks pushed apart), **Safe Walk line** (app-drawn straight start→destination line + band + you).
+- **Results:** backend **792 / 0** (2 skipped; +2); Android **877 / 0** (+68); lint **0 / 104** (unchanged); debug build OK.
+- **Emulator walk-through PASS** (list in `PHASE17F.md` §6) after 4 fixes found on the way: the shake never armed because
+  `AppVisibility` was created too late (17F-V1), Safe Walk line collisions / cut-off band (V2), radar halos over numbers (V3),
+  an outdated "audio only when you tap" line (V4).
+- **Galaxy A23 (connected this time):** debug APK installed and cold-started to the sign-in screen (nobody signed in). **Finding:**
+  its only accelerometer is non-wake-up, so shaking with the screen off is unreliable on such phones: stale samples are dropped
+  and the app tells the person not to rely on it.
+- **NOT VERIFIED:** shake tuning / false positives / battery on a real phone (nobody shook it); TalkBack by ear; dark mode of the
+  new screens; the radar at 2.0x text; the Safety Circle SMS after a background-started SOS (needs a SIM).
+- **State left:** backend stopped (it had been started for the walk-through); emulator running, signed in as the old 17E throwaway
+  account (queued for deletion 2026-11-10; it now has shake on, audio on, SOS rows 51–53 `SHAKE`/`SHAKE`/`MANUAL`, all ended);
+  scratch Nearby signals and my extra test account deleted; the build still points at `127.0.0.1` (`adb reverse tcp:8080`).
+- **Next:** the user's review and push; then 17G AI Explore + ratings (V29 is the next free migration number; the plan said V30 for
+  ratings because V29 was reserved for 17F - it was not needed, so ratings can take **V29**).
+
+---
+
 # Handoff: IRL rebrand + opening screen (2026-11-03) — one local commit, NOT pushed
 
 **Implemented, compiled, tested, emulator-verified (API 37)**, a focused branding update before 17F (no phase, no

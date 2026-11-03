@@ -39,7 +39,8 @@ class AreaSignalAdapter(
         val (badge, badgeLabel) = CommunityTexts.badge(signal.category.group)
 
         with(holder.binding) {
-            signalTitle.text = title
+            // Phase 17F: the same number as the mark on the radar above.
+            signalTitle.text = context.getString(R.string.signal_number_title, position + 1, title)
             signalDetails.text = details
             signalBadge.setStatus(badge, badgeLabel)
             signalIcon.setImageResource(
@@ -64,7 +65,7 @@ class AreaSignalAdapter(
             flagButton.isVisible = CommunityPolicy.canFlag(signal)
             flagButton.setOnClickListener { onFlag(signal) }
 
-            signalSummary.contentDescription = context.getString(R.string.cd_area_signal, SpokenText.part(title),
+            signalSummary.contentDescription = context.getString(R.string.cd_area_signal, SpokenText.part(context.getString(R.string.signal_number_title, position + 1, title)),
                 SpokenText.part(context.getString(badgeLabel)), SpokenText.part(details))
         }
     }

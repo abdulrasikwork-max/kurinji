@@ -68,11 +68,27 @@ class EmergencyApiIntegrationTest {
     }
 
     @Test
-    void start_withATriggerThatDoesNotExistYet_returns400() throws Exception {
+    void start_withShake_isAccepted_andTheTriggerIsKept() throws Exception {
+        // Phase 17F (D-4): the phone's opted-in shake gesture, after its own 5 s countdown.
         mockMvc.perform(post("/api/emergencies")
                         .header(HttpHeaders.AUTHORIZATION, bearer(tokenA))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"triggerType\":\"SHAKE\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.triggerType").value("SHAKE"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+        mockMvc.perform(get("/api/emergencies").header(HttpHeaders.AUTHORIZATION, bearer(tokenA)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].triggerType").value("SHAKE"));
+    }
+
+    @Test
+    void start_withATriggerThatDoesNotExistYet_returns400() throws Exception {
+        // VOICE and DURESS_PIN stay reserved (voice is deferred, D-4); an unknown name is a bad request too.
+        mockMvc.perform(post("/api/emergencies")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(tokenA))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"triggerType\":\"VOICE\"}"))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(post("/api/emergencies")
                         .header(HttpHeaders.AUTHORIZATION, bearer(tokenA))

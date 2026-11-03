@@ -133,6 +133,11 @@
             android:exported="false" />
 
         <!-- Phase 4D: "sent" / "delivered" results of SMS the app sent itself. Only our own PendingIntents reach it. -->
+        <!-- Phase 17F: the Cancel button of the shake countdown notification. Only our own PendingIntent reaches it. -->
+        <receiver
+            android:name=".feature.emergency.trigger.ShakeCountdownCancelReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".core.sms.SmsResultReceiver"
             android:exported="false" />

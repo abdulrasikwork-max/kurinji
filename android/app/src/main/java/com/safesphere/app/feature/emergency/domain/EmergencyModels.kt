@@ -15,7 +15,7 @@ enum class EmergencyStatus(@StringRes val labelRes: Int) {
     }
 }
 
-/** What started the emergency. Only MANUAL can be created in Phase 3; the rest are reserved for later phases. */
+/** What started the emergency. MANUAL, and (Phase 17F, D-4) SHAKE after its 5 s countdown; VOICE and DURESS_PIN are reserved and the server rejects them. */
 enum class EmergencyTrigger(@StringRes val labelRes: Int) {
     MANUAL(R.string.trigger_manual),
     SHAKE(R.string.trigger_shake),
@@ -46,5 +46,7 @@ data class EmergencyEvent(
 data class SosRecordRequest(
     val clientRef: String,
     val startedAt: Instant? = null,
-    val ended: LocalEnd? = null
+    val ended: LocalEnd? = null,
+    /** Phase 17F: what started this SOS on the phone (sent to the server with the record). */
+    val trigger: EmergencyTrigger = EmergencyTrigger.MANUAL
 )

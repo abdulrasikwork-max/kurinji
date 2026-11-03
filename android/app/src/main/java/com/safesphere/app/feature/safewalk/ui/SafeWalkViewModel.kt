@@ -117,6 +117,10 @@ class SafeWalkViewModel(
     /** The person switched stop / route checks on or off during the walk (e.g. the wrong place was found). */
     fun onMovementChecksToggled() = controller.setMovementChecks(!controller.state.value.movementChecks)
 
+    /** Phase 17F: the half-width of the band the route checks watch (the same number the Safety Bubble uses). */
+    fun bandHalfWidthMeters(start: com.safesphere.app.core.location.GeoPoint, destination: com.safesphere.app.core.location.GeoPoint): Double =
+        movementPolicy.corridorHalfWidthMeters(start, destination)
+
     /** For the status lines: whether the GPS is good enough for the movement checks right now. */
     fun gpsQuality(state: SafeWalkState, now: Instant): GpsQuality = movementPolicy.gpsQuality(state.movement, now)
 

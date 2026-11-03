@@ -17,6 +17,9 @@ object NotificationChannels {
     /** Safe Walk check-in reminders and missed check-ins: heads-up, with sound, so they are noticed. */
     const val SAFETY_ALERTS = "safety_alerts"
 
+    /** Phase 17F: the cancellable countdown of a shake gesture made while IRL is not on the screen (Safe Walk only). */
+    const val SOS_COUNTDOWN = "sos_countdown"
+
     fun createAll(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         val alerts = NotificationChannel(
@@ -38,5 +41,14 @@ object NotificationChannels {
             setShowBadge(false)
         }
         manager.createNotificationChannel(tracking)
+        val countdown = NotificationChannel(
+            SOS_COUNTDOWN,
+            context.getString(R.string.notification_channel_sos_countdown_name),
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = context.getString(R.string.notification_channel_sos_countdown_description)
+            enableVibration(true)
+        }
+        manager.createNotificationChannel(countdown)
     }
 }

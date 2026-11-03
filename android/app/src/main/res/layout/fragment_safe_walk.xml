@@ -235,6 +235,31 @@
                 android:layout_marginTop="@dimen/space_xs"
                 android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
+            <!-- Phase 17F: start, destination and you on the app-drawn straight line (no map tiles; not a route) -->
+            <LinearLayout
+                android:id="@+id/walkLineBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.safesphere.app.feature.safewalk.ui.WalkLineView
+                    android:id="@+id/walkLine"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/walkLineCaption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:importantForAccessibility="no"
+                    android:text="@string/walk_line_caption"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+            </LinearLayout>
+
             <!-- Level 2: no response. Emergency treatment (Phase 16, U4): black, red ring, siren, words. -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/noResponseCard"

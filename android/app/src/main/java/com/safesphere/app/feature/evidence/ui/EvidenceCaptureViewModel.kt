@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.safesphere.app.AppContainer
+import com.safesphere.app.feature.emergency.domain.SosOptionsStore
 import com.safesphere.app.feature.evidence.capture.EvidenceRecorder
+import com.safesphere.app.feature.evidence.domain.AutoAudioPolicy
 import com.safesphere.app.feature.evidence.data.PendingCapture
 import com.safesphere.app.feature.evidence.domain.EvidenceKind
 import com.safesphere.app.feature.evidence.domain.RecordingPolicy
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -33,6 +36,8 @@ class EvidenceCaptureViewModel(
     private val vault: EvidenceVault,
     microphoneInForeground: StateFlow<Boolean>,
     private val freeBytes: () -> Long,
+    /** Phase 17F: the person's audio choice and the SOS a recording was last started for (null in older tests). */
+    private val options: SosOptionsStore? = null,
     private val elapsedMillis: () -> Long = SystemClock::elapsedRealtime,
     ticker: Flow<Unit> = flow { while (true) { emit(Unit); delay(1_000) } }
 ) : ViewModel() {
@@ -56,7 +61,34 @@ class EvidenceCaptureViewModel(
     /** RECORD_AUDIO is granted. Returns why it cannot start, or null when it started. */
     fun startRecording(): RecordingStopReason? {
         val id = emergencyId.value ?: return RecordingStopReason.EMERGENCY_ENDED
+        // Phase 17F: whoever starts it (a tap or the automatic start), and whether or not it worked, the automatic
+        // start is not tried again for this SOS (no retry loop; the Record button is always there).
+        markRecordingStarted(id)
         return recorder.start(id)
+    }
+
+    private fun markRecordingStarted(emergency: Long) {
+        val store = options ?: return
+        val user = vault.currentUserId.value ?: return
+        viewModelScope.launch { store.markRecordingStarted(user, emergency) }
+    }
+
+    /**
+     * Phase 17F: should the SOS screen start recording by itself now? Call only from the visible SOS screen, with the
+     * microphone permission as it is (never asked here). [AutoAudioPolicy] decides; START means the caller may call
+     * [startRecording].
+     */
+    suspend fun autoAudioDecision(microphoneGranted: Boolean): AutoAudioPolicy.Decision {
+        val store = options ?: return AutoAudioPolicy.Decision.OFF
+        val user = vault.currentUserId.value ?: return AutoAudioPolicy.Decision.OFF
+        val choice = store.options(user).first().autoAudio
+        return AutoAudioPolicy.decide(
+            choice = choice,
+            emergencyId = emergencyId.value,
+            lastRecordedEmergency = store.lastRecordedEmergency(user),
+            isRecording = card.value.isRecording,
+            microphoneGranted = microphoneGranted
+        )
     }
 
     fun stopRecording() = recorder.stop()
@@ -92,7 +124,8 @@ class EvidenceCaptureViewModel(
                     recorder = container.evidenceRecorder,
                     vault = container.evidenceVault,
                     microphoneInForeground = container.microphoneInForeground,
-                    freeBytes = { android.os.StatFs(container.evidenceFiles.vaultDir.parentFile!!.absolutePath).availableBytes }
+                    freeBytes = { android.os.StatFs(container.evidenceFiles.vaultDir.parentFile!!.absolutePath).availableBytes },
+                    options = container.sosOptionsStore
                 )
             }
         }

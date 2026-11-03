@@ -79,8 +79,10 @@ public class EmergencyService {
     @Transactional
     public EmergencyResponse start(long userId, CreateEmergencyRequest request, String sessionId) {
         TriggerType trigger = request.triggerType() == null ? TriggerType.MANUAL : request.triggerType();
-        if (trigger != TriggerType.MANUAL) {
-            throw new InvalidRequestException("Only manual emergencies are supported in this version");
+        // Phase 17F (D-4): SHAKE = the person's opted-in shake gesture, which still went through the same 5 s countdown
+        // on the phone. VOICE and DURESS_PIN stay reserved and rejected.
+        if (trigger != TriggerType.MANUAL && trigger != TriggerType.SHAKE) {
+            throw new InvalidRequestException("This way of starting an emergency is not supported in this version");
         }
         String clientRef = request.clientRef();
         if (clientRef != null && !CLIENT_REF.matcher(clientRef).matches()) {

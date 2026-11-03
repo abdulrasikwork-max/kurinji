@@ -21,6 +21,7 @@ import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentEmergencyBinding
 import com.safesphere.app.feature.emergency.domain.EmergencyStatus
+import com.safesphere.app.feature.emergency.domain.EmergencyTrigger
 import com.safesphere.app.feature.emergency.location.LocationSharingStatus
 import android.widget.Toast
 import com.safesphere.app.feature.circlealert.domain.AlertTarget
@@ -94,15 +95,19 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         // Phase 13F (F11, F3): opened from the SOS shortcut or tile, the countdown starts by itself once the screen knows
         // no SOS is running (Idle). It stays cancellable for 5 s, exactly as after a tap on Start SOS. Once only.
         var autoStart = savedInstanceState == null && arguments?.getBoolean(ARG_AUTO_START) == true
+        val autoTrigger =
+            if (arguments?.getString(ARG_TRIGGER) == EmergencyTrigger.SHAKE.name) EmergencyTrigger.SHAKE else EmergencyTrigger.MANUAL
         collectWhenStarted(viewModel.uiState) { state ->
             // Phase 11: evidence belongs to an SOS the server has recorded (not to one with a local id yet).
             evidenceViewModel.setEmergency((state as? EmergencyUiState.Active)?.takeUnless { it.notOnServerYet }?.event?.id)
             if (autoStart && state != EmergencyUiState.Loading) {
                 autoStart = false
-                if (state == EmergencyUiState.Idle) viewModel.onStartSosClicked()
+                if (state == EmergencyUiState.Idle) viewModel.onStartSosClicked(autoTrigger)
             }
             render(state)
             renderLocation(viewModel.locationUi.value)
+            // Phase 17F: audio by itself only if the person agreed beforehand (AutoAudioPolicy); never asks for a permission.
+            if (state is EmergencyUiState.Active && !state.notOnServerYet) evidenceCard.autoStartIfDue()
         }
         collectWhenStarted(viewModel.circleAlertState) {
             (viewModel.uiState.value as? EmergencyUiState.Active)?.let(::renderCircle)
@@ -296,10 +301,18 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
             val latitude = String.format(Locale.ROOT, "%.5f", fix.latitude)
             val longitude = String.format(Locale.ROOT, "%.5f", fix.longitude)
             val accuracy = fix.accuracyMeters
-            binding.locationDetails.text = if (accuracy != null) {
+            val coordinates = if (accuracy != null) {
                 getString(R.string.location_details, latitude, longitude, accuracy.roundToInt())
             } else {
                 getString(R.string.location_details_no_accuracy, latitude, longitude)
+            }
+            // Phase 17F: an old position is called the LAST KNOWN one, with its time and age - never shown as "now".
+            val lastKnown = card.lastKnown
+            binding.locationDetails.text = if (lastKnown != null) {
+                getString(R.string.location_last_known, EmergencyTimeFormatter.formatTime(lastKnown.recordedAt),
+                    ageText(lastKnown.ageSeconds)) + "\n" + coordinates
+            } else {
+                coordinates
             }
         }
 
@@ -352,6 +365,13 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         serviceStarter.startIfNeeded(ui.sharing.emergencyId, ui.sharing.isTracking, ui.backgroundTrackingActive)
     }
 
+    /** "3 min ago" / "2 h ago" for a position that is no longer new. */
+    private fun ageText(ageSeconds: Long): String {
+        val minutes = (ageSeconds / 60).toInt().coerceAtLeast(1)
+        return if (minutes < 120) resources.getQuantityString(R.plurals.location_age_minutes, minutes, minutes)
+        else resources.getQuantityString(R.plurals.location_age_hours, minutes / 60, minutes / 60)
+    }
+
     private fun requestLocationPermission() {
         locationPermissionLauncher.launch(LocationPermissions.REQUESTED)
     }
@@ -378,6 +398,9 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
 
         /** Phase 13F (F11): set only by MainActivity after it consumed an in-memory SosLaunchRequest. */
         const val ARG_AUTO_START = "autoStart"
+
+        /** Phase 17F: "SHAKE" when the shake gesture opened the screen (still the same cancellable countdown). */
+        const val ARG_TRIGGER = "trigger"
     }
 
     private fun showOnly(visiblePanel: View) {

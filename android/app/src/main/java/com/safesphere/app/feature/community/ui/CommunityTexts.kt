@@ -32,6 +32,16 @@ object CommunityTexts {
         R.plurals.brief_conditions to brief.conditions
     ).filter { it.second > 0 }
 
+    /**
+     * Phase 17F: "It counts within about 1465 minutes" read badly. The server's delay (minutes) is said in the unit a person
+     * thinks in: minutes up to 90, then hours up to 2 days, then days. Pair of (plural resource, count); never 0.
+     */
+    fun recordedDelay(minutes: Int): Pair<Int, Int> = when {
+        minutes <= 90 -> R.plurals.community_recorded to minutes.coerceAtLeast(1)
+        minutes < 48 * 60 -> R.plurals.community_recorded_hours to ((minutes + 30) / 60)
+        else -> R.plurals.community_recorded_days to ((minutes + 720) / 1440)
+    }
+
     @StringRes
     fun category(category: SignalCategory): Int = when (category) {
         SignalCategory.HARASSMENT -> R.string.signal_harassment

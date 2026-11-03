@@ -69,6 +69,22 @@ class MainActivity : AppCompatActivity() {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             updateChrome(destination)
         }
+
+        // Phase 17F (D-4): the opted-in shake gesture while IRL is on the screen opens the SOS screen with its normal
+        // cancellable countdown (the gesture only ever asks for that countdown; it starts nothing by itself). On the
+        // SOS screen itself its own view model starts the countdown. Not before sign-in.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                appContainer.shakeSos.foregroundShakes.collect {
+                    if (NavigationRules.opensSosFrom(navController.currentDestination?.id)) {
+                        navController.navigate(R.id.emergencyFragment, androidx.core.os.bundleOf(
+                            com.safesphere.app.feature.emergency.ui.EmergencyFragment.ARG_AUTO_START to true,
+                            com.safesphere.app.feature.emergency.ui.EmergencyFragment.ARG_TRIGGER to
+                                com.safesphere.app.feature.emergency.domain.EmergencyTrigger.SHAKE.name))
+                    }
+                }
+            }
+        }
     }
 
     private fun updateChrome(destination: NavDestination) {

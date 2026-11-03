@@ -78,6 +78,13 @@ import com.safesphere.app.feature.emergency.domain.EmergencyIds
 import com.safesphere.app.feature.emergency.session.SosRecorder
 import com.safesphere.app.core.retired.RiseRetirement
 import com.safesphere.app.feature.emergency.entry.SosLaunchRequest
+import com.safesphere.app.feature.emergency.data.DataStoreSosOptionsStore
+import com.safesphere.app.feature.emergency.domain.SosOptionsStore
+import com.safesphere.app.feature.emergency.trigger.AndroidShakeCountdownNotifier
+import com.safesphere.app.feature.emergency.trigger.AndroidShakeSensor
+import com.safesphere.app.feature.emergency.trigger.ShakeSensor
+import com.safesphere.app.feature.emergency.trigger.ShakeSos
+import com.safesphere.app.core.notifications.NotificationPermission
 import com.safesphere.app.feature.emergency.domain.EmergencyLocationRepository
 import com.safesphere.app.feature.emergency.domain.EmergencyRepository
 import com.safesphere.app.feature.emergency.location.EmergencyLocationSharing
@@ -320,7 +327,9 @@ class AppContainer(context: Context) {
         AccountDataWiper(
             parts = listOf(
                 { userId -> evidenceVault.forgetAccount(userId) },
-                { userId -> withContext(Dispatchers.IO) { recoveryKeyStore.remove(userId) } }
+                { userId -> withContext(Dispatchers.IO) { recoveryKeyStore.remove(userId) } },
+                // Phase 17F: the deleted account's shake / audio choices
+                { userId -> sosOptionsStore.forget(userId) }
             ),
             pendingDeletion = pendingDeletion
         )
@@ -562,6 +571,50 @@ class AppContainer(context: Context) {
     /** Phase 13F (F11): set only by the non-exported SosEntryActivity (shortcut, tile); memory only. */
     val sosLaunchRequest: SosLaunchRequest = SosLaunchRequest()
 
+    // ---- Phase 17F: SOS options (shake gesture, audio consent) ---------------------------------------------
+
+    /** Whether any screen of IRL is on the display (the shake gesture opens the SOS screen itself only then). */
+    val appVisibility: com.safesphere.app.core.lifecycle.AppVisibility
+        get() = (appContext as com.safesphere.app.SafeSphereApp).appVisibility
+
+    /** The person's own SOS choices (shake, audio), per account, on this phone only. */
+    val sosOptionsStore: SosOptionsStore by lazy { DataStoreSosOptionsStore(appContext) }
+
+    /** The shake sensor, shared by the holder and by the options screen (which hides the switch without one). */
+    val shakeSensor: ShakeSensor by lazy { AndroidShakeSensor(appContext) }
+
+    /**
+     * Phase 17F (D-4): the one holder of the shake gesture. A shake only ever opens the cancellable 5 s countdown;
+     * with IRL off the screen (Safe Walk running) that countdown is a notification with a Cancel button, and at zero
+     * the SOS starts on the phone exactly as the SOS screen would have started it.
+     */
+    val shakeSos: ShakeSos by lazy {
+        ShakeSos(
+            scope = applicationScope,
+            sensor = shakeSensor,
+            notifier = AndroidShakeCountdownNotifier(appContext),
+            userId = sessionStorage.session.map { it?.user?.id }.distinctUntilChanged(),
+            options = sosOptionsStore::options,
+            sosRunning = sosRecorder.state.map { it.current != null }.distinctUntilChanged(),
+            walkRunning = safeWalk.state.map { it.isActive }.distinctUntilChanged(),
+            appVisible = appVisibility.visible,
+            notificationsAllowed = { NotificationPermission.isGranted(appContext) },
+            startSos = { trigger ->
+                val userId = sessionStorage.session.first()?.user?.id
+                if (userId == null) {
+                    false
+                } else {
+                    // The same steps the SOS screen takes when its countdown ends (EmergencyViewModel.startEmergency).
+                    val record = sosRecorder.startLocal(userId, trigger)
+                    safeWalk.onEmergencyStarted()
+                    emergencyLocationSharing.start(record.emergencyId, record.startedAt)
+                    circleAlertCoordinator.onEmergencyActive(record.emergencyId, record.startedAt)
+                    true
+                }
+            }
+        )
+    }
+
     init {
         applicationScope.launch(Dispatchers.IO) { riseRetirement.retire() }
         currentSession // Phase 11 C1: start following the session now, so the dialog never reads a stale "null"
@@ -569,6 +622,7 @@ class AppContainer(context: Context) {
         evidenceRecorder // watches the active emergency (stops recording when it ends)
         circleAlerts // start watching walks and emergencies right away (e.g. after a restart into a walk)
         sosRecorder // record an SOS that started or ended offline as soon as the server can be reached
+        shakeSos // Phase 17F: starts listening for the shake gesture if (and only if) the person switched it on
         // On a real sign-out (the person's own, a changed password, a deleted or disabled account) forget the active
         // emergency / walk records kept on this phone. Phase 11 C1: an expired token is NOT a sign-out (the session stays,
         // marked "sign in to sync" if the refresh is refused), so this never runs for it.

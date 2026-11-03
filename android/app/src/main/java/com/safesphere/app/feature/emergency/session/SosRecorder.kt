@@ -9,6 +9,7 @@ import com.safesphere.app.feature.emergency.domain.EmergencyEvent
 import com.safesphere.app.feature.emergency.domain.EmergencyIds
 import com.safesphere.app.feature.emergency.domain.EmergencyRepository
 import com.safesphere.app.feature.emergency.domain.EmergencyStatus
+import com.safesphere.app.feature.emergency.domain.EmergencyTrigger
 import com.safesphere.app.feature.emergency.domain.LocalEnd
 import com.safesphere.app.feature.emergency.domain.SosRecordRequest
 import java.time.Duration
@@ -112,12 +113,12 @@ class SosRecorder(
     }
 
     /** The countdown reached zero: the SOS starts on this phone now and is recorded on the server when possible. */
-    suspend fun startLocal(userId: Long): ActiveEmergencyRecord {
+    suspend fun startLocal(userId: Long, trigger: EmergencyTrigger = EmergencyTrigger.MANUAL): ActiveEmergencyRecord {
         loaded.await()
         val reference = newReference()
         val record = ActiveEmergencyRecord(
             userId = userId, emergencyId = EmergencyIds.localIdFor(reference), startedAt = now(),
-            clientRef = reference, onServer = false
+            clientRef = reference, onServer = false, trigger = trigger
         )
         attemptsForCurrent = 0
         _state.value = _state.value.copy(current = record, refused = false)
@@ -133,7 +134,7 @@ class SosRecorder(
         if (current != null && current.userId == userId && current.emergencyId == event.id) return
         // A local SOS still waiting for the server is not replaced by a different one.
         if (current != null && current.userId == userId && !current.onServer) return
-        val record = ActiveEmergencyRecord(userId, event.id, event.startedAt)
+        val record = ActiveEmergencyRecord(userId, event.id, event.startedAt, trigger = event.trigger)
         _state.value = _state.value.copy(current = record, refused = false)
         store.save(record)
     }
@@ -219,7 +220,7 @@ class SosRecorder(
                 Duration.between(work.startedAt, now()) > PHONE_TIME_AFTER
             if (isCurrent) attemptsForCurrent++
             val result = repository.record(
-                SosRecordRequest(reference, startedAt = work.startedAt.takeIf { sendPhoneTimes }, ended = work.ended)
+                SosRecordRequest(reference, startedAt = work.startedAt.takeIf { sendPhoneTimes }, ended = work.ended, trigger = work.trigger)
             )
             return when (result) {
                 is ApiResult.Success -> {

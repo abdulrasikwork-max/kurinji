@@ -29,6 +29,12 @@ import com.safesphere.app.feature.community.domain.CommunityPolicy.ReportReadine
 import com.safesphere.app.feature.community.domain.CommunityStanding
 import com.safesphere.app.feature.community.domain.ContributionKind
 import com.safesphere.app.feature.community.domain.FlagReason
+import com.safesphere.app.feature.community.domain.ReportChoices
+import com.safesphere.app.databinding.DialogReportSheetBinding
+import com.google.android.material.radiobutton.MaterialRadioButton
+import androidx.appcompat.app.AlertDialog
+import androidx.core.view.ViewCompat
+import android.widget.TextView
 import java.text.DateFormat
 import java.time.LocalTime
 import java.util.Date
@@ -259,7 +265,7 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
      */
     private fun onReportTapped() {
         val need = locationNeed(wantsPrecise = true)
-        if (need == LocationNeed.NONE) chooseCategory() else showNeedDialog(need)
+        if (need == LocationNeed.NONE) showReportSheet() else showNeedDialog(need)
     }
 
     private fun showNeedDialog(need: LocationNeed) {
@@ -291,29 +297,46 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
             .show()
     }
 
-    private fun chooseCategory() {
-        val categories = SignalCategory.entries
-        val labels = categories.map { category ->
-            val group = getString(CommunityTexts.badge(category.group).second)
-            getString(R.string.category_choice, group, getString(CommunityTexts.category(category)))
-        }.toTypedArray()
-        MaterialAlertDialogBuilder(requireContext())
+    /**
+     * Phase 17F (D-9): the whole report in one step. The closed list of place conditions (grouped as on the radar), the
+     * privacy text that used to be a second dialog, and "Share anonymously", which stays off until something is chosen.
+     * No free text and no photo, by design.
+     */
+    private fun showReportSheet() {
+        val content = DialogReportSheetBinding.inflate(layoutInflater)
+        var chosen: SignalCategory? = null
+        val choices = content.reportChoices
+        ReportChoices.groups.forEach { (group, categories) ->
+            choices.addView(TextView(requireContext(), null, 0, R.style.TextAppearance_SafeSphere_Overline).apply {
+                text = getString(CommunityTexts.badge(group).second)
+                setPadding(0, resources.getDimensionPixelSize(R.dimen.space_md), 0, 0)
+                ViewCompat.setAccessibilityHeading(this, true)
+            })
+            categories.forEach { category ->
+                choices.addView(MaterialRadioButton(requireContext()).apply {
+                    id = View.generateViewId()
+                    text = getString(CommunityTexts.category(category))
+                    minHeight = resources.getDimensionPixelSize(R.dimen.min_touch_target)
+                    tag = category
+                })
+            }
+        }
+        val dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.report_choose_title)
-            .setItems(labels) { _, which -> confirmReport(categories[which]) }
-            .setNegativeButton(R.string.action_cancel, null)
-            .show()
-    }
-
-    private fun confirmReport(category: SignalCategory) {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(CommunityTexts.category(category))
-            .setMessage(R.string.report_confirm_message)
+            .setView(content.root)
             .setNegativeButton(R.string.action_cancel, null)
             .setPositiveButton(R.string.action_share_anonymously) { _, _ ->
+                val category = chosen ?: return@setPositiveButton
                 retryAction = { viewModel.onReport(category) }
                 viewModel.onReport(category)
             }
-            .show()
+            .create()
+        choices.setOnCheckedChangeListener { group, checkedId ->
+            chosen = group.findViewById<View>(checkedId)?.tag as? SignalCategory
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = chosen != null
+        }
+        dialog.setOnShowListener { dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = chosen != null }
+        dialog.show()
     }
 
     private fun confirmAnswer(signal: AreaSignal, kind: ContributionKind) {
@@ -398,9 +421,9 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
             return
         }
         val text = when (event) {
-            is CommunityEvent.Recorded -> resources.getQuantityString(
-                R.plurals.community_recorded, event.appearsWithinMinutes, event.appearsWithinMinutes
-            )
+            is CommunityEvent.Recorded -> CommunityTexts.recordedDelay(event.appearsWithinMinutes).let { (plural, count) ->
+                resources.getQuantityString(plural, count, count)
+            }
             CommunityEvent.SavedOffline -> getString(R.string.community_saved_offline)
             is CommunityEvent.OutboxSent -> resources.getQuantityString(R.plurals.community_outbox_sent, event.count, event.count)
             CommunityEvent.Withdrawn -> getString(R.string.community_withdrawn)

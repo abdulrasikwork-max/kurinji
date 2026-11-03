@@ -149,6 +149,13 @@
     </fragment>
 
     <!-- You → Safety → Nearby (Phase 6/8 place signals; a secondary screen since 13F) -->
+    <!-- Phase 17F: shake to start SOS, audio in an SOS -->
+    <fragment
+        android:id="@+id/sosOptionsFragment"
+        android:name="com.safesphere.app.feature.safety.ui.SosOptionsFragment"
+        android:label="@string/sos_options_title"
+        tools:layout="@layout/fragment_sos_options" />
+
     <fragment
         android:id="@+id/communityFragment"
         android:name="com.safesphere.app.feature.community.ui.CommunityFragment"

@@ -210,9 +210,10 @@
     <string name="community_nearest_haven">Nearest safe place: %1$s.</string>
     <string name="community_approximate_location">You allowed approximate location only, so distances are rough. Reporting needs precise location.</string>
     <string name="radar_north">N</string>
+    <string name="signal_number_title">%1$d · %2$s</string>
     <string name="radar_m">%1$d m</string>
     <string name="radar_km">%1$d km</string>
-    <string name="radar_legend">▲ concern   ■ take care   ● safe place   (soft circle = placed only to about 1 km)</string>
+    <string name="radar_legend">▲ concern   ■ take care   ● safe place   (soft circle = placed only to about 1 km). Numbers match the list below.</string>
     <string name="cd_radar">Safety radar. %1$s Details are in the list below.</string>
     <string name="cd_area_signal">%1$s. %2$s. %3$s.</string>
     <string name="group_incident">Concern</string>
@@ -250,7 +251,6 @@
     <string name="action_withdraw">Withdraw</string>
     <string name="action_try_again">Try again</string>
     <string name="action_share_anonymously">Share anonymously</string>
-    <string name="category_choice">%1$s: %2$s</string>
     <string name="report_choose_title">What is it like here?</string>
     <string name="report_confirm_message">This is shared without your name, for a block of about 150 m where you are now. Others see it only to about 1 km until someone confirms it. If the same thing was already reported in a block right next to yours, your report is added to it, and your reports then show it as something you saw too. It appears after a short random delay and fades on its own. Describe the place, never a person.</string>
     <string name="answer_confirm_message">You are saying you saw this here too. Your answer is anonymous and counts once.</string>
@@ -261,6 +261,15 @@
         <item quantity="one">Thank you. It counts within about %d minute.</item>
         <item quantity="other">Thank you. It counts within about %d minutes.</item>
     </plurals>
+    <plurals name="community_recorded_hours">
+        <item quantity="one">Thank you. It counts within about %d hour.</item>
+        <item quantity="other">Thank you. It counts within about %d hours.</item>
+    </plurals>
+    <plurals name="community_recorded_days">
+        <item quantity="one">Thank you. It counts within about %d day.</item>
+        <item quantity="other">Thank you. It counts within about %d days.</item>
+    </plurals>
+    <string name="report_sheet_intro">Choose what it is like here. Nothing else is asked: no text, no photo, no names.</string>
     <string name="community_saved_offline">No connection. Your report is saved on this phone and will be sent when you open this screen online (within 24 hours).</string>
     <plurals name="community_outbox_sent">
         <item quantity="one">%d saved report was sent.</item>
@@ -573,7 +582,7 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- ===== Emergency SOS ===== -->
     <string name="emergency_idle_title">Emergency SOS</string>
     <string name="emergency_idle_body">Starts a five second countdown. If you do not cancel it, your SOS starts on this phone, even without internet, and is recorded on your account as soon as IRL\'s server can be reached.</string>
-    <string name="emergency_limits_notice">During SOS, IRL asks for your location and saves it to your own emergency record. If you switched on automatic SMS (Safety Circle screen), your Safety Circle is texted with a map link; otherwise you can text them yourself. IRL never calls emergency services, and records audio, photos or video only when you tap to do so. In an emergency, call 112 or your local emergency number.</string>
+    <string name="emergency_limits_notice">During SOS, IRL asks for your location and saves it to your own emergency record. If you switched on automatic SMS (Safety Circle screen), your Safety Circle is texted with a map link; otherwise you can text them yourself. IRL never calls emergency services, and records audio, photos or video only when you choose it: by tapping, or (for audio) in advance in SOS options. In an emergency, call 112 or your local emergency number.</string>
     <string name="action_start_sos">Start SOS</string>
     <string name="action_view_emergency_history">View emergency history</string>
     <string name="emergency_countdown_label">Starting emergency in</string>
@@ -848,7 +857,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="section_evidence">Evidence</string>
     <string name="section_evidence_items">Evidence items</string>
     <string name="title_evidence_vault">Evidence Vault</string>
-    <string name="evidence_card_intro">Record audio, a photo or a video as evidence. It is encrypted on this phone right away and uploaded to your private vault. Recording only happens while you choose, with a notification and Android\'s microphone indicator.</string>
+    <string name="evidence_card_intro">Record audio, a photo or a video as evidence. It is encrypted on this phone right away and uploaded to your private vault. Recording only happens when you choose it (here, or in advance in SOS options), with a notification and Android\'s microphone indicator.</string>
     <string name="evidence_card_recording">Audio is being recorded. Each 30-second part is encrypted and saved as soon as it ends.</string>
     <plurals name="evidence_recording_status">
         <item quantity="one">Recording %1$s · %2$d part saved</item>
@@ -1802,4 +1811,51 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="place_share_yours">I went here</string>
     <string name="place_share_yours_description">I went here: share your own experience of %1$s</string>
     <string name="place_page_note">Experiences shared with everyone, newest first.</string>
+
+    <!-- Phase 17F: SOS options (shake, audio), the shake countdown notification -->
+    <string name="sos_options_title">SOS options</string>
+    <string name="sos_options_subtitle">Two optional ways to make an SOS quicker. Both are off until you turn them on, and you can change them any time.</string>
+    <string name="sos_options_hub_description">Shake to start SOS, and recording audio in an SOS</string>
+    <string name="sos_options_shake_title">Shake to start SOS</string>
+    <string name="sos_options_shake_body">Shake the phone firmly three times and the same 5-second SOS countdown starts. You can cancel it. A shake never sends anything by itself. It works while IRL is open. During a Safe Walk it also tries with the screen off (the countdown is then a notification with a Cancel button), but many phones pause their motion sensor when the screen is off, so do not rely on shaking then. The SOS button, the Quick Settings tile and the launcher shortcut always work.</string>
+    <string name="sos_options_shake_no_sensor">This phone has no motion sensor, so shaking cannot be used.</string>
+    <string name="sos_options_shake_no_notifications">Notifications are off, so shaking works only while IRL is open. During a Safe Walk with the screen off there would be no way to cancel the countdown.</string>
+    <string name="sos_options_shake_notifications_action">Allow notifications</string>
+    <string name="sos_options_audio_title">Record audio in an SOS</string>
+    <string name="sos_options_audio_body">When an SOS is on, IRL starts recording sound by itself, so you do not have to find a button. It is encrypted on the phone, appears in your Evidence Vault, and shows a notification while it records. You can stop it any time. Nothing is recorded outside an SOS.</string>
+    <string name="sos_options_audio_no_permission">The microphone is not allowed for IRL, so nothing will be recorded until you allow it.</string>
+    <string name="sos_options_audio_denied">Without the microphone, IRL cannot record. Audio in an SOS is off; you can still tap Record during an SOS if you allow it then.</string>
+    <string name="sos_options_voice_notice">Starting an SOS by voice is not available. A phone cannot reliably keep listening in the background, and it would mean a microphone that is always on. The SOS button, the Quick Settings tile, the launcher shortcut and (if you turn it on) shaking are the ways to start one.</string>
+    <string name="action_allow_microphone">Allow microphone</string>
+    <string name="audio_question_title">Record audio in an SOS?</string>
+    <string name="audio_question_message">If you ever start an SOS, IRL can start recording sound on your phone by itself, so you do not have to find a button. It is encrypted on the phone before anything is sent, appears in your Evidence Vault, and shows a notification while it records. You can stop it any time. Nothing is recorded outside an SOS, and you can change this later in SOS options.\n\nIf you choose Yes, Android asks to allow the microphone now.</string>
+    <string name="audio_question_yes">Yes, record</string>
+    <string name="audio_question_no">No</string>
+    <string name="evidence_recording_started_auto">Recording started because you chose that in SOS options. Tap Stop recording to end it.</string>
+    <string name="action_cancel_sos">Cancel</string>
+    <string name="shake_countdown_title">SOS starts in %1$d s</string>
+    <string name="shake_countdown_text">You shook the phone. If this was not meant, tap Cancel now.</string>
+    <string name="shake_started_title">SOS started</string>
+    <string name="shake_started_text">Tap to open it. Your location is being collected. Your Safety Circle is texted only if automatic SMS is on; otherwise open IRL and text them from the SOS screen.</string>
+    <string name="walk_line_start">Start</string>
+    <string name="walk_line_destination">Destination</string>
+    <string name="walk_line_you">You</string>
+    <string name="walk_line_you_outside">You (outside the band)</string>
+    <string name="walk_line_caption">A straight line from where you started to the place you named, with the band the route checks watch. It is not a route and not a recommended way: roads may not follow it.</string>
+    <string name="walk_line_cd">Safe Walk line, north is up: a straight line from your start to your destination, not a route. %1$s%2$s</string>
+    <string name="walk_line_cd_distance">About %1$s to the destination. </string>
+    <string name="walk_line_cd_inside">You are inside the band the route checks watch.</string>
+    <string name="walk_line_cd_outside">You are outside the band the route checks watch.</string>
+    <string name="walk_line_cd_no_position">No recent position, so you are not shown.</string>
+    <string name="location_last_known">Last known position (%1$s, %2$s). Not necessarily where you are now.</string>
+    <plurals name="location_age_minutes">
+        <item quantity="one">%d minute ago</item>
+        <item quantity="other">%d minutes ago</item>
+    </plurals>
+    <plurals name="location_age_hours">
+        <item quantity="one">%d hour ago</item>
+        <item quantity="other">%d hours ago</item>
+    </plurals>
+    <string name="notification_channel_sos_countdown_name">SOS countdown</string>
+    <string name="notification_channel_sos_countdown_description">The 5-second countdown after shaking the phone during a Safe Walk, with a Cancel button</string>
 </resources>

@@ -85,7 +85,8 @@ Phases 1–3 are the foundation.
 | 16 | UX reset (U1–U4) | implemented, compiled, tested, emulator | physical phone, TalkBack, real e-mail |
 | 17A–17E | Stabilise; phone OTP (V26); media (V27); location UX; social redesign (V28) | each implemented, compiled, tested, verified (MySQL/emulator; 17B also on the A23) | no real SMS sent; physical phone; TalkBack by ear; 17E on the A23 install + launch only |
 | IRL | Rebrand, icon "the Meet", opening screen | implemented, compiled, tested, emulator; local commit | physical phone, TalkBack |
-| 17F–17J | Rest of `docs/PHASE17_PLAN.md` | planned | — |
+| 17F | Emergency: opt-in shake SOS (D-4; voice stays unavailable), audio in an SOS after advance consent, "last known" position, one-step Nearby report, readable radar, Safe Walk line; no migration | implemented, compiled, tested, emulator (`docs/PHASE17F.md`) | shake tuning + screen-off sensor delivery on a real phone (the A23 sensor does not wake the CPU), TalkBack |
+| 17G–17J | Rest of `docs/PHASE17_PLAN.md` | planned | — |
 
 Next migration **V29**. Each phase or sub-phase needs its own plan and the user's approval first.
 
@@ -206,11 +207,11 @@ cd android
   cache only; videos stream with the sign-in header, play only after a tap; social data is never persisted.
 - **Wording is guarded by tests** (keep them green; extend them for new strings): `HonestyTextsTest`, `KurinjiTextsTest`,
   `SocialTextsTest`, `ModerationV2Test`, `AiModerationTest`, `CommunityTextsTest`, `ContrastTest`,
-  `EmergencyTreatmentTest`, `ResourceEncodingTest`.
+  `EmergencyTreatmentTest`, `ResourceEncodingTest`, `Phase17FGuardsTest`.
 - **Permissions today:** `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `POST_NOTIFICATIONS`,
   `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `ACCESS_NETWORK_STATE`, `SEND_SMS` (asked only on opt-in; Play
   "physical safety" declaration needed for release), `RECORD_AUDIO` + `FOREGROUND_SERVICE_MICROPHONE` (asked on the
-  Record tap during an ACTIVE SOS), `USE_BIOMETRIC`. Photo/video via the Photo Picker and camera-app intents — **never
+  Record tap during an ACTIVE SOS, or since 17F when the person turns on audio in SOS options), `USE_BIOMETRIC`. Photo/video via the Photo Picker and camera-app intents — **never
   declare `CAMERA`**. Telephony/microphone/camera features not required. `dataExtractionRules` exclude all data.
 - **Tests:** JUnit4 + kotlinx-coroutines-test, `MainDispatcherRule`, fakes in `src/test/.../testing/`. Background holders
   need `runCurrent()`/`advanceTimeBy()`, NOT `advanceUntilIdle()` (it ignores `backgroundScope`); real-recorder tests use
@@ -297,6 +298,9 @@ closed lists use binary collation.
 - Collect the minimum data; minimise location retention.
 - Request permissions **in context** with a rationale; handle denial, permanent denial and revocation; never at launch.
 - No microphone or camera before the Evidence/AI phases. Phase 5: only user-started, visible, during an ACTIVE emergency.
+  **17F (F17-4):** audio may also start by itself in an SOS, but ONLY after the person agreed in advance (one question,
+  default No, changeable in SOS options; the permission is asked then, never during an SOS), from the visible SOS screen,
+  once per SOS, visible and stoppable. Shake SOS (opt-in) only opens the same cancellable 5 s countdown.
 - Never claim emergency-service integration, SMS delivery, or that contacts were notified unless it happened and was
   confirmed. SMS "sent" ≠ delivered.
 - Document platform limitations honestly (`docs/PLATFORM_CONSTRAINTS.md`).

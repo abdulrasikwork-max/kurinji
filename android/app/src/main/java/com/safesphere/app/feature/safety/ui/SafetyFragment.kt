@@ -31,6 +31,10 @@ import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.components.FeatureItem
 import com.safesphere.app.core.ui.components.FeatureListAdapter
 import com.safesphere.app.databinding.FragmentSafetyBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.safesphere.app.feature.emergency.domain.AutoAudioChoice
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 /**
  * Phase 13F: You → Safety, the hub of the safety tools (docs/PHASE13F_PLAN.md F7): the factual status card and the SOS
@@ -61,8 +65,52 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
         }
     }
 
+    // ---- Phase 17F: the one-time question about audio in an SOS -------------------------------------------------
+
+    private val sosOptions by viewModels<SosOptionsViewModel> { SosOptionsViewModel.factory(appContainer) }
+    private var audioQuestionShown = false
+
+    private val microphoneLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        // Asked here, in context, with the question on screen. A refusal is respected: audio stays off.
+        sosOptions.setAutoAudio(if (granted) AutoAudioChoice.ON else AutoAudioChoice.OFF)
+        if (!granted && isAdded) {
+            Toast.makeText(requireContext(), R.string.sos_options_audio_denied, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /**
+     * Asked the first time this account opens You → Safety: may IRL record audio by itself when an SOS is on?
+     * It never stands between a person and SOS: it is NOT shown while an SOS or a Safe Walk is running, and Back or a tap
+     * outside dismisses it as "ask me next time" (nothing is stored, the choice stays NOT_ASKED). "No" and "Yes" are the two
+     * explicit answers; the choice can be changed any time in SOS options. Nothing is recorded by agreeing; the microphone
+     * permission is asked only on "Yes".
+     */
+    private fun askAudioQuestionIfDue() {
+        if (audioQuestionShown) return
+        // An SOS or a walk already running is never interrupted by a question.
+        if (appContainer.sosRecorder.state.value.current != null || appContainer.safeWalk.state.value.isActive) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            if (!sosOptions.audioQuestionDue() || audioQuestionShown) return@launch
+            audioQuestionShown = true
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.audio_question_title)
+                .setMessage(R.string.audio_question_message)
+                .setNegativeButton(R.string.audio_question_no) { _, _ -> sosOptions.setAutoAudio(AutoAudioChoice.OFF) }
+                .setPositiveButton(R.string.audio_question_yes) { _, _ ->
+                    val granted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) ==
+                        PackageManager.PERMISSION_GRANTED
+                    if (granted) sosOptions.setAutoAudio(AutoAudioChoice.ON)
+                    else microphoneLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
+                .show()
+        }
+    }
+
     override fun onStart() {
         super.onStart()
+        askAudioQuestionIfDue()
         session.onScreenVisible()
         // Back from Settings or the Safety Circle: read the answers again.
         val context = requireContext()
@@ -127,6 +175,10 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
             },
             FeatureItem(R.drawable.ic_lock, R.string.feature_evidence_vault_title, R.string.feature_evidence_vault_description) {
                 nav.navigate(R.id.evidenceVaultFragment)
+            },
+            // Phase 17F: shake to start SOS and audio in an SOS - both off until the person turns them on.
+            FeatureItem(R.drawable.ic_tune, R.string.sos_options_title, R.string.sos_options_hub_description) {
+                nav.navigate(R.id.sosOptionsFragment)
             },
             FeatureItem(R.drawable.ic_community_outline, R.string.safety_hub_nearby_title, R.string.safety_hub_nearby_description) {
                 nav.navigate(R.id.communityFragment)

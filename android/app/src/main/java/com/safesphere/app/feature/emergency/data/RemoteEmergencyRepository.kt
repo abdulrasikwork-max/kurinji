@@ -24,7 +24,7 @@ class RemoteEmergencyRepository(
         handler.execute {
             api.start(
                 CreateEmergencyRequestDto(
-                    triggerType = EmergencyTrigger.MANUAL.name,
+                    triggerType = request.trigger.name,
                     clientRef = request.clientRef,
                     startedAt = request.startedAt?.toString(),
                     endedAt = request.ended?.at?.toString(),

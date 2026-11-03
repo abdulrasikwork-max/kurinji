@@ -17,7 +17,12 @@ import com.safesphere.app.feature.emergency.location.LocationSharingStatus
 data class EmergencyLocationUi(
     val sharing: LocationSharingState = LocationSharingState(),
     val permissionBlocked: Boolean = false,
-    val backgroundTrackingActive: Boolean = false
+    val backgroundTrackingActive: Boolean = false,
+    /**
+     * Phase 17F: the phone's clock (epoch millis), refreshed every few seconds by the screen's view model, so a position
+     * that stops being new can be labelled with its age. Null = unknown (no label is invented).
+     */
+    val nowMillis: Long? = null
 )
 
 enum class LocationCardAction { ALLOW_LOCATION, OPEN_APP_SETTINGS, OPEN_LOCATION_SETTINGS }
@@ -33,8 +38,25 @@ data class LocationCard(
     val showKeepAppOpenHint: Boolean = false,
     val showApproximateHint: Boolean = false,
     val showLowAccuracyHint: Boolean = false,
-    val showRejectedHint: Boolean = false
+    val showRejectedHint: Boolean = false,
+    /** Phase 17F: set when the shown position is no longer new; the screen then says so and how old it is. */
+    val lastKnown: LastKnownFix? = null
 )
+
+/**
+ * Phase 17F: the position on screen is the LAST KNOWN one, [ageSeconds] old (phone clock). It is never presented as
+ * where the person is now. Shown (and sent to the Safety Circle, which always said "Last known location") with its time.
+ */
+data class LastKnownFix(val recordedAt: java.time.Instant, val ageSeconds: Long)
+
+/** A position older than this is called last known (the same minute the SOS screen waits before saying "no new position"). */
+const val LAST_KNOWN_AFTER_SECONDS = 60L
+
+fun lastKnownOf(fix: com.safesphere.app.core.location.LocationFix?, nowMillis: Long?): LastKnownFix? {
+    if (fix == null || nowMillis == null) return null
+    val age = ((nowMillis - fix.recordedAt.toEpochMilli()) / 1000).coerceAtLeast(0)
+    return if (age >= LAST_KNOWN_AFTER_SECONDS) LastKnownFix(fix.recordedAt, age) else null
+}
 
 fun locationCardFor(ui: EmergencyLocationUi): LocationCard {
     val sharing = ui.sharing
@@ -67,6 +89,7 @@ fun locationCardFor(ui: EmergencyLocationUi): LocationCard {
         showKeepAppOpenHint = tracking && !ui.backgroundTrackingActive,
         showApproximateHint = tracking && sharing.isApproximate,
         showLowAccuracyHint = hasFix && accuracyLevelOf(sharing.lastFix?.accuracyMeters) == AccuracyLevel.POOR,
-        showRejectedHint = sharing.rejectedCount > 0
+        showRejectedHint = sharing.rejectedCount > 0,
+        lastKnown = if (hasFix && !sharing.signedOut) lastKnownOf(sharing.lastFix, ui.nowMillis) else null
     )
 }

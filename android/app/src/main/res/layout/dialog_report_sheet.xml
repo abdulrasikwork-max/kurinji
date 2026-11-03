@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 17F (D-9): the whole Nearby report in ONE step - pick what it is like here, read the privacy line, share.
+     No text field and no photo, by design (Phase 6: place signals carry no text, photos or authors). -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/space_lg"
+        android:paddingTop="@dimen/space_sm"
+        android:paddingEnd="@dimen/space_lg"
+        android:paddingBottom="@dimen/space_sm">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/report_sheet_intro"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+        <RadioGroup
+            android:id="@+id/reportChoices"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/reportPrivacy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="@string/report_confirm_message"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

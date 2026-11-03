@@ -80,6 +80,26 @@ class OfflineSosApiIntegrationTest {
     }
 
     @Test
+    void aShakeSos_recordedLate_keepsItsTrigger_andTheSameReferenceStillMeansOneEmergency() throws Exception {
+        // Phase 17F (D-4): the phone started this SOS after its own countdown while offline and sends it later.
+        String token = token();
+        String ref = ref();
+        Instant started = Instant.now().minus(Duration.ofMinutes(10)).truncatedTo(ChronoUnit.MILLIS);
+        Map<String, Object> request = body(ref, started, null, null);
+        request.put("triggerType", "SHAKE");
+        JsonNode first = json(create(token, request).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.triggerType").value("SHAKE")).andExpect(jsonPath("$.startedOffline").value(true)));
+        JsonNode again = json(create(token, request).andExpect(status().isCreated()));
+        assertThat(again.get("id").asLong()).isEqualTo(first.get("id").asLong());
+        assertThat(jdbc.queryForObject("SELECT trigger_type FROM emergency_events WHERE client_ref = ?", String.class, ref))
+                .isEqualTo("SHAKE");
+        // A reserved trigger is still refused on this path.
+        Map<String, Object> voice = body(ref(), started, null, null);
+        voice.put("triggerType", "VOICE");
+        create(token(), voice).andExpect(status().isBadRequest());
+    }
+
+    @Test
     void phoneTimes_areClamped_neverInTheFuture_andAtMostADayBack() throws Exception {
         Instant before = Instant.now();
         JsonNode future = json(create(token(), body(ref(), Instant.now().plus(Duration.ofHours(3)), null, null))

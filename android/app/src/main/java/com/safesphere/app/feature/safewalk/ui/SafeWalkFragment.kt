@@ -48,6 +48,10 @@ import com.safesphere.app.feature.safewalk.domain.JourneyStatus
 import com.safesphere.app.feature.safewalk.session.SafeWalkState
 import java.time.Duration
 import java.time.Instant
+import com.safesphere.app.core.location.GeoPoint
+import com.safesphere.app.feature.safewalk.domain.GpsQuality
+import com.safesphere.app.feature.safewalk.domain.WalkLineGeometry
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -290,6 +294,36 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
         if (need != LocationNeed.NONE) binding.setupLocationButton.setText(needLabel(need))
     }
 
+    /**
+     * Phase 17F: the straight start-to-destination line with the band and your position, drawn by the app. Only with a
+     * destination the phone found (it is never kept on the phone, so after a restart it is hidden until the server sends
+     * it again) and a start. The position is left out while the GPS has had no usable fix for a while, rather than
+     * showing an old one as "you".
+     */
+    private fun renderWalkLine(walk: SafeWalkState) {
+        val start = walk.movement.routeStart
+        val destination = walk.journey?.destination
+        val weak = viewModel.gpsQuality(walk, Instant.now()) == GpsQuality.WEAK
+        val current = if (weak) null else walk.lastFix?.let(GeoPoint::of)
+        val half = if (start != null && destination != null) viewModel.bandHalfWidthMeters(start, destination) else 0.0
+        val layout = if (walk.movementChecks) WalkLineGeometry.layout(start, destination, current, half) else null
+        binding.walkLineBlock.isVisible = layout != null
+        if (layout == null) return
+        val outside = walk.movement.bubble.offRoute
+        binding.walkLine.setLine(layout, outside)
+        val togo = walk.movement.metersToDestination?.let { meters ->
+            val rounded = if (meters < 1000) ((meters / 50).roundToInt() * 50).coerceAtLeast(50) else (meters / 100).roundToInt() * 100
+            getString(R.string.walk_line_cd_distance,
+                if (rounded >= 1000) getString(R.string.distance_km, rounded / 1000.0) else getString(R.string.distance_m, rounded))
+        }.orEmpty()
+        binding.walkLine.contentDescription = getString(R.string.walk_line_cd, togo,
+            getString(when {
+                current == null -> R.string.walk_line_cd_no_position
+                outside -> R.string.walk_line_cd_outside
+                else -> R.string.walk_line_cd_inside
+            }))
+    }
+
     private fun renderActive(state: SafeWalkUiState.Active) {
         val walk = state.walk
         val journey = walk.journey ?: return
@@ -320,6 +354,7 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
             )
         }
         binding.arrivalNotice.isVisible = walk.looksArrived
+        renderWalkLine(walk)
         renderCountdown(state)
         renderMovement(walk)
         renderCircle(journey.id, phase)

@@ -94,6 +94,26 @@ tricks. Policies change often: re-check the current Android and Google Play docu
   Login after the date. Uninstalling the app removes everything anyway.
 - **FLAG_SECURE** on the Account screen: screenshots and the recents preview are blank there (by design).
 
+## Phase 17F (shake SOS, audio in an SOS, Safe Walk line) - what the platform does to them
+
+- **Shake with the screen off is best-effort.** Checked on the Galaxy A23 (SM-A236E, Android 14) with `dumpsys sensorservice`:
+  its only accelerometer (LSM6DSO) is **non-wake-up**. While the screen is off its samples wait in a FIFO and are delivered in a
+  batch when something wakes the CPU, so a shake made with the screen off may arrive late or not at all. The app drops any
+  sample older than 1.5 s (a late batch can never open a countdown for an old shake), uses the wake-up variant only where a phone
+  has one, batches reports every 300 ms (a wake-up sensor otherwise wakes the CPU about 50 times a second), and tells the person
+  not to rely on shaking with the screen off. Shaking while IRL is on the screen is reliable. No wake lock is held (it would
+  drain the battery for a gesture that must also work offline of any server).
+- **No SMS app after a background-started SOS.** Android blocks starting an activity from the background, so an SOS started by
+  the notification countdown cannot open the SMS composer for the Safety Circle. Automatic SMS (opt-in, `SEND_SMS`) still sends;
+  otherwise the person opens IRL from the notification and texts from the SOS screen. Said in the notification and in
+  `PHASE17F.md`.
+- **Audio cannot start until the screen is opened.** Android 14 refuses to start a foreground service of type microphone from the
+  background, so audio in an SOS (and an SOS started by a background shake) starts only once the SOS screen is in front.
+- **Notifications and the lock screen.** The shake countdown is a high-importance notification with a Cancel button and must be
+  usable from the lock screen, so it is public (it reveals only that a countdown runs for about 5 s). The "SOS started" notice is
+  private with a neutral public version (nobody holding a locked phone is told an SOS is running).
+
+
 ## Constraints for later phases
 
 | Future feature | Constraint to plan for | Design direction (not implemented) |

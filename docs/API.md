@@ -186,7 +186,7 @@ Emergency sessions are only **recorded**. Nothing is sent to anyone (Phase 4A ad
 
 | Method and URL | Purpose | Success | Errors |
 |---|---|---|---|
-| `POST /api/emergencies` | Record a new ACTIVE emergency. Optional body `{"triggerType":"MANUAL"}` (default MANUAL; `SHAKE`, `VOICE`, `DURESS_PIN` are reserved and rejected) | `201` | `400` unsupported trigger, `401`, `409` one is already active |
+| `POST /api/emergencies` | Record a new ACTIVE emergency. Optional body `{"triggerType":"MANUAL"}` (default MANUAL; **`SHAKE` accepted since Phase 17F** - the phone's opted-in shake gesture, after its own 5 s countdown; `VOICE` and `DURESS_PIN` are reserved and rejected) | `201` | `400` unsupported trigger, `401`, `409` one is already active |
 | `GET /api/emergencies` | Your history, newest first, at most 50 | `200` list | `401` |
 | `GET /api/emergencies/{id}` | One of your emergencies | `200` | `401`, `404` |
 | `PUT /api/emergencies/{id}/cancel` | "False alarm": ACTIVE to CANCELLED | `200` | `401`, `404`, `409` already ended |
@@ -1268,11 +1268,22 @@ decision with `canAppeal: false`, audited in `moderation_actions`.
 
 ---
 
+## Phase 17F (emergency; no migration, no new endpoint)
+
+`POST /api/emergencies` now accepts `triggerType` **`SHAKE`** besides `MANUAL` (the default). The answer, the history and the
+emergency context packet carry it back unchanged as `triggerType`. It is only a label for the person's own history: a
+shake still went through the phone's cancellable 5-second countdown before this call, and nothing on the server treats
+a SHAKE emergency differently. `VOICE` (deferred, D-4) and `DURESS_PIN` still answer `400`. It works on the offline path
+too (`clientRef`, `startedAt`): the phone keeps the trigger with the record and sends it with every attempt. The column
+`emergency_events.trigger_type` has no CHECK (verified on MySQL 8.0), so no migration was needed.
+
 # Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
 
 A compact list of every phase's endpoints and config keys; the sections above have the details. Keep it in step.
 
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/users/me`
+- Phase 17F (`API.md` "Phase 17F"): `POST /api/emergencies` accepts `triggerType` `SHAKE` (MANUAL default; VOICE and
+  DURESS_PIN still 400). No new endpoint, no migration.
 - Phase 17E (V28, `API.md` "Phase 17E"): `PUT|DELETE /api/posts/{id}/reaction` and `/save` (idempotent: 200
   `{marked}` / 204), `GET /api/saved?cursor=`; post answers `youReacted`, `saved`, author-only `butterflies`; removed
   `/butterfly` and `/api/cocoon`; `PUT|DELETE /api/profiles/me/photo`, `GET /api/profiles/{id}/photo/{key}`, `photo` in

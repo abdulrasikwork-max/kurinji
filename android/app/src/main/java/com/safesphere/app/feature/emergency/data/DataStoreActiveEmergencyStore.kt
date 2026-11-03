@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.safesphere.app.feature.emergency.domain.ActiveEmergencyRecord
 import com.safesphere.app.feature.emergency.domain.ActiveEmergencyStore
+import com.safesphere.app.feature.emergency.domain.EmergencyTrigger
 import com.safesphere.app.feature.emergency.domain.LocalEnd
 import java.io.IOException
 import java.time.Instant
@@ -46,7 +47,9 @@ class DataStoreActiveEmergencyStore(context: Context) : ActiveEmergencyStore {
             clientRef = preferences[KEY_CLIENT_REF],
             // Records from before Phase 11 had no flag: they always held a server id.
             onServer = preferences[KEY_ON_SERVER] ?: true,
-            dialPromptOpened = preferences[KEY_DIAL_PROMPT] ?: false
+            dialPromptOpened = preferences[KEY_DIAL_PROMPT] ?: false,
+            // Records from before Phase 17F had no trigger: they were always MANUAL.
+            trigger = preferences[KEY_TRIGGER]?.let(::triggerOf) ?: EmergencyTrigger.MANUAL
         )
     }
 
@@ -59,6 +62,7 @@ class DataStoreActiveEmergencyStore(context: Context) : ActiveEmergencyStore {
             record.clientRef?.let { preferences[KEY_CLIENT_REF] = it }
             preferences[KEY_ON_SERVER] = record.onServer
             preferences[KEY_DIAL_PROMPT] = record.dialPromptOpened
+            preferences[KEY_TRIGGER] = record.trigger.name
         }
     }
 
@@ -80,7 +84,7 @@ class DataStoreActiveEmergencyStore(context: Context) : ActiveEmergencyStore {
     }
 
     private fun removeCurrent(preferences: MutablePreferences) {
-        listOf(KEY_USER_ID, KEY_EMERGENCY_ID, KEY_STARTED_AT_MILLIS, KEY_CLIENT_REF, KEY_ON_SERVER, KEY_DIAL_PROMPT)
+        listOf(KEY_USER_ID, KEY_EMERGENCY_ID, KEY_STARTED_AT_MILLIS, KEY_CLIENT_REF, KEY_ON_SERVER, KEY_DIAL_PROMPT, KEY_TRIGGER)
             .forEach { preferences.remove(it) }
     }
 
@@ -91,6 +95,7 @@ class DataStoreActiveEmergencyStore(context: Context) : ActiveEmergencyStore {
         val KEY_CLIENT_REF = stringPreferencesKey("client_ref")
         val KEY_ON_SERVER = booleanPreferencesKey("on_server")
         val KEY_DIAL_PROMPT = booleanPreferencesKey("dial_prompt_opened")
+        val KEY_TRIGGER = stringPreferencesKey("trigger")
         val KEY_UNSENT = stringPreferencesKey("unsent_endings")
 
         fun encode(record: ActiveEmergencyRecord): String = UnsentEndingsCodec.encode(record)
@@ -103,12 +108,14 @@ internal object UnsentEndingsCodec {
 
     fun encode(record: ActiveEmergencyRecord): String = listOf(
         record.userId, record.emergencyId, record.startedAt.toEpochMilli(), record.clientRef.orEmpty(),
-        record.onServer, record.ended?.at?.toEpochMilli() ?: "", record.ended?.resolved ?: "", record.dialPromptOpened
+        record.onServer, record.ended?.at?.toEpochMilli() ?: "", record.ended?.resolved ?: "", record.dialPromptOpened,
+        triggerCode(record.trigger)
     ).joinToString(";")
 
     fun decode(line: String): ActiveEmergencyRecord? {
         val parts = line.split(";")
-        if (parts.size != 8) return null
+        // Phase 17F added a ninth field (the trigger); lines written before it have eight and are MANUAL.
+        if (parts.size != 8 && parts.size != 9) return null
         val endMillis = parts[5].toLongOrNull() ?: return null // only ENDED records are kept here
         return ActiveEmergencyRecord(
             userId = parts[0].toLongOrNull() ?: return null,
@@ -117,7 +124,26 @@ internal object UnsentEndingsCodec {
             clientRef = parts[3].ifEmpty { null },
             onServer = parts[4].toBooleanStrictOrNull() ?: return null,
             ended = LocalEnd(parts[6].toBooleanStrictOrNull() ?: true, Instant.ofEpochMilli(endMillis)),
-            dialPromptOpened = parts[7].toBooleanStrictOrNull() ?: false
+            dialPromptOpened = parts[7].toBooleanStrictOrNull() ?: false,
+            trigger = parts.getOrNull(8)?.let(::triggerFromCode) ?: EmergencyTrigger.MANUAL
         )
     }
+}
+
+/** A stored trigger name; anything unknown reads as MANUAL (it only labels the record, it never decides anything). */
+private fun triggerOf(name: String): EmergencyTrigger = EmergencyTrigger.entries.firstOrNull { it.name == name } ?: EmergencyTrigger.MANUAL
+
+/** Phase 17F: the unsent-endings line keeps to digits, so the trigger is a fixed one-digit code (never the enum's position). */
+private fun triggerCode(trigger: EmergencyTrigger): String = when (trigger) {
+    EmergencyTrigger.MANUAL -> "0"
+    EmergencyTrigger.SHAKE -> "1"
+    EmergencyTrigger.VOICE -> "2"
+    EmergencyTrigger.DURESS_PIN -> "3"
+}
+
+private fun triggerFromCode(code: String): EmergencyTrigger = when (code) {
+    "1" -> EmergencyTrigger.SHAKE
+    "2" -> EmergencyTrigger.VOICE
+    "3" -> EmergencyTrigger.DURESS_PIN
+    else -> EmergencyTrigger.MANUAL
 }

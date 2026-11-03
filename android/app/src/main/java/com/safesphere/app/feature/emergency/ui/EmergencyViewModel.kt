@@ -59,7 +59,11 @@ class EmergencyViewModel(
     private val onEmergencyStarted: () -> Unit = {},
     /** Phase 4D: Safety Circle communication (automatic SMS if opted in, SMS app, "Call 112"). */
     private val circleAlerts: CircleAlertController? = null,
-    private val countdownSeconds: Int = DEFAULT_COUNTDOWN_SECONDS
+    private val countdownSeconds: Int = DEFAULT_COUNTDOWN_SECONDS,
+    /** Phase 17F: the shake gesture while this screen is in front (starts the same cancellable countdown). */
+    shakeEvents: kotlinx.coroutines.flow.Flow<Unit> = kotlinx.coroutines.flow.emptyFlow(),
+    /** Phase 17F: the phone's clock every few seconds, so a position that stops being new shows its age (null = off, as in tests). */
+    clockTicks: kotlinx.coroutines.flow.Flow<Long?> = kotlinx.coroutines.flow.flowOf(null)
 ) : ViewModel() {
 
     /** What the Safety Circle has been told about this emergency (per contact), and whether automatic SMS is on. */
@@ -74,11 +78,12 @@ class EmergencyViewModel(
     private val permissionBlocked = MutableStateFlow(false)
 
     val locationUi: StateFlow<EmergencyLocationUi> =
-        combine(locationSharing.state, permissionBlocked, trackingServiceRunning) { sharing, blocked, running ->
-            EmergencyLocationUi(sharing, blocked, running)
+        combine(locationSharing.state, permissionBlocked, trackingServiceRunning, clockTicks) { sharing, blocked, running, now ->
+            EmergencyLocationUi(sharing, blocked, running, now)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, EmergencyLocationUi())
 
     private var countdownJob: Job? = null
+    private var pendingTrigger = EmergencyTrigger.MANUAL
     private var autoLocationRequestUsed = false
     private var notificationPromptUsed = false
 
@@ -91,6 +96,9 @@ class EmergencyViewModel(
             }
         }
         viewModelScope.launch { sos.state.collect(::onRecorderChanged) }
+        viewModelScope.launch {
+            shakeEvents.collect { if (_uiState.value == EmergencyUiState.Idle) onStartSosClicked(EmergencyTrigger.SHAKE) }
+        }
     }
 
     /**
@@ -160,8 +168,13 @@ class EmergencyViewModel(
         }
     }
 
-    fun onStartSosClicked() {
+    /**
+     * [trigger] is MANUAL for the button, tile and shortcut. Phase 17F: SHAKE when the person's opted-in shake gesture
+     * opened the screen; it goes through this same cancellable 5 s countdown (nothing starts without it).
+     */
+    fun onStartSosClicked(trigger: EmergencyTrigger = EmergencyTrigger.MANUAL) {
         if (_uiState.value != EmergencyUiState.Idle) return
+        pendingTrigger = trigger
         // Set synchronously so a second tap (before the coroutine starts) is ignored.
         _uiState.value = EmergencyUiState.Countdown(countdownSeconds)
         countdownJob = viewModelScope.launch {
@@ -269,7 +282,7 @@ class EmergencyViewModel(
             _uiState.value = EmergencyUiState.StartFailed(ApiResult.Failure(ApiError.UNAUTHORIZED))
             return
         }
-        val record = sos.startLocal(userId)
+        val record = sos.startLocal(userId, pendingTrigger)
         onEmergencyStarted()
         showActive(record.toEvent(), clientRef = record.clientRef)
     }
@@ -424,7 +437,7 @@ class EmergencyViewModel(
     private fun ActiveEmergencyRecord.toEvent() = EmergencyEvent(
         id = emergencyId,
         status = EmergencyStatus.ACTIVE,
-        trigger = EmergencyTrigger.MANUAL, // the only trigger that can be created so far
+        trigger = trigger,
         startedAt = startedAt,
         endedAt = null
     )
@@ -432,6 +445,7 @@ class EmergencyViewModel(
     companion object {
         const val DEFAULT_COUNTDOWN_SECONDS = 5
         const val TICK_MILLIS = 1_000L
+        private const val CLOCK_TICK_MILLIS = 15_000L
 
         /** Ending the SOS while these come back is kept on the phone and told to the server later (Phase 11). */
         private val OFFLINE_ERRORS = setOf(ApiError.NO_CONNECTION, ApiError.SERVER, ApiError.UNKNOWN)
@@ -446,7 +460,14 @@ class EmergencyViewModel(
                     currentUserId = { container.authRepository.currentUser.first()?.id },
                     trackingServiceRunning = container.trackingServiceRunning,
                     onEmergencyStarted = container.safeWalk::onEmergencyStarted,
-                    circleAlerts = container.circleAlerts
+                    circleAlerts = container.circleAlerts,
+                    shakeEvents = container.shakeSos.foregroundShakes,
+                    clockTicks = kotlinx.coroutines.flow.flow {
+                        while (true) {
+                            emit(System.currentTimeMillis())
+                            kotlinx.coroutines.delay(CLOCK_TICK_MILLIS)
+                        }
+                    }
                 )
             }
         }
