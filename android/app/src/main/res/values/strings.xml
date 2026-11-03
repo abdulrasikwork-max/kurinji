@@ -1858,4 +1858,36 @@ A complete privacy policy will be written and reviewed before any public release
     </plurals>
     <string name="notification_channel_sos_countdown_name">SOS countdown</string>
     <string name="notification_channel_sos_countdown_description">The 5-second countdown after shaking the phone during a Safe Walk, with a Cancel button</string>
+
+    <!-- Phase 17G-1: Explore (deterministic, on-phone understanding) and the experience tags -->
+    <string name="explore_entry">Explore</string>
+    <string name="explore_entry_description">Explore. Describe what you are looking for.</string>
+    <string name="explore_title">Explore</string>
+    <string name="explore_hint">What are you looking for?</string>
+    <string name="explore_helper">For example: a quiet cafe to study in the evening. Your words stay on this phone. Only the choices below are searched.</string>
+    <string name="explore_city_label">City: %1$s</string>
+    <string name="explore_city_pick">Choose a city</string>
+    <string name="explore_section_categories">Kind of place (up to 2)</string>
+    <string name="explore_section_facets">Good for (up to 4)</string>
+    <string name="explore_section_daypart">Time of day</string>
+    <string name="explore_searching_for">Searching for: %1$s</string>
+    <string name="explore_nothing_asked">Type what you are looking for, or choose from the lists below.</string>
+    <string name="explore_unused">We did not use: %1$s</string>
+    <string name="explore_search">Search</string>
+    <string name="explore_clear">Clear</string>
+    <string name="explore_loading">Looking…</string>
+    <!-- "Matches 3 of the 4 things you asked for": counts only what the person asked for, never people or posts. -->
+    <plurals name="explore_match_of">
+        <item quantity="one">Matches %1$d of the %2$d thing you asked for</item>
+        <item quantity="other">Matches %1$d of the %2$d things you asked for</item>
+    </plurals>
+    <string name="explore_hit_good_for">Good for: %1$s</string>
+    <string name="explore_results_header">Places found</string>
+    <string name="explore_end">That is all we found. Try fewer choices or another city.</string>
+    <string name="explore_empty_title">Nothing shared yet that fits</string>
+    <string name="explore_empty_message">Try fewer choices or another city. A place appears here once people share experiences about it with everyone.</string>
+    <string name="explore_footer">Explore searches experiences that people shared with everyone, and lists places by how well they match what you asked for. It does not count people or reactions.</string>
+    <string name="social_facets_title">Good for (optional)</string>
+    <string name="social_facets_note">Choose up to 4. People who search Explore can find this place by these.</string>
+    <string name="post_facets_line">Good for: %1$s</string>
 </resources>

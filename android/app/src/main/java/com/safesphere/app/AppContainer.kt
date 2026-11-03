@@ -243,6 +243,13 @@ class AppContainer(context: Context) {
         RemoteDiscoverRepository(retrofit.create(DiscoverApi::class.java), apiCallHandler)
     }
 
+    // ---- Phase 17G-1: Explore (a structured query to the backend; nothing stored on the phone) ------------------
+
+    val exploreRepository: com.safesphere.app.feature.social.domain.ExploreRepository by lazy {
+        com.safesphere.app.feature.social.data.RemoteExploreRepository(
+            retrofit.create(com.safesphere.app.feature.social.data.remote.ExploreApi::class.java), apiCallHandler)
+    }
+
     // ---- Phase 13D: reports, own standing and appeals; moderators' content queue (nothing stored) ---------------
 
     val reportRepository: ReportRepository by lazy {

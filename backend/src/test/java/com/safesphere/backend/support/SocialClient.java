@@ -364,6 +364,20 @@ public final class SocialClient {
         return perform(who.token(), builder, null);
     }
 
+    /** Phase 17G-1: an Explore search with a structured request body. */
+    public ResultActions explore(Person who, Map<String, ?> body) throws Exception {
+        return perform(who.token(), post("/api/explore/search"), body);
+    }
+
+    /** Phase 17G-1: the public ids of the places an Explore answer lists, in order. */
+    public List<String> explorePlaceIds(ResultActions answer) throws Exception {
+        List<String> ids = new ArrayList<>();
+        for (JsonNode hit : json(answer.andExpect(status().isOk())).get("hits")) {
+            ids.add(hit.get("place").get("publicId").asText());
+        }
+        return ids;
+    }
+
     /** Every post id in an Edition, all sections together, in order. */
     public List<String> editionIds(ResultActions edition) throws Exception {
         List<String> ids = new ArrayList<>();

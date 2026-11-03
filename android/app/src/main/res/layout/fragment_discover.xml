@@ -97,6 +97,20 @@
             app:drawableTint="?attr/colorOnSurface" />
     </LinearLayout>
 
+    <!-- Phase 17G-1: Explore opens its own screen (the search icon above still finds place and category names). -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/exploreButton"
+        style="@style/Widget.Kurinji.Button.Tonal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/screen_padding"
+        android:layout_marginTop="@dimen/space_xs"
+        android:contentDescription="@string/explore_entry_description"
+        android:minHeight="@dimen/min_touch_target"
+        android:text="@string/explore_entry"
+        app:icon="@drawable/ic_search"
+        app:layout_scrollFlags="scroll|enterAlways" />
+
     <com.safesphere.app.core.ui.components.NoticeView
         android:id="@+id/errorNotice"
         android:layout_width="match_parent"

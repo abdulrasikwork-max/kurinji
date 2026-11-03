@@ -1,4 +1,22 @@
-# Handoff: Phase 17F device validation + four 2.0x fixes (2026-11-03) — working tree changes, NOT committed, NOT pushed
+# Handoff: Phase 17G-1 deterministic Explore (2026-11-03) — one local commit, NOT pushed
+
+**Implemented, compiled, tested, live-verified on MySQL, emulator-verified** (`docs/PHASE17G.md`; plan + decisions G-1…G-11 in
+`PHASE17G_PLAN.md`, approved by the user). **V29 `post_facets` is applied to the dev database** (backup `safesphere-before-v29.sql` was
+taken first; dry run on scratch tables 14/14 accepted + 9/9 refused); next migration **V30**. A person types what they want; the
+**phone** understands the words (word list EN/Tamil/Tanglish) and shows chips; Search sends ONLY the structured query; the server's
+deterministic engine lists places from EXACT-place Everyone experiences the viewer may read. Experiences carry up to 4 optional
+"Good for" tags. No AI, no key, no cost.
+- **Results:** backend **818 / 0** (+26), Android **927 / 0** (+31), lint **0 / 104** (unchanged), live API **31/31** on MySQL
+  (real sign-up + dev-file OTP), emulator walk-through PASS incl. 2.0x text. Scratch accounts/places/tags were deleted afterwards.
+- **NOT VERIFIED:** the Galaxy A23 (not connected this time); TalkBack by ear; **the Tamil/Tanglish word list is a draft that needs a
+  Tamil reader (decision G-6)**; Explore with real data.
+- **Next:** the user's review; 17G-3 (optional Claude understanding behind a mode switch, default OFF, stub-verified unless a funded
+  API key is provided) is recommended before 17G-2 (ratings need the U5 rule change). Nothing for 17G-2/3 is started.
+- **State left:** backend stopped; emulator at font 1.0, signed in as the 17E throwaway account; the build still points at `127.0.0.1`.
+
+---
+
+# Handoff: Phase 17F device validation + four 2.0x fixes (2026-11-03) — committed locally (15db253), NOT pushed
 
 **Implemented, compiled, tested (Android 896 / 0, lint 0 / 104), verified on the Galaxy A23** (`docs/PHASE17F.md` §6.1 and §6.2).
 The A23 was reached without touching authentication: the backend's existing `DEV_FILE` OTP sink wrote the code to a file and a

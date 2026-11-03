@@ -33,7 +33,9 @@ public final class PostDtos {
             @Size(max = 12, message = "Unknown comment setting") String commentPolicy,
             @Size(max = 6, message = "Add at most 6 photos or videos") List<@Size(max = 40) String> mediaIds,
 
-            Boolean approveFirst) {
+            Boolean approveFirst,
+            /** Phase 17G-1: Explore tags ("Good for..."), an Experience only, none to four from the closed list. */
+            @Size(max = 8, message = "Choose at most 4 tags") List<@Size(max = 30) String> facets) {
     }
 
     /**
@@ -50,7 +52,9 @@ public final class PostDtos {
             @Size(max = 12, message = "Unknown time of day") String daypart,
             @Size(max = 12, message = "Unknown audience") String audience,
             @Size(max = 12, message = "Unknown comment setting") String commentPolicy,
-            Boolean approveFirst) {
+            Boolean approveFirst,
+            /** Phase 17G-1: null = the tags stay as they are; an empty list = remove them all; otherwise the new tags. */
+            @Size(max = 8, message = "Choose at most 4 tags") List<@Size(max = 30) String> facets) {
     }
 
     /**
@@ -97,6 +101,7 @@ public final class PostDtos {
      * going through something hard, so the app shows a support line.
      * Phase 16 (U1): [commentCount] = how many perspectives THIS viewer can read on the post (the length of the list
      * GET /api/posts/{id}/comments gives them); the only public number on a post.
+     * Phase 17G-1: [facets] = the Explore tags the author chose (closed list, never a count); empty when none.
      */
     public record PostResponse(String publicId, String type, PersonSummary author, boolean own, String body, String tip,
                                String category, String precision, PostPlace place, String areaCell, String city,
@@ -104,14 +109,15 @@ public final class PostDtos {
                                List<MediaRef> media, String audience, String commentPolicy, boolean canComment,
                                Instant postedAt, Instant visibleFrom, boolean youReacted, boolean saved,
                                ButterflyTally butterflies, boolean approveFirst, ModerationView moderation,
-                               String collapsed, boolean strongLanguage, Boolean supportSuggested, int commentCount) {
+                               String collapsed, boolean strongLanguage, Boolean supportSuggested, int commentCount,
+                               List<String> facets) {
 
         /** The same answer with the one-time support flag (the author's own write answer). */
         public PostResponse withSupport(boolean support) {
             return new PostResponse(publicId, type, author, own, body, tip, category, precision, place, areaCell, city,
                     experiencedMonth, daypart, postedPeriod, edited, media, audience, commentPolicy, canComment,
                     postedAt, visibleFrom, youReacted, saved, butterflies, approveFirst, moderation, collapsed,
-                    strongLanguage, support ? Boolean.TRUE : null, commentCount);
+                    strongLanguage, support ? Boolean.TRUE : null, commentCount, facets);
         }
     }
 

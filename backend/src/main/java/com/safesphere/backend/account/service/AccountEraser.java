@@ -136,6 +136,9 @@ public class AccountEraser {
             "DELETE FROM comments WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)",
             "DELETE FROM comments WHERE author_id = ?",
             "DELETE FROM post_media WHERE owner_id = ?",
+            // Phase 17G-1 (V29): the Explore tags of their posts (MySQL would cascade; this keeps the order explicit and
+            // works on the test database, which has no foreign keys).
+            "DELETE FROM post_facets WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)",
             "DELETE FROM posts WHERE author_id = ?",
             "DELETE FROM profiles WHERE user_id = ?");
 

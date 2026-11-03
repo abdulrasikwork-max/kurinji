@@ -27,6 +27,7 @@ import com.safesphere.app.feature.social.domain.Audience
 import com.safesphere.app.feature.social.domain.CommentPolicy
 import com.safesphere.app.feature.social.domain.ComposerPolicy
 import com.safesphere.app.feature.social.domain.Daypart
+import com.safesphere.app.feature.social.domain.ExploreFacets
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.PostType
 import com.safesphere.app.feature.social.domain.Precision
@@ -50,6 +51,7 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
     private lateinit var typeChips: ChoiceChips<PostType>
     private lateinit var precisionChips: ChoiceChips<Precision>
     private lateinit var daypartChips: ChoiceChips<Daypart>
+    private lateinit var facetChips: MultiChips<String>
     private lateinit var categoryChips: ChoiceChips<Interest>
     private lateinit var audienceChips: ChoiceChips<Audience>
     private lateinit var commentChips: ChoiceChips<CommentPolicy>
@@ -70,6 +72,7 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
                 arguments?.getString(ARG_CATEGORY)?.let(Interest::fromCode))
         }
         daypartChips = ChoiceChips(binding.daypartGroup) { viewModel.onDaypart(it) }
+        facetChips = MultiChips(binding.facetGroup) { viewModel.onToggleFacet(it) }
         categoryChips = ChoiceChips(binding.categoryGroup) { viewModel.onCategory(it) }
         audienceChips = ChoiceChips(binding.audienceGroup) { it?.let(viewModel::onAudience) }
         commentChips = ChoiceChips(binding.commentGroup) { it?.let(viewModel::onCommentPolicy) }
@@ -168,6 +171,12 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         val monthIndex = months.indexOf(state.month)
         if (monthIndex >= 0 && binding.monthSpinner.selectedItemPosition != monthIndex) binding.monthSpinner.setSelection(monthIndex)
         daypartChips.show(Daypart.entries.map { it to getString(ExperienceLabels.of(it)) }, state.daypart)
+        // Phase 17G-1: "Good for..." tags, Experiences only.
+        binding.facetsTitle.isVisible = experience
+        binding.facetGroup.isVisible = experience
+        binding.facetsNote.isVisible = experience
+        facetChips.show(ExploreFacets.all.map { it.code to it.english }, state.facets.toSet(),
+            state.facets.size >= ExploreFacets.MAX_PER_POST)
         categoryChips.show(Interest.entries.map { it to getString(SocialLabels.of(it)) }, state.category)
 
         audienceChips.show(Audience.entries.map { it to getString(ExperienceLabels.of(it)) }, state.audience)

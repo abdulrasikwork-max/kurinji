@@ -26,6 +26,7 @@ import com.safesphere.app.feature.social.data.VideoRules
 import com.safesphere.app.databinding.FragmentPostBinding
 import com.safesphere.app.feature.going.GoingThere
 import com.safesphere.app.feature.social.domain.CommentKind
+import com.safesphere.app.feature.social.domain.ExploreFacets
 import com.safesphere.app.feature.social.domain.ModerationState
 import com.safesphere.app.feature.social.domain.OwnModeration
 import com.safesphere.app.feature.social.domain.Perspective
@@ -293,6 +294,13 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
                 text = line
                 setChipIconResource(R.drawable.ic_schedule)
                 isChipIconVisible = true
+            })
+        }
+        // Phase 17G-1: the author's "Good for..." tags, read-only (nothing counts or ranks them).
+        val tags = post.facets.mapNotNull { ExploreFacets.find(it)?.english }
+        if (tags.isNotEmpty()) {
+            group.addView(Chip(requireContext(), null, R.attr.contextChipStyle).apply {
+                text = getString(R.string.post_facets_line, tags.joinToString(" · "))
             })
         }
         group.isVisible = group.childCount > 0

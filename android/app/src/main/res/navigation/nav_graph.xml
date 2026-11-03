@@ -414,6 +414,19 @@
             app:nullable="true" />
     </fragment>
 
+    <!-- Phase 17G-1: Explore (a task screen: toolbar and back; the words stay on the phone) -->
+    <fragment
+        android:id="@+id/exploreFragment"
+        android:name="com.safesphere.app.feature.social.ui.ExploreFragment"
+        android:label="@string/explore_title"
+        tools:layout="@layout/fragment_explore">
+        <argument
+            android:name="city"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+
     <!-- Secondary screens -->
     <fragment
         android:id="@+id/settingsFragment"

@@ -96,7 +96,9 @@ data class Post(
     /** Phase 13E: the automatic check found strong language (a viewer may collapse it on their own phone). */
     val strongLanguage: Boolean = false,
     /** Phase 16 (U1): how many comments THIS viewer can read on the post (the server counts its own visible list). */
-    val commentCount: Int = 0
+    val commentCount: Int = 0,
+    /** Phase 17G-1: the Explore tags the author chose ("Good for..."), codes of the closed list, in the list's order. */
+    val facets: List<String> = emptyList()
 )
 
 data class PostPage(val items: List<Post>, val nextCursor: String?)
@@ -141,7 +143,9 @@ data class PostDraft(
     val commentPolicy: CommentPolicy,
     val mediaIds: List<String>,
     /** Phase 13D (Q6): only with "Everyone can add perspectives". */
-    val approveFirst: Boolean = false
+    val approveFirst: Boolean = false,
+    /** Phase 17G-1: Explore tags ("Good for..."), an Experience only, at most [ExploreFacets.MAX_PER_POST]. */
+    val facets: List<String> = emptyList()
 )
 
 /** A photo uploaded (sanitised) and ready to attach; Phase 17C: also a video's answer (its poster comes after). */

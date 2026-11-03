@@ -107,6 +107,8 @@ class SocialTextsTest {
             // Phase 17E
             "item_experience_card.xml", "item_saved.xml", "sheet_city_picker.xml", "sheet_daily_state.xml", "fragment_you.xml",
             "item_safety_tile.xml",
+            // Phase 17G-1: Explore
+            "fragment_explore.xml", "item_explore_hit.xml",
             // Phase 13D
             "fragment_my_reports.xml", "fragment_guidelines.xml")
         /** Phase 13C (C2): the only text with a number of people: the author's own private line. */

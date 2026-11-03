@@ -6,7 +6,7 @@ paths:
 ---
 # Database migrations (moved verbatim from CLAUDE.md §7 on 2026-11-03)
 
-The key rules of every applied migration. Conventions (next file **V29**) stay in `CLAUDE.md` §7. Never edit an applied
+The key rules of every applied migration. Conventions (next file **V30**) stay in `CLAUDE.md` §7. Never edit an applied
 migration; verify each new one on real MySQL (backup, CHECK dry run on a scratch copy, apply).
 
 | Migration | Table | Key rules |
@@ -62,6 +62,7 @@ migration; verify each new one on real MySQL (backup, CHECK dry run on a scratch
 | V27 | `post_media.kind`, `duration_ms`, `poster_bytes` | Phase 17C: kind PHOTO/VIDEO (binary, default PHOTO); size CHECK per kind: photo ≤ 5 MiB with no duration/poster, video ≤ 50 MiB with 1–60 500 ms and poster NULL or ≤ 5 MiB, ≤ 4096 px; every NULL case written out; "a video needs its poster before it is attached" in code (no CHECK on the cascading `post_id`). Dry run 15/15 refused + 5/5 accepted on a scratch copy, applied on MySQL 8.0 (2026-11-01, backup taken first) |
 
 | V28 | `cities`, `saved_posts`, `daily_states`, `profiles.photo_key`; `butterflies` = reactions; `places.city`/`posts.city` → FK | Phase 17E: `cities` (code PK binary REGEXP, box CHECKs, OTHER without box) seeded line for line from `cities-v1.tsv` (`CityCatalogTest`); the closed city CHECKs replaced by FKs without referential actions (`ck_places_city` never OTHER, `ck_posts_city` precision rule); `saved_posts` UNIQUE (user, post), FKs cascade, Cocoon rows copied in; `butterflies` emptied, `state`/`been_at` dropped (no reaction invented); `photo_key` lower-case UUID CHECK, unique; `daily_states` user PK, closed mood/intent list, `set_on DATE` (IST day, no time); audit lists + `PERSON_REMOVE_PHOTO` (kind PERSON, COALESCE). Backup first; dry run 8/8 refused; constraint checks 26/26 refused + 11/11 accepted; applied on MySQL 8.0 (2026-11-02) |
+| V29 | `post_facets` | Phase 17G-1: one row per (post, tag): `id`, `post_id` FK `posts` ON DELETE CASCADE, `facet` VARCHAR(20) binary NOT NULL with a CHECK of the 13 closed codes (same list and order as `explore-facets-v1.tsv`, `ExploreFacetsParityTest`), UNIQUE (post, facet), index (facet, post); the CHECK is on a non-FK column (MySQL forbids CHECKs on cascading-FK columns); ≤ 4 per post and Experiences only are enforced in code; no user id, no time. Backup first; dry run on scratch tables 14/14 accepted + 9/9 refused; applied on MySQL 8.0.46 (2026-11-03) |
 
-Conventions: never edit an applied migration; next file is **V29**; snake_case; `DATETIME(6)` stored in UTC; constraint
+Conventions: never edit an applied migration; next file is **V30**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.

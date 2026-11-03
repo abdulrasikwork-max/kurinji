@@ -1,0 +1,45 @@
+# IRL Explore word list v1 (Phase 17G-1). Read ONLY by the app (ExploreLexicon): the words a person types are understood on
+# the phone and never leave it. One line: kind, code, terms separated by | (a term may be several words).
+#
+# DRAFT FOR REVIEW (decision G-6): the Tamil and Tanglish terms below are a first draft and have NOT been checked by a Tamil
+# reader. Known limit: Tamil words take endings (suffixes), and only the forms written here are recognised; a form that is
+# missing is shown to the person as "We did not use: ..." and is simply not searched. Add forms here as they are found.
+#
+# kind = CATEGORY (code = one of the 10 place categories), FACET (code = a tag of explore-facets-v1.tsv), DAYPART
+#        (MORNING | AFTERNOON | EVENING | NIGHT), NEGATION (code -), STOP (code -: a word that means nothing for the search).
+# Terms are compared after lower-casing and replacing every character that is not a letter, a digit or a Tamil sign with a
+# space. A term may appear once in the whole file (ExploreLexiconTest). The tag names of explore-facets-v1.tsv (English,
+# Tamil, Tanglish) are added automatically and need not be repeated here.
+#
+# Deliberately NOT understood: negation ("not crowded" is shown as unused), ranking words ("best", "top"), and anything
+# about safety (no tag exists for it; Nearby covers conditions).
+#
+CATEGORY	FOOD_CAFES	food|cafe|cafes|coffee|tea|chai|restaurant|restaurants|eat|eating|eatery|snack|snacks|breakfast|lunch|dinner|biryani|dosa|idli|meals|bakery|street food|saapadu|sapadu|unavu|kaapi|kapi|tea kadai|hotel|உணவு|சாப்பாடு|காபி|தேநீர்|டீ|ஹோட்டல்|உணவகம்
+CATEGORY	NATURE_OUTDOORS	nature|outdoors|outdoor|park|parks|garden|gardens|lake|lakes|beach|beaches|hill|hills|trek|trekking|hiking|forest|waterfall|river|iyarkai|poonga|thottam|kadarkarai|malai|kulam|aaru|aruvi|இயற்கை|பூங்கா|தோட்டம்|கடற்கரை|மலை|குளம்|ஆறு|அருவி
+CATEGORY	CULTURE_HERITAGE	culture|cultural|heritage|temple|temples|museum|museums|history|historical|fort|palace|church|mosque|art|gallery|monument|kovil|koyil|kottai|arungatchiyagam|parambariyam|கோவில்|கோயில்|கோட்டை|அருங்காட்சியகம்|பாரம்பரியம்
+CATEGORY	MUSIC_NIGHTLIFE	music|concert|concerts|nightlife|club|clubs|pub|pubs|live music|gig|gigs|dj|dance|dancing|karaoke|isai|இசை
+CATEGORY	STUDY_WORK	study|studying|work|working|coworking|library|libraries|exam|exams|padikka|padippu|velai|நூலகம்|படிக்க|வேலை
+CATEGORY	DAY_TRIPS	trip|trips|day trip|day trips|travel|weekend|getaway|road trip|drive|picnic|outing|tour|payanam|suttrula|பயணம்|சுற்றுலா
+CATEGORY	ACTIVITIES_SPORT	sport|sports|cricket|football|gym|swimming|cycling|badminton|yoga|run|running|jogging|activity|activities|vilaiyattu|விளையாட்டு|கிரிக்கெட்
+CATEGORY	HOBBIES_MAKING	hobby|hobbies|craft|crafts|painting|pottery|workshop|workshops|making|art class|photography|knitting|kaivinai|ovivam|கைவினை|ஓவியம்
+CATEGORY	CITY_LIFE	city life|shopping|mall|malls|market|markets|bazaar|street|streets|shop|shops|kadai|sandhai|கடை|சந்தை
+CATEGORY	HIDDEN_GEMS	hidden|hidden gem|hidden gems|gem|gems|offbeat|secret|underrated|undiscovered
+FACET	QUIET	quiet|calm|peaceful|silent|relaxing|relaxed|amaithi|அமைதி
+FACET	LIVELY	lively|buzzing|vibrant|energetic|happening|kalakalappu|கலகலப்பு
+FACET	BUDGET_FRIENDLY	cheap|budget|affordable|inexpensive|low cost|pocket friendly|economical|kammi vilai|kammi|மலிவு|மலிவான
+FACET	GOOD_WITH_FRIENDS	friends|group|with friends|hangout|hang out|nanbargal|nanbargaludan|நண்பர்கள்|நண்பர்களுடன்
+FACET	GOOD_ALONE	alone|solo|by myself|on my own|thaniya|thaniyaga|தனியாக|தனிமை
+FACET	FAMILY_FRIENDLY	family|kids|children|with family|kudumbam|kudumbathudan|குடும்பம்|குடும்பத்துடன்
+FACET	OUTDOOR_SEATING	outdoor seating|terrace|rooftop|open air|patio|veliye|வெளியே
+FACET	VEGETARIAN_OPTIONS	veg|vegetarian|vegan|pure veg|saivam|saiva|சைவம்|சைவ
+FACET	EASY_TO_REACH	easy to reach|easy access|metro|public transport|near bus stand|near station|elithil|எளிதில்
+FACET	STEP_FREE_ACCESS	wheelchair|step free|ramp|wheelchair friendly|lift|elevator
+FACET	OPEN_LATE	open late|late night|24 hours|24x7|24 7|midnight|odd hours
+FACET	SCENIC	scenic|view|views|beautiful|sunset|sunrise|photogenic|picturesque|azhagu|azhagana|அழகு|அழகான
+FACET	GOOD_FOR_WORK	laptop|wifi|wi fi|work friendly|good for work|work from cafe|power sockets|charging points
+DAYPART	MORNING	morning|early morning|breakfast time|kaalai|kalai|காலை
+DAYPART	AFTERNOON	afternoon|noon|midday|lunch time|mathiyam|மதியம்
+DAYPART	EVENING	evening|evenings|maalai|மாலை
+DAYPART	NIGHT	night|tonight|at night|iravu|இரவு
+NEGATION	-	not|no|without|never|dont|don|nahi|vendaam|வேண்டாம்
+STOP	-	a|an|the|in|at|on|for|to|of|with|and|or|near|nearby|around|me|my|i|we|want|looking|find|show|search|place|places|spot|spots|somewhere|something|good|nice|some|any|is|are|that|this|it|please|oru|enakku|venum|vendum|ange|inge|pakkathula|irukkum|iruku|ulla|ஒரு|எனக்கு|வேண்டும்|இடம்|இடங்கள்|அருகில்

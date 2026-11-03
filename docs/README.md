@@ -32,7 +32,7 @@ larger phases also have a design or plan doc written and approved before the wor
 | 13A–13F | `PHASE13A_PLAN.md` + `PHASE13A.md` … `PHASE13F_PLAN.md` + `PHASE13F.md` |
 | 14–15 | `PHASE14.md` (security audit), `PHASE15.md` (acceptance) |
 | 16 | `PHASE16.md` (UX reset) |
-| 17 | `PHASE17_PLAN.md`, `PHASE17A.md`, `PHASE17B_PLAN.md` + `PHASE17B.md`, `PHASE17C.md`, `PHASE17D.md`, `PHASE17E.md`, `PHASE17F.md` |
+| 17 | `PHASE17_PLAN.md`, `PHASE17A.md`, `PHASE17B_PLAN.md` + `PHASE17B.md`, `PHASE17C.md`, `PHASE17D.md`, `PHASE17E.md`, `PHASE17F.md`, `PHASE17G_PLAN.md` + `PHASE17G.md` (17G-1 Explore) |
 
 ## As previously listed in CLAUDE.md §4 (kept verbatim, 2026-11-03)
 ├── docs/      API.md, PHASE17F.md (emergency: shake SOS, audio consent, last known, Nearby, radar, Safe Walk line), PHASE17E.md (social redesign), PHASE17D.md (location UX), PHASE17C.md (media), PHASE16.md (UX reset), EMAIL_SETUP.md, EMAIL_VERIFICATION.md (V25), PHASE15.md (acceptance), PHASE14.md (security audit), PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), AUDIT_NEXT.md (2026-10-22 audit), EXPERIENCE_PLATFORM_DESIGN.md (the new product direction, Phase 13), PHASE13A_PLAN.md + PHASE13A.md (13A), PHASE13B_PLAN.md + PHASE13B.md (13B), PHASE13C_PLAN.md + PHASE13C.md (13C), PHASE13D_PLAN.md + PHASE13D.md (13D), PHASE13E_PLAN.md + PHASE13E.md (13E), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md

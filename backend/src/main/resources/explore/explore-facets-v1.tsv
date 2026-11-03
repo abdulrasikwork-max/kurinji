@@ -1,0 +1,19 @@
+# IRL Explore tags ("facets") v1 (Phase 17G-1, decision G-1). One line per tag: code, English label, Tamil name, Tanglish name.
+# DRAFT FOR REVIEW (G-6): the Tamil and Tanglish columns are a first draft and have NOT been checked by a Tamil reader.
+# Read by the backend (ExploreFacets, the V29 CHECK list) and bundled byte-identical in the app
+# (android/app/src/main/resources/explore/explore-facets-v1.tsv); ExploreFacetsParityTest compares the two and V29.
+# Codes are at most 20 characters, upper-case. A tag is added by a new migration and this file together.
+# Deliberately NOT here: anything about safety, lighting, women or danger (Nearby covers conditions; a test forbids these words).
+QUIET	Quiet	அமைதியான	amaithiyana
+LIVELY	Lively	கலகலப்பான	kalakalappana
+BUDGET_FRIENDLY	Budget friendly	குறைந்த செலவு	kuraintha selavu
+GOOD_WITH_FRIENDS	Good with friends	நண்பர்களுடன் செல்ல ஏற்றது	nanbargaludan sella etrathu
+GOOD_ALONE	Good alone	தனியாக செல்ல ஏற்றது	thaniyaga sella etrathu
+FAMILY_FRIENDLY	Family friendly	குடும்பத்துடன் செல்ல ஏற்றது	kudumbathudan sella etrathu
+OUTDOOR_SEATING	Outdoor seating	வெளியே அமர இடம்	veliye amara idam
+VEGETARIAN_OPTIONS	Vegetarian options	சைவ உணவு	saiva unavu
+EASY_TO_REACH	Easy to reach	எளிதில் சென்றடையலாம்	elithil sendraiyalam
+STEP_FREE_ACCESS	Step-free access	படிகள் இல்லாத வழி	padigal illatha vazhi
+OPEN_LATE	Open late	இரவு வரை திறந்திருக்கும்	iravu varai thiranthirukkum
+SCENIC	Scenic	அழகான காட்சி	azhagana katchi
+GOOD_FOR_WORK	Good for work	வேலை செய்ய ஏற்றது	velai seiya etrathu

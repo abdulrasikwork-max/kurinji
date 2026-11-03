@@ -1428,3 +1428,13 @@ A compact list of every phase's endpoints and config keys; the sections above ha
   {status, action, rule, reason, evidence[], strongLanguage, versions}`. Internal service `POST /v1/assess` (key header)
   and `GET /v1/health`. Config `app.moderation.ai.*` (enabled, url, key = env `MODERATION_SERVICE_KEY`, connect-timeout
   300ms, timeout 1500ms, model-mode OFF, probation-wait-max 2h, retry-for 24h, retention 90d, job-interval PT5M).
+- Phase 17G-1 (V29, `docs/PHASE17G.md`): `POST /api/explore/search {city, categories[≤2], facets[≤4], daypart?}` →
+  `200 {city, requested, hits[≤20 {place{publicId, name, category, city}, matchedCategory, matchedFacets[], matchedDaypart,
+  requested, matched}]}`, best match first, the list always ends. **A structured query only** (closed lists; the words a
+  person typed are understood on the phone and never sent). At least one of categories / facets / daypart (`400 "Choose what
+  you are looking for"`), city = a catalog city (never OTHER), unknown codes / repeats / more than 2 categories or 4 tags
+  `400`, `401`, `429` after 120 per hour (`app.social.explore-searches-per-hour`). Searches Everyone-audience EXACT-place
+  Experiences in the city, not the caller's own, through the Edition visibility rule; no coordinates, times, authors or counts
+  in the answer. Posts accept and answer `facets` (Explore tags, 13 closed codes in `explore/explore-facets-v1.tsv`, an
+  Experience only, ≤ 4, no repeats): create `facets`, edit `null` = keep / `[]` = remove / a list = replace, an Ask with tags
+  `400 "Tags are for experiences, not questions"`; the answer lists them in the tag list's order (empty list when none).

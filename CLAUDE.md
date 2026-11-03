@@ -86,9 +86,10 @@ Phases 1–3 are the foundation.
 | 17A–17E | Stabilise; phone OTP (V26); media (V27); location UX; social redesign (V28) | each implemented, compiled, tested, verified (MySQL/emulator; 17B also on the A23) | no real SMS sent; physical phone; TalkBack by ear; 17E on the A23 install + launch only |
 | IRL | Rebrand, icon "the Meet", opening screen | implemented, compiled, tested, emulator; local commit | physical phone, TalkBack |
 | 17F | Emergency: opt-in shake SOS (D-4; voice stays unavailable), audio in an SOS after advance consent, "last known" position, one-step Nearby report, readable radar, Safe Walk line; no migration | implemented, compiled, tested, emulator (`docs/PHASE17F.md`) | shake tuning + screen-off sensor delivery on a real phone (the A23 sensor does not wake the CPU), TalkBack |
-| 17G–17J | Rest of `docs/PHASE17_PLAN.md` | planned | — |
+| 17G-1 | Deterministic Explore: closed-list tags on experiences (V29), the typed words understood ON THE PHONE (word list EN/Tamil/Tanglish), a structured query, a deterministic server engine; no AI, no cost (`docs/PHASE17G.md`, plan `PHASE17G_PLAN.md`) | implemented, compiled, tested, live MySQL 31/31, emulator | physical phone, TalkBack, Tamil word-list review |
+| 17G-2/3, 17H–17J | "I went" + ratings (U5), optional Claude understanding (never required); brand; regression | planned | — |
 
-Next migration **V29**. Each phase or sub-phase needs its own plan and the user's approval first.
+Next migration **V30**. Each phase or sub-phase needs its own plan and the user's approval first.
 
 **Never implement early:** Verified Nearby Assistance (Phase 12; "Circle Response" in `PHASE10_DESIGN.md` §32 stays a
 proposal); advanced route intelligence (a real route planner needs an on-device routing graph + a new privacy review,
@@ -260,7 +261,7 @@ cd android
 
 ## 7. Database (MySQL `safesphere`, Flyway) — per-migration rules in `.claude/rules/database.md`
 
-Conventions: never edit an applied migration; next file is **V29**; snake_case; `DATETIME(6)` stored in UTC; constraint
+Conventions: never edit an applied migration; next file is **V30**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci. "One active /
 one primary / one open" via a generated marker column + unique index. MySQL forbids CHECKs on cascading-FK columns
 (enforce those rules in code); write NULL cases out with `COALESCE` (a NULL makes `IN` UNKNOWN, which a CHECK lets pass);
@@ -275,6 +276,7 @@ closed lists use binary collation.
 | V16–V19 | account deletion columns; `emergency_events.started_session/ended_elsewhere`; `client_ref/started_offline`; `device_sessions` |
 | V20–V24 | `profiles`, `connections`, `connection_invites`, `blocks`, `mutes`; `places`, `posts`, `post_media`, `comments`; `butterflies`; content moderation tables; `content_assessments` |
 | V25–V28 | e-mail verification (superseded); phone verification `phone_challenges`; `post_media.kind` (video); `cities`, `saved_posts`, `daily_states`, `profiles.photo_key` |
+| V29 | `post_facets` (Explore tags on experiences, 13 closed codes, ≤ 4 per post in code) |
 
 ---
 

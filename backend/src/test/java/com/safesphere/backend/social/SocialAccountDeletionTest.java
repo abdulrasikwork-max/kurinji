@@ -115,6 +115,7 @@ class SocialAccountDeletionTest {
         social.videoId(p); // Phase 17C: a video (+ poster) never attached: its .mp4 must go too
         Map<String, Object> body = SocialClient.experienceBody("EVERYONE", "NONE");
         body.put("mediaIds", java.util.List.of(photo));
+        body.put("facets", java.util.List.of("QUIET", "SCENIC")); // Phase 17G-1: p's own post carries Explore tags
         String ownPost = social.json(social.createPost(p, body).andExpect(status().isCreated())).get("publicId").asText();
         social.commentId(friend, ownPost, "BEEN_HERE", "Friend on p's post", null);
         String friendsPost = social.experience(friend, "EVERYONE");
@@ -171,6 +172,8 @@ class SocialAccountDeletionTest {
                 friendsPostId)).isEqualTo(1);
         assertThat(count("SELECT COUNT(*) FROM saved_posts WHERE post_id NOT IN (SELECT id FROM posts)")).isZero();
         assertThat(count("SELECT COUNT(*) FROM daily_states WHERE user_id = ?", userId)).isZero();
+        // Phase 17G-1: the Explore tags of p's posts went with them (the test database has no cascade: the eraser does it).
+        assertThat(count("SELECT COUNT(*) FROM post_facets WHERE post_id NOT IN (SELECT id FROM posts)")).isZero();
         assertThat(media.exists(profilePhotoKey)).isFalse();
     }
 

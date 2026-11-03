@@ -78,6 +78,11 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         binding.searchCategoryList.adapter = categoryResults
         binding.nearList.adapter = nearResults
         binding.cityButton.setOnClickListener { chooseCity() }
+        // Phase 17G-1: Explore starts in the city Discover is showing.
+        binding.exploreButton.setOnClickListener {
+            findNavController().navigate(R.id.exploreFragment,
+                bundleOf(ExploreViewModel.ARG_CITY to viewModel.uiState.value.city?.code))
+        }
         binding.searchToggle.setOnClickListener {
             searchOpen = !searchOpen
             nearOpen = false

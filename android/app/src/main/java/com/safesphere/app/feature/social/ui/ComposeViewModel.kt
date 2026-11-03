@@ -21,6 +21,7 @@ import com.safesphere.app.feature.social.domain.ComposerIssue
 import com.safesphere.app.feature.social.domain.ComposerPolicy
 import com.safesphere.app.feature.social.domain.Daypart
 import com.safesphere.app.feature.social.domain.ExperienceRepository
+import com.safesphere.app.feature.social.domain.ExploreFacets
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.MediaKind
 import com.safesphere.app.feature.social.domain.Place
@@ -91,6 +92,8 @@ data class ComposeUiState(
     val city: City? = null,
     val month: YearMonth? = null,
     val daypart: Daypart? = null,
+    /** Phase 17G-1: Explore tags ("Good for..."), an Experience only, at most four, codes in the list's order. */
+    val facets: List<String> = emptyList(),
     /** Never preselected on the first post (D14); afterwards the last choice. */
     val audience: Audience? = null,
     val commentPolicy: CommentPolicy = CommentPolicy.EVERYONE,
@@ -172,6 +175,16 @@ class ComposeViewModel(
     fun onCategory(category: Interest?) = change { it.copy(category = category) }
     fun onMonth(month: YearMonth) = change { it.copy(month = month) }
     fun onDaypart(daypart: Daypart?) = change { it.copy(daypart = daypart) }
+
+    /** Phase 17G-1: add or take off one tag; a fifth is not added (the chips are disabled at four). */
+    fun onToggleFacet(code: String) = change { s ->
+        when {
+            !ExploreFacets.isValid(code) -> s
+            code in s.facets -> s.copy(facets = s.facets - code)
+            s.facets.size >= ExploreFacets.MAX_PER_POST -> s
+            else -> s.copy(facets = ExploreFacets.cleaned(s.facets + code))
+        }
+    }
     fun onAudience(audience: Audience) = change { it.copy(audience = audience) }
     fun onCommentPolicy(policy: CommentPolicy) = change { it.copy(commentPolicy = policy) }
     fun onCity(city: City) = change { it.copy(city = city) }
@@ -386,7 +399,8 @@ class ComposeViewModel(
         audience = state.audience,
         commentPolicy = ComposerPolicy.effectiveCommentPolicy(state.audience, state.commentPolicy),
         mediaIds = state.media.filter { it.ready }.mapNotNull { it.mediaId },
-        approveFirst = state.approveFirst && state.canApproveFirst
+        approveFirst = state.approveFirst && state.canApproveFirst,
+        facets = if (state.type == PostType.EXPERIENCE) state.facets else emptyList()
     )
 
     private fun issuesOf(state: ComposeUiState) =

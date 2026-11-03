@@ -73,6 +73,20 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     List<Post> editionCandidates(@Param("type") PostType type, @Param("city") String city, @Param("viewer") long viewer,
                                  @Param("from") LocalDateTime from, @Param("now") LocalDateTime now, Pageable page);
 
+    /**
+     * Phase 17G-1 (Explore): Everyone EXPERIENCES that name an EXACT place in a city, not the viewer's, visible by [now],
+     * newest visible first, never a merged-away place. EXACT only: an AREA post promises not to reveal its place (C10 does
+     * the same). A pre-filter only: every post still passes the Edition rule (Relationships.forEdition) before Explore
+     * may look at its tags.
+     */
+    @Query("SELECT p FROM Post p WHERE " + EVERYONE + " AND p.type = com.safesphere.backend.social.entity.PostEnums.PostType.EXPERIENCE"
+            + " AND p.precision = com.safesphere.backend.social.entity.PostEnums.Precision.EXACT AND p.authorId <> :viewer"
+            + " AND p.visibleFrom <= :now AND p.placeId IN (SELECT pl.id FROM Place pl WHERE pl.city = :city"
+            + " AND pl.mergedInto IS NULL)"
+            + " ORDER BY p.visibleFrom DESC, p.id DESC")
+    List<Post> exploreCandidates(@Param("city") String city, @Param("viewer") long viewer,
+                                 @Param("now") LocalDateTime now, Pageable page);
+
     /** Theme candidates: as above, one category. */
     @Query("SELECT p FROM Post p WHERE " + EVERYONE + " AND p.type = :type AND p.authorId <> :viewer"
             + " AND p.category = :category AND p.visibleFrom >= :from AND p.visibleFrom <= :now AND " + IN_CITY

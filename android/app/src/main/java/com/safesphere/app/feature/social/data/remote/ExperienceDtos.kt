@@ -11,6 +11,7 @@ import com.safesphere.app.feature.social.domain.OwnModeration
 import com.safesphere.app.feature.social.domain.CommentKind
 import com.safesphere.app.feature.social.domain.CommentPolicy
 import com.safesphere.app.feature.social.domain.Daypart
+import com.safesphere.app.feature.social.domain.ExploreFacets
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.ComposerPolicy
 import com.safesphere.app.feature.social.domain.MediaKind
@@ -77,7 +78,9 @@ data class PostRequestDto(
     val audience: String,
     val commentPolicy: String,
     val mediaIds: List<String>,
-    val approveFirst: Boolean = false
+    val approveFirst: Boolean = false,
+    /** Phase 17G-1: Explore tags; null (not sent) for an Ask or when none were chosen. */
+    val facets: List<String>? = null
 ) {
     companion object {
         /** Only for a draft that passed ComposerPolicy (precision and audience chosen). */
@@ -100,7 +103,10 @@ data class PostRequestDto(
                 commentPolicy = policy.name,
                 mediaIds = draft.mediaIds,
                 // Phase 13D (Q6): the server refuses it with any other comment setting; never sent then.
-                approveFirst = draft.approveFirst && policy == CommentPolicy.EVERYONE
+                approveFirst = draft.approveFirst && policy == CommentPolicy.EVERYONE,
+                // Phase 17G-1: tags belong to Experiences only; the server refuses them on an Ask.
+                facets = if (experience) ExploreFacets.cleaned(draft.facets).take(ExploreFacets.MAX_PER_POST)
+                    .ifEmpty { null } else null
             )
         }
     }
@@ -163,7 +169,9 @@ data class PostDto(
     val collapsed: String? = null,
     val strongLanguage: Boolean? = null,
     /** Phase 16 (U1): comments this viewer can read; a missing or negative number counts as none. */
-    val commentCount: Int? = null
+    val commentCount: Int? = null,
+    /** Phase 17G-1: Explore tags; missing (an older answer) = none, an unknown code is dropped. */
+    val facets: List<String>? = null
 ) {
     fun toDomain(): Post? {
         val author = author?.let { a ->
@@ -206,7 +214,8 @@ data class PostDto(
             ownModeration = if (own == true) moderation?.toDomain() else null,
             collapsed = if (own == true) null else collapsedOf(collapsed),
             strongLanguage = strongLanguage == true,
-            commentCount = (commentCount ?: 0).coerceAtLeast(0)
+            commentCount = (commentCount ?: 0).coerceAtLeast(0),
+            facets = ExploreFacets.cleaned(facets)
         )
     }
 
