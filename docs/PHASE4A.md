@@ -127,3 +127,57 @@ Backend: `mvn test`, then `mvn spring-boot:run` (Flyway should say schema is at 
 - **Why is location not stored on the phone?** Minimum retention: a stolen/inspected phone does not reveal a track.
 - **Lifecycle:** work runs in an application-scoped coroutine (survives leaving the screen); the service only keeps the
   process foreground; the ViewModel survives rotation, so the permission dialog is not shown twice.
+
+---
+
+## Appendix: approved Phase 4 design (moved verbatim from CLAUDE.md §11 on 2026-11-03)
+
+Agreed with the user before 4A; 4A–4D are now built. The invariants are summarised in CLAUDE.md §11.
+
+**Cross-cutting decisions**
+- **Detection logic runs on the phone in pure Kotlin** (check-in deadlines, deviation, inactivity, Safety Bubble, battery
+  policy, escalation policy): works offline and is unit-testable. The **server** stores journeys, validates state
+  transitions, enforces ownership, and computes check-in deadlines (phone clocks drift).
+- **One foreground service** (`SafetyTrackingService`, type `location`) during Safe Walk or an active emergency; persistent
+  notification; started only while the app is visible. UI and service share state through one holder.
+- **Location:** `play-services-location` (the only approved new dependency) behind a `LocationProvider` interface.
+- **Emergency Context Packet** = a **read model assembled on demand** (emergency + latest location + journey + escalation
+  events). **No `emergency_context` table.** Recipient-specific **projections are field allow-lists** (owner, Safety Circle,
+  future official pathway, future Verified Nearby Assistance). Safety Circle sees only name, time, type, location link.
+- **Escalation Ladder** = enum + pure policy, proportional, never jumps straight to the top:
+  L0 normal · L1 missed check-in/minor concern → prompt user · L2 no response/anomaly → Safety Circle ·
+  L3 confirmed SOS → emergency ACTIVE · L4 emergency pathway = **user-tapped dial prompt (112)**, no claimed integration ·
+  L5 Verified Nearby Assistance = reserved name, **rejected by the server**.
+- **Duress PIN** (silent trigger) remains a reserved trigger type; not part of Phase 4 unless re-planned.
+- **SMS fallback:** auto-send only if the user opts in (then `SEND_SMS`); otherwise open the SMS composer for the user to send.
+- **Safety Bubble / deviation baseline:** corridor around a straight start→destination line with generous tolerance;
+  requires sustained deviation with acceptable GPS accuracy; **warns only**. Real route geometry belongs to Phase 8.
+- **Privacy:** journeys store only the last-known location (no full GPS track).
+- **Not in Phase 4:** server scheduler / push / dead-man alerts (no delivery channel yet — documented limitation),
+  background location, `CALL_PHONE`, exact alarms, boot receiver, microphone, camera.
+
+**Planned migrations (re-inspect the schema before writing)**
+- **V4 `emergency_locations` (4A):** `emergency_id` FK cascade (**no user_id** — ownership via the emergency), latitude/longitude
+  `DECIMAL(9,6)` with range CHECKs, `accuracy_meters`, `source` (FUSED, LAST_KNOWN, GPS, NETWORK, UNKNOWN), `battery_percent`,
+  `recorded_at`, `received_at`, index `(emergency_id, recorded_at)`.
+- V5 `safe_journeys` + `journey_events` (4B; check-ins are journey events; one non-final journey per user via generated marker).
+- V6 `escalation_events` + nullable `journey_id` on `emergency_events` (4B/4C).
+
+**Planned 4A API**
+- `POST /api/emergencies/{id}/locations` — batch of 1–50 points (lets an offline phone upload later), all-or-nothing.
+  Accepted while ACTIVE plus a 15-minute grace after the emergency ends; `recordedAt` not in the future (5-min clock tolerance)
+  and not before the emergency began; per-emergency cap (configurable, e.g. 1000). Use an injectable `Clock` bean.
+- `GET /api/emergencies/{id}/locations/latest` (404 if none), `GET /api/emergencies/{id}/locations` (newest 100).
+- Owner only; other users → 404; JWT required.
+
+**Planned 4A Android**
+- `core/location` (provider interface + fused implementation; permission, availability and accuracy states; GPS off / denied /
+  revoked / low accuracy / unavailable / temporary failure all handled), `core/device` (`ConnectivityMonitor`, `BatteryMonitor`),
+  `core/notifications` (channels + notifier), emergency location association and upload, recovery not dependent on memory alone.
+- New 4A permissions: `ACCESS_FINE_LOCATION`/`ACCESS_COARSE_LOCATION` (at the moment of need, with rationale),
+  `POST_NOTIFICATIONS` (Android 13+, before the first notification), `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_LOCATION`,
+  `ACCESS_NETWORK_STATE`.
+
+**Phase 4 required test cases (map each to a named test):** Safe Walk start/complete/cancel; check-in success/missed;
+warning; escalation; "I'm Safe" prevents escalation; location unavailable; location permission denied; network unavailable;
+SMS unavailable; emergency recoverable after restart; another user cannot access emergency/journey; low battery handled.

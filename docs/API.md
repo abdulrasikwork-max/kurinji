@@ -1265,3 +1265,155 @@ city search endpoint (search words never leave the phone).
 JPEG; moderators who did not take part; other kinds → 404); action `PERSON_REMOVE_PHOTO` (with a violation reason): the
 photo goes, the case stays OPEN, no strike, not appealable, shown to the person in `GET /api/social-standing` as a
 decision with `canAppeal: false`, audited in `moderation_actions`.
+
+---
+
+# Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
+
+A compact list of every phase's endpoints and config keys; the sections above have the details. Keep it in step.
+
+- `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/users/me`
+- Phase 17E (V28, `API.md` "Phase 17E"): `PUT|DELETE /api/posts/{id}/reaction` and `/save` (idempotent: 200
+  `{marked}` / 204), `GET /api/saved?cursor=`; post answers `youReacted`, `saved`, author-only `butterflies`; removed
+  `/butterfly` and `/api/cocoon`; `PUT|DELETE /api/profiles/me/photo`, `GET /api/profiles/{id}/photo/{key}`, `photo` in
+  person summaries and profiles; `PUT|DELETE /api/profiles/me/daily-state`, `dailyState` (own + connections only);
+  city codes from the catalog; moderators `GET …/content-cases/{id}/person-photo`, action `PERSON_REMOVE_PHOTO`.
+- Phase 17C (V27, `API.md` "Phase 17C"): `POST /api/media` `video/mp4` → 201 `{mediaId, kind, width, height,
+  durationMs}`; `POST /api/media/{id}/poster`; `GET /api/media/{id}` = photo or poster; `GET /api/media/{id}/video`
+  (ranges); `DELETE /api/media/{id}` (own, unattached); posts: ≤ 1 video (400), not ready 409; `media[]` + `kind`,
+  `durationMs`; moderators `GET …/content-cases/{id}/media/{mediaId}/video`. Config `app.social.max-video-bytes`,
+  `videos-per-day`.
+- Phase 17B (`API.md` "Phase 17B"): register needs `phone` → 201 `{status: PHONE_VERIFICATION_REQUIRED, challenge,
+  phoneHint, needsPhone, codeSent, resendInSeconds, codeExpiresInSeconds}`; login without a verified phone → 403
+  `PHONE_NOT_VERIFIED`; `POST /api/auth/phone/start|verify|resend|change` (verify answers like a sign-in). The V25
+  endpoints below are removed.
+- V25 (history): register → 201 `{status: VERIFICATION_REQUIRED, email}` (no tokens); login of an unverified
+  account → 403 `code EMAIL_NOT_VERIFIED`; `POST /api/auth/verify-email {token}` (200 / 400 `VERIFICATION_LINK_INVALID`
+  / 429); `POST /api/auth/verification/resend {email, password}` (202 always / 429); `GET /verify-email(.js|.css)`;
+  `ApiError.code` optional. Config `PUBLIC_BASE_URL`, `MAIL_*`, `app.email-verification.*`.
+- `GET|POST /api/safety-contacts`, `GET|PUT|DELETE /api/safety-contacts/{id}`
+- `POST|GET /api/emergencies`, `GET /api/emergencies/{id}`, `PUT /api/emergencies/{id}/cancel`, `PUT /api/emergencies/{id}/resolve`
+- `POST|GET /api/emergencies/{id}/locations`, `GET /api/emergencies/{id}/locations/latest` (4A; config
+  `app.emergency.locations.max-per-emergency|upload-grace|clock-tolerance`, defaults 1000 / 15m / 5m)
+- `POST|GET /api/journeys`, `GET /api/journeys/{id}`, `POST /api/journeys/{id}/check-ins`, `PUT …/complete|cancel`,
+  `POST …/escalations` (1–2 only, no skipping, idempotent; 3 = start SOS; 4/5 rejected), `PUT …/location` (last known) (4B).
+  `POST /api/emergencies` links the caller's ACTIVE walk (L3) and returns `journeyId`.
+- 4C: `POST /api/journeys` optional `destinationLatitude/Longitude` (both or neither), response `destination`;
+  `POST …/escalations` optional `reason` (L1: `CHECK_IN_MISSED` default | `ROUTE_DEVIATION` (needs destination) |
+  `UNEXPECTED_STOP`, may precede the deadline; L2: `NO_RESPONSE` only).
+- 4D: `POST /api/emergencies/{id}/circle-alerts`, `POST /api/journeys/{id}/circle-alerts` (1–20 reports, idempotent by
+  `clientRef`, status only forward, ≤ 200 per target), `POST /api/emergencies/{id}/dial-prompts` (L4 once, ACTIVE only),
+  `GET /api/emergencies/{id}/context?audience=OWNER|SAFETY_CIRCLE` (others 400). Journey L4 → 400.
+- Phase 5: `GET /api/evidence/vault-key`, `POST|GET /api/emergencies/{id}/evidence`, `GET …/evidence/custody`,
+  `GET /api/evidence/{id}`, `PUT /api/evidence/{id}/content?offset=N` (octet-stream ≤ 1 MiB), `POST …/seal`,
+  `GET …/content`, `POST …/delete {password}`. Config `app.evidence.*` (`EVIDENCE_STORAGE_DIR`, `EVIDENCE_VAULT_PUBLIC_KEY`).
+  Context OWNER gains `evidence` counts; SAFETY_CIRCLE none.
+- Phase 5 hardening (V10): `POST /api/evidence/{id}/verify` (server re-hashes its stored copy; damaged → UPLOADING
+  again). Delete: refused while ACTIVE and for `app.evidence.delete-protection` (24h) after the end; 5 wrong passwords
+  in 15 min → 429 (`delete-max-failures`, `delete-failure-window`); wrong passwords logged `DELETE_REFUSED`.
+  `VaultKeyTool generate` (passphrase-encrypted PEM) | `check` | `decrypt`.
+- Phase 5 restore (V11, `docs/PHASE5.md` §11): `GET|PUT /api/evidence/recovery`, `POST /api/evidence/recovery/envelope
+  {password}`, `GET /api/evidence/recovery/items?page=N`, `PUT /api/evidence/{id}/recovery-key`; declaration accepts
+  `recoveryRkVersion` + `recoveryWrappedKey`; `EvidenceResponse.recoverable`. Wrong passwords counted (5/15 min → 429).
+- Phase 6 (V12, `docs/PHASE6.md`): `POST /api/community/reports {category, cell(7)}` → 202 (same answer new / merged /
+  re-sent), `GET /api/community/area?cell=(6)` (cell + 8 neighbours, ≤ 100, nearest first; precision AREA/BLOCK,
+  support/freshness BANDS, `yourContribution`), `POST /api/community/signals/{id}/contributions {kind, near(7)}`,
+  `GET /api/community/mine`, `DELETE /api/community/mine/{id}`. Config `app.community.*`: delay 10–30 min, probation
+  24 h, 10 reports / 3 per area / 30 answers per 24 h, 120 look-ups + 15 distinct areas per hour, purge 15 min.
+- Phase 7 (V13, `docs/PHASE7.md`): area signals add `confidence`, `reasons`, `youFlagged`; mine adds `UNDER_REVIEW`;
+  `POST /api/community/signals/{id}/flags {reason, near(7)}` → 202 `{status:RECEIVED}` (10/day);
+  `GET /api/community/standing` (own pause only, no score); `POST /api/community/appeals` → 202;
+  `GET /api/moderation/access` (any JWT); MODERATOR/ADMIN (role from DB per request): `GET /api/moderation/cases?status=`
+  (summaries carry `youTookPart`),
+  `GET /api/moderation/cases/{id}`, `POST /api/moderation/cases/{id}/actions {action QUARANTINE|DISMISS|REMOVE|RESTRICT,
+  reason, contributorRef?, days?}`, `GET /api/moderation/appeals`, `POST /api/moderation/appeals/{id}/decision
+  {decision UPHELD|OVERTURNED}`; ADMIN: `PUT /api/admin/roles {email, role USER|MODERATOR}`, `GET /api/admin/moderation-log?page=`.
+  Paused contributor → 403 on report/answer/flag (viewing and safety features unaffected). Sign-in 429 after 10 failures
+  per account / 30 per address per 15 min; sign-up 429 after 10 per address per hour; community writes 10 per 10 min.
+  Config `app.auth.*`, `app.moderation.*`, `app.community.writes-per-10-minutes` (tests lift the per-address limits).
+- Phase 8 (V14, `docs/PHASE8.md`): `GET /api/community/area` adds `picture {modelVersion "rules-1", outlook, concern,
+  information, reasons, concernCategories, conflicting, highestConcernCell (6-char or null), areas[9] {cell, outlook,
+  information}}` (null if the rules fail; computed before the 100-signal cut); `GET /api/intelligence/region?cell=(5)` →
+  `{region, modelVersion, complete, areas[] (only known cells; absent = NO_INFORMATION), signals[] (MODERATE/HIGH only,
+  no ids, independent freshness)}`; 429 after 20 downloads / 6 distinct regions per 24 h (2 in probation), in memory.
+  Config `app.intelligence.*` (pattern half-life 60d, cap 4, recurring 2.5, forget 0.25, min gap 7d, region budgets,
+  `region-max-signals` 500).
+- Phase 9C (`docs/PHASE9.md` §8): `GET /api/moderation/cases/{id}` adds `coordination: null | {reasons
+  [LINKED_GROUP|SUPPORT_CORE|EXCLUSIVE_PAIR], groupSize TWO|THREE_TO_FIVE|SIX_OR_MORE, groupPlaces null|TWO_TO_FOUR|
+  FIVE_TO_NINE|TEN_OR_MORE}` (bands only, recomputed per view). `DELETE /api/community/mine/{id}` is no longer 409 for a
+  COORDINATION case without flags. Config `app.moderation.coordination.mode` (SHADOW), `.interval` (1h; tests 0s),
+  `.max-cases-per-day` (5).
+- Phase 9C.1–9C.2 (`docs/PHASE9.md` §9–§10): case detail adds `groupMembers [{ref, role null, flag null, tier,
+  accountAge, counting, linkGroup}]`; `POST …/actions` RESTRICT accepts `"wholeGroup": true` instead of `contributorRef`
+  (400 with both or on another action; 409 no group / everyone paused); a moderator in the group's core gets 403. DISMISS
+  of a COORDINATION case = Option B (that signal counts the people seen then separately).
+- Phase 9D (`docs/PHASE9.md` §18–§20): **no new endpoint or field.** `picture.modelVersion` / region pack `modelVersion`
+  = `"rules-1.1"` (was `"rules-1"`; `"rules-2"` only if `app.intelligence.rules-2-mode=ACTIVE`); the outlook
+  `NO_CONFIRMED_CONCERNS` is no longer sent.
+- Phase 9B (V15, `docs/PHASE9.md` §27–§34): ADMIN only `GET /api/admin/evaluation?weeks=1..104` (default 12) →
+  `{notice, fromWeek, toWeek, currentWeekIncomplete, countersEnabled, counters[{weekStart, metric, dimension,
+  modelVersion, value}], rates[{name, dimension, numerator, denominator, minimum, status OK|NOT_ENOUGH_DATA|INCONSISTENT,
+  value, low, high, lowerBound}], g1{status NOT_MET|COUNTS_MET_PRIVACY_REVIEW_REQUIRED, decidedCasesPerFourWeeks,
+  activeModerators, note}}`; 400 / 401 / 403. No client endpoint or field changed. Config `app.evaluation.enabled`
+  (true; false deletes the rows at the next clean-up), `app.evaluation.retention-weeks` (104, max 104). `POST /api/community/reports` answers as before; a lone report may later
+  appear in `GET /api/community/mine` as `kind: CONFIRM` on the neighbouring signal's id. Config
+  `app.intelligence.rules-2-mode` (SHADOW) and `.rules-2-shadow-interval` (1h; tests 0s).
+- Phase 10A (V16, `docs/API.md` "Phase 10A endpoints"): `PUT /api/users/me/password {currentPassword, newPassword}` → 200
+  fresh token (others revoked; 409 during ACTIVE SOS/walk; 409 wrong password; 429), `POST /api/users/me/deletion
+  {password}` → 202 `{deletionRequestedAt, deletionDueAt}` (409 ACTIVE / < 24 h), `POST /api/users/me/deletion/cancel
+  {password}` → 204; `/me`, login, register and password-change `user` add `deletionRequestedAt`, `deletionDueAt`; every
+  authenticated endpoint can answer 401 with `WWW-Authenticate: Bearer error="invalid_token",
+  error_description="credentials_changed|account_deleted|account_unavailable"`. Config `app.account.*`.
+- Phase 10A.4 (V17): tokens carry `sid` + `auth_time`; `POST /api/users/me/token` → 200 renewed token (409 after 30
+  days unless an SOS/walk is ACTIVE); `PUT /api/emergencies/{id}/resolve|cancel` optional `{password}`: from another
+  sign-in than the starter 403 without it, 409 wrong, 200 right; emergency answers add `endedElsewhere`.
+- Phase 11 (V18): `POST /api/emergencies` optional `clientRef` (same caller + reference ⇒ same emergency),
+  `startedAt` (offline start, clamped `[now − 24 h, now]`, marks `startedOffline`), `endedAt` + `outcome`
+  RESOLVED|CANCELLED (ended offline, stored ended); `PUT …/resolve|cancel` optional `endedAt` (clamped `[start, now]`);
+  answers add `startedOffline`; location grace for offline-started SOS also counts from the server's first record.
+  Rise (10B) has NO endpoint.
+- C1 (V19, `API.md` "Phase 11 C1"): register/login/refresh return `refreshToken` (`<sid>.<secret>`);
+  `POST /api/auth/refresh {refreshToken}` (public) → new access token + rotated secret; replaced secret within 60 s =
+  lost answer, later = reuse → session ends; 401 reasons `session_revoked` | `account_deleted` | `account_unavailable`;
+  `POST /api/auth/sign-out {refreshToken}` → 204 always; login optional `previousRefreshToken` (same account: hand-over
+  incl. ACTIVE SOS); every endpoint refuses a `sid` whose session ended (`session_revoked`); password change ends the
+  other sessions; renewal/password change adopt pre-V19 sign-ins once. Config `app.account.refresh-idle-timeout` (90d),
+  `refresh-reuse-grace` (60s), `session-retention` (30d).
+- Phase 13A (V20, `API.md` "Phase 13A"): register REQUIRES `dateOfBirth` (18+, never stored); user answers add
+  `ageConfirmed`; `POST /api/users/me/age-confirmation`; `GET|PUT /api/profiles/me`, `GET /api/profiles/by-handle/{h}`,
+  `GET /api/profiles/{id}` (`relationship`); `POST|GET /api/connections/requests`, `…/{id}/accept|decline`,
+  `DELETE …/requests/{id}`, `GET /api/connections`, `DELETE /api/connections/{profileId}`; `POST|GET
+  /api/connections/invites`, `DELETE …/invites/{id}`, `POST …/invites/redeem`; `POST|GET /api/blocks`, `DELETE
+  /api/blocks/{id}`; same for `/api/mutes`. Invisible = 404; no counts; config `app.social.*`.
+- Phase 13B (V21, `API.md` "Phase 13B"): `POST /api/places` (200, existing place returned), `GET /api/places/nearby?area=(6)`,
+  `GET /api/places/{id}`; `POST /api/media` (image/jpeg|png body, ≤ 5 MB → 201; others 415), `GET /api/media/{id}`
+  (`no-store, private`, `nosniff`); `POST /api/posts`, `GET|PUT|DELETE /api/posts/{id}` (PUT narrow-only, 409 on
+  widening), `GET /api/posts/mine?cursor=`, `GET /api/profiles/{id}/posts?cursor=`; `GET|POST /api/posts/{id}/comments`,
+  `DELETE /api/comments/{id}`, `POST /api/comments/{id}/hide|unhide`, `POST|DELETE /api/comments/{id}/helped`. Bands
+  for everyone but the author; exact-place posts visible to others after 1–3 h.
+- Phase 13C (V22, `API.md` "Phase 13C"): `PUT|DELETE /api/posts/{id}/butterfly` (`{state?: WANT|BEEN}`; own post / Ask
+  400), `GET /api/cocoon?state=&cursor=` (`{items[{post, state, savedPeriod}], nextCursor}`); post answers add
+  `yourButterfly` and, author only, `butterflies {count ≥ 3 | null, fewerThanThree}`; `GET /api/discover/edition?city=`
+  (`{city, weekOf, theme, sections[{kind CITY|ASKS|THEME, items[{post, reasons}]}]}`), `GET
+  /api/discover/connections?cursor=`, `GET /api/discover/categories/{c}?city=&cursor=`, `GET /api/places/{id}/posts?cursor=`
+  (EXACT + Everyone only), `GET /api/places/search?q=&city=` (names only, ≤ 20); place answers add `city`. Config
+  `app.social.butterflies-per-day` (200), `discover-reads-per-hour` (240), `place-searches-per-hour` (120).
+- Phase 13D (V23, `API.md` "Phase 13D"): `POST /api/reports {targetKind POST|COMMENT|PERSON, targetId, reason, note?}` →
+  202 always the same (400 own/reason/note, 404 invisible, 429 after 20/day), `GET /api/reports/mine`; `GET
+  /api/social-standing` (pause + decisions of 90 days, never a "keep"), `POST /api/social-standing/decisions/{id}/appeal`
+  (202, 409 asked/no longer applies); post answers add `approveFirst`, author `moderation {state, reason, decisionId}`,
+  others `collapsed` UNDER_REVIEW|BY_MODERATOR; perspectives add `awaitingApproval`, `canApprove`, `moderation`,
+  `collapsed`; posts accept `approveFirst`; `POST /api/comments/{id}/approve`; pauses answer 403 on their writes only.
+  Moderators: `GET /api/moderation/content-cases?status=`, `GET …/{id}`, `POST …/{id}/actions {action, reason}`,
+  `GET …/{id}/media/{mediaId}`, `GET /api/moderation/content-appeals`, `POST …/{id}/decision`, `GET
+  /api/moderation/places?area=`, `POST /api/moderation/places/{id}/merge {into}`; `/api/moderation/appeals` = Phase 7
+  RESTRICT appeals only. Config `app.moderation.reports-per-day` (20), `collapse-reports` (3), `content-interval` (1h),
+  `app.social.probation` (72h), `probation-posts-per-day` (3), `probation-comments-per-day` (10).
+- Phase 13E (V24, `API.md` "Phase 13E"): writes answer as before (never refused); post/perspective answers add
+  `strongLanguage`; others' `collapsed` + `BY_SYSTEM`; the author's `moderation` + `source` (SYSTEM|MODERATOR|null),
+  `flagged [{start,end}]` (code points of body + "\n" + tip); reason `AWAITING_CHECK`; the author's create/edit answer
+  may carry `supportSuggested`. `POST /api/content-checks/review {targetKind POST|COMMENT, targetId}` → 202 always the
+  same (own SYSTEM state only, else 404). Moderator summaries add `openedBy`, `contentSource`; detail adds `assessment
+  {status, action, rule, reason, evidence[], strongLanguage, versions}`. Internal service `POST /v1/assess` (key header)
+  and `GET /v1/health`. Config `app.moderation.ai.*` (enabled, url, key = env `MODERATION_SERVICE_KEY`, connect-timeout
+  300ms, timeout 1500ms, model-mode OFF, probation-wait-max 2h, retry-for 24h, retention 90d, job-interval PT5M).

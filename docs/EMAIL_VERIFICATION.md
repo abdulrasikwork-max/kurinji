@@ -104,3 +104,11 @@ Put them in the environment or the git-ignored `backend/.env` (never in `applica
 - Changing the e-mail address of an account is not possible (there is no such feature); when it is added it must
   re-verify the new address.
 - The 409 for an already verified address remains (accepted V1 oracle).
+
+## Appendix: the rule as recorded in CLAUDE.md §9 (moved verbatim on 2026-11-03)
+
+- **E-mail ownership (V25, SUPERSEDED by 17B, history):** no account gets a session before its owner opens the e-mailed link; verification,
+  refresh and per-request checks all refuse an unverified account; tokens are 256-bit, single use, 60 min, stored only as
+  SHA-256 and never logged or returned by an API; resend and verification answers reveal nothing about accounts; mail
+  credentials only from the environment. A future password reset must use its own token table and refuse unverified
+  accounts.

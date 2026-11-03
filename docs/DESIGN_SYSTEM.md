@@ -104,3 +104,34 @@ perspective, postmark, edition, "for the next person") in anything people read, 
 No text claims a place or person is safe; no counts except the comment count (U1) and the author's private butterfly
 line (from 3); saves are counted for nobody; no ranking words; no "avoid"; moderation feedback in ochre; no endless
 feed (U3).
+
+## History: identity notes from CLAUDE.md §10 (moved verbatim on 2026-11-03)
+
+Superseded identities (13F mist/bloom, Phase 16 red/black/white) and older UX bullets as CLAUDE.md held them.
+The current rules are above and in CLAUDE.md §10.
+
+> **Since 13F the Kurinji system governs every screen** (`docs/DESIGN_SYSTEM.md`): mist page, indigo ink, bloom
+> violet-blue primary, yeoman orange for intent only, ochre for moderation/caution, red for emergency UI only; Young
+> Serif headlines + Mukta Malar (Tamil + Latin) bundled; postmark / ticket / butterfly / kolam objects; four motion
+> moments. `ContrastTest` and `KurinjiTextsTest` guard contrast and voice. (The navy/teal identity is superseded.)
+
+> **Since Phase 16 (2026-10-26, decision U4) the red / black / white Kurinji system replaces the 13F mist/bloom look**
+> (`docs/DESIGN_SYSTEM.md`, `docs/PHASE16.md`): brand red for actions and the save; black hero surfaces; Mukta Malar
+> Bold headlines; social feed cards (person, photo, short thought, context chips, save + comments). Emergency UI is
+> recognised by the siren icon + the words SOS/Emergency + its black-and-red treatment, never by colour alone. The
+> bullet below about red is superseded.
+
+> **Since Phase 17E (E17-1) the palette is "Ink & Lime"** (`docs/DESIGN_SYSTEM.md`): ink black is the action colour on
+> light pages (lime words on it), lime #ADFF2F the action colour in dark mode; lime is otherwise a FILL (a given mark,
+> chosen tags, today's state) with ink on it, never text or an icon on a light page; deep leaf green #3A6100 for
+> accents read on light pages. The U4 emergency treatment and values are unchanged; red now means only emergency.
+
+- ~~**Red only for emergency UI.**~~ (superseded by U4) All text pairs ≥ 4.5:1 contrast, control edges ≥ 3:1. Status never by colour alone.
+  Never set `android:fontFamily` on the theme (it overrides text appearances); emergency digits use the phone's sans.
+- Use theme attributes and existing styles/components; no hard-coded colours in layouts.
+- Honesty labels: **Available** (works), **Preview** (design only), **Coming soon** (not built), **Sample** (placeholder data).
+- No text claims a place or person is safe (Phase 8). The Home status card states facts only (`HomeStatus`: checking /
+  nothing running / Safe Walk on / check-in missed; hidden during an SOS); `HomeTextsTest` scans every Home string.
+- Emergency UI: clear, fast, high contrast, low cognitive load, large touch targets, `keepScreenOn` while active.
+- Bottom nav (13F): Discover, ✚ Share (action), Cocoon, You. Reading screens keep the bar; everything else is a
+  secondary destination (toolbar + back, no bottom bar). Nearby (`communityFragment`) is under You → Safety.

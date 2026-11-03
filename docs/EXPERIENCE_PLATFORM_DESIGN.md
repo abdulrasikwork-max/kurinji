@@ -978,3 +978,68 @@ Sources for the name and model claims are listed in §17.
   [KEC_AI_NLP 2023](https://preview.aclanthology.org/setup/2023.dravidianlangtech-1.43),
   [DravidianLangTech 2026](https://aclanthology.org/2026.dravidianlangtech-1.51/)
 - MuRIL: [arXiv 2103.10730](https://arxiv.org/abs/2103.10730v2)
+
+---
+
+## Appendix: product as recorded in CLAUDE.md §1 (moved verbatim on 2026-11-03)
+
+The banner as it was written over Phases 13–17, and the product as built up to Phase 11 (SAFE / RISE; history).
+The current summary is CLAUDE.md §1.
+
+> **Product direction — FINAL, decided by the user 2026-10-22; design approved the same day:
+> `docs/EXPERIENCE_PLATFORM_DESIGN.md`. Status: planned (nothing built yet).**
+> **A social platform for real-world experiences and exploration, with the existing safety technology as a trust
+> layer underneath.** Definition: *a social space where people share first-hand experiences of places and activities —
+> written for the next person — so others feel inspired and equipped to go experience the world themselves, with
+> quiet safety built in.* Philosophy: **"Experience it. Share it forward. Fear less."**
+> - Safety is **not** the identity, the main screen, onboarding, navigation or branding; it appears when someone moves
+>   from reading to going ("Going there?" sheet, You → Safety, active walk/SOS). Every safety guarantee is kept.
+> - Planned structure: **Discover · ✚ Share · Cocoon · You.** Experience + Ask posts (Take in V2), 🦋 butterfly =
+>   "I want to experience this" (saves to the private Cocoon: Want → Been), Perspectives (comments), mutual
+>   Connections, visibility Everyone / Connections / Only me.
+> - Permanent product rules: **no follower/following, no public counts of anything, no DMs, no reels/stories, no
+>   streaks, no popularity rankings, no infinite auto-scroll, no presence/online status, notifications only from
+>   people**; nobody can use the platform to monitor another person (applies to social features too).
+> - **Changed by the user on 2026-10-26 (Phase 16 UX reset, `docs/PHASE16.md`):** (U1) a post shows **how many
+>   comments the viewer can read** (only comments; never likes, saves, views or followers; the number is computed
+>   through the same visibility rule as the comment list, so it reveals nothing the viewer could not count); (U2)
+>   Discover may show **"Talking now"**: posts with recent comments, ordered by the time of the newest visible comment,
+>   **never by totals**, no numbers in the order; (U3) Discover **auto-loads the next page** while scrolling but always
+>   **ends** with an "all caught up" card (no endless feed); (U4) the brand is **red / black / white**; red is no longer
+>   reserved for emergencies, so **emergency UI never relies on colour**: it always carries the siren icon and the words
+>   (SOS / Emergency) and uses its own black-and-red treatment. The other permanent rules below are unchanged.
+> - **Phase 17E (2026-11-02, E17-1, under the user's full-autonomy brief):** the brand colours are **ink black + Kurinji
+>   lime (#ADFF2F)** ("Ink & Lime", `docs/DESIGN_SYSTEM.md`); this supersedes only the *colour* part of U4. U4's
+>   emergency rule and every emergency value are unchanged (`ContrastTest` pins them); red again means only emergency.
+>   The butterfly is a **reaction** (author sees a count from 3, never who) and **Save** a private bookmark (D-3);
+>   today's state is visible to connections only (D-7).
+> - Do **not** treat this as a planning/outings app or return to `AUDIT_NEXT.md` Part II ("Go further, prepared"): that
+>   direction is superseded. Do not keep re-opening the core concept.
+> - Brand: **IRL — In Real Life** (the user's decision, 2026-11-03; replaces Kurinji, D1/F1; trademark, domain and
+>   store checks for IRL are still to do). Line **"OUT THERE. TOGETHER."**; icon **"the Meet"**
+>   (`docs/design/irl-icon.md`); opening screen and name rules in `docs/DESIGN_SYSTEM.md` ("Name", "Icon", "Opening").
+>   **Package, applicationId (`com.safesphere.app`), signing, database, API and code names stay SafeSphere** (a
+>   rebrand, not a new app; `KurinjiTextsTest` pins it). Decisions D1–D15: design doc §15 (all decided 2026-10-22).
+>
+> Everything below in §1 describes the product as built up to Phase 11 (history; still the truth for existing code).
+
+**SafeSphere (as built to Phase 11) — a safety, community intelligence, and empowerment platform designed with women
+at the center.** Philosophy: *"Safe enough to live. Free enough to grow."*
+
+- **SAFE** — *"You deserve to feel safe."* Emergency and personal safety, Safety Circle, emergency response,
+  Safe Journey / Safe Walk, location and emergency intelligence, community safety reports, safety map, evidence
+  protection, safety intelligence, AI-assisted safety.
+- **RISE** — *"You deserve the freedom to grow."* Redesigned in Phase 10 as **"Proof"** (`docs/PHASE10_DESIGN.md`): a
+  private, phone-only self-efficacy cycle (Doubt → Prepare → Try → Proof → Next); self-doubts are tested, safety concerns
+  are respected and never "disproven"; support is never ranked; gender and stereotypes are never named; collective proof
+  only as anonymous thresholded counts. **10B built 2026-10-22** (phone-only, `feature/rise`, `docs/PHASE11.md` §4);
+  10C collective proof not built (stoppable). The original "Small Wins / Stories" community idea was
+  rejected (no audience, no shared text, no contact).
+  **Not** LinkedIn-style networking. **Not** an Instagram-style popularity/influencer system (no likes, followers, feeds).
+- **Identity (Phase 10A):** *"Safety that expands your world."* **Nobody can use SafeSphere to monitor another person**
+  (no family/partner/guardian mode, no location on request, no remote view): a permanent product decision.
+- SAFE community features exist to produce **safety intelligence** (reports, locations, confirmations, verification), not engagement.
+- UI philosophy: **"Calm when everything is safe. Powerful when something goes wrong."**
+
+The vision has evolved; the project is **not** being restarted. Phases 1–3 are the foundation.
+Final-year B.Tech IT team project: the student must be able to explain every important decision in a viva.

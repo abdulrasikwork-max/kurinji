@@ -1,207 +1,107 @@
-# CLAUDE.md — SafeSphere project context
+# CLAUDE.md — SafeSphere (brand: IRL) project context
 
-Permanent context for Claude Code. **The repository is the source of truth for code**; this file records product
-intent, decisions, conventions and rules. If code and this file disagree, inspect the code and flag the conflict to
-the user instead of guessing. Detailed history is in `docs/` — read only what the current task needs.
+Permanent context for Claude Code. **The repository is the source of truth for code**; this file holds the product
+intent, rules and conventions that apply to every task. If code and this file (or a rules file) disagree, inspect the
+code and flag the conflict to the user instead of guessing.
 
 > The user's local repository may contain fixes made during Phase 3 live verification that are not in
 > `SafeSphere-Phase3.zip`. Always inspect the local repo, never the zip.
+
+**Where the rest of the project knowledge lives (read only what the task needs):**
+- `.claude/rules/` — architecture detail, loaded automatically when you open matching files: `android.md` (all of
+  `android/`), `android-safety.md` (SOS, Safe Walk, Circle, vault, Nearby, trust, intelligence), `android-social.md`
+  (social, profile, moderation screens, text check, media), `backend.md`, `database.md` (migrations, per-migration
+  constraints), `moderation-service.md`. When planning across modules, read the relevant ones yourself.
+- `docs/STATUS.md` — the full status record per phase (test counts, verification results, code map per phase).
+- `docs/DECISIONS.md` — the full decision log with reasons (viva material). New decisions are added there.
+- `docs/API.md` — every endpoint; its appendix is the per-phase endpoint and config index.
+- `docs/README.md` — index of every doc. Latest state and next steps: top of `docs/HANDOFF.md`.
+- `C:\Users\ABDUL RAFIQ\Desktop\CLAUDE.md` (outside the repo) is an old copy; this repo copy is the current one.
+
+**Keeping this file small:** it must stay below 40k characters. New phase results go to the phase doc,
+`docs/STATUS.md` (one compact line here) and `docs/HANDOFF.md`; new decisions to `docs/DECISIONS.md` (here only if
+they are permanent rules); new class maps to the matching `.claude/rules/` file. Move text, never delete it.
 
 ---
 
 ## 1. Product
 
-> **Product direction — FINAL, decided by the user 2026-10-22; design approved the same day:
-> `docs/EXPERIENCE_PLATFORM_DESIGN.md`. Status: planned (nothing built yet).**
-> **A social platform for real-world experiences and exploration, with the existing safety technology as a trust
-> layer underneath.** Definition: *a social space where people share first-hand experiences of places and activities —
-> written for the next person — so others feel inspired and equipped to go experience the world themselves, with
-> quiet safety built in.* Philosophy: **"Experience it. Share it forward. Fear less."**
-> - Safety is **not** the identity, the main screen, onboarding, navigation or branding; it appears when someone moves
->   from reading to going ("Going there?" sheet, You → Safety, active walk/SOS). Every safety guarantee is kept.
-> - Planned structure: **Discover · ✚ Share · Cocoon · You.** Experience + Ask posts (Take in V2), 🦋 butterfly =
->   "I want to experience this" (saves to the private Cocoon: Want → Been), Perspectives (comments), mutual
->   Connections, visibility Everyone / Connections / Only me.
-> - Permanent product rules: **no follower/following, no public counts of anything, no DMs, no reels/stories, no
->   streaks, no popularity rankings, no infinite auto-scroll, no presence/online status, notifications only from
->   people**; nobody can use the platform to monitor another person (applies to social features too).
-> - **Changed by the user on 2026-10-26 (Phase 16 UX reset, `docs/PHASE16.md`):** (U1) a post shows **how many
->   comments the viewer can read** (only comments; never likes, saves, views or followers; the number is computed
->   through the same visibility rule as the comment list, so it reveals nothing the viewer could not count); (U2)
->   Discover may show **"Talking now"**: posts with recent comments, ordered by the time of the newest visible comment,
->   **never by totals**, no numbers in the order; (U3) Discover **auto-loads the next page** while scrolling but always
->   **ends** with an "all caught up" card (no endless feed); (U4) the brand is **red / black / white**; red is no longer
->   reserved for emergencies, so **emergency UI never relies on colour**: it always carries the siren icon and the words
->   (SOS / Emergency) and uses its own black-and-red treatment. The other permanent rules below are unchanged.
-> - **Phase 17E (2026-11-02, E17-1, under the user's full-autonomy brief):** the brand colours are **ink black + Kurinji
->   lime (#ADFF2F)** ("Ink & Lime", `docs/DESIGN_SYSTEM.md`); this supersedes only the *colour* part of U4. U4's
->   emergency rule and every emergency value are unchanged (`ContrastTest` pins them); red again means only emergency.
->   The butterfly is a **reaction** (author sees a count from 3, never who) and **Save** a private bookmark (D-3);
->   today's state is visible to connections only (D-7).
-> - Do **not** treat this as a planning/outings app or return to `AUDIT_NEXT.md` Part II ("Go further, prepared"): that
->   direction is superseded. Do not keep re-opening the core concept.
-> - Brand: **IRL — In Real Life** (the user's decision, 2026-11-03; replaces Kurinji, D1/F1; trademark, domain and
->   store checks for IRL are still to do). Line **"OUT THERE. TOGETHER."**; icon **"the Meet"**
->   (`docs/design/irl-icon.md`); opening screen and name rules in `docs/DESIGN_SYSTEM.md` ("Name", "Icon", "Opening").
->   **Package, applicationId (`com.safesphere.app`), signing, database, API and code names stay SafeSphere** (a
->   rebrand, not a new app; `KurinjiTextsTest` pins it). Decisions D1–D15: design doc §15 (all decided 2026-10-22).
->
-> Everything below in §1 describes the product as built up to Phase 11 (history; still the truth for existing code).
+**Brand: IRL — In Real Life** (the user's decision, 2026-11-03; replaces Kurinji; trademark, domain and store checks
+still to do). Line **"OUT THERE. TOGETHER."**, icon **"the Meet"** (`docs/design/irl-icon.md`), opening screen and name
+rules in `docs/DESIGN_SYSTEM.md`. **Package, applicationId (`com.safesphere.app`), signing, database, API and code names
+stay SafeSphere** (a rebrand, not a new app; `KurinjiTextsTest` pins it).
 
-**SafeSphere (as built to Phase 11) — a safety, community intelligence, and empowerment platform designed with women
-at the center.** Philosophy: *"Safe enough to live. Free enough to grow."*
+**Direction — FINAL (the user, 2026-10-22; design `docs/EXPERIENCE_PLATFORM_DESIGN.md`, decisions D1–D15 in its §15;
+built in Phases 13–17):** a social platform for real-world experiences and exploration, with the existing safety
+technology as a trust layer underneath — *people share first-hand experiences of places and activities, written for
+the next person, so others feel inspired and equipped to go experience the world themselves, with quiet safety built
+in.* Philosophy: **"Experience it. Share it forward. Fear less."** Do **not** treat it as a planning/outings app or return
+to `AUDIT_NEXT.md` Part II (superseded). Do not keep re-opening the core concept. The project is not being restarted;
+Phases 1–3 are the foundation.
 
-- **SAFE** — *"You deserve to feel safe."* Emergency and personal safety, Safety Circle, emergency response,
-  Safe Journey / Safe Walk, location and emergency intelligence, community safety reports, safety map, evidence
-  protection, safety intelligence, AI-assisted safety.
-- **RISE** — *"You deserve the freedom to grow."* Redesigned in Phase 10 as **"Proof"** (`docs/PHASE10_DESIGN.md`): a
-  private, phone-only self-efficacy cycle (Doubt → Prepare → Try → Proof → Next); self-doubts are tested, safety concerns
-  are respected and never "disproven"; support is never ranked; gender and stereotypes are never named; collective proof
-  only as anonymous thresholded counts. **10B built 2026-10-22** (phone-only, `feature/rise`, `docs/PHASE11.md` §4);
-  10C collective proof not built (stoppable). The original "Small Wins / Stories" community idea was
-  rejected (no audience, no shared text, no contact).
-  **Not** LinkedIn-style networking. **Not** an Instagram-style popularity/influencer system (no likes, followers, feeds).
-- **Identity (Phase 10A):** *"Safety that expands your world."* **Nobody can use SafeSphere to monitor another person**
-  (no family/partner/guardian mode, no location on request, no remote view): a permanent product decision.
-- SAFE community features exist to produce **safety intelligence** (reports, locations, confirmations, verification), not engagement.
-- UI philosophy: **"Calm when everything is safe. Powerful when something goes wrong."**
-
-The vision has evolved; the project is **not** being restarted. Phases 1–3 are the foundation.
-Final-year B.Tech IT team project: the student must be able to explain every important decision in a viva.
+- Safety is **not** the identity, the main screen, onboarding, navigation or branding; it appears when someone moves
+  from reading to going ("Going there?" sheet, You → Safety, active walk/SOS banners). **Every safety guarantee is kept.**
+- Structure: **Discover · ✚ Share · Saved · You** (the Saved tab keeps the nav id `cocoonFragment`). Experience + Ask
+  posts (Takes in V2), Perspectives (comments), mutual Connections, visibility Everyone / Connections / Only me.
+- 🦋 butterfly = a **reaction** on others' Experiences (the author sees a count from 3, never who); **Save** = a private
+  bookmark (D-3). Today's state: a closed list, connections only, the IST day only (D-7).
+- **Permanent product rules:** no follower/following, no public counts (except U1), no DMs, no reels/stories, no streaks,
+  no popularity rankings, no endless feed, no presence/online status, notifications only from people. **Nobody can use
+  the platform to monitor another person** (no family/partner/guardian mode, no location on request, no remote view;
+  applies to social features too).
+- Changed by the user on 2026-10-26 (Phase 16, `docs/PHASE16.md`): **U1** a post shows how many comments the viewer can
+  read (only comments; computed through the comment visibility rule, so it reveals nothing the viewer could not count);
+  **U2** Discover may show "Talking now", ordered by the newest visible comment, never by totals, no numbers; **U3**
+  Discover auto-loads the next page but always **ends** with an "all caught up" card; **U4** emergency UI never relies on
+  colour: siren icon + the words SOS/Emergency + its own black-and-red treatment.
+- Colours (E17-1, 2026-11-02): **"Ink & Lime"** (ink black + lime #ADFF2F, `docs/DESIGN_SYSTEM.md`); red again means only
+  emergency (`ContrastTest` pins the emergency values).
+- Women's realities are an internal design principle only (D4). Chennai first; Tamil/Tanglish content from V1, Tamil UI
+  in V2 (D5). 18+, self-declared date of birth, never stored (D6).
+- Final-year B.Tech IT team project: the student must be able to explain every important decision in a viva.
+- History (SafeSphere "as built to Phase 11": SAFE / RISE; Rise retired in 13F, D9): appendix of
+  `docs/EXPERIENCE_PLATFORM_DESIGN.md`.
 
 ---
 
-## 2. Status and roadmap
+## 2. Status (full record: `docs/STATUS.md`; per phase: `docs/PHASE*.md`; latest: `docs/HANDOFF.md`)
 
-| Phase | Scope | Status |
-|---|---|---|
-| 0 | Architecture & planning | Done |
-| 1 | Android foundation, branded design system | Done |
-| 2 | Spring Boot + MySQL + JWT auth, Android session | Done, live verified |
-| 3 | Safety Circle + manual SOS (countdown, events, history, recovery) | Done, **live verified** |
-| **4** | **Real emergency response + Safe Walk** (sub-phases below) | **4A–4D implemented, compiled, tested** (manual verification **not verified**: 4A, 4B pending; 4C partial, `docs/PHASE4C.md` §8.1; 4D skipped by the user 2026-10-20, `docs/PHASE4D.md` §8). Phase 5 is done; see the next rows |
-| 5 | Emergency Evidence Vault | **Implementation-complete 2026-10-20**: implemented, compiled, tested, emulator-verified, incl. **hardening** (V10, `docs/PHASE5.md` §10) and **restore on a new phone** (V11, recovery passphrase, §11). **Samsung Galaxy A23 partially verified** (§11.5.1: PASS tests 1–5 and 6b; PARTIAL 6; 7 step 1 only). **All other real-phone checks DEFERRED / not yet verified** by the user's decision (list in §11.5.1, incl. recovery passphrase 16–22 on a real phone) |
-| **6** | **Community Safety Intelligence** ("Place Signals") | **Implemented, compiled, tested 2026-10-20** (V12 on MySQL, live API smoke test, API 37 emulator run): `docs/PHASE6.md`. **Real phone: not verified** |
-| **7** | **Verification, Trust + Moderation** | **Implemented, compiled, tested 2026-10-20** (backend 261 / Android 403 tests, V13 on MySQL, live API 58/58), **emulator-verified (API 37)** incl. moderator screens: `docs/PHASE7.md` §10. TalkBack/dark mode **not verified**; **Galaxy A23 deferred** |
-| **8** | **Safety Intelligence Engine** (area picture, pattern memory, "Check the way"; full route planner NOT built) | **Implemented, compiled, tested 2026-10-21** (backend 316 / Android 431 tests, V14 on MySQL, live API 22/22, **emulator-verified (API 37)**): `docs/PHASE8.md`, design `docs/PHASE8_DESIGN.md`. TalkBack **not verified**; real phone **not verified**; real pattern episode on MySQL **not verified** |
-| **9** | **AI/ML** ("evidence before AI", `docs/PHASE9_DESIGN.md`) | **In progress.** 9C.0 (Phase 7 COORDINATION reopen fix) implemented, tested, **live-verified on MySQL**; **9A attack simulation implemented, compiled, tested 2026-10-21** (test code only); **9C coordination check implemented, compiled, tested 2026-10-21** (coord-1 in **SHADOW** by default, no withdrawal lock for COORDINATION cases, moderator pattern texts); **9C.1 S15 Option B, 9C.2 group members + whole-group pause, 9C.3 two guard fixes implemented, compiled, tested 2026-10-21** (backend 388 / Android 450, lint 0 errors / 87 warnings; **live ACTIVE check on MySQL 25/25**; **emulator (API 37) moderator screens PASS**; TalkBack speech, dark-mode colours and the A23 **not verified**): `docs/PHASE9.md` §9–§16. **9C complete: accepted by the user on 2026-10-21.** **9D implemented, compiled, tested 2026-10-21, awaiting the user's review** (`docs/PHASE9.md` §18–§26): neighbour join (active), havens-alone cap = active rules **rules-1.1**, rules-2 in **SHADOW only** (not promoted: no real-world evidence); backend 423 / Android 452, lint 0 errors / 87 warnings, **live MySQL 19/19**, **emulator (API 37) PASS**; TalkBack, the A23 and real-world rates **not verified**. **9B implemented, compiled, tested 2026-10-21; complete: accepted by the user on 2026-10-21, frozen** (`docs/PHASE9.md` §27–§34): V15 weekly system-wide outcome counters (after commit, best effort) + `moderation_cases.coordination_rule`, weekly snapshot, ADMIN-only `GET /api/admin/evaluation`; backend 453 / Android 454, lint 0 errors / 87 warnings, **V15 dry run 19/19 + applied on MySQL, live MySQL 21/21**; nothing user-visible; real-world rates **not verified** (no deployment). **No learned model** (gates G1–G3 not met) |
-| **10** | **Foundation (10A) + RISE "Proof" (10B–10D)** (`docs/PHASE10_DESIGN.md`) | **10A implemented, compiled, tested, verified 2026-10-22** (`docs/PHASE10.md`): honesty/identity/language pass, V16 + `ActiveAccountCheck` + password change with revocation, coercion-aware account deletion; backend 466 / Android 480 tests, lint 0 errors / 85 warnings, **V16 dry run 13/13 + applied, live MySQL 23/23, emulator (API 37) PASS**; TalkBack, onboarding pages on a device and the real phone **not verified**. **10A.4 session continuity** (token renewal, password to end an SOS from another sign-in, V17) **implemented, compiled, tested, verified 2026-10-22**: backend 473 / Android 487, lint 0 errors / 85 warnings, **V17 dry run 7/7 + applied, live MySQL 9/9, emulator PASS** (`PHASE10.md` §11). 10B–10D: planned, not started. **10B Rise "Proof" implemented, compiled, tested, emulator-verified 2026-10-22** (Android only, nothing sent; `docs/PHASE11.md` §4); 10C (collective proof) not built; 10D (real phone, TalkBack) not done |
-| **11** | **SOS without internet** (`docs/PHASE11.md` §1–§3) | **Implemented, compiled, tested, verified 2026-10-22**: every SOS starts on the phone (SMS + location offline), `SosRecorder` records it later with a client reference (V18); backend 482 / Android 527, lint 0 / 85, **V18 dry run 10/10 + applied, live MySQL 12/12, emulator with the server down PASS**; real phone and TalkBack **not verified**. **C1 session continuity (V19 device sessions + rotating refresh secrets; expired ≠ revoked) implemented, compiled, tested, verified 2026-10-22**: V19 dry run 3/3 + 14/14 and applied, live MySQL 10/10, emulator E1–E7 PASS; real phone and a 25 h idle test **not verified** (`docs/PHASE11.md` §8) |
-| 12 | Verified Nearby Assistance | Not started ("Circle Response" from `PHASE10_DESIGN.md` §32 stays a future proposal) |
-| **13** | **Experience platform** (the new product direction; `docs/EXPERIENCE_PLATFORM_DESIGN.md`) | **13A identity foundation implemented, compiled, tested, verified 2026-10-22** (`docs/PHASE13A.md`, plan `PHASE13A_PLAN.md`): age gate (18+, date of birth never stored), profiles/handles, mutual connections, invite codes, blocks, mutes, the one visibility rule; backend 569 / Android 592, lint 0 / 89, **V20 dry run 30/30 + applied, live MySQL 12/12, emulator (API 37) E1–E7 PASS** (one bug found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13B experiences implemented, compiled, tested, verified
-2026-10-22/23** (`docs/PHASE13B.md`, plan `PHASE13B_PLAN.md` approved with Q1–Q12): places, Experiences/Asks with
-precision and the 1–3 h exact-place delay, photos stripped twice, Perspectives, encrypted private places; backend 635 /
-Android 627, lint 0 / 91, **V21 dry run 79/79 + applied, live MySQL 33/33, emulator (API 37) E1–E12 PASS** (two bugs
-found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13C intent and discovery implemented, compiled, tested, verified 2026-10-23** (`docs/PHASE13C.md`, plan `PHASE13C_PLAN.md`, C1–C15 decided under the user's delegation): butterfly = private Cocoon item (Want → Been), the author's count only from 3 people up, weekly city Edition with "Why am I seeing this?", From your connections, place and category pages, place-name search, mute in every list; backend 663 / Android 641, lint 0 / 94, **V22 dry run 14/14 + applied, live MySQL 29/29, emulator (API 37) E1–E17 PASS** (one wording bug found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13D moderation v2 implemented, compiled, tested, verified 2026-10-24/25** (`docs/PHASE13D.md`, plan `PHASE13D_PLAN.md`, M1–M20 decided under the user's delegation): reports on posts/perspectives/people (reporters never revealed, nothing observable to the reported person below 3 independent reports), collapse, holds, removal, strikes, pauses, appeals to another moderator, approve-first (Q6), edit history during a case (Q7), place merging (API), probation; backend 694 / Android 657, lint 0 / 54, **V23 dry run 51/51 + applied (2 CHECK gaps found and fixed first), live MySQL 30/30, emulator (API 37) E1–E8 PASS** (3 wording bugs found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13E AI v1 implemented, compiled, tested, verified 2026-10-25** (`docs/PHASE13E.md`, plan `PHASE13E_PLAN.md`, E1–E30 decided under the user's delegation): Python moderation service (standard library only, internal, never logs text) with the norm-1 normaliser + hashed Tamil/Tanglish/English lexicon lex-1 + evidence rules; pure Java `DecisionPolicy` policy-1 (PUBLISH / PUBLISH_COLLAPSED / HOLD_FOR_REVIEW, never a removal or a restriction); the same normaliser, lexicon and rules in plain Kotlin on the phone for a private nudge (drafts never leave it) and a self-harm support line (never stored); rung-2 linear model built in Python + Kotlin but **OFF, no model ships** (no D3 dataset); V24 dry run 59/59 + 19/19 and applied, live MySQL 28/28 with the real service, emulator (API 37) E1–E8 PASS (one privacy leak and two UI gaps found and fixed); real phone, TalkBack speech and dark mode **not verified**. **13F Kurinji UI/UX + safety integration implemented, compiled, tested, emulator-verified 2026-10-25** (`docs/PHASE13F.md`, plan `PHASE13F_PLAN.md` approved with F1–F4): new identity (mist/ink/bloom/yeoman, Young Serif + Mukta Malar), Discover · Share · Cocoon · You, safety banners on every screen, You → Safety hub, "Going there?", SOS shortcut + Quick Settings tile, Rise retired (D9), visible brand Kurinji (F1), Ready check "Before you need it" in You → Safety; Android 686 / 0, lint 0 / 94 (0 unused resources); emulator E1–E16 PASS (4 bugs found and fixed); real phone and TalkBack speech **not verified**. 13R: planned. Sub-phases 13A identity foundation (V20) → 13B experiences → 13C intent + discovery → 13D moderation v2 → 13E AI v1 → 13F new UI/navigation, plus 13R Tamil/Tanglish model research track in parallel (design doc §12). Decided 2026-10-22: D1 (name Kurinji, checks pending), D4 (women's realities = internal principle only), D5 (Chennai first; Tamil/Tanglish content from V1, Tamil UI in V2), D6 (18+, self-declared date of birth), D13 (Phase 13), D7 (Coil is the one new Android dependency for 13B; push stays V2), D11 (places user-created only, no places API), D14 (no audience preselected on the first post), D2 (moderation models allowed under the evidence → policy → human rule), D3 (the user's dataset + licence-checked public sets, ≥ 2 annotators), D8 (Takes in V2), D9 (retire Rise when 13F ships), D10 (pending safety items folded into Phase 13; A23 sprint before any pilot), D12 (HTTPS server before a closed pilot), D15 (team moderators, rotating). All of D1–D15 are decided. Each sub-phase needs its own plan and the user's approval first |
+| Phase | Scope | Status | Not verified (never claim otherwise) |
+|---|---|---|---|
+| 0–3 | Planning; Android foundation; Spring Boot + MySQL + JWT; Safety Circle + manual SOS | Done; 2 and 3 live verified | — |
+| 4A–4D | Location + notifications; Safe Walk; route/stop/battery checks; SMS fallback, Context Packet, Call 112 | implemented, compiled, tested | manual: 4A, 4B pending; 4C partial; 4D skipped by the user |
+| 5 | Evidence Vault + hardening (V10) + restore on a new phone (V11) | implementation-complete, emulator-verified | A23 partial; other real-phone checks deferred (`PHASE5.md` §11.5.1) |
+| 6 | Community place signals ("Nearby") | implemented, compiled, tested, emulator | real phone |
+| 7 | Verification, trust, moderation | implemented, compiled, tested, emulator | TalkBack, dark mode, A23 |
+| 8 | Safety Intelligence (area picture, patterns, "Check the way"; no route planner) | implemented, compiled, tested, emulator | TalkBack, real phone, real pattern episode |
+| 9 | "Evidence before AI": 9A attack simulation, 9B counters, 9C coordination, 9D neighbour join | 9B and 9C accepted, frozen; 9D awaiting the user's review; **no learned model** | real-world rates, TalkBack, A23 |
+| 10 | 10A foundation + 10A.4 session continuity; 10B Rise (retired in 13F) | verified (MySQL, emulator) | TalkBack, real phone; 10C not built |
+| 11 | SOS without internet (V18) + C1 device sessions (V19) | verified (emulator incl. server down) | real phone, TalkBack, 25 h idle |
+| 12 | Verified Nearby Assistance | not started | — |
+| 13A–13F | Identity, experiences, discovery, moderation v2, AI v1, new UI/navigation | each implemented, compiled, tested, live MySQL, emulator | real phone, TalkBack speech, dark mode; 13R research track planned |
+| 14 | Security, privacy + abuse-resistance audit (P14-1…3 fixed) | implemented, compiled, tested, live MySQL | real phone |
+| 15 | Final integration + acceptance testing | PARTIAL: 31/36 PASS, 0 FAIL | 5 NOT VERIFIED (real phone, TalkBack…) |
+| V25 | E-mail verification | superseded by 17B (history) | real mailbox |
+| 16 | UX reset (U1–U4) | implemented, compiled, tested, emulator | physical phone, TalkBack, real e-mail |
+| 17A–17E | Stabilise; phone OTP (V26); media (V27); location UX; social redesign (V28) | each implemented, compiled, tested, verified (MySQL/emulator; 17B also on the A23) | no real SMS sent; physical phone; TalkBack by ear; 17E on the A23 install + launch only |
+| IRL | Rebrand, icon "the Meet", opening screen | implemented, compiled, tested, emulator; local commit | physical phone, TalkBack |
+| 17F–17J | Rest of `docs/PHASE17_PLAN.md` | planned | — |
 
-| **14** | **Security, privacy + abuse-resistance audit** (`docs/PHASE14.md`) | **Implemented, compiled, tested 2026-10-26** (no feature, no migration, no Android change): 3 Low findings fixed with regression tests (`backend/src/test/.../audit/Phase14SecurityRegressionTest`): P14-1 others' profile list ordered by `visible_from` (created_at leaked the Q1-delayed time), P14-2 a post's author takes no part in a perspective case on it (or its appeal), P14-3 simultaneous block/mute/report no longer 500 (unique-key race inside one transaction; MySQL deadlocks on reports, fixed with a target row lock + READ COMMITTED + retry); no Critical/High/Medium; backend 728 / Android 686, lint 0 / 94, Python 38/38, **live MySQL 7/7**; real phone not verified |
-| **15** | **Final integration + acceptance testing** (`docs/PHASE15.md`) | **PARTIAL 2026-10-26** (no feature, no migration, no backend change): acceptance matrix 31/36 PASS, 0 FAIL, 5 NOT VERIFIED (real phone — device unavailable, TalkBack by ear, device SOS/Safe Walk, Connections and moderator screens on the phone); live API **119 checks** against MySQL + the real Python service (118 PASS + 1 script fault re-verified), erasure incl. photo files verified; emulator (API 37) walk-through PASS after **6 Android fixes** (15-1 onboarding dots, 15-2 post failure off-screen, 15-3 Cocoon "Add a perspective", 15-4 report band words + doubled full stops in spoken labels (`core/ui/SpokenText`), **15-5 session banners not re-shown on return to a tab**, 15-6 deletion text names social content; `Phase15IntegrationFixesTest`); backend 728 / Android 692, lint 0 / 94, Python 38/38. Dev DB: 168 old phase6–9 test accounts and an ACTIVE SOS (id 24) on the owner's account found and left for the user |
-| **V25** | **E-mail ownership verification** (`docs/EMAIL_VERIFICATION.md`) | **Implemented, compiled, tested, verified 2026-10-26**: unverified accounts get no session; 60-min single-use links (SHA-256 only); resend (e-mail + password, always 202); login 403 `EMAIL_NOT_VERIFIED`; browser confirmation page; SMTP mailer (off without MAIL_HOST/MAIL_FROM); backend 752 / Android 701, lint 0 / 95, Python 38/38; **V25 dry run 11/11 + 6/6, applied** (171 accounts grandfathered verified); live API 16/16 via a local SMTP sink; emulator flow PASS. **Real external mailbox, physical phone: NOT VERIFIED** |
-| **16** | **Kurinji UX reset + stabilization** (`docs/PHASE16.md`) | **Implemented, compiled, tested, emulator-verified 2026-10-26** (decisions U1–U4 by the user): red/black/white identity (Mukta Malar Bold, Go-K icon `docs/design/kurinji-16-icon.md`, "Go. See. Tell." splash), feed cards (avatar, photo, words, Save, comment count), one-feed Discover (`DiscoverFeed`: Near me, Talking now, city, theme, people you know, auto-load, ends), rebuilt post page (large photos, chips, Tip, pinned comment box), Saved tab (was Cocoon), plain words, `core/location/OneFix` (cached/fresh one-shot fix, distinct notices, settings fallbacks, platform fallback), emergency UI = black + red ring + siren; backend `PostResponse.commentCount` + Edition `TALKING` (no migration, next still **V26**); backend 756 / Android 712, lint 0 / 99; `docs/EMAIL_SETUP.md`. Physical phone, TalkBack by ear, real e-mail **not verified** |
-| **17** | **Product reset + bug fixes + social UX + AI Explore** (`docs/PHASE17_PLAN.md`: audit R1–R4, sub-phases 17A–17J, decisions D-1…D-10) | **17A stabilise implemented, compiled, tested, emulator-verified 2026-10-27** (`docs/PHASE17A.md`): one age state (`AGE_NOT_CONFIRMED` code, `core/network/AgeGate`, age screen once + banner), `PROFILE_NEEDED` code + composer error next to Share with "Make your profile", failed photo blocks Share with retry, SOS location "unavailable" only after 60 s without a fix, debug cleartext list generated from `api.base.url`; no migration (next still **V26**); backend 756 / Android 719, lint 0 / 99, live MySQL 6/6, emulator PASS; physical phone **not verified**. **17B account creation + phone OTP implemented, compiled, tested, verified on MySQL, the Galaxy A23 and the emulator 2026-10-27** (`docs/PHASE17B.md`, plan `PHASE17B_PLAN.md`): V25 e-mail links removed (new accounts were stuck: no mail server), V26 phone verification (`auth/phone`, provider-neutral `OtpSender`: `DevFileOtpSender` default, `Fast2SmsOtpSender` off until `FAST2SMS_API_KEY`), sign-in resumes an interrupted sign-up, first-run "Your profile", location `areaOnly` fix found on the A23; backend 755 / Android 732, lint 0 / 101, V26 dry run 15/15 + 7/7 + applied, live MySQL 20/20, A23 PASS; **no real SMS sent**. **17C media implemented, compiled, tested, live-verified on MySQL, emulator-verified 2026-11-01** (`docs/PHASE17C.md`, decisions C-1…C-12 under D-6): photos 3072 px q92 (server ladder from 0.92, 16 MP decode cap), one video per post ≤ 60 s (+0.5 s rounding) and ≤ 50 MiB re-packed on the phone with `MediaMuxer` (first picture + sound track only, never a location, `Mp4Scrubber` zeroes the muxer's `meta`), poster frame under the same storage key, server `Mp4Sanitizer` (structure checks, metadata boxes zeroed, times zeroed, never decodes), upload progress + retry from the failed step, Remove cancels and deletes the server copy, no partial post (409 without poster), `VideoView` player on tap only (streams with the sign-in header, nothing stored); V27; backend 773 / Android 749, lint 0 / 102, V27 dry run 15/15 + 5/5 + applied, live MySQL 21/21, emulator PASS; physical phone **not verified**. **17D location UX implemented, compiled, tested, emulator-verified 2026-11-01** (`docs/PHASE17D.md`, no migration, next still **V28**): shared best-fix search `core/location/PreciseFix` (visible, cancellable, never lowers the 100 m rule), one permission/upgrade path (`LocationNeeds` + `LocationAsk`), Nearby report gated before the form + "move outside or wait" + Try again, "Updated" time, Safe Walk location status/hints/set-up line (never touches check-ins), place picker "Use where I am / Search / Recent", private places precise search, `showSessionExpiredDialog` crash fixed; Android 792 / lint 0 / 102; physical phone, real weak GPS, TalkBack **not verified**. **17E social redesign implemented, compiled, tested, live-verified on MySQL, emulator-verified (light, dark, 320 dp at 2.0x text) 2026-11-02/03** (`docs/PHASE17E.md`, decisions E17-1…E17-10): "Ink & Lime" palette (E17-1), butterfly = reaction + Save = private bookmark + Saved tab (D-3, Cocoon rows migrated), cities catalog `cities-v1.tsv` (85 cities, D-5, searched on the phone), profile photo (square 720 px, new key per upload, visibility-checked, moderator `PERSON_REMOVE_PHOTO`), today's state for connections only (D-7, IST day), "I went", You → Safety compact grid, `MarksFit` for narrow screens / large text; V28; backend 790 / Android 808, lint 0 / 104, V28 dry run 8/8 + 26/26 + 11/11 + applied, live MySQL 49/49 + moderator 9/9, emulator PASS after 10 fixes (17E-V1…V10); A23 install + launch only; TalkBack by ear **not verified**. 17F–17J planned |
+Next migration **V29**. Each phase or sub-phase needs its own plan and the user's approval first.
 
-**Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
-- **4A** — Location + permissions, notifications foundation, emergency location sharing, emergency/state recovery, battery + network readers.
-- **4B** — Safe Walk, check-in timer, "I'm Safe", journey state, escalation levels 0–3.
-- **4C** — Route deviation, inactivity/unexpected stop, Safety Bubble, battery policy (pure, heavily tested logic).
-- **4D** — Offline SMS fallback, Emergency Context Packet, escalation communication (levels 2 and 4).
+**Never implement early:** Verified Nearby Assistance (Phase 12; "Circle Response" in `PHASE10_DESIGN.md` §32 stays a
+proposal); advanced route intelligence (a real route planner needs an on-device routing graph + a new privacy review,
+`PHASE8_DESIGN.md` §16.4). Rise is retired.
 
-**4A is in the repository** (V4, location API, `core/location|device|notifications|tracking`, emergency location
-sharing, offline recovery). Automated tests, V4 on real MySQL and an API 37 emulator run passed on 2026-10-19; what
-was and was not verified is in `docs/PHASE4A.md` §4.
-**4B is in the repository** (V5, V6, `/api/journeys`, `feature/safewalk`, `CheckInPolicy`, `SafeWalkSession`, Home
-active-session banner). Verified on 2026-10-19 (tests, MySQL, API 37 emulator): `docs/PHASE4B.md` §5.
-**4C is in the repository** (V7, destination coordinates + escalation reasons, `MovementPolicy`, `BatteryPolicy`,
-`GeocoderDestinationResolver`, Safe Walk movement checks UI). Verified on 2026-10-19 (tests, V7 on MySQL, API smoke test,
-API 37 emulator route-deviation run): `docs/PHASE4C.md` §6.
-**4D is in the repository** (V8 `circle_alerts`, `/circle-alerts`, `/dial-prompts`, `/context`, `core/sms`,
-`feature/circlealert`, Emergency details screen). Verified on 2026-10-20 (tests, V8 on MySQL, API smoke test, emulator SMS run):
-`docs/PHASE4D.md` §6.
-
-Do not implement 4B/4C/4D during 4A unless a small dependency is unavoidable (say so explicitly).
-**6 is in the repository** (V12 `place_signals` + `signal_contributions`, `/api/community/*`, `feature/community`,
-`core/location/GeoHash`, Safety Radar). Threat model, decisions and verification: `docs/PHASE6.md`.
-
-**7 is in the repository** (V13, `TrustPolicy`, `Independence`, `FlagPolicy`, `TrustService`, `moderation`
-package, `AuthThrottle`; Android confidence/flags/pause banner and `feature/moderation`). Implemented autonomously under
-the user's briefs of 2026-10-20 (full autonomy). Real-phone checks deferred (`docs/HANDOFF.md` §5).
-
-**8 is in the repository** (V14, `intelligence` package: `AreaIntelligencePolicy` rules-1, `PatternPolicy`/`PatternService`,
-`RegionIntelligenceService`, `RegionQueryLimiter`; `/area` `picture`, `/api/intelligence/region`; Android
-`feature/intelligence`, Area picture card, radar area cells, Safe Walk "Check the way"). Implemented autonomously under
-the user's brief of 2026-10-20. Results and deviations from the design: `docs/PHASE8.md`.
-
-Never implement early: RISE, Verified Nearby Assistance, advanced route intelligence (a real route planner needs
-an on-device routing graph + a new privacy review, `docs/PHASE8_DESIGN.md` §16.4). AI/ML only as `docs/PHASE9_DESIGN.md`
-plans it: rules decide everything users see; no learned model without gates G1–G3 and the user's decision.
-**Changed for Phase 13 (decision D2, approved by the user 2026-10-22):** learned models are allowed for content
-moderation only (Tamil/Tanglish/English text, images), under the rule "models produce evidence → a tested
-deterministic policy decides → only humans restrict people" (design doc §6). Models run only in the Python moderation
-service and as a plain-Kotlin linear model on the phone. Since 13E `NoMlRuntimeTest` and the ML-runtime check in
-`EvaluationIsolationTest` are replaced by `ModelPlacesTest` (backend + Android), which pins exactly those places (no ML
-library anywhere, model/lexicon files only in `assets/textcheck/`, only `ModerationServiceClient` calls the service,
-the service imports the Python standard library only, `core/textcheck` has no network/storage/logging). No learned model
-acts until gates L1–L3 (`PHASE13E_PLAN.md` E2) and the user's decision (`app.moderation.ai.model-mode`). Everything else above
-(Phase 8/9 intelligence: rules only) is unchanged.
-Phase 9A attack scenarios live in `backend/src/test/.../evaluation/simulation` (real API, virtual clock, SIMULATED
-reports in `backend/target/attack-simulation/`); since 9D they measure only PRODUCTION rules (`CandidateRules` was
-removed; 9D scenarios in `NeighbourJoinSimulationTest`). Promoting rules-2 (`app.intelligence.rules-2-mode=ACTIVE`) is
-the user's decision, never a default. Phase 9B (`evaluation` package, V15) only COUNTS: nothing that decides what
-people see may read a counter (`EvaluationIsolationTest`). Next: see `docs/HANDOFF.md` §6.
-
-**10A is in the repository** (V16, `account` package, `security/ActiveAccountCheck`, Android `feature/account`,
-`core/network/SessionEnder`, rebuilt Settings/Profile/Safety Center/Home/onboarding). Deviations from the design
-(D1–D16), the SAFE audit (A1–A16): `docs/PHASE10.md`. **10A.4** closed A4/A5 (token renewal; another sign-in needs
-the password to end an SOS). Still deferred: token encryption on the phone (A14), password reset (A6, needs e-mail).
-Phase 9 stays frozen.
-
-**11 + 10B are in the repository** (V18, `emergency/session/SosRecorder`, `feature/rise`): `docs/PHASE11.md` (audit,
-decisions E1–E7 and R1–R10, verification). **C1 is in the repository** (V19 `device_sessions`, `auth` package
-`DeviceSessionService`/`RefreshSecrets`, Android `SessionRefresher`, `SessionEnder` expired ≠ revoked): `docs/PHASE11.md`
-§8 (decisions C1-1…C1-11). `docs/AUDIT_NEXT.md` (2026-10-22 audit): its safety findings still apply; its product
-direction (Part II, "no social layers") is **superseded** by `docs/EXPERIENCE_PLATFORM_DESIGN.md`. Which pending
-safety items (HANDOFF "Next": Ready check, automatic SMS first-run choice, Safe Walk local start, SOS location
-retention, A23 sprint) are folded into Phase 13 (D10, decided 2026-10-22; design doc §15).
-**13A is in the repository** (V20, backend `social` package, `user/service/AgeGate`, Android `feature/social`, date of
-birth at sign-up): `docs/PHASE13A.md` (deviations A1–A10, results).
-**13B is in the repository** (V21, backend `social` places/posts/media/comments + `SocialMediaCleanupJob`, Android
-`feature/social` composer, place picker, post view, lists, private places, Coil): `docs/PHASE13B.md` (deviations
-B1–B14, results).
-**13C is in the repository** (V22 `butterflies` + `places.city`, backend `social` `ButterflyService`, `DiscoverService`,
-pure `CityAreas`/`EditionPolicy`/`ButterflyTally`, `Visibility.showInLists`; Android `DiscoverFragment`,
-`CocoonFragment`, `PostCollectionFragment`, 🦋 on `PostFragment`): `docs/PHASE13C.md` (decisions C1–C15 in
-`PHASE13C_PLAN.md`, deviations C-D1–C-D8, results).
-**13D is in the repository** (V23, backend `moderation` `ReportService`, `ContentModerationService`, pure `ReportPolicy`
-/ `StrikePolicy`, `ContentModerationJob`; `social` moderation state on posts/comments, `SocialStanding`,
-`PostRevision`, `Visibility.canSeeComment/showInEdition/visibleStates`, `SocialAccess` pauses + probation; Android
-`ReportViewModel`/`ReportDialogs`, `MyReportsFragment`, `GuidelinesFragment`, moderator `ContentQueueViewModel`,
-`ContentCaseFragment`): `docs/PHASE13D.md` (decisions M1–M20 in `PHASE13D_PLAN.md`, deviations 13D-D1–D11).
-**13E is in the repository** (V24; `moderation-service/` Python, stdlib only, with `NORMALISER.md`, `restricted/`
-(readable lexicon + developer challenge set: sensitive, **git-ignored**, only its README is in git; tests that need it skip); backend `moderation.assessment`
-`ModerationServiceClient`, pure `DecisionPolicy`, `AssessmentService`, `ContentAssessment`, `AssessmentJob`;
-`social/event/ContentWritten`; Android `core/textcheck` (`TextNormalizer`, `PhoneticKey`, `HashedLexicon`, `TextCheck`,
-`LinearModel`, `DraftNudge`, `TextSpans`), `DraftNudgeDialogs`, `ViewerPreferences`): `docs/PHASE13E.md` (decisions
-E1–E30 in `PHASE13E_PLAN.md`, deviations 13E-D1–D10).
-**V25 e-mail verification is in the repository** (`docs/EMAIL_VERIFICATION.md`, decisions EV1–EV16): `users.email_verified_at`
-+ `email_verification_tokens` (SHA-256 only, one per account); backend `auth/service/EmailVerificationService`
-(+ `EmailVerificationCleanupJob`), `auth/mail` (`VerificationMailer`, `SmtpVerificationMailer`, `MailConfig`,
-`VerificationEmailText`), `auth/controller/VerificationPageController` + `resources/verification/*`,
-`EmailNotVerifiedException`, `VerificationLinkInvalidException`, `ApiError.code`; Android `VerificationPending`,
-`AuthError.EMAIL_NOT_VERIFIED`, `ResendStatus`, register "Check your email" block, login resend. Next migration **V26**.
-**13F is in the repository** (Android only): `res/font` (Young Serif, Mukta Malar), Kurinji colours/type/themes,
-`core/ui/components` `PostmarkView`, `TicketLayout`, `ButterflyDrawable`, `KolamView`, `TextTabsView`,
-`AspectRatioImageView`; `core/ui/ButterflyFlight`, `Haptics`; `core/retired/RiseRetirement`; `navigation/NavigationRules`
-(tabs, reading screens, banners, `opensSosFrom`); `MainActivity` banner host; `feature/safety/ui`
-`SessionStatusViewModel` (was HomeViewModel) + Safety hub + pure `ReadyCheck` / `ReadyCheckViewModel` (facts, never a
-verdict; `ReadyCheckTest`); `feature/profile/ui/YouFragment`; `feature/going/GoingThere`;
-`feature/emergency/entry` (`SosEntryActivity` not exported, `SosLaunchRequest`, `SosTileService`), `res/xml/shortcuts.xml`;
-social `ExperienceCard(s)`, `ExperienceCardAdapter` + `CardTexts`, `BeenInvitation`, `JournalViewModel`,
-`PostPageText`: `docs/PHASE13F.md` (deviations 13F-D1–D9). `feature/home` and `feature/rise` no longer exist.
-**17C is in the repository** (V27): backend `social/media/Mp4Sanitizer`, `MediaStorage` (`.mp4` + poster `.jpg` under one key, `newTemporary`, `moveVideo`), `MediaService.uploadVideo/uploadPoster/deleteUnattached/video`, `entity/MediaKind`, `PostService.attach` (one video, poster first); Android `feature/social/data/VideoPreparer`, `VideoRules`, `Mp4Scrubber`, `MediaSource` (`UriPick`, `AndroidMediaSource`, replaces `PhotoSource`), `core/network/ProgressRequestBody`, `ui/ComposeMedia` + `MediaStage` + `ComposeMediaTexts`, `VideoPlayerFragment` + `VideoPlayerViewModel` (`videoPlayerFragment`, arg `caseId` for moderators): `docs/PHASE17C.md`.
-**16 is in the repository** (Android + 2 backend read additions, no migration): `core/ui/components/AvatarView`, `core/ui/LocationHelp` (`LocationAsk`, `LocationSettings`), `core/location/OneFix` + `LocationProvider.currentFix`, social `ExperienceCard` (thought, canSave, commentCount) + `CardBinder`, `DiscoverFeed` + `DiscoverFeedAdapter` (FeedActions), `CommentAdapter`, `domain/CityAreas` (phone copy of the server boxes), `EmergencyTreatmentTest`; removed `PostmarkView`, `TicketLayout`, `KolamView`, `TextTabsView`, `PostPageText`, Young Serif; backend `CommentService.readable`, `PostResponse.commentCount`, `EditionPolicy.TALKING/pickTalking`, `PostRepository.talkedAbout`: `docs/PHASE16.md`. The Saved tab keeps the id `cocoonFragment` (the Cocoon API is gone since 17E).
-**17E is in the repository** (V28): backend `social/policy/CityCatalog` (+ `resources/cities/cities-v1.tsv`, replaces `CityAreas` and the `City` enum), `service/PlaceCityBackfill`, `PostMarkService` (replaces `ButterflyService`), `entity/SavedPost`, `Butterfly` = reaction, `ProfilePhotoService` (+ `ImageSanitizer.sanitizeSquare`), `DailyStateService` + `entity/DailyState`, moderation `PERSON_REMOVE_PHOTO`; Android `feature/social/domain/Cities` (bundled byte-identical catalog), `ui/CityPicker`, `DailyStates`, `PostMarks`, `SavedFragment` + `SavedViewModel` (Cocoon/BeenInvitation removed), `MarksFit`, `PhotoPreparer.prepareAvatar`, Ink & Lime tokens (`k_page`, `k_lime`, `k_action`, `k_leaf`, `k_panel`…; attrs `colorLime`, `colorOnLime`, `colorAccentText`, `colorPanel*`): `docs/PHASE17E.md`.
-**Note:** `C:\Users\ABDUL RAFIQ\Desktop\CLAUDE.md` (outside the repo) is an old copy (says "4A has not started"); this
-repo copy is the current one.
+**AI/ML rules:** everything users see from Phase 8/9 safety intelligence is decided by rules; no learned model there
+without gates G1–G3 and the user's decision. **D2 (2026-10-22):** learned models are allowed for content moderation only
+(Tamil/Tanglish/English text, images), under "models produce evidence → a tested deterministic policy decides → only
+humans restrict people"; they run only in the Python moderation service and as a plain-Kotlin linear model on the phone
+(`ModelPlacesTest` pins exactly those places). No learned model acts until gates L1–L3 (`PHASE13E_PLAN.md` E2) and the
+user's decision (`app.moderation.ai.model-mode`). Promoting rules-2 (`app.intelligence.rules-2-mode=ACTIVE`) is the
+user's decision, never a default. Phase 9 is frozen; nothing that decides what people see may read a 9B counter
+(`EvaluationIsolationTest`). **D-2:** AI Explore may use the Claude API with request text + candidate place facts only;
+the deterministic engine must work without it.
 
 ---
 
@@ -242,7 +142,7 @@ Android lifecycle implications / security + privacy / likely viva questions*. No
 SafeSphere/
 ├── android/   Kotlin app — open THIS folder in Android Studio (has gradlew)
 ├── backend/   Spring Boot API — Maven (no mvnw wrapper; Maven is installed)
-├── docs/      API.md, PHASE17E.md (social redesign), PHASE17D.md (location UX), PHASE17C.md (media), PHASE16.md (UX reset), EMAIL_SETUP.md, EMAIL_VERIFICATION.md (V25), PHASE15.md (acceptance), PHASE14.md (security audit), PHASE2.md, PHASE3.md, PHASE4A.md, PHASE4B.md, PHASE4C.md, PHASE4D.md, PHASE5.md, PHASE6.md, PHASE7.md, PHASE8_DESIGN.md, PHASE8.md, PHASE9_DESIGN.md, PHASE9.md (9A, 9B, 9C, 9D results), PHASE9C_CONTINUATION.md (closed), PHASE10_DESIGN.md, PHASE10.md (10A results), PHASE11.md (SOS without internet + 10B Rise), AUDIT_NEXT.md (2026-10-22 audit), EXPERIENCE_PLATFORM_DESIGN.md (the new product direction, Phase 13), PHASE13A_PLAN.md + PHASE13A.md (13A), PHASE13B_PLAN.md + PHASE13B.md (13B), PHASE13C_PLAN.md + PHASE13C.md (13C), PHASE13D_PLAN.md + PHASE13D.md (13D), PHASE13E_PLAN.md + PHASE13E.md (13E), TIMESTAMPS.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md, PHASE1_README.md
+├── docs/      one doc per phase + references; index in docs/README.md (STATUS.md, DECISIONS.md, API.md, HANDOFF.md …)
 ├── moderation-service/  Phase 13E Python service (stdlib only): README.md, NORMALISER.md, restricted/ (sensitive, git-ignored)
 └── README.md
 ```
@@ -263,608 +163,129 @@ cd android
 - One-time DB setup: `backend/sql/setup.sql` (database `safesphere`, least-privilege user `safesphere`).
 - Android backend URL: `android/local.properties` → `api.base.url=http://10.0.2.2:8080/` (default; `10.0.2.2` is the
   host PC from the emulator). Cleartext HTTP allowed **only in debug builds** (`app/src/debug/res/xml/network_security_config.xml`).
+- Build gotcha (this Windows sandbox): Gradle/Tomcat fail with "Unable to establish loopback connection"; run with
+  `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\Users\Public` (backend: `-Dspring-boot.run.jvmArguments=...`).
 
 ---
 
-## 5. Android architecture (`com.safesphere.app`)
+## 5. Android architecture (`com.safesphere.app`) — detail in `.claude/rules/android*.md`
 
 - **Stack:** Kotlin 2.0.21, AGP 8.7.3, XML Views, Fragments, ViewBinding, single Activity (`MainActivity`), one Navigation
-  graph, MVVM, repositories, Coroutines/Flow, DataStore, Retrofit 2.11 + OkHttp 4.12 + Gson, Material 3.
-  minSdk 26, compile/target 35. **No Compose. No Hilt** unless explicitly approved.
-- **Packages:** feature-first `feature/<name>/{domain,data,ui}`; shared code in `core/`, `navigation/`.
-  Features: splash, onboarding, auth, safety (You → Safety hub + session status), community (Nearby heads-ups), profile
-  (You), settings, safetycircle, emergency (+ `entry`: SOS shortcut/tile), safewalk, circlealert, evidence, moderation
-  (Phase 7), intelligence (Phase 8), account (Phase 10A), social (Phase 13), going (Phase 13F bridge, navigation only).
-  `feature/map` (10A), `feature/home` and `feature/rise` (13F, D9) were removed. No screen shows "Coming soon".
-- **Navigation (13F):** Discover · ✚ Share (action → composer) · Cocoon · You; start = Discover. Bar on tabs + reading
-  screens (post, place/category page, person profile); task/safety screens toolbar + back. Safety banners (SOS, walk,
+  graph, MVVM, repositories, Coroutines/Flow, DataStore, Retrofit 2.11 + OkHttp 4.12 + Gson, Material 3, Coil (13B, D7),
+  `play-services-location`. minSdk 26, compile/target 35. **No Compose. No Hilt** unless explicitly approved. No new
+  dependency without the user's approval.
+- **Packages:** feature-first `feature/<name>/{domain,data,ui}`; shared code in `core/`, `navigation/`. Features: splash,
+  onboarding, auth, safety (You → Safety hub + session status), community (Nearby), profile (You), settings,
+  safetycircle, emergency (+ `entry`: SOS shortcut/tile), safewalk, circlealert, evidence, moderation, intelligence,
+  account, social, going (navigation bridge only). `feature/map`, `feature/home` and `feature/rise` no longer exist.
+  No screen shows "Coming soon".
+- **Navigation:** Discover · ✚ Share (action → composer) · Saved · You; start = Discover. Bar on tabs + reading screens
+  (post, place/category page, person profile); task/safety screens have toolbar + back. Safety banners (SOS, walk,
   deletion, sign in to sync) on every tab and reading screen via `MainActivity` + `SessionStatusViewModel`, never on the
-  SOS screen. Social and safety never import each other; `feature/going` imports neither (`GoingThereTest`).
+  SOS screen. Nearby (`communityFragment`) is under You → Safety.
+- **Isolation:** social and safety never import each other; `feature/going` imports neither (`GoingThereTest`);
+  intelligence stays out of SOS, tracking, Safe Walk, circle alerts and evidence (`IntelligenceIsolationTest`).
 - **DI:** manual `AppContainer` (composition root) via `Fragment.appContainer`; each ViewModel has `factory(container)`.
-- **Networking:** exactly **one** Retrofit instance; all APIs are created from it in `AppContainer`. `AuthInterceptor` adds the
-  Bearer token to everything except `/api/auth/*`. **No HTTP logging interceptor** (bodies contain passwords).
-- **Errors:** Phase 3+ repositories use `core/network/ApiCallHandler` → `ApiResult<T>` (`Success` / `Failure(ApiError, message?)`).
-  A 401 goes through `core/network/SessionEnder` (Phase 10A): the session is cleared only if the rejected token is still
-  the saved one (`SessionStorage.clearIfToken`, atomic in DataStore; a late 401 for an old token never signs out a newer
-  session), the old token's 401 is ignored while a password change swaps tokens (`swapping`), and the reason from
-  `WWW-Authenticate` (`credentials_changed` / `account_deleted` / `account_unavailable`) is published (`ended`,
-  `lastReason`); screens then call `showSessionExpiredDialog()` (words follow the reason) (→ Login). Only our own 409
-  messages reach users; other errors use app strings (`ApiResult.Failure.toMessage()`). Auth keeps its own
-  `RemoteAuthRepository` mapping (its `refreshProfile` 401 also uses `SessionEnder`).
-- **Session:** `DataStoreSessionStorage` (token + id/name/email + a pending deletion's dates; never the password). Splash
-  routes Onboarding / Login / Home. The 24 h access token is **not encrypted** yet (known limitation). `allowBackup=false`.
-  **C1 (`docs/PHASE11.md` §8):** `AuthSession.refreshToken` (sealed with Keystore alias `safesphere_session_v1`) and
-  `needsSignIn` ("sign in to sync"). **Expired ≠ revoked:** a 401 without a reason → `SessionRefresher` (single-flight,
-  NonCancellable, conditional atomic save) → `ApiCallHandler` retries ONCE; offline = NO_CONNECTION; refused or
-  `session_revoked` → `markNeedsSignIn` (NOTHING deleted: SOS, unsent endings, Circle copy, walk stay; SOS works; Home
-  banner + closable dialog, never on the SOS screen); `credentials_changed`/`account_deleted`/`account_unavailable` →
-  Phase 10A sign-out. Every session change that keeps the rest uses the atomic `SessionStorage.update`. Login to the
-  same account sends `previousRefreshToken` (hand-over incl. its ACTIVE SOS); another account → `onAccountSwitch`
-  clean-up first, never its secret. Logout ends the server session (best effort). `SessionRenewer` refreshes at start
-  after idle time and when due (last 12 h AND second half of the token's life).
-- **Account (Phase 10A, `feature/account`, `docs/PHASE10.md`):** `AccountFragment` (FLAG_SECURE): change password
-  (`AccountPolicy` checks 8+ chars, ≤ 72 bytes, confirm, different; `RemoteAccountRepository` saves the NEW token inside
-  `SessionEnder.swapping`), request / cancel deletion (password dialogs). `AccountPolicy.deletionNotice` drives the amber
-  banner on Account and Home (opens Account). `PendingDeletionStore` (DataStore, account id + date only, survives
-  sign-out). On a 401 `account_deleted`, `AppContainer` runs `AccountDataWiper` (= `EvidenceVault.forgetAccount` +
-  `RecoveryKeyStore.remove`; a sign-out clears the rest anyway); after the date with no session, Login offers "Remove its
-  data from this phone". `HonestyTextsTest` guards onboarding/settings honesty, identity lines, "no avoid", summary order.
-  **10A.4:** `SessionRenewer` (app scope; every 10 min during an SOS/walk, hourly otherwise, at once when one starts)
-  renews when < 12 h are left (`TokenRenewalPolicy`, reads `exp` only) via `RemoteAccountRepository.renewToken`, saved
-  with `SessionStorage.replaceToken` (atomic, only over the same old token). SOS screen: a 403 while ending ⇒
-  `EmergencyUiState.Active.passwordNeededFor` ⇒ FLAG_SECURE password prompt ⇒ `onEndWithPassword` (never re-asks by
-  itself); `onScreenVisible` re-checks the SOS and, if it was ended elsewhere, stops location sharing and shows
-  `emergency_ended_elsewhere_message` WITHOUT sending the Safety Circle a "resolved" SMS.
-- **UI helpers:** `ViewBindingFragment`, `collectWhenStarted`, `Motion.revealInSequence`; components in `core/ui/components`
-  (`StatusBadgeView` + `BadgeStatus`, `NoticeView`, `SectionHeaderView`, `EmptyStateView`, `SafetyStatusCardView`, `FeatureListAdapter`).
-- **Emergency (Phase 3):** `EmergencyUiState` = Loading → Idle → Countdown(5..1) → Starting → Active → Ended(RESOLVED/CANCELLED),
-  plus StartFailed. Countdown is **client-side only** (cancel records nothing). Recovery: fetch history, show any ACTIVE event.
-  The active screen lists enabled Safety Circle contacts **for display only — nobody is notified** (Phase 3; since 4D see
-  "Safety Circle communication" below). Home SOS tile badge: "5 s to cancel", under the subtitle (not beside the title: it
-  squeezed "SOS" off 320 dp screens); its description says SafeSphere texts the
-  Safety Circle only with automatic SMS switched on (was "No alerts yet" until 2026-10-21; `HomeTextsTest` guards it).
-- **SOS without internet (Phase 11, `docs/PHASE11.md`):** at the countdown's end `SosRecorder` (application scope, the
-  one holder) starts the SOS ON THE PHONE with a LOCAL id (negative, `EmergencyIds`, from a random `clientRef`); location
-  sharing and the Safety Circle start at once. It records it on the server with the same reference (idempotent; first
-  attempt without phone time, later ones with it; backoff 5→60 s, at once when online, after a restart too); the
-  server's id is then pushed to the `EmergencyRebinder`s (Circle first, then location: memory, deliveries, pending
-  reports, queued and parked points move). "I'm safe"/"False alarm" before the server has it, or when the end call has
-  no connection, go to `SosRecorderState.unsent` (≤ 5, `UnsentEndingsCodec`: numbers/UUID/flags) and are sent later
-  (created ended, or `endedAt`). "Call 112" before the server has it is remembered and recorded later. 409 on start =
-  join the server's ACTIVE SOS. Evidence only once on the server. Sign-out clears everything (`clearAll`). Tests with the
-  real recorder use `sosRecorderForTest` + `settle()` (background scope).
-- **Profiles and connections (Phase 13A, `feature/social`, `docs/PHASE13A.md`):** reached from a Profile-tab row until
-  13F. `SocialRepository` / `RemoteSocialRepository` (ApiCallHandler; NOTHING stored on the phone). Pure mirrors of the
-  server rules: `AgePolicy` (18+ on the UTC date; also used by `RegisterViewModel`), `HandlePolicy`, `ProfileInputPolicy`
-  (`SocialPolicyTest` uses the backend's cases). Screens: `ConnectionsFragment` (own profile, find by exact handle,
-  requests both ways, connections, invite codes shown once with share/copy, redeem), `ProfileSetupFragment` (one-time
-  age confirmation for pre-13A accounts, handle/name/bio/city/language and interest chips), `PersonProfileFragment`
-  (Connect / Accept / Request sent / Remove / Mute / Block; one-shots `message`, `closed` must be consumed),
-  `BlockedMutedFragment`; shared `PersonRowAdapter`, `DateOfBirthPicker` (text mode, reattached after rotation).
-  DTOs fail closed (unknown relationship = NONE, unknown codes dropped); invite codes and dates redacted in `toString()`.
-  `SocialTextsTest`: no counts, follower/like/online/safe wording; quiet actions say "not told".
-- **Location UX (Phase 17D, `docs/PHASE17D.md`):** one-shot readers use `oneFix` (a recent / Wi-Fi position, area level) or `preciseFix` (a short visible, cancellable search for <= 100 m: `Good` / `Rough(best)` / the exact problem; a rough position NEVER places anything; `LocationProvider.freshUpdates` drops cached positions by the platform boot clock). Streams: `LocationStreamPolicy` (searching / available / no signal after max(60 s, 3 x interval) / off, switch looked at every 5 s) in `SafeWalkState.locationStatus`; it explains and never changes a check-in phase, concern or level. One permission path: `LocationAsk` (+ `act`, `askForPrecise`, `preciseDeclined`) and pure `LocationNeeds` (the ONE action to offer); screens (except the SOS screen) must not register their own location launcher or read a stream (`Phase17DLocationTest` scans). Nearby: gate before the form, "Updated" time, answers on AREA signals need only an area position. Place picker: Use where I am / Search (names only) / Recent. Screens stop their location search in `onStop`.
-- **Social redesign (Phase 17E, `docs/PHASE17E.md`):** `PostMarks` = optimistic butterfly/Save toggles (undo on failure, one call in flight per mark); `CardBinder.bindReaction/bindSave` (a given mark = lime fill + changed word + changed spoken label); pure `MarksFit` (screen width dp ÷ font scale: FULL ≥ 400 / SHORT ≥ 320 / ICONS) drives the card marks, You's head stacking and Saved's action row: words go first, never a button; `Cities` reads the bundled `resources/cities/cities-v1.tsv` (byte-identical to the backend's; search on the phone only); `CityPicker` sheet; `DailyStates` sheet (drawn icons, no emoji); profile photo via Photo Picker (`PhotoPreparer.prepareAvatar`), shown by `AvatarView` through the one Coil loader (memory cache only); Discover's head + city title in a scrolling `AppBarLayout` (page-coloured). `Phase17ETest`.
-- **Media (Phase 17C, `docs/PHASE17C.md`):** the composer picks photos and one video (`PickVisualMedia.ImageAndVideo`,
-  no permission); `ComposeMedia` stages PREPARING → UPLOADING (progress) → FINISHING (video poster) → READY, or FAILED
-  (Retry from the failed step) / REFUSED (`MediaRefusal`, Remove only); Share blocked while any item is pending or failed.
-  `VideoPreparer` re-packs (no re-encode) into `cache/video-upload` (deleted after Share/Remove/close, swept after a
-  process death); the player gets `AppContainer.videoHeaders()` for one playback and is opened only by a tap; leaving the
-  app pauses, never resumes by itself. Nothing about other people's videos is written to the phone (Q3).
-- **Experiences (Phase 13B, `feature/social`, `docs/PHASE13B.md`):** separate `ExperienceApi` / `ExperienceRepository`
-  (`RemoteExperienceRepository`; fail-closed DTOs: unknown precision → NONE, band → EARLIER, comment policy → NOBODY;
-  cells redacted in `toString`). Pure `ComposerPolicy` (mirror of the server's `PostPolicy`), `PrivatePlacePolicy`
-  (a place in a private cell or its 8 neighbours → City / No place only; no public place added there).
-  `PhotoPreparer` (Photo Picker, no permission; upright, ≤ 2048 px, new JPEG q85 = no metadata; a bounds-only decode
-  returns null by design). `EncryptedPlacesStore` + `PlaceMemory` (Q9: private places, 20 recent places, last audience;
-  AES-GCM, Keystore-wrapped key, AAD `SSPLACES1|accountId`; cleared on sign-out and account switch; unreadable =
-  never overwritten and every place counts as private). ONE Coil `ImageLoader` in `AppContainer` on the shared OkHttp
-  client (JWT), memory cache only, disk cache null (Q3). Screens `ComposeFragment` (no audience preselected the first
-  time, D14; choosing a place preselects AREA; exact place explains the 1–3 h delay; "Share with …"),
-  `PlacePickerFragment` (one fix on "Places near me": only the 6-char area / 7-char cell leave the phone),
-  `PostFragment` (bands, tip box, Perspectives via `PersonRowAdapter` rows + a "More" menu: hide/show, This helped,
-  delete), `MyPostsFragment`, `PrivatePlacesFragment`; Connections: Share / Your experiences / Private places; profiles:
-  "Experiences" list (`PostListViewModel`, more only on "Show more"). No Android edit screen (API only).
-- **Intent and discovery (Phase 13C, `feature/social`, `docs/PHASE13C.md`):** separate `DiscoverApi` /
-  `DiscoverRepository` (`RemoteDiscoverRepository`; DTOs fail closed: unknown state/section dropped, unknown reasons
-  vanish, a tally on someone else's post or under 3 dropped). `Post.yourButterfly` (own state only), `Post.butterflies`
-  (author only), `Post.placeId` (EXACT), `Place.city`. Pure `CityMatch` (profile city text → launch city, aliases
-  Madras/Trichy/Pondy/Bangalore…). Screens: `DiscoverFragment` + `DiscoverViewModel` (city chips, not saved; Edition
-  sections with "Why?" (`DiscoverTexts`), end card; From your connections with Show more + end line; search = places
-  on the server, categories matched on the phone), `CocoonFragment` + `CocoonViewModel` (Want / Been, I've been →
-  invitation, Want again, Take out), `PostCollectionFragment` + `PostCollectionViewModel` (`PostCollection.OfPlace` /
-  `OfCategory`), `PostFragment` 🦋 / "I've been" / author's private line / "See this place". Entry: Connections →
-  "Discover", "Your Cocoon" (until 13F). Nothing stored on the phone. `SocialTextsTest`: `%d` only in
-  `butterfly_author_count` ("Only you can see this line"); ranking words (for you, top, most …, rank, best, feed,
-  views, trending, popular) forbidden.
-- **Moderation v2 (Phase 13D, `docs/PHASE13D.md`):** members: `ReportRepository` / `RemoteReportRepository`
-  (`ReportApi`: `/api/reports`, `/api/social-standing`), pure `ReportReason.accepts` (reason fits target, note only and
-  always for OTHER), shared `ReportViewModel` (report, standing, appeal) used by `PostFragment` ("Report this post", a
-  perspective's More menu, collapsed post/perspective behind "Show it", the author's amber `moderationNotice` + "Ask for
-  a review", approve), `PersonProfileFragment` ("Report this person"), `ConnectionsFragment` (amber pause notice +
-  review, "Your reports", "Community guidelines"); `ReportDialogs` + `ModerationLabels`; `MyReportsFragment`,
-  `GuidelinesFragment`; composer approve-first switch (only with "Anyone who can see it"). DTOs fail closed (own unknown
-  state → HELD, others' unknown collapse → UNDER_REVIEW, unknown decisions/reports dropped, unknown appeal → no button).
-  Moderators: `ContentModerationRepository` (`ContentModerationApi`), pure `ContentModerationPolicy`,
-  `ContentQueueViewModel` (two sections in `ModerationFragment`; 403 hides them), `ContentCaseViewModel` /
-  `ContentCaseFragment` (FLAG_SECURE, photos only on tap, reason dialog, confirmation). Moderation words amber, never
-  red; author-facing strings never say "report(s)/reported" (`ModerationV2Test`). Nothing stored on the phone.
-- **Automatic check on the phone (Phase 13E, `core/textcheck`, `docs/PHASE13E.md`):** pure Kotlin twins of the
-  service's norm-1 `TextNormalizer` (offsets per character), `PhoneticKey` (spaces en/enc/ta), `HashedLexicon` (asset
-  `assets/textcheck/lexicon-v1.keys`, byte-identical to `moderation-service/data/lexicon-v1.keys`, SHA-256 keys only),
-  `TextCheck` (evidence rules), `LinearModel` (runtime only, no model ships), pure `DraftNudge` (Support first, Care,
-  Contact, None) and `TextSpans`; `TextCheckParityTest` reads `../../moderation-service/data/vectors/*` and
-  `restricted/evidence-vectors.tsv` directly. `AppContainer.textCheck` (null if the asset is unreadable: share without a
-  nudge). `DraftNudgeDialogs` before Share (composer) and Add (perspective): "Our system thinks this may come across
-  as…", Edit / Share anyway; contact details; support line Tele-MANAS 14416 (`ACTION_DIAL`, nothing stored); only-me
-  drafts get the support line only. DTOs: `OwnModeration.source` (unknown → MODERATOR, phrases only for SYSTEM),
-  `flagged`, `Collapsed.BY_SYSTEM`, `strongLanguage`; `ModerationLabels.ownNotice/collapsedLine`; list rows (`PostRows`)
-  show the collapsed line, never a collapsed post's words. `ViewerPreferences` (DataStore "viewer_preferences": the
-  viewer's own "Collapse strong language", switch on Connections). Moderator case screen: openedBy, "by the automatic
-  check", findings with phrases, "evidence, not a verdict". `ModelPlacesTest` replaced `NoMlRuntimeTest`;
-  `AiModerationTest` guards words (no score, no "you are", "our system").
-- **Rise is retired (13F, D9):** code, layouts, strings and tests removed; `core/retired/RiseRetirement` deletes
-  `files/rise/` once and MainActivity shows a one-time notice. The description below is history.
-- **Rise "Proof" (Phase 10B, `feature/rise`, `docs/PHASE11.md` §4):** phone-only; `RiseJournalHolder` (one encrypted
-  file per account, `EncryptedFileRiseStore`: AES-GCM per save, key wrapped by the Keystore `LocalKeyWrapper`, AAD
-  `SSRISE1|accountId`, `.bak`, Unreadable never silently empty), pure `GoalPolicy` / `ProofPolicy` (replay only for the
-  same self-doubt, never "wasn't OK"; a safety worry never gets a replay), `RiseLock` (optional screen-lock gate,
-  1 s grace across Rise screens), quiet mode, FLAG_SECURE on all Rise screens, tab "Rise". SAFE bridge = navigation
-  only; "Tell someone" = SMS app without a number. No network/notification/service/alarm (`RiseTextsTest` scans language
-  rules and isolation). `ScreenLockGate` lives in `core/ui`. Account deletion wipes Rise; sign-out keeps it.
-- **Emergency location (4A):** `EmergencyLocationSharing` (application scope, single-threaded main) is the one holder read by
-  the SOS screen (`state`) and `SafetyTrackingService` (`notice`; null ⇒ service stops). Queue in memory only (newest 500),
-  batches ≤ 50, backoff 5→60 s. `ActiveEmergencyStore` keeps `{userId, emergencyId, startedAt}` for offline recovery
-  (cleared on end/logout). Location asked once automatically when the emergency is ACTIVE, then via the card.
-- **Safe Walk (4B):** `SafeWalkSession` (application scope) is the one holder for the screen, Home, the notification
-  "I'm OK" action (`CheckInActionReceiver`, not exported) and the service. `CheckInPolicy` is pure: ON_TRACK → DUE_SOON
-  (1 min before) → MISSED = L1 → NO_RESPONSE = L2 (+2 min); never L3 by itself. Local deadline = phoneNow + (due − serverTime).
-  Ordered offline command queue; `ActiveJourneyStore` keeps ids/interval/start/local deadline/pending end (no destination,
-  no location). The ONE `SafetyTrackingService` reads `CompositeTrackingNoticeSource` (emergency > walk); screens start it
-  via `TrackingServiceStarter`. `EmergencyViewModel.onEmergencyStarted` ends the local walk.
-- **Movement checks (4C):** `MovementPolicy` is pure (`onFix(state, fix, destination)` → next state): Safety Bubble
-  (corridor around start→destination, half-width 40 % of length, 250 m–2 km, outside = distance − accuracy > width,
-  sustained ≥ 3 fixes + 90 s), unexpected stop (10 min within 60–200 m), arrival hint (never auto-ends), fixes > 100 m
-  accuracy ignored (GPS "weak" = paused). A NEW concern opens the same prompt early: `CheckInPolicy.evaluate(due, now,
-  concern)` → L1 with reason, L2 after 2 min, never higher; "I'm OK" answers and suppresses the same condition until it
-  clears. `BatteryPolicy` (pure): LOW ≤ 20 %, CRITICAL ≤ 10 %, +5 hysteresis, charging = NORMAL; low → location every
-  60 s; critical → one notification + latest fix sent once; SOS location is never throttled. Destination looked up via
-  `DestinationResolver` (platform Geocoder) at start; the phone stores only the switch + open concern (kind, time).
-- **Safety Circle communication (4D):** `CircleAlertCoordinator` (application scope, the one holder) watches
-  `SafeWalkSession.state` and gets SOS active/ended hooks from `EmergencyViewModel`; `CircleAlertPolicy` (pure) decides:
-  walk L2 → "did not answer" (≤ 3 per walk) and an all-clear after an answer; SOS → one message (waits ≤ 30 s for a fix,
-  one location follow-up ≤ 10 min), resolved/false-alarm at the end; nothing for stale (> 30 min) emergencies.
-  Automatic ONLY if opted in + `SEND_SMS` + SMS supported + enabled contacts; otherwise the SMS app (`ACTION_SENDTO`).
-  `CircleMessages` (pure) = Safety Circle allow-list text (name, time, what happened, map link). `AndroidSmsSender`
-  (multipart, sent/delivery PendingIntents → non-exported `SmsResultReceiver`). Statuses SENDING/SENT/DELIVERED/FAILED/
-  COMPOSER_OPENED; SENDING never reported. `DataStoreCircleAlertStore` keeps opt-in, enabled contacts (name+number, for
-  offline SMS), alert memory, recent deliveries, pending server reports (cleared on logout). "Call 112" = `ACTION_DIAL` +
-  `POST /dial-prompts` (L4). Emergency details screen reads the context packet (OWNER).
-- **Evidence Vault (Phase 5, `docs/PHASE5.md`):** `EvidenceVault` (application scope, the one holder) seals each
-  capture at once: per-item 256-bit key, `core/crypto/EvidenceCipher` = **SSEV1** (AES-256-GCM, 64 KiB segments, STREAM
-  nonce; byte-identical to backend `SsevFormat`, shared test vector), both SHA-256 hashes, key wrapped by
-  `AndroidKeystoreKeyWrapper` (not auth-bound) and, when the server has a vault key, by `EscrowKey` (RSA-OAEP-SHA256;
-  optional pin `evidence.vault.key.id` in local.properties). Files: `files/evidence` (ciphertext + `index.json`),
-  `files/evidence-capture` (plaintext staging + note; `recover()` seals after a crash), `cache/evidence-view` (playback
-  only). Upload: declare → resumable pieces → server seal; refusals keep the item. `EvidenceRecorder`: audio only on tap
-  during ACTIVE SOS, 30 s AAC/ADTS parts, stops at 60 min / low storage / emergency end / logout / mic loss.
-  Photo/video via camera-app intents + FileProvider (no CAMERA permission — never declare it). Vault screen
-  FLAG_SECURE; delete everywhere = server password check, refused while ACTIVE. Items belong to the capturing account.
-  Tests: background holders need `runCurrent()`/`advanceTimeBy()`, NOT `advanceUntilIdle()` (it ignores backgroundScope).
-  Hardening (§10): every vault action checks the item belongs to the signed-in person; `VaultLock` (app scope) +
-  `ScreenLockGate` (platform BiometricPrompt / Keyguard, `USE_BIOMETRIC`) gate the vault SCREEN, re-lock on leaving or
-  account change (app gate, not auth-bound keys — deliberate); index written fsync'd with `index.json.bak` fallback;
-  `PlaintextWipe` for staging/view files; `CustodyAnchoring` (pure) = phone-held `(sequenceNo, entryHash)` per
-  emergency in `custody-anchors.json`; `EvidenceUploadJobService` (JobScheduler, job id 5001, network constraint, not
-  persisted) resumes uploads after process death; "Remove from this phone" first asks the server to re-check
-  (`/verify`); refused uploads can be retried. `ApiError.TOO_MANY_ATTEMPTS` = 429 (our message shown).
-  Restore on a new phone (§11): `RecoveryKeyCrypto` (own PBKDF2-HMAC-SHA256 600k over NFC UTF-8; GCM wraps with AADs
-  `SSRK1|rkVersion`, `SSRW1|clientRef|sha`), `RecoveryKeyStore` (RK per account, Keystore-sealed,
-  `recovery-keys.json`; a NEW RK is stored only after the server accepted it), `EvidenceRecovery` (set up / restore /
-  change / forgot), `PassphrasePolicy` (≥ 15 chars, not name/email/account password, not in `common_passwords_10k.txt`)
-  + `PassphraseGenerator` (5 EFF words, `eff_large_wordlist.txt`); vault section + `EvidenceRecoveryViewModel`
-  (behind `VaultLock`); `EvidenceVault` adds the copy at declaration (re-declares without it on a "recovery" 409),
-  back-fills when idle, `importRestored` (content on Bring back), `syncDeletions` on vault refresh.
-- **Community (Phase 6, `docs/PHASE6.md`):** place signals, not posts. The phone turns one fresh fix into a geohash
-  (`core/location/GeoHash`, shared vectors with backend `GeoCell`): 6 chars (~1 km) to look at the area, 7 chars
-  (~150 m) to report/answer; **no coordinate is ever sent**. `CommunityPolicy` (pure): reporting needs PRECISE +
-  fix ≤ 100 m (viewing works with approximate), outbox ≤ 10 / ≤ 24 h, placement (distance, bearing), brief, 50/100 m
-  rounding. `CommunityViewModel` (location only while the screen is open, 20 s timeout), `DataStoreCommunityOutbox`
-  (cell + category only, cleared on logout), `SafetyRadarView` (no map tiles; shape + colour; halo = ~1 km precision),
-  Home "Nearby Safety" opens Community. No new permission; location asked from the Community screen only.
-  Phase 9D: the report confirmation (`report_confirm_message`) says a report may be added to the same report in the
-  block right next to yours and then shows as "you saw this too" (`CommunityTextsTest`); no other phone change.
-- **Trust UI (Phase 7, `docs/PHASE7.md`):** `AreaSignal.confidence/reasons/youFlagged` (unknown → LOW, never more
-  certainty than told); card shows "Not yet confirmed / Confirmed by people nearby / Strongly confirmed", "How sure is
-  this?" (reasons) and "Report a problem" (flag reason + confirmation, current 7-char cell only); `canFlag`/`canAnswer`
-  exclude own and flagged signals; `CommunityStanding` from `/standing` drives a warning banner + "Ask for a review"
-  and blocks writes; a 403 reloads it. `ApiError.FORBIDDEN` (403, our message shown); `AuthError.TOO_MANY_ATTEMPTS` (429).
-  Trust tiers are NEVER shown in the app. "Withdraw" hidden for UNDER_REVIEW items.
-- **Moderation (Phase 7, `feature/moderation`):** Profile shows "Moderation" only when `GET /api/moderation/access`
-  says `canModerate` (hidden on any failure; re-asked on every Profile start). `ModerationPolicy` (pure) mirrors the
-  server: reason codes per decision, no decision on a case you took part in / a closed case, no appeal decision on your
-  own restriction. `ModerationViewModel` (queue; 403 ⇒ NotAllowed, data cleared) and `ModerationCaseViewModel` (only
-  possible decisions sent; 409/403 reload). DTO unknowns fail closed (`youTookPart`/`youDecidedTheRestriction` default
-  true); pseudonyms/cells redacted in `toString()`. Both screens FLAG_SECURE. Nothing stored on the phone. Closed cases
-  and admin functions are API-only. The server is the authority for every check. Phase 9C: the case screen adds the
-  coordination pattern as text lines (`ModerationTexts.coordinationLines`: reason, size/places bands, and ALWAYS the
-  guidance "Backing each other is not proof…"); `CoordinationDto` drops unknown reasons; `ModerationTest` scans the
-  `coordination_*` strings for accusatory words. 9C.1/9C.2: "Others in this group" (`CaseDetail.groupMembers`, read
-  only when role and flag are both null), "Pause everyone in this group" (`ModerationPolicy.canRestrictGroup`: open
-  coord-1 case only; `onRestrictGroup` sends RESTRICT + `wholeGroup`), "Keep it" on a COORDINATION case confirms with
-  `coordination_confirm_dismiss` (Option B); each "Pause" button is labelled "Pause Person xxxxxx" for TalkBack.
-- **Safety Intelligence (Phase 8, `docs/PHASE8.md`, `feature/intelligence`):** decision support only. The server sends
-  CODES (rules-1; since 9D rules-1.1, which never sends NO_CONFIRMED_CONCERNS; the phone keeps its text and ignores
-  `modelVersion`), the phone writes the words (`IntelligenceTexts`; a test forbids "safe/safest/dangerous/verified"
-  claims). Two axes: concern (confirmed only) and information (how much is known); no outlook means "safe".
-  `AreaPictureDto` fails CLOSED (unknown/inconsistent ⇒ no card); `RegionPackDto` fails SAFE (anything unknown ⇒ pack
-  incomplete ⇒ no brief). Community: `AreaView(signals, picture)`, card above the radar (amber for care, teal info
-  otherwise, never green/red), `SafetyRadarView.setAreaCells` (hatched = nothing known, dotted = little, amber outline =
-  confirmed concerns). Night order from the phone's own clock (`IntelligencePolicy.isNight`). Safe Walk set-up:
-  "Check the way" in its own `WayCheckViewModel` (one fix, destination via the shared `destinationResolver`,
-  `CorridorBriefPolicy` pure: straight-line corridor = bubble half-width capped at 500 m, ≤ 4 regions, ≤ 20 km; only
-  5-character region cells are sent). Nothing stored; `IntelligenceIsolationTest` keeps it out of SOS, tracking,
-  Safe Walk session/policies, circle alerts and evidence.
+- **Networking:** exactly **one** Retrofit instance; all APIs are created from it in `AppContainer`. `AuthInterceptor`
+  adds the Bearer token to everything except `/api/auth/*`. **No HTTP logging interceptor** (bodies contain passwords).
+- **Errors:** repositories use `core/network/ApiCallHandler` → `ApiResult<T>` (`Success` / `Failure(ApiError, message?)`).
+  Only our own 409 messages (and our 403/429 messages) reach users; other errors use app strings. A 401 goes through
+  `core/network/SessionEnder` (clears the session only if the rejected token is still the saved one).
+- **Session (C1): expired ≠ revoked.** A 401 without a reason → `SessionRefresher` → one retry; a refused refresh or
+  `session_revoked` → "sign in to sync" and **nothing is deleted** (SOS, unsent endings, Circle copy and walk stay; SOS
+  works); `credentials_changed` / `account_deleted` / `account_unavailable` → sign-out. Session changes use the atomic
+  `SessionStorage.update`. The 24 h access token is **not encrypted** yet (known limitation); `allowBackup=false`.
+- **One holder per concern, in application scope** (`SosRecorder`, `EmergencyLocationSharing`, `SafeWalkSession`,
+  `CircleAlertCoordinator`, `EvidenceVault`, …); screens and the ONE `SafetyTrackingService` read the same holder.
+  Detection and decision logic are **pure, unit-tested policies** (`CheckInPolicy`, `MovementPolicy`, `BatteryPolicy`,
+  `CircleAlertPolicy`, `CommunityPolicy`, …). Every SOS starts on the phone (Phase 11).
+- **Location (17D):** one permission path (`LocationAsk` + pure `LocationNeeds`); screens other than the SOS screen must
+  not register their own location launcher or read a stream (`Phase17DLocationTest`); a rough position never places
+  anything (≤ 100 m for reports and places); screens stop location searches in `onStop`.
+- **Nothing about other people is stored on the phone (Q3):** one Coil `ImageLoader` on the shared OkHttp client, memory
+  cache only; videos stream with the sign-in header, play only after a tap; social data is never persisted.
+- **Wording is guarded by tests** (keep them green; extend them for new strings): `HonestyTextsTest`, `KurinjiTextsTest`,
+  `SocialTextsTest`, `ModerationV2Test`, `AiModerationTest`, `CommunityTextsTest`, `ContrastTest`,
+  `EmergencyTreatmentTest`, `ResourceEncodingTest`.
 - **Permissions today:** `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `POST_NOTIFICATIONS`,
-  `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `ACCESS_NETWORK_STATE`, `SEND_SMS` (4D, asked only on opt-in;
-  Play "physical safety" declaration needed for release), `RECORD_AUDIO` + `FOREGROUND_SERVICE_MICROPHONE` (Phase 5, asked
-  on the Record tap; the one service's types = location ∪ microphone), `USE_BIOMETRIC` (Phase 5 hardening, normal
-  install-time permission for the vault's screen-lock prompt). Telephony/microphone/camera features not required.
-  `dataExtractionRules` exclude all data.
-- **Build gotcha (this Windows sandbox):** Gradle/Tomcat fail with "Unable to establish loopback connection"; run with
-  `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\Users\Public` (backend: `-Dspring-boot.run.jvmArguments=...`).
-- **Tests:** JUnit4 + kotlinx-coroutines-test, `MainDispatcherRule`, fakes in `src/test/.../testing/` (FakeAuthRepository,
-  FakeSafetyCircleRepository, FakeEmergencyRepository, FakeAuthApi, FakeSessionStorage…). Countdown tested with virtual time.
+  `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `ACCESS_NETWORK_STATE`, `SEND_SMS` (asked only on opt-in; Play
+  "physical safety" declaration needed for release), `RECORD_AUDIO` + `FOREGROUND_SERVICE_MICROPHONE` (asked on the
+  Record tap during an ACTIVE SOS), `USE_BIOMETRIC`. Photo/video via the Photo Picker and camera-app intents — **never
+  declare `CAMERA`**. Telephony/microphone/camera features not required. `dataExtractionRules` exclude all data.
+- **Tests:** JUnit4 + kotlinx-coroutines-test, `MainDispatcherRule`, fakes in `src/test/.../testing/`. Background holders
+  need `runCurrent()`/`advanceTimeBy()`, NOT `advanceUntilIdle()` (it ignores `backgroundScope`); real-recorder tests use
+  `sosRecorderForTest` + `settle()`.
 
 ---
 
-## 6. Backend architecture (`com.safesphere.backend`)
+## 6. Backend architecture (`com.safesphere.backend`) — detail in `.claude/rules/backend.md`
 
 - **Stack:** Java 17, Spring Boot **3.5.16** (OSS support ended 30 Jun 2026 — upgrading to 4.x is a separate, planned step),
   Spring Web, Data JPA, Security (OAuth2 resource server for JWT), Bean Validation, Flyway, MySQL 8.
-- **Packages:** `auth`, `user`, `safetycontact`, `emergency`, `evidence` (Phase 5; + `tools/VaultKeyTool`, offline only),
-  `intelligence` (Phase 8: pure `AreaIntelligencePolicy` + `PatternPolicy`, `AreaIntelligenceService`, `PatternService`,
-  `RegionIntelligenceService`, in-memory `RegionQueryLimiter`, `IntelligenceController`; `config/IntelligenceProperties`;
-  reads signals only through `CommunityService.visibleIn` = the ONE visibility definition; must not reference
-  emergency/journey/escalation/safetycontact/circlealert/evidence/moderation — `IntelligenceIsolationTest`;
-  Phase 9D: `AreaIntelligencePolicy.Model` RULES_1_1 (active, `modelVersion` "rules-1.1": havens alone count once) |
-  RULES_2 (rule (b) needs ≥ 3 independent people across signals, `Evidence.people` from
-  `Assessment.independentSupporters`, people linkage from `SignalVisibility.VisibleSet`); `AreaModelShadow` (from the
-  job, at most hourly, read-only, logs counts only); `app.intelligence.rules-2-mode` OFF|SHADOW|ACTIVE, default SHADOW),
-  `social` (Phase 13A: pure `policy/` `AgePolicy`, `HandlePolicy`, `ProfileTextPolicy`, `ProfileLists`, `InviteCodes`,
-  `Visibility` = THE one visibility rule; `SocialAccess` (active + age-confirmed caller), `Relationships`,
-  `ProfileService`, `ConnectionService` (one row per pair, silent decline, asking back connects, invites), `BlockService`,
-  in-memory `SocialLimits`; `config/SocialProperties`; must not reference safety packages and the reverse —
-  `SocialIsolationTest`; four-user tests `SocialFourUserTest`; HTTP age check in `user/service/AgeGate`;
-  Phase 13B: `Visibility.canSeePost/canComment/visibleAudiences`, pure `PostPolicy`, `TimeBands`, `PostDelay` (Q1),
-  `PlaceNamePolicy`; `media/ImageSanitizer` (magic bytes, header size check before decoding, re-encode without
-  metadata) + `media/MediaStorage` (`app.social.media-dir`, UUID names); `PlaceService`, `PostService`, `MediaService`,
-  `CommentService`; `SocialMediaCleanupJob` = the ONLY `@Scheduled` in `social` (unattached uploads > 24 h, orphan
-  files); `AccountEraser` deletes the person's photo files before the rows;
-  Phase 13C: `Butterfly` (= Cocoon item), `ButterflyService` (Experiences of others only; Cocoon filtered by the one rule),
-  `DiscoverService` (Edition, connections list, place/category pages; SQL pre-filter, then `Relationships.forLists` =
-  `Visibility.showInLists` = canSeePost + not muted), pure `EditionPolicy` (IST week, theme rotation, content-only order +
-  reason codes), `CityAreas` (launch-city boxes → `places.city`), `ButterflyTally` (author only, number from 3),
-  `PlaceService.search` (names only);
-  Phase 13D: posts/comments carry `moderation` NONE/COLLAPSED/HELD/REMOVED + reason + decision (written only by
-  `moderation`; social never references `moderation` — `SocialIsolationTest`), `Visibility` (HELD/REMOVED = author only,
-  `canSeeComment`, `showInEdition` leaves collapsed out, `visibleStates` for list SQL), `SocialStanding` (pause) read by
-  `SocialAccess.requireCanComment/Post/Connect`, probation (`app.social.probation` 72 h: lower post/perspective limits,
-  no links, `countsFrom` for reports), `PostRevision` (only while `posts.in_review`), `approve_first` /
-  `awaiting_approval` (Q6);
-  Phase 13E: `moderation_source` REPORTS/SYSTEM/MODERATOR (`moderate()` derives REPORTS/MODERATOR,
-  `moderateBySystem()` only COLLAPSED/HELD/NONE, never REMOVED), `moderation_spans`, `strong_language`;
-  `event/ContentWritten` published synchronously by `PostService.create/edit` (text changed, never ONLY_ME) and
-  `CommentService.create`; the author's `ModerationView.source` is SYSTEM/MODERATOR only (a report collapse has none:
-  13D M4), `collapsed` BY_SYSTEM, `supportSuggested` only in the author's write answer),
-  `moderation.assessment` (Phase 13E: `ModerationServiceClient` = the ONLY caller of the Python service (java.net.http,
-  `app.moderation.ai.*`, sends `{kind, text}` only, fail-closed parsing, logs exception classes only); pure
-  `DecisionPolicy` policy-1 pinned to `moderation-service/data/vectors/policy-vectors.tsv`; `AssessmentService`
-  (`@EventListener` inside the write transaction, never throws into it; applies only over NONE/SYSTEM; HOLD (not
-  CHECK_PENDING) opens a `content_cases` row `origin` SYSTEM + `in_review`; `requestReview` = origin AUTHOR_REQUEST,
-  same 202; `viewFor` for moderators; `reviewed` → `OutcomeRecorder.aiReviewed`); `ContentAssessment` (V24, no text,
-  one per target); `AssessmentJob` (`@Scheduled` `app.moderation.ai.job-interval`: retries with backoff 1→30 min for
-  24 h, publishes a probation hold after `probation-wait-max` 2 h, retention 90 d unless an open case/appeal); the check
-  is OFF without a 16+ character `MODERATION_SERVICE_KEY` (start-up WARN); tests: stub `support/StubModerationService`,
-  `AssessmentIntegrationTest` + `AssessmentProbationIntegrationTest` on their own H2 URLs, `ModelPlacesTest`),
-  `community` (Phase 6: `GeoCell`, pure `SignalPolicy`, `CommunityService`, in-memory `AreaQueryLimiter`,
-  `CommunityPurgeJob` = a `@Scheduled` task, deletion only (since Phase 10A the other one is `AccountDeletionJob`); `config/CommunityProperties`, `SchedulingConfig`;
-  Phase 7: pure `TrustPolicy`, `Independence`, `FlagPolicy`, `TrustService`, private `ContributorStanding`, `SignalFlag`;
-  Phase 9C: `SignalVisibility` = the ONE visibility definition (`CommunityService.visibleIn` delegates), pure
-  `CoordinationPolicy` = coord-1 R1/R2; Phase 9D: `CommunityService.joinLoneReports` (first step of `purge`: a lone,
-  counting, never-confirmed concern REPORT moves as a CONFIRM onto an OLDER visible same-category signal in a block
-  sharing a SIDE, `GeoCell.adjacency`; never havens/corners/flagged/under review/self) and `confirmsNextDoor`
-  (re-send guard)),
-  `moderation` (Phase 7: `ModerationService`, `CaseRefs`, `ModerationController`, `AdminController`,
-  `config/ModerationProperties`; Phase 9C: `CoordinationCheck` (from the job, mode OFF|SHADOW|ACTIVE, default SHADOW,
-  only write = open a COORDINATION case; `CoordinationIsolationTest`), `config/CoordinationProperties`,
-  `blocksWithdrawal` (COORDINATION cases without flags do not lock withdrawal); Phase 9C.1–9C.3: S15 Option B in
-  `TrustService.Snapshot.supportOn` (people counting at a DISMISSED COORDINATION case count separately on THAT signal;
-  read via `ModerationCaseRepository.lastClosedBySignal`, nothing stored), `CoordinationPolicy.Group.members()` (≥ 2
-  of the group's places) for `CaseDetail.groupMembers`, RESTRICT `wholeGroup` and the dismissed-group guard (any
-  signal backed only by members); Phase 9B: `coordination_rule` stored on every new COORDINATION case;
-  Phase 13D: SIBLING tables `content_cases`/`content_reports` (Phase 7 `moderation_cases` untouched), `ReportService`
-  (visible targets only, repeat = same 202, case opened or joined, collapse at `app.moderation.collapse-reports` 3
-  independent counting reports via `community.service.Independence`), `ContentModerationService` (queue, detail, decisions
-  CONTENT_*/PERSON_*, one strike per case, pauses never shorten a stronger one, appeals on the shared
-  `moderation_appeals` (never the decider, never a reporting moderator), standing, place merge, `maintain`),
-  `ContentModerationJob` (`@Scheduled` hourly; collapse + retention only), `CaseRefs.contentRef` (own namespace);
-  `ModerationService.listAppeals/decideAppeal` now handle community RESTRICT appeals only; `requireModerator` shared),
-  `evaluation` (Phase 9B: `OutcomeRecorder` = the only writer, typed enum-only methods, counts buffered per transaction
-  and written AFTER COMMIT in their own transaction, best effort (failure = WARN with the exception class only), never
-  reads; `WeeklySnapshot` from the job, first run of each ISO week, one transaction, reads `SignalVisibility`, also the
-  104-week retention; pure `EvaluationReport` (rates, Wilson 95 %, minimums, gate G1); `EvaluationService` = the only
-  reader, called by `ModerationService.evaluationReport` (ADMIN); `config/EvaluationProperties`; must not reference
-  safety packages or moderation, and safety packages / intelligence must not reference it — `EvaluationIsolationTest`),
-  `security/RoleAuthorization` +
-  `AttemptLimiter`, `auth/service/AuthThrottle`
-  (`config/AuthProperties`) (each `controller/service/repository/entity/dto`),
-  `config` (SecurityConfig, JwtConfig, JwtProperties), `security` (JwtService, CurrentUser, 401/403 JSON handlers),
-  `common/exception` + `common/response/ApiError`.
+- **Packages:** `auth` (+ `auth/phone`), `user`, `account`, `safetycontact`, `emergency`, `emergencycontext`,
+  `escalation`, `journey`, `evidence`, `community`, `moderation` (+ `moderation.assessment`), `intelligence`,
+  `evaluation`, `social`, `security`, `config`, `common` (each `controller/service/repository/entity/dto`).
 - **Conventions:**
   - Thin controllers; rules in services; DTOs are Java records; entities are never serialized.
   - Caller identity **only** from the JWT: `CurrentUser.id(jwt)` (`sub` claim). No `userId` in any request DTO.
   - Repositories returning owned data always filter by user (`findByIdAndUserId`, …). Another user's record → **404** (same as missing).
-  - Throw `ApiException` subclasses: `InvalidRequestException` 400, `UnauthorizedException`/`InvalidCredentialsException` 401,
-    `ResourceNotFoundException` 404, `ConflictException`/`EmailAlreadyUsedException` 409. `GlobalExceptionHandler` renders one
-    JSON shape: `timestamp, status, error, message, path, fieldErrors?`. No stack traces or exception text to clients.
+  - Throw `ApiException` subclasses (`InvalidRequestException` 400, `UnauthorizedException`/`InvalidCredentialsException`
+    401, `ResourceNotFoundException` 404, `ConflictException` 409); `GlobalExceptionHandler` renders one JSON shape:
+    `timestamp, status, error, message, path, fieldErrors?, code?`. No stack traces or exception text to clients.
+    Stable `code`s for refusals the app must act on (`AGE_NOT_CONFIRMED`, `PROFILE_NEEDED`, `PHONE_NOT_VERIFIED`).
+  - Wrong passwords on account endpoints answer **409**, not 401 (a 401 means "signed out" on the phone).
   - `spring.jpa.hibernate.ddl-auto=none`, `open-in-view=false`. **Flyway owns the schema.**
-- **JWT:** HS256, secret from env, issuer `https://safesphere.example`, `sub` = user id, **24 h**. **C1:** each sign-in is
-  a device session (V19) with a rotating refresh secret (`POST /api/auth/refresh`); logout ends it on the server
-  (`POST /api/auth/sign-out`) and clears the phone. **Phase 10A:** after a password change tokens carry `cca` (credentials stamp = µs of
-  `users.credentials_changed_at`); `security/ActiveAccountCheck` (inside the decoder, after exp/iss) refuses a token whose
-  account is missing/erased/disabled or whose stamp differs (exact equality) → 401 with an RFC 6750 `error_description`.
-  **10A.4:** tokens carry `sid` (random sign-in id) and `auth_time` (`CurrentUser.sessionId/authTime`); `POST
-  /api/users/me/token` renews for the same sign-in (≤ `app.account.session-max-age` 30d since the password, always during
-  an ACTIVE SOS/walk). `EmergencyEvent.startedSession` (only while ACTIVE): another sign-in ends an SOS only with the
-  password (`account/service/PasswordGuard`, shared limit) and sets `ended_elsewhere`.
-- **Account (Phase 10A, `account` package):** `AccountService` (password change refused during an ACTIVE SOS or Safe
-  Walk; deletion request refused while ACTIVE / < 24 h after an emergency, 7-day grace; cancel with password; 5 wrong
-  passwords / 15 min shared → 429, in memory; wrong password = 409), `AccountDeletionJob` (`@Scheduled`, 15 min) →
-  `AccountEraser` (postpone if an emergency is recent; evidence files first; owned rows children-first + 
-  `CommunityService.eraseContributor`; delete the row, or anonymise it if the audit log names it as decider);
-  `AccountEraserCoverageTest` compares the eraser with every `REFERENCES users` in the migrations.
-- **Social redesign (Phase 17E, V28, `docs/PHASE17E.md`):** `CityCatalog` = the ONE city list (`cities-v1.tsv`; codes
-  are Strings; `PlaceCityBackfill` gives existing places a city at start-up, idempotent); `PostMarkService` (reaction on
-  others' Experiences, save on others' Experiences/Asks; writes outside a transaction so a lost unique race just finds
-  the row, Phase 14 rule; Saved filtered by the one visibility rule); `ProfilePhotoService` (new key per upload, old
-  file after commit, served only through `canSeeProfile` + current key); `DailyStateService` (IST day, expiry on read,
-  CONNECTED/SELF only; purge in `SocialMediaCleanupJob`, still the ONE `@Scheduled` in social); moderation
-  `PERSON_REMOVE_PHOTO` (not a strike, not appealable, case stays open). `Phase17eSocialApiTest`, `CityCatalogTest`.
-- **Media (Phase 17C, V27, `docs/PHASE17C.md`):** `Mp4Sanitizer` is pure (JDK only) and never decodes video; metadata
-  boxes are renamed `free` and zeroed in place (offsets stay valid); a video upload is streamed to `.tmp` files in the
-  media folder (hard cap `app.social.max-video-bytes`), never held in memory; content types come from the row's kind;
-  every key-based deletion removes `<key>.jpg` and `<key>.mp4`; `videos-per-day` 10 (in memory).
-- **Phone verification (Phase 17B, V26, `docs/PHASE17B.md`):** `auth/phone`: `PhoneVerificationService` (open inside
-  the sign-up/start transaction, `deliver` after commit with undo on provider refusal, `verify` under a row lock,
-  `resend`, `change`, `cleanUp`), `PhoneNumbers`, `PhoneChallenge`, `OtpProperties` (`app.otp.*`), `OtpSender` →
-  `DevFileOtpSender` (default) | `Fast2SmsOtpSender` (`OtpSenderConfig`); `PhoneVerificationException` codes;
-  `User.isActivated()` = phone OR (pre-V26) e-mail verified, used by `ActiveAccountCheck` and refresh; login and new
-  sign-ins need `isPhoneVerified()`. `TestAccounts.phoneFor/markVerified` for tests; `CapturingOtpSenderConfig` captures
-  codes. `ModelPlacesTest` pins the two outbound HTTP clients.
-- **E-mail verification (V25, REMOVED from the flow in 17B; history):** sign-up creates an UNVERIFIED account and NO session;
-  `EmailVerificationService` issues a 256-bit token (only SHA-256 stored, one row per account, 60 min), the e-mail goes
-  out after commit on the `verificationMailExecutor` thread (never logged); `POST /api/auth/verify-email` consumes it
-  with one conditional DELETE (single use, race-safe) and sets `email_verified_at`; login of an unverified account =
-  403 `EMAIL_NOT_VERIFIED` (only after the right password); resend needs e-mail + password, always 202, limited;
-  `ActiveAccountCheck` and refresh refuse unverified accounts; unverified accounts go after 7 days; an unverified
-  address whose link expired can be signed up again. `TestAccounts.registerVerifiedAndLogin/markVerified` for tests.
-- **Security:** stateless; `POST /api/auth/register|login` public, everything else authenticated. CSRF off (no cookies).
-  CORS: no origins by default. BCrypt passwords (72-byte limit enforced). Login errors generic and timing-equalised.
-- **Tests:** `@SpringBootTest` + MockMvc, real JWT flow, H2 in MySQL mode with **Flyway disabled** and Hibernate `create-drop`
-  (`src/test/resources/application.properties`). Helper `support/TestAccounts`. Two-user ownership tests are the norm.
-  ⚠ H2 does not exercise MySQL-only DDL (generated columns, CHECKs): **verify every new migration on real MySQL.**
+  - Never catch a unique-key error inside a transaction and carry on: write the row in its own transaction or retry the
+    whole attempt (Phase 14).
+  - Time is UTC everywhere; inject `Clock`; no `LocalDateTime.now()` without `ZoneOffset.UTC`/`Clock` (`TimeConventionsTest`).
+- **One visibility definition per area:** social `Visibility` (every read path, tested with author / connection /
+  stranger / blocked), community `SignalVisibility`. **Isolation tests are invariants:** `SocialIsolationTest`,
+  `IntelligenceIsolationTest`, `EvaluationIsolationTest`, `CoordinationIsolationTest`, `ModelPlacesTest`;
+  `AccountEraserCoverageTest` (the eraser must cover every `REFERENCES users`). `SocialMediaCleanupJob` is the ONLY
+  `@Scheduled` in `social`.
+- **Auth/JWT:** HS256, secret from env (≥ 32 chars), issuer `https://safesphere.example`, `sub` = user id, 24 h, claims
+  `sid`, `auth_time`, `cca`. Device sessions with rotating refresh secrets (V19); `security/ActiveAccountCheck` refuses
+  missing/erased/disabled accounts, changed credentials and ended sessions (401 + RFC 6750 `error_description`). Public:
+  `POST /api/auth/register|login|refresh|sign-out` and `/api/auth/phone/start|verify|resend|change`; everything else
+  authenticated; `/api/moderation/**` MODERATOR/ADMIN, `/api/admin/**` ADMIN (roles read from the DB per request; ADMIN
+  only via SQL). CSRF off (no cookies); CORS no origins by default; BCrypt (72-byte limit). Login errors generic and
+  timing-equalised. New accounts need a verified phone (17B).
+- **Tests:** `@SpringBootTest` + MockMvc, real JWT flow, H2 in MySQL mode with **Flyway disabled** and Hibernate
+  `create-drop` (`src/test/resources/application.properties`). Helper `support/TestAccounts`. Two-user ownership tests
+  are the norm. ⚠ H2 does not exercise MySQL-only DDL (generated columns, CHECKs): **verify every new migration on real
+  MySQL** (backup, dry run of the CHECKs on a scratch copy, then apply). Real-MySQL check: `SAFESPHERE_MYSQL_TESTS=true`.
 
 ---
 
-## 7. Database (MySQL `safesphere`, Flyway)
-
-| Migration | Table | Key rules |
-|---|---|---|
-| V1 | `users` | unique email (case-insensitive collation, stored lower-case), `password_hash` (BCrypt), `enabled` |
-| V2 | `safety_contacts` | FK user (cascade); unique `(user_id, phone_number)` with normalized phone; generated `primary_marker` + unique ⇒ max one primary per user; priority CHECK 1–5; max 10 contacts (service rule); disabled contact never primary |
-| V3 | `emergency_events` | FK user (cascade); status ACTIVE/CANCELLED/RESOLVED; trigger MANUAL (SHAKE, VOICE, DURESS_PIN reserved and **rejected**); generated `active_marker` + unique ⇒ max one ACTIVE per user; `started_at`/`ended_at` |
-| V4 | `emergency_locations` | FK emergency (cascade), **no user_id**; lat/lng `DECIMAL(9,6)` + range CHECKs; `accuracy_meters DECIMAL(7,1)`, `source` CHECK, `battery_percent` 0–100; `recorded_at`/`received_at`; **UNIQUE (emergency_id, recorded_at)** (idempotent re-send; also the read index) |
-
-| V5 | `safe_journeys`, `journey_events` | FK user cascade; status ACTIVE/COMPLETED/CANCELLED/EMERGENCY; generated `active_marker` + unique ⇒ one ACTIVE walk per user; interval CHECK 2–60; escalation 0–3; deadline/ended CHECKs tied to status; last location only (all-or-nothing CHECK) |
-| V6 | `escalation_events` + `emergency_events.journey_id` | level 0–4 (5 never stored), reason CHECK; journey/emergency FKs cascade ("at least one" enforced in code: MySQL forbids CHECKs on cascading-FK columns); `journey_id` on emergencies `ON DELETE SET NULL` |
-
-| V7 | `safe_journeys.destination_latitude/longitude` + reasons | `DECIMAL(9,6)`, range CHECKs, both-or-none CHECK; reason CHECK replaced (+`ROUTE_DEVIATION`, `UNEXPECTED_STOP`); coordinates + last location deleted when a walk ends COMPLETED/CANCELLED (kept for EMERGENCY) |
-
-| V8 | `circle_alerts` + reason `DIAL_PROMPT_OPENED` | emergency/journey FKs cascade (exactly one, enforced in code), `contact_id` FK `ON DELETE SET NULL`; kind/channel/status CHECKs; `UNIQUE client_ref` (UUID from the phone); no number, no text |
-
-| V9 | `evidence_items`, `evidence_custody_events` | items: FK emergency cascade, **no user_id**; kind/status/size/lower-case-hex-hash/capture-order CHECKs; SEALED ⇒ sealed_at + all bytes; DELETED ⇔ deleted_at ⇔ no storage_key, no escrow key; `UNIQUE client_ref`, sequence_no NOT unique. Custody: per-user hash chain, `UNIQUE (user_id, sequence_no)`, action CHECK, append-only. Ciphertext lives in files (`app.evidence.storage-dir`), never in MySQL |
-
-| V10 | `evidence_custody_events` | action CHECK replaced (+`VERIFIED`, `DELETE_REFUSED`); index `(user_id, action, occurred_at)` for the deletion lockout count |
-
-| V11 | `evidence_recovery_envelopes`, `evidence_recovery_failures`, `evidence_items.recovery_rk_version/recovery_wrapped_key` | envelope: one per user, kdf CHECK `PBKDF2-SHA256`, iterations 600 000–10 000 000, salt 16–32 B, wrap = 60 B; item copy both-or-none + 60 B; shredded CHECK now also requires no recovery copy; failures cascade from users |
-
-| V12 | `place_signals`, `signal_contributions` | signal: random `public_id`, category CHECK (10 place-only categories), `cell` CHAR(7) geohash (REGEXP CHECK), `area_cell` = LEFT(cell,6) CHECK, **UNIQUE (cell, category)** (reports merge); **no coordinates, no author, no time**. Contribution: FK signal + user cascade, kind REPORT/CONFIRM/NO_LONGER, **UNIQUE (signal_id, user_id)**, `counts_from` = server time + random delay (+ probation), the only time stored. Rows deleted at the end of their lifetime |
-
-| V13 | `users.role`, `contributor_standing`, `signal_flags`, `moderation_cases`, `moderation_actions`, `moderation_appeals`; `place_signals.moderation/moderation_until`; `signal_contributions.credited` | role CHECK (ADMIN only via SQL); standing = counters only (no places/times), halved every 90 days; one flag per person per signal; generated `open_marker` + unique ⇒ one OPEN case per signal; REMOVED ⇔ moderation_until; audit append-only, actor FK without cascade; one appeal per decision; `version` on cases/appeals. Applied + constraint-checked on MySQL 8.0 |
-
-| V14 | `area_patterns`, `place_signals.reached_confirmed` | one decayed value per (6-char area, INCIDENT/CONDITION), PK (area_cell, signal_group), **no FK, no user/signal id**, `DATE` columns (day precision, never returned), CHECKs cell/group/value 0–4/next ≥ decayed; fed only by finished, independently confirmed, unmoderated episodes (≤ 1/week), forgotten < 0.25, reset by any REMOVE. Applied + constraint-checked on MySQL 8.0 |
-
-| V15 | `evaluation_counters`, `moderation_cases.coordination_rule` | counters: PK (week_start, metric, dimension, model_version), `occurrences` ≥ 0; **no user/cell/signal/case column**; metric closed list (binary collation), dimension `^(-\|[A-Z_]+([.][A-Z_]+)?)$` case-sensitive (a geohash cannot be stored), version `^(-\|[a-z]+-[0-9]+([.][0-9]+)?)$`, week_start a Monday; 104-week retention in code. `coordination_rule` LINKED_GROUP/SUPPORT_CORE/EXCLUSIVE_PAIR, COORDINATION cases only, binary. Dry run 19/19 rejected, applied on MySQL 8.0 |
-
-| V16 | `users.credentials_changed_at`, `deletion_requested_at`, `deletion_due_at`, `erased_at` | CHECKs: deletion pair both-or-none, due > requested, erased ⇒ disabled, ⇒ no pending deletion, ⇒ role USER, ⇒ email `erased-%@erased.invalid`; index on `deletion_due_at`. Dry run 13/13, applied on MySQL 8.0 (2026-10-22) |
-
-| V17 | `emergency_events.started_session`, `ended_elsewhere` | session id CHAR(36) binary, lower-case UUID CHECK; only while ACTIVE (CHECK); ended_elsewhere only when not ACTIVE (CHECK). Dry run 7/7, applied on MySQL 8.0 (2026-10-22) |
-
-| V18 | `emergency_events.client_ref`, `started_offline` | Phase 11: phone reference (lower-case UUID, binary, `UNIQUE (user_id, client_ref)`), offline ⇒ reference (CHECK), `ended_at >= started_at` (CHECK). Dry run 10/10 (incl. the real rows), applied on MySQL 8.0 (2026-10-22) |
-
-| V19 | `device_sessions` | C1: one row per sign-in (`session_id` = token `sid`, binary, UUID CHECK, unique), FK user cascade, `secret_hash` + `previous_secret_hash` lower-case hex SHA-256 (never the secret), rotation pair CHECK, `authenticated_at`, sliding `expires_at` > `last_used_at` ≥ `created_at`, revoked pair + reason CHECK (SIGNED_OUT, PASSWORD_CHANGED, REUSE_DETECTED, ACCOUNT_DISABLED, EXPIRED). Dry run 3/3 + 14/14, applied (2026-10-22) |
-
-| V20 | `users.age_confirmed_at`, `profiles`, `connections`, `connection_invites`, `blocks`, `mutes` | 13A: no date-of-birth column; profile handle binary + REGEXP CHECK (ASCII, 3–20, no `..`), previous handle reserved (pair CHECK, ≠ current, unique), text length CHECKs, closed language/interest lists; connections `UNIQUE (user_low, user_high)`, status + responded CHECKs; invites store only a lower-case SHA-256; "not self"/"low < high" in code (MySQL forbids CHECKs on cascading-FK columns). All FKs cascade; `AccountEraser` covers 8 new references. Dry run 30/30, applied (2026-10-22) |
-
-| V21 | `places`, `posts`, `post_media`, `comments` | 13B: places with no creator (`created_on DATE`), unique (cell, normalised name), cell/area CHECKs; posts: type, precision (`location_precision`), area only for AREA, closed city list only for CITY, month (day 1) only and always for EXPERIENCE, ONLY_ME ⇒ NOBODY, `visible_from ≥ created_at`; media: random `storage_key`, `sort_order` 0–5, unique (post, position), ≤ 4096 px, ≤ 5 MiB, SHA-256; comments: kinds, 1–1000 chars, helped only on ANSWER; "place for EXACT/AREA", "one level", "position iff attached" in code. Dry run 79/79, applied (2026-10-22) |
-
-| V22 | `butterflies`, `places.city`, index `posts (audience, visible_from)` | 13C: one row per (person, post) = the Cocoon item, FKs cascade, `state` WANT/BEEN binary CHECK, `(state = BEEN) = (been_at IS NOT NULL)` + `been_at >= created_at` CHECK, UNIQUE (user, post); `places.city` closed list without OTHER (binary CHECK), set by the server from the cell (`CityAreas`); "not own post" and "Experiences only" in code. Dry run 14/14, applied (2026-10-23) |
-
-| V23 | `posts`/`comments` moderation columns, `post_revisions`, `content_cases`, `content_reports`, `social_strikes`, `social_standing`, `moderation_actions.target_kind` | 13D: state NONE/COLLAPSED/HELD/REMOVED + reason + decision UUID (CHECK: NONE ⇒ neither, COLLAPSED ⇒ both or neither, HELD/REMOVED ⇒ both), `approve_first` ⇒ comment policy EVERYONE, `awaiting_approval`; one OPEN case per post / comment / person (`open_marker` + unique), outcome NO_VIOLATION/ACTION_TAKEN with `outcome IS NOT NULL` written out; one report per reporter and target, note only for OTHER (1–200), `counts_from ≥ created_at`; strike weight 1–3, decision unique; one standing row per person, until > decided; audit action/reason lists extended + kind-matches CHECK with `COALESCE` (NULL makes `IN` UNKNOWN, which a MySQL CHECK lets pass — found in the dry run). "Exactly one target" in code. Dry run 51/51 + 18/18, applied (2026-10-24) |
-
-| V24 | `posts`/`comments` `moderation_source`, `moderation_spans`, `strong_language`; `content_cases.origin`; `content_assessments`; V15 metric list + `AI_CHECKED`, `AI_REVIEWED` | 13E: state CHECK replaced (NONE ⇔ no source/reason/decision/spans; REPORTS ⇒ COLLAPSED without reason/decision/spans; SYSTEM ⇒ COLLAPSED/HELD + reason, no decision; MODERATOR ⇒ reason + decision, no spans; `COALESCE(source,'-')` against UNKNOWN), reason list + `AWAITING_CHECK`, spans `start-end` list; origin REPORTS/SYSTEM/AUTHOR_REQUEST; assessments: one per post/comment (unique, FK cascade), status PENDING/DONE/UNAVAILABLE with consistent times/rule, action + rule + reason (`(action = 'PUBLISH') = (reason IS NULL)`), evidence `CATEGORY:sev:T|U:Q|-` list whose categories exclude self-harm, versions V15 pattern, **no text column**. Dry run 59/59 + 19/19, applied (2026-10-25) |
-
-| V26 | `users.phone_e164`, `phone_verified_at`, generated `verified_phone`; `phone_challenges` | Phase 17B: `+91[6-9]` + 9 digits (binary, CHECK), verified ⇒ number, verified ≥ created, tombstone keeps no number; UNIQUE `verified_phone` = one verified account per number; challenges: PK user_id (one per account), lower-case hex SHA-256 token hash (unique), code only as HMAC hex + expiry + send time + number (CHECK together), attempts/sends 0–20, expires > created, FK cascade; **no code, no IP, no text**. Dry run 15/15 rejected + 7/7 accepted + cascade on scratch copies, applied on MySQL 8.0 (2026-10-27, backup taken first) |
-
-| V25 | `users.email_verified_at`, `email_verification_tokens` | E-mail verification: NULL = unverified; existing non-erased accounts set verified at the migration (no production users); CHECK verified ≥ created; index (email_verified_at, created_at); tokens: PK user_id (one live token), UNIQUE lower-case hex SHA-256 (CHECK), expires > created (CHECK), FK cascade, **no token, no IP**. Dry run 11/11 rejected + 6/6 accepted, applied on MySQL 8.0 (2026-10-26, backup taken first) |
-
-| V27 | `post_media.kind`, `duration_ms`, `poster_bytes` | Phase 17C: kind PHOTO/VIDEO (binary, default PHOTO); size CHECK per kind: photo ≤ 5 MiB with no duration/poster, video ≤ 50 MiB with 1–60 500 ms and poster NULL or ≤ 5 MiB, ≤ 4096 px; every NULL case written out; "a video needs its poster before it is attached" in code (no CHECK on the cascading `post_id`). Dry run 15/15 refused + 5/5 accepted on a scratch copy, applied on MySQL 8.0 (2026-11-01, backup taken first) |
-
-| V28 | `cities`, `saved_posts`, `daily_states`, `profiles.photo_key`; `butterflies` = reactions; `places.city`/`posts.city` → FK | Phase 17E: `cities` (code PK binary REGEXP, box CHECKs, OTHER without box) seeded line for line from `cities-v1.tsv` (`CityCatalogTest`); the closed city CHECKs replaced by FKs without referential actions (`ck_places_city` never OTHER, `ck_posts_city` precision rule); `saved_posts` UNIQUE (user, post), FKs cascade, Cocoon rows copied in; `butterflies` emptied, `state`/`been_at` dropped (no reaction invented); `photo_key` lower-case UUID CHECK, unique; `daily_states` user PK, closed mood/intent list, `set_on DATE` (IST day, no time); audit lists + `PERSON_REMOVE_PHOTO` (kind PERSON, COALESCE). Backup first; dry run 8/8 refused; constraint checks 26/26 refused + 11/11 accepted; applied on MySQL 8.0 (2026-11-02) |
+## 7. Database (MySQL `safesphere`, Flyway) — per-migration rules in `.claude/rules/database.md`
 
 Conventions: never edit an applied migration; next file is **V29**; snake_case; `DATETIME(6)` stored in UTC; constraint
-prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.
+prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci. "One active /
+one primary / one open" via a generated marker column + unique index. MySQL forbids CHECKs on cascading-FK columns
+(enforce those rules in code); write NULL cases out with `COALESCE` (a NULL makes `IN` UNKNOWN, which a CHECK lets pass);
+closed lists use binary collation.
+
+| Migration | Tables / columns |
+|---|---|
+| V1–V3 | `users`; `safety_contacts`; `emergency_events` |
+| V4–V8 | `emergency_locations`; `safe_journeys`, `journey_events`; `escalation_events` + `emergency_events.journey_id`; journey destination + reasons; `circle_alerts` |
+| V9–V11 | `evidence_items`, `evidence_custody_events`; custody actions; `evidence_recovery_envelopes`, `evidence_recovery_failures` |
+| V12–V15 | `place_signals`, `signal_contributions`; roles, standing, flags, `moderation_cases/actions/appeals`; `area_patterns`; `evaluation_counters` |
+| V16–V19 | account deletion columns; `emergency_events.started_session/ended_elsewhere`; `client_ref/started_offline`; `device_sessions` |
+| V20–V24 | `profiles`, `connections`, `connection_invites`, `blocks`, `mutes`; `places`, `posts`, `post_media`, `comments`; `butterflies`; content moderation tables; `content_assessments` |
+| V25–V28 | e-mail verification (superseded); phone verification `phone_challenges`; `post_media.kind` (video); `cities`, `saved_posts`, `daily_states`, `profiles.photo_key` |
 
 ---
 
-## 8. API (details and examples in `docs/API.md`)
+## 8. API — every endpoint in `docs/API.md` (per-phase index in its appendix)
 
-- `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/users/me`
-- Phase 17E (V28, `API.md` "Phase 17E"): `PUT|DELETE /api/posts/{id}/reaction` and `/save` (idempotent: 200
-  `{marked}` / 204), `GET /api/saved?cursor=`; post answers `youReacted`, `saved`, author-only `butterflies`; removed
-  `/butterfly` and `/api/cocoon`; `PUT|DELETE /api/profiles/me/photo`, `GET /api/profiles/{id}/photo/{key}`, `photo` in
-  person summaries and profiles; `PUT|DELETE /api/profiles/me/daily-state`, `dailyState` (own + connections only);
-  city codes from the catalog; moderators `GET …/content-cases/{id}/person-photo`, action `PERSON_REMOVE_PHOTO`.
-- Phase 17C (V27, `API.md` "Phase 17C"): `POST /api/media` `video/mp4` → 201 `{mediaId, kind, width, height,
-  durationMs}`; `POST /api/media/{id}/poster`; `GET /api/media/{id}` = photo or poster; `GET /api/media/{id}/video`
-  (ranges); `DELETE /api/media/{id}` (own, unattached); posts: ≤ 1 video (400), not ready 409; `media[]` + `kind`,
-  `durationMs`; moderators `GET …/content-cases/{id}/media/{mediaId}/video`. Config `app.social.max-video-bytes`,
-  `videos-per-day`.
-- Phase 17B (`API.md` "Phase 17B"): register needs `phone` → 201 `{status: PHONE_VERIFICATION_REQUIRED, challenge,
-  phoneHint, needsPhone, codeSent, resendInSeconds, codeExpiresInSeconds}`; login without a verified phone → 403
-  `PHONE_NOT_VERIFIED`; `POST /api/auth/phone/start|verify|resend|change` (verify answers like a sign-in). The V25
-  endpoints below are removed.
-- V25 (history): register → 201 `{status: VERIFICATION_REQUIRED, email}` (no tokens); login of an unverified
-  account → 403 `code EMAIL_NOT_VERIFIED`; `POST /api/auth/verify-email {token}` (200 / 400 `VERIFICATION_LINK_INVALID`
-  / 429); `POST /api/auth/verification/resend {email, password}` (202 always / 429); `GET /verify-email(.js|.css)`;
-  `ApiError.code` optional. Config `PUBLIC_BASE_URL`, `MAIL_*`, `app.email-verification.*`.
-- `GET|POST /api/safety-contacts`, `GET|PUT|DELETE /api/safety-contacts/{id}`
-- `POST|GET /api/emergencies`, `GET /api/emergencies/{id}`, `PUT /api/emergencies/{id}/cancel`, `PUT /api/emergencies/{id}/resolve`
-- `POST|GET /api/emergencies/{id}/locations`, `GET /api/emergencies/{id}/locations/latest` (4A; config
-  `app.emergency.locations.max-per-emergency|upload-grace|clock-tolerance`, defaults 1000 / 15m / 5m)
-- `POST|GET /api/journeys`, `GET /api/journeys/{id}`, `POST /api/journeys/{id}/check-ins`, `PUT …/complete|cancel`,
-  `POST …/escalations` (1–2 only, no skipping, idempotent; 3 = start SOS; 4/5 rejected), `PUT …/location` (last known) (4B).
-  `POST /api/emergencies` links the caller's ACTIVE walk (L3) and returns `journeyId`.
-- 4C: `POST /api/journeys` optional `destinationLatitude/Longitude` (both or neither), response `destination`;
-  `POST …/escalations` optional `reason` (L1: `CHECK_IN_MISSED` default | `ROUTE_DEVIATION` (needs destination) |
-  `UNEXPECTED_STOP`, may precede the deadline; L2: `NO_RESPONSE` only).
-- 4D: `POST /api/emergencies/{id}/circle-alerts`, `POST /api/journeys/{id}/circle-alerts` (1–20 reports, idempotent by
-  `clientRef`, status only forward, ≤ 200 per target), `POST /api/emergencies/{id}/dial-prompts` (L4 once, ACTIVE only),
-  `GET /api/emergencies/{id}/context?audience=OWNER|SAFETY_CIRCLE` (others 400). Journey L4 → 400.
-- Phase 5: `GET /api/evidence/vault-key`, `POST|GET /api/emergencies/{id}/evidence`, `GET …/evidence/custody`,
-  `GET /api/evidence/{id}`, `PUT /api/evidence/{id}/content?offset=N` (octet-stream ≤ 1 MiB), `POST …/seal`,
-  `GET …/content`, `POST …/delete {password}`. Config `app.evidence.*` (`EVIDENCE_STORAGE_DIR`, `EVIDENCE_VAULT_PUBLIC_KEY`).
-  Context OWNER gains `evidence` counts; SAFETY_CIRCLE none.
-- Phase 5 hardening (V10): `POST /api/evidence/{id}/verify` (server re-hashes its stored copy; damaged → UPLOADING
-  again). Delete: refused while ACTIVE and for `app.evidence.delete-protection` (24h) after the end; 5 wrong passwords
-  in 15 min → 429 (`delete-max-failures`, `delete-failure-window`); wrong passwords logged `DELETE_REFUSED`.
-  `VaultKeyTool generate` (passphrase-encrypted PEM) | `check` | `decrypt`.
-- Phase 5 restore (V11, `docs/PHASE5.md` §11): `GET|PUT /api/evidence/recovery`, `POST /api/evidence/recovery/envelope
-  {password}`, `GET /api/evidence/recovery/items?page=N`, `PUT /api/evidence/{id}/recovery-key`; declaration accepts
-  `recoveryRkVersion` + `recoveryWrappedKey`; `EvidenceResponse.recoverable`. Wrong passwords counted (5/15 min → 429).
-- Phase 6 (V12, `docs/PHASE6.md`): `POST /api/community/reports {category, cell(7)}` → 202 (same answer new / merged /
-  re-sent), `GET /api/community/area?cell=(6)` (cell + 8 neighbours, ≤ 100, nearest first; precision AREA/BLOCK,
-  support/freshness BANDS, `yourContribution`), `POST /api/community/signals/{id}/contributions {kind, near(7)}`,
-  `GET /api/community/mine`, `DELETE /api/community/mine/{id}`. Config `app.community.*`: delay 10–30 min, probation
-  24 h, 10 reports / 3 per area / 30 answers per 24 h, 120 look-ups + 15 distinct areas per hour, purge 15 min.
-- Phase 7 (V13, `docs/PHASE7.md`): area signals add `confidence`, `reasons`, `youFlagged`; mine adds `UNDER_REVIEW`;
-  `POST /api/community/signals/{id}/flags {reason, near(7)}` → 202 `{status:RECEIVED}` (10/day);
-  `GET /api/community/standing` (own pause only, no score); `POST /api/community/appeals` → 202;
-  `GET /api/moderation/access` (any JWT); MODERATOR/ADMIN (role from DB per request): `GET /api/moderation/cases?status=`
-  (summaries carry `youTookPart`),
-  `GET /api/moderation/cases/{id}`, `POST /api/moderation/cases/{id}/actions {action QUARANTINE|DISMISS|REMOVE|RESTRICT,
-  reason, contributorRef?, days?}`, `GET /api/moderation/appeals`, `POST /api/moderation/appeals/{id}/decision
-  {decision UPHELD|OVERTURNED}`; ADMIN: `PUT /api/admin/roles {email, role USER|MODERATOR}`, `GET /api/admin/moderation-log?page=`.
-  Paused contributor → 403 on report/answer/flag (viewing and safety features unaffected). Sign-in 429 after 10 failures
-  per account / 30 per address per 15 min; sign-up 429 after 10 per address per hour; community writes 10 per 10 min.
-  Config `app.auth.*`, `app.moderation.*`, `app.community.writes-per-10-minutes` (tests lift the per-address limits).
-- Phase 8 (V14, `docs/PHASE8.md`): `GET /api/community/area` adds `picture {modelVersion "rules-1", outlook, concern,
-  information, reasons, concernCategories, conflicting, highestConcernCell (6-char or null), areas[9] {cell, outlook,
-  information}}` (null if the rules fail; computed before the 100-signal cut); `GET /api/intelligence/region?cell=(5)` →
-  `{region, modelVersion, complete, areas[] (only known cells; absent = NO_INFORMATION), signals[] (MODERATE/HIGH only,
-  no ids, independent freshness)}`; 429 after 20 downloads / 6 distinct regions per 24 h (2 in probation), in memory.
-  Config `app.intelligence.*` (pattern half-life 60d, cap 4, recurring 2.5, forget 0.25, min gap 7d, region budgets,
-  `region-max-signals` 500).
-- Phase 9C (`docs/PHASE9.md` §8): `GET /api/moderation/cases/{id}` adds `coordination: null | {reasons
-  [LINKED_GROUP|SUPPORT_CORE|EXCLUSIVE_PAIR], groupSize TWO|THREE_TO_FIVE|SIX_OR_MORE, groupPlaces null|TWO_TO_FOUR|
-  FIVE_TO_NINE|TEN_OR_MORE}` (bands only, recomputed per view). `DELETE /api/community/mine/{id}` is no longer 409 for a
-  COORDINATION case without flags. Config `app.moderation.coordination.mode` (SHADOW), `.interval` (1h; tests 0s),
-  `.max-cases-per-day` (5).
-- Phase 9C.1–9C.2 (`docs/PHASE9.md` §9–§10): case detail adds `groupMembers [{ref, role null, flag null, tier,
-  accountAge, counting, linkGroup}]`; `POST …/actions` RESTRICT accepts `"wholeGroup": true` instead of `contributorRef`
-  (400 with both or on another action; 409 no group / everyone paused); a moderator in the group's core gets 403. DISMISS
-  of a COORDINATION case = Option B (that signal counts the people seen then separately).
-- Phase 9D (`docs/PHASE9.md` §18–§20): **no new endpoint or field.** `picture.modelVersion` / region pack `modelVersion`
-  = `"rules-1.1"` (was `"rules-1"`; `"rules-2"` only if `app.intelligence.rules-2-mode=ACTIVE`); the outlook
-  `NO_CONFIRMED_CONCERNS` is no longer sent.
-- Phase 9B (V15, `docs/PHASE9.md` §27–§34): ADMIN only `GET /api/admin/evaluation?weeks=1..104` (default 12) →
-  `{notice, fromWeek, toWeek, currentWeekIncomplete, countersEnabled, counters[{weekStart, metric, dimension,
-  modelVersion, value}], rates[{name, dimension, numerator, denominator, minimum, status OK|NOT_ENOUGH_DATA|INCONSISTENT,
-  value, low, high, lowerBound}], g1{status NOT_MET|COUNTS_MET_PRIVACY_REVIEW_REQUIRED, decidedCasesPerFourWeeks,
-  activeModerators, note}}`; 400 / 401 / 403. No client endpoint or field changed. Config `app.evaluation.enabled`
-  (true; false deletes the rows at the next clean-up), `app.evaluation.retention-weeks` (104, max 104). `POST /api/community/reports` answers as before; a lone report may later
-  appear in `GET /api/community/mine` as `kind: CONFIRM` on the neighbouring signal's id. Config
-  `app.intelligence.rules-2-mode` (SHADOW) and `.rules-2-shadow-interval` (1h; tests 0s).
-- Phase 10A (V16, `docs/API.md` "Phase 10A endpoints"): `PUT /api/users/me/password {currentPassword, newPassword}` → 200
-  fresh token (others revoked; 409 during ACTIVE SOS/walk; 409 wrong password; 429), `POST /api/users/me/deletion
-  {password}` → 202 `{deletionRequestedAt, deletionDueAt}` (409 ACTIVE / < 24 h), `POST /api/users/me/deletion/cancel
-  {password}` → 204; `/me`, login, register and password-change `user` add `deletionRequestedAt`, `deletionDueAt`; every
-  authenticated endpoint can answer 401 with `WWW-Authenticate: Bearer error="invalid_token",
-  error_description="credentials_changed|account_deleted|account_unavailable"`. Config `app.account.*`.
-- Phase 10A.4 (V17): tokens carry `sid` + `auth_time`; `POST /api/users/me/token` → 200 renewed token (409 after 30
-  days unless an SOS/walk is ACTIVE); `PUT /api/emergencies/{id}/resolve|cancel` optional `{password}`: from another
-  sign-in than the starter 403 without it, 409 wrong, 200 right; emergency answers add `endedElsewhere`.
-- Phase 11 (V18): `POST /api/emergencies` optional `clientRef` (same caller + reference ⇒ same emergency),
-  `startedAt` (offline start, clamped `[now − 24 h, now]`, marks `startedOffline`), `endedAt` + `outcome`
-  RESOLVED|CANCELLED (ended offline, stored ended); `PUT …/resolve|cancel` optional `endedAt` (clamped `[start, now]`);
-  answers add `startedOffline`; location grace for offline-started SOS also counts from the server's first record.
-  Rise (10B) has NO endpoint.
-- C1 (V19, `API.md` "Phase 11 C1"): register/login/refresh return `refreshToken` (`<sid>.<secret>`);
-  `POST /api/auth/refresh {refreshToken}` (public) → new access token + rotated secret; replaced secret within 60 s =
-  lost answer, later = reuse → session ends; 401 reasons `session_revoked` | `account_deleted` | `account_unavailable`;
-  `POST /api/auth/sign-out {refreshToken}` → 204 always; login optional `previousRefreshToken` (same account: hand-over
-  incl. ACTIVE SOS); every endpoint refuses a `sid` whose session ended (`session_revoked`); password change ends the
-  other sessions; renewal/password change adopt pre-V19 sign-ins once. Config `app.account.refresh-idle-timeout` (90d),
-  `refresh-reuse-grace` (60s), `session-retention` (30d).
-- Phase 13A (V20, `API.md` "Phase 13A"): register REQUIRES `dateOfBirth` (18+, never stored); user answers add
-  `ageConfirmed`; `POST /api/users/me/age-confirmation`; `GET|PUT /api/profiles/me`, `GET /api/profiles/by-handle/{h}`,
-  `GET /api/profiles/{id}` (`relationship`); `POST|GET /api/connections/requests`, `…/{id}/accept|decline`,
-  `DELETE …/requests/{id}`, `GET /api/connections`, `DELETE /api/connections/{profileId}`; `POST|GET
-  /api/connections/invites`, `DELETE …/invites/{id}`, `POST …/invites/redeem`; `POST|GET /api/blocks`, `DELETE
-  /api/blocks/{id}`; same for `/api/mutes`. Invisible = 404; no counts; config `app.social.*`.
-- Phase 13B (V21, `API.md` "Phase 13B"): `POST /api/places` (200, existing place returned), `GET /api/places/nearby?area=(6)`,
-  `GET /api/places/{id}`; `POST /api/media` (image/jpeg|png body, ≤ 5 MB → 201; others 415), `GET /api/media/{id}`
-  (`no-store, private`, `nosniff`); `POST /api/posts`, `GET|PUT|DELETE /api/posts/{id}` (PUT narrow-only, 409 on
-  widening), `GET /api/posts/mine?cursor=`, `GET /api/profiles/{id}/posts?cursor=`; `GET|POST /api/posts/{id}/comments`,
-  `DELETE /api/comments/{id}`, `POST /api/comments/{id}/hide|unhide`, `POST|DELETE /api/comments/{id}/helped`. Bands
-  for everyone but the author; exact-place posts visible to others after 1–3 h.
-- Phase 13C (V22, `API.md` "Phase 13C"): `PUT|DELETE /api/posts/{id}/butterfly` (`{state?: WANT|BEEN}`; own post / Ask
-  400), `GET /api/cocoon?state=&cursor=` (`{items[{post, state, savedPeriod}], nextCursor}`); post answers add
-  `yourButterfly` and, author only, `butterflies {count ≥ 3 | null, fewerThanThree}`; `GET /api/discover/edition?city=`
-  (`{city, weekOf, theme, sections[{kind CITY|ASKS|THEME, items[{post, reasons}]}]}`), `GET
-  /api/discover/connections?cursor=`, `GET /api/discover/categories/{c}?city=&cursor=`, `GET /api/places/{id}/posts?cursor=`
-  (EXACT + Everyone only), `GET /api/places/search?q=&city=` (names only, ≤ 20); place answers add `city`. Config
-  `app.social.butterflies-per-day` (200), `discover-reads-per-hour` (240), `place-searches-per-hour` (120).
-- Phase 13D (V23, `API.md` "Phase 13D"): `POST /api/reports {targetKind POST|COMMENT|PERSON, targetId, reason, note?}` →
-  202 always the same (400 own/reason/note, 404 invisible, 429 after 20/day), `GET /api/reports/mine`; `GET
-  /api/social-standing` (pause + decisions of 90 days, never a "keep"), `POST /api/social-standing/decisions/{id}/appeal`
-  (202, 409 asked/no longer applies); post answers add `approveFirst`, author `moderation {state, reason, decisionId}`,
-  others `collapsed` UNDER_REVIEW|BY_MODERATOR; perspectives add `awaitingApproval`, `canApprove`, `moderation`,
-  `collapsed`; posts accept `approveFirst`; `POST /api/comments/{id}/approve`; pauses answer 403 on their writes only.
-  Moderators: `GET /api/moderation/content-cases?status=`, `GET …/{id}`, `POST …/{id}/actions {action, reason}`,
-  `GET …/{id}/media/{mediaId}`, `GET /api/moderation/content-appeals`, `POST …/{id}/decision`, `GET
-  /api/moderation/places?area=`, `POST /api/moderation/places/{id}/merge {into}`; `/api/moderation/appeals` = Phase 7
-  RESTRICT appeals only. Config `app.moderation.reports-per-day` (20), `collapse-reports` (3), `content-interval` (1h),
-  `app.social.probation` (72h), `probation-posts-per-day` (3), `probation-comments-per-day` (10).
-- Phase 13E (V24, `API.md` "Phase 13E"): writes answer as before (never refused); post/perspective answers add
-  `strongLanguage`; others' `collapsed` + `BY_SYSTEM`; the author's `moderation` + `source` (SYSTEM|MODERATOR|null),
-  `flagged [{start,end}]` (code points of body + "\n" + tip); reason `AWAITING_CHECK`; the author's create/edit answer
-  may carry `supportSuggested`. `POST /api/content-checks/review {targetKind POST|COMMENT, targetId}` → 202 always the
-  same (own SYSTEM state only, else 404). Moderator summaries add `openedBy`, `contentSource`; detail adds `assessment
-  {status, action, rule, reason, evidence[], strongLanguage, versions}`. Internal service `POST /v1/assess` (key header)
-  and `GET /v1/health`. Config `app.moderation.ai.*` (enabled, url, key = env `MODERATION_SERVICE_KEY`, connect-timeout
-  300ms, timeout 1500ms, model-mode OFF, probation-wait-max 2h, retry-for 24h, retention 90d, job-interval PT5M).
+- One error JSON shape (§6); a foreign or invisible record answers **404**; refused writes by a paused person **403**;
+  limits **429** (our message shown).
+- Every authenticated endpoint can answer 401 with `WWW-Authenticate: Bearer error="invalid_token",
+  error_description="credentials_changed|account_deleted|account_unavailable|session_revoked"`.
+- Social answers never carry coordinates (cells only) or exact times for others (bands only); no counts except U1 and
+  the author-only butterfly count (from 3).
+- Update `docs/API.md` (and its appendix index) with every endpoint change.
 
 ---
 
@@ -879,11 +300,11 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
 - Never claim emergency-service integration, SMS delivery, or that contacts were notified unless it happened and was
   confirmed. SMS "sent" ≠ delivered.
 - Document platform limitations honestly (`docs/PLATFORM_CONSTRAINTS.md`).
-- **Social features (Phase 13, planned; design doc §4):** no coordinates in any social request or response (cells
+- **Social features (Phase 13, built; design doc §4):** no coordinates in any social request or response (cells
   only); public times as bands, never timestamps; private places stay on the phone; EXIF stripped on the phone and
-  re-encoded on the server; one visibility definition (`ContentVisibility`) for every read path, tested with
-  author / connection / stranger / blocked users; connection lists, block lists and butterflies visible only to their
-  owner; social packages never read safety data and safety never depends on social features; a posting restriction
+  re-encoded on the server; one visibility definition (social `Visibility`) for every read path, tested with
+  author / connection / stranger / blocked users; connection lists, block lists and saves visible only to their
+  owner (butterfly reactions: the author sees a count from 3, never who); social packages never read safety data and safety never depends on social features; a posting restriction
   never touches SOS, Safe Walk, the Safety Circle or the vault. 18+ at launch, self-declared date of birth at sign-up (D6, decided 2026-10-22).
 - **Media metadata (Phase 17C, built):** photos are re-encoded on the phone and again on the server; videos are
   re-packed on the phone (first picture + sound track only, no location, muxer `meta` zeroed) and checked + stripped of
@@ -895,97 +316,50 @@ prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); Inno
   256-bit, SHA-256 stored; one verified account per number; SMS only after commit, provider refusals undone; provider
   credentials only from the environment; the dev sink writes codes to a local file only (never in production). Accounts
   from before 17B keep their sessions and verify a number at their next sign-in.
-- **E-mail ownership (V25, SUPERSEDED by 17B, history):** no account gets a session before its owner opens the e-mailed link; verification,
-  refresh and per-request checks all refuse an unverified account; tokens are 256-bit, single use, 60 min, stored only as
-  SHA-256 and never logged or returned by an API; resend and verification answers reveal nothing about accounts; mail
-  credentials only from the environment. A future password reset must use its own token table and refuse unverified
-  accounts.
 - **Moderation (Phase 13D, built):** the reported person is never told who reported or that a report exists (no
   notice, no refused edit/delete, no "keep" in their standing); reports only collapse (visibly, at 3 independent
   counting reports); hold, removal and pauses are human decisions with a reason, audited and appealable to another
   moderator (never the decider or a reporting moderator); no shadow bans: every state is shown to its author.
+- **E-mail ownership (V25, superseded by 17B):** the full rule is in `docs/EMAIL_VERIFICATION.md` (appendix). A future
+  password reset must use its own token table and refuse unverified accounts.
 
 ---
 
-## 10. Design system and UX (full spec: `docs/DESIGN_SYSTEM.md`)
+## 10. Design system and UX (full spec: `docs/DESIGN_SYSTEM.md`; earlier identities in its History section)
 
-> **Since 13F the Kurinji system governs every screen** (`docs/DESIGN_SYSTEM.md`): mist page, indigo ink, bloom
-> violet-blue primary, yeoman orange for intent only, ochre for moderation/caution, red for emergency UI only; Young
-> Serif headlines + Mukta Malar (Tamil + Latin) bundled; postmark / ticket / butterfly / kolam objects; four motion
-> moments. `ContrastTest` and `KurinjiTextsTest` guard contrast and voice. (The navy/teal identity is superseded.)
-
-> **Since Phase 16 (2026-10-26, decision U4) the red / black / white Kurinji system replaces the 13F mist/bloom look**
-> (`docs/DESIGN_SYSTEM.md`, `docs/PHASE16.md`): brand red for actions and the save; black hero surfaces; Mukta Malar
-> Bold headlines; social feed cards (person, photo, short thought, context chips, save + comments). Emergency UI is
-> recognised by the siren icon + the words SOS/Emergency + its black-and-red treatment, never by colour alone. The
-> bullet below about red is superseded.
-
-> **Since Phase 17E (E17-1) the palette is "Ink & Lime"** (`docs/DESIGN_SYSTEM.md`): ink black is the action colour on
-> light pages (lime words on it), lime #ADFF2F the action colour in dark mode; lime is otherwise a FILL (a given mark,
-> chosen tags, today's state) with ink on it, never text or an icon on a light page; deep leaf green #3A6100 for
-> accents read on light pages. The U4 emergency treatment and values are unchanged; red now means only emergency.
-
-- ~~**Red only for emergency UI.**~~ (superseded by U4) All text pairs ≥ 4.5:1 contrast, control edges ≥ 3:1. Status never by colour alone.
-  Never set `android:fontFamily` on the theme (it overrides text appearances); emergency digits use the phone's sans.
-- Use theme attributes and existing styles/components; no hard-coded colours in layouts.
-- Honesty labels: **Available** (works), **Preview** (design only), **Coming soon** (not built), **Sample** (placeholder data).
-- No text claims a place or person is safe (Phase 8). The Home status card states facts only (`HomeStatus`: checking /
-  nothing running / Safe Walk on / check-in missed; hidden during an SOS); `HomeTextsTest` scans every Home string.
-- Emergency UI: clear, fast, high contrast, low cognitive load, large touch targets, `keepScreenOn` while active.
-- Bottom nav (13F): Discover, ✚ Share (action), Cocoon, You. Reading screens keep the bar; everything else is a
-  secondary destination (toolbar + back, no bottom bar). Nearby (`communityFragment`) is under You → Safety.
+- **"Ink & Lime" (E17-1):** ink black is the action colour on light pages (lime words on it), lime #ADFF2F the action
+  colour in dark mode; lime is otherwise a FILL (a given mark, chosen tags, today's state) with ink on it, never text or
+  an icon on a light page; deep leaf green #3A6100 for accents read on light pages. Red means only emergency.
+- **Emergency UI (U4):** siren icon + the words SOS/Emergency + its black-and-red treatment, never colour alone; clear,
+  fast, high contrast, low cognitive load, large touch targets, `keepScreenOn` while active. Emergency digits use the
+  phone's sans.
+- All text pairs ≥ 4.5:1 contrast, control edges ≥ 3:1 (`ContrastTest`). Status never by colour alone. Moderation words
+  amber, never red.
+- Use theme attributes and existing styles/components; no hard-coded colours in layouts. Never set
+  `android:fontFamily` on the theme (it overrides text appearances).
+- Narrow screens / large text: marks lose their words before any button (`MarksFit`); spoken labels unchanged.
+- Honesty labels: **Available** (works), **Preview** (design only), **Coming soon** (not built), **Sample** (placeholder
+  data). No text claims a place or person is safe (Phase 8). No ranking words (for you, top, trending, popular…).
 
 ---
 
-## 11. Approved Phase 4 design (already agreed with the user)
+## 11. Safety design invariants (approved Phase 4 design: appendix of `docs/PHASE4A.md`)
 
-**Cross-cutting decisions**
-- **Detection logic runs on the phone in pure Kotlin** (check-in deadlines, deviation, inactivity, Safety Bubble, battery
-  policy, escalation policy): works offline and is unit-testable. The **server** stores journeys, validates state
-  transitions, enforces ownership, and computes check-in deadlines (phone clocks drift).
-- **One foreground service** (`SafetyTrackingService`, type `location`) during Safe Walk or an active emergency; persistent
-  notification; started only while the app is visible. UI and service share state through one holder.
-- **Location:** `play-services-location` (the only approved new dependency) behind a `LocationProvider` interface.
-- **Emergency Context Packet** = a **read model assembled on demand** (emergency + latest location + journey + escalation
-  events). **No `emergency_context` table.** Recipient-specific **projections are field allow-lists** (owner, Safety Circle,
-  future official pathway, future Verified Nearby Assistance). Safety Circle sees only name, time, type, location link.
-- **Escalation Ladder** = enum + pure policy, proportional, never jumps straight to the top:
-  L0 normal · L1 missed check-in/minor concern → prompt user · L2 no response/anomaly → Safety Circle ·
-  L3 confirmed SOS → emergency ACTIVE · L4 emergency pathway = **user-tapped dial prompt (112)**, no claimed integration ·
-  L5 Verified Nearby Assistance = reserved name, **rejected by the server**.
-- **Duress PIN** (silent trigger) remains a reserved trigger type; not part of Phase 4 unless re-planned.
-- **SMS fallback:** auto-send only if the user opts in (then `SEND_SMS`); otherwise open the SMS composer for the user to send.
-- **Safety Bubble / deviation baseline:** corridor around a straight start→destination line with generous tolerance;
-  requires sustained deviation with acceptable GPS accuracy; **warns only**. Real route geometry belongs to Phase 8.
-- **Privacy:** journeys store only the last-known location (no full GPS track).
-- **Not in Phase 4:** server scheduler / push / dead-man alerts (no delivery channel yet — documented limitation),
-  background location, `CALL_PHONE`, exact alarms, boot receiver, microphone, camera.
-
-**Planned migrations (re-inspect the schema before writing)**
-- **V4 `emergency_locations` (4A):** `emergency_id` FK cascade (**no user_id** — ownership via the emergency), latitude/longitude
-  `DECIMAL(9,6)` with range CHECKs, `accuracy_meters`, `source` (FUSED, LAST_KNOWN, GPS, NETWORK, UNKNOWN), `battery_percent`,
-  `recorded_at`, `received_at`, index `(emergency_id, recorded_at)`.
-- V5 `safe_journeys` + `journey_events` (4B; check-ins are journey events; one non-final journey per user via generated marker).
-- V6 `escalation_events` + nullable `journey_id` on `emergency_events` (4B/4C).
-
-**Planned 4A API**
-- `POST /api/emergencies/{id}/locations` — batch of 1–50 points (lets an offline phone upload later), all-or-nothing.
-  Accepted while ACTIVE plus a 15-minute grace after the emergency ends; `recordedAt` not in the future (5-min clock tolerance)
-  and not before the emergency began; per-emergency cap (configurable, e.g. 1000). Use an injectable `Clock` bean.
-- `GET /api/emergencies/{id}/locations/latest` (404 if none), `GET /api/emergencies/{id}/locations` (newest 100).
-- Owner only; other users → 404; JWT required.
-
-**Planned 4A Android**
-- `core/location` (provider interface + fused implementation; permission, availability and accuracy states; GPS off / denied /
-  revoked / low accuracy / unavailable / temporary failure all handled), `core/device` (`ConnectivityMonitor`, `BatteryMonitor`),
-  `core/notifications` (channels + notifier), emergency location association and upload, recovery not dependent on memory alone.
-- New 4A permissions: `ACCESS_FINE_LOCATION`/`ACCESS_COARSE_LOCATION` (at the moment of need, with rationale),
-  `POST_NOTIFICATIONS` (Android 13+, before the first notification), `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_LOCATION`,
-  `ACCESS_NETWORK_STATE`.
-
-**Phase 4 required test cases (map each to a named test):** Safe Walk start/complete/cancel; check-in success/missed;
-warning; escalation; "I'm Safe" prevents escalation; location unavailable; location permission denied; network unavailable;
-SMS unavailable; emergency recoverable after restart; another user cannot access emergency/journey; low battery handled.
+- Detection logic runs **on the phone in pure Kotlin** (works offline, unit-tested); the **server** stores records,
+  validates state transitions, enforces ownership and computes check-in deadlines (phone clocks drift).
+- **One foreground service** (`SafetyTrackingService`) during Safe Walk or an active emergency; persistent notification;
+  started only while the app is visible (`START_NOT_STICKY`, recovery on next open).
+- **Escalation ladder** (enum + pure policy, never jumps to the top): L0 normal · L1 missed check-in/minor concern →
+  prompt the user · L2 no response/anomaly → Safety Circle · L3 confirmed SOS → emergency ACTIVE · L4 **user-tapped dial
+  prompt (112)**, no claimed integration, no `CALL_PHONE` · L5 Verified Nearby Assistance = reserved, **rejected by the
+  server**. Movement concerns only warn; never L3 by themselves.
+- **Emergency Context Packet** = a read model assembled on demand; recipient projections are field **allow-lists**; the
+  Safety Circle sees only name, time, type, location link.
+- Safety Circle SMS: automatic only if the person opted in (`SEND_SMS`), otherwise the SMS app opens; SMS "sent" ≠
+  delivered. Journeys store only the last-known location (no track); destination deleted at a normal end.
+- A posting/community restriction **never** touches SOS, Safe Walk, the Safety Circle or the vault. Sign-out and
+  authentication failures never destroy a running SOS or evidence.
+- Not built (documented limitations): server-side dead-man alerts/push, background location, exact alarms, boot receiver.
 
 ---
 
@@ -1018,146 +392,33 @@ SMS unavailable; emergency recoverable after restart; another user cannot access
   clean-up (withdrawals, role reset) always runs. Method and results: `docs/PHASE9.md` §13. Save a script containing
   Tamil text with a UTF-8 **BOM** (5.1 reads BOM-less UTF-8 as Windows-1252); `R` is an alias of Invoke-History and
   `Type` of Get-Content (don't name helpers so); native-exe arguments lose embedded double quotes.
-- **Python (13E):** none on PATH on this PC; verification used the 3.12.14 interpreter inside
-  `%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\` (another tool's runtime). Tools and
-  tests run with `-I`; the service must start with `-E -s -m kurinji_moderation.server` (`-I` drops its folder from the
-  module path). After changing the lexicon or the rules: `tools/build_lexicon.py`, then `tools/make_vectors.py`.
+- **Python (13E):** none on PATH on this PC; how to run the service and its tools: `.claude/rules/moderation-service.md`.
 - **Emulator:** starting it with `-no-snapshot-save` can come back from an older snapshot with an older APK installed;
   check `dumpsys package com.safesphere.app | lastUpdateTime` and reinstall before a walk-through.
 
 ---
 
-## 13. Decision log
+## 13. Permanent decisions (all 130+ decisions with reasons: `docs/DECISIONS.md`)
 
 | Decision | Reason |
 |---|---|
-| XML Views + Fragments, no Compose | Approved in Phase 1; viva-friendly; consistency |
-| Manual `AppContainer`, no Hilt | Small object graph; less magic to explain |
-| Feature-first packages | Features grow independently; future modularisation |
-| Flyway, `ddl-auto=none` | Reviewed, versioned schema changes |
-| JWT 24 h, no refresh tokens | Kept simple in Phase 2; revisit later |
-| Spring resource-server JWT (not a custom filter) | Less custom security code |
-| Foreign record → 404 | Does not reveal that IDs exist |
-| "One primary" / "one active" via generated columns + unique index | Correct even under concurrent requests |
-| Countdown client-side; event recorded at zero | Cancelling records nothing |
-| Phase 4 in gated sub-phases 4A–4D | Size and risk; build + test between each |
-| Location upload queue in memory only; phone stores ids + start time only | Minimum location retention on the device |
-| `UNIQUE (emergency_id, recorded_at)` + all-or-nothing batches | Offline re-sends are safe and simple |
-| `START_NOT_STICKY` tracking service, recovery on next open | A restarted service would lack while-in-use location access |
-| Phone counts down `due − serverTime`; server checks "missed" against its own deadline (30 s) | Clock drift irrelevant; reports stay plausible |
-| SOS links the active walk server-side by JWT user | No client-supplied journey ownership |
-| Home active-session banner | Tracking can only resume from a visible screen after a restart |
-| Movement concern = the same "Are you OK?" prompt opened early (L1 + reason), L2 on no answer | Ladder "L1 minor concern → prompt; L2 no response/anomaly"; bubble only warns, never L3. Confirmed by the user 2026-10-19 |
-| Destination coordinates on the server, deleted at a normal end | Phone keeps no destination/location; minimum retention |
-| Arrival is a hint, never auto-complete | Ending monitoring near the door is unsafe |
-| Phone sends Safety Circle SMS (opt-in), server only records status | No server gateway in Phase 4; SMS works offline; server keeps no number or text |
-| All-clear / resolved follow-up messages; SOS cancelled within the location wait tells nobody | Calm, proportional communication; no needless alarm |
-| Emergency Context Packet: read model + explicit allow-list projections, owner-only endpoint | Approved design; nothing copied; no accidental leak |
-| Level 4 = `ACTION_DIAL` 112, recorded as "dialer opened" | No claimed emergency-service integration; no CALL_PHONE |
-| Evidence encrypted on the phone, per-item key in the Keystore; server stores ciphertext only | Server/DB breach reveals no evidence; delete key = crypto-shred |
-| Escrow to an OFFLINE RSA recovery key (server has the public half only) | Recoverable after phone loss without making the server able to read evidence |
-| Server re-hashes every byte before SEALED; hash-chained custody ledger incl. downloads | "Verified" is a server fact; tampering and access are auditable |
-| Audio in 30 s AAC/ADTS parts; photo/video via camera app | Loss limited to one part; crash-recoverable; no CAMERA permission, no new library |
-| Deletion needs the password and is refused during an ACTIVE emergency | An unlocked phone in the wrong hands cannot destroy evidence |
-| Deletion also refused 24 h after the end; 5 wrong passwords → 429; attempts logged in custody | Coerced "I'm safe" + immediate deletion; online guessing; attempts are evidence |
-| Vault viewing gated by the phone's screen lock; Keystore key still NOT auth-bound | Capture while locked; removing the screen lock would otherwise destroy all keys |
-| Upload resumption via platform JobScheduler (not WorkManager) | No new dependency; same OS mechanism |
-| Phone re-checks the vault copy on the server before deleting its own | "Verified once" ≠ "intact now"; never delete the last good copy |
-| Restore on a new phone: user passphrase → PBKDF2 → wraps a per-account recovery key that wraps item keys | Self-service recovery without server readability; passphrase change = one re-wrap; approved 2026-10-20 (option D) |
-| Recovery envelope only with the account password; RK reset deferred | Stolen token gives no guessing material; one RK keeps every copy openable |
-| Community = place signals: merge per (cell, category), one answer per person, bands not counts, no text/photos/authors | Safety intelligence, not engagement; report bombing pointless; no accusations of people (Phase 6, autonomous decision under the user's brief 2026-10-20) |
-| Phone sends geohash cells only; precision earned by a 2nd person (k = 2) | Server never has coordinates; one account cannot pin a home |
-| Random publication delay; only `counts_from` stored; 24 h new-account probation | Reporter cannot be linked on the spot; real time never recorded; sock puppets slower |
-| Area look-ups = own area only, 15 distinct areas/h, limiter in memory | Anti-scraping without a DB log of where viewers look |
-| Safety Radar drawn by the app, no map tiles | No new dependency / API key; tile servers would learn viewed locations |
-| Trust private (tiers only weigh contributions; never shown, not even to the person) | Trust > popularity; no status system, nothing to track or game (Phase 7, autonomous under the user's brief 2026-10-20) |
-| Independence rule: accounts sharing ≥ 3 live signals and ≥ half of their activity count once | Sock-puppet resistance without device ids, phone numbers or IPs; fades with retention |
-| Content hidden automatically (reversible quarantine), people restricted only by a human | Automatic punishment fails unsafely; flags cannot silence a well-corroborated warning |
-| Case-scoped HMAC pseudonyms, reason codes only, audit log, appeal to a different moderator | Moderators act without knowing or tracking people; moderator abuse is auditable |
-| Community pause never touches SOS / Safe Walk / Safety Circle / evidence | A safety app must fail safely |
-| Phase 9: no learned model for anything users see; measure first (9A attack simulation through the real API) | No real data, no ground truth, deliberate forgetting; a model would learn our test scripts (`PHASE9_DESIGN.md`, 2026-10-21) |
-| coord-1 (k-core + exclusive pairs) only opens a case for a human; SHADOW by default | Catches the rings and padded pairs 9A measured; honest communities misread as rings must cost moderator time, never their voice |
-| COORDINATION cases do not lock withdrawal (flags still do) | The 409 told a ring it was detected; withdrawing removes the fake anyway (9C, changes a Phase 7 decision) |
-| S15 Option B: a moderator's DISMISS of a COORDINATION case frees THAT signal's counting people (frozen to those seen), via the closed case row | Honest groups regain their voice without storing a social fact; a mistaken dismissal cannot be topped up with puppets (9C.1, the user's choice of option B) |
-| A case lists the coord-1 group's members; one RESTRICT can pause them all | One by one was measured to be fragile (the pattern vanishes before the last member); each pause is still audited and appealable per person (9C.2) |
-| Group membership = backs ≥ 2 of the group's places | A ring member confirming an honest pair's place pulled them into the 2-core (found in testing); detection unchanged (9C.3) |
-| Neighbour join in the clean-up job, only once the report counts; lone reports only, into OLDER signals, stored as CONFIRM | A write-time merge (the design) is a silent probe of a single report's hidden block and misses pairs that were both pending; "older only" stops capture; the effect equals "I saw this too" (9D-1) |
-| Side neighbours only, never corners | Measured: 300 m street 39.6 % → 78.6 % honest pairs joined, 2.0 % of places 300 m apart joined (corners: 94.6 % / 17.9 %) (9D-1) |
-| rules-1.1: safe places alone count once (information ≤ LITTLE) | "No confirmed concerns" could only come from havens, and two accounts faked it; a change that only removes reassurance ships (9D-3) |
-| rules-2 stays SHADOW (counted, never shown) | It also downgrades honest pairs' "extra care"; no real-world evidence of the honest/fake proportion; weakening a warning needs evidence (9D-2) |
-| Outcome counters: weekly, system-wide, after commit, best effort, ADMIN-only; nothing that decides reads them (9B) | Rules can be evaluated without keeping history, places or people; measurement can never break or steer a safety app |
-| The rule that opened a COORDINATION case is stored on the case (V15) | A whole-group pause removes the pattern before the decision; recomputing would credit the decision to nothing (9B, deviation from the design) |
-| Counter CHECKs: upper-case dimension, versions with one dot, binary-collated closed lists | A cell, id or free text cannot be stored; `rules-1.1` must fit; an `IN` CHECK under a case-insensitive collation let `support_core` through (dry run) |
-| Roles read from the DB per request; ADMIN only via SQL | Instant revocation; no API path to the top privilege |
-| Sign-in/sign-up limits in memory, failures only, per account + per address | No IP/e-mail log at rest; short account window limits victim lock-out |
-| Safety Intelligence = deterministic rules on two axes (confirmed concern, information), no score, no ML | Explainable, attack-resistant (counts independent people), honest about "unknown"; no ground truth for ML (Phase 8, autonomous under the user's brief 2026-10-20) |
-| Picture computed from the ONE visible set; neighbourhood = max of cells; havens capped and never cancel concerns | No timing/moderation oracle; busy areas not penalised; lure resistance |
-| Independent freshness (linked group = its oldest member) for intelligence | Sock puppets cannot keep an incident "today" |
-| Pattern memory = one decaying number per ~1 km area and group, k-gated (3 episodes), reset on removal | Recurrence without history, people or times; forgets within ~8 months |
-| App-drawn radar cells, no heat map, no tiles | Unknown is visible (hatched), real precision, no third-party location leak |
-| "Check the way" computed on the phone from ~5 km region packs | Server never learns a route; only confirmed signals rank; unknown ≠ safe |
-| **No monitoring of a person by anyone else, permanently** (no family/partner/guardian mode, no location on request) | Safety the person controls expands their world; a monitoring feature would turn a safety tool into a control tool (Phase 10) |
-| Revocation by a credentials stamp in the token, exact equality, checked on every request (Phase 10A) | Ends stolen / old sessions and disabled accounts at once without refresh tokens; no clock or second-rounding issue (deviation from `iat`) |
-| Password change refused during an ACTIVE SOS or Safe Walk (Phase 10A) | Revocation would otherwise let anyone who knows the password cut a running safety session off the server |
-| Account deletion: password, refused during / 24 h after an emergency, 7-day grace with a Home banner, cancel needs the password, sign-in does not cancel, postponed by an emergency, files before rows (Phase 10A) | Coerced deletion is recoverable and visible; fresh evidence is protected; no ciphertext left without an owner |
-| Accounts named in the moderation audit log are anonymised, not deleted (CHECK-enforced tombstone) (Phase 10A) | The audit trail survives; the person's data does not |
-| Wrong passwords on account endpoints answer 409, not 401 (Phase 10A) | A 401 means "signed out" on the phone |
-| The phone removes a deleted account's evidence only on the server's `account_deleted` answer or the person's tap | A sign-out must never destroy evidence; a cancelled or postponed deletion must never wipe a living account |
-| Token renewal for the same sign-in, always during an SOS/walk, else ≤ 30 days since the password (10A.4) | A long SOS never loses its server connection; renewal is safe because a password change revokes every token |
-| Another sign-in ends an ACTIVE SOS only with the password, and the record says so (10A.4) | Nobody can silently end someone's SOS; a lost starting phone does not trap the person in an endless SOS |
-| No automatic "resolved" SMS when an SOS was ended from another phone (10A.4) | Only the person on a phone can say they are OK |
-| Only working rows on every screen; no "Coming soon" anywhere; tab "Nearby"; summary leads with safe places; no "avoid" (Phase 10A) | Honesty is the product's claim; places, not people; going out, not staying away (`HonestyTextsTest`) |
-| Every SOS starts on the phone; the server is told later with a client reference (Phase 11) | SMS and GPS work without internet, the server does not; the emergency button must not depend on a round trip; one path for online and offline |
-| Phone times only for an SOS the server could not hear of, clamped; idempotency per person | Exact server times online; a true record offline; no cross-account oracle |
-| Rise phone-only, encrypted per account, no Home card, no notifications, no private incident note (10B) | Coercive control is the main threat model; a note of an incident is the most dangerous text to be found and is not evidence |
-| Device sessions with a rotating refresh secret (SHA-256 stored, 60 s lost-answer grace, later reuse ends the session, 90-day sliding idle limit) (C1) | An SOS after weeks unopened must reach the server without the password; copies are noticed; revocation stays immediate |
-| Expired ≠ revoked on the phone: a refused refresh is "sign in to sync" and deletes nothing (C1) | Authentication failing for sync must never destroy a running SOS, its ending or the offline Safety Circle copy |
-| Self-doubt vs. safety concern; support never ranked; stereotypes never named (10B, tested) | Worries lead to preparation, doubts to proof; support is strength; naming a stereotype repeats it |
-| **Final product direction: a social platform for real-world experiences; safety becomes the trust layer underneath (2026-10-22, the user's decision; design approved)** | A safety app is opened only when something is wrong; experiences give an everyday reason to open it, and the safety system is why people can explore with confidence (`EXPERIENCE_PLATFORM_DESIGN.md` §1–§2) |
-| Content is written for the next person; 🦋 = "I want to experience this" (saves to the Cocoon), no public counts | Separates the product from Instagram: intent and real-world impact instead of approval and popularity |
-| No followers, mutual Connections only, private connection lists, no DMs, no presence | Following someone's real-world posts is monitoring; DMs are where most harassment happens |
-| Location privacy built into the post shape (cells, precision per post, time bands, private places on the phone, no live posting) | Public experiences must not reveal anyone's routine |
-| AI produces evidence, a deterministic policy decides, only humans restrict people; collapse rather than remove; no shadow bans (D2, decided 2026-10-22) | Moderation that can be explained and appealed; an AI mistake must not silence anyone |
-| Tamil/Tanglish abuse model as the research contribution; Chennai launch community (D5, decided 2026-10-22) | The launch community writes that way; general moderation tools handle it poorly; measurable, publishable work |
-| 13E: rules (normaliser + hashed lexicon + context rules) decide; the linear model is built but OFF; no transformer (E1/E2) | No D3 dataset exists; a model trained on developer-written text learns the developer; a model must beat the rules on held-out data without more false actions on banter, counter-speech and identity mentions before it acts |
-| 13E: the Python service gives evidence, Java `DecisionPolicy` decides, the machine never removes or restricts (E3/E5/E11) | D2; decisions tested and explainable; humans keep every serious decision |
-| 13E: outage = publish; only new accounts wait, at most 2 h (E7) | Infrastructure failure must never silence people |
-| 13E: quoted / reported speech and identity terms never act alone (E15/E16) | People describing harassment they faced, and people naming their own community, must not be silenced |
-| 13E: self-harm never stored, only a support line (E12) | Health data is the most sensitive; support, not surveillance |
-| 13E: one normaliser spec, two implementations, shared vectors, byte-identical hashed lexicon on the phone (E21/E22) | Phone nudge and server check agree; the app never contains readable slurs |
-| 13F: visible brand Kurinji now; package/applicationId and code names stay SafeSphere (F1, the user's decision) | The phase is the Kurinji identity; D1 trademark/domain/store checks remain open |
-| 13F: mist/ink/bloom palette, yeoman orange for intent only, bundled Young Serif + Mukta Malar (F2) | Not the cream-serif-terracotta cliché; colours from Neelakurinji and the Tamil Yeoman; one face for Tamil and Latin |
-| 13F: postmark = where/when showing only the revealed precision; ticket = the tip; drawn butterfly; kolam for empty states | Privacy made visible; "written for the next person" made concrete; no emoji |
-| 13F: safety banners in MainActivity on every tab and reading screen | Safety guarantees must not depend on one tab being open |
-| 13F: SOS shortcut/tile start the countdown via a non-exported activity + in-memory request (F3, F11) | Fast access; another app cannot forge a start through the exported launcher activity |
-| 13F: "Let someone know" = the person's own share sheet, editable note, no location, no link (F4) | Care without monitoring; nothing stored or sent by Kurinji |
-| 13F: "Going there?" bridge imports neither social nor safety code; Safe Walk only gets a pre-filled field | Keeps the isolation; nothing starts by itself |
-| 14: every list of others' posts is ordered by `visible_from`, never `created_at` (also the profile list) | The order of a list must not reveal the time the Q1 delay hides |
-| 14: on a perspective case, the post's author counts as taking part (case and appeal) | They are a party and can already hide it; deciding about its writer is a conflict of interest |
-| 14: never catch a unique-key error inside a transaction and carry on; write the row in its own transaction or retry the whole attempt in a new one | Spring marks the transaction rollback-only, so the commit fails (500) and "it already exists" cannot be honoured |
-| V25: no session of any kind before the e-mail is verified; existing accounts grandfathered | Ownership of the address is proven before the account can act; no production users exist, every row is a dev/test account |
-| V25: token in the URL fragment, confirmed by a tap on a static same-origin page; no App Link | The fragment never reaches a server log or Referer; scanners cannot use the link up; App Links need an HTTPS domain that does not exist yet |
-| V25: resend needs e-mail + password, always 202, sent asynchronously | Only the owner can trigger mail; answer and timing reveal nothing about accounts |
-| V25: SMTP via `spring-boot-starter-mail` behind `VerificationMailer`; nothing is sent without MAIL_HOST + MAIL_FROM | Provider-neutral; credentials only from the environment; mail being unavailable never verifies anyone |
-| U1 (2026-10-26, the user): a post shows the number of comments the viewer can read; no other public count | A comment number says "there is a conversation here" without ranking people; computed through the comment visibility rule, so it equals what the viewer could count themselves |
-| U2 (2026-10-26, the user): "Talking now" ordered by the newest visible comment, never by totals | Shows what people are reacting to without a popularity ranking that rewards pile-ons |
-| U3 (2026-10-26, the user): Discover auto-loads pages but always ends ("You're all caught up") | Natural browsing without an endless feed |
-| U4 (2026-10-26, the user): red/black/white brand; emergency UI = siren icon + words + black/red treatment, never colour alone | A bold, recognisable social brand; the safety meaning of the SOS UI survives because it never depended on hue alone |
-| Phase 17 decisions (2026-10-27, the user; `PHASE17_PLAN.md` §3): D-1 phone OTP via a provider-neutral sender, e-mail + password stays the sign-in; D-2 AI Explore language understanding by the Claude API with request text + candidate place facts only (amends D2 for this one use), deterministic engine works without it; D-3 butterfly = reaction, Saved separate, no public count; D-4 shake SOS only (opt-in, app open or Safe Walk), voice deferred; D-5 cities table; D-6 video without metadata, tap to play, no new player library; D-7 daily state for connections only, clears at midnight; D-8/U5 ratings only from people who went, shown from 5, Bayesian, never a sort by rating/activity alone; D-9 Nearby reports stay without text/photos | Recorded as each sub-phase's ground rules; each still gets its own plan |
-| 17C: metadata boxes in a video are overwritten (renamed `free`, zeroed), never cut out | Cutting bytes out of a moov in front of the mdat shifts every chunk offset and breaks playback; overwriting leaves no metadata byte and keeps the file valid |
-| 17C: a video's poster frame is made on the phone, sanitised as a photo and stored under the video's storage key; no poster = no attach | Every image view keeps working; every key-based deletion removes both files; server-side "no partial post" |
-| 17C: video plays only after a tap, streamed with the sign-in header, never written to the phone | No autoplay; Q3 (nothing about other people stored on the phone); ranges let the player seek |
-| 17B: phone OTP replaces e-mail links;
- e-mail + password stays the sign-in; the server makes and checks codes, a provider only delivers (`OtpSender`); dev sink by default, Fast2SMS only with the user's key | Sign-ups were stuck (no mail server); a provider-neutral sender keeps codes, limits and privacy rules in our tested code; Rs 100 budget fits Fast2SMS (KYC + first top-up) |
-| 17B: an interrupted sign-up resumes by signing in (new challenge token, same live code, no second SMS); nothing about a verification is stored on the phone | A closed app must never leave an unusable account; the token is a credential, kept in memory only |
-| 17B: area-level location reads use balanced accuracy and the platform's recent fix (found on the A23 indoors) | A GPS-only request returned nothing indoors although a good Wi-Fi/cell position existed; adding a place still needs ≤ 100 m |
-| 17A: the server sends stable codes (`AGE_NOT_CONFIRMED`, `PROFILE_NEEDED`) for refusals the app must act on; the app keeps ONE age state and opens the age screen by itself at most once per sign-in | A refusal shown on every screen with no way forward was the reported bug; codes avoid matching on words |
-| 17E (E17-1): "Ink & Lime" brand; supersedes U4's colour only | With red no longer the brand, red means only emergency again (an extra cue on top of U4's shape-and-words rule); lime is the young growth on the Kurinji hills |
-| 17E (D-3, E17-5/6): butterfly = reaction on others' Experiences, Save = private bookmark of Experiences and Asks; both idempotent; Cocoon rows became saves, no reaction invented | One mark for both made a private list into a signal for the author; optimistic toggles must survive double taps and lost answers |
-| 17E (D-7, E17-4): today's state is a mood or intent from a closed list, connections only, the IST day only, no time, no history | "Travelling" / "free now" reveal absence from home and presence |
-| 17E (E17-8): profile photo square, re-encoded twice, a new random key per upload, served only through the profile visibility rule; moderators can remove it (not a strike, case stays open) | Caches can never show an old photo; a kept URL stops working on a change or a block; new public imagery needs a moderation path |
-| 17E (D-5, E17-7): one city catalog file read by the backend, bundled in the app and seeded by V28 (tested equal); city search runs on the phone | H2 tests run without Flyway; search words never leave the phone |
-| 17E (17E-V2): on narrow screens / large text the marks lose their words before any button (`MarksFit`), spoken labels unchanged | Found on the emulator at 320 dp / 2.0x: Save was pushed off the card |
-| IRL rebrand (2026-11-03, the user): visible name IRL everywhere a person reads it (strings, SMS, one server message); package, applicationId, signing and code names unchanged | A rebrand must update the installed app in place; renaming identifiers would make a new app and break existing installs and data |
-| IRL icon "the Meet": two paths meeting under an off-axis sun; adaptive icon only (no density PNGs at minSdk 26) | Real-world connection, togetherness and exploring in one silhouette that holds at 48 px; a centred dot read as a figure, which the brief ruled out |
-| IRL opening screen: "LET'S GO →" only on the first run; returning people are routed on by themselves; the button is pinned and never scrolls away | The opening must never add a tap between a returning person and SOS; a first-run call to action must always be reachable |
+| XML Views + Fragments, manual `AppContainer`, feature-first packages; no Compose, no Hilt | Approved in Phase 1; viva-friendly; less magic to explain |
+| Flyway owns the schema (`ddl-auto=none`); never edit an applied migration | Reviewed, versioned schema changes |
+| Caller identity only from the JWT; a foreign record → 404 | No client-supplied ownership; does not reveal that ids exist |
+| "One active / one primary / one open" via generated columns + unique index | Correct under concurrent requests |
+| **Nobody can monitor another person, permanently** (no family/partner/guardian mode, no location on request) | A monitoring feature turns a safety tool into a control tool |
+| Every SOS starts on the phone; the server is told later with a client reference | SMS and GPS work without internet; the button must not depend on a round trip |
+| Expired ≠ revoked: a failed refresh is "sign in to sync" and deletes nothing | Authentication failing must never destroy a running SOS, its ending or the offline Circle copy |
+| Another sign-in ends an ACTIVE SOS only with the password; no automatic "resolved" SMS from another phone | Nobody can silently end someone's SOS; only the person on a phone can say they are OK |
+| Evidence encrypted on the phone (per-item key); server stores ciphertext only; deletion needs the password and is refused during / 24 h after an emergency | A breach reveals no evidence; coerced deletion is blocked |
+| Password change and account deletion refused during an ACTIVE SOS/walk; deletion has a 7-day grace | Revocation must not cut a running safety session; coerced deletion is recoverable |
+| Community = place signals (cells only, no authors, no text, bands not counts); trust private, never shown | Safety intelligence, not engagement; no accusations of people |
+| Content can be hidden automatically (reversible); people are restricted only by a human, with a reason, audited, appealable to another moderator; no shadow bans | Automatic punishment fails unsafely; moderator abuse is auditable |
+| AI produces evidence → a deterministic policy decides → only humans restrict (D2); an outage publishes; self-harm never stored | An AI mistake must not silence anyone; infrastructure failure must not silence people |
+| Safety intelligence = deterministic rules, no score, "unknown" is never "safe"; no text claims a place or person is safe | Explainable, attack-resistant, honest |
+| Social: no followers, mutual connections only, no DMs, no presence, no counts except U1; cells and time bands only; private places stay on the phone | Following someone's real-world posts is monitoring; public posts must not reveal routines |
+| Every list of others' posts is ordered by `visible_from`, never `created_at` | The order must not reveal the time the delay hides |
+| Phone OTP for new accounts (provider-neutral `OtpSender`); e-mail + password stays the sign-in | Sign-ups were stuck without a mail server; codes and limits stay in tested code |
+| Media: metadata stripped on the phone and again on the server; videos tap to play, never stored on the phone | Location privacy; Q3 (nothing about other people on the phone) |
+| Visible brand IRL; package, applicationId, signing and code names stay SafeSphere | A rebrand must update the installed app in place |
+| Time = UTC everywhere (`docs/TIMESTAMPS.md`) | Shifted timestamps were found and fixed once; `TimestampStorageVerifier` refuses to start on a shift |
