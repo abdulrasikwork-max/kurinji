@@ -1,3 +1,22 @@
+# Handoff: Phase 17F device validation + four 2.0x fixes (2026-11-03) — working tree changes, NOT committed, NOT pushed
+
+**Implemented, compiled, tested (Android 896 / 0, lint 0 / 104), verified on the Galaxy A23** (`docs/PHASE17F.md` §6.1 and §6.2).
+The A23 was reached without touching authentication: the backend's existing `DEV_FILE` OTP sink wrote the code to a file and a
+test account (`qa.phase17f@example.com`, handle `qa_phase17f`, fake number 9000017017) was created through the real sign-up
+screen. It still exists on the A23 and in the dev DB (account deletion is refused for 24 h after an emergency; one manual SOS
+was ended with "I'm safe"; no Safety Circle contacts, no SMS). Executed on the phone: audio consent, SOS countdown/Cancel, auto
+audio + Stop finality, last known position, Safe Walk line, Nearby radar and report sheet, 2.0x text. **Fixed (V5-V8, drawing and
+layout only):** report dialog → bottom sheet with a fixed Share/Cancel footer (Cancel had been clipped at 2.0x), Safe Walk line labels
+no longer printed over their marks, radar number/"You"/ring labels keep apart, signal-row badge under the title.
+- **Still open (needs the user's decision):** the signal card's two button rows break words at 2.0x ("Rep / ort / a problem");
+  proposal in `PHASE17F.md` §6.2.
+- **Manual only, still the user's:** all shake tests (screen on, screen off during a Safe Walk, false positives), swipe-away from
+  recents, TalkBack by ear, battery, Safety Circle SMS, a Nearby report outdoors (≤ 100 m), the Safe Walk deviation notification.
+- **State left:** A23 restored (font 0.8, dark, no reverse, stay-awake off; its location was found ON, left as found); backend
+  stopped; the APK on both devices is the new build pointing at `127.0.0.1`.
+
+---
+
 # Handoff: Phase 17F emergency (2026-11-03) — one local commit, NOT pushed
 
 **Implemented, compiled, tested, emulator-verified (API 37)** (`docs/PHASE17F.md`, decisions F17-1…F17-7). **No migration**

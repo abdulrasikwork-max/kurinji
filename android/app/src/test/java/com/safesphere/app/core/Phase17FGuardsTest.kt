@@ -89,6 +89,43 @@ class Phase17FGuardsTest {
     }
 
     @Test
+    fun `the report sheet keeps Share and Cancel outside the scrolling choices (17F-V5, 2_0x text)`() {
+        val layout = File("src/main/res/layout/dialog_report_sheet.xml").readText(Charsets.UTF_8)
+        val scrollEnd = layout.indexOf("</androidx.core.widget.NestedScrollView>")
+        assertTrue("the choices scroll inside a NestedScrollView", scrollEnd > 0 && layout.indexOf("<androidx.core.widget.NestedScrollView") in 0 until scrollEnd)
+        for (id in listOf("reportShareButton", "reportCancelButton")) {
+            val at = layout.indexOf("@+id/$id")
+            assertTrue("$id exists", at >= 0)
+            assertTrue("$id must be in the footer, after the scroll area closes (a clipped Cancel at 2.0x)", at > scrollEnd)
+        }
+        assertTrue("the choices are inside the scroll area", layout.indexOf("@+id/reportChoices") in 0 until scrollEnd)
+        val fragment = File(main, "java/com/safesphere/app/feature/community/ui/CommunityFragment.kt").readText(Charsets.UTF_8)
+        val sheet = fragment.substringAfter("private fun showReportSheet()").substringBefore("private fun confirmAnswer")
+        assertTrue("a bottom sheet, not a system alert dialog", sheet.contains("BottomSheetDialog(") && !sheet.contains("MaterialAlertDialogBuilder"))
+        assertTrue("Share stays off until something is chosen", sheet.contains("reportShareButton.isEnabled = chosen != null"))
+    }
+
+    @Test
+    fun `a Nearby signal row keeps its badge under the title so its words are not squeezed at 2_0x (17F-V8)`() {
+        val row = File("src/main/res/layout/item_area_signal.xml").readText(Charsets.UTF_8)
+        val badge = row.indexOf("@+id/signalBadge")
+        assertTrue(badge > 0)
+        assertTrue("the badge is inside the text column, between the title and the details",
+            row.indexOf("@+id/signalTitle") < badge && badge < row.indexOf("@+id/signalDetails"))
+        val summary = row.substringAfter("@+id/signalSummary").substringBefore("@+id/signalDisputed")
+        assertEquals("only the text column takes the row's spare width", 1, Regex("layout_weight=\"1\"").findAll(summary).count())
+    }
+
+    @Test
+    fun `the Safe Walk line and the radar place their words with the pure helpers, not by pushing them back inside the view`() {
+        val line = File(main, "java/com/safesphere/app/feature/safewalk/ui/WalkLineView.kt").readText(Charsets.UTF_8)
+        assertTrue(line.contains("WalkLineLabels.place("))
+        assertFalse("the old clamp that put a word on its own mark", line.contains("coerceIn(dp(2).toFloat(), width - textWidth"))
+        val radar = File(main, "java/com/safesphere/app/feature/community/ui/SafetyRadarView.kt").readText(Charsets.UTF_8)
+        assertTrue(radar.contains("RadarLayout.ringLabelBox(") && radar.contains("RadarLayout.numberSpot(") && radar.contains("keepClear"))
+    }
+
+    @Test
     fun `no new permission, and the shake adds no service, no boot receiver and no camera`() {
         val permissions = Regex("<uses-permission android:name=\"([^\"]+)\"").findAll(manifest).map { it.groupValues[1] }.toSet()
         assertEquals(
@@ -144,7 +181,7 @@ class Phase17FGuardsTest {
     fun `the pure shake and walk-line rules use no Android types`() {
         val pure = listOf(
             "feature/emergency/trigger/ShakePolicy.kt", "feature/emergency/trigger/ShakeArming.kt",
-            "feature/safewalk/domain/WalkLineGeometry.kt", "feature/community/ui/RadarLayout.kt",
+            "feature/safewalk/domain/WalkLineGeometry.kt", "feature/safewalk/domain/WalkLineLabels.kt", "feature/community/ui/RadarLayout.kt",
             "feature/evidence/domain/AutoAudioPolicy.kt", "feature/community/domain/ReportChoices.kt"
         )
         for (path in pure) {

@@ -65,7 +65,7 @@ Vault (5), Nearby place signals (6), trust UI + community moderation (7), safety
   Settings -> Safety), the one-time audio question in `SafetyFragment`. `AutoAudioPolicy` (pure) + `EvidenceCardController.autoStartIfDue`
   start audio only from the visible SOS screen, once per SOS, with the permission already granted. Voice SOS is not built and
   the options screen says so. `EmergencyLocationUi.nowMillis` + `lastKnownOf` mark a position >= 60 s old as LAST KNOWN with
-  its age. Nearby: `ReportChoices` + `dialog_report_sheet` (one-step report), `RadarLayout.spread` (marks apart, drawing only),
+  its age. Nearby: `ReportChoices` + `dialog_report_sheet` (one-step report, a `BottomSheetDialog` with the Share/Cancel footer OUTSIDE the scroll area since V5), `RadarLayout.spread` (marks apart + `keepClear` of the person's ring, `numberSpot`, `ringLabelBox`: V7, drawing only), `WalkLineLabels` (V6: words never onto a mark),
   numbered marks matching the list. Safe Walk: `WalkLineGeometry` (pure) + `WalkLineView` (straight line, band, you; memory only).
 - **Safe Walk (4B):** `SafeWalkSession` (application scope) is the one holder for the screen, Home, the notification
   "I'm OK" action (`CheckInActionReceiver`, not exported) and the service. `CheckInPolicy` is pure: ON_TRACK → DUE_SOON

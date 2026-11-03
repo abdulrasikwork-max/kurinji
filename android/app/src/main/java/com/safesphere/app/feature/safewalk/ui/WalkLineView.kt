@@ -12,6 +12,7 @@ import com.safesphere.app.R
 import com.safesphere.app.core.ui.components.dp
 import com.safesphere.app.core.ui.components.themeColor
 import com.safesphere.app.feature.safewalk.domain.WalkLineGeometry
+import com.safesphere.app.feature.safewalk.domain.WalkLineLabels
 import kotlin.math.min
 import com.google.android.material.R as MaterialR
 
@@ -100,10 +101,23 @@ class WalkLineView @JvmOverloads constructor(
         fillPaint.color = ink
         canvas.drawPath(diamond, fillPaint)
 
-        // The two end labels go on opposite sides (start away from the destination), so they can never print over each other.
+        // 17F-V6: every word is placed by the pure WalkLineLabels, which never moves a word onto a mark or another word (at
+        // 2.0x text the old "push it back inside the view" printed "Destination" over its own diamond). The two end words
+        // still prefer opposite sides (start away from the destination).
         val destinationIsRight = dx >= sx
-        drawLabel(canvas, context.getString(R.string.walk_line_start), sx, sy, mark, surface, ink, onRight = !destinationIsRight)
-        drawLabel(canvas, context.getString(R.string.walk_line_destination), dx, dy, mark * 1.3f, surface, ink, onRight = destinationIsRight)
+        val startMark = WalkLineLabels.markBox(sx, sy, mark)
+        val destinationMark = WalkLineLabels.markBox(dx, dy, mark * 1.3f)
+        val youMark = layout.position?.let { WalkLineLabels.markBox(px(it.x), py(it.y), dp(10).toFloat() + strokePaint.strokeWidth) }
+        val placed = mutableListOf<WalkLineLabels.Box>()
+
+        val startBox = placeLabel(context.getString(R.string.walk_line_start), sx, sy, mark, !destinationIsRight,
+            listOfNotNull(destinationMark, youMark))
+        placed += startBox
+        val destinationBox = placeLabel(context.getString(R.string.walk_line_destination), dx, dy, mark * 1.3f, destinationIsRight,
+            listOfNotNull(startMark, youMark) + placed)
+        placed += destinationBox
+        drawLabel(canvas, context.getString(R.string.walk_line_start), startBox, surface, ink)
+        drawLabel(canvas, context.getString(R.string.walk_line_destination), destinationBox, surface, ink)
 
         layout.position?.let { position ->
             val x = px(position.x)
@@ -112,29 +126,35 @@ class WalkLineView @JvmOverloads constructor(
             canvas.drawCircle(x, y, dp(5).toFloat(), fillPaint)
             strokePaint.color = primary
             canvas.drawCircle(x, y, dp(10).toFloat(), strokePaint)
-            // "You" sits above the mark, centred, where neither end label is.
+            // "You" goes above the mark when there is room, otherwise where nothing else is.
             val text = context.getString(if (outside) R.string.walk_line_you_outside else R.string.walk_line_you)
-            val tx = (x - textPaint.measureText(text) / 2f).coerceIn(dp(2).toFloat(), width - textPaint.measureText(text) - dp(2))
-            val ty = (y - dp(16)).coerceAtLeast(textPaint.textSize)
-            haloPaint.color = surface
-            textPaint.color = primary
-            canvas.drawText(text, tx, ty, haloPaint)
-            canvas.drawText(text, tx, ty, textPaint)
+            val youBox = placeLabel(text, x, y, dp(10).toFloat(), preferRight = true, avoid = listOf(startMark, destinationMark) + placed,
+                aboveFirst = true)
+            drawLabel(canvas, text, youBox, surface, primary)
         }
     }
 
-    /** A word beside a mark, on the side with more room, with a halo in the card colour so it reads over the band. */
-    private fun drawLabel(
-        canvas: Canvas, text: String, x: Float, y: Float, offset: Float, halo: Int, color: Int, onRight: Boolean
-    ) {
-        val textWidth = textPaint.measureText(text)
-        val wanted = if (onRight) x + offset + dp(4) else x - offset - dp(4) - textWidth
-        val tx = wanted.coerceIn(dp(2).toFloat(), width - textWidth - dp(2))
-        val ty = (y + textPaint.textSize / 3f).coerceIn(textPaint.textSize, height - dp(4).toFloat())
+    private fun placeLabel(
+        text: String, x: Float, y: Float, markHalf: Float, preferRight: Boolean,
+        avoid: List<WalkLineLabels.Box>, aboveFirst: Boolean = false
+    ): WalkLineLabels.Box {
+        val metrics = textPaint.fontMetrics
+        return WalkLineLabels.place(
+            markX = x, markY = y, markHalf = markHalf,
+            textWidth = textPaint.measureText(text), textHeight = metrics.descent - metrics.ascent,
+            viewWidth = width.toFloat(), viewHeight = height.toFloat(),
+            preferRight = preferRight, gap = dp(4).toFloat(), edge = dp(2).toFloat(),
+            avoid = avoid, aboveFirst = aboveFirst
+        )
+    }
+
+    /** A word in its box, with a halo in the card colour so it reads over the band. */
+    private fun drawLabel(canvas: Canvas, text: String, box: WalkLineLabels.Box, halo: Int, color: Int) {
+        val baseline = box.top - textPaint.fontMetrics.ascent
         haloPaint.color = halo
         textPaint.color = color
-        canvas.drawText(text, tx, ty, haloPaint)
-        canvas.drawText(text, tx, ty, textPaint)
+        canvas.drawText(text, box.left, baseline, haloPaint)
+        canvas.drawText(text, box.left, baseline, textPaint)
     }
 
     private fun sp(value: Float): Float =

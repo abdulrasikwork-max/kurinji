@@ -153,7 +153,7 @@ Tests new: `ShakePolicyTest`, `ShakeArmingTest`, `ShakeSosTest`, `AutoAudioPolic
 | Android lint | **0 errors, 104 warnings** (the same 104 as before 17F; three new ones found on the way were fixed) |
 | MySQL | `SHOW CREATE TABLE emergency_events`: no CHECK on `trigger_type`, so **no V29**; the emulator walk-through wrote `trigger_type = SHAKE` rows 51, 52 and `MANUAL` 53 into the live table |
 | Emulator (API 37) | PASS after 4 fixes (below) |
-| Galaxy A23 | sensor inventory read (above); the debug APK was installed and launched, nobody signed in |
+| Galaxy A23 | 2026-11-03: sensor inventory read; then a device-validation run through the app's own sign-up and the dev-file OTP sink (§6.1), and a re-check of fixes V5-V8 (§6.2) |
 
 **Emulator walk-through (what was done and seen):** first visit to You → Safety showed the audio question, "Yes" showed Android's
 microphone dialog, the choice was stored (`auto_audio_<id> = ON`); SOS options (shake off by default, audio on, voice notice);
@@ -178,11 +178,57 @@ ago). Not necessarily where you are now."
 - **V4** The idle SOS screen still said audio is recorded "only when you tap": reworded (and the Evidence card intro).
 Also: the console-based sensor replay is the only reliable way to shake the emulator (`adb emu` calls are too slow and uneven).
 
+### 6.1 Galaxy A23 device validation (2026-11-03, Android 14, SM-A236E, by adb + uiautomator + screenshots)
+
+How the app was reached without touching authentication: the backend's existing development sink (`OTP_PROVIDER=DEV_FILE`, the
+default) writes each code to a local file; a new account was created through the real sign-up screen and the code typed in.
+No production auth, OTP or safety code was changed. **Executed on the phone:**
+
+| Check | Result |
+|---|---|
+| Audio question: Back closes it with no choice, it returns next visit; not shown during a Safe Walk; Yes -> Android's own microphone dialog; not shown again | PASS |
+| SOS options (shake off by default, audio on, voice notice), accessibility tree (labelled switches, live regions, radar description) | PASS (tree check, not TalkBack by ear) |
+| SOS countdown + Cancel (manual button; countdown at "4" when cancelled, no SOS started) | PASS |
+| SOS run: audio starts with no tap; OS shows an active MIC capture, foreground service type location+microphone, 7 vault items verified | PASS |
+| Stop recording is final: leaving and re-entering did not restart the microphone | PASS |
+| Screen off during the SOS: recording continued | PASS |
+| Last known position (location off 95 s): "Last known position (1:59 PM, 1 minute ago). Not necessarily where you are now." | PASS |
+| Safe Walk straight line, dark mode, 2.0x text | renders; findings below |
+| Nearby radar and report sheet, dark mode, 2.0x text | renders; findings below |
+| Nearby report filed | **not done**: indoors the position was 156-254 m and the app refused ("Move outside..."), sending nothing (the designed gate) |
+
+**Manual only (not done, never simulated):** every shake test (screen on, screen off, false positives), TalkBack by ear, battery cost,
+the Safety Circle SMS path, a Safe Walk "Are you OK?" notification with the screen off. The lock screen of this phone shows
+icons only, so the private lock-screen text could not be read (inconclusive). The phone is pattern-locked: a screen-off during
+the run locked it and the owner had to unlock it.
+
+### 6.2 Four 2.0x-text findings from that run, fixed (17F-V5...V8, all drawing / layout; no safety logic touched)
+
+| Id | Found on the A23 | Fix |
+|---|---|---|
+| V5 | The Nearby report dialog gave its choices nearly all the height; at 2.0x the button area was ~295 px and **Cancel was clipped** | `showReportSheet()` is now a Material `BottomSheetDialog` (`dialog_report_sheet.xml`): title, the scrolling choices, and a footer with "Share anonymously" and "Cancel" OUTSIDE the scroll area. Share stays off until a choice; Back, Cancel and a swipe down all close it with nothing sent |
+| V6 | Safe Walk line: "Destination" printed over its own diamond (the old code pushed a word back inside the view, onto its mark) | pure `WalkLineLabels.place` (preferred side, other side, above, below; never onto a mark or another word); "You" prefers above. The earlier absent "You" was the weak-GPS state (no usable fix), by design |
+| V7 | Radar: the number "1" half under the "You" ring; "500 m" and "1 km" labels collided | `RadarLayout.spread(keepClear)` keeps marks out from under the person's ring (drawn position only; the list keeps the true distance); `numberSpot` puts a number on the OUTSIDE of its mark; `ringLabelBox` puts the 500 m label below-right and the others above-right, at any text size |
+| V8 | A signal row's text column was squeezed by the badge beside it ("confir / med") | the badge moved under the title in `item_area_signal.xml` (one layout for every size, no scale-dependent code) |
+
+Tests: `testDebugUnitTest` **896 tests, 0 failures** (877 before; +8 `WalkLineLabelsTest`, +8 `RadarReadabilityTest`, +3 `Phase17FGuardsTest`);
+lint **0 errors, 104 warnings** (the same 104; one new `UnusedAttribute` was found and fixed). Re-checked **on the A23 at 2.0x text in
+dark mode**: V5 (Share and Cancel fully on screen, Share off until a choice, Cancel closes it, nothing sent), V6, V7, V8 (walk line,
+radar, signal row). On the **emulator at 2.0x** (light mode): V5 also (Cancel and Back both close it, nothing shared). **Not
+re-checked:** light mode of V6-V8 on the A23.
+
+**Still open (found while re-checking V8, not fixed - outside the approved four):** in the same signal card the two button rows
+("I saw this too / No longer true", "How sure is this? / Report a problem") are horizontal rows of wrap-content buttons; at 2.0x
+"No longer true" wraps to three lines and "Report a problem" breaks inside a word ("Rep / ort / a"). Proposed: stack the buttons
+vertically when the font scale is large (the pure `MarksFit` pattern) or always; needs the user's decision. Smaller nit: with
+start and "You" almost on the same spot the "Start" word touches the You ring (no overlap).
+
 ## 7. Not verified / to do before 17G
 
-- A physical phone: shake tuning, screen-off delivery on phones whose sensor does not wake the CPU, battery cost, TalkBack by ear
-  for the new screens, dark mode of the new screens.
-- Nearby with a really weak GPS and the radar at 320 dp / 2.0x text (sp labels were built for it, not walked through).
+- A physical phone: shake tuning (every shake test), screen-off delivery on phones whose sensor does not wake the CPU, whether the
+  Safe Walk service and shake survive a swipe-away from recents on Samsung, battery cost, TalkBack by ear for the new screens,
+  light mode of the new screens at 2.0x, a real Nearby report outdoors, the Safe Walk deviation notification on the phone.
+- The radar with several marks at 2.0x (only one signal existed; the separation is covered by unit tests).
 - The Safety Circle's own SMS path after a background-started SOS with automatic SMS on (needs a real SIM; unchanged code).
 - Voice SOS (deferred by decision D-4).
 

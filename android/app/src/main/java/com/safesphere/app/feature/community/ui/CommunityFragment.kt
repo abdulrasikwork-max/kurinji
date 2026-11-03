@@ -32,7 +32,8 @@ import com.safesphere.app.feature.community.domain.FlagReason
 import com.safesphere.app.feature.community.domain.ReportChoices
 import com.safesphere.app.databinding.DialogReportSheetBinding
 import com.google.android.material.radiobutton.MaterialRadioButton
-import androidx.appcompat.app.AlertDialog
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import androidx.core.view.ViewCompat
 import android.widget.TextView
 import java.text.DateFormat
@@ -321,21 +322,24 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
                 })
             }
         }
-        val dialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.report_choose_title)
-            .setView(content.root)
-            .setNegativeButton(R.string.action_cancel, null)
-            .setPositiveButton(R.string.action_share_anonymously) { _, _ ->
-                val category = chosen ?: return@setPositiveButton
-                retryAction = { viewModel.onReport(category) }
-                viewModel.onReport(category)
-            }
-            .create()
+        // 17F-V5: a bottom sheet whose footer (Share, Cancel) is outside the scrolling choices, so neither button can be
+        // clipped at 2.0x text. Back and a swipe down both cancel; nothing is sent until Share is tapped.
+        val dialog = BottomSheetDialog(requireContext())
+        ViewCompat.setAccessibilityHeading(content.reportTitle, true)
         choices.setOnCheckedChangeListener { group, checkedId ->
             chosen = group.findViewById<View>(checkedId)?.tag as? SignalCategory
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = chosen != null
+            content.reportShareButton.isEnabled = chosen != null
         }
-        dialog.setOnShowListener { dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = chosen != null }
+        content.reportCancelButton.setOnClickListener { dialog.dismiss() }
+        content.reportShareButton.setOnClickListener {
+            val category = chosen ?: return@setOnClickListener
+            dialog.dismiss()
+            retryAction = { viewModel.onReport(category) }
+            viewModel.onReport(category)
+        }
+        dialog.setContentView(content.root)
+        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        dialog.behavior.skipCollapsed = true
         dialog.show()
     }
 

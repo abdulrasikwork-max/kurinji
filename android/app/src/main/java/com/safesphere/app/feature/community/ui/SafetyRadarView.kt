@@ -52,7 +52,7 @@ class SafetyRadarView @JvmOverloads constructor(
         textSize = sp(12f); textAlign = Paint.Align.CENTER; style = Paint.Style.STROKE; strokeWidth = dp(3).toFloat()
     }
     private val numberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = sp(12f); textAlign = Paint.Align.LEFT; typeface = Typeface.DEFAULT_BOLD
+        textSize = sp(12f); textAlign = Paint.Align.CENTER; typeface = Typeface.DEFAULT_BOLD
     }
     private val markOutlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = dp(2).toFloat() }
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -96,11 +96,19 @@ class SafetyRadarView @JvmOverloads constructor(
 
         val surface = themeColor(MaterialR.attr.colorSurface)
         haloTextPaint.color = surface
-        RINGS_METERS.forEach { meters ->
+        RINGS_METERS.forEachIndexed { index, meters ->
             val r = radius * meters / RANGE_METERS
             canvas.drawCircle(cx, cy, r, ringPaint)
-            drawHaloText(canvas, ringLabel(meters), cx + r * 0.71f + dp(2), cy - r * 0.71f, labelPaint)
+            // 17F-V7: the box comes from the pure RadarLayout, so the three labels keep apart (and off the person) at 2.0x text.
+            val text = ringLabel(meters)
+            val metrics = labelPaint.fontMetrics
+            val height = metrics.descent - metrics.ascent
+            val box = RadarLayout.ringLabelBox(index, cx, cy, r, labelPaint.measureText(text), height, dp(2).toFloat())
+            val centred = index != 0
+            labelPaint.textAlign = if (centred) Paint.Align.CENTER else Paint.Align.LEFT
+            drawHaloText(canvas, text, if (centred) (box.left + box.right) / 2f else box.left, box.top + height * 0.8f, labelPaint)
         }
+        labelPaint.textAlign = Paint.Align.CENTER
         drawHaloText(canvas, context.getString(R.string.radar_north), cx, cy - radius - dp(2), labelPaint)
 
         val marker = dp(9).toFloat()
@@ -124,9 +132,12 @@ class SafetyRadarView @JvmOverloads constructor(
             drawShape(canvas, placed.signal.category.group, x, y, marker, outline = markOutlinePaint)
             fillPaint.color = color
             drawShape(canvas, placed.signal.category.group, x, y, marker)
-            // The number matches the list below the radar ("1 · Harassment happened here").
+            // The number matches the list below the radar ("1 · Harassment happened here"). 17F-V7: it sits on the OUTSIDE of
+            // its mark (away from the person), so the "You" ring can never cover it.
             numberPaint.color = label
-            drawHaloText(canvas, (index + 1).toString(), x + marker * 1.1f, y - marker * 0.9f, numberPaint)
+            val numberMetrics = numberPaint.fontMetrics
+            val spot = RadarLayout.numberSpot(x, y, cx, cy, offset = marker + (numberMetrics.descent - numberMetrics.ascent) * 0.55f)
+            drawHaloText(canvas, (index + 1).toString(), spot.x, spot.y - (numberMetrics.ascent + numberMetrics.descent) / 2f, numberPaint)
         }
 
         // The person: a ring with a dot, in the primary colour.
@@ -146,8 +157,10 @@ class SafetyRadarView @JvmOverloads constructor(
         )
     }
 
+    // keepClear: the person's ring (9 dp) + a mark's size + a margin, so a mark never sits under "You" (17F-V7).
     private fun spreadSpots(spots: List<RadarLayout.Mark>, marker: Float, cx: Float, cy: Float, radius: Float) =
-        RadarLayout.spread(spots, minGap = marker * 2.4f, centerX = cx, centerY = cy, limit = radius)
+        RadarLayout.spread(spots, minGap = marker * 2.4f, centerX = cx, centerY = cy, limit = radius,
+            keepClear = dp(9).toFloat() + marker + dp(2).toFloat())
 
     private fun drawCells(canvas: Canvas, cx: Float, cy: Float, radius: Float, outline: Int) {
         val scale = radius / RANGE_METERS

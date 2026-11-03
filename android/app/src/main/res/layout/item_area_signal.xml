@@ -44,19 +44,22 @@
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
 
+                <!-- 17F-V8: under the title, not beside the text column. Beside it, the badge took half the row at 2.0x
+                     text and the details broke inside words ("confir / med"). -->
+                <com.safesphere.app.core.ui.components.StatusBadgeView
+                    android:id="@+id/signalBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:layout_marginBottom="@dimen/space_xs"
+                    android:importantForAccessibility="no" />
+
                 <TextView
                     android:id="@+id/signalDetails"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
             </LinearLayout>
-
-            <com.safesphere.app.core.ui.components.StatusBadgeView
-                android:id="@+id/signalBadge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/space_sm"
-                android:importantForAccessibility="no" />
         </LinearLayout>
 
         <TextView

@@ -14,10 +14,55 @@ object RadarLayout {
 
     data class Mark(val x: Float, val y: Float)
 
+    /** A rectangle in view pixels (y pointing down). */
+    data class Box(val left: Float, val top: Float, val right: Float, val bottom: Float) {
+        fun overlaps(other: Box): Boolean =
+            left < other.right && other.left < right && top < other.bottom && other.top < bottom
+
+        /** Distance from the point to the nearest point of this box (0 when inside). */
+        fun distanceTo(x: Float, y: Float): Float =
+            hypot((x - x.coerceIn(left, right)), (y - y.coerceIn(top, bottom)))
+    }
+
+    /**
+     * 17F-V7: where the text of a distance ring goes. At 2.0x text the three labels (500 m, 1 km, 2 km) all sat on the same
+     * diagonal and ran into each other and into "You". The 500 m label now goes below-right of its ring, starting at the
+     * ring (so it never covers the person in the middle), and the other two stay above-right, centred - far enough apart
+     * at any text size. [index] 0 = the innermost ring. Only drawing: the rings and the list say the same as before.
+     */
+    fun ringLabelBox(
+        index: Int, centerX: Float, centerY: Float, ringRadius: Float, textWidth: Float, textHeight: Float, gap: Float
+    ): Box {
+        val diagonal = ringRadius * 0.71f
+        return if (index == 0) {
+            Box(centerX + diagonal + gap, centerY + diagonal, centerX + diagonal + gap + textWidth, centerY + diagonal + textHeight)
+        } else {
+            val middle = centerX + diagonal + gap
+            Box(middle - textWidth / 2f, centerY - diagonal - textHeight * 0.8f, middle + textWidth / 2f, centerY - diagonal + textHeight * 0.2f)
+        }
+    }
+
+    /**
+     * 17F-V7: the centre of the number that goes with a mark. It sits on the OUTSIDE of the mark (away from the person in the
+     * middle), so the "You" ring can never cover it. A mark exactly at the centre gets its number up and to the right.
+     */
+    fun numberSpot(markX: Float, markY: Float, centerX: Float, centerY: Float, offset: Float): Mark {
+        var dx = markX - centerX
+        var dy = markY - centerY
+        var distance = hypot(dx, dy)
+        if (distance < 0.01f) {
+            dx = 0.7071f; dy = -0.7071f; distance = 1f
+        }
+        return Mark(markX + dx / distance * offset, markY + dy / distance * offset)
+    }
+
     /**
      * Returns marks at least [minGap] apart (when there is room), keeping each within [limit] of the centre
      * ([centerX], [centerY]). Deterministic: the same input gives the same output, so a redraw never makes marks dance.
      * Marks are treated in list order; an earlier (nearer) mark is pushed less than a later one.
+     *
+     * 17F-V7: [keepClear] > 0 also keeps every mark at least that far from the centre, where the person's own ring is
+     * drawn (a mark used to sit half under it). It moves a mark only where it is drawn; the list keeps the true distance.
      */
     fun spread(
         marks: List<Mark>,
@@ -25,9 +70,11 @@ object RadarLayout {
         centerX: Float,
         centerY: Float,
         limit: Float,
-        rounds: Int = 60
+        rounds: Int = 60,
+        keepClear: Float = 0f
     ): List<Mark> {
-        if (marks.size < 2) return marks
+        if (marks.isEmpty()) return marks
+        if (marks.size < 2 && keepClear <= 0f) return marks
         val xs = FloatArray(marks.size) { marks[it].x }
         val ys = FloatArray(marks.size) { marks[it].y }
         for (round in 0 until rounds) {
@@ -63,6 +110,12 @@ object RadarLayout {
                 if (d > limit) {
                     xs[i] = centerX + ox / d * limit
                     ys[i] = centerY + oy / d * limit
+                } else if (d < keepClear - 0.001f) {
+                    // Out from under the person's own ring, along the same direction (up-right when exactly on the centre).
+                    val (ux, uy) = if (d < 0.01f) 0.7071f to -0.7071f else ox / d to oy / d
+                    xs[i] = centerX + ux * keepClear
+                    ys[i] = centerY + uy * keepClear
+                    moved = true
                 }
             }
             if (!moved) break
