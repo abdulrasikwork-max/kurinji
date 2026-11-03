@@ -27,6 +27,21 @@ interface DiscoverRepository {
 
     suspend fun placePage(placeId: String, cursor: String?): ApiResult<PlacePage>
 
+    /**
+     * Phase 17G-2 (U5): "I went" for a place the person can see (private to them; repeating it is harmless). A 404 means the
+     * place is not one they can see.
+     */
+    suspend fun went(placeId: String): ApiResult<Visit>
+
+    /** Takes "I went" back, and the rating with it. */
+    suspend fun notWent(placeId: String): ApiResult<Unit>
+
+    /** The person's own rating, 1 to 5, for a place they went to. A rating outside 1..5 never leaves the phone. */
+    suspend fun rate(placeId: String, rating: Int): ApiResult<Visit>
+
+    /** Takes the rating back and keeps "I went". */
+    suspend fun clearRating(placeId: String): ApiResult<Visit>
+
     /** Places by name only (no people search). */
     suspend fun searchPlaces(query: String, city: City?): ApiResult<List<Place>>
 }

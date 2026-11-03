@@ -138,6 +138,22 @@ class SocialAccountDeletionTest {
         photoKeys = jdbc.queryForList("SELECT storage_key FROM post_media WHERE owner_id = ?", String.class, p.id());
         assertThat(photoKeys).hasSize(3).allMatch(media::exists);
         assertThat(photoKeys).anyMatch(media::hasVideo);
+        // Phase 17G-2 (V30): p went to (and rated) a place the friend wrote about; the friend marked it too. p's visit must
+        // go with the account; the friend's must stay.
+        String cell = com.safesphere.backend.community.service.GeoCell.encode(10.80 + Math.random() * 0.05, 79.10 + Math.random() * 0.05, 7);
+        String placeId = social.json(social.createPlace(friend, "Deletion Place " + java.util.UUID.randomUUID().toString().substring(0, 8),
+                "NATURE_OUTDOORS", cell).andExpect(status().isOk())).get("publicId").asText();
+        Map<String, Object> exact = SocialClient.experienceBody("EVERYONE", "EXACT");
+        exact.put("placeId", placeId);
+        String exactPost = social.json(social.createPost(friend, exact).andExpect(status().isCreated())).get("publicId").asText();
+        java.time.LocalDateTime earlier = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC).minusMinutes(5);
+        jdbc.update("UPDATE posts SET created_at = ?, visible_from = ? WHERE public_id = ?", earlier, earlier, exactPost);
+        social.went(p, placeId).andExpect(status().isOk());
+        social.rate(p, placeId, 4).andExpect(status().isOk());
+        social.went(friend, placeId).andExpect(status().isOk());
+        assertThat(count("SELECT COUNT(*) FROM place_visits WHERE user_id = ?", p.id())).isEqualTo(1);
+        friendVisits = count("SELECT COUNT(*) FROM place_visits WHERE user_id = ?", friend.id());
+        friendUserId = friend.id();
         friendsPostId = friendsPost;
         return friend;
     }
@@ -145,6 +161,8 @@ class SocialAccountDeletionTest {
     private java.util.List<String> photoKeys;
     private String profilePhotoKey;
     private String friendsPostId;
+    private long friendVisits;
+    private long friendUserId;
 
     private void assertNothingLeft(long userId) {
         assertThat(count("SELECT COUNT(*) FROM posts WHERE author_id = ?", userId)).isZero();
@@ -175,12 +193,15 @@ class SocialAccountDeletionTest {
         // Phase 17G-1: the Explore tags of p's posts went with them (the test database has no cascade: the eraser does it).
         assertThat(count("SELECT COUNT(*) FROM post_facets WHERE post_id NOT IN (SELECT id FROM posts)")).isZero();
         assertThat(media.exists(profilePhotoKey)).isFalse();
+        assertThat(count("SELECT COUNT(*) FROM place_visits WHERE user_id = ?", userId)).as("the person's visits and ratings").isZero();
     }
 
     private void assertOthersKept(Person friend) throws Exception {
         assertThat(social.publicIds(social.connections(friend))).hasSize(1);
         assertThat(social.publicIds(social.blocks(friend))).hasSize(1);
         assertThat(social.publicIds(social.mutes(friend))).isEmpty(); // the only mute was of the deleted person
+        assertThat(count("SELECT COUNT(*) FROM place_visits WHERE user_id = ?", friendUserId)).as("the friend's own visit stays")
+                .isEqualTo(friendVisits).isEqualTo(1);
     }
 
     private long count(String sql, Object... args) {

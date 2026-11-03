@@ -70,6 +70,8 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.cancelReplyButton.setOnClickListener { viewModel.onCancelReply() }
         binding.showCollapsedButton.setOnClickListener { viewModel.onReveal() }
         binding.moreButton.setOnClickListener { showMoreMenu() }
+        wentSheet = WentSheet(this, onRate = viewModel::onRate, onClearRating = viewModel::onClearRating,
+            onNotWent = viewModel::onNotWent, onShare = { viewModel.uiState.value.post?.let { composeFor(it) } })
         collectWhenStarted(viewModel.uiState, ::render)
         collectWhenStarted(reports.uiState, ::renderReports)
         collectWhenStarted(appContainer.viewerPreferences.collapseStrongLanguage, viewModel::onStrongLanguageFilter)
@@ -135,8 +137,18 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         if (line != null) binding.reviewLine.setText(line)
     }
 
+    /** Phase 17G-2 (U5): "How was it?" after "I went" (the person's own visit only). */
+    private var wentSheet: WentSheet? = null
+
     private fun render(state: PostUiState) {
         binding.progress.isVisible = state.isLoading || state.isBusy
+        wentSheet?.setBusy(state.visitBusy)
+        if (state.visitSheet) {
+            viewModel.onVisitSheetHandled()
+            wentSheet?.show(state.visit)
+        } else if (wentSheet?.isShowing == true) {
+            wentSheet?.update(state.visit)
+        }
         binding.notFound.isVisible = state.notFound
         val post = state.post
         binding.contentBlock.isVisible = post != null && !state.notFound
@@ -409,10 +421,15 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
     }
 
     /**
-     * Phase 17E ("I went", plan §4): the composer, with this post's place filled in when it named an exact place (and
-     * its category). The person writes their own experience; nothing is posted or stored by itself; no rating (17G).
+     * Phase 17E/17G-2 ("I went"): when the post names an exact place, "I went" marks the person's private visit and asks how it was
+     * (the sheet then offers the composer); otherwise there is no place to mark and the composer opens as before.
      */
     private fun iWent(post: Post) {
+        if (!viewModel.onWent()) composeFor(post)
+    }
+
+    /** The composer, with this post's place filled in when it named an exact place (and its category). Nothing is posted by itself. */
+    private fun composeFor(post: Post) {
         val placeId = post.placeId.takeIf { post.precision == Precision.EXACT }
         findNavController().navigate(R.id.composeFragment, bundleOf(ComposeFragment.ARG_PLACE_ID to placeId,
             ComposeFragment.ARG_CATEGORY to post.category?.name))

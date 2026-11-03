@@ -66,7 +66,9 @@ public class AccountEraser {
             // V25: a pending e-mail verification link. Phase 17B (V26): a phone verification in progress.
             "email_verification_tokens.user_id", "phone_challenges.user_id",
             // Phase 17E (V28): the person's saved posts and today's state (butterflies are now reactions, above).
-            "saved_posts.user_id", "daily_states.user_id");
+            "saved_posts.user_id", "daily_states.user_id",
+            // Phase 17G-2 (V30): the person's private "I went" records and their ratings.
+            "place_visits.user_id");
 
     /** References that keep the account row (anonymised): the moderation audit trail of decisions this person took. */
     public static final Set<String> KEPT_REFERENCES = Set.of("moderation_actions.actor_id", "moderation_appeals.decided_by");
@@ -107,6 +109,7 @@ public class AccountEraser {
             "DELETE FROM saved_posts WHERE user_id = ?",
             "DELETE FROM saved_posts WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)",
             "DELETE FROM daily_states WHERE user_id = ?",
+            "DELETE FROM place_visits WHERE user_id = ?",
             // Phase 13D: the person's reports; every case (and its reports) about the person, their posts, their
             // perspectives and the perspectives on their posts; earlier texts of their posts; their strikes and pause.
             "DELETE FROM content_reports WHERE reporter_id = ?",

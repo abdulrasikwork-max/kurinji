@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 17G-2 (U5): one number of the optional 1 to 5 ("How was it?"). At least 48 dp high; the spoken label is set in code
+     ("Rate 3 out of 5" / "3 out of 5, your rating"). -->
+<com.google.android.material.button.MaterialButton xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Widget.Kurinji.Button.Quiet"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:insetTop="0dp"
+    android:insetBottom="0dp"
+    android:minWidth="0dp"
+    android:minHeight="@dimen/min_touch_target"
+    android:paddingStart="0dp"
+    android:paddingEnd="0dp" />

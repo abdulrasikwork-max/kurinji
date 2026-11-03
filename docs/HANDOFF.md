@@ -1,4 +1,22 @@
-# Handoff: Phase 17G-3 optional Claude understanding (2026-11-03) — uncommitted in the working tree, NOT pushed
+# Handoff: Phase 17G-2 "I went" + guarded rating (2026-11-03) — uncommitted in the working tree, NOT pushed
+
+**Implemented, compiled, tested, live-verified on real MySQL, emulator-verified incl. 2.0x** (`docs/PHASE17G2.md`; rule **U5** added to CLAUDE.md §1 by the
+user's approval of all defaults). **V30 `place_visits` is applied to the dev database** (backup `safesphere-before-v30.sql` first; dry run 15/15); next
+migration **V31**. "I went" is a private record; an optional 1-5 rating lives on the same row; a place shows ONE guarded average (≥ 5 counted raters past
+probation, Bayesian, once per IST day in memory, no count/name/time, place page only, never an ordering input). Android: "How was it?" sheet from the place page and
+the post page.
+- **Results:** backend **883 / 0** (+25), Android **966 / 0** (+16), Python 83 / 0, lint **0 / 104** (unchanged).
+- **NOT VERIFIED:** a physical phone, TalkBack by ear, the daily memo across a real IST midnight (moved clock only), several backend instances.
+- **Found by the live run (fixed):** the place buttons side by side clipped the long "You went here · 4 out of 5" label (now stacked full-width); a stale
+  post-page button description. **My test method, not the product:** MySQL's own CHECK refused moving accounts back in time without `phone_verified_at`.
+- **State left:** backend stopped; the emulator was cold-booted (its old snapshot hung), signed in as scratch account `live17g2.other.stqa@example.com`
+  (has a visit); many scratch accounts `live17g2.*` / `live17g3.*` and their places/posts remain in the dev DB. Backups in the session scratchpad
+  contain dev data (`safesphere-before-v29.sql`, `-v30.sql`): delete when no longer needed.
+- **Next:** the user's review and a local commit if wanted; then 17H (brand) and 17I/J (regression, release audit).
+
+---
+
+# Handoff: Phase 17G-3 optional AI understanding (2026-11-03) — committed locally (edd63f9, f997b73), NOT pushed
 
 **Implemented, compiled, tested and MANUALLY VERIFIED LIVE with Groq on the emulator** (`docs/PHASE17G3.md` section 8). OFF by default at every layer; Explore (17G-1) is unchanged
 when off. Python service `/v1/understand` (`understand.py`, stdlib only, provider adapter: **Groq free tier first**, Anthropic second; key only in `IRL_UNDERSTANDING_API_KEY`; smoke test `tools/smoke_understand.py`), backend package `explore`

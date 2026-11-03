@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Phase 13C, redesigned in 17E: a place page or a category page. An ink head (the place or category, its city, and for a
-     place: "I went here" and "Going there?"), then its posts newest first; more only on an explicit tap; no ratings, no
-     counts, never ordered by numbers (E17-10). -->
+     place: "I went here" and "Going there?"), then its posts newest first; more only on an explicit tap; never ordered by
+     numbers (E17-10). Since 17G-2 (U5) a place may show ONE guarded average rating, in words, from people who went: no count. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -59,21 +59,34 @@
                     android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
                     android:textColor="?attr/colorOnPanelVariant" />
 
+                <!-- Phase 17G-2 (U5): the one public average, only from enough people who went; a drawn star AND the words. -->
+                <TextView
+                    android:id="@+id/ratingLine"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_sm"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                    android:textColor="?attr/colorOnPanel"
+                    android:visibility="gone"
+                    app:drawableStartCompat="@drawable/ic_star"
+                    app:drawableTint="?attr/colorOnPanel" />
+
                 <!-- Phase 13F (F9) + 17E ("I went"): from reading to going, and to sharing (place pages only). -->
                 <LinearLayout
                     android:id="@+id/placeActions"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_md"
-                    android:orientation="horizontal"
+                    android:orientation="vertical"
                     android:visibility="gone">
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/wentButton"
                         style="@style/Widget.Kurinji.Button.Tonal"
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:text="@string/place_share_yours"
                         android:textColor="?attr/colorOnLime"
                         app:backgroundTint="?attr/colorLime"
@@ -83,10 +96,9 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/goingButton"
                         style="@style/Widget.Kurinji.Button.Quiet"
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/space_sm"
-                        android:layout_weight="1"
+                        android:layout_marginTop="@dimen/space_sm"
                         android:text="@string/going_there"
                         android:textColor="?attr/colorOnPanel"
                         app:icon="@drawable/ic_route"

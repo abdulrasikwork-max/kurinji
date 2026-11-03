@@ -13,6 +13,8 @@ import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.Place
 import com.safesphere.app.feature.social.domain.PlacePage
 import com.safesphere.app.feature.social.domain.PostPage
+import com.safesphere.app.feature.social.domain.Visit
+import com.safesphere.app.feature.social.data.remote.RatingRequestDto
 
 /**
  * Phase 13C: Discover on the backend; Phase 17E: reactions and Saved. All error handling is in [ApiCallHandler]; nothing is
@@ -45,6 +47,17 @@ class RemoteDiscoverRepository(
 
     override suspend fun placePage(placeId: String, cursor: String?): ApiResult<PlacePage> =
         orNotFound(handler.execute { api.placePage(placeId, cursor).toDomain() })
+
+    override suspend fun went(placeId: String): ApiResult<Visit> = handler.execute { api.went(placeId).toDomain() }
+
+    override suspend fun notWent(placeId: String): ApiResult<Unit> = handler.execute { api.notWent(placeId) }
+
+    override suspend fun rate(placeId: String, rating: Int): ApiResult<Visit> {
+        if (!Visit.isValid(rating)) return ApiResult.Failure(ApiError.VALIDATION) // never sent
+        return handler.execute { api.rate(placeId, RatingRequestDto(rating)).toDomain() }
+    }
+
+    override suspend fun clearRating(placeId: String): ApiResult<Visit> = handler.execute { api.clearRating(placeId).toDomain() }
 
     override suspend fun searchPlaces(query: String, city: City?): ApiResult<List<Place>> =
         handler.execute { api.searchPlaces(query.trim(), city?.code).mapNotNull { it.toDomain() } }

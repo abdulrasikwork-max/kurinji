@@ -127,6 +127,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
                                @Param("now") LocalDateTime now, @Param("cursorAt") LocalDateTime cursorAt,
                                @Param("cursorId") long cursorId, Pageable page);
 
+    /** Phase 17G-2: whether [authorId] wrote any post that names [placeId] (they went there: they may mark it). */
+    boolean existsByAuthorIdAndPlaceId(Long authorId, Long placeId);
+
     /** C10: Everyone posts that name this exact place. AREA posts never appear: they promise not to reveal it. */
     @Query("SELECT p FROM Post p WHERE " + EVERYONE + " AND p.placeId = :placeId"
             + " AND p.precision = com.safesphere.backend.social.entity.PostEnums.Precision.EXACT"

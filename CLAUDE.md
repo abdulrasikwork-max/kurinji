@@ -45,7 +45,7 @@ Phases 1–3 are the foundation.
   posts (Takes in V2), Perspectives (comments), mutual Connections, visibility Everyone / Connections / Only me.
 - 🦋 butterfly = a **reaction** on others' Experiences (the author sees a count from 3, never who); **Save** = a private
   bookmark (D-3). Today's state: a closed list, connections only, the IST day only (D-7).
-- **Permanent product rules:** no follower/following, no public counts (except U1), no DMs, no reels/stories, no streaks,
+- **Permanent product rules:** no follower/following, no public counts (except U1; the U5 place average carries no count), no DMs, no reels/stories, no streaks,
   no popularity rankings, no endless feed, no presence/online status, notifications only from people. **Nobody can use
   the platform to monitor another person** (no family/partner/guardian mode, no location on request, no remote view;
   applies to social features too).
@@ -53,7 +53,7 @@ Phases 1–3 are the foundation.
   read (only comments; computed through the comment visibility rule, so it reveals nothing the viewer could not count);
   **U2** Discover may show "Talking now", ordered by the newest visible comment, never by totals, no numbers; **U3**
   Discover auto-loads the next page but always **ends** with an "all caught up" card; **U4** emergency UI never relies on
-  colour: siren icon + the words SOS/Emergency + its own black-and-red treatment.
+  colour: siren icon + the words SOS/Emergency + its own black-and-red treatment; **U5** (2026-11-03, `docs/PHASE17G2.md`) a place shows ONE guarded average (1-5) only once ≥ 5 people who went (past probation) rated it: no count, name or time, once a day, never used to sort or rank. "I went" and own ratings are private.
 - Colours (E17-1, 2026-11-02): **"Ink & Lime"** (ink black + lime #ADFF2F, `docs/DESIGN_SYSTEM.md`); red again means only
   emergency (`ContrastTest` pins the emergency values).
 - Women's realities are an internal design principle only (D4). Chennai first; Tamil/Tanglish content from V1, Tamil UI
@@ -88,9 +88,10 @@ Phases 1–3 are the foundation.
 | 17F | Emergency: opt-in shake SOS (D-4; voice stays unavailable), audio in an SOS after advance consent, "last known" position, one-step Nearby report, readable radar, Safe Walk line; no migration | implemented, compiled, tested, emulator (`docs/PHASE17F.md`) | shake tuning + screen-off sensor delivery on a real phone (the A23 sensor does not wake the CPU), TalkBack |
 | 17G-1 | Deterministic Explore: closed-list tags on experiences (V29), the typed words understood ON THE PHONE (word list EN/Tamil/Tanglish), a structured query, a deterministic server engine; no AI, no cost (`docs/PHASE17G.md`, plan `PHASE17G_PLAN.md`) | implemented, compiled, tested, live MySQL 31/31, emulator | physical phone, TalkBack, Tamil word-list review |
 | 17G-3 | Optional AI understanding (Groq free tier first) of a typed Explore request: OFF by default, key only in the Python service, our own caps + breaker, per-account consent, any failure → the 17G-1 word list (`docs/PHASE17G3.md`) | implemented, compiled, tested, manually verified live with Groq + emulator | physical phone, TalkBack, live 422 path |
-| 17G-2, 17H–17J | "I went" + ratings (U5); brand; regression | planned | — |
+| 17G-2 | "I went" = a private record + optional 1–5 rating (V30); a place shows ONE guarded average (U5) only from ≥ 5 counted raters, daily, no count; place page + post page flow (`docs/PHASE17G2.md`) | implemented, compiled, tested, live MySQL, emulator (incl. 2.0x) | physical phone, TalkBack |
+| 17H–17J | brand; regression; release audit | planned | — |
 
-Next migration **V30**. Each phase or sub-phase needs its own plan and the user's approval first.
+Next migration **V31**. Each phase or sub-phase needs its own plan and the user's approval first.
 
 **Never implement early:** Verified Nearby Assistance (Phase 12; "Circle Response" in `PHASE10_DESIGN.md` §32 stays a
 proposal); advanced route intelligence (a real route planner needs an on-device routing graph + a new privacy review,
@@ -262,7 +263,7 @@ cd android
 
 ## 7. Database (MySQL `safesphere`, Flyway) — per-migration rules in `.claude/rules/database.md`
 
-Conventions: never edit an applied migration; next file is **V30**; snake_case; `DATETIME(6)` stored in UTC; constraint
+Conventions: never edit an applied migration; next file is **V31**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci. "One active /
 one primary / one open" via a generated marker column + unique index. MySQL forbids CHECKs on cascading-FK columns
 (enforce those rules in code); write NULL cases out with `COALESCE` (a NULL makes `IN` UNKNOWN, which a CHECK lets pass);
@@ -278,6 +279,7 @@ closed lists use binary collation.
 | V20–V24 | `profiles`, `connections`, `connection_invites`, `blocks`, `mutes`; `places`, `posts`, `post_media`, `comments`; `butterflies`; content moderation tables; `content_assessments` |
 | V25–V28 | e-mail verification (superseded); phone verification `phone_challenges`; `post_media.kind` (video); `cities`, `saved_posts`, `daily_states`, `profiles.photo_key` |
 | V29 | `post_facets` (Explore tags on experiences, 13 closed codes, ≤ 4 per post in code) |
+| V30 | `place_visits` ("I went" + optional rating 1–5 on the same row, private to its owner) |
 
 ---
 

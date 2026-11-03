@@ -1446,3 +1446,11 @@ A compact list of every phase's endpoints and config keys; the sections above ha
   `app.explore.understanding.*` (mode OFF [env `EXPLORE_UNDERSTANDING_MODE`], url, key = env `MODERATION_SERVICE_KEY`, connect-timeout 300ms,
   timeout 9s, user-daily-cap 20, global-daily-cap 300, breaker-pause 10m, status-cache 2m). Internal service (not an app endpoint):
   `POST /v1/understand` (200 chips; 503 off; 502 provider failure; **422 this request got no usable answer**, for which the backend does not open its breaker), `GET /v1/health` gains `"understanding": "UP"|"OFF"`; provider key env `IRL_UNDERSTANDING_API_KEY` (service only), `IRL_UNDERSTANDING_PROVIDER` (`groq` default | `anthropic`), `IRL_UNDERSTANDING_MODEL`.
+- Phase 17G-2 (V30, U5, `docs/PHASE17G2.md`): `PUT /api/places/{id}/went` → `200 {rating|null}` (the caller's OWN visit; idempotent; a place the
+  caller cannot see, or an unknown id, `404`; `429` after 20 new marks a day, `app.social.visits-per-day`); `DELETE /api/places/{id}/went` → `204`
+  whatever was there (also removes the rating); `PUT /api/places/{id}/rating {rating 1..5}` → `200 {rating}` (`409 "Mark that you went there first"`,
+  `400 "Choose 1 to 5"`, `403` while paused from posting, `429` after 40 rating writes a day, `app.social.rating-writes-per-day`);
+  `DELETE /api/places/{id}/rating` → `200 {rating: null}` (keeps the visit; `409` without one). A merged place stands for its survivor. The place page
+  `GET /api/places/{id}/posts` answers two more fields: `rating` = ONE guarded average as text ("4.3") or `null` (needs ≥ 5 counted raters, accounts
+  past probation; Bayesian, one decimal; recomputed at most once per IST day; never a count, name or time) and `yourVisit` = `{rating|null}` or `null`
+  (the caller's own only). Nothing orders by either.

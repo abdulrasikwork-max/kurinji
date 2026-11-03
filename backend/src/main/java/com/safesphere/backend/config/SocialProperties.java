@@ -41,6 +41,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param videosPerDay         17C: videos a person may upload per day (separate from photos: a video is up to 10 times
  *                             larger, so this bounds the disk one account can fill before the 24 h clean-up)
  * @param exploreSearchesPerHour 17G-1: Explore searches per person per hour
+ * @param visitsPerDay         17G-2 (U5): new "I went" marks per person per day
+ * @param ratingWritesPerDay   17G-2 (U5): ratings a person may give, change or take back per day
  */
 @ConfigurationProperties(prefix = "app.social")
 public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCooldown, Duration handleReservation,
@@ -53,7 +55,8 @@ public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCool
                                Duration unattachedMediaLifetime, Integer butterfliesPerDay,
                                Integer discoverReadsPerHour, Integer placeSearchesPerHour, Duration probation,
                                Integer probationPostsPerDay, Integer probationCommentsPerDay, Integer maxVideoBytes,
-                               Integer videosPerDay, Integer exploreSearchesPerHour) {
+                               Integer videosPerDay, Integer exploreSearchesPerHour, Integer visitsPerDay,
+                               Integer ratingWritesPerDay) {
 
     /** Decision D-6: a video is at most 50 MiB. */
     public static final int VIDEO_BYTES_LIMIT = 50 * 1024 * 1024;
@@ -89,7 +92,10 @@ public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCool
         if (maxVideoBytes == null) maxVideoBytes = VIDEO_BYTES_LIMIT;
         if (videosPerDay == null) videosPerDay = 10;
         if (exploreSearchesPerHour == null) exploreSearchesPerHour = 120;
-        if (maxVideoBytes < 1024 || maxVideoBytes > VIDEO_BYTES_LIMIT || videosPerDay < 1 || exploreSearchesPerHour < 1) {
+        if (visitsPerDay == null) visitsPerDay = 20;
+        if (ratingWritesPerDay == null) ratingWritesPerDay = 40;
+        if (maxVideoBytes < 1024 || maxVideoBytes > VIDEO_BYTES_LIMIT || videosPerDay < 1 || exploreSearchesPerHour < 1
+                || visitsPerDay < 1 || ratingWritesPerDay < 1) {
             throw new IllegalStateException("app.social.* values are invalid");
         }
 

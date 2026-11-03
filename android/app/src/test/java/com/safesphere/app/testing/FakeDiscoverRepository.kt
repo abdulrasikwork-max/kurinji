@@ -13,6 +13,7 @@ import com.safesphere.app.feature.social.domain.PostPage
 import com.safesphere.app.feature.social.domain.SavedItem
 import com.safesphere.app.feature.social.domain.SavedPage
 import com.safesphere.app.feature.social.domain.TimeBand
+import com.safesphere.app.feature.social.domain.Visit
 
 /** Test double (Phase 13C, 17E): an in-memory Discover server that records what the phone asked for. */
 class FakeDiscoverRepository : DiscoverRepository {
@@ -36,6 +37,35 @@ class FakeDiscoverRepository : DiscoverRepository {
     var placePages: Map<String?, PlacePage> = emptyMap()
     var places: List<Place> = emptyList()
     var searchFailure: ApiResult.Failure? = null
+
+    /** Phase 17G-2: every went / rating call, as "went:<id>", "notWent:<id>", "rate:<id>:<n>", "clearRating:<id>". */
+    val visitCalls = mutableListOf<String>()
+
+    /** The answer of went / rate / clearRating (the person's own visit), or a failure to simulate. */
+    var visitResult: ApiResult<Visit> = ApiResult.Success(Visit(null))
+    var notWentResult: ApiResult<Unit> = ApiResult.Success(Unit)
+
+    override suspend fun went(placeId: String): ApiResult<Visit> {
+        visitCalls += "went:$placeId"
+        return visitResult
+    }
+
+    override suspend fun notWent(placeId: String): ApiResult<Unit> {
+        visitCalls += "notWent:$placeId"
+        return notWentResult
+    }
+
+    override suspend fun rate(placeId: String, rating: Int): ApiResult<Visit> {
+        visitCalls += "rate:$placeId:$rating"
+        val r = visitResult
+        return if (r is ApiResult.Success) ApiResult.Success(Visit(rating)) else r
+    }
+
+    override suspend fun clearRating(placeId: String): ApiResult<Visit> {
+        visitCalls += "clearRating:$placeId"
+        val r = visitResult
+        return if (r is ApiResult.Success) ApiResult.Success(Visit(null)) else r
+    }
 
     override suspend fun react(postId: String): ApiResult<Unit> = mark("react:$postId")
 

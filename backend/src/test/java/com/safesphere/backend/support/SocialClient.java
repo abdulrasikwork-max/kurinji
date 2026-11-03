@@ -335,6 +335,25 @@ public final class SocialClient {
         return perform(who.token(), delete("/api/posts/{id}/reaction", postId), null);
     }
 
+    /** Phase 17G-2 (U5): "I went". */
+    public ResultActions went(Person who, String placeId) throws Exception {
+        return perform(who.token(), put("/api/places/{id}/went", placeId), null);
+    }
+
+    public ResultActions notWent(Person who, String placeId) throws Exception {
+        return perform(who.token(), delete("/api/places/{id}/went", placeId), null);
+    }
+
+    public ResultActions rate(Person who, String placeId, Object rating) throws Exception {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("rating", rating);
+        return perform(who.token(), put("/api/places/{id}/rating", placeId), body);
+    }
+
+    public ResultActions clearRating(Person who, String placeId) throws Exception {
+        return perform(who.token(), delete("/api/places/{id}/rating", placeId), null);
+    }
+
     public ResultActions save(Person who, String postId) throws Exception {
         return perform(who.token(), put("/api/posts/{id}/save", postId), null);
     }

@@ -109,6 +109,8 @@ class SocialTextsTest {
             "item_safety_tile.xml",
             // Phase 17G-1: Explore
             "fragment_explore.xml", "item_explore_hit.xml",
+            // Phase 17G-2 (U5): "I went" and the guarded rating
+            "sheet_went.xml", "item_rating_choice.xml",
             // Phase 13D
             "fragment_my_reports.xml", "fragment_guidelines.xml")
         /** Phase 13C (C2): the only text with a number of people: the author's own private line. */

@@ -42,6 +42,7 @@ public final class DiscoverDtos {
     }
 
     /** A place page: the place and its exact-place Everyone posts, newest first. */
-    public record PlacePage(PlaceResponse place, List<PostResponse> items, String nextCursor) {
+    public record PlacePage(PlaceResponse place, List<PostResponse> items, String nextCursor, String rating,
+                            PlaceDtos.VisitResponse yourVisit) {
     }
 }

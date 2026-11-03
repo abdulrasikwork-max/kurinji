@@ -62,19 +62,24 @@ public class DiscoverService {
     private final ProfileRepository profiles;
     private final PostService postService;
     private final PlaceService placeService;
+    private final PlaceRatings ratings;
+    private final PlaceVisitService visitService;
     private final Relationships relationships;
     private final SocialAccess access;
     private final SocialLimits limits;
     private final Clock clock;
 
     public DiscoverService(PostRepository posts, CommentRepository comments, ProfileRepository profiles,
-                           PostService postService, PlaceService placeService, Relationships relationships,
+                           PostService postService, PlaceService placeService, PlaceRatings ratings,
+                           PlaceVisitService visitService, Relationships relationships,
                            SocialAccess access, SocialLimits limits, Clock clock) {
         this.posts = posts;
         this.comments = comments;
         this.profiles = profiles;
         this.postService = postService;
         this.placeService = placeService;
+        this.ratings = ratings;
+        this.visitService = visitService;
         this.relationships = relationships;
         this.access = access;
         this.limits = limits;
@@ -181,8 +186,10 @@ public class DiscoverService {
         List<Post> raw = posts.placePage(place.getId(), now, after == null ? END : after.getVisibleFrom(),
                 after == null ? Long.MAX_VALUE : after.getId(), PageRequest.of(0, PAGE_SIZE + 1));
         Page page = page(viewer, raw, now);
+        // Phase 17G-2 (U5): the guarded average (text only, null until enough ratings) and the caller's OWN visit. Neither ever
+        // changes which posts are shown or in what order.
         return new PlacePage(PlaceService.toResponse(place), postService.respond(viewerId, page.shown(), now),
-                page.nextCursor());
+                page.nextCursor(), ratings.textFor(place.getId()), visitService.yourVisit(viewerId, place.getId()));
     }
 
     /** C11: Everyone posts of one category, optionally in one city. */

@@ -28,6 +28,8 @@ public class SocialLimits {
             "You have given or taken back many butterflies and saves today. Please try again tomorrow.";
     static final String TOO_MANY_DISCOVER = "You have opened a lot of lists this hour. Please try again later.";
     static final String TOO_MANY_SEARCHES = "Too many place searches. Please try again later.";
+    static final String TOO_MANY_VISITS = "You have marked many places today. Please try again tomorrow.";
+    static final String TOO_MANY_RATINGS = "You have changed many ratings today. Please try again tomorrow.";
     static final String TOO_MANY_EXPLORES = "You have searched a lot this hour. Please try again later.";
 
     private final AttemptLimiter lookups;
@@ -44,6 +46,8 @@ public class SocialLimits {
     private final AttemptLimiter discover;
     private final AttemptLimiter searches;
     private final AttemptLimiter explores;
+    private final AttemptLimiter visits;
+    private final AttemptLimiter ratingWrites;
     private final AttemptLimiter probationPosts;
     private final AttemptLimiter probationComments;
 
@@ -63,6 +67,8 @@ public class SocialLimits {
         this.discover = new AttemptLimiter(properties.discoverReadsPerHour(), Duration.ofHours(1), keys, clock);
         this.searches = new AttemptLimiter(properties.placeSearchesPerHour(), Duration.ofHours(1), keys, clock);
         this.explores = new AttemptLimiter(properties.exploreSearchesPerHour(), Duration.ofHours(1), keys, clock);
+        this.visits = new AttemptLimiter(properties.visitsPerDay(), Duration.ofDays(1), keys, clock);
+        this.ratingWrites = new AttemptLimiter(properties.ratingWritesPerDay(), Duration.ofDays(1), keys, clock);
         this.probationPosts = new AttemptLimiter(properties.probationPostsPerDay(), Duration.ofDays(1), keys, clock);
         this.probationComments = new AttemptLimiter(properties.probationCommentsPerDay(), Duration.ofDays(1), keys,
                 clock);
@@ -134,6 +140,16 @@ public class SocialLimits {
 
     public void search(long userId) {
         if (!searches.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_SEARCHES);
+    }
+
+    /** Phase 17G-2: a NEW "I went" mark (repeating one that exists costs nothing). */
+    public void visit(long userId) {
+        if (!visits.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_VISITS);
+    }
+
+    /** Phase 17G-2: giving, changing or taking back a rating. */
+    public void ratingWrite(long userId) {
+        if (!ratingWrites.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_RATINGS);
     }
 
     /** Phase 17G-1: one Explore search. */

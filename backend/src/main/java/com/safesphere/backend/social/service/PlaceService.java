@@ -130,6 +130,12 @@ public class PlaceService {
         return toResponse(resolve(requirePlace(publicId)));
     }
 
+    /** For PlaceVisitService.notWent: the place (a merged place stands for its survivor), or null when unknown. */
+    public Place findForVisit(String publicId) {
+        Place place = publicId == null ? null : places.findByPublicId(publicId).orElse(null);
+        return place == null ? null : resolve(place);
+    }
+
     /** For PostService: the place a post may use (a merged place stands for the place it was merged into). */
     public Place requirePlace(String publicId) {
         Place place = publicId == null ? null : places.findByPublicId(publicId).orElse(null);

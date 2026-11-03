@@ -142,7 +142,7 @@ this is where you find out where to go next and help the next person.*
 
 Instagram, TikTok, Facebook, Snapchat, a Reddit clone, a WhatsApp replacement, a dating app, an event or trip
 planner, a follower competition, a reels platform, a doom-scrolling app, a generic chatbot, Google Maps or
-Tripadvisor (no star ratings of places or businesses), a fear map (no danger scores, no incident feed), a monitoring
+Tripadvisor (no star ratings of businesses; **since 2026-11-03 (U5) a place may show one guarded average from people who went, never a ranking**), a fear map (no danger scores, no incident feed), a monitoring
 tool.
 
 ---
@@ -200,7 +200,7 @@ Mechanics:
 - Created by users; duplicates merged by moderators (`merged_into`). No third-party places API in V1 (cost, keys, and
   the provider would learn what people look up) (**D11**).
 - **Place page:** public experiences, Asks, and **"Good to know"** (practical notes, including anonymous heads-ups from
-  the existing place-signal pipeline). **No stars, no ratings, no rankings of places.**
+  the existing place-signal pipeline). **No rankings of places. Amended 2026-11-03 (U5, `PHASE17G2.md`): a place shows one average rating only once at least 5 people who marked "I went" have rated it - no count, no names, no times, recomputed daily, never used to order anything.**
 - Residential places cannot be created as public places (the composer offers City or None instead).
 
 ### 3.6 Categories (closed list, expandable by migration)

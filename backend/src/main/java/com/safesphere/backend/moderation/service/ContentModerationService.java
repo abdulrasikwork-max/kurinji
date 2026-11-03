@@ -145,6 +145,7 @@ public class ContentModerationService {
     private final ModerationProperties properties;
     private final AssessmentService assessmentService;
     private final com.safesphere.backend.social.service.ProfilePhotoService photos;
+    private final com.safesphere.backend.social.service.PlaceVisitService placeVisits;
     private final Clock clock;
 
     public ContentModerationService(ModerationService moderation, ReportService reportService,
@@ -156,8 +157,10 @@ public class ContentModerationService {
                                     ProfileRepository profiles, SocialStandingRepository standings,
                                     SocialAccess access, UserRepository users, CaseRefs refs,
                                     ModerationProperties properties, AssessmentService assessmentService,
-                                    com.safesphere.backend.social.service.ProfilePhotoService photos, Clock clock) {
+                                    com.safesphere.backend.social.service.ProfilePhotoService photos,
+                                    com.safesphere.backend.social.service.PlaceVisitService placeVisits, Clock clock) {
         this.photos = photos;
+        this.placeVisits = placeVisits;
         this.assessmentService = assessmentService;
         this.moderation = moderation;
         this.reportService = reportService;
@@ -385,6 +388,7 @@ public class ContentModerationService {
         }
         LocalDateTime now = now();
         posts.movePlace(from.getId(), into.getId());
+        placeVisits.mergePlace(from.getId(), into.getId()); // Phase 17G-2: "I went" records and ratings follow the place
         from.mergeInto(into.getId());
         places.saveAndFlush(from);
         actions.saveAndFlush(ModerationAction.social(moderatorId, ActionType.PLACE_MERGED, ActionReason.DUPLICATE,

@@ -11,8 +11,11 @@ import com.safesphere.app.feature.social.domain.EditionSection
 import com.safesphere.app.feature.social.domain.EditionSectionKind
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.PlacePage
+import com.safesphere.app.feature.social.domain.PlaceRating
+import com.safesphere.app.feature.social.domain.Visit
 import com.safesphere.app.feature.social.domain.TimeBand
 import java.time.LocalDate
+import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PUT
@@ -50,6 +53,19 @@ interface DiscoverApi {
 
     @GET("api/places/{id}/posts")
     suspend fun placePage(@Path("id") placeId: String, @Query("cursor") cursor: String?): PlacePageDto
+
+    // Phase 17G-2 (U5): "I went" and the person's own rating (idempotent on the server).
+    @PUT("api/places/{id}/went")
+    suspend fun went(@Path("id") placeId: String): VisitDto
+
+    @DELETE("api/places/{id}/went")
+    suspend fun notWent(@Path("id") placeId: String)
+
+    @PUT("api/places/{id}/rating")
+    suspend fun rate(@Path("id") placeId: String, @Body body: RatingRequestDto): VisitDto
+
+    @DELETE("api/places/{id}/rating")
+    suspend fun clearRating(@Path("id") placeId: String): VisitDto
 
     @GET("api/places/search")
     suspend fun searchPlaces(@Query("q") query: String, @Query("city") city: String?): List<PlaceDto>
@@ -112,12 +128,29 @@ data class DiscoverPageDto(val items: List<DiscoverItemDto>? = null, val nextCur
     fun toDomain() = DiscoverPage(items.orEmpty().mapNotNull { it.toDomain() }, nextCursor)
 }
 
-data class PlacePageDto(val place: PlaceDto? = null, val items: List<PostDto>? = null, val nextCursor: String? = null) {
+/** Phase 17G-1/17G-2: [rating] is read as text and fails closed (unreadable = none); [yourVisit] is the caller's own. */
+data class PlacePageDto(
+    val place: PlaceDto? = null,
+    val items: List<PostDto>? = null,
+    val nextCursor: String? = null,
+    val rating: String? = null,
+    val yourVisit: VisitDto? = null
+) {
     fun toDomain(): PlacePage? {
         return PlacePage(
             place = place?.toDomain() ?: return null,
             items = items.orEmpty().mapNotNull { it.toDomain() },
-            nextCursor = nextCursor
+            nextCursor = nextCursor,
+            rating = PlaceRating.clean(rating),
+            yourVisit = yourVisit?.toDomain()
         )
     }
 }
+
+/** The caller's own visit. A rating outside 1..5 is not believed (it becomes "not rated"). */
+data class VisitDto(val rating: Int? = null) {
+    fun toDomain() = Visit(rating?.takeIf(Visit::isValid))
+}
+
+/** Body of PUT places/{id}/rating. */
+data class RatingRequestDto(val rating: Int)

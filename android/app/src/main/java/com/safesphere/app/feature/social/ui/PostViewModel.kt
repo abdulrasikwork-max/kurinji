@@ -15,6 +15,8 @@ import com.safesphere.app.feature.social.domain.ExperienceRepository
 import com.safesphere.app.feature.social.domain.Perspective
 import com.safesphere.app.feature.social.domain.Post
 import com.safesphere.app.feature.social.domain.PostType
+import com.safesphere.app.feature.social.domain.Precision
+import com.safesphere.app.feature.social.domain.Visit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,7 +47,12 @@ data class PostUiState(
     /** Phase 13D: the collapsed perspectives the viewer chose to show. */
     val revealedPerspectives: Set<String> = emptySet(),
     /** Phase 13E (E20): the viewer chose "Collapse strong language" (their own setting, on this phone). */
-    val strongLanguageFilter: Boolean = false
+    val strongLanguageFilter: Boolean = false,
+    /** Phase 17G-2 (U5): the person's OWN visit (and rating) at this post's place, once they marked "I went". */
+    val visit: Visit? = null,
+    val visitBusy: Boolean = false,
+    /** Phase 17G-2, one-shot: "I went" was just confirmed; the screen asks "How was it?". */
+    val visitSheet: Boolean = false
 ) {
     /**
      * Phase 13D: someone else's post that stays behind a tap until the viewer chooses to see it. 13E: also when it has
@@ -187,6 +194,40 @@ class PostViewModel(
     }
 
     fun onSavedShown() = _uiState.update { it.copy(savedNow = false) }
+
+    /** Phase 17G-2 (U5): "I went" and the person's own rating for the place this post names (only an EXACT place). */
+    private val visits = PlaceVisits(discover, viewModelScope,
+        onVisit = { v -> _uiState.update { it.copy(visit = v) } },
+        onWent = { _uiState.update { it.copy(visitSheet = true) } },
+        onBusy = { b -> _uiState.update { it.copy(visitBusy = b) } },
+        onFailure = { failure -> fail(failure) })
+
+    /** The place a visit can be marked for: the post's own, when it names an exact place; otherwise none. */
+    private fun visitPlaceId(): String? = _uiState.value.post?.let { if (it.precision == Precision.EXACT) it.placeId else null }
+
+    /**
+     * "I went". Returns true when a visit is being marked (the screen then waits for the "How was it?" sheet); false when the post
+     * names no exact place, so there is nothing to mark and the screen goes straight to the composer, as before 17G-2.
+     */
+    fun onWent(): Boolean {
+        val placeId = visitPlaceId() ?: return false
+        visits.went(placeId)
+        return true
+    }
+
+    fun onRate(rating: Int) {
+        visitPlaceId()?.let { visits.rate(it, rating) }
+    }
+
+    fun onClearRating() {
+        visitPlaceId()?.let { visits.clearRating(it) }
+    }
+
+    fun onNotWent() {
+        visitPlaceId()?.let { visits.notWent(it) }
+    }
+
+    fun onVisitSheetHandled() = _uiState.update { it.copy(visitSheet = false) }
 
     private fun toggle(key: String, apply: (Post) -> Post, undo: (Post) -> Post, confirmed: () -> Unit = {},
                        call: suspend () -> ApiResult<Unit>) {

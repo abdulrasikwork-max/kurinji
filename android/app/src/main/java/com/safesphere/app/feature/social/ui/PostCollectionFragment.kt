@@ -19,13 +19,17 @@ import com.safesphere.app.feature.social.domain.Interest
 
 /**
  * Phase 13C: a place page (C10) or a category page (C11). The place page shows the place's name, category and city,
- * then its exact-place experiences shared for everyone. No stars, no ratings, no rankings (design §3.5).
+ * then its exact-place experiences shared for everyone. No rankings (design §3.5). Since 17G-2 (U5) it may show ONE guarded average
+ * rating from people who went, without any count; it never orders anything.
  */
 class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding>(FragmentPostCollectionBinding::inflate) {
 
     private val viewModel by viewModels<PostCollectionViewModel> { PostCollectionViewModel.factory(appContainer) }
     private lateinit var adapter: ExperienceCardAdapter
     private var collapseStrongLanguage = false
+
+    /** Phase 17G-2 (U5): "How was it?" after "I went" (the person's own visit only). */
+    private var wentSheet: WentSheet? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -38,6 +42,13 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
             }
         }
         binding.showMoreButton.setOnClickListener { viewModel.onShowMore() }
+        wentSheet = WentSheet(this, onRate = viewModel::onRate, onClearRating = viewModel::onClearRating,
+            onNotWent = viewModel::onNotWent, onShare = {
+                viewModel.uiState.value.place?.let { place ->
+                    findNavController().navigate(R.id.composeFragment, bundleOf(
+                        ComposeFragment.ARG_PLACE_ID to place.publicId, ComposeFragment.ARG_CATEGORY to place.category.name))
+                }
+            })
         collectWhenStarted(viewModel.uiState, ::render)
         val args = arguments
         val placeId = args?.getString(PostCollectionViewModel.ARG_PLACE_ID)
@@ -62,10 +73,22 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
                     if (place != null) GoingThere.show(this, GoingThere.Target(listOfNotNull(place.name,
                         place.city?.name).joinToString(", ")), cocoon = null)
                 }
+                // Phase 17G-2 (U5): "I went here" marks a private record, then asks how it was (and offers the composer).
+                val visit = state.visit
                 binding.wentButton.contentDescription = place?.let { getString(R.string.place_share_yours_description, it.name) }
-                binding.wentButton.setOnClickListener {
-                    if (place != null) findNavController().navigate(R.id.composeFragment, bundleOf(
-                        ComposeFragment.ARG_PLACE_ID to place.publicId, ComposeFragment.ARG_CATEGORY to place.category.name))
+                binding.wentButton.text = when {
+                    visit == null -> getString(R.string.place_share_yours)
+                    visit.rating == null -> getString(R.string.place_went_state)
+                    else -> getString(R.string.place_went_rated, visit.rating.toString())
+                }
+                binding.wentButton.isEnabled = !state.visitBusy
+                binding.wentButton.setOnClickListener { if (visit == null) viewModel.onWent() else viewModel.onOpenVisitSheet() }
+                // The one public average: words and a drawn star, never a count, never ordering anything.
+                val rating = state.rating
+                binding.ratingLine.isVisible = rating != null
+                if (rating != null) {
+                    binding.ratingLine.text = getString(R.string.place_rating_line, rating)
+                    binding.ratingLine.contentDescription = getString(R.string.place_rating_description, rating)
                 }
                 binding.detailLine.text = if (place == null) "" else listOfNotNull(place.city?.name,
                     getString(R.string.place_page_note)).joinToString(" · ")
@@ -74,12 +97,20 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
                 binding.heading.text = getString(SocialLabels.of(c.category))
                 binding.kindTag.isVisible = false
                 binding.placeActions.isVisible = false
+                binding.ratingLine.isVisible = false
                 binding.detailLine.text = c.city?.let { getString(R.string.collection_category_city_line, it.name) }
                     ?: getString(R.string.collection_category_line)
             }
             null -> Unit
         }
         binding.progress.isVisible = state.isLoading
+        wentSheet?.setBusy(state.visitBusy)
+        if (state.visitSheet) {
+            viewModel.onVisitSheetHandled()
+            wentSheet?.show(state.visit)
+        } else if (wentSheet?.isShowing == true) {
+            wentSheet?.update(state.visit)
+        }
         adapter.submitList(state.items.map { post ->
             CardRow(ExperienceCards.of(post, collapseStrongLanguage = collapseStrongLanguage), onOpen = {
                 findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to post.publicId))

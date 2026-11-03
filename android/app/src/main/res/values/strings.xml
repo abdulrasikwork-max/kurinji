@@ -1752,7 +1752,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="feed_media_count_spoken">%1$d photos or videos inside</string>
     <!-- "I went" (plan §4): from reading to sharing your own experience. -->
     <string name="went_label">I went</string>
-    <string name="went_description">I went: share your own experience of this place</string>
+    <string name="went_description">I went: mark this place, say how it was, or share your own experience of it</string>
     <!-- Saved -->
     <string name="saved_intro">Only you can see what you save. Nobody is told.</string>
     <string name="saved_empty_title">Nothing saved yet</string>
@@ -1809,7 +1809,23 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="you_tile_nearby_sub">Heads-ups about places</string>
     <!-- Place page -->
     <string name="place_share_yours">I went here</string>
-    <string name="place_share_yours_description">I went here: share your own experience of %1$s</string>
+    <string name="place_share_yours_description">I went here: mark that you went to %1$s and say how it was</string>
+    <!-- Phase 17G-2 (U5): "I went" is a private record; an optional 1 to 5; a place shows ONE average only from people who went -->
+    <string name="place_went_state">You went here · rate it</string>
+    <string name="place_went_rated">You went here · %1$s out of 5</string>
+    <string name="place_rating_line">%1$s out of 5 · from people who went</string>
+    <string name="place_rating_description">Rated %1$s out of 5 by people who went</string>
+    <string name="went_sheet_title">How was it?</string>
+    <string name="went_sheet_note">Optional. Your rating is private to you. A place shows an average only once enough people who went have rated it.</string>
+    <string name="went_rate_description">Rate %1$s out of 5</string>
+    <string name="went_rate_chosen">%1$s out of 5, your rating</string>
+    <string name="went_status_none">You went here. You have not rated it.</string>
+    <string name="went_status_rated">Your rating: %1$s out of 5</string>
+    <string name="went_rate_number">%1$s</string>
+    <string name="went_clear">Take back my rating</string>
+    <string name="went_share">Share your experience</string>
+    <string name="went_not">I did not go here</string>
+    <string name="went_done">Done</string>
     <string name="place_page_note">Experiences shared with everyone, newest first.</string>
 
     <!-- Phase 17F: SOS options (shake, audio), the shake countdown notification -->
