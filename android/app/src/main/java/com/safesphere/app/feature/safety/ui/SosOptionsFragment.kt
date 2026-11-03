@@ -16,6 +16,7 @@ import androidx.fragment.app.viewModels
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.notifications.NotificationPermission
+import com.safesphere.app.core.ui.RuntimePermissionAsk
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.databinding.FragmentSosOptionsBinding
@@ -67,7 +68,7 @@ class SosOptionsFragment : ViewBindingFragment<FragmentSosOptionsBinding>(Fragme
         }
         binding.shakeNotificationsButton.setOnClickListener { askForNotifications() }
         binding.audioPermissionButton.setOnClickListener {
-            if (askedForMicrophone && !shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
+            if (microphoneNeedsSettings()) {
                 openAppSettings()
             } else {
                 askedForMicrophone = true
@@ -100,6 +101,11 @@ class SosOptionsFragment : ViewBindingFragment<FragmentSosOptionsBinding>(Fragme
         if (shakeLine != null) binding.shakeStatus.setText(shakeLine)
         binding.shakeNotificationsButton.isVisible =
             viewModel.shakeSensorAvailable && shakeOn && !NotificationPermission.isGranted(requireContext())
+        // Label and action agree: once Android will not ask again, the button says "Open settings" and opens them.
+        binding.shakeNotificationsButton.setText(
+            if (notificationsNeedsSettings()) R.string.action_open_settings
+            else R.string.sos_options_shake_notifications_action
+        )
 
         val audioOn = options?.autoAudio == AutoAudioChoice.ON
         audioSwitch.isEnabled = options != null
@@ -109,18 +115,23 @@ class SosOptionsFragment : ViewBindingFragment<FragmentSosOptionsBinding>(Fragme
         if (needsMicrophone) binding.audioStatus.setText(R.string.sos_options_audio_no_permission)
         binding.audioPermissionButton.isVisible = needsMicrophone
         binding.audioPermissionButton.setText(
-            if (askedForMicrophone && !shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) R.string.action_open_settings
-            else R.string.action_allow_microphone
+            if (microphoneNeedsSettings()) R.string.action_open_settings else R.string.action_allow_microphone
         )
     }
+
+    private fun microphoneNeedsSettings() = RuntimePermissionAsk.needsSettings(
+        askedForMicrophone, shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)
+    )
+
+    private fun notificationsNeedsSettings() = RuntimePermissionAsk.needsSettings(
+        askedForNotifications, shouldShowRequestPermissionRationale(NotificationPermission.PERMISSION)
+    )
 
     private fun microphoneGranted() =
         ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
     private fun askForNotifications() {
-        if (NotificationPermission.isRuntimePermission() &&
-            !(askedForNotifications && !shouldShowRequestPermissionRationale(NotificationPermission.PERMISSION))
-        ) {
+        if (NotificationPermission.isRuntimePermission() && !notificationsNeedsSettings()) {
             askedForNotifications = true
             notificationLauncher.launch(NotificationPermission.PERMISSION)
         } else {

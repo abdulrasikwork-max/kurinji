@@ -14,6 +14,7 @@ import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.location.LocationNeed
 import com.safesphere.app.core.location.LocationNeeds
+import com.safesphere.app.core.location.LocationPermissionStatus
 import com.safesphere.app.core.location.LocationUnavailableReason
 import com.safesphere.app.core.ui.LocationAsk
 import com.safesphere.app.core.ui.Motion
@@ -54,7 +55,9 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
     private val viewModel by viewModels<CommunityViewModel> { CommunityViewModel.factory(appContainer) }
 
     /** Phase 17D: the one way to ask for location, to open settings and to upgrade to precise (shared with other screens). */
-    private val locationAsk = LocationAsk(this) { viewModel.onPermissionResult() }
+    private val locationAsk = LocationAsk(this) { status ->
+        viewModel.onPermissionResult(permanentlyDenied = status == LocationPermissionStatus.PERMANENTLY_DENIED)
+    }
 
     /** What "Try again" repeats after a position that was too rough (lost on rotation: the dialog then just closes). */
     private var retryAction: (() -> Unit)? = null
@@ -97,7 +100,7 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
     )
 
     private fun render(ui: CommunityUiState) {
-        renderArea(ui.area)
+        renderArea(ui.area, ui.permissionBlocked)
 
         val locating = ui.locating
         binding.locatingBlock.isVisible = locating != null
@@ -127,7 +130,7 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
         }
     }
 
-    private fun renderArea(area: AreaState) {
+    private fun renderArea(area: AreaState, permissionBlocked: Boolean) {
         val ready = area as? AreaState.Ready
         renderPicture(ready)
         binding.radar.isVisible = ready != null
@@ -144,9 +147,9 @@ class CommunityFragment : ViewBindingFragment<FragmentCommunityBinding>(Fragment
             AreaState.Loading -> binding.areaStatus.setText(R.string.community_loading)
             AreaState.NeedsPermission -> {
                 binding.areaStatus.setText(R.string.community_permission_title)
-                showHint(if (locationAsk.permanentlyDenied) R.string.community_permission_blocked
+                showHint(if (permissionBlocked) R.string.community_permission_blocked
                     else R.string.community_permission_rationale)
-                if (locationAsk.permanentlyDenied) {
+                if (permissionBlocked) {
                     showAction(R.string.action_open_settings) { locationAsk.act(LocationNeed.OPEN_APP_SETTINGS) }
                 } else {
                     showAction(R.string.action_allow_location) { locationAsk.act(LocationNeed.ALLOW) }

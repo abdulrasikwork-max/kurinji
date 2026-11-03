@@ -107,7 +107,13 @@ data class CommunityUiState(
     val locating: Locating? = null,
     val event: CommunityEvent? = null,
     val sessionExpired: Boolean = false,
-    val standing: CommunityStanding = CommunityStanding.ACTIVE
+    val standing: CommunityStanding = CommunityStanding.ACTIVE,
+    /**
+     * Phase 17H (found on the Galaxy A23): Android would not show its dialog again ("Don't allow" answered). Part of the
+     * STATE, not a field of the fragment, so a second refusal changes the state, the screen redraws, and the button
+     * becomes "Open settings". Cleared as soon as a position can be read again.
+     */
+    val permissionBlocked: Boolean = false
 )
 
 /**
@@ -137,11 +143,20 @@ class CommunityViewModel(
             _ui.update { it.copy(area = AreaState.NeedsPermission) }
             loadMineAndOutbox()
         } else {
+            _ui.update { it.copy(permissionBlocked = false) } // allowed again (e.g. in Settings)
             refresh()
         }
     }
 
-    fun onPermissionResult() = onScreenVisible()
+    /**
+     * The answer to Android's permission dialog. [permanentlyDenied] = the dialog will not be shown again. It goes into
+     * the state first: with no permission the area is "needs permission" again (an EQUAL state, which a StateFlow does
+     * not emit), so without this flag the second refusal would change nothing on screen.
+     */
+    fun onPermissionResult(permanentlyDenied: Boolean) {
+        _ui.update { it.copy(permissionBlocked = permanentlyDenied) }
+        onScreenVisible()
+    }
 
     /**
      * Phase 17D: the screen is no longer visible. Location is used only while it is open (Phase 6), so a search for a

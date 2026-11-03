@@ -1,4 +1,21 @@
-# Handoff: Phase 17G-2 "I went" + guarded rating (2026-11-03) — uncommitted in the working tree, NOT pushed
+# Handoff: real-device sprint, Tracks A and B done; Track C paused (2026-11-04) — committed locally, NOT pushed
+
+Full record and the Track C handoff: **`docs/REAL_DEVICE_SPRINT.md`** (§4 = how to resume). The user paused the sprint after Track B ("not ready for the
+physical-device Track C tests"); **no further device testing was run and Track C has not started.**
+- **Done on the Galaxy A23:** Track A (setup) and Track B (display matrix, permission flows, server-unreachable SOS with sync, process death, foreground-service
+  types, media). Everything passed except one defect and one label nit, both **fixed and re-verified on the phone**: Nearby after a permanent location refusal
+  (`CommunityUiState.permissionBlocked`) and the notification button label (`core/ui/RuntimePermissionAsk`).
+- **Results:** Android **974 / 0** (+8 `Phase17HPermissionDenialTest`), lint 0 / 104 (unchanged), backend unchanged (883 / 0).
+- **NOT VERIFIED (Tracks C-H):** shake SOS, TalkBack by ear, Safe Walk and Nearby report outdoors, Explore with the Samsung keyboard / Tamil / Tanglish, the
+  Phase 5 vault viewing (needs the user's unlock), Samsung/OEM behaviour, SMS and Call 112 (nothing sent, nothing dialled so far), 25 h idle / overnight runs,
+  the emulator API 26 / 29 / 33 matrix.
+- **State left:** backend (started for the sprint with the dev OTP sink, no real SMS) and the `adb reverse tcp:8080` tunnel may still be up; the phone is
+  back at its original settings (`stay_on_while_plugged_in 0`); location, microphone and notifications granted, `SEND_SMS` not.
+- **Next:** resume with Track C when the user is available and holding the phone; then D, E, F, G, H as in the sprint plan.
+
+---
+
+# Handoff: Phase 17G-2 "I went" + guarded rating (2026-11-03) — committed locally (2f1e09b), NOT pushed
 
 **Implemented, compiled, tested, live-verified on real MySQL, emulator-verified incl. 2.0x** (`docs/PHASE17G2.md`; rule **U5** added to CLAUDE.md §1 by the
 user's approval of all defaults). **V30 `place_visits` is applied to the dev database** (backup `safesphere-before-v30.sql` first; dry run 15/15); next
