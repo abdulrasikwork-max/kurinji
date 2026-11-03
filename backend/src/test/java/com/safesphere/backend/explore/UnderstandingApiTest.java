@@ -183,6 +183,19 @@ class UnderstandingApiTest {
     }
 
     @Test
+    void aRequestThatGotNoUsableAnswer_isRefused_butDoesNotOpenTheBreakerForEverybody() throws Exception {
+        STUB.status = 422;
+        STUB.body = "{\"error\":\"unusable\"}";
+        understand(token, "an odd sentence").andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("UNDERSTANDING_UNAVAILABLE"));
+        assertThat(STUB.received).hasSize(1);
+        STUB.reset();   // the next person's sentence is fine and must be answered at once
+        STUB.body = "{\"categories\":[\"FOOD_CAFES\"],\"facets\":[],\"daypart\":null}";
+        understand(newAccount(), "quiet cafe").andExpect(status().isOk());
+        assertThat(STUB.received).as("no breaker: the second person's call reached the service").hasSize(1);
+    }
+
+    @Test
     void aServiceWithoutAProviderKey_isOff_andDoesNotOpenTheBreaker() throws Exception {
         STUB.status = 503;
         STUB.body = "{\"error\":\"off\"}";

@@ -29,4 +29,4 @@ E1–E30 in `PHASE13E_PLAN.md`, deviations 13E-D1–D10).
 
 **17G-3 (optional Explore understanding):** `understand.py` + route `/v1/understand` + `data/explore-vocabulary-v1.tsv`; the ONLY Python file
 that may use `urllib`/`ssl`, and the only place that names the provider's address or header; key env `IRL_UNDERSTANDING_API_KEY` (read in
-`server.py`, never anywhere else). The standard-library-only rule stands (no SDK). See the README section and `docs/PHASE17G3.md`.
+`server.py`, never anywhere else). Provider = adapter (Groq default, Anthropic second); key variables are read only by `from_environment()`. The standard-library-only rule stands (no SDK). See the README section and `docs/PHASE17G3.md`.

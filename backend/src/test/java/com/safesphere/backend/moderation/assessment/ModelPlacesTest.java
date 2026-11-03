@@ -103,7 +103,7 @@ class ModelPlacesTest {
      */
     @Test
     void onlyUnderstandPy_namesTheProviderAndItsKey() throws IOException {
-        Pattern provider = Pattern.compile("api\\.anthropic\\.com|x-api-key|IRL_UNDERSTANDING_API_KEY|ANTHROPIC_API_KEY",
+        Pattern provider = Pattern.compile("api\\.anthropic\\.com|api\\.groq\\.com|x-api-key|IRL_UNDERSTANDING_API_KEY|ANTHROPIC_API_KEY|GROQ_API_KEY|gsk_",
                 Pattern.CASE_INSENSITIVE);
         List<String> pythonHits = new ArrayList<>();
         try (Stream<Path> files = Files.walk(SERVICE)) {
@@ -113,10 +113,12 @@ class ModelPlacesTest {
                 if (provider.matcher(Files.readString(file, StandardCharsets.UTF_8)).find()) pythonHits.add(name);
             }
         }
-        // server.py reads the key's environment variable and hands it over; understand.py is the only caller of the provider.
-        assertThat(pythonHits).containsExactlyInAnyOrder("understand.py", "server.py");
+        // understand.py is the only caller of a provider and the only reader of the key variables (from_environment); the
+        // smoke tool (run by the key's owner) names the variable in its messages only. server.py names nothing.
+        assertThat(pythonHits).containsExactlyInAnyOrder("understand.py", "smoke_understand.py");
         String server = Files.readString(SERVICE.resolve(Path.of("kurinji_moderation", "server.py")), StandardCharsets.UTF_8);
-        assertThat(server).doesNotContain("api.anthropic.com").doesNotContain("x-api-key").doesNotContain("urllib");
+        assertThat(server).doesNotContain("api.anthropic.com").doesNotContain("api.groq.com").doesNotContain("x-api-key")
+                .doesNotContain("urllib").doesNotContain("API_KEY");
 
         List<String> elsewhere = new ArrayList<>();
         for (Path root : List.of(MAIN, Path.of("..", "android", "app", "src", "main"))) {

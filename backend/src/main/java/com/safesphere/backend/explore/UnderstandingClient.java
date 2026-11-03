@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
 public class UnderstandingClient {
 
     /** What a call came to. */
-    public sealed interface Outcome permits Understood, Off, Unavailable {
+    public sealed interface Outcome permits Understood, Off, Unavailable, Unusable {
     }
 
     /** The chips. [daypart] is null when none was understood. Lists hold closed-list codes only. */
@@ -42,8 +42,15 @@ public class UnderstandingClient {
     public record Off() implements Outcome {
     }
 
-    /** The service could not give a usable answer in time (the caller opens its breaker). */
+    /** The service (or the provider behind it) is failing or did not answer in time: the caller opens its breaker. */
     public record Unavailable() implements Outcome {
+    }
+
+    /**
+     * THIS request got no usable answer (a refusal, a cut-off or malformed reply, a provider 400 for this input): one odd
+     * sentence says nothing about the provider, so the caller must NOT open its breaker for everybody. The app still falls back.
+     */
+    public record Unusable() implements Outcome {
     }
 
     static final int MAX_CATEGORIES = 2;
@@ -73,6 +80,7 @@ public class UnderstandingClient {
                     .POST(HttpRequest.BodyPublishers.ofByteArray(body)).build();
             HttpResponse<byte[]> response = http.send(request, HttpResponse.BodyHandlers.ofByteArray());
             if (response.statusCode() == 503 && isOff(response.body())) return new Off();
+            if (response.statusCode() == 422) return new Unusable();
             if (response.statusCode() != 200) {
                 log.warn("Understanding service answered {}; the standard understanding is used", response.statusCode());
                 return new Unavailable();

@@ -419,7 +419,7 @@ class Phase17G3SmartUnderstandingTest {
         assertFalse("the 'stay on this phone' line is replaced while it is on", text("explore_helper_smart").contains("stay on this phone"))
         listOf("explore_smart_title", "explore_smart_summary", "explore_smart_dialog_message", "explore_helper_smart",
             "explore_understood_smart", "explore_understood_standard").forEach {
-            assertFalse(it, Regex("anthropic|claude|openai", RegexOption.IGNORE_CASE).containsMatchIn(text(it)))
+            assertFalse(it, Regex("anthropic|claude|groq|openai", RegexOption.IGNORE_CASE).containsMatchIn(text(it)))
         }
         assertEquals("Standard understanding was used.", text("explore_understood_standard"))
     }

@@ -2,7 +2,8 @@
 
   POST /v1/assess  {"kind": "POST"|"COMMENT", "text": "..."} with header X-Moderation-Key -> evidence (never a decision)
   POST /v1/understand {"text": "..."} (17G-3, optional) -> {"categories": [...], "facets": [...], "daypart": ...|null}
-       503 {"error": "off"} without a provider key; 502 {"error": "unavailable"} when the provider could not answer
+       503 {"error": "off"} without a provider key; 502 {"error": "unavailable"} when the provider is failing;
+       422 {"error": "unusable"} when THIS request got no usable answer (refused, cut off, malformed, or we are busy)
   GET  /v1/health  -> {"status": "UP", "versions": {...}, "understanding": "UP"|"OFF"}
 
 It never logs a text, a header or a body: only the method, the path, the status and the time taken. It binds to
@@ -20,7 +21,7 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from .service import Assessor
-from .understand import DEFAULT_MODEL, Understander, Unavailable
+from .understand import Unavailable, from_environment
 
 MAX_BODY = 32 * 1024
 
@@ -67,8 +68,14 @@ def make_handler(assessor, key, understander=None):
                 self._done(400, {"error": "shape"}, started)
                 return
             except Unavailable as e:
-                sys.stderr.write(f"understanding unavailable: {e.reason}\n")   # a category, never a text or a key
-                self._done(502, {"error": "unavailable"}, started)
+                detail = f" ({e.detail})" if e.detail else ""   # the provider's own short error code, never a text or a key
+                sys.stderr.write(f"understanding unavailable: {e.reason}{detail}\n")
+                # 422: THIS request got no usable answer (the backend must not open its breaker for it);
+                # 502: the provider is failing (the backend may).
+                if e.per_request:
+                    self._done(422, {"error": "unusable"}, started)
+                else:
+                    self._done(502, {"error": "unavailable"}, started)
                 return
             self._done(200, result, started)
 
@@ -119,15 +126,14 @@ def main():
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8091)
     parser.add_argument("--model", default=None, help="an SSLIN1 model file (none ships in 13E)")
-    parser.add_argument("--understanding-model", default=DEFAULT_MODEL,
-                        help="the model for the optional Explore understanding (17G-3)")
     args = parser.parse_args()
-    # The provider key has its OWN name on purpose: a general ANTHROPIC_API_KEY that happens to be set on this PC (for
-    # another tool) must never start spending money here. Without it the understanding route answers "off".
-    understander = Understander(os.environ.get("IRL_UNDERSTANDING_API_KEY", ""), model=args.understanding_model)
+    # The optional Explore understanding (17G-3) is configured ONLY by its own environment variables (see understand.py):
+    # a general key that happens to be set on this PC for another tool never starts spending money here. Without a key the
+    # understanding route answers "off".
+    understander = from_environment()
     server = serve(args.host, args.port, os.environ.get("MODERATION_SERVICE_KEY", ""), args.model, understander)
     sys.stderr.write(f"moderation service on {args.host}:{args.port}; "
-                     f"understanding {'on' if understander.enabled else 'off (no key)'}\n")
+                     f"understanding {('on via ' + understander.provider) if understander.enabled else 'off (no key)'}\n")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -87,7 +87,7 @@ Phases 1–3 are the foundation.
 | IRL | Rebrand, icon "the Meet", opening screen | implemented, compiled, tested, emulator; local commit | physical phone, TalkBack |
 | 17F | Emergency: opt-in shake SOS (D-4; voice stays unavailable), audio in an SOS after advance consent, "last known" position, one-step Nearby report, readable radar, Safe Walk line; no migration | implemented, compiled, tested, emulator (`docs/PHASE17F.md`) | shake tuning + screen-off sensor delivery on a real phone (the A23 sensor does not wake the CPU), TalkBack |
 | 17G-1 | Deterministic Explore: closed-list tags on experiences (V29), the typed words understood ON THE PHONE (word list EN/Tamil/Tanglish), a structured query, a deterministic server engine; no AI, no cost (`docs/PHASE17G.md`, plan `PHASE17G_PLAN.md`) | implemented, compiled, tested, live MySQL 31/31, emulator | physical phone, TalkBack, Tamil word-list review |
-| 17G-3 | Optional Claude understanding of a typed Explore request: OFF by default, key only in the Python service, our own caps + breaker, per-account consent, any failure → the 17G-1 word list (`docs/PHASE17G3.md`) | implemented, compiled, tested against local stubs | the REAL provider (no key used), emulator/phone, TalkBack |
+| 17G-3 | Optional AI understanding (Groq free tier first) of a typed Explore request: OFF by default, key only in the Python service, our own caps + breaker, per-account consent, any failure → the 17G-1 word list (`docs/PHASE17G3.md`) | implemented, compiled, tested, manually verified live with Groq + emulator | physical phone, TalkBack, live 422 path |
 | 17G-2, 17H–17J | "I went" + ratings (U5); brand; regression | planned | — |
 
 Next migration **V30**. Each phase or sub-phase needs its own plan and the user's approval first.
@@ -103,7 +103,7 @@ humans restrict people"; they run only in the Python moderation service and as a
 (`ModelPlacesTest` pins exactly those places). No learned model acts until gates L1–L3 (`PHASE13E_PLAN.md` E2) and the
 user's decision (`app.moderation.ai.model-mode`). Promoting rules-2 (`app.intelligence.rules-2-mode=ACTIVE`) is the
 user's decision, never a default. Phase 9 is frozen; nothing that decides what people see may read a 9B counter
-(`EvaluationIsolationTest`). **D-2:** AI Explore may use the Claude API with request text + candidate place facts only;
+(`EvaluationIsolationTest`). **D-2:** AI Explore may use an external model API (Groq free tier first, Claude possible; 17G-3) with request text + candidate place facts only;
 the deterministic engine must work without it.
 
 ---

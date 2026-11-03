@@ -1,10 +1,11 @@
 # Handoff: Phase 17G-3 optional Claude understanding (2026-11-03) — uncommitted in the working tree, NOT pushed
 
-**Implemented, compiled, tested against LOCAL STUBS only** (`docs/PHASE17G3.md`). OFF by default at every layer; Explore (17G-1) is unchanged
-when off. Python service `/v1/understand` (`understand.py`, stdlib only, key only in `IRL_UNDERSTANDING_API_KEY`), backend package `explore`
+**Implemented, compiled, tested and MANUALLY VERIFIED LIVE with Groq on the emulator** (`docs/PHASE17G3.md` section 8). OFF by default at every layer; Explore (17G-1) is unchanged
+when off. Python service `/v1/understand` (`understand.py`, stdlib only, provider adapter: **Groq free tier first**, Anthropic second; key only in `IRL_UNDERSTANDING_API_KEY`; smoke test `tools/smoke_understand.py`), backend package `explore`
 (`UnderstandingClient/Gate/Service/Controller`, caps 20 / 300 per UTC day, 10-minute breaker, mode `EXPLORE_UNDERSTANDING_MODE`), Android
 switch + question on the Explore screen (per-account consent, fallback "Standard understanding was used."). No migration (next stays **V30**).
-- **Results:** Python **66** OK (+28), backend **856 / 0** (+38), Android **950 / 0** (+23), lint **0 / 104**.
+- **Results:** Python **83** OK, backend **858 / 0**, Android **950 / 0**, lint **0 / 104**. Live: the real model answered English/Tanglish/Tamil in about 1 s and
+  was stable after the prompt + `temperature: 0` change; the app's consent, smart search, hand edit, repeat and cap fallback were walked through on the emulator.
 - **NOT VERIFIED:** the REAL provider (no funded key; the request shape follows the API reference but was never sent), the emulator and the A23 for
   this sub-phase, TalkBack. `PHASE17G3.md` §6 is the checklist; item 1 (one real request) is the important one.
 - **Deliberate changes to guard tests:** `ModelPlacesTest` (third pinned client, `urllib`/`ssl`, provider only in `understand.py`),

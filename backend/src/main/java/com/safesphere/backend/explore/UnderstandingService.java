@@ -5,6 +5,7 @@ import com.safesphere.backend.config.ExploreUnderstandingProperties;
 import com.safesphere.backend.explore.UnderstandingClient.Off;
 import com.safesphere.backend.explore.UnderstandingClient.Outcome;
 import com.safesphere.backend.explore.UnderstandingClient.Understood;
+import com.safesphere.backend.explore.UnderstandingClient.Unusable;
 import com.safesphere.backend.explore.UnderstandingDtos.UnderstandResponse;
 import com.safesphere.backend.explore.UnderstandingDtos.UnderstandingStatus;
 import java.time.Clock;
@@ -69,6 +70,9 @@ public class UnderstandingService {
             return new UnderstandResponse(understood.categories(), understood.facets(), understood.daypart());
         }
         if (outcome instanceof Off) throw UnderstandingRefusedException.off();
+        // This request alone got no usable answer: the call counts against the caps (it was made) but says nothing about the
+        // provider, so it must not open the breaker for everybody.
+        if (outcome instanceof Unusable) throw UnderstandingRefusedException.unavailable();
         gate.failed();
         throw UnderstandingRefusedException.unavailable();
     }

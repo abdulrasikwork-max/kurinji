@@ -444,7 +444,7 @@ class Phase17GExploreTest {
     fun `no part of the app names an AI service or holds a key for one`() {
         val offenders = File("src/main/java").walkTopDown().filter { it.extension == "kt" }
             // ("CLAUDE.md" in a comment names the project's notes file, not a service.)
-            .filter { Regex("anthropic|claude(?!\\.md)|api\\.openai|x-api-key|ANTHROPIC_API_KEY", RegexOption.IGNORE_CASE).containsMatchIn(it.readText(Charsets.UTF_8)) }
+            .filter { Regex("anthropic|claude(?!\\.md)|groq|gsk_|api\\.openai|x-api-key|ANTHROPIC_API_KEY", RegexOption.IGNORE_CASE).containsMatchIn(it.readText(Charsets.UTF_8)) }
             .map { it.name }.toList()
         assertEquals(emptyList<String>(), offenders)
     }

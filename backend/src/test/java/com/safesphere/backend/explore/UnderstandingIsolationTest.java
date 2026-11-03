@@ -65,7 +65,7 @@ class UnderstandingIsolationTest {
     @Test
     void onlyTheClient_callsOut_andNoFileHoldsAProviderKeyOrAddress() throws IOException {
         Pattern outbound = Pattern.compile("HttpClient|RestTemplate|WebClient|java\\.net\\.http");
-        Pattern provider = Pattern.compile("(?i)anthropic|x-api-key|api[-_ ]?key|sk-ant|ANTHROPIC|IRL_UNDERSTANDING");
+        Pattern provider = Pattern.compile("(?i)anthropic|groq|gsk_|x-api-key|api[-_ ]?key|sk-ant|IRL_UNDERSTANDING");
         for (Path file : javaFiles(EXPLORE)) {
             String code = code(file);
             boolean client = file.getFileName().toString().equals("UnderstandingClient.java");

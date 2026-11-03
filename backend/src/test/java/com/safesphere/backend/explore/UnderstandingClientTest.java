@@ -9,6 +9,7 @@ import com.safesphere.backend.explore.UnderstandingClient.Off;
 import com.safesphere.backend.explore.UnderstandingClient.Outcome;
 import com.safesphere.backend.explore.UnderstandingClient.Unavailable;
 import com.safesphere.backend.explore.UnderstandingClient.Understood;
+import com.safesphere.backend.explore.UnderstandingClient.Unusable;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
@@ -94,6 +95,16 @@ class UnderstandingClientTest {
             stub.body = code == 503 ? "{\"error\":\"busy\"}" : "{\"error\":\"unavailable\"}";
             assertThat(client().understand("x")).as("status " + code).isInstanceOf(Unavailable.class);
         }
+    }
+
+    @Test
+    void a422_meansThisRequestGotNoUsableAnswer_notThatTheProviderIsFailing() {
+        stub.status = 422;
+        stub.body = "{\"error\":\"unusable\"}";
+        assertThat(client().understand("x")).isInstanceOf(Unusable.class);
+        stub.status = 502;
+        stub.body = "{\"error\":\"unavailable\"}";
+        assertThat(client().understand("x")).as("a failing provider is a different thing").isInstanceOf(Unavailable.class);
     }
 
     @Test

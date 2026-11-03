@@ -121,7 +121,7 @@ Loaded when working on files under `backend/`. Conventions and invariants also s
   `{categories ≤ 2, facets ≤ 4, daypart?}` (closed-list codes only) or **503** with code `UNDERSTANDING_OFF` / `UNDERSTANDING_UNAVAILABLE`;
   `GET /api/explore/understanding` → `{available}`. `UnderstandingService` (mode `app.explore.understanding.mode` OFF by default, text
   check identical to the service's) → `UnderstandingGate` (our own per-person 20 / global 300 caps per UTC day + a 10-minute circuit
-  breaker after any provider failure, in memory) → `UnderstandingClient` (java.net.http, the ONLY caller; talks to our internal Python
+  breaker after any provider failure, in memory) → `UnderstandingClient` (java.net.http, the ONLY caller; outcomes Understood / Off / Unavailable (breaker may open) / Unusable (422: this request only, NO breaker); talks to our internal Python
   service with `X-Moderation-Key`, never to a provider; reads the answer fail-closed against `Interest` / `ExploreFacets` / `Daypart`).
   The provider key never exists in the JVM. `UnderstandingIsolationTest` (island: imports only closed lists + plumbing, stores and
   schedules nothing, no provider names), `ExploreVocabularyParityTest`, `ModelPlacesTest` (third pinned client; provider address/key only

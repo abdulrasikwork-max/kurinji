@@ -1445,4 +1445,4 @@ A compact list of every phase's endpoints and config keys; the sections above ha
   internal service holds a provider key; remembered 2 minutes). The words are never stored or logged. Config
   `app.explore.understanding.*` (mode OFF [env `EXPLORE_UNDERSTANDING_MODE`], url, key = env `MODERATION_SERVICE_KEY`, connect-timeout 300ms,
   timeout 9s, user-daily-cap 20, global-daily-cap 300, breaker-pause 10m, status-cache 2m). Internal service (not an app endpoint):
-  `POST /v1/understand`, `GET /v1/health` gains `"understanding": "UP"|"OFF"`; provider key env `IRL_UNDERSTANDING_API_KEY` (service only).
+  `POST /v1/understand` (200 chips; 503 off; 502 provider failure; **422 this request got no usable answer**, for which the backend does not open its breaker), `GET /v1/health` gains `"understanding": "UP"|"OFF"`; provider key env `IRL_UNDERSTANDING_API_KEY` (service only), `IRL_UNDERSTANDING_PROVIDER` (`groq` default | `anthropic`), `IRL_UNDERSTANDING_MODEL`.
