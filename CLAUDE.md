@@ -87,7 +87,8 @@ Phases 1–3 are the foundation.
 | IRL | Rebrand, icon "the Meet", opening screen | implemented, compiled, tested, emulator; local commit | physical phone, TalkBack |
 | 17F | Emergency: opt-in shake SOS (D-4; voice stays unavailable), audio in an SOS after advance consent, "last known" position, one-step Nearby report, readable radar, Safe Walk line; no migration | implemented, compiled, tested, emulator (`docs/PHASE17F.md`) | shake tuning + screen-off sensor delivery on a real phone (the A23 sensor does not wake the CPU), TalkBack |
 | 17G-1 | Deterministic Explore: closed-list tags on experiences (V29), the typed words understood ON THE PHONE (word list EN/Tamil/Tanglish), a structured query, a deterministic server engine; no AI, no cost (`docs/PHASE17G.md`, plan `PHASE17G_PLAN.md`) | implemented, compiled, tested, live MySQL 31/31, emulator | physical phone, TalkBack, Tamil word-list review |
-| 17G-2/3, 17H–17J | "I went" + ratings (U5), optional Claude understanding (never required); brand; regression | planned | — |
+| 17G-3 | Optional Claude understanding of a typed Explore request: OFF by default, key only in the Python service, our own caps + breaker, per-account consent, any failure → the 17G-1 word list (`docs/PHASE17G3.md`) | implemented, compiled, tested against local stubs | the REAL provider (no key used), emulator/phone, TalkBack |
+| 17G-2, 17H–17J | "I went" + ratings (U5); brand; regression | planned | — |
 
 Next migration **V30**. Each phase or sub-phase needs its own plan and the user's approval first.
 

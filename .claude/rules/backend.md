@@ -117,6 +117,15 @@ Loaded when working on files under `backend/`. Conventions and invariants also s
   `CommunityService.eraseContributor`; delete the row, or anonymise it if the audit log names it as decider);
   `AccountEraserCoverageTest` compares the eraser with every `REFERENCES users` in the migrations.
 - **Explore (Phase 17G-1, V29, `docs/PHASE17G.md`):** `ExploreFacets` = the ONE tag list (`explore/explore-facets-v1.tsv`, 13 codes, byte-identical in the app, V29's CHECK list; `ExploreFacetsParityTest`); `PostFacet` + `PostFacetRepository` (tags read in batch in `PostService.respond`, deleted explicitly with the post and by `AccountEraser`: the test database has no cascade; create/edit `facets`: null keeps, [] clears, never on an Ask); pure `ExplorePolicy` (requested = categories as ONE + tags + daypart; order: matches, newest readable experience, name; max 20; no popularity input) + `ExploreService` (candidates = `PostRepository.exploreCandidates`: Everyone EXPERIENCE + EXACT place in the city, not the viewer's own, visible, newest 400 by `visible_from`, then `Relationships.forEdition`; tags/times only from those posts) + `ExploreController` `POST /api/explore/search` (structured body, `SocialLimits.explore`). `ExploreIsolationTest` scans the code (comments stripped): no safety/community/intelligence/evaluation/moderation reference, no outbound call, no count or rating or createdAt. Tests: `ExplorePolicyTest`, `Phase17gExploreApiTest`.
+- **Optional smart understanding (Phase 17G-3, `docs/PHASE17G3.md`, package `explore`, NOT `social`):** `POST /api/explore/understand {text ≤ 200}` →
+  `{categories ≤ 2, facets ≤ 4, daypart?}` (closed-list codes only) or **503** with code `UNDERSTANDING_OFF` / `UNDERSTANDING_UNAVAILABLE`;
+  `GET /api/explore/understanding` → `{available}`. `UnderstandingService` (mode `app.explore.understanding.mode` OFF by default, text
+  check identical to the service's) → `UnderstandingGate` (our own per-person 20 / global 300 caps per UTC day + a 10-minute circuit
+  breaker after any provider failure, in memory) → `UnderstandingClient` (java.net.http, the ONLY caller; talks to our internal Python
+  service with `X-Moderation-Key`, never to a provider; reads the answer fail-closed against `Interest` / `ExploreFacets` / `Daypart`).
+  The provider key never exists in the JVM. `UnderstandingIsolationTest` (island: imports only closed lists + plumbing, stores and
+  schedules nothing, no provider names), `ExploreVocabularyParityTest`, `ModelPlacesTest` (third pinned client; provider address/key only
+  in `understand.py`).
 - **Social redesign (Phase 17E, V28, `docs/PHASE17E.md`):** `CityCatalog` = the ONE city list (`cities-v1.tsv`; codes
   are Strings; `PlaceCityBackfill` gives existing places a city at start-up, idempotent); `PostMarkService` (reaction on
   others' Experiences, save on others' Experiences/Asks; writes outside a transaction so a lost unique race just finds

@@ -50,37 +50,116 @@ class ModelPlacesTest {
 
     /**
      * Every outbound HTTP call of the backend is pinned here. Phase 17B added exactly one more: the SMS provider
-     * adapter (it delivers verification codes; it never talks to the moderation service and never logs).
+     * adapter (it delivers verification codes; it never talks to the moderation service and never logs). Phase 17G-3 added
+     * the third and last: the optional Explore understanding client. It talks ONLY to our own internal service (the same
+     * Python process as the moderation check), never to a provider; the provider key and address exist only in
+     * moderation-service/kurinji_moderation/understand.py (see onlyUnderstandPy_namesTheProvider...).
      */
     @Test
-    void onlyTheTwoPinnedClients_makeOutboundCalls() throws IOException {
-        Pattern outbound = Pattern.compile("java\\.net\\.http|HttpClient|RestTemplate|WebClient|\"/v1/assess");
+    void onlyThePinnedClients_makeOutboundCalls() throws IOException {
+        Pattern outbound = Pattern.compile("java\\.net\\.http|HttpClient|RestTemplate|WebClient|\"/v1/assess|\"/v1/understand");
         List<String> found = new ArrayList<>();
         try (Stream<Path> files = Files.walk(MAIN.resolve("java"))) {
             for (Path file : files.filter(p -> p.toString().endsWith(".java")).toList()) {
                 if (outbound.matcher(Files.readString(file)).find()) found.add(file.getFileName().toString());
             }
         }
-        assertThat(found).containsExactlyInAnyOrder("ModerationServiceClient.java", "Fast2SmsOtpSender.java");
+        assertThat(found).containsExactlyInAnyOrder("ModerationServiceClient.java", "Fast2SmsOtpSender.java",
+                "UnderstandingClient.java");
         String sms = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "auth", "phone",
                 "Fast2SmsOtpSender.java")));
-        assertThat(sms).doesNotContain("/v1/assess").doesNotContain("Logger").doesNotContain("log.");
+        assertThat(sms).doesNotContain("/v1/assess").doesNotContain("/v1/understand").doesNotContain("Logger")
+                .doesNotContain("log.");
+        String moderation = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "moderation",
+                "assessment", "ModerationServiceClient.java")));
+        String understanding = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "explore",
+                "UnderstandingClient.java")));
+        assertThat(moderation).as("each client calls only its own route").doesNotContain("/v1/understand");
+        assertThat(understanding).as("each client calls only its own route").doesNotContain("/v1/assess");
     }
 
     @Test
-    void theClient_neverLogsTheTextOrTheKey() throws IOException {
-        String client = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "moderation",
-                "assessment", "ModerationServiceClient.java")));
-        Matcher logs = Pattern.compile("log\\.(warn|info|debug|error|trace)\\(([^;]*);").matcher(client);
-        while (logs.find()) {
-            assertThat(logs.group(2)).doesNotContain("text").doesNotContain("key()").doesNotContain("body");
+    void theClients_neverLogTheTextOrTheKey() throws IOException {
+        for (Path file : List.of(
+                MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "moderation", "assessment",
+                        "ModerationServiceClient.java")),
+                MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "explore", "UnderstandingClient.java")))) {
+            String client = Files.readString(file);
+            Matcher logs = Pattern.compile("log\\.(warn|info|debug|error|trace)\\(([^;]*);").matcher(client);
+            int seen = 0;
+            while (logs.find()) {
+                seen++;
+                assertThat(logs.group(2)).as(file.getFileName().toString()).doesNotContain("text").doesNotContain("key()")
+                        .doesNotContain("body");
+            }
+            assertThat(seen).as("the client does log its failures, by kind").isPositive();
         }
+    }
+
+    /**
+     * Phase 17G-3 (decision D-2): the provider's address, header and key belong to ONE file, the Python service's
+     * understand.py. Neither the Java backend nor the app may name the provider or hold its key; no other Python file may open
+     * a network connection of its own.
+     */
+    @Test
+    void onlyUnderstandPy_namesTheProviderAndItsKey() throws IOException {
+        Pattern provider = Pattern.compile("api\\.anthropic\\.com|x-api-key|IRL_UNDERSTANDING_API_KEY|ANTHROPIC_API_KEY",
+                Pattern.CASE_INSENSITIVE);
+        List<String> pythonHits = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(SERVICE)) {
+            for (Path file : files.filter(p -> p.toString().endsWith(".py")).toList()) {
+                String name = file.getFileName().toString();
+                if (name.equals("test_understand.py")) continue;   // the stub-based tests name the header they check
+                if (provider.matcher(Files.readString(file, StandardCharsets.UTF_8)).find()) pythonHits.add(name);
+            }
+        }
+        // server.py reads the key's environment variable and hands it over; understand.py is the only caller of the provider.
+        assertThat(pythonHits).containsExactlyInAnyOrder("understand.py", "server.py");
+        String server = Files.readString(SERVICE.resolve(Path.of("kurinji_moderation", "server.py")), StandardCharsets.UTF_8);
+        assertThat(server).doesNotContain("api.anthropic.com").doesNotContain("x-api-key").doesNotContain("urllib");
+
+        List<String> elsewhere = new ArrayList<>();
+        for (Path root : List.of(MAIN, Path.of("..", "android", "app", "src", "main"))) {
+            if (!Files.isDirectory(root)) continue;   // the app folder is absent when only the backend is checked out
+            try (Stream<Path> files = Files.walk(root)) {
+                for (Path file : files.filter(Files::isRegularFile).filter(ModelPlacesTest::isSourceOrConfig).toList()) {
+                    if (provider.matcher(Files.readString(file, StandardCharsets.UTF_8)).find()) {
+                        elsewhere.add(file.toString().replace('\\', '/'));
+                    }
+                }
+            }
+        }
+        assertThat(elsewhere).as("the backend and the app never name the provider or hold its key").isEmpty();
+    }
+
+    /** Source and configuration text files (binary resources such as images and the hashed lexicon are skipped). */
+    private static boolean isSourceOrConfig(Path file) {
+        String name = file.toString().toLowerCase(Locale.ROOT);
+        return name.endsWith(".java") || name.endsWith(".kt") || name.endsWith(".xml") || name.endsWith(".properties")
+                || name.endsWith(".tsv") || name.endsWith(".sql") || name.endsWith(".json");
+    }
+
+    @Test
+    void understandPy_isTheOnlyPythonFileThatOpensConnections() throws IOException {
+        List<String> networked = new ArrayList<>();
+        Pattern net = Pattern.compile("^\\s*(?:from|import)\\s+(urllib|ssl|socket)\\b", Pattern.MULTILINE);
+        try (Stream<Path> files = Files.walk(SERVICE)) {
+            for (Path file : files.filter(p -> p.toString().endsWith(".py")).toList()) {
+                String name = file.getFileName().toString();
+                // tests (and tools/benchmark.py) start and call their own local server on 127.0.0.1 with http.client: not a reach-out
+                if (name.startsWith("test_")) continue;
+                if (net.matcher(Files.readString(file, StandardCharsets.UTF_8)).find()) networked.add(name);
+            }
+        }
+        assertThat(networked).containsExactly("understand.py");
     }
 
     @Test
     void theService_usesOnlyThePythonStandardLibrary() throws IOException {
+        // 17G-3 added urllib and ssl for understand.py (the optional Explore understanding); no other file may import them
+        // (understandPy_isTheOnlyPythonFileThatOpensConnections).
         Set<String> stdlib = Set.of("argparse", "hashlib", "hmac", "http", "json", "math", "os", "random", "re", "sys",
-                "threading", "time", "unicodedata", "io", "unittest", "contextlib", "shutil", "statistics");
+                "threading", "time", "unicodedata", "io", "unittest", "contextlib", "shutil", "statistics", "urllib", "ssl");
         Pattern imports = Pattern.compile("^\\s*(?:from\\s+([\\w.]+)\\s+import|import\\s+([\\w.]+))", Pattern.MULTILINE);
         List<String> outside = new ArrayList<>();
         try (Stream<Path> files = Files.walk(SERVICE)) {

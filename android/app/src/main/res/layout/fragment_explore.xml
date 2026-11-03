@@ -31,11 +31,40 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
+            android:id="@+id/exploreHelper"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_xs"
             android:text="@string/explore_helper"
             android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <!-- Phase 17G-3: the OPTIONAL smart understanding. Shown only when the server offers it; off until this account agrees. -->
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/exploreSmartSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/explore_smart_title"
+            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/exploreSmartSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/explore_smart_summary"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/exploreSmartNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:accessibilityLiveRegion="polite"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/exploreUnused"

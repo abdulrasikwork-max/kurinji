@@ -250,6 +250,11 @@ class AppContainer(context: Context) {
             retrofit.create(com.safesphere.app.feature.social.data.remote.ExploreApi::class.java), apiCallHandler)
     }
 
+    /** Phase 17G-3: whether THIS account agreed to the optional smart understanding (off by default; per account). */
+    val smartUnderstanding: com.safesphere.app.feature.social.domain.SmartUnderstandingChoice by lazy {
+        com.safesphere.app.feature.social.domain.SmartUnderstandingChoice(viewerPreferences) { currentSession.value?.user?.id }
+    }
+
     // ---- Phase 13D: reports, own standing and appeals; moderators' content queue (nothing stored) ---------------
 
     val reportRepository: ReportRepository by lazy {

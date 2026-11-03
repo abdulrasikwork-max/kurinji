@@ -1438,3 +1438,11 @@ A compact list of every phase's endpoints and config keys; the sections above ha
   in the answer. Posts accept and answer `facets` (Explore tags, 13 closed codes in `explore/explore-facets-v1.tsv`, an
   Experience only, ≤ 4, no repeats): create `facets`, edit `null` = keep / `[]` = remove / a list = replace, an Ask with tags
   `400 "Tags are for experiences, not questions"`; the answer lists them in the tag list's order (empty list when none).
+- Phase 17G-3 (`docs/PHASE17G3.md`, optional, OFF by default): `POST /api/explore/understand {text ≤ 200 chars}` → `200 {categories[≤2],
+  facets[≤4], daypart|null}` (closed-list codes only, validated), `400` for blank / over-long / control-character text, `401`, or
+  `503` with `code` `UNDERSTANDING_OFF` (mode off or no provider key) / `UNDERSTANDING_UNAVAILABLE` (our caps, the breaker, a
+  timeout or any provider problem; the message never says which). `GET /api/explore/understanding` → `200 {available}` (mode ON and the
+  internal service holds a provider key; remembered 2 minutes). The words are never stored or logged. Config
+  `app.explore.understanding.*` (mode OFF [env `EXPLORE_UNDERSTANDING_MODE`], url, key = env `MODERATION_SERVICE_KEY`, connect-timeout 300ms,
+  timeout 9s, user-daily-cap 20, global-daily-cap 300, breaker-pause 10m, status-cache 2m). Internal service (not an app endpoint):
+  `POST /v1/understand`, `GET /v1/health` gains `"understanding": "UP"|"OFF"`; provider key env `IRL_UNDERSTANDING_API_KEY` (service only).

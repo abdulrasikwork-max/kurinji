@@ -49,8 +49,30 @@ data class ExploreHit(
 /** At most 20 places, best match first; the list always ends. Held in memory only (nothing about others is stored). */
 data class ExploreResult(val city: City?, val requested: Int, val hits: List<ExploreHit>)
 
+/**
+ * Phase 17G-3: what the OPTIONAL smart understanding made of the typed words: the same closed-list chips the phone's word list
+ * produces (never a place, a score or an explanation). A daypart of null = none understood. Empty = nothing understood.
+ */
+data class Understanding(
+    val categories: List<Interest> = emptyList(),
+    val facets: List<String> = emptyList(),
+    val daypart: Daypart? = null
+) {
+    val isEmpty: Boolean get() = categories.isEmpty() && facets.isEmpty() && daypart == null
+}
+
 /** Phase 17G-1: Explore on the backend. No history, no cache: each search is one call, kept in memory by the screen. */
 interface ExploreRepository {
 
     suspend fun search(query: ExploreQuery): ApiResult<ExploreResult>
+
+    /**
+     * Phase 17G-3: ask the server for the OPTIONAL smart understanding of the typed [text] (it reaches an external AI service
+     * through IRL's server; only called after the person agreed). ANY failure is a plain Failure: the screen then uses the
+     * phone's own word list and the search still works. Text that must not be sent never leaves the phone.
+     */
+    suspend fun understand(text: String): ApiResult<Understanding>
+
+    /** Phase 17G-3: whether this server offers smart understanding at all (false on any doubt, offline included). */
+    suspend fun understandingAvailable(): Boolean
 }

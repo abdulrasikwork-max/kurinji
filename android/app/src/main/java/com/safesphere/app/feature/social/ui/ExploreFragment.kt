@@ -9,6 +9,7 @@ import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.ui.ViewBindingFragment
@@ -63,11 +64,43 @@ class ExploreFragment : ViewBindingFragment<FragmentExploreBinding>(FragmentExpl
         }
         binding.exploreSearchButton.setOnClickListener { viewModel.search() }
         binding.exploreClearButton.setOnClickListener { viewModel.onClear() }
+        // Phase 17G-3: turning smart understanding ON asks the question first; turning it OFF needs no question.
+        binding.exploreSmartSwitch.setOnCheckedChangeListener { button, on ->
+            if (!button.isPressed) return@setOnCheckedChangeListener
+            if (on) {
+                button.isChecked = false   // stays off until the person confirms
+                confirmSmart()
+            } else {
+                if (viewModel.uiState.value.smartOn) viewModel.onSmartOff()   // not when we just reset it ourselves
+            }
+        }
         collectWhenStarted(viewModel.uiState, ::render)
+    }
+
+    /** The one honest question before any typed word can leave the phone for smart understanding. */
+    private fun confirmSmart() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.explore_smart_dialog_title)
+            .setMessage(R.string.explore_smart_dialog_message)
+            .setPositiveButton(R.string.explore_smart_dialog_on) { _, _ -> viewModel.onSmartConfirmed() }
+            .setNegativeButton(R.string.explore_smart_dialog_cancel, null)
+            .show()
     }
 
     private fun render(state: ExploreUiState) {
         if (view == null) return
+        // Phase 17G-3: the switch exists only when the server offers it; the helper tells the truth about where the words go.
+        binding.exploreSmartSwitch.isVisible = state.smartAvailable
+        binding.exploreSmartSummary.isVisible = state.smartAvailable
+        if (binding.exploreSmartSwitch.isChecked != state.smartOn) binding.exploreSmartSwitch.isChecked = state.smartOn
+        binding.exploreHelper.setText(if (state.smartOn && state.smartAvailable) R.string.explore_helper_smart else R.string.explore_helper)
+        val note = when (state.understoodBy) {
+            UnderstoodBy.SMART -> R.string.explore_understood_smart
+            UnderstoodBy.FALLBACK -> R.string.explore_understood_standard
+            UnderstoodBy.PHONE -> null
+        }
+        binding.exploreSmartNote.isVisible = note != null
+        if (note != null) binding.exploreSmartNote.setText(note)
         if (binding.exploreInput.text?.toString() != state.text) {
             rendering = true
             binding.exploreInput.setText(state.text)

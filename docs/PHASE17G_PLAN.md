@@ -1,7 +1,7 @@
 # Phase 17G plan — Explore (deterministic first), "I went" + ratings, optional Claude understanding
 
 Status: **17G-1 (deterministic Explore) IMPLEMENTED 2026-11-03: see `PHASE17G.md`** (approved by the user; V29 applied; backend 818 /
-Android 927 tests, live MySQL 31/31, emulator PASS; the A23 was not run). **17G-2 and 17G-3 are NOT started** and remain as planned
+Android 927 tests, live MySQL 31/31, emulator PASS; the A23 was not run). **17G-3 IMPLEMENTED 2026-11-03 (stub-verified only): see `PHASE17G3.md`. 17G-2 is NOT started** and remains as planned
 below. Two corrections found while building 17G-1 (the text below keeps the original wording): Explore reads **EXACT-place** posts only
 (an AREA post promises not to reveal its place), and the categories asked for count as **ONE** requirement
 (`requested` = (categories ? 1 : 0) + tags + (time of day ? 1 : 0)).

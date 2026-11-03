@@ -12,4 +12,13 @@ interface ViewerPreferences {
     val collapseStrongLanguage: Flow<Boolean>
 
     suspend fun setCollapseStrongLanguage(on: Boolean)
+
+    /**
+     * Phase 17G-3: the account (user id) that agreed, on this phone, to send its typed Explore words to the optional smart
+     * understanding; null = nobody. It is tied to one account on purpose: someone else signing in on this phone has NOT
+     * agreed, so [SmartUnderstandingChoice] never treats it as theirs.
+     */
+    val smartUnderstandingAccount: Flow<Long?>
+
+    suspend fun setSmartUnderstandingAccount(userId: Long?)
 }

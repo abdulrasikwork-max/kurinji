@@ -1865,6 +1865,16 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="explore_title">Explore</string>
     <string name="explore_hint">What are you looking for?</string>
     <string name="explore_helper">For example: a quiet cafe to study in the evening. Your words stay on this phone. Only the choices below are searched.</string>
+    <!-- Phase 17G-3: the optional smart understanding (off by default; the provider is not named in the app) -->
+    <string name="explore_helper_smart">For example: a quiet cafe to study in the evening. Smart understanding is on, so your words are sent when you search. Only the choices below are searched.</string>
+    <string name="explore_smart_title">Smart understanding (Preview)</string>
+    <string name="explore_smart_summary">Off unless you turn it on. When on, the words you type are sent to IRL\'s server and then to an external AI service, which turns them into the choices below. Searching works without it.</string>
+    <string name="explore_smart_dialog_title">Use smart understanding?</string>
+    <string name="explore_smart_dialog_message">When this is on, the words you type in Explore are sent to IRL\'s server and then to an external AI service, which turns them into the choices below.\n\nOnly the words are sent: no places, no location and no account details. IRL does not save them. The AI service has its own rules for what it receives.\n\nSearching still works without it, and you can turn it off at any time.</string>
+    <string name="explore_smart_dialog_on">Turn on</string>
+    <string name="explore_smart_dialog_cancel">Not now</string>
+    <string name="explore_understood_smart">Understood with smart understanding. You can change the choices.</string>
+    <string name="explore_understood_standard">Standard understanding was used.</string>
     <string name="explore_city_label">City: %1$s</string>
     <string name="explore_city_pick">Choose a city</string>
     <string name="explore_section_categories">Kind of place (up to 2)</string>

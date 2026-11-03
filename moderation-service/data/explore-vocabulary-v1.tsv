@@ -1,0 +1,32 @@
+# IRL Explore vocabulary v1 (Phase 17G-3): the CLOSED lists the optional "smart understanding" may answer with.
+# One line per entry: KIND, CODE, a short English description for the model. Read only by understand.py.
+# It is the whole of what the model is told about IRL: no place, no post, no person, no coordinate.
+# Parity: ExploreVocabularyParityTest (backend) compares these codes with the backend's category enum, the Explore
+# tag file and the day parts; a change here needs the same change there (and a new Android/word-list review).
+CATEGORY	FOOD_CAFES	food, restaurants, cafes, street food, tea and coffee, bakeries
+CATEGORY	NATURE_OUTDOORS	parks, beaches, gardens, hills, lakes, forests, walks outdoors
+CATEGORY	CULTURE_HERITAGE	temples, museums, monuments, art, history, festivals, traditional places
+CATEGORY	MUSIC_NIGHTLIFE	live music, concerts, pubs, clubs, evening entertainment
+CATEGORY	STUDY_WORK	places to study or work: libraries, co-working, quiet cafes with desks
+CATEGORY	DAY_TRIPS	places worth a day out of the city, short trips, getaways
+CATEGORY	ACTIVITIES_SPORT	sports, games, trekking, cycling, swimming, adventure activities
+CATEGORY	HOBBIES_MAKING	workshops, crafts, classes, photography, making things, clubs
+CATEGORY	CITY_LIFE	markets, shopping, everyday city places, neighbourhoods, transport hubs
+CATEGORY	HIDDEN_GEMS	lesser-known places, local secrets, unusual finds
+FACET	QUIET	calm, peaceful, not crowded, low noise
+FACET	LIVELY	busy, buzzing, energetic, social atmosphere
+FACET	BUDGET_FRIENDLY	cheap, affordable, good value
+FACET	GOOD_WITH_FRIENDS	suits a group of friends
+FACET	GOOD_ALONE	comfortable to visit on your own
+FACET	FAMILY_FRIENDLY	suits families and children
+FACET	OUTDOOR_SEATING	open-air seating, terrace, garden seating
+FACET	VEGETARIAN_OPTIONS	vegetarian or vegan food available
+FACET	EASY_TO_REACH	easy to get to, close to transport
+FACET	STEP_FREE_ACCESS	no steps; wheelchair, pram or walking-aid friendly
+FACET	OPEN_LATE	open late into the evening or night
+FACET	SCENIC	beautiful view or surroundings
+FACET	GOOD_FOR_WORK	good for working or studying with a laptop
+DAYPART	MORNING	early day, sunrise, breakfast time
+DAYPART	AFTERNOON	midday to late afternoon, lunch time
+DAYPART	EVENING	late afternoon to dusk, evening snacks, sunset
+DAYPART	NIGHT	after dark, late night

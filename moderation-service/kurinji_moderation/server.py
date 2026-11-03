@@ -1,7 +1,9 @@
 """The moderation service: internal network only, standard library only (docs/PHASE13E_PLAN.md E3, E4).
 
   POST /v1/assess  {"kind": "POST"|"COMMENT", "text": "..."} with header X-Moderation-Key -> evidence (never a decision)
-  GET  /v1/health  -> {"status": "UP", "versions": {...}}
+  POST /v1/understand {"text": "..."} (17G-3, optional) -> {"categories": [...], "facets": [...], "daypart": ...|null}
+       503 {"error": "off"} without a provider key; 502 {"error": "unavailable"} when the provider could not answer
+  GET  /v1/health  -> {"status": "UP", "versions": {...}, "understanding": "UP"|"OFF"}
 
 It never logs a text, a header or a body: only the method, the path, the status and the time taken. It binds to
 127.0.0.1 unless told otherwise, and refuses to start without a key of at least 16 characters.
@@ -18,11 +20,12 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from .service import Assessor
+from .understand import DEFAULT_MODEL, Understander, Unavailable
 
 MAX_BODY = 32 * 1024
 
 
-def make_handler(assessor, key):
+def make_handler(assessor, key, understander=None):
     expected = key.encode("utf-8")
 
     class Handler(BaseHTTPRequestHandler):
@@ -46,13 +49,32 @@ def make_handler(assessor, key):
         def do_GET(self):
             started = time.perf_counter()
             if self.path == "/v1/health":
-                self._done(200, {"status": "UP", "versions": assessor.versions()}, started)
+                # "understanding" says only whether the optional Explore understanding has a key; it never names it.
+                state = "UP" if understander is not None and understander.enabled else "OFF"
+                self._done(200, {"status": "UP", "versions": assessor.versions(), "understanding": state}, started)
             else:
                 self._done(404, {"error": "not found"}, started)
 
+        def _understand(self, raw, started):
+            """POST /v1/understand {"text": "..."} -> {categories, facets, daypart}; 503 off; 502 unavailable."""
+            if understander is None or not understander.enabled:
+                self._done(503, {"error": "off"}, started)
+                return
+            try:
+                text = json.loads(raw.decode("utf-8")).get("text")
+                result = understander.understand(text)
+            except (ValueError, AttributeError, UnicodeDecodeError):
+                self._done(400, {"error": "shape"}, started)
+                return
+            except Unavailable as e:
+                sys.stderr.write(f"understanding unavailable: {e.reason}\n")   # a category, never a text or a key
+                self._done(502, {"error": "unavailable"}, started)
+                return
+            self._done(200, result, started)
+
         def do_POST(self):
             started = time.perf_counter()
-            if self.path != "/v1/assess":
+            if self.path not in ("/v1/assess", "/v1/understand"):
                 self._done(404, {"error": "not found"}, started)
                 return
             given = (self.headers.get("X-Moderation-Key") or "").encode("utf-8")
@@ -69,8 +91,12 @@ def make_handler(assessor, key):
             if length > MAX_BODY:
                 self._done(413, {"error": "too large"}, started)
                 return
+            raw = self.rfile.read(length)
+            if self.path == "/v1/understand":
+                self._understand(raw, started)
+                return
             try:
-                request = json.loads(self.rfile.read(length).decode("utf-8"))
+                request = json.loads(raw.decode("utf-8"))
                 result = assessor.assess(request.get("kind"), request.get("text"))
             except (ValueError, AttributeError, UnicodeDecodeError):
                 self._done(400, {"error": "shape"}, started)
@@ -80,10 +106,10 @@ def make_handler(assessor, key):
     return Handler
 
 
-def serve(host, port, key, model=None):
+def serve(host, port, key, model=None, understander=None):
     if not key or len(key) < 16:
         raise SystemExit("MODERATION_SERVICE_KEY must be set (at least 16 characters)")
-    server = ThreadingHTTPServer((host, port), make_handler(Assessor(model_path=model), key))
+    server = ThreadingHTTPServer((host, port), make_handler(Assessor(model_path=model), key, understander))
     server.daemon_threads = True
     return server
 
@@ -93,9 +119,15 @@ def main():
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8091)
     parser.add_argument("--model", default=None, help="an SSLIN1 model file (none ships in 13E)")
+    parser.add_argument("--understanding-model", default=DEFAULT_MODEL,
+                        help="the model for the optional Explore understanding (17G-3)")
     args = parser.parse_args()
-    server = serve(args.host, args.port, os.environ.get("MODERATION_SERVICE_KEY", ""), args.model)
-    sys.stderr.write(f"moderation service on {args.host}:{args.port}\n")
+    # The provider key has its OWN name on purpose: a general ANTHROPIC_API_KEY that happens to be set on this PC (for
+    # another tool) must never start spending money here. Without it the understanding route answers "off".
+    understander = Understander(os.environ.get("IRL_UNDERSTANDING_API_KEY", ""), model=args.understanding_model)
+    server = serve(args.host, args.port, os.environ.get("MODERATION_SERVICE_KEY", ""), args.model, understander)
+    sys.stderr.write(f"moderation service on {args.host}:{args.port}; "
+                     f"understanding {'on' if understander.enabled else 'off (no key)'}\n")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

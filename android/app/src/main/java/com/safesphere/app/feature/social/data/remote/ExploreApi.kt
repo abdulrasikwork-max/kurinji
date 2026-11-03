@@ -6,7 +6,10 @@ import com.safesphere.app.feature.social.domain.ExploreHit
 import com.safesphere.app.feature.social.domain.ExploreQuery
 import com.safesphere.app.feature.social.domain.ExploreResult
 import com.safesphere.app.feature.social.domain.Interest
+import com.safesphere.app.feature.social.domain.Daypart
+import com.safesphere.app.feature.social.domain.Understanding
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
 
 /**
@@ -17,7 +20,35 @@ interface ExploreApi {
 
     @POST("api/explore/search")
     suspend fun search(@Body body: ExploreRequestDto): ExploreResponseDto
+
+    /** Phase 17G-3 (optional): the ONLY request that carries the typed words, and only after the person agreed. */
+    @POST("api/explore/understand")
+    suspend fun understand(@Body body: UnderstandRequestDto): UnderstandResponseDto
+
+    /** Phase 17G-3: whether to offer the switch at all. */
+    @GET("api/explore/understanding")
+    suspend fun understandingStatus(): UnderstandingStatusDto
 }
+
+/** The typed words (at most 200 characters). Never printed: [toString] shows only the length. */
+data class UnderstandRequestDto(val text: String) {
+    override fun toString() = "UnderstandRequestDto(text=<${text.length} chars>)"
+}
+
+/** The answer, read FAIL-CLOSED: unknown codes are dropped, limits (2 categories, 4 tags) are re-applied. */
+data class UnderstandResponseDto(
+    val categories: List<String>? = null,
+    val facets: List<String>? = null,
+    val daypart: String? = null
+) {
+    fun toDomain() = Understanding(
+        categories = categories.orEmpty().mapNotNull(Interest::fromCode).distinct().take(ExploreQuery.MAX_CATEGORIES),
+        facets = ExploreFacets.cleaned(facets).take(ExploreFacets.MAX_PER_QUERY),
+        daypart = Daypart.entries.firstOrNull { it.name == daypart }
+    )
+}
+
+data class UnderstandingStatusDto(val available: Boolean? = null)
 
 /** The request body: closed-list codes only. */
 data class ExploreRequestDto(

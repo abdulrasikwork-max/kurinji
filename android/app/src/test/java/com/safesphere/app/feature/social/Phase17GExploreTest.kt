@@ -415,8 +415,13 @@ class Phase17GExploreTest {
             }
         }
         val api = File("src/main/java/com/safesphere/app/feature/social/data/remote/ExploreApi.kt").readText(Charsets.UTF_8)
-        assertEquals("one endpoint: the structured search", 1, Regex("@POST|@GET|@PUT|@DELETE").findAll(api).count())
+        // 17G-3 deliberately added exactly two optional endpoints (smart understanding and whether to offer it); the structured
+        // search stays the only one that finds places, and its request has no field for words.
+        assertEquals("three endpoints: search + the two optional 17G-3 ones", 3,
+            Regex("@POST|@GET|@PUT|@DELETE").findAll(api).count())
         assertTrue(api.contains("@POST(\"api/explore/search\")"))
+        assertTrue(api.contains("@POST(\"api/explore/understand\")"))
+        assertTrue(api.contains("@GET(\"api/explore/understanding\")"))
     }
 
     @Test

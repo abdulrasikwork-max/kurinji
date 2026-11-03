@@ -26,3 +26,7 @@ E1–E30 in `PHASE13E_PLAN.md`, deviations 13E-D1–D10).
   `%USERPROFILE%\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\` (another tool's runtime). Tools and
   tests run with `-I`; the service must start with `-E -s -m kurinji_moderation.server` (`-I` drops its folder from the
   module path). After changing the lexicon or the rules: `tools/build_lexicon.py`, then `tools/make_vectors.py`.
+
+**17G-3 (optional Explore understanding):** `understand.py` + route `/v1/understand` + `data/explore-vocabulary-v1.tsv`; the ONLY Python file
+that may use `urllib`/`ssl`, and the only place that names the provider's address or header; key env `IRL_UNDERSTANDING_API_KEY` (read in
+`server.py`, never anywhere else). The standard-library-only rule stands (no SDK). See the README section and `docs/PHASE17G3.md`.
