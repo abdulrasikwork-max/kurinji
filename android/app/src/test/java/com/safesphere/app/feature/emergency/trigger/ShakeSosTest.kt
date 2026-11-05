@@ -37,9 +37,9 @@ class ShakeSosTest {
         fun shake(at: Long = 1_000) {
             val l = listener ?: error("not listening")
             l(at - 20, 0f, 0f, 9.81f)
-            l(at, 30f, 0f, 9.81f)
-            l(at + 100, -30f, 0f, 9.81f)
-            l(at + 200, 30f, 0f, 9.81f)
+            l(at, 45f, 0f, 9.81f)
+            l(at + 100, -45f, 0f, 9.81f)
+            l(at + 200, 45f, 0f, 9.81f)
         }
     }
 

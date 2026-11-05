@@ -1,6 +1,6 @@
 # Real-device sprint (Galaxy A23) — record so far: Track A and Track B (2026-11-03/04)
 
-Status: **Track A (setup) and Track B (automated checks on the phone) done; Tracks C–H NOT STARTED.** The user paused the sprint after
+Status: **Track A (setup) and Track B (automated checks on the phone) done; Track C IN PROGRESS (§5); Tracks D–H NOT STARTED.** The user paused the sprint after
 Track B ("I'm not ready for the physical-device Track C tests"); it resumes in a later session. Vocabulary as in `CLAUDE.md` §3: nothing here
 is called verified that was not run.
 
@@ -65,3 +65,42 @@ recording), so only the "no location" half of the video check ran; one phone, on
   The scratch scripts used here (adb helpers, the display-matrix script) were session files and are **not** in the repo.
 - **Still open from earlier work, not part of Track B:** the 17F signal-card button rows break words at 2.0x text (the user's decision is pending);
   the Tamil/Tanglish word list needs a human review; physical-phone and TalkBack verification for everything marked "not verified" in `STATUS.md`.
+
+## 5. Track C (2026-11-06) — IN PROGRESS: results so far
+
+Method: the user does the physical act, I set up the phone, collect evidence (server rows, logcat, UI dump) and write nothing the user did not report.
+Environment: backend `spring-boot:run` (`MODERATION_AI_ENABLED=false`, dev OTP file), `adb reverse tcp:8080`, QA account `qa.phase17f@example.com` (id 362) which
+has **no Safety Circle contacts** (checked in MySQL), so no SMS composer can open and nothing can be sent. Phone clock was about 2m50s behind the server at the end.
+User decisions this session: outdoor tests with the PC carried along (USB), screen-off shake skipped for now.
+
+| # | Check | Result | Evidence |
+|---|---|---|---|
+| C1a | Shake SOS, screen ON, IRL open | **PASS** | user: SOS screen + 5 s countdown opened; server row 59 `trigger_type = SHAKE`, ended RESOLVED |
+| C1b | Shake SOS, screen OFF | **NOT RUN** | the user chose to skip; needs the phone off the cable (a powered, adb-attached phone may keep the CPU awake and give a false pass) |
+| C1c | Shake false positives (walk, jog, hard run, pocket) | **FAIL, fixed, retest PASS** (§6, F-C1) | see §6 |
+| C2 | TalkBack by ear | not run yet | |
+| C3 | Safe Walk outdoors | not run yet | |
+| C4 | Nearby report outdoors | not run yet | |
+| C5 | Explore: Samsung keyboard, Tamil, Tanglish | not run yet | |
+| C6 | Smart understanding (Groq) | not run yet | |
+| C7 | "I went" + rating | not run yet | |
+| C8 | Phase 5 vault viewing | not run yet | |
+
+## 6. Defect found in Track C and fixed
+
+- **F-C1 (defect, safety-relevant):** shake SOS opened a countdown while **jogging / running with the phone in a pocket**. Normal walking was clean. With the
+  phone in a pocket the person cannot press Cancel, so each such countdown ran to zero and a real SOS started on the phone (server rows 60-64, `SHAKE`,
+  `started_offline = 1`, all marked False alarm; nobody was notified because the QA account has no contacts).
+- **Evidence (temporary logging of the residual strength and vector, removed again):** walking peaks 17-30 m/s²; jogging 17-29 in a steady train every ~270 ms;
+  hard running up to 36-58 m/s²; deliberate shakes (light to hard) 35-85, as 3 peaks in 190-250 ms, each starting from rest. A higher count threshold alone would
+  have lost the light shakes (they decay: 35-75, then 18-28), and a hard run is as strong as a light shake, so strength cannot separate them; a run never goes quiet.
+- **Fix (`ShakePolicy`):** the count stays "3 alternating peaks ≥ 17 m/s² in 2 s", and a shake now also needs (a) one sample ≥ 32 m/s² inside that window and
+  (b) no other counted peak in the 800 ms before its first peak. The recorded trace was replayed through the real direction logic to choose the values (lead-in
+  stable from 300 to 1000 ms; strong threshold between the jog maximum 29 and the weakest shake 35). Tests: `ShakePolicyTest` (+5: stride train, hard run with a
+  strong jerk, burst right after an impact vs after quiet, weakening shake still triggers, jerk outside the window), `ShakeSosTest` helper strokes raised to 45.
+  Android **979 / 0** (974 before).
+- **Retest on the A23:** brisk walk, jog, hard run / stairs: no countdown; 5 deliberate shakes (2 light, 2 medium, 1 hard): all 5 opened the countdown; no new
+  `SHAKE` row on the server. One run by one person on one phone.
+- **Not solved (stated limit):** a single isolated violent jolt (one trace showed 24, 69, 29 m/s² at a jog) looks exactly like a hard shake; it did not repeat in the
+  retest, but the policy cannot tell the two apart. A proximity-sensor "phone is covered" rule would, but it is a design change (a person may want to shake a
+  pocket) and is the user's decision.
