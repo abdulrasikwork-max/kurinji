@@ -152,6 +152,7 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         )
         // Keep the screen awake while a countdown or an emergency is running. (No permission needed.)
         binding.root.keepScreenOn = state is EmergencyUiState.Countdown || state is EmergencyUiState.Active
+        if (state !is EmergencyUiState.Countdown) cancelFocused = false
 
         when (state) {
             is EmergencyUiState.Countdown -> renderCountdown(state)
@@ -163,10 +164,28 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         }
     }
 
+    /** True once accessibility focus has been moved to CANCEL for the countdown now running. */
+    private var cancelFocused = false
+
     private fun renderCountdown(state: EmergencyUiState.Countdown) {
-        binding.countdownNumber.text = state.secondsRemaining.toString()
-        binding.countdownNumber.contentDescription =
-            getString(R.string.cd_countdown_seconds, state.secondsRemaining)
+        val seconds = state.secondsRemaining
+        binding.countdownNumber.text = seconds.toString()
+        binding.countdownNumber.contentDescription = getString(R.string.cd_countdown_seconds, seconds)
+        // Real-device sprint, Track C (Galaxy A23, TalkBack 14.5): a person using TalkBack heard NOTHING during the countdown
+        // (the polite live region on the number was not spoken), and then could not find CANCEL within 5 s, so two
+        // countdowns ran to zero. Accessibility focus now goes to CANCEL itself when the countdown starts: one double-tap
+        // anywhere stops it (verified on the phone). What TalkBack SPEAKS at that moment is not reliable: the opening phrase
+        // was heard only as a fragment because another utterance follows within 0.5 s, and announcing every second made it
+        // worse, so there is no per-second announcement and the number is not a live region.
+        if (!cancelFocused) {
+            cancelFocused = true
+            binding.cancelCountdownButton.contentDescription = getString(R.string.cd_countdown_cancel)
+            binding.cancelCountdownButton.post {
+                binding.cancelCountdownButton.performAccessibilityAction(
+                    android.view.accessibility.AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, null
+                )
+            }
+        }
     }
 
     private fun renderActive(state: EmergencyUiState.Active) {

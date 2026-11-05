@@ -78,7 +78,7 @@ User decisions this session: outdoor tests with the PC carried along (USB), scre
 | C1a | Shake SOS, screen ON, IRL open | **PASS** | user: SOS screen + 5 s countdown opened; server row 59 `trigger_type = SHAKE`, ended RESOLVED |
 | C1b | Shake SOS, screen OFF | **NOT RUN** | the user chose to skip; needs the phone off the cable (a powered, adb-attached phone may keep the CPU awake and give a false pass) |
 | C1c | Shake false positives (walk, jog, hard run, pocket) | **FAIL, fixed, retest PASS** (§6, F-C1) | see §6 |
-| C2 | TalkBack by ear | not run yet | |
+| C2 | TalkBack by ear (4 flows) | **PARTIAL, 2 defects open** | Flow 2 Nearby (radar, list, report sheet): **PASS** by the user. Flow 4 SOS countdown: **FAIL, partly fixed** (§6 F-C2). Flow 1 SOS options: **FAIL, not investigated** (user: "a switch had no state spoken", "a label was long/confusing"; the accessibility tree shows two real Switch nodes with text + checkable + checked, so the cause is not visible in the tree: needs a second by-ear pass; this TalkBack reads "State, name, type" by Samsung default). Flow 3 Explore / I went: **FAIL, not investigated** (user: "could not type/enter the request", "chips unreachable or not spoken"; the star rating and the I went sheet were not reported on) |
 | C3 | Safe Walk outdoors | not run yet | |
 | C4 | Nearby report outdoors | not run yet | |
 | C5 | Explore: Samsung keyboard, Tamil, Tanglish | not run yet | |
@@ -99,8 +99,28 @@ User decisions this session: outdoor tests with the PC carried along (USB), scre
   stable from 300 to 1000 ms; strong threshold between the jog maximum 29 and the weakest shake 35). Tests: `ShakePolicyTest` (+5: stride train, hard run with a
   strong jerk, burst right after an impact vs after quiet, weakening shake still triggers, jerk outside the window), `ShakeSosTest` helper strokes raised to 45.
   Android **979 / 0** (974 before).
-- **Retest on the A23:** brisk walk, jog, hard run / stairs: no countdown; 5 deliberate shakes (2 light, 2 medium, 1 hard): all 5 opened the countdown; no new
-  `SHAKE` row on the server. One run by one person on one phone.
+- **Retest on the A23:** brisk walk, jog, hard run / stairs: no countdown; 5 deliberate shakes (2 light, 2 medium, 1 hard): all 5 opened the countdown. One run by
+  one person on one phone. (Correction: server rows 65-67 are `SHAKE` rows created after the fix; the user confirmed they shook the phone on purpose to open the
+  SOS screen during the TalkBack flows, so they are not false triggers. An earlier version of this record said "no new SHAKE row"; that was wrong.)
 - **Not solved (stated limit):** a single isolated violent jolt (one trace showed 24, 69, 29 m/s² at a jog) looks exactly like a hard shake; it did not repeat in the
   retest, but the policy cannot tell the two apart. A proximity-sensor "phone is covered" rule would, but it is a design change (a person may want to shake a
   pocket) and is the user's decision.
+- **F-C2 (defect, safety-relevant, PARTLY fixed):** with TalkBack on, the SOS countdown was **silent** (user, clean TalkBack session: "Nothing spoken during the
+  count"), and a person feeling for CANCEL by ear could not reach it within 5 s: two countdowns ran to zero and started real SOS rows (68 and 70, both closed as
+  false alarm; no contacts, nobody notified). The number had a polite live region and a per-second content description; TalkBack 14.5 on the A23 did not speak them.
+  **Measured:** TalkBack's verbose log shows a 6.45 s utterance (the new Cancel label) cut off about 0.5 s later by `SamsungTTS onStop()` and a 2.0 s utterance; the
+  text is hashed in the log, so what interrupts it is **not identified**. Per-second `announceForAccessibility` made it worse (only a fragment, or "5" and "4").
+  **Fix (kept):** when the countdown starts, accessibility focus moves to CANCEL (`performAccessibilityAction(ACTION_ACCESSIBILITY_FOCUS)`, once per countdown), its
+  label is "Cancel. The emergency is starting. Double-tap anywhere to stop it." (no number: it would go stale), the number is no longer a live region and nothing is
+  announced per second. **Verified on the A23: one double-tap anywhere cancels the countdown** (several remote runs, no SOS row created).
+  **NOT fixed / not verified:** what TalkBack SPEAKS at the start. The user heard only the fragment "Cancel" in three attempts; the countdown numbers are not spoken.
+  A haptic tick per second (`performHapticFeedback`, no permission) would not depend on TalkBack: proposed, not built (the user's decision).
+  Tests: `Phase17HTalkBackCountdownTest` (+3). Android **982 / 0**, lint **0 errors / 105 warnings** (104 before).
+- **Device changes made and undone:** TalkBack was enabled through `secure` settings for the tests and is OFF again (original null/0); TalkBack's own permission
+  READ_PHONE_STATE was answered "Don't allow" and is now fixed as denied for TalkBack (it kept asking "Allow phone access?" over the SOS screen, which also muddled the
+  first by-ear run: **this stays changed**, say if you want it back); TalkBack developer "Display speech output" was turned on and is OFF again (log level was already
+  VERBOSE); the logcat buffer was enlarged to 5 MiB (resets on reboot); `location_mode` had been left at 0 and was put back to 3; `stay_on_while_plugged_in` is 0.
+- **Left behind:** QA emergencies 59-70 (RESOLVED or CANCELLED, trigger SHAKE or MANUAL). The backend started by this session (`spring-boot:run`, dev OTP file in the
+  session scratchpad) is still running.
+- **Track C stopped here** (C1b screen-off shake skipped by the user's choice; C3-C8 not started; C2 open items above). Outdoor tests C3/C4 need the PC carried along
+  (user's choice), so they are best done in one separate outing.

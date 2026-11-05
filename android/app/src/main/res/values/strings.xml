@@ -587,6 +587,8 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="action_view_emergency_history">View emergency history</string>
     <string name="emergency_countdown_label">Starting emergency in</string>
     <string name="cd_countdown_seconds">Starting emergency in %1$d seconds</string>
+    <!-- Label of CANCEL while the countdown runs; accessibility focus is moved to it (real-device sprint, Track C: a person using TalkBack could not find CANCEL within 5 s). No number in it: it is read once and would be wrong when read again later. -->
+    <string name="cd_countdown_cancel">Cancel. The emergency is starting. Double-tap anywhere to stop it.</string>
     <string name="action_cancel_caps">CANCEL</string>
     <string name="emergency_starting_message">Starting your SOS…</string>
     <string name="emergency_active_title">Emergency mode activated</string>

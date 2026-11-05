@@ -103,7 +103,6 @@
             android:layout_width="200dp"
             android:layout_height="200dp"
             android:layout_marginTop="@dimen/space_lg"
-            android:accessibilityLiveRegion="polite"
             android:background="@drawable/bg_icon_circle"
             android:backgroundTint="?attr/colorErrorContainer"
             android:gravity="center"
