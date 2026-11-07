@@ -173,6 +173,24 @@ class Phase17GExploreTest {
     }
 
     @Test
+    fun `Tanglish spelled with dh is understood too - found on the A23 as amaidhiyana place`() {
+        for (word in listOf("amaithiyana", "amaidhiyana", "amaidhi", "amaithiyaana", "amaidhiyaana")) {
+            val u = understand("$word place")
+            assertEquals(word, listOf("QUIET"), u.query.facets)
+            assertEquals(word, emptyList<String>(), u.unused)   // "place" is a filler word
+        }
+    }
+
+    @Test
+    fun `Tanglish eat verbs mean food - found on the A23 as sapdra place`() {
+        for (word in listOf("sapdra", "saapdra", "sapidra", "saapidra", "sapdalam", "saapdalam", "saapidalam")) {
+            val u = understand("$word place")
+            assertEquals(word, listOf(Interest.FOOD_CAFES), u.query.categories)
+            assertEquals(word, emptyList<String>(), u.unused)
+        }
+    }
+
+    @Test
     fun `English mixed with Tanglish and Tamil in one sentence`() {
         val u = understand("kovil near beach evening அமைதியான")
         assertEquals(listOf(Interest.CULTURE_HERITAGE, Interest.NATURE_OUTDOORS), u.query.categories)

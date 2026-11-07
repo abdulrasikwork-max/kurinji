@@ -1,4 +1,15 @@
-# Handoff: real-device sprint, Tracks A and B done; Track C paused (2026-11-04) — committed locally, NOT pushed
+# Handoff: real-device sprint CLOSED PARTIAL (2026-11-07) — changes are in the working tree, NOT committed (the user decides), never pushed by Claude
+
+Full record: **`docs/REAL_DEVICE_SPRINT.md`** (§17 = close-out, open decisions, device state). Android **998 / 0**, lint 0 / 105, backend 883 / 0, Python 83 / 0.
+- **Done:** Tracks A-H (see the record). Eleven defects found on the A23 and the emulators were fixed; the last one (F-H1c, the foreground-service notification after Home + a late "Allow") was found and verified on the A23 in the close-out.
+- **NOT verified / deferred by the user:** D1b real 25 h idle and D2 overnight battery (never started; their old reference times are void), SOS countdown speech under TalkBack, screen-off shake reliability, a second phone.
+- **Open decisions for the user (nothing built):** haptic tick for the SOS countdown; a general Tanglish spelling rule (+ "chilling"); screen-off shake; a proximity rule against jolts; restarting a walk's service from any screen; the 17F signal-card buttons at 2.0x text.
+- **State left:** the A23 is back at its settings (battery Optimized, automatic SMS OFF, `SEND_SMS` revoked, TalkBack off, `location_mode` 3 - it was found at 0, no SOS or walk running); the backend started for the close-out may still be running; AVDs `irl_api26/29/33` (about 47 GB) are still on disk by the user's instruction; dev SQL backups in the session scratchpad contain dev data.
+- **Next:** the user's decisions above; the sprint commit (local) when they say so; then 17I/17J.
+
+---
+
+# Handoff: real-device sprint, Tracks A and B done; Track C paused (2026-11-04) — committed locally, NOT pushed (history)
 
 Full record and the Track C handoff: **`docs/REAL_DEVICE_SPRINT.md`** (§4 = how to resume). The user paused the sprint after Track B ("not ready for the
 physical-device Track C tests"); **no further device testing was run and Track C has not started.**

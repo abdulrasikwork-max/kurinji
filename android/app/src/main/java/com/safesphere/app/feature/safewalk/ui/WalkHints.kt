@@ -2,6 +2,7 @@ package com.safesphere.app.feature.safewalk.ui
 
 import androidx.annotation.StringRes
 import com.safesphere.app.R
+import com.safesphere.app.core.device.BackgroundLimit
 import com.safesphere.app.core.device.BatteryLevel
 import com.safesphere.app.core.location.LocationAccess
 import com.safesphere.app.core.location.LocationNeed
@@ -25,10 +26,21 @@ enum class WalkHint(@StringRes val text: Int) {
 
     /** Phase 17D: location is on but no position for a while (indoors, weak signal). */
     NO_SIGNAL(R.string.safe_walk_hint_no_signal),
-    LOCATION_UNSUPPORTED(R.string.safe_walk_hint_location_unsupported)
+    LOCATION_UNSUPPORTED(R.string.safe_walk_hint_location_unsupported),
+
+    /** Real-device sprint E: the phone may end this walk when IRL is closed from the recent apps (default "Optimized"). */
+    BATTERY_OPTIMIZED(R.string.safe_walk_hint_battery_optimized),
+
+    /** Real-device sprint E: background use is restricted, so the walk stops checking as soon as IRL leaves the screen. */
+    BATTERY_RESTRICTED(R.string.safe_walk_hint_battery_restricted)
 }
 
-fun walkHintsFor(state: SafeWalkState, serviceRunning: Boolean, notificationsGranted: Boolean): List<WalkHint> = buildList {
+fun walkHintsFor(
+    state: SafeWalkState,
+    serviceRunning: Boolean,
+    notificationsGranted: Boolean,
+    backgroundLimit: BackgroundLimit = BackgroundLimit.NONE
+): List<WalkHint> = buildList {
     if (!state.isActive) return@buildList
     if (state.access == LocationAccess.NONE) add(WalkHint.LOCATION_NOT_SHARED)
     // Phase 17D: why no position arrives, said once, in the same words as the SOS screen. Check-ins are unaffected.
@@ -42,6 +54,12 @@ fun walkHintsFor(state: SafeWalkState, serviceRunning: Boolean, notificationsGra
     // while the app process is alive.
     if (!serviceRunning) add(WalkHint.KEEP_APP_OPEN)
     if (!notificationsGranted) add(WalkHint.NOTIFICATIONS_OFF)
+    // Said once, only when the phone really limits IRL (measured on a Galaxy A23); "Unrestricted" says nothing.
+    when (backgroundLimit) {
+        BackgroundLimit.RESTRICTED -> add(WalkHint.BATTERY_RESTRICTED)
+        BackgroundLimit.OPTIMIZED -> add(WalkHint.BATTERY_OPTIMIZED)
+        BackgroundLimit.NONE -> Unit
+    }
     if (state.pendingSync > 0 && !state.isOnline) add(WalkHint.OFFLINE_PENDING)
     if (state.restoredOffline) add(WalkHint.RESTORED_OFFLINE)
 }

@@ -704,6 +704,10 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="safe_walk_setup_location_off">Location is switched off. Check-ins work; stop and route checks need location.</string>
     <string name="safe_walk_setup_location_not_allowed">Location is not allowed. Check-ins work; stop and route checks need location.</string>
     <string name="safe_walk_hint_keep_open">Keep IRL open: without its background notification, check-in reminders may not reach you.</string>
+    <!-- Real-device sprint E (Galaxy A23): what the phone's battery manager does to a walk or an SOS when IRL is not on screen -->
+    <string name="safe_walk_hint_battery_optimized">On some phones, including Samsung, closing IRL from your recent apps ends this walk\'s check-ins until you open IRL again. Leave IRL open, or in the phone\'s App info set Battery to Unrestricted.</string>
+    <string name="safe_walk_hint_battery_restricted">Battery use is restricted for IRL, so this walk stops checking on you as soon as you leave IRL. In the phone\'s App info set Battery to Unrestricted, or keep IRL open.</string>
+    <string name="sos_hint_battery_restricted">Battery use is restricted for IRL, so your location may stop being saved when you leave this screen. In the phone\'s App info set Battery to Unrestricted, or keep IRL open.</string>
     <string name="safe_walk_hint_notifications_off">Notifications are off, so check-in reminders only appear while IRL is open.</string>
     <string name="safe_walk_hint_offline">No connection. Your check-ins count on this phone and are sent when you are back online.</string>
     <string name="safe_walk_hint_restored_offline">You are offline. This walk was restored from this phone.</string>
@@ -1815,6 +1819,9 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- Phase 17G-2 (U5): "I went" is a private record; an optional 1 to 5; a place shows ONE average only from people who went -->
     <string name="place_went_state">You went here · rate it</string>
     <string name="place_went_rated">You went here · %1$s out of 5</string>
+    <!-- Real-device sprint C7: once the visit exists the spoken label must say the state the text shows, not the first-visit prompt -->
+    <string name="place_went_description_state">You went to %1$s. You have not rated it. Open to rate it, share your experience, or take it back.</string>
+    <string name="place_went_description_rated">You went to %1$s and rated it %2$s out of 5. Open to change it, share your experience, or take it back.</string>
     <string name="place_rating_line">%1$s out of 5 · from people who went</string>
     <string name="place_rating_description">Rated %1$s out of 5 by people who went</string>
     <string name="went_sheet_title">How was it?</string>

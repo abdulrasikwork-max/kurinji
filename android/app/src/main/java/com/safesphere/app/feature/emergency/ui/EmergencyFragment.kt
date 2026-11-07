@@ -14,6 +14,8 @@ import androidx.navigation.fragment.findNavController
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.location.LocationPermissions
+import com.safesphere.app.core.device.BackgroundLimit
+import com.safesphere.app.core.device.BackgroundLimits
 import com.safesphere.app.core.tracking.TrackingServiceStarter
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
@@ -349,6 +351,10 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
 
         val hints = buildList {
             if (card.showKeepAppOpenHint) add(getString(R.string.location_hint_keep_app_open))
+            // Real-device sprint E: with Battery set to Restricted, leaving this screen stops the location (measured on a Galaxy A23).
+            if (ui.sharing.isTracking && BackgroundLimits.read(requireContext()) == BackgroundLimit.RESTRICTED) {
+                add(getString(R.string.sos_hint_battery_restricted))
+            }
             if (card.showApproximateHint) add(getString(R.string.location_hint_approximate))
             if (card.showLowAccuracyHint) add(getString(R.string.location_hint_low_accuracy))
             if (card.showRejectedHint) add(getString(R.string.location_hint_rejected))

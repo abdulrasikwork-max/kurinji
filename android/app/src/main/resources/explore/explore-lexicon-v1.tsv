@@ -14,7 +14,7 @@
 # Deliberately NOT understood: negation ("not crowded" is shown as unused), ranking words ("best", "top"), and anything
 # about safety (no tag exists for it; Nearby covers conditions).
 #
-CATEGORY	FOOD_CAFES	food|cafe|cafes|coffee|tea|chai|restaurant|restaurants|eat|eating|eatery|snack|snacks|breakfast|lunch|dinner|biryani|dosa|idli|meals|bakery|street food|saapadu|sapadu|unavu|kaapi|kapi|tea kadai|hotel|உணவு|சாப்பாடு|காபி|தேநீர்|டீ|ஹோட்டல்|உணவகம்
+CATEGORY	FOOD_CAFES	food|cafe|cafes|coffee|tea|chai|restaurant|restaurants|eat|eating|eatery|snack|snacks|breakfast|lunch|dinner|biryani|dosa|idli|meals|bakery|street food|saapadu|sapadu|sapdra|saapdra|sapidra|saapidra|sapdalam|saapdalam|saapidalam|unavu|kaapi|kapi|tea kadai|hotel|உணவு|சாப்பாடு|காபி|தேநீர்|டீ|ஹோட்டல்|உணவகம்
 CATEGORY	NATURE_OUTDOORS	nature|outdoors|outdoor|park|parks|garden|gardens|lake|lakes|beach|beaches|hill|hills|trek|trekking|hiking|forest|waterfall|river|iyarkai|poonga|thottam|kadarkarai|malai|kulam|aaru|aruvi|இயற்கை|பூங்கா|தோட்டம்|கடற்கரை|மலை|குளம்|ஆறு|அருவி
 CATEGORY	CULTURE_HERITAGE	culture|cultural|heritage|temple|temples|museum|museums|history|historical|fort|palace|church|mosque|art|gallery|monument|kovil|koyil|kottai|arungatchiyagam|parambariyam|கோவில்|கோயில்|கோட்டை|அருங்காட்சியகம்|பாரம்பரியம்
 CATEGORY	MUSIC_NIGHTLIFE	music|concert|concerts|nightlife|club|clubs|pub|pubs|live music|gig|gigs|dj|dance|dancing|karaoke|isai|இசை
@@ -24,7 +24,7 @@ CATEGORY	ACTIVITIES_SPORT	sport|sports|cricket|football|gym|swimming|cycling|bad
 CATEGORY	HOBBIES_MAKING	hobby|hobbies|craft|crafts|painting|pottery|workshop|workshops|making|art class|photography|knitting|kaivinai|ovivam|கைவினை|ஓவியம்
 CATEGORY	CITY_LIFE	city life|shopping|mall|malls|market|markets|bazaar|street|streets|shop|shops|kadai|sandhai|கடை|சந்தை
 CATEGORY	HIDDEN_GEMS	hidden|hidden gem|hidden gems|gem|gems|offbeat|secret|underrated|undiscovered
-FACET	QUIET	quiet|calm|peaceful|silent|relaxing|relaxed|amaithi|அமைதி
+FACET	QUIET	quiet|calm|peaceful|silent|relaxing|relaxed|amaithi|amaidhi|amaidhiyana|amaithiyaana|amaidhiyaana|அமைதி
 FACET	LIVELY	lively|buzzing|vibrant|energetic|happening|kalakalappu|கலகலப்பு
 FACET	BUDGET_FRIENDLY	cheap|budget|affordable|inexpensive|low cost|pocket friendly|economical|kammi vilai|kammi|மலிவு|மலிவான
 FACET	GOOD_WITH_FRIENDS	friends|group|with friends|hangout|hang out|nanbargal|nanbargaludan|நண்பர்கள்|நண்பர்களுடன்

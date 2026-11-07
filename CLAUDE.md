@@ -69,14 +69,14 @@ Phases 1–3 are the foundation.
 | Phase | Scope | Status | Not verified (never claim otherwise) |
 |---|---|---|---|
 | 0–3 | Planning; Android foundation; Spring Boot + MySQL + JWT; Safety Circle + manual SOS | Done; 2 and 3 live verified | — |
-| 4A–4D | Location + notifications; Safe Walk; route/stop/battery checks; SMS fallback, Context Packet, Call 112 | implemented, compiled, tested | manual: 4A, 4B pending; 4C partial; 4D skipped by the user |
-| 5 | Evidence Vault + hardening (V10) + restore on a new phone (V11) | implementation-complete, emulator-verified | A23 partial; other real-phone checks deferred (`PHASE5.md` §11.5.1) |
+| 4A–4D | Location + notifications; Safe Walk; route/stop/battery checks; SMS fallback, Context Packet, Call 112 | implemented, compiled, tested; A23: 4A/4B core, 4D (real SMS, Call 112) verified | 4C route/pocket; Samsung "Optimized" ends a walk silently (said in-app) |
+| 5 | Evidence Vault + hardening (V10) + restore on a new phone (V11) | implementation-complete, emulator-verified | A23 partial (+ unlock + one item played, sprint C8); the rest deferred (`PHASE5.md` §11.5.1) |
 | 6 | Community place signals ("Nearby") | implemented, compiled, tested, emulator | real phone |
 | 7 | Verification, trust, moderation | implemented, compiled, tested, emulator | TalkBack, dark mode, A23 |
 | 8 | Safety Intelligence (area picture, patterns, "Check the way"; no route planner) | implemented, compiled, tested, emulator | TalkBack, real phone, real pattern episode |
 | 9 | "Evidence before AI": 9A attack simulation, 9B counters, 9C coordination, 9D neighbour join | 9B and 9C accepted, frozen; 9D awaiting the user's review; **no learned model** | real-world rates, TalkBack, A23 |
 | 10 | 10A foundation + 10A.4 session continuity; 10B Rise (retired in 13F) | verified (MySQL, emulator) | TalkBack, real phone; 10C not built |
-| 11 | SOS without internet (V18) + C1 device sessions (V19) | verified (emulator incl. server down) | real phone, TalkBack, 25 h idle |
+| 11 | SOS without internet (V18) + C1 device sessions (V19) | verified (emulator incl. server down; A23: offline SOS + forced refresh PASS) | TalkBack, the real 25 h idle (deferred) |
 | 12 | Verified Nearby Assistance | not started | — |
 | 13A–13F | Identity, experiences, discovery, moderation v2, AI v1, new UI/navigation | each implemented, compiled, tested, live MySQL, emulator | real phone, TalkBack speech, dark mode; 13R research track planned |
 | 14 | Security, privacy + abuse-resistance audit (P14-1…3 fixed) | implemented, compiled, tested, live MySQL | real phone |
@@ -85,11 +85,12 @@ Phases 1–3 are the foundation.
 | 16 | UX reset (U1–U4) | implemented, compiled, tested, emulator | physical phone, TalkBack, real e-mail |
 | 17A–17E | Stabilise; phone OTP (V26); media (V27); location UX; social redesign (V28) | each implemented, compiled, tested, verified (MySQL/emulator; 17B also on the A23) | no real SMS sent; physical phone; TalkBack by ear; 17E on the A23 install + launch only |
 | IRL | Rebrand, icon "the Meet", opening screen | implemented, compiled, tested, emulator; local commit | physical phone, TalkBack |
-| 17F | Emergency: opt-in shake SOS (D-4; voice stays unavailable), audio in an SOS after advance consent, "last known" position, one-step Nearby report, readable radar, Safe Walk line; no migration | implemented, compiled, tested, emulator (`docs/PHASE17F.md`) | shake tuning + screen-off sensor delivery on a real phone (the A23 sensor does not wake the CPU), TalkBack |
-| 17G-1 | Deterministic Explore: closed-list tags on experiences (V29), the typed words understood ON THE PHONE (word list EN/Tamil/Tanglish), a structured query, a deterministic server engine; no AI, no cost (`docs/PHASE17G.md`, plan `PHASE17G_PLAN.md`) | implemented, compiled, tested, live MySQL 31/31, emulator | physical phone, TalkBack, Tamil word-list review |
-| 17G-3 | Optional AI understanding (Groq free tier first) of a typed Explore request: OFF by default, key only in the Python service, our own caps + breaker, per-account consent, any failure → the 17G-1 word list (`docs/PHASE17G3.md`) | implemented, compiled, tested, manually verified live with Groq + emulator | physical phone, TalkBack, live 422 path |
-| 17G-2 | "I went" = a private record + optional 1–5 rating (V30); a place shows ONE guarded average (U5) only from ≥ 5 counted raters, daily, no count; place page + post page flow (`docs/PHASE17G2.md`) | implemented, compiled, tested, live MySQL, emulator (incl. 2.0x) | physical phone, TalkBack |
-| 17H–17J | brand; regression; release audit | planned | — |
+| 17F | Emergency: opt-in shake SOS (D-4; voice stays unavailable), audio in an SOS after advance consent, "last known" position, one-step Nearby report, readable radar, Safe Walk line; no migration | implemented, compiled, tested, emulator; A23: shake screen-on + false-positive fix (`PHASE17F.md`) | screen-off shake unreliable (said in-app); countdown speech under TalkBack |
+| 17G-1 | Deterministic Explore: closed-list tags on experiences (V29), the typed words understood ON THE PHONE (word list EN/Tamil/Tanglish), a structured query, a deterministic server engine; no AI, no cost (`docs/PHASE17G.md`, plan `PHASE17G_PLAN.md`) | implemented, compiled, tested, live MySQL 31/31, emulator, A23 (English, Tanglish) | Tamil word-list review, a Tanglish spelling rule (user's decision) |
+| 17G-3 | Optional AI understanding (Groq free tier first) of a typed Explore request: OFF by default, key only in the Python service, our own caps + breaker, per-account consent, any failure → the 17G-1 word list (`docs/PHASE17G3.md`) | implemented, compiled, tested, manually verified live with Groq + emulator + A23 | live 422 path, the service window's own log |
+| 17G-2 | "I went" = a private record + optional 1–5 rating (V30); a place shows ONE guarded average (U5) only from ≥ 5 counted raters, daily, no count; place page + post page flow (`docs/PHASE17G2.md`) | implemented, compiled, tested, live MySQL, emulator (incl. 2.0x), A23 | TalkBack by ear on the new button label |
+| 17H | Real-device sprint: A23 + API 26/29/33 emulators (`docs/REAL_DEVICE_SPRINT.md`); 11 defects fixed | closed PARTIAL 2026-11-07 | 25 h idle + overnight battery (deferred), SOS countdown speech, screen-off shake |
+| 17I–17J | brand; regression; release audit | planned | — |
 
 Next migration **V31**. Each phase or sub-phase needs its own plan and the user's approval first.
 
@@ -396,11 +397,8 @@ closed lists use binary collation.
   Rows written before the fix were corrected on 2026-10-20 (`backend/sql/fix_utc_offset_ist.sql`, one-time, verified; never rerun).
 - **Encoding:** Windows PowerShell 5.1 `Get-Content`/`Set-Content` read BOM-less UTF-8 as Windows-1252 and add a BOM —
   never round-trip source files through them (it turned "…" into "â€¦" in `strings.xml`). `ResourceEncodingTest` guards res/.
-- **Live-check scripts (PowerShell 5.1):** `$home` is read-only (assigning it aborts the script); a one-element array
-  returned from a function unrolls to its element (`return , @(...)`); wrap the scenario in try/finally so the
-  clean-up (withdrawals, role reset) always runs. Method and results: `docs/PHASE9.md` §13. Save a script containing
-  Tamil text with a UTF-8 **BOM** (5.1 reads BOM-less UTF-8 as Windows-1252); `R` is an alias of Invoke-History and
-  `Type` of Get-Content (don't name helpers so); native-exe arguments lose embedded double quotes.
+- **Live-check scripts (PowerShell 5.1):** `$home` is read-only; a one-element array returned from a function unrolls;
+  Tamil text needs a UTF-8 **BOM**; wrap in try/finally. Full list: `docs/PLATFORM_CONSTRAINTS.md` (end).
 - **Python (13E):** none on PATH on this PC; how to run the service and its tools: `.claude/rules/moderation-service.md`.
 - **Emulator:** starting it with `-no-snapshot-save` can come back from an older snapshot with an older APK installed;
   check `dumpsys package com.safesphere.app | lastUpdateTime` and reinstall before a walk-through.

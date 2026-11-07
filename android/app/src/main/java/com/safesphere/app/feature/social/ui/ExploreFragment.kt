@@ -5,6 +5,8 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
@@ -44,6 +46,9 @@ class ExploreFragment : ViewBindingFragment<FragmentExploreBinding>(FragmentExpl
     /** True while the screen writes the typed text itself, so rendering never feeds back into the ViewModel. */
     private var rendering = false
 
+    /** Set by a search the person started; cleared when its answer has been brought into view. */
+    private var showAnswerWhenReady = false
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.exploreResults.adapter = adapter
@@ -56,13 +61,13 @@ class ExploreFragment : ViewBindingFragment<FragmentExploreBinding>(FragmentExpl
 
         binding.exploreInput.doAfterTextChanged { if (!rendering) viewModel.onText(it?.toString().orEmpty()) }
         binding.exploreInput.setOnEditorActionListener { _, action, _ ->
-            if (action == EditorInfo.IME_ACTION_SEARCH) viewModel.search()
+            if (action == EditorInfo.IME_ACTION_SEARCH) startSearch()
             action == EditorInfo.IME_ACTION_SEARCH
         }
         binding.exploreCityButton.setOnClickListener {
             CityPicker.show(this, viewModel.uiState.value.city, allowOther = false) { viewModel.onCity(it) }
         }
-        binding.exploreSearchButton.setOnClickListener { viewModel.search() }
+        binding.exploreSearchButton.setOnClickListener { startSearch() }
         binding.exploreClearButton.setOnClickListener { viewModel.onClear() }
         // Phase 17G-3: turning smart understanding ON asks the question first; turning it OFF needs no question.
         binding.exploreSmartSwitch.setOnCheckedChangeListener { button, on ->
@@ -75,6 +80,32 @@ class ExploreFragment : ViewBindingFragment<FragmentExploreBinding>(FragmentExpl
             }
         }
         collectWhenStarted(viewModel.uiState, ::render)
+    }
+
+    /**
+     * Real-device sprint (C5): the keyboard's search key left the keyboard open, so the answer appeared out of sight below it.
+     * Searching now closes the keyboard and, once the answer (or its failure) is drawn, brings it into view.
+     */
+    private fun startSearch() {
+        // Always close the keyboard: when nothing was understood the "We did not use ..." line must not stay hidden behind it.
+        binding.exploreInput.clearFocus()
+        WindowCompat.getInsetsController(requireActivity().window, binding.exploreInput).hide(WindowInsetsCompat.Type.ime())
+        if (!viewModel.uiState.value.canSearch) return
+        showAnswerWhenReady = true
+        viewModel.search()
+    }
+
+    /** Scrolls to whichever of results / empty message / failure is on screen; the end of a search, never on later redraws. */
+    private fun showAnswerIfWaiting(state: ExploreUiState) {
+        if (!showAnswerWhenReady) return
+        val target = when (state.phase) {
+            ExplorePhase.RESULTS ->
+                if (state.result?.hits.orEmpty().isEmpty()) binding.exploreEmptyTitle else binding.exploreResultsHeader
+            ExplorePhase.FAILED -> binding.exploreNotice
+            else -> return   // still loading (or the search ended without one): keep waiting
+        }
+        showAnswerWhenReady = false
+        binding.root.post { if (view != null) binding.root.smoothScrollTo(0, target.top) }
     }
 
     /** The one honest question before any typed word can leave the phone for smart understanding. */
@@ -140,6 +171,7 @@ class ExploreFragment : ViewBindingFragment<FragmentExploreBinding>(FragmentExpl
         binding.exploreEmptyTitle.isVisible = answered && hits.isEmpty()
         binding.exploreEmptyMessage.isVisible = answered && hits.isEmpty()
         adapter.submitList(hits)
+        showAnswerIfWaiting(state)
 
         if (state.sessionExpired) {
             viewModel.onSessionExpiredHandled()

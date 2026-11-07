@@ -31,6 +31,7 @@ import com.safesphere.app.core.location.LocationStreamStatus
 import com.safesphere.app.core.ui.LocationAsk
 import com.safesphere.app.core.location.LocationPermissions
 import com.safesphere.app.core.notifications.NotificationPermission
+import com.safesphere.app.core.device.BackgroundLimits
 import com.safesphere.app.core.tracking.TrackingServiceStarter
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
@@ -370,7 +371,10 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
                 fix == null -> Unit
                 else -> add(getString(R.string.location_not_saved_yet))
             }
-            walkHintsFor(walk, viewModel.trackingServiceRunning.value, NotificationPermission.isGranted(requireContext()))
+            walkHintsFor(
+                walk, viewModel.trackingServiceRunning.value, NotificationPermission.isGranted(requireContext()),
+                BackgroundLimits.read(requireContext())
+            )
                 .forEach { add(getString(it.text)) }
         }
         binding.walkStatusLines.text = lines.joinToString("\n")

@@ -75,7 +75,14 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
                 }
                 // Phase 17G-2 (U5): "I went here" marks a private record, then asks how it was (and offers the composer).
                 val visit = state.visit
-                binding.wentButton.contentDescription = place?.let { getString(R.string.place_share_yours_description, it.name) }
+                // The spoken label follows the state the text shows (found with TalkBack on the A23: it kept the first-visit prompt).
+                binding.wentButton.contentDescription = place?.let {
+                    when {
+                        visit == null -> getString(R.string.place_share_yours_description, it.name)
+                        visit.rating == null -> getString(R.string.place_went_description_state, it.name)
+                        else -> getString(R.string.place_went_description_rated, it.name, visit.rating.toString())
+                    }
+                }
                 binding.wentButton.text = when {
                     visit == null -> getString(R.string.place_share_yours)
                     visit.rating == null -> getString(R.string.place_went_state)

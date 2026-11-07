@@ -42,6 +42,7 @@ tricks. Policies change often: re-check the current Android and Google Play docu
 | Android 13+ async `Geocoder` API vs older blocking one | API 33+: `GeocodeListener`; older: blocking call on `Dispatchers.IO` | — |
 | GPS accuracy varies (indoors, approximate permission ≈ hundreds of metres) | Fixes worse than 100 m are ignored and the screen says "GPS signal is weak: checks paused"; approximate-only access therefore effectively pauses the checks | No movement checks with approximate location |
 | Location updates in Doze / background | Only while the 4A/4B location foreground service runs; low battery halves the request rate | If the process is killed, no checks until the app is opened again |
+| Deep Doze on a phone that lies still (measured, Galaxy A23, Android 14, `REAL_DEVICE_SPRINT.md` §13) | The platform switched GPS OFF the moment full Doze began (about 62 minutes after the screen went off, phone flat and untouched) and kept it off; the foreground service and the check-in timer kept running, but positions then came only from network location (accuracy 100 m to 900 m). A phone that is carried moves, so it does not reach deep Doze | The app cannot prevent this; a Safe Walk's last-known position on a motionless phone can be a coarse one. Said here, not hidden |
 | Battery level | `BatteryManager` (no permission), polled every 60 s; no broadcast receiver | Emulators may report odd levels (`adb shell dumpsys battery set level N` to test) |
 | Motion sensors for inactivity | **Not used**: throttled in the background, extra permission (`ACTIVITY_RECOGNITION`) on 10+ | Stops are detected from location only (10 min) |
 
@@ -128,3 +129,7 @@ tricks. Policies change often: re-check the current Android and Google Play docu
 | Evidence encryption | Done in Phase 5 (Keystore-wrapped per-item keys, SSEV1, SHA-256 on phone and server). | A vault PIN/biometric gate for viewing; WorkManager uploads. |
 | Backend communication | Cleartext HTTP is blocked by default for modern targets. | HTTPS only for release builds. INTERNET was added in Phase 2 (debug builds allow plain HTTP to 10.0.2.2 only). No secrets in the APK; use short-lived tokens. |
 | Backup | `allowBackup` is already `false` in Phase 1 so private data is not copied to cloud backups. | Keep it off, or use explicit backup rules for non-sensitive data only. |
+
+## Live-check scripts on Windows PowerShell 5.1 (moved here from `CLAUDE.md` §12 on 2026-11-07)
+
+`$home` is read-only (assigning it aborts the script); a one-element array returned from a function unrolls to its element (`return , @(...)`); wrap the scenario in try/finally so the clean-up (withdrawals, role reset) always runs. Method and results: `docs/PHASE9.md` §13. Save a script containing Tamil text with a UTF-8 **BOM** (5.1 reads BOM-less UTF-8 as Windows-1252); `R` is an alias of Invoke-History and `Type` of Get-Content (do not name helpers so); native-exe arguments lose embedded double quotes.
