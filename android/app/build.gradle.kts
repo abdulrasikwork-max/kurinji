@@ -44,6 +44,39 @@ run {
     }
 }
 
+// ---- Phase 17J: release configuration ----------------------------------------------------------------------------
+// Nothing secret lives in this file. A release is signed ONLY when a keystore is supplied from outside the repository,
+// either android/keystore.properties (git-ignored) with  storeFile= storePassword= keyAlias= keyPassword=  or the
+// environment variables IRL_KEYSTORE_FILE, IRL_KEYSTORE_PASSWORD, IRL_KEY_ALIAS, IRL_KEY_PASSWORD. Without them the
+// release build is UNSIGNED (it never silently falls back to the debug key).
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+fun signingValue(property: String, env: String): String? =
+    (keystoreProperties.getProperty(property) ?: System.getenv(env))?.takeIf { it.isNotBlank() }
+val releaseStoreFile = signingValue("storeFile", "IRL_KEYSTORE_FILE")
+val releaseStorePassword = signingValue("storePassword", "IRL_KEYSTORE_PASSWORD")
+val releaseKeyAlias = signingValue("keyAlias", "IRL_KEY_ALIAS")
+val releaseKeyPassword = signingValue("keyPassword", "IRL_KEY_PASSWORD")
+val releaseSigningConfigured = releaseStoreFile != null && releaseStorePassword != null &&
+    releaseKeyAlias != null && releaseKeyPassword != null
+
+// The production server address is SEPARATE from the development one. Until the operator has a real domain the default
+// is a name under the reserved ".invalid" top level (it can never resolve, so a build made by mistake fails closed
+// instead of talking to somebody else's server). Set  release.api.base.url=https://...  in local.properties or pass
+// -Prelease.api.base.url=... when building the real release.
+val releaseApiBaseUrl: String = (project.findProperty("release.api.base.url") as String?)
+    ?: localProperties.getProperty("release.api.base.url")?.takeIf { it.isNotBlank() }
+    ?: "https://api.irl-app.invalid/"
+
+// Version: the first public candidate. versionCode must rise with every upload to Google Play; override per build with
+// -Papp.version.code=N / -Papp.version.name=X or the same keys in local.properties.
+val appVersionCode: Int = ((project.findProperty("app.version.code") as String?)
+    ?: localProperties.getProperty("app.version.code"))?.toIntOrNull() ?: 1
+val appVersionName: String = (project.findProperty("app.version.name") as String?)
+    ?: localProperties.getProperty("app.version.name")?.takeIf { it.isNotBlank() } ?: "1.0.0-rc1"
+
 android {
     namespace = "com.safesphere.app"
     compileSdk = 35
@@ -52,8 +85,8 @@ android {
         applicationId = "com.safesphere.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0-phase1"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         // Phase 5: optional pin of the evidence vault recovery key (its SHA-256 key id, printed by VaultKeyTool).
@@ -61,14 +94,42 @@ android {
         buildConfigField("String", "EVIDENCE_VAULT_KEY_ID", "\"$evidenceVaultKeyId\"")
     }
 
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            create("release") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // Shrinking is left off for Phase 1; enable it before any public release.
-            isMinifyEnabled = false
+            // Phase 17J: R8 shrinks, obfuscates and optimises; keep rules are in proguard-rules.pro (Gson reads our
+            // data classes by field name, so those names must survive).
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "API_BASE_URL", "\"$releaseApiBaseUrl\"")
+            // Unsigned (no signing config) unless a keystore was supplied; NEVER the debug key.
+            signingConfig = if (releaseSigningConfigured) signingConfigs.getByName("release") else null
+        }
+
+        // NOT FOR DISTRIBUTION. Exactly the release code path (R8, shrunk resources) but signed with the debug key, a
+        // different application id (so it never replaces the real app on a phone) and the DEVELOPMENT server, so the
+        // minified app can be walked through on an emulator against the local backend.
+        create("releaseCheck") {
+            initWith(getByName("release"))
+            matchingFallbacks += "release"
+            signingConfig = signingConfigs.getByName("debug")
+            applicationIdSuffix = ".releasecheck"
+            versionNameSuffix = "-releasecheck"
+            buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         }
     }
 
@@ -87,6 +148,25 @@ android {
 
     // Phase 17A (R1): the generated cleartext allow-list (see devNetworkResDir above), debug only.
     sourceSets.getByName("debug").res.srcDir(devNetworkResDir)
+    // The releaseCheck build talks to the development server, so it gets the same generated allow-list (this file
+    // overlays the strict main/res/xml/network_security_config.xml that real release builds use).
+    sourceSets.getByName("releaseCheck").res.srcDir(devNetworkResDir)
+}
+
+// Phase 17J guards for a real release: the address must be HTTPS, and a SIGNED release must not carry the placeholder.
+afterEvaluate {
+    tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+        doFirst {
+            val uri = runCatching { URI(releaseApiBaseUrl) }.getOrNull()
+            check(uri != null && uri.scheme == "https" && !uri.host.isNullOrBlank()) {
+                "release.api.base.url must be an https:// address (was: $releaseApiBaseUrl)"
+            }
+            check(!(releaseSigningConfigured && uri!!.host.endsWith(".invalid"))) {
+                "A SIGNED release must not use the placeholder server $releaseApiBaseUrl. " +
+                    "Set release.api.base.url (local.properties or -Prelease.api.base.url=...) to the real https:// address."
+            }
+        }
+    }
 }
 
 dependencies {

@@ -36,3 +36,7 @@ render.experimental.xml
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Phase 17J: release signing details (the keystore itself is covered by *.jks / *.keystore above)
+keystore.properties
+android/app/release/

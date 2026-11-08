@@ -48,7 +48,7 @@ Profiles and connections (13A), experiences (13B), discovery (13C), moderation v
   no permission); `ComposeMedia` stages PREPARING → UPLOADING (progress) → FINISHING (video poster) → READY, or FAILED
   (Retry from the failed step) / REFUSED (`MediaRefusal`, Remove only); Share blocked while any item is pending or failed.
   `VideoPreparer` re-packs (no re-encode) into `cache/video-upload` (deleted after Share/Remove/close, swept after a
-  process death); the player gets `AppContainer.videoHeaders()` for one playback and is opened only by a tap; leaving the
+  process death); the player gets `AppContainer.videoHeaders(url)` (only for the backend origin, 17J) for one playback and is opened only by a tap; leaving the
   app pauses, never resumes by itself. Nothing about other people's videos is written to the phone (Q3).
 - **Experiences (Phase 13B, `feature/social`, `docs/PHASE13B.md`):** separate `ExperienceApi` / `ExperienceRepository`
   (`RemoteExperienceRepository`; fail-closed DTOs: unknown precision → NONE, band → EARLIER, comment policy → NOBODY;

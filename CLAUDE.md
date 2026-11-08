@@ -85,12 +85,13 @@ Phases 1–3 are the foundation.
 | 16 | UX reset (U1–U4) | implemented, compiled, tested, emulator | physical phone, TalkBack, real e-mail |
 | 17A–17E | Stabilise; phone OTP (V26); media (V27); location UX; social redesign (V28) | each implemented, compiled, tested, verified (MySQL/emulator; 17B also on the A23) | no real SMS sent; physical phone; TalkBack by ear; 17E on the A23 install + launch only |
 | IRL | Rebrand, icon "the Meet", opening screen | implemented, compiled, tested, emulator; local commit | physical phone, TalkBack |
-| 17F | Emergency: opt-in shake SOS (D-4; voice stays unavailable), audio in an SOS after advance consent, "last known" position, one-step Nearby report, readable radar, Safe Walk line; no migration | implemented, compiled, tested, emulator; A23: shake screen-on + false-positive fix (`PHASE17F.md`) | screen-off shake unreliable (said in-app); countdown speech under TalkBack |
-| 17G-1 | Deterministic Explore: closed-list tags on experiences (V29), the typed words understood ON THE PHONE (word list EN/Tamil/Tanglish), a structured query, a deterministic server engine; no AI, no cost (`docs/PHASE17G.md`, plan `PHASE17G_PLAN.md`) | implemented, compiled, tested, live MySQL 31/31, emulator, A23 (English, Tanglish) | Tamil word-list review, a Tanglish spelling rule (user's decision) |
+| 17F | Emergency: opt-in shake SOS, audio in an SOS after advance consent, last-known position, one-step Nearby report; no migration (`PHASE17F.md`) | implemented, compiled, tested, emulator, A23 (shake screen-on) | screen-off shake unreliable (said in-app); countdown speech under TalkBack |
+| 17G-1 | Deterministic Explore: closed-list tags (V29), typed words understood ON THE PHONE (EN/Tamil/Tanglish list), structured query, deterministic server engine; no AI (`docs/PHASE17G.md`) | implemented, compiled, tested, live MySQL 31/31, emulator, A23 (English, Tanglish) | Tamil word-list review, a Tanglish spelling rule (user's decision) |
 | 17G-3 | Optional AI understanding (Groq free tier first) of a typed Explore request: OFF by default, key only in the Python service, our own caps + breaker, per-account consent, any failure → the 17G-1 word list (`docs/PHASE17G3.md`) | implemented, compiled, tested, manually verified live with Groq + emulator + A23 | live 422 path, the service window's own log |
 | 17G-2 | "I went" = a private record + optional 1–5 rating (V30); a place shows ONE guarded average (U5) only from ≥ 5 counted raters, daily, no count; place page + post page flow (`docs/PHASE17G2.md`) | implemented, compiled, tested, live MySQL, emulator (incl. 2.0x), A23 | TalkBack by ear on the new button label |
 | 17H | Real-device sprint: A23 + API 26/29/33 emulators (`docs/REAL_DEVICE_SPRINT.md`); 11 defects fixed | closed PARTIAL 2026-11-07 | 25 h idle + overnight battery (deferred), SOS countdown speech, screen-off shake |
-| 17I–17J | brand; regression; release audit | planned | — |
+| 17J | Release readiness: Keystore-sealed access token, origin-checked token, R8 + signing + https release config, `prod` profile + `ProductionGuard` (`docs/PHASE17J.md`) | implemented, compiled, tested; minified build emulator-verified (partial) | signed release, real SMS; **Play needs targetSdk 36 (app 35)** |
+| 17I | brand; regression | planned | — |
 
 Next migration **V31**. Each phase or sub-phase needs its own plan and the user's approval first.
 
@@ -192,14 +193,14 @@ cd android
   intelligence stays out of SOS, tracking, Safe Walk, circle alerts and evidence (`IntelligenceIsolationTest`).
 - **DI:** manual `AppContainer` (composition root) via `Fragment.appContainer`; each ViewModel has `factory(container)`.
 - **Networking:** exactly **one** Retrofit instance; all APIs are created from it in `AppContainer`. `AuthInterceptor`
-  adds the Bearer token to everything except `/api/auth/*`. **No HTTP logging interceptor** (bodies contain passwords).
+  adds the Bearer token only to the backend origin (17J), never to `/api/auth/*`. **No HTTP logging interceptor** (passwords).
 - **Errors:** repositories use `core/network/ApiCallHandler` → `ApiResult<T>` (`Success` / `Failure(ApiError, message?)`).
   Only our own 409 messages (and our 403/429 messages) reach users; other errors use app strings. A 401 goes through
   `core/network/SessionEnder` (clears the session only if the rejected token is still the saved one).
 - **Session (C1): expired ≠ revoked.** A 401 without a reason → `SessionRefresher` → one retry; a refused refresh or
   `session_revoked` → "sign in to sync" and **nothing is deleted** (SOS, unsent endings, Circle copy and walk stay; SOS
   works); `credentials_changed` / `account_deleted` / `account_unavailable` → sign-out. Session changes use the atomic
-  `SessionStorage.update`. The 24 h access token is **not encrypted** yet (known limitation); `allowBackup=false`.
+  `SessionStorage.update`. The 24 h access token is Keystore-sealed, never plain text (17J, J-8); `allowBackup=false`.
 - **One holder per concern, in application scope** (`SosRecorder`, `EmergencyLocationSharing`, `SafeWalkSession`,
   `CircleAlertCoordinator`, `EvidenceVault`, …); screens and the ONE `SafetyTrackingService` read the same holder.
   Detection and decision logic are **pure, unit-tested policies** (`CheckInPolicy`, `MovementPolicy`, `BatteryPolicy`,

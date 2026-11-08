@@ -1,3 +1,24 @@
+# Handoff: 17J follow-up J-8, no plaintext token ever (2026-11-08) — working tree, NOT committed, NOT pushed
+
+Supersedes the plain-text fallback (J-2) from the first 17J pass. Details and reasons: `docs/PHASE17J.md` §2 (J-8) and `DECISIONS.md` J-8 (advisor-reviewed first). Android **1029 / 0** (forced re-run), lint **0 / 105**, `assembleRelease` + `assembleReleaseCheck` built; backend and Python untouched, not re-run.
+- **Changed:** `DataStoreSessionStorage` only (plus tests and docs). No token or refresh secret is ever written in plain text: sealing is tried twice; if the Keystore still refuses, the session is **memory-only** (secrets in this process, a random generation id on disk, every sealed/plain secret removed in the same edit); after a restart it is the safe state: same person, empty token, "sign in to sync", nothing deleted, SOS works locally. The plain `access_token` key is never read as a token or assigned; a pre-17J plain token is sealed or moved to memory at first read and removed in the same edit. No Keystore key is deleted or regenerated.
+- **Tests:** `SealedAccessTokenTest` rewritten (15; raw DataStore file bytes scanned for secrets; account-switch, retry, restart, emission, migration, source guard; a deliberate plaintext write made 3 tests fail) and `EmptyTokenRestartStateTest` (4: refresher/renewer quiet, no sign-out).
+- **NOT verified:** the memory-only path on a device (a real Keystore failure cannot be produced on demand). One earlier forced build run reported BUILD FAILED with its output lost; cause not identified; two later runs passed.
+- **Next:** the user's review; commit when they say so; the 17J decisions (targetSdk 36, domain, keystore, SMS, policy).
+
+---
+
+# Handoff: Phase 17J release readiness (2026-11-08) — changes are in the working tree, NOT committed, NOT pushed, nothing deployed
+
+Full record: **`docs/PHASE17J.md`** (decisions J-1…J-7 in `DECISIONS.md`; privacy / Play draft in `docs/RELEASE_PRIVACY_PLAY.md`). Android **1017 / 0**, lint 0 / 105, backend **891 / 0**, Python 83 OK.
+- **Done (implemented, compiled, tested):** access token sealed with the Keystore (A14 closed); `AuthInterceptor` + video header only to the backend origin; release signing only from `keystore.properties` / `IRL_KEYSTORE_*` (else unsigned); R8 + resource shrinking with Gson keep rules; versionCode 1 / `1.0.0-rc1`; separate `release.api.base.url` (placeholder under `.invalid`, https enforced, a signed release may not carry the placeholder); strict main network config; backend profile `prod` + `ProductionGuard`; `.env.example` complete; proxy / rate-limit notes.
+- **Found by running the minified build on the emulator (two release-only bugs, both fixed):** (1) the app crashed at launch (R8 stripped `TypeToken` generic signatures); (2) server error texts and codes were silently dropped (R8 merged away `ErrorBody`; a duplicate Safety Circle number showed a generic text). Re-verified on screen after the fixes; partial walk (sign-in, restart persistence, Discover, Safety Center, Safe Walk, Evidence Vault, duplicate contact) passed. Not walked under R8: sign-up/OTP, post with media, SOS, Nearby, Explore.
+- **Blocks a Play upload / needs the user:** **Play now requires targetSdk 36 (app: 35)** = AGP + compileSdk upgrade (own phase); production domain + TLS; release keystore (generate + back up); real OTP (Fast2SMS KYC, top-up, India DLT); production secrets; privacy policy + Data safety + account-deletion web link; `SEND_SMS` / foreground-service declarations; Spring Boot 4.x upgrade (3.5.16 is the last 3.5.x; newest stable 4.1.2); confirm version numbers.
+- **State left:** emulator and backend stopped, check app uninstalled; the A23 was not touched; scratch account `releasecheck.17j@example.com` is in the dev DB; the build still points at `127.0.0.1`.
+- **Next:** the user's decisions above; then a repeat of the minified walk with the real release configuration; 17I (brand, regression).
+
+---
+
 # Handoff: real-device sprint CLOSED PARTIAL (2026-11-07) — changes are in the working tree, NOT committed (the user decides), never pushed by Claude
 
 Full record: **`docs/REAL_DEVICE_SPRINT.md`** (§17 = close-out, open decisions, device state). Android **998 / 0**, lint 0 / 105, backend 883 / 0, Python 83 / 0.

@@ -27,7 +27,7 @@ Loaded when working on files under `android/`. Safety features: `android-safety.
   SOS screen. Social and safety never import each other; `feature/going` imports neither (`GoingThereTest`).
 - **DI:** manual `AppContainer` (composition root) via `Fragment.appContainer`; each ViewModel has `factory(container)`.
 - **Networking:** exactly **one** Retrofit instance; all APIs are created from it in `AppContainer`. `AuthInterceptor` adds the
-  Bearer token to everything except `/api/auth/*`. **No HTTP logging interceptor** (bodies contain passwords).
+  Bearer token only to the backend origin (scheme+host+port, 17J) and never to `/api/auth/*`. **No HTTP logging interceptor** (bodies contain passwords).
 - **Errors:** Phase 3+ repositories use `core/network/ApiCallHandler` → `ApiResult<T>` (`Success` / `Failure(ApiError, message?)`).
   A 401 goes through `core/network/SessionEnder` (Phase 10A): the session is cleared only if the rejected token is still
   the saved one (`SessionStorage.clearIfToken`, atomic in DataStore; a late 401 for an old token never signs out a newer
@@ -37,7 +37,7 @@ Loaded when working on files under `android/`. Safety features: `android-safety.
   messages reach users; other errors use app strings (`ApiResult.Failure.toMessage()`). Auth keeps its own
   `RemoteAuthRepository` mapping (its `refreshProfile` 401 also uses `SessionEnder`).
 - **Session:** `DataStoreSessionStorage` (token + id/name/email + a pending deletion's dates; never the password). Splash
-  routes Onboarding / Login / Home. The 24 h access token is **not encrypted** yet (known limitation). `allowBackup=false`.
+  routes Onboarding / Login / Home. The 24 h access token is sealed with the Keystore like the refresh secret and NEVER written in plain text (17J, `docs/PHASE17J.md` §2 / J-8: sealing is tried twice, then the session is memory-only with a generation id on disk; an unopenable or lost token = same person, empty token, "sign in to sync", nothing deleted). `allowBackup=false`.
   **C1 (`docs/PHASE11.md` §8):** `AuthSession.refreshToken` (sealed with Keystore alias `safesphere_session_v1`) and
   `needsSignIn` ("sign in to sync"). **Expired ≠ revoked:** a 401 without a reason → `SessionRefresher` (single-flight,
   NonCancellable, conditional atomic save) → `ApiCallHandler` retries ONCE; offline = NO_CONNECTION; refused or

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Phase 17J: the app talks to the backend over HTTPS only. No cleartext, and only the system's certificate
+    authorities are trusted (no user-installed CAs). DEBUG builds replace this file with a generated one that also
+    allows plain http:// to the development hosts (app/build.gradle.kts); release builds use this file as it is.
+    Certificate pinning is deliberately not set: it needs the real production host and a rotation plan (see
+    docs/PHASE17J.md).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

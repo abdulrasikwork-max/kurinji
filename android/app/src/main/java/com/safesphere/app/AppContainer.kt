@@ -143,6 +143,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.safesphere.app.core.network.BackendOrigin
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -161,13 +164,16 @@ class AppContainer(context: Context) {
 
     private val sessionStorage: SessionStorage by lazy { DataStoreSessionStorage(appContext) }
 
+    // Phase 17J: the one origin that may receive the sign-in token (AuthInterceptor, videoHeaders).
+    private val backendHttpUrl: HttpUrl by lazy { backendBaseUrl().toHttpUrl() }
+
     // No logging interceptor on purpose: request bodies contain passwords, so they must never be logged.
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .addInterceptor(AuthInterceptor(sessionStorage))
+            .addInterceptor(AuthInterceptor(sessionStorage, backendHttpUrl))
             .build()
     }
 
@@ -307,8 +313,10 @@ class AppContainer(context: Context) {
      * Phase 17C: the platform video player streams through its own connection (not the shared client), so it is given
      * the current sign-in header for one playback; nothing is stored. Empty when signed out.
      */
-    fun videoHeaders(): Map<String, String> =
-        currentSession.value?.token?.let { mapOf("Authorization" to "Bearer $it") } ?: emptyMap()
+    fun videoHeaders(url: String): Map<String, String> =
+        if (!BackendOrigin.isSame(backendHttpUrl, url)) emptyMap()   // Phase 17J: never to another origin
+        else currentSession.value?.token?.takeIf { it.isNotEmpty() }
+            ?.let { mapOf("Authorization" to "Bearer $it") } ?: emptyMap()
 
     /**
      * Q3: ONE image loader on the shared client (so AuthInterceptor attaches the JWT), memory cache only: nothing about

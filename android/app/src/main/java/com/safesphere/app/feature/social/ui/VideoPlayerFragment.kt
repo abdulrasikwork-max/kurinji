@@ -80,7 +80,7 @@ class VideoPlayerFragment : ViewBindingFragment<FragmentVideoPlayerBinding>(Frag
                 opened = true
                 // The platform player has its own connection: it gets the current sign-in header (after the check
                 // above renewed it if needed), for this playback only.
-                binding.video.setVideoURI(Uri.parse(viewModel.url), appContainer.videoHeaders())
+                binding.video.setVideoURI(Uri.parse(viewModel.url), appContainer.videoHeaders(viewModel.url))
             }
             VideoPlayerViewModel.State.Checking -> Unit
         }
