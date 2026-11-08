@@ -83,6 +83,8 @@ class ProductionGuardTest {
             p.load(in);
         }
         assertThat(p.getProperty("server.forward-headers-strategy")).contains(":none}");
+        // Phase D12: the production backend listens on the loopback interface only (nginx on the same host is the way in)
+        assertThat(p.getProperty("server.address")).isEqualTo("${SERVER_ADDRESS:127.0.0.1}");
         assertThat(p.getProperty("server.shutdown")).isEqualTo("graceful");
         assertThat(p.getProperty("server.error.include-stacktrace")).isEqualTo("never");
         assertThat(p.getProperty("spring.jpa.show-sql")).isEqualTo("false");

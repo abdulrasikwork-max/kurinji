@@ -1,0 +1,21 @@
+# /etc/systemd/system/irl-backup.service  (NOT VERIFIED: never run on a Linux host; see deploy/README.md)
+# One backup run: the database dump, then the evidence and photo folders. Started daily by irl-backup.timer.
+[Unit]
+Description=IRL backup (MySQL dump + evidence + media)
+After=mysql.service
+
+[Service]
+Type=oneshot
+User=irl
+Group=irl
+# Its own small file (mode 600): IRL_BACKUP_DIR, IRL_DB_DEFAULTS_FILE, EVIDENCE_STORAGE_DIR, SOCIAL_MEDIA_DIR and optionally
+# IRL_BACKUP_GPG_RECIPIENT, IRL_BACKUP_KEEP_DAYS (see deploy/scripts/backup.sh). The backend's secrets are NOT loaded here.
+EnvironmentFile=/etc/irl/backup.env
+ExecStart=/opt/irl/deploy/scripts/backup.sh
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/var/lib/irl
+ReadWritePaths=/var/backups/irl

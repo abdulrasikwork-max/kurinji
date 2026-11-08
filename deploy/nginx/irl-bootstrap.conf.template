@@ -1,0 +1,20 @@
+# Step 1 of 2: a port-80-only site so the certificate can be requested before the HTTPS site (which needs the certificate files)
+# exists. (NOT VERIFIED: nginx is not installed on the machine this was written on.)
+#   export IRL_DOMAIN=<your domain>          # the one whose DNS A record points at this server
+#   envsubst '${IRL_DOMAIN}' < irl-bootstrap.conf.template | sudo tee /etc/nginx/sites-available/irl >/dev/null
+#   sudo ln -sf /etc/nginx/sites-available/irl /etc/nginx/sites-enabled/irl && sudo nginx -t && sudo systemctl reload nginx
+#   sudo certbot certonly --webroot -w /var/www/certbot -d "$IRL_DOMAIN" -m <your e-mail> --agree-tos --no-eff-email
+# Then install irl.conf.template (step 2).
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${IRL_DOMAIN};
+    server_tokens off;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    location / {
+        return 404;
+    }
+}

@@ -1,0 +1,12 @@
+# /etc/systemd/system/irl-backup.timer  (NOT VERIFIED: never run on a Linux host)
+[Unit]
+Description=Daily IRL backup
+
+[Timer]
+# 03:30 server time; if the server was off then, run at the next boot.
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

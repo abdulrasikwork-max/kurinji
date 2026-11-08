@@ -1,0 +1,38 @@
+# /etc/systemd/system/irl-backend.service  (NOT VERIFIED: written here, never run on a Linux host; see deploy/README.md)
+[Unit]
+Description=IRL backend (Spring Boot)
+Wants=network-online.target
+After=network-online.target mysql.service irl-moderation.service
+
+[Service]
+Type=simple
+User=irl
+Group=irl
+# Secrets live here (mode 600, owner root), never in the repository or in this unit.
+EnvironmentFile=/etc/irl/backend.env
+WorkingDirectory=/opt/irl/backend
+# The install step copies the built jar to this fixed name (the version in the jar's file name does not matter).
+ExecStart=/usr/bin/java -Xms256m -Xmx768m -XX:+ExitOnOutOfMemoryError -jar /opt/irl/backend/app.jar
+Restart=on-failure
+RestartSec=10
+# Java exits with 143 on SIGTERM; the app finishes running requests (graceful shutdown, 30 s) before it does.
+SuccessExitStatus=143
+TimeoutStopSec=45
+LimitNOFILE=65535
+UMask=0077
+
+# Hardening: the process can write only to the two storage folders (and its private /tmp).
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+ReadWritePaths=/var/lib/irl/evidence /var/lib/irl/media
+
+[Install]
+WantedBy=multi-user.target

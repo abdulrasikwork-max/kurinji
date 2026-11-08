@@ -1,0 +1,4 @@
+# Phase D12: deployment files run on Linux. A script saved with Windows line endings fails there ("/usr/bin/env: 'bash\r'").
+# Scoped to these files only on purpose: no `* text=auto`, so no other file in the repository is renormalised.
+*.sh text eol=lf
+deploy/** text eol=lf

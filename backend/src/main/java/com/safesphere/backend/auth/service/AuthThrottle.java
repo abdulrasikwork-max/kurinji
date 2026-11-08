@@ -25,7 +25,10 @@ import org.springframework.stereotype.Component;
  * working. The account limit is therefore generous (10 per 15 min) and short.
  *
  * E-mail addresses are kept only as SHA-256 hashes in memory; nothing is written to the database or the log.
- * Network addresses are the TCP peer address; X-Forwarded-For is NOT trusted (any client can forge it).
+ * Network addresses are the address the servlet container reports, which is the TCP peer address by default;
+ * X-Forwarded-For is NOT trusted by default (any client can forge it). Only when forward-headers-strategy=native is set (the
+ * production profile behind nginx / a Cloudflare Tunnel, FORWARD_HEADERS_STRATEGY) does Tomcat replace it with the header,
+ * and then only for a request that comes from a trusted proxy on this machine (RealClientAddress*Test).
  */
 @Component
 public class AuthThrottle {

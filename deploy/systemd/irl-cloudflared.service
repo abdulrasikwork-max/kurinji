@@ -1,0 +1,34 @@
+# /etc/systemd/system/irl-cloudflared.service  (L1; NOT VERIFIED: written here, never run; see deploy/LAPTOP.md)
+# The Cloudflare Tunnel connector. It only makes OUTBOUND connections to Cloudflare; it listens on nothing but its loopback metrics port.
+[Unit]
+Description=IRL Cloudflare Tunnel (cloudflared)
+Wants=network-online.target
+After=network-online.target nginx.service irl-backend.service
+
+[Service]
+Type=simple
+User=cloudflared
+Group=cloudflared
+# The tunnel credentials file lives in /etc/irl/cloudflared (mode 600, owner cloudflared). cert.pem must NOT be left on the laptop
+# after the tunnel is created (it can manage every tunnel and DNS record of the account).
+ExecStart=/usr/bin/cloudflared --no-autoupdate --config /etc/irl/cloudflared/config.yml tunnel run
+# It must come back by itself after a network drop, a sleep or a restart of Windows.
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target

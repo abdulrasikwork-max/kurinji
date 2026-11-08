@@ -1,0 +1,23 @@
+# L1: a small MySQL 8 configuration for the laptop (inside WSL). Install as /etc/mysql/mysql.conf.d/zz-irl.cnf and restart MySQL.
+# NOT VERIFIED on a Linux host. Nothing here is a secret. Sizes assume a laptop shared with other programs and 5-30 friends.
+[mysqld]
+# Its own port, so it can never be confused with the Windows MySQL80 service (3306) used for development.
+port                     = 3307
+bind-address             = 127.0.0.1
+# Do not open the X protocol port (33060); the backend uses the normal one.
+mysqlx                   = OFF
+# The backend's DB_URL asks for TLS (sslMode=REQUIRED); the production profile refuses to start otherwise.
+require_secure_transport = ON
+
+character-set-server     = utf8mb4
+collation-server         = utf8mb4_unicode_ci
+
+# Memory: the default buffer pool is 128 MB but performance_schema alone adds roughly 150-200 MB; a pilot does not need it.
+innodb_buffer_pool_size  = 256M
+performance_schema       = OFF
+max_connections          = 40
+
+# Durability stays at the safe default: a power cut or a Windows restart must not lose a committed sign-up or SOS record.
+innodb_flush_log_at_trx_commit = 1
+# Backups are mysqldump files (deploy/scripts/backup.sh), so the binary log is only kept for 3 days (disk).
+binlog_expire_logs_seconds = 259200

@@ -1,0 +1,21 @@
+# L1: cloudflared (the Cloudflare Tunnel connector) configuration. NOT VERIFIED: cloudflared is not installed on the machine this was
+# written on. Fill it ON THE LAPTOP (in WSL):
+#   export IRL_TUNNEL_ID=<the id printed by `cloudflared tunnel create`>  IRL_API_HOST=<api.yourdomain>  IRL_NGINX_PORT=8081
+#   envsubst '${IRL_TUNNEL_ID} ${IRL_API_HOST} ${IRL_NGINX_PORT}' < config.yml.template | sudo tee /etc/irl/cloudflared/config.yml
+# Nothing here is a secret. The tunnel's credentials file (<id>.json) and cert.pem ARE secrets and never go in git (see .gitignore).
+tunnel: ${IRL_TUNNEL_ID}
+credentials-file: /etc/irl/cloudflared/${IRL_TUNNEL_ID}.json
+
+# Updates come from the package manager, not from the program itself.
+no-autoupdate: true
+# The connector's own metrics/health page: loopback only, never exposed.
+metrics: 127.0.0.1:20241
+
+ingress:
+  # The ONE public name. It goes to nginx, which goes to the backend. Nothing else on this laptop is routed.
+  - hostname: ${IRL_API_HOST}
+    service: http://127.0.0.1:${IRL_NGINX_PORT}
+    originRequest:
+      connectTimeout: 5s
+  # Everything else (any other host name that reaches this tunnel) is refused.
+  - service: http_status:404

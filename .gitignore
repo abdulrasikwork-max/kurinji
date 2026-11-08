@@ -40,3 +40,11 @@ desktop.ini
 # Phase 17J: release signing details (the keystore itself is covered by *.jks / *.keystore above)
 keystore.properties
 android/app/release/
+
+# L1 (laptop + Cloudflare Tunnel): tunnel credentials are secrets. cert.pem can manage the whole Cloudflare account.
+cert.pem
+deploy/cloudflared/*.json
+deploy/cloudflared/config.yml
+# Filled-in copies of the deployment templates (the *.template / *.example files stay in git)
+deploy/**/*.env
+deploy/**/backup.my.cnf

@@ -1277,6 +1277,14 @@ a SHAKE emergency differently. `VOICE` (deferred, D-4) and `DURESS_PIN` still an
 too (`clientRef`, `startedAt`): the phone keeps the trigger with the record and sends it with every attempt. The column
 `emergency_events.trigger_type` has no CHECK (verified on MySQL 8.0), so no migration was needed.
 
+# Phase D12: health check (`docs/D12_DEPLOYMENT.md`)
+
+- `GET /api/health` (public, no sign-in, GET only) -> `200 {"status":"UP"}` while the database answers a 2-second ping, otherwise
+  `503 {"status":"DOWN"}`. Nothing else is ever in the body: no version, no exception text, no time, no counts, nothing about any
+  person. `Cache-Control: no-store`, no CORS headers. Any other method, or a sub-path such as `/api/health/details`, is `401` like every
+  other protected path. For an uptime monitor and `deploy/scripts/smoke-test.sh`. The `prod` profile binds the backend to
+  `127.0.0.1` (`SERVER_ADDRESS`), so the monitor must call it through the HTTPS proxy.
+
 # Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
 
 A compact list of every phase's endpoints and config keys; the sections above have the details. Keep it in step.
@@ -1454,3 +1462,4 @@ A compact list of every phase's endpoints and config keys; the sections above ha
   `GET /api/places/{id}/posts` answers two more fields: `rating` = ONE guarded average as text ("4.3") or `null` (needs ≥ 5 counted raters, accounts
   past probation; Bayesian, one decimal; recomputed at most once per IST day; never a count, name or time) and `yourVisit` = `{rating|null}` or `null`
   (the caller's own only). Nothing orders by either.
+- Phase D12: `GET /api/health` (public, `{status: UP|DOWN}`, 503 when the database does not answer; `docs/D12_DEPLOYMENT.md`).

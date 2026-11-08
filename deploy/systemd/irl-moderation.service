@@ -1,0 +1,35 @@
+# /etc/systemd/system/irl-moderation.service  (NOT VERIFIED: written here, never run on a Linux host; see deploy/README.md)
+[Unit]
+Description=IRL moderation service (Python, standard library only, internal)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=irlmod
+Group=irlmod
+EnvironmentFile=/etc/irl/moderation.env
+WorkingDirectory=/opt/irl/moderation-service
+# 127.0.0.1 only: this service is never reachable from outside (nginx does not proxy /v1/). -E -s ignore Python environment
+# variables and the user site (the key comes from the unit's environment, which -E does not touch).
+ExecStart=/usr/bin/python3 -E -s -m kurinji_moderation.server --host 127.0.0.1 --port 8091
+Restart=on-failure
+RestartSec=5
+MemoryMax=512M
+UMask=0077
+
+# Hardening: it reads its own folder and writes nothing.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

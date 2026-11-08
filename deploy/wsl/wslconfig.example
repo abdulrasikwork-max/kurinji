@@ -1,0 +1,21 @@
+# L1: %UserProfile%\.wslconfig on WINDOWS (applies to every WSL2 distribution). NOT VERIFIED here. Apply with `wsl --shutdown`.
+# Some keys depend on the WSL version (`wsl --version`); an unknown key is ignored with a warning, so read the output of the first start.
+[wsl2]
+# Stay out of the way of Android Studio, the emulator and the browser: a hard cap on what the Linux side may take.
+# Spring Boot (<= 768 MB heap) + MySQL (~400 MB) + Python (<= 512 MB) + nginx + cloudflared: about 2.5 GB in the worst case.
+memory=3GB
+processors=2
+swap=1GB
+
+# Windows must NOT be able to reach the server's ports through "localhost": the development backend, MySQL80 and the emulator use
+# 8080 / 3306 / 8091 on Windows, and the phone must only ever reach the server through the Cloudflare tunnel. (Use
+# `wsl -d Ubuntu -- curl http://127.0.0.1:8180/api/health` to look at the server from Windows.)
+localhostForwarding=false
+
+# By default WSL stops its virtual machine after a short idle time when no window is open. Do not rely on a setting for that
+# (its name and range depend on the WSL version): the scheduled keep-alive task (deploy/wsl/windows-host-setup.ps1) keeps one
+# harmless process running.
+
+[experimental]
+# Give unused memory back to Windows (a growing page cache is the usual reason a WSL machine looks "big").
+autoMemoryReclaim=gradual

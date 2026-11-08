@@ -1,0 +1,17 @@
+-- Production MySQL 8 setup (run ONCE as a MySQL admin on the server). NOT VERIFIED here: no production MySQL exists yet.
+-- Copy to a file outside the repository, replace the two <...> placeholders, run it, then DELETE the copy:
+--   sudo mysql < create-production-db.sql        (the password is generated on the server: openssl rand -base64 36)
+-- Tables are created by Flyway when the backend starts (migrations V1..V30 and later); never create them by hand.
+
+CREATE DATABASE IF NOT EXISTS safesphere
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
+-- REQUIRE SSL: this account cannot connect without TLS (the backend's DB_URL uses sslMode=REQUIRED or stronger).
+-- Flyway needs DDL rights on this one schema only: ALL on safesphere.*, nothing global, no GRANT OPTION.
+CREATE USER IF NOT EXISTS '<db-user>'@'localhost' IDENTIFIED BY '<generated-password>' REQUIRE SSL;
+GRANT ALL PRIVILEGES ON safesphere.* TO '<db-user>'@'localhost';
+FLUSH PRIVILEGES;
+
+-- In /etc/mysql/mysql.conf.d/ (server side):  require_secure_transport = ON   and   bind-address = 127.0.0.1
+-- A separate backup account needs only: GRANT SELECT, SHOW VIEW, TRIGGER, LOCK TABLES, PROCESS (mysqldump --single-transaction).

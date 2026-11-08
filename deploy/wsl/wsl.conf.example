@@ -1,0 +1,14 @@
+# L1: /etc/wsl.conf INSIDE the Ubuntu distribution (WSL2). NOT VERIFIED here (WSL is not installed on the machine this was written on).
+# systemd makes the D12 services (irl-backend, irl-moderation, nginx, mysql, irl-cloudflared, the backup timer) start and restart by
+# themselves, exactly as on a VPS.
+[boot]
+systemd=true
+
+[network]
+# Keep the default generated resolv.conf; set the host name to something that is not your real name.
+hostname=irl-laptop
+
+[interop]
+# Linux processes of the server must not start Windows programs, and Windows' PATH is not needed there.
+enabled=false
+appendWindowsPath=false

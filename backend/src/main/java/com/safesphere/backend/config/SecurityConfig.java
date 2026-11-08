@@ -62,6 +62,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/phone/start", "/api/auth/phone/verify",
                                 "/api/auth/phone/resend", "/api/auth/phone/change").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // Phase D12: the uptime monitor and the deploy smoke test; GET only, says only UP or DOWN.
+                        .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/moderation/access").authenticated()
                         .requestMatchers("/api/moderation/**").access(roles.moderator())
                         .requestMatchers("/api/admin/**").access(roles.admin())

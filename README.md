@@ -9,13 +9,16 @@ family, partner or guardian mode and no location on request (a permanent product
 SafeSphere/
 ├── android/   Kotlin Android app (XML views, MVVM, Navigation, Retrofit, DataStore)
 ├── backend/   Spring Boot REST API (Spring Security + JWT, JPA, Flyway, MySQL)
-└── docs/      API.md, PHASE2.md … PHASE10.md, PHASE*_DESIGN.md, HANDOFF.md, DESIGN_SYSTEM.md, PLATFORM_CONSTRAINTS.md
+├── moderation-service/  Python content-check service (standard library only, internal)
+├── deploy/    production / laptop-server runbooks, systemd, nginx, Cloudflare Tunnel, backup scripts (no secrets)
+└── docs/      index in docs/README.md (API.md, STATUS.md, DECISIONS.md, HANDOFF.md, one file per phase, DESIGN_SYSTEM.md …)
 ```
 
-The status table below covers Phases 1–5; the current, complete status of every phase (6–10) is in `CLAUDE.md` §2
-and `docs/HANDOFF.md`. In short: Nearby place signals (6), trust and moderation (7), safety intelligence (8) and the
-Phase 9 evaluation layer are built; **Phase 10A** (honest app texts, password change with session revocation, and
-coercion-aware account deletion) is implemented and tested (`docs/PHASE10.md`); RISE (10B) is designed, not built.
+**Start here:** the product is now **IRL** (a social platform for real-world experiences with the safety technology as a trust
+layer; the code, package and database keep the name SafeSphere). The current product intent, rules and status of every phase are in
+`CLAUDE.md` and `docs/STATUS.md`; the latest state and next steps are at the top of `docs/HANDOFF.md`; running it for friends from a
+laptop is `deploy/LAPTOP.md`, on a server `deploy/README.md`. **The status table below is the history of Phases 1–5 only** and is kept
+as the record of what was verified then.
 
 ## Status
 

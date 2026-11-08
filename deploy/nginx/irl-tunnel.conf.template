@@ -1,0 +1,79 @@
+# L1 (laptop behind a Cloudflare Tunnel): the ONLY nginx site in that setup. NOT VERIFIED: nginx is not installed on the machine this
+# was written on; run `nginx -t` first.   Install:
+#   export IRL_NGINX_PORT=8081 IRL_BACKEND_PORT=8180
+#   envsubst '${IRL_NGINX_PORT} ${IRL_BACKEND_PORT}' < irl-tunnel.conf.template | sudo tee /etc/nginx/sites-available/irl >/dev/null
+#   sudo nginx -t && sudo systemctl reload nginx
+#
+#   phone --https--> Cloudflare edge --tunnel--> cloudflared (this host) --http--> nginx 127.0.0.1:${IRL_NGINX_PORT}
+#                                                                              --http--> backend 127.0.0.1:${IRL_BACKEND_PORT}
+# TLS ends at Cloudflare's edge and the tunnel only ever connects OUTWARD, so there is no certificate, no port 80/443 listener and
+# no router port to open here. nginx listens on the loopback interface ONLY: the one thing that can reach it is cloudflared.
+# (Use irl.conf.template instead on a normal VPS that serves the internet directly.)
+
+# Privacy: no client address, no query string, no user agent in the access log (the privacy-policy draft says no address is stored).
+log_format irl_privacy '$time_iso8601 $status $request_method $uri $request_time';
+
+server {
+    listen 127.0.0.1:${IRL_NGINX_PORT};
+    server_name _;
+    server_tokens off;
+
+    # THE REAL CLIENT ADDRESS. Every request arrives from cloudflared on 127.0.0.1, so without this the backend would see one
+    # address for every friend and its sign-in / sign-up limits would become ONE shared bucket (one person's typos would lock
+    # everybody out). Cloudflare's edge SETS CF-Connecting-IP itself (a client cannot choose it), and only the loopback peer
+    # (cloudflared) is trusted to say so. After this, $remote_addr IS the client's address.
+    set_real_ip_from 127.0.0.1;
+    real_ip_header   CF-Connecting-IP;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer" always;
+
+    access_log /var/log/nginx/irl.access.log irl_privacy;
+    error_log  /var/log/nginx/irl.error.log warn;
+
+    # Videos are at most 50 MB and uploads are RAW bodies (not multipart). 60m covers the largest (Cloudflare's free plan caps a
+    # request body at 100 MB, which is above this; check Cloudflare's current limits).
+    client_max_body_size 60m;
+
+    # The admin API is for the owner ON THIS LAPTOP only (curl http://127.0.0.1:${IRL_BACKEND_PORT}/api/admin/... directly,
+    # with an ADMIN token). It is never served to the internet, even to a token that would be valid.
+    location /api/admin/ {
+        return 404;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:${IRL_BACKEND_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        # SET, never passed through: the backend's rate limits trust this header (FORWARD_HEADERS_STRATEGY=native) and a client
+        # must not be able to choose its own address. $remote_addr is already the real address (set_real_ip_from above).
+        proxy_set_header X-Forwarded-For   $remote_addr;
+        # A literal, not $scheme: this hop is plain http, but the person is on https (Cloudflare's edge).
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_request_buffering off;
+        proxy_connect_timeout 5s;
+        proxy_send_timeout    120s;
+        proxy_read_timeout    120s;
+    }
+
+    location = /api/health {
+        proxy_pass http://127.0.0.1:${IRL_BACKEND_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Forwarded-For   $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        access_log off;
+    }
+
+    # The Python moderation service is internal: it is never proxied.
+    location /v1/ {
+        return 404;
+    }
+
+    # The privacy and account-deletion pages are NOT served from the laptop (they must stay up when it is off): host them on
+    # Cloudflare Pages (free) or any static host.
+    location / {
+        return 404;
+    }
+}
