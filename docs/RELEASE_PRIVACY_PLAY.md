@@ -51,7 +51,7 @@ deletion** = Yes (in-app, 7-day grace) **plus a web link [OWNER]**; independent 
    person switches on automatic SMS; otherwise the SMS app opens. Be ready with a demo video of that screen.
 2. **Foreground service types** `location` and `microphone` — declare the user-initiated SOS / Safe Walk / evidence recording.
 3. **`USE_BIOMETRIC`** — normal permission, no form.
-4. **Target API 36** — required (see PHASE17J §5). Not met today (35).
+4. **Target API 36** — required (see PHASE17J §5). Met since Phase 17K (the release APK reports `targetSdkVersion:'36'`); not yet verified on a real Android 16 phone or by an actual Play upload.
 5. **Content rating questionnaire** and **target audience 18+**; user-generated content declaration (reporting + blocking exist).
 6. **Account deletion** — in-app path and the web resource URL **[OWNER]**.
 7. Government/emergency claims: the app **does not** integrate with emergency services; "Call 112" opens the dialer. The store

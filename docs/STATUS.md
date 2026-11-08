@@ -35,6 +35,8 @@ found and fixed); real phone, TalkBack speech and dark mode **not verified**. **
 
 **17J (2026-11-08, `docs/PHASE17J.md`) release readiness: implemented, compiled, tested (Android 1017/0, lint 0/105, backend 891/0, Python 83); R8 build manually verified on the emulator (partial; found and fixed a launch crash and lost server error texts).** Keystore-sealed access token (never plain text; memory-only if the Keystore refuses, J-8), origin-checked token header, release signing/R8/https config, `prod` profile + `ProductionGuard`. NOT done / needs the user: targetSdk 36 for Play (app targets 35), production domain + TLS, release keystore, real SMS (Fast2SMS KYC + top-up), privacy policy + Play forms, Spring Boot 4.x.
 
+**17K Step A (2026-11-08, `docs/TARGETSDK36_PLAN.md`) toolchain for targetSdk 36: AGP 8.13.2 + Gradle 8.14.6 + compileSdk 36 (target still 35): tested (1029/0), lint 0 errors / 98 warnings, both release builds, R8/packaging checks, emulator walk (API 37). **17K Step B: `targetSdk = 36` (one line): tested (1029/0), lint 0 errors / 98, both release builds, badging target 36; back (incl. SOS countdown, active SOS, active Safe Walk), Tamil and the functional walk identical to target 35 on the API 37 emulator. NOT verified: a real Android 16 phone, TalkBack.**
+
 **Phase 4 sub-phases — one at a time, each gated by the user's build + test:**
 - **4A** — Location + permissions, notifications foundation, emergency location sharing, emergency/state recovery, battery + network readers.
 - **4B** — Safe Walk, check-in timer, "I'm Safe", journey state, escalation levels 0–3.

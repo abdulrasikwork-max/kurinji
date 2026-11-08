@@ -124,7 +124,7 @@ released build (needed to read crash reports; it is in `app/build/outputs/mappin
 
 | Item | Why it is open |
 |---|---|
-| **Play target API: the app targets 35, Play now requires 36** | Checked 2026-11-08 (developer.android.com/google/play/requirements/target-sdk): new apps and updates must target Android 16 / API 36 since 31 Aug 2026. Moving to 36 means compileSdk 36 and a newer AGP (current 8.7.3), i.e. a toolchain change plus a behaviour review (edge-to-edge, predictive back, foreground-service rules). **Not done**; needs your decision and its own phase. **This blocks a Play upload.** |
+| **Play target API: the app targets 35, Play now requires 36** | Checked 2026-11-08 (developer.android.com/google/play/requirements/target-sdk): new apps and updates must target Android 16 / API 36 since 31 Aug 2026. Moving to 36 means compileSdk 36 and a newer AGP (current 8.7.3), i.e. a toolchain change plus a behaviour review (edge-to-edge, predictive back, foreground-service rules). **Not done in 17J**; done in Phase 17K (`docs/TARGETSDK36_PLAN.md`): AGP 8.13.2, Gradle 8.14.6, compileSdk and targetSdk 36. The Play target-API blocker is closed in code; a real upload and an Android 16 phone are still to do. |
 | Production domain, hosting, TLS certificate | Not available; `release.api.base.url` stays a placeholder. Then decide certificate pinning. |
 | Release keystore | Generate and **back up** a release key (losing it means no updates). Put its paths/passwords in `android/keystore.properties` or `IRL_KEYSTORE_*`; use Play App Signing. |
 | Version numbers | `1 / 1.0.0-rc1` is my proposal; confirm or change. |

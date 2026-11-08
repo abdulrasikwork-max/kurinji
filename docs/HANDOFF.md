@@ -1,3 +1,27 @@
+# Handoff: Phase 17K Step B, targetSdk 36 (2026-11-08) - working tree, NOT committed, NOT pushed
+
+Full record: **`docs/TARGETSDK36_PLAN.md`** (status log at the end; decisions 17K A-1 and B-1 in `DECISIONS.md`). **Steps A and B are complete.** The app now builds with AGP 8.13.2, Gradle 8.14.6, compileSdk 36 and **targetSdk 36** (the Play requirement).
+- **Step B = one line** (`targetSdk = 36`). Unit tests **1029 / 0**, lint **0 errors / 98 warnings** (same issue IDs as Step A; `OldTargetApi` stays, informational), `assembleRelease` and `assembleReleaseCheck` built, release badging `targetSdkVersion:'36'`, R8/packaging checks unchanged. Backend and Python untouched, not re-run.
+- **Measured, not assumed:** on the same API 37 emulator, target 35 and target 36 behave **identically** for back handling (key, edge swipe, cancelled edge gesture) on onboarding, ProfileSetup, the Discover panel, the city and report sheets, the **SOS countdown** (back cancels it, a cancelled gesture does not), an **active SOS** and an **active Safe Walk** (a full back leaves the screen, the banner and the service stay), and for the Tamil + Tanglish post at font 1.0 and 2.0 (no clipping). No predictive-back opt-out was added.
+- **NOT verified:** a real Android 16 phone, the JobScheduler quota effect on evidence uploads, large-screen layouts, the sign-up form/DOB picker, video, comments/connections/moderation/account screens, shake SOS, AI understanding, permission flows (pre-granted), TalkBack, an actual Play upload.
+- **State left:** emulator and backend stopped, app uninstalled, mock location removed, font 1.0; scratch accounts `bk35`, `bk36`, `walk.17k`, `releasecheck.17j` are in the dev DB. Local-only edit outside git: `android/local.properties` `sdk.dir` colon escaped.
+- **Still open for Play (user decisions, `PHASE17J.md` §5):** production domain + TLS, release keystore, real SMS, privacy policy + Data safety forms, account-deletion web link, SEND_SMS / foreground-service declarations, Spring Boot 4.x, the AGP 9 migration before the next yearly target bump (API 37).
+- **Next:** the user's review; a local commit if wanted.
+
+---
+
+# Handoff: Phase 17K Step A, toolchain for targetSdk 36 (2026-11-08) - working tree, NOT committed, NOT pushed
+
+Full record: **`docs/TARGETSDK36_PLAN.md`** (status log at the end; decision 17K A-1 in `DECISIONS.md`). **Step A is complete; Step B (`targetSdk = 36`) is not started.**
+- **Changed (3 lines):** wrapper `distributionUrl` -> Gradle **8.14.6**, `agp = "8.13.2"`, `compileSdk = 36` (targetSdk 35). Also, outside git: `android/local.properties` `sdk.dir` colon escaped (AGP 8.13 lint error `PropertyEscape`).
+- **Results:** unit tests **1029 / 0**, lint **0 errors / 98 warnings** (was 105), `assembleRelease` + `assembleReleaseCheck` built, Gradle guards fail where they should, R8/dex/16 KB/badging checks pass, emulator walk of the minified build on the API 37 AVD passed on the steps listed in the plan (sign-in routing to the phone-code screen, verify, profile, Explore, Nearby report, private place, photo post, duplicate-contact text, SOS countdown + Cancel, a real SOS with 2 sealed audio items, Safe Walk, vault). **Backend and Python not touched, not re-run.**
+- **NOT verified:** the sign-up form and DOB picker, video, comments, connections, moderation, account screens, shake SOS, AI understanding, Tamil text, permission flows (pre-granted), TalkBack, any real Android 16 phone.
+- **Environment notes:** use `-Djava.net.preferIPv4Stack=true` for Gradle downloads here; run Gradle stages one at a time with the daemon stopped between heavy ones (a combined forced run stalled and a low-memory reap happened); Git Bash `sed -i` rewrites CRLF files.
+- **State left:** emulator and backend stopped, app uninstalled, mock location removed; scratch account `walk.17k@example.com` (2 resolved emergencies, 1 post, 1 contact) is in the dev DB. I also stopped a VS Code Java helper process by mistake (it normally restarts on its own).
+- **Next:** Step B when the user says so (same API 37 AVD and settings, same walk, compare screenshots in the scratchpad `shots-A`).
+
+---
+
 # Handoff: 17J follow-up J-8, no plaintext token ever (2026-11-08) — working tree, NOT committed, NOT pushed
 
 Supersedes the plain-text fallback (J-2) from the first 17J pass. Details and reasons: `docs/PHASE17J.md` §2 (J-8) and `DECISIONS.md` J-8 (advisor-reviewed first). Android **1029 / 0** (forced re-run), lint **0 / 105**, `assembleRelease` + `assembleReleaseCheck` built; backend and Python untouched, not re-run.

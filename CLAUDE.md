@@ -87,10 +87,11 @@ Phases 1–3 are the foundation.
 | IRL | Rebrand, icon "the Meet", opening screen | implemented, compiled, tested, emulator; local commit | physical phone, TalkBack |
 | 17F | Emergency: opt-in shake SOS, audio in an SOS after advance consent, last-known position, one-step Nearby report; no migration (`PHASE17F.md`) | implemented, compiled, tested, emulator, A23 (shake screen-on) | screen-off shake unreliable (said in-app); countdown speech under TalkBack |
 | 17G-1 | Deterministic Explore: closed-list tags (V29), typed words understood ON THE PHONE (EN/Tamil/Tanglish list), structured query, deterministic server engine; no AI (`docs/PHASE17G.md`) | implemented, compiled, tested, live MySQL 31/31, emulator, A23 (English, Tanglish) | Tamil word-list review, a Tanglish spelling rule (user's decision) |
-| 17G-3 | Optional AI understanding (Groq free tier first) of a typed Explore request: OFF by default, key only in the Python service, our own caps + breaker, per-account consent, any failure → the 17G-1 word list (`docs/PHASE17G3.md`) | implemented, compiled, tested, manually verified live with Groq + emulator + A23 | live 422 path, the service window's own log |
-| 17G-2 | "I went" = a private record + optional 1–5 rating (V30); a place shows ONE guarded average (U5) only from ≥ 5 counted raters, daily, no count; place page + post page flow (`docs/PHASE17G2.md`) | implemented, compiled, tested, live MySQL, emulator (incl. 2.0x), A23 | TalkBack by ear on the new button label |
-| 17H | Real-device sprint: A23 + API 26/29/33 emulators (`docs/REAL_DEVICE_SPRINT.md`); 11 defects fixed | closed PARTIAL 2026-11-07 | 25 h idle + overnight battery (deferred), SOS countdown speech, screen-off shake |
-| 17J | Release readiness: Keystore-sealed access token, origin-checked token, R8 + signing + https release config, `prod` profile + `ProductionGuard` (`docs/PHASE17J.md`) | implemented, compiled, tested; minified build emulator-verified (partial) | signed release, real SMS; **Play needs targetSdk 36 (app 35)** |
+| 17G-3 | Optional AI understanding of a typed Explore request: OFF by default, key only in the Python service, caps + breaker, consent, any failure → the 17G-1 word list (`docs/PHASE17G3.md`) | implemented, compiled, tested, manually verified live with Groq + emulator + A23 | live 422 path, the service window's own log |
+| 17G-2 | "I went" = a private record + optional 1–5 rating (V30); a place shows ONE guarded average (U5) from ≥ 5 raters, no count (`docs/PHASE17G2.md`) | implemented, compiled, tested, live MySQL, emulator (incl. 2.0x), A23 | TalkBack by ear on the new button label |
+| 17H | Real-device sprint: A23 + API 26/29/33 emulators (`docs/REAL_DEVICE_SPRINT.md`); 11 defects fixed | closed PARTIAL 2026-11-07 | 25 h idle, overnight battery, SOS countdown speech, screen-off shake |
+| 17J | Release readiness: Keystore-sealed access token, origin-checked token, R8 + signing + https release config, `prod` profile + `ProductionGuard` (`docs/PHASE17J.md`) | implemented, compiled, tested; minified build emulator-verified (partial) | signed release, real SMS |
+| 17K | targetSdk 36 for Play (`docs/TARGETSDK36_PLAN.md`): AGP 8.13.2, Gradle 8.14.6, compile/target 36 | implemented, compiled, tested; back/Tamil/SOS/walk matrices identical to target 35 on the API 37 emulator | Android 16 phones, TalkBack |
 | 17I | brand; regression | planned | — |
 
 Next migration **V31**. Each phase or sub-phase needs its own plan and the user's approval first.
@@ -176,9 +177,9 @@ cd android
 
 ## 5. Android architecture (`com.safesphere.app`) — detail in `.claude/rules/android*.md`
 
-- **Stack:** Kotlin 2.0.21, AGP 8.7.3, XML Views, Fragments, ViewBinding, single Activity (`MainActivity`), one Navigation
+- **Stack:** Kotlin 2.0.21, AGP 8.13.2 (Gradle 8.14.6), XML Views, Fragments, ViewBinding, single Activity (`MainActivity`), one Navigation
   graph, MVVM, repositories, Coroutines/Flow, DataStore, Retrofit 2.11 + OkHttp 4.12 + Gson, Material 3, Coil (13B, D7),
-  `play-services-location`. minSdk 26, compile/target 35. **No Compose. No Hilt** unless explicitly approved. No new
+  `play-services-location`. minSdk 26, compile/target 36 (Play, 17K). **No Compose. No Hilt** unless explicitly approved. No new
   dependency without the user's approval.
 - **Packages:** feature-first `feature/<name>/{domain,data,ui}`; shared code in `core/`, `navigation/`. Features: splash,
   onboarding, auth, safety (You → Safety hub + session status), community (Nearby), profile (You), settings,

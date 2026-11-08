@@ -13,9 +13,9 @@ Loaded when working on files under `android/`. Safety features: `android-safety.
 > (`SavedFragment`, nav id still `cocoonFragment`); Cocoon / Want / Been are gone. `feature/rise` was removed in 13F.
 > When this text and the code disagree, the code wins: flag it to the user.
 
-- **Stack:** Kotlin 2.0.21, AGP 8.7.3, XML Views, Fragments, ViewBinding, single Activity (`MainActivity`), one Navigation
+- **Stack:** Kotlin 2.0.21, AGP 8.13.2 on Gradle 8.14.6 (AGP 8.11+ needs Gradle <= 9.5; AGP 9 needs Gradle 9.1+), XML Views, Fragments, ViewBinding, single Activity (`MainActivity`), one Navigation
   graph, MVVM, repositories, Coroutines/Flow, DataStore, Retrofit 2.11 + OkHttp 4.12 + Gson, Material 3.
-  minSdk 26, compile/target 35. **No Compose. No Hilt** unless explicitly approved.
+  minSdk 26, compile/target 36 (Play requirement, 17K; the target-36 behaviour changes were measured on the API 37 emulator, `docs/TARGETSDK36_PLAN.md`). **No Compose. No Hilt** unless explicitly approved.
 - **Packages:** feature-first `feature/<name>/{domain,data,ui}`; shared code in `core/`, `navigation/`.
   Features: splash, onboarding, auth, safety (You → Safety hub + session status), community (Nearby heads-ups), profile
   (You), settings, safetycircle, emergency (+ `entry`: SOS shortcut/tile), safewalk, circlealert, evidence, moderation
