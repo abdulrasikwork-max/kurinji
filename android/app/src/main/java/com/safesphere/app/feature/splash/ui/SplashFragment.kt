@@ -1,9 +1,13 @@
 package com.safesphere.app.feature.splash.ui
 
+import android.animation.ValueAnimator
 import android.graphics.drawable.Animatable
 import android.os.Bundle
+import android.transition.ChangeBounds
+import android.transition.TransitionManager
 import android.util.TypedValue
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import androidx.core.view.ViewCompat
 import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
@@ -19,12 +23,13 @@ import com.safesphere.app.feature.social.ui.MarksFit
 import java.util.Locale
 
 /**
- * The IRL opening screen (2026-11-03, docs/DESIGN_SYSTEM.md "Opening"). It continues the system launch screen: "the
- * Meet" rises as the hero, then "OUT THERE. TOGETHER." and the three lines land one after another. On the first run
- * "LET'S GO →" appears and leads to the onboarding; a returning person is taken on by themselves after the short
- * launch time (as before), so the opening never adds a tap on the way to SOS. With the system's animations switched
- * off everything is simply shown. With large text on a narrow screen the decorative hero hides and the headline gets
- * smaller, so the words and the button fit.
+ * The IRL opening screen (2026-11-12, third version; docs/DESIGN_SYSTEM.md "Opening"). It continues the plain cherry
+ * launch screen with ONE centred lockup, every time: the mark writes itself (560 ms), "IRL" arrives under it, then
+ * "OUT THERE. TOGETHER.". A returning person is taken on after that by themselves (about one second in all), so the
+ * opening never adds a tap on the way to SOS. On the first run the lockup then moves up and "YOUR WORLD. / YOUR PEOPLE. /
+ * YOUR FREEDOM." lands line by line with "LET'S GO", which leads to the onboarding. With the system's animations
+ * switched off everything is simply shown. With large text on a narrow screen the decorative mark hides and the
+ * headline gets smaller, so the words and the button fit.
  */
 class SplashFragment : ViewBindingFragment<FragmentSplashBinding>(FragmentSplashBinding::inflate) {
 
@@ -37,8 +42,12 @@ class SplashFragment : ViewBindingFragment<FragmentSplashBinding>(FragmentSplash
         ViewCompat.setAccessibilityHeading(binding.openingHeadline, true)
         (binding.openingArt.drawable as? Animatable)?.start()
         if (savedInstanceState == null) {
-            Motion.revealInSequence(listOf(binding.openingBrand, binding.openingMotto, binding.openingLineWorld,
-                binding.openingLinePeople, binding.openingLineFreedom, binding.openingSupporting))
+            // The name arrives while the mark is still being written; the line follows it.
+            Motion.revealInSequence(
+                listOf(binding.openingWordmark, binding.openingMotto),
+                startDelayMs = NAME_AFTER_MS,
+                staggerMs = LINE_AFTER_NAME_MS
+            )
         }
         binding.openingStart.setOnClickListener { navigateTo(StartDestination.Onboarding) }
         collectWhenStarted(viewModel.destination) { destination ->
@@ -50,19 +59,36 @@ class SplashFragment : ViewBindingFragment<FragmentSplashBinding>(FragmentSplash
         }
     }
 
-    /** First run: the button fades in once the words have landed. */
+    /**
+     * First run only: once the lockup is complete it glides up to make room, the three lines land one after another and
+     * the button with them. A returning person never sees this: they are taken on after the lockup.
+     */
     private fun showStart() {
         val start = binding.openingStart
         if (start.isVisible) return
-        Motion.revealInSequence(listOf(start))
+        val animated = ValueAnimator.areAnimatorsEnabled()
+        if (animated) {
+            TransitionManager.beginDelayedTransition(
+                binding.openingContent,
+                ChangeBounds().setDuration(MAKE_ROOM_MS).setInterpolator(DecelerateInterpolator())
+            )
+        }
+        binding.openingHeadline.isVisible = true
         start.isVisible = true
+        Motion.revealInSequence(headlineLines + start, startDelayMs = LINES_AFTER_MS, staggerMs = BETWEEN_LINES_MS)
     }
 
     private fun fitToTextSize() {
         val config = resources.configuration
-        // The hero never takes more than 30 % of the screen, so on short phones the words still fit above the button.
-        val density = resources.displayMetrics.density
-        binding.openingArt.maxHeight = (minOf(HERO_MAX_DP, config.screenHeightDp * HERO_SHARE) * density).toInt()
+        // The mark never takes more than a fifth of the screen height, so on short phones the words still fit.
+        val markPx = minOf(
+            resources.getDimension(R.dimen.opening_mark),
+            config.screenHeightDp * MARK_SHARE * resources.displayMetrics.density
+        ).toInt()
+        binding.openingArt.layoutParams = binding.openingArt.layoutParams.apply {
+            width = markPx
+            height = markPx
+        }
         if (MarksFit.mode(config.screenWidthDp, config.fontScale) != MarksFit.Mode.ICONS) return
         binding.openingArt.isVisible = false
         setHeadlineSize(resources.getDimension(R.dimen.opening_headline_tight))
@@ -115,7 +141,15 @@ class SplashFragment : ViewBindingFragment<FragmentSplashBinding>(FragmentSplash
     private companion object {
         /** A little room so the widest line never touches the edge. */
         const val FIT_MARGIN = 0.97f
-        const val HERO_MAX_DP = 300f
-        const val HERO_SHARE = 0.30f
+        const val MARK_SHARE = 0.20f
+
+        /** "IRL" starts to arrive while the mark is still being written (560 ms); the line follows. */
+        const val NAME_AFTER_MS = 300L
+        const val LINE_AFTER_NAME_MS = 220L
+
+        /** First run: the lockup makes room, then the three lines and the button land. */
+        const val MAKE_ROOM_MS = 380L
+        const val LINES_AFTER_MS = 220L
+        const val BETWEEN_LINES_MS = 120L
     }
 }

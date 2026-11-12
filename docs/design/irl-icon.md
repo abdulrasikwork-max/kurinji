@@ -1,4 +1,121 @@
-# IRL launcher icon: concepts and choice (2026-11-03)
+# IRL launcher icon: concepts and choice
+
+> **CURRENT MARK (2026-11-12 afternoon, decision IRL-C10): the Tamil letter ஐ, drawn as one line. APPROVED by the owner on
+> 2026-11-12 ("I approve the new ஐ logo and the new opening direction").** The Kolam butterfly (IRL-C9) was rejected by the owner the same day: "the concept/story is interesting,
+> but the actual logo feels too complicated for an app icon". Earlier drawings are history, below.
+>
+> **The idea.** ஐ is the Tamil vowel that is said exactly like the English letter **I**.
+> - It is the **I of IRL** (in Tamil script the name is written ஐ.ஆர்.எல்), and it is "I": me, in person.
+> - **"ஐ!"** is what a child shouts in delight, for instance when let outside.
+> - In old Tamil the word ஐ means **wonder** (Tolkappiyam: "ஐ வியப்பாகும்"). It also begins ஐக்கியம், unity.
+> - For someone who does not read Tamil it is an abstract ribbon: it starts curled up, sweeps out wide, and ends open.
+>
+> So the visual itself carries the idea (I, in real life, with wonder); it does not illustrate "people + place".
+>
+> **The drawing.** Our own drawing of the standard letterform as ONE line of one weight with round ends (not a font
+> outline). One colour. 108 x 108 adaptive, the letter is about 44 units wide, stroke 5, all inside the 66-unit safe
+> zone. Path data: `ic_launcher_foreground.xml`.
+> - **Colours:** `brand_cream` #EEDCC8 on `brand_cherry` #5D0703 fading to `brand_cherry_deep`. Themed icon: one colour.
+>   In the app (`ic_brand_mark`): the text colour of the screen.
+> - **Motion (`art_opening_meet`, 560 ms):** the letter writes itself in one stroke, in the order it is written by hand.
+> - **Files:** `ic_launcher_foreground`, `ic_launcher_monochrome`, `ic_brand_mark`, `ic_mark_on_ink`, `art_opening_meet`,
+>   `mipmap-anydpi/ic_launcher.xml` (comment only); `ic_launcher_background` unchanged.
+>
+> **How it was chosen (round 5; sheets `docs/design/irl/icon-round5-*.png`).** Rendered and dropped:
+>
+> | Direction | Idea | Why dropped |
+> |---|---|---|
+> | The letter I casting a shadow | only real things cast a shadow | reads as a pushpin, or as a 2013 "long shadow" icon |
+> | Two linked hooks | URL is a link to a page, IRL a link to a person | it is the paperclip / hyperlink icon |
+> | Pause bars, one stepping | press pause, step out; a trail blaze | a pause or equaliser icon; too plain |
+> | Two soles | the same, as footprints | a step-counter app |
+> | An open hand ("first-hand") | the oldest post is a handprint | the Congress party symbol; "stop" |
+> | A hand that is a rising sun | first-hand + out there | a weather icon; the rising sun is the DMK symbol |
+> | Four pebbles, phone face down, three ticks | | generic |
+>
+> Thought through and not drawn: a door (reads as "log out"), an ampersand (says "together" but not "real life"), a crow
+> (the Kural's bird that calls others to share: a bird is a worn social-media sign), a kite, a paper boat and a pinwheel
+> (each is a well-known brand's sign), the letter இ (richer in meaning: இடம் place, இங்கே here, இணை connect, but a more
+> complicated drawing).
+> **A rule learned for any later round:** in Tamil Nadu a mark must not look like a party symbol (rising sun, open hand,
+> two leaves, lotus, and others).
+>
+> **Seen:** the final sheet (`icon-ai-final.png`: 300 to 32 px, circle and squircle, themed, day, night, and the
+> drawing laid over the reference letter); on the A23 the returning opening (`opening-ai-returning-a23.png`); on the
+> API 33 emulator the first-run opening (`opening-ai-first-run-emulator.png`).
+> **Not seen:** the launcher icon on the home screen grid, the themed icon, the Home head and other in-app places on
+> a phone, dark mode, the motion itself by eye (only still frames).
+> **Still open (the approval covers the mark and the direction, not these checks):** (1) a second Tamil reader's look at
+> the drawing; (2) a trademark and similarity search
+> (the 2015 film "ஐ" used the letter as its title; other uses are not checked); (3) the Play Store 512 px icon.
+
+---
+
+# History: the Kolam butterfly (IRL-C9, 2026-11-12, rejected the same day)
+
+> **(History) Decision IRL-C9: "the Kolam butterfly". Rejected by the owner on 2026-11-12 as too complicated for an icon.**
+> The earlier drawings ("Out there" of the same morning, rejected by the owner as ordinary and generic; "the Meet" of
+> 2026-11-03) are history, below.
+>
+> **The idea.** A kolam is drawn every morning at the doorstep of a Chennai home: the exact line between inside and
+> out there. It is ONE unbroken line that goes round every dot, touches none, and comes home; it is made by hand, in
+> rice flour on red earth, for whoever walks past. IRL is the same thing: a line through the places of your city, drawn
+> by people, left for the next person. In the mark that one line leaves the middle four times, goes round a dot each
+> time, and its four loops are the wings of a **butterfly in flight**.
+> - **The line** = a person's way through the city; one stroke, never lifted (people, going out, coming home).
+> - **The dots** = places. The line goes round them without touching: close, never intrusive (the no-monitoring rule).
+> - **The butterfly** = what the app is for. It is already the reaction on a post ("this inspires you"); the saved list
+>   was once the Cocoon; and "someone else goes because you went" is the butterfly effect. Cocoon → butterfly = staying
+>   in → out there. "Fear less."
+> - **The colours were already right:** cream on Black Cherry is rice flour on kaavi (the red-ochre border of a kolam).
+> - **A visual language, not just a logo:** one cream line with round loops and small blush dots. It can draw empty
+>   states, the "all caught up" card, dividers and loading (the line drawing itself) later. Not done yet.
+>
+> **Geometry (108 x 108 adaptive, all inside the 66-unit safe zone; farthest point 31.4 units from the centre):** one
+> closed path, stroke 4.2, round joins, tilted 16 degrees as if rising to the right. Two upper wings (loop radius about
+> 8.7, stretched 1.25 along their axis), two lower wings (radius about 5), a small four-cornered body where the line
+> crosses itself. Dots: radius 2.75 in the upper wings, 1.58 in the lower. The path data is in `ic_launcher_foreground.xml`.
+> - **Colours:** line `brand_cream` #EEDCC8, dots `brand_blush` #E8A48C, ground `brand_cherry` #5D0703 fading to
+>   `brand_cherry_deep` #2A0302. Themed icon: one colour. In the app (`ic_brand_mark`): line = text colour, dots = accent.
+> - **Motion (`art_opening_meet`, about 640 ms):** the line draws itself in one stroke (520 ms), the way a kolam is drawn;
+>   the dots appear as it closes (from 420 ms).
+> - **Files:** `ic_launcher_foreground`, `ic_launcher_monochrome`, `ic_launcher_background` (unchanged), `ic_brand_mark`,
+>   `ic_mark_on_ink`, `art_opening_meet`, `mipmap-anydpi/ic_launcher.xml` (comment only).
+>
+> **How it was chosen (round 4; sheets in `docs/design/irl/`).** Directions thought through from the brief (real life,
+> people, places, connection, going out, discovering, community, people and places): a doorway (reads as "log out"),
+> a cairn (a marker left for the next walker: reads as a spa), a handprint ("I was here": reads as "stop"), contour
+> lines that are also a fingerprint (a map and a security sign), a shadow (only real things cast one: too subtle), a
+> sandal at the door, a postmark, and the kolam. The kolam won on meaning and because nobody else in the category can
+> own it. Then the drawing (`icon-round4-concepts.png`): the classic four-loop kolam and every uneven version of it turned
+> out to be the ⌘ key (`icon-round4-loops-rejected.png`); three loops are a fidget spinner; a kolam hand is a peacock; two
+> woven strands are an X. The butterfly (`icon-round4-butterfly.png`) is the one that is a THING people can name
+> ("the IRL butterfly") and still plainly one kolam line. Antennae were tried and dropped: they break the one line and
+> clutter 48 px. Final: `icon-kolam-butterfly-final.png`; on the phone: `opening-kolam-butterfly-a23.png`.
+>
+> **Seen:** rendered at 192 / 96 / 48 px in a circle and a squircle, themed, by day and at night (the final sheet); on the
+> A23 (light mode): the Home head and the opening screen. **Not seen:** the launcher icon on the home screen grid, the
+> themed icon, dark mode on the phone, the first-run opening with its words.
+> **Not done:** trademark / similarity search (butterflies are common in logos: this needs a real check before a store
+> release); the Play Store 512 px icon; redrawing the "Inspired" reaction icon in the same line (today it is a different
+> butterfly drawing: a decision for the owner).
+
+---
+
+# History: the first drawings (2026-11-03 and 2026-11-12 morning)
+
+> **2026-11-12: this document describes the FIRST drawing ("the Meet": two paths rising to one point under a sun, ink and
+> lime), kept as history.** The mark of the morning of 2026-11-12 was **"Out there"** (decision IRL-C8, rejected by the owner the same day): a Cream Vanilla ring, open at one side,
+> and a blush dot that has stepped out through the opening, on Black Cherry.
+> - **Meaning:** the ring is a place, a circle of people, or the screen you were looking at; the dot is you, out there.
+> - **Geometry (108 x 108 adaptive, inside the 66-unit safe zone):** ring centre (52, 56), radius 20, stroke 8, round
+>   ends, open for 56 degrees towards the upper right; dot radius 7 at (73.9, 34.1), on the axis of the opening.
+> - **Colours:** `brand_cream` #EEDCC8 ring, `brand_blush` #E8A48C dot, background `brand_cherry` #5D0703 fading to
+>   `brand_cherry_deep` #2A0302. Themed icon: one colour. In-app (`ic_brand_mark`): ring in the text colour, dot in the accent.
+> - **Motion (`art_opening_meet`, about 700 ms):** the dot waits in the middle, the ring draws around it, the dot steps out.
+> - **Files:** `ic_launcher_foreground`, `ic_launcher_monochrome`, `ic_launcher_background`, `ic_brand_mark`,
+>   `ic_mark_on_ink`, `art_opening_meet`. Concepts considered and dropped: `docs/DECISIONS.md` IRL-C8.
+> - **Not done:** trademark / similarity search for the mark; the Play Store 512 px icon; a look on the home screen grid.
 
 Brief (the user's, for the rename to **IRL — In Real Life**): an original, instantly recognisable symbol for real-world
 connection, people coming together, being present and exploring beyond a screen. **Not** a shield, a security symbol,

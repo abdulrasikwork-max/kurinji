@@ -18,6 +18,9 @@
     <dimen name="opening_headline_tight">34sp</dimen>
     <!-- Mukta Malar's tall line box (room for Tamil) leaves wide gaps between capital lines: pull them together. -->
     <dimen name="opening_headline_overlap">-16dp</dimen>
+    <!-- The centred lockup: the mark (code caps it at a share of the screen height) and the name under it. -->
+    <dimen name="opening_mark">132dp</dimen>
+    <dimen name="opening_wordmark">60sp</dimen>
     <dimen name="illustration_size">104dp</dimen>
     <dimen name="menu_row_min_height">56dp</dimen>
     <dimen name="button_height">56dp</dimen>

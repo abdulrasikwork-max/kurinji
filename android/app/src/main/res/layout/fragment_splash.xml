@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- IRL opening screen (2026-11-03, docs/DESIGN_SYSTEM.md "Opening"). Always ink, continuing the launch screen:
-     the IRL lockup, "the Meet" rising as the hero, then "OUT THERE. TOGETHER.", "YOUR WORLD. / YOUR PEOPLE. /
-     YOUR FREEDOM.", the supporting line and "LET'S GO →". The button appears only on the first run (it leads to the
-     onboarding); a returning person is taken on by themselves after the short launch time (SplashFragment), so the
-     opening never slows the way to SOS. The button is pinned to the bottom, always in view; the words above it scroll
-     when large text needs the room, and the hero hides on tight screens. -->
+<!-- IRL opening screen (2026-11-12, third version; docs/DESIGN_SYSTEM.md "Opening"). Black Cherry, continuing the launch
+     screen. ONE centred lockup, every time the app opens: the mark writes itself, "IRL" arrives under it, then
+     "OUT THERE. TOGETHER.". A returning person is taken on after that (about one second; SplashFragment), so the
+     opening never adds a tap on the way to SOS. On the FIRST run the lockup then moves up and "YOUR WORLD. / YOUR
+     PEOPLE. / YOUR FREEDOM." lands line by line with "LET'S GO" (it leads to the onboarding). Nothing else is said
+     here. The button is pinned to the bottom, always in view; the words scroll when large text needs the room, and
+     the decorative mark hides on tight screens. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -16,113 +17,99 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:fillViewport="true">
-    
+
         <LinearLayout
+            android:id="@+id/openingContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
             android:orientation="vertical"
             android:paddingStart="28dp"
             android:paddingTop="20dp"
             android:paddingEnd="28dp"
             android:paddingBottom="8dp">
-    
-            <!-- The lockup: the mark, IRL, and what it stands for. -->
-            <LinearLayout
-                android:id="@+id/openingBrand"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:contentDescription="@string/cd_app_logo"
-                android:focusable="true"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-    
-                <ImageView
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
-                    android:importantForAccessibility="no"
-                    android:src="@drawable/ic_mark_on_ink" />
-    
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:importantForAccessibility="no"
-                    android:includeFontPadding="false"
-                    android:text="@string/app_name"
-                    android:textAppearance="@style/TextAppearance.Kurinji.Wordmark"
-                    android:textColor="@color/launcher_white"
-                    android:textSize="26sp" />
-    
-                <TextView
-                    style="@style/Opening.Eyebrow"
-                    android:layout_marginStart="10dp"
-                    android:importantForAccessibility="no"
-                    android:text="@string/opening_expansion"
-                    android:textColor="@color/opening_soft"
-                    android:textSize="11sp" />
-            </LinearLayout>
-    
-            <!-- Room on tall screens: the hero sits right above the words, rising from them. -->
+
             <Space
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:minHeight="12dp" />
-    
-            <ImageView
-                android:id="@+id/openingArt"
-                android:layout_width="match_parent"
+                android:minHeight="16dp" />
+
+            <!-- The lockup: the mark, the name, the line. One thing for TalkBack. -->
+            <LinearLayout
+                android:id="@+id/openingBrand"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:adjustViewBounds="true"
-                android:importantForAccessibility="no"
-                android:maxHeight="300dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/art_opening_meet" />
-    
-            <TextView
-                android:id="@+id/openingMotto"
-                style="@style/Opening.Eyebrow"
-                android:layout_marginTop="28dp"
-                android:text="@string/motto" />
-    
+                android:contentDescription="@string/opening_brand_spoken"
+                android:focusable="true"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/openingArt"
+                    android:layout_width="@dimen/opening_mark"
+                    android:layout_height="@dimen/opening_mark"
+                    android:importantForAccessibility="no"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/art_opening_meet" />
+
+                <TextView
+                    android:id="@+id/openingWordmark"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:importantForAccessibility="no"
+                    android:includeFontPadding="false"
+                    android:text="@string/app_name"
+                    android:textAppearance="@style/TextAppearance.Kurinji.Wordmark"
+                    android:textColor="@color/brand_cream"
+                    android:textSize="@dimen/opening_wordmark" />
+
+                <TextView
+                    android:id="@+id/openingMotto"
+                    style="@style/Opening.Eyebrow"
+                    android:layout_marginTop="14dp"
+                    android:gravity="center"
+                    android:importantForAccessibility="no"
+                    android:text="@string/motto"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:minHeight="16dp" />
+
+            <!-- First run only (SplashFragment.showStart): gone until then, so the lockup sits in the middle. -->
             <LinearLayout
                 android:id="@+id/openingHeadline"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"
                 android:contentDescription="@string/opening_headline_spoken"
                 android:focusable="true"
-                android:orientation="vertical">
-    
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:visibility="gone">
+
                 <TextView
                     android:id="@+id/openingLineWorld"
                     style="@style/Opening.Headline"
                     android:text="@string/opening_line_world" />
-    
+
                 <TextView
                     android:id="@+id/openingLinePeople"
                     style="@style/Opening.Headline"
                     android:layout_marginTop="@dimen/opening_headline_overlap"
                     android:text="@string/opening_line_people" />
-    
+
                 <TextView
                     android:id="@+id/openingLineFreedom"
                     style="@style/Opening.Headline"
                     android:layout_marginTop="@dimen/opening_headline_overlap"
                     android:text="@string/opening_line_freedom"
-                    android:textColor="@color/launcher_lime" />
+                    android:textColor="@color/brand_blush" />
             </LinearLayout>
-    
-            <TextView
-                android:id="@+id/openingSupporting"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:lineSpacingMultiplier="1.15"
-                android:text="@string/opening_supporting"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-                android:textColor="@color/opening_soft"
-                android:textSize="16sp" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

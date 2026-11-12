@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- IRL themed-icon layer (Android 13+): "the Meet" in one colour; the launcher tints it. Same geometry as
+<!-- IRL themed-icon layer (Android 13+): the mark in one colour; the launcher tints it. Same geometry as
      ic_launcher_foreground.xml. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -7,12 +7,9 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M20,108L20,94C24,66 38,56 49.5,49.5L51.5,52.5C44,59 36,70 36,94L36,108Z" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M80,108L80,94C78,66 64,56 54.5,49.5L52.5,52.5C58,59 65,70 65,94L65,108Z" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M58,35a9,9 0,1 0,18 0a9,9 0,1 0,-18 0Z" />
+        android:pathData="M37.44,40.85 C38.56,40.33 39.41,40.33 40.39,40.46 C43.34,40.72 45.44,42.95 45.44,45.9 C45.44,48.85 43.02,51.21 40.07,51.21 C36.98,51.21 34.49,48.85 34.49,44.92 C34.49,39.02 38.75,34.56 44.33,34.56 C50.23,34.56 54.82,38.36 54.82,44.26 L54.82,50.16 L54.82,44.26 C54.82,38.36 59.08,34.56 64.98,34.56 C70.23,34.56 73.51,38.69 73.51,44.26 C73.51,50.16 69.9,53.31 63.34,54.36 L44.33,56.85 C38.43,57.7 34.82,61.31 34.82,65.9 C34.82,70.49 38.43,73.44 44,73.44 C50.23,73.44 54.82,70.49 54.82,65.9 L54.82,61.31 L54.82,65.9 C54.82,70.49 59.41,73.44 64.66,73.44 C70.23,73.44 73.51,70.16 73.51,65.25 C73.51,62.62 72.52,60.33 70.56,58.69"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="5" />
 </vector>

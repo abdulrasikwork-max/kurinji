@@ -1684,12 +1684,11 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="rise_retired_message">Its notes on this phone were deleted. Nothing from Rise was ever on a server. Your saved list and \"Only me\" posts are the place for plans you keep to yourself.</string>
     <!-- ===== Phase 16: UX reset (docs/PHASE16.md) ===== -->
     <!-- ===== IRL opening screen (2026-11-03, docs/DESIGN_SYSTEM.md "Opening"). Shown in capitals via textAllCaps. ===== -->
-    <string name="opening_expansion">In real life</string>
+    <string name="opening_brand_spoken">IRL, in real life. Out there. Together.</string>
     <string name="opening_line_world">Your world.</string>
     <string name="opening_line_people">Your people.</string>
     <string name="opening_line_freedom">Your freedom.</string>
     <string name="opening_headline_spoken">Your world. Your people. Your freedom.</string>
-    <string name="opening_supporting">Discover places. Connect with people. Share experiences. Look out for each other.</string>
     <string name="opening_cta">Let\'s go →</string>
     <string name="opening_cta_description">Let\'s go: see how IRL works</string>
 

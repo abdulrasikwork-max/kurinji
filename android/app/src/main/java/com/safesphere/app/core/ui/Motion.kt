@@ -14,7 +14,7 @@ object Motion {
     private const val STAGGER_MS = 45L
     private const val OFFSET_DP = 14f
 
-    fun revealInSequence(views: List<View>) {
+    fun revealInSequence(views: List<View>, startDelayMs: Long = 0L, staggerMs: Long = STAGGER_MS) {
         if (views.isEmpty() || !ValueAnimator.areAnimatorsEnabled()) return
         val offsetPx = views.first().resources.displayMetrics.density * OFFSET_DP
 
@@ -24,7 +24,7 @@ object Motion {
             view.animate()
                 .alpha(1f)
                 .translationY(0f)
-                .setStartDelay(index * STAGGER_MS)
+                .setStartDelay(startDelayMs + index * staggerMs)
                 .setDuration(DURATION_MS)
                 .setInterpolator(DecelerateInterpolator())
                 .start()

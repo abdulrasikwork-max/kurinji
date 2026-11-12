@@ -2,6 +2,7 @@ package com.safesphere.app.core
 
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -60,8 +61,9 @@ class KurinjiTextsTest {
         assertEquals("Out there. Together.", strings["motto"])
         assertEquals(listOf("Your world.", "Your people.", "Your freedom."),
             listOf("opening_line_world", "opening_line_people", "opening_line_freedom").map { strings[it] })
-        assertEquals("Discover places. Connect with people. Share experiences. Look out for each other.",
-            strings["opening_supporting"])
+        // 2026-11-12: the opening says only the name, the line and the three lines; the longer sentence was taken out.
+        assertNull(strings["opening_supporting"])
+        assertEquals("IRL, in real life. Out there. Together.", strings["opening_brand_spoken"])
         assertEquals("Let\\'s go →", strings["opening_cta"])
         assertEquals("You\\'re all caught up.", strings["discover_edition_end"])
         // Phase 17E (D-3): the butterfly is a reaction; Save keeps a post; "I went" leads to sharing.
