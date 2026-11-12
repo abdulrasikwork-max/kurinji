@@ -91,7 +91,9 @@ data class PostUiState(
 class PostViewModel(
     private val repository: ExperienceRepository,
     private val discover: DiscoverRepository,
-    private val postId: String
+    private val postId: String,
+    private val freshness: com.safesphere.app.feature.social.domain.FeedFreshness =
+        com.safesphere.app.feature.social.domain.FeedFreshness()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PostUiState())
@@ -122,7 +124,25 @@ class PostViewModel(
         }
     }
 
-    fun onKind(kind: CommentKind) = _uiState.update { it.copy(kind = kind, replyTo = null) }
+    fun onKind(kind: CommentKind) {
+        kindChosen = true
+        _uiState.update { it.copy(kind = kind, replyTo = null) }
+    }
+
+    /** A kind picked through [onKind] wins; the screen no longer offers that choice (R1). */
+    private var kindChosen = false
+
+    /**
+     * IRL redesign (R1): a comment is just a comment. The server still files each one under a kind, so the app picks
+     * it from the words: a question mark makes it a Question, otherwise the first kind that fits the post (which the
+     * screen no longer prints, so "nice!" is not announced as "Been here too").
+     */
+    private fun kindFor(state: PostUiState): CommentKind = when {
+        kindChosen && state.kind != null -> state.kind
+        ('?' in state.text || '？' in state.text) &&CommentKind.QUESTION in state.kinds -> CommentKind.QUESTION
+        else -> state.kinds.first()
+    }
+
     fun onText(text: String) = _uiState.update { it.copy(text = text) }
     fun onReplyTo(perspective: Perspective) = _uiState.update { it.copy(replyTo = perspective) }
     fun onCancelReply() = _uiState.update { it.copy(replyTo = null) }
@@ -131,7 +151,7 @@ class PostViewModel(
         val state = _uiState.value
         if (!state.canSend) return
         val replyTo = state.replyTo
-        val kind = if (replyTo != null) CommentKind.REPLY else state.kind ?: return
+        val kind = if (replyTo != null) CommentKind.REPLY else kindFor(state)
         act {
             when (val result = repository.addPerspective(postId, kind, state.text, replyTo?.publicId)) {
                 is ApiResult.Success -> {
@@ -165,7 +185,10 @@ class PostViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isBusy = true) }
             when (val result = repository.deletePost(postId)) {
-                is ApiResult.Success -> _uiState.update { it.copy(isBusy = false, closed = true) }
+                is ApiResult.Success -> {
+                    freshness.changed()
+                    _uiState.update { it.copy(isBusy = false, closed = true) }
+                }
                 is ApiResult.Failure -> fail(result)
             }
         }
@@ -236,6 +259,7 @@ class PostViewModel(
             when (val result = call()) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(marking = it.marking - key) }
+                    freshness.changed() // R7: Home shows the same mark when the person goes back
                     confirmed()
                 }
                 is ApiResult.Failure -> {
@@ -257,7 +281,11 @@ class PostViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isBusy = true, failure = null) }
             val failure = call()
-            if (failure != null) fail(failure) else _uiState.update { it.copy(isBusy = false) }
+            if (failure != null) fail(failure) else {
+                // R7: a comment added, deleted, hidden or approved changes what the feed card says ("2 comments").
+                freshness.changed()
+                _uiState.update { it.copy(isBusy = false) }
+            }
             loadPerspectives()
         }
     }
@@ -284,7 +312,7 @@ class PostViewModel(
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
                 PostViewModel(container.experienceRepository, container.discoverRepository,
-                    createSavedStateHandle().get<String>(ARG_POST_ID).orEmpty())
+                    createSavedStateHandle().get<String>(ARG_POST_ID).orEmpty(), container.feedFreshness)
             }
         }
     }

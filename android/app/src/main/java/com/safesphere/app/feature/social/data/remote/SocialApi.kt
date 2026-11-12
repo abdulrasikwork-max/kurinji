@@ -1,8 +1,10 @@
 package com.safesphere.app.feature.social.data.remote
 
+import com.safesphere.app.core.network.UploadTimeoutInterceptor
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -27,6 +29,7 @@ interface SocialApi {
     suspend fun saveProfile(@Body body: ProfileRequestDto): OwnProfileDto
 
     /** Phase 17E: a square JPEG made on the phone (re-encoded again by the server); answers {"photo": key}. */
+    @Headers(UploadTimeoutInterceptor.HEADER_LINE)
     @PUT("api/profiles/me/photo")
     suspend fun uploadPhoto(@Body body: okhttp3.RequestBody): Map<String, String>
 

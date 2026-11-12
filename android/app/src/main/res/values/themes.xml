@@ -108,8 +108,7 @@
          into the in-app splash on the same ink. -->
     <style name="Theme.SafeSphere.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_mark</item>
-        <item name="windowSplashScreenAnimationDuration">700</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
         <item name="postSplashScreenTheme">@style/Theme.SafeSphere</item>
     </style>
 
@@ -139,6 +138,55 @@
 
     <style name="MaterialAlertDialog.Kurinji.Title" parent="MaterialAlertDialog.Material3.Title.Text">
         <item name="android:textAppearance">@style/TextAppearance.Kurinji.Headline.Small</item>
+    </style>
+
+
+    <!-- ===== IRL social palette (2026-11-12): Black Cherry & Cream Vanilla, on the SOCIAL side only =====
+         core/ui/SocialPalette decides which screens wear it (social, profile, sign-in, onboarding, settings, account);
+         ViewBindingFragment gives those fragments a context with this overlay, so their views, sheets and dialogs all
+         follow. MainActivity colours the shared toolbar and page the same way; the bottom bar (only on social screens)
+         carries it in activity_main.xml. It replaces ONLY the neutral and action roles: the emergency ("error"), safe,
+         caution and hero roles are not named here, so they keep the values of the base theme everywhere. -->
+    <style name="ThemeOverlay.IRL.Social" parent="">
+        <item name="colorPrimary">@color/c_action</item>
+        <item name="colorOnPrimary">@color/c_on_action</item>
+        <item name="colorPrimaryContainer">@color/c_soft</item>
+        <item name="colorOnPrimaryContainer">@color/c_on_soft</item>
+        <item name="colorSecondary">@color/c_accent</item>
+        <item name="colorOnSecondary">@color/c_surface</item>
+        <item name="colorSecondaryContainer">@color/c_soft</item>
+        <item name="colorOnSecondaryContainer">@color/c_on_soft</item>
+        <item name="colorTertiary">@color/c_accent</item>
+        <item name="colorOnTertiary">@color/c_surface</item>
+        <item name="colorTertiaryContainer">@color/c_fill</item>
+        <item name="colorOnTertiaryContainer">@color/c_on_fill</item>
+        <item name="colorSurface">@color/c_page</item>
+        <item name="colorOnSurface">@color/c_ink</item>
+        <item name="colorSurfaceVariant">@color/c_surface_sunk</item>
+        <item name="colorOnSurfaceVariant">@color/c_ink_soft</item>
+        <item name="colorOutline">@color/c_outline</item>
+        <item name="colorOutlineVariant">@color/c_line</item>
+        <item name="colorSurfaceContainerLowest">@color/c_surface</item>
+        <item name="colorSurfaceContainerLow">@color/c_surface_low</item>
+        <item name="colorSurfaceContainer">@color/c_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/c_surface_high</item>
+        <item name="colorSurfaceContainerHighest">@color/c_surface_highest</item>
+        <item name="android:colorBackground">@color/c_page</item>
+        <item name="colorOnBackground">@color/c_ink</item>
+        <item name="colorCard">@color/c_surface</item>
+        <item name="colorLine">@color/c_line</item>
+        <item name="colorLime">@color/c_fill</item>
+        <item name="colorOnLime">@color/c_on_fill</item>
+        <item name="colorAccentText">@color/c_accent</item>
+        <item name="colorPanel">@color/c_panel</item>
+        <item name="colorOnPanel">@color/c_on_panel</item>
+        <item name="colorOnPanelVariant">@color/c_on_panel_soft</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.IRL.Social.Dialog</item>
+    </style>
+
+    <style name="ThemeOverlay.IRL.Social.Dialog" parent="ThemeOverlay.Kurinji.Dialog">
+        <item name="colorSurface">@color/c_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/c_surface</item>
     </style>
 
 </resources>

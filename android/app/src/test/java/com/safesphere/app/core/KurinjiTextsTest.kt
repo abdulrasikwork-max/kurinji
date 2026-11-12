@@ -69,8 +69,8 @@ class KurinjiTextsTest {
         // Phase 17E (D-3): the butterfly is a reaction; Save keeps a post; "I went" leads to sharing.
         assertEquals("Inspired", strings["reaction_label"])
         assertTrue(strings.getValue("saved_empty_message").startsWith("Tap Save"))
-        assertEquals("I went", strings["went_label"])
-        assertEquals("Saved", strings["nav_cocoon"])
+        assertEquals("Been here", strings["went_label"])
+        assertEquals("Want to go", strings["nav_cocoon"])
         assertEquals("Tip", strings["card_ticket_label"])
         assertEquals("Comments", strings["social_perspectives_title"])
         assertEquals("Going there?", strings["going_there"])

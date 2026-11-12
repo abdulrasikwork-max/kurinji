@@ -86,7 +86,8 @@ object DiscoverFeed {
         if (connections.isNotEmpty()) {
             out += FeedItem.Header(HeaderKind.CONNECTIONS)
             connections.forEach(::add)
-        } else if (state.connectionsLoaded && !state.connectionsHasMore && state.connections.isEmpty()) {
+        } else if (posts > 0 && state.connectionsLoaded && !state.connectionsHasMore && state.connections.isEmpty()) {
+            // R6: only under posts. On an empty Home ONE message speaks (choose a city, or the empty week), not two.
             // Only when people you know really shared nothing: their posts may all be in the city list above already
             // (emulator finding: the prompt asked a connected person to "find people").
             out += FeedItem.ConnectPrompt

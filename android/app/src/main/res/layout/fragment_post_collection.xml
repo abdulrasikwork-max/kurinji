@@ -2,17 +2,44 @@
 <!-- Phase 13C, redesigned in 17E: a place page or a category page. An ink head (the place or category, its city, and for a
      place: "I went here" and "Going there?"), then its posts newest first; more only on an explicit tap; never ordered by
      numbers (E17-10). Since 17G-2 (U5) a place may show ONE guarded average rating, in words, from people who went: no count. -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Found on a real phone (A23, live path): the posts used to sit in a non-scrolling RecyclerView inside a ScrollView,
+     which lays out only about one screen of items, so a second photo post was unreachable. Now, as on Discover, the
+     place / category panel is an AppBarLayout header that scrolls away with the list, and the posts are a
+     self-scrolling RecyclerView; "Show more", the end line and the progress bar stay in place. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:orientation="vertical">
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_padding"
+        android:layout_marginTop="@dimen/space_sm"
+        android:indeterminate="true"
+        android:visibility="gone" />
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/colorBackground"
+            android:stateListAnimator="@null"
+            app:liftOnScroll="false"
+            app:liftOnScrollColor="?android:attr/colorBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/screen_padding">
+        android:padding="@dimen/screen_padding"
+        app:layout_scrollFlags="scroll">
 
         <com.safesphere.app.core.ui.components.NoticeView
             android:id="@+id/errorNotice"
@@ -108,22 +135,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.progressindicator.LinearProgressIndicator
-            android:id="@+id/progress"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_sm"
-            android:indeterminate="true"
-            android:visibility="gone" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/postList"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:nestedScrollingEnabled="false"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
         <LinearLayout
             android:id="@+id/emptyBlock"
             android:layout_width="match_parent"
@@ -147,23 +158,37 @@
                 android:gravity="center"
                 android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
         </LinearLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/showMoreButton"
-            style="@style/Widget.SafeSphere.Button.Secondary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="@dimen/min_touch_target"
-            android:text="@string/social_show_more"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/endText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:text="@string/collection_end"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
-            android:visibility="gone" />
     </LinearLayout>
-</ScrollView>
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/postList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingHorizontal="@dimen/screen_padding"
+            app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/showMoreButton"
+        style="@style/Widget.SafeSphere.Button.Secondary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_padding"
+        android:layout_marginBottom="@dimen/space_sm"
+        android:minHeight="@dimen/min_touch_target"
+        android:text="@string/social_show_more"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/endText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_padding"
+        android:layout_marginVertical="@dimen/space_sm"
+        android:text="@string/collection_end"
+        android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+        android:visibility="gone" />
+</LinearLayout>

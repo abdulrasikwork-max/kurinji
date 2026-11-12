@@ -28,9 +28,11 @@
         app:defaultNavHost="true"
         app:navGraph="@navigation/nav_graph" />
 
-    <!-- Discover · Share · Cocoon · You (styling from Widget.SafeSphere.BottomNavigation) -->
+    <!-- Home · Explore · Share · You (styling from Widget.SafeSphere.BottomNavigation). The bar is shown only on social
+         screens (NavigationRules.bottomBarDestinations), so it wears the social palette. -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
+        android:theme="@style/ThemeOverlay.IRL.Social"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:visibility="gone"

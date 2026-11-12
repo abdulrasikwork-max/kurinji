@@ -3,7 +3,9 @@ package com.safesphere.backend.social.service;
 import com.safesphere.backend.config.SocialProperties;
 import com.safesphere.backend.social.policy.RatingPolicy;
 import com.safesphere.backend.social.repository.PlaceVisitRepository;
-import com.safesphere.backend.social.repository.PlaceVisitRepository.Totals;
+import com.safesphere.backend.social.repository.ConnectionRepository;
+import com.safesphere.backend.social.repository.PlaceVisitRepository.RaterRow;
+import java.util.List;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,12 +31,14 @@ public class PlaceRatings {
     }
 
     private final PlaceVisitRepository visits;
+    private final ConnectionRepository connections;
     private final SocialProperties properties;
     private final Clock clock;
     private final Map<Long, Memo> memo = new HashMap<>();
 
-    public PlaceRatings(PlaceVisitRepository visits, SocialProperties properties, Clock clock) {
+    public PlaceRatings(PlaceVisitRepository visits, ConnectionRepository connections, SocialProperties properties, Clock clock) {
         this.visits = visits;
+        this.connections = connections;
         this.properties = properties;
         this.clock = clock;
     }
@@ -45,10 +49,26 @@ public class PlaceRatings {
         Memo known = memo.get(placeId);
         if (known != null && known.day().equals(today)) return known.text();
         LocalDateTime cutoff = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC).minus(properties.probation());
-        Totals totals = visits.totals(placeId, cutoff);
-        String text = RatingPolicy.display(totals.raters(), totals.sum());
+        String text = compute(placeId, cutoff);
         if (memo.size() >= MAX_MEMO) memo.clear();
         memo.put(placeId, new Memo(today, text));
         return text;
+    }
+
+    /**
+     * Phase 18A-1: the counted ratings with their weights, and which raters are connected to each other; RatingPolicy turns
+     * them into the one text. Nothing read here is kept or returned: only the text is.
+     */
+    private String compute(long placeId, LocalDateTime cutoff) {
+        List<RaterRow> rows = visits.raters(placeId, cutoff);
+        if (rows.size() < RatingPolicy.MIN_RATERS) return null;
+        LocalDateTime establishedBefore = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC)
+                .minusDays(RatingPolicy.ESTABLISHED_AFTER_DAYS);
+        List<RatingPolicy.Rater> raters = rows.stream().map(row -> new RatingPolicy.Rater(row.userId(), row.rating(),
+                !row.accountCreatedAt().isAfter(establishedBefore),
+                row.placesRated() >= RatingPolicy.BROAD_FROM_PLACES)).toList();
+        List<RatingPolicy.Link> links = connections.acceptedAmong(rows.stream().map(RaterRow::userId).toList()).stream()
+                .map(c -> new RatingPolicy.Link(c.getUserLow(), c.getUserHigh())).toList();
+        return RatingPolicy.display(raters, links);
     }
 }

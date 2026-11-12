@@ -257,8 +257,8 @@
         <item name="android:paddingTop">2dp</item>
         <item name="android:paddingBottom">2dp</item>
         <item name="android:textAppearance">@style/TextAppearance.Kurinji.Overline</item>
-        <item name="android:textColor">@color/k_surface</item>
-        <item name="android:drawableTint">@color/k_surface</item>
+        <item name="android:textColor">@color/k_on_video_badge</item>
+        <item name="android:drawableTint">@color/k_on_video_badge</item>
     </style>
 
     <!-- A fact under a post (where it is, "Tip inside"): not a button. -->
@@ -296,19 +296,21 @@
         <item name="cornerSize">50%</item>
     </style>
 
-    <!-- IRL opening screen (2026-11-03; always ink, so fixed colours; ContrastTest checks each pair). -->
+    <!-- IRL opening screen (2026-11-03; always Black Cherry, so fixed colours; ContrastTest checks each pair). -->
     <style name="Opening.Eyebrow" parent="">
+        <item name="android:fontFamily">@font/kurinji_display</item>
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:textAppearance">@style/TextAppearance.Kurinji.Wordmark</item>
         <item name="android:textSize">14sp</item>
         <item name="android:letterSpacing">0.16</item>
         <item name="android:textAllCaps">true</item>
-        <item name="android:textColor">@color/launcher_lime</item>
+        <item name="android:textColor">@color/brand_blush</item>
     </style>
 
     <!-- One line of "Your world. Your people. Your freedom.": big, bold, tight. -->
     <style name="Opening.Headline" parent="">
+        <item name="android:fontFamily">@font/kurinji_display</item>
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:importantForAccessibility">no</item>
@@ -317,11 +319,12 @@
         <item name="android:textSize">@dimen/opening_headline</item>
         <item name="android:letterSpacing">-0.03</item>
         <item name="android:textAllCaps">true</item>
-        <item name="android:textColor">@color/launcher_white</item>
+        <item name="android:textColor">@color/brand_cream</item>
     </style>
 
-    <!-- "Let's go →": the one lime button, ink words, a full-width pill. -->
+    <!-- "Let's go →": the one cream button, cherry words, a full-width pill. -->
     <style name="Widget.IRL.Button.Opening" parent="Widget.Material3.Button">
+        <item name="android:fontFamily">@font/kurinji_display</item>
         <item name="android:minHeight">60dp</item>
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
@@ -329,9 +332,9 @@
         <item name="android:textSize">17sp</item>
         <item name="android:letterSpacing">0.08</item>
         <item name="android:textAllCaps">true</item>
-        <item name="android:textColor">@color/launcher_background</item>
-        <item name="backgroundTint">@color/launcher_lime</item>
-        <item name="rippleColor">@color/launcher_ground</item>
+        <item name="android:textColor">@color/brand_cherry</item>
+        <item name="backgroundTint">@color/brand_cream</item>
+        <item name="rippleColor">@color/brand_cherry_deep</item>
         <item name="cornerRadius">30dp</item>
     </style>
 
@@ -419,13 +422,6 @@
         <item name="cardBackgroundColor">?attr/colorPanel</item>
         <item name="strokeWidth">0dp</item>
         <item name="cardCornerRadius">28dp</item>
-    </style>
-
-    <!-- A tile of the compact Safety grid on You (opens the existing Safety screens; never changes them). -->
-    <style name="Widget.Kurinji.Card.Tile" parent="Widget.SafeSphere.Card">
-        <item name="cardBackgroundColor">?attr/colorCard</item>
-        <item name="strokeColor">?attr/colorOutlineVariant</item>
-        <item name="cardCornerRadius">20dp</item>
     </style>
 
     <!-- A screen's big title on the social tabs. -->

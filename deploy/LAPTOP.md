@@ -97,13 +97,20 @@ cloudflared tunnel login                         # opens a browser link: authori
 cloudflared tunnel create irl-api                # prints the tunnel id and writes <id>.json (a SECRET)
 cloudflared tunnel route dns irl-api api.<yourdomain>      # creates the proxied DNS record
 sudo adduser --system --group --no-create-home cloudflared
-sudo install -d -o cloudflared -g cloudflared -m 750 /etc/irl/cloudflared
-sudo install -o cloudflared -g cloudflared -m 600 ~/.cloudflared/<id>.json /etc/irl/cloudflared/
+sudo install -d -o root -g root -m 755 /etc/cloudflared
+sudo install -o root -g root -m 400 ~/.cloudflared/<id>.json /etc/cloudflared/<id>.json   # root-only; the service gets it through LoadCredential=
+sudo ln -s <id>.json /etc/cloudflared/tunnel.json                                          # a name, not a copy; the unit loads this name
 export IRL_TUNNEL_ID=<id> IRL_API_HOST=api.<yourdomain> IRL_NGINX_PORT=8081
-envsubst '${IRL_TUNNEL_ID} ${IRL_API_HOST} ${IRL_NGINX_PORT}' < deploy/cloudflared/config.yml.template | sudo tee /etc/irl/cloudflared/config.yml >/dev/null
-shred -u ~/.cloudflared/cert.pem ~/.cloudflared/<id>.json    # the service does not need cert.pem; keep a copy of <id>.json in your password manager
-sudo cp deploy/systemd/irl-cloudflared.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now irl-cloudflared
+envsubst '${IRL_TUNNEL_ID} ${IRL_API_HOST} ${IRL_NGINX_PORT}' < deploy/cloudflared/config.yml.template | sudo tee /etc/cloudflared/irl-tunnel.yml >/dev/null
+sudo install -m 644 -o root -g root deploy/systemd/irl-cloudflared.service /etc/systemd/system/irl-cloudflared.service   # install -m: the /mnt/c copy is executable and world-writable
+sudo systemctl daemon-reload && sudo systemctl enable --now irl-cloudflared
+shred -u ~/.cloudflared/cert.pem ~/.cloudflared/<id>.json    # ONLY after the tunnel is connected; best effort on a virtual disk; keep a copy of <id>.json in your password manager
 ```
+Why `LoadCredential=`: `/etc/irl` is `750 root:irl`, so the `cloudflared` user cannot read anything under it, and it must not be added to the `irl` group
+(that is the backend's secrets). systemd reads the credential as root and gives it to this one service only. **If the package's own
+`cloudflared.service` (from `cloudflared service install`) is present**, stop and disable it first (both use metrics port 20241), move its unit file to a root-only
+backup, then `sudo systemctl mask cloudflared.service`: the package's `cloudflared-update.service` runs `systemctl restart cloudflared` after an update, which would
+otherwise start the root connector again. Keep updates in one place (apt, or that timer, not both).
 Choose the host name ONCE: it is baked into the release APK (`-Prelease.api.base.url=https://api.<yourdomain>/`) and stays the same on a VPS.
 
 **Cloudflare dashboard checklist** (names change over time; NOT VERIFIED):
@@ -113,12 +120,27 @@ Choose the host name ONCE: it is baked into the release APK (`-Prelease.api.base
 | Bot Fight Mode / JS challenges / "I'm Under Attack" | **off** for this domain | they answer API clients with an HTML challenge page; use a domain for the API only |
 | Browser Integrity Check | off if the app's requests are refused with an HTML page | it judges browser headers |
 | Cache Rule | host equals `api.<yourdomain>` → **Bypass cache** | media of other people must never sit in an edge cache (nothing should be cached); the backend also sends `private, no-store` |
-| WAF custom rule | block path starts with `/api/admin/` | the nginx 404 is the first wall, this is the second |
+| WAF custom rule | Block when `http.host eq "api.irlnow.in" and starts_with(lower(http.request.uri.path), "/api/admin")` (no trailing slash) | the nginx 404 is the first wall, this is the second; nginx's `location /api/admin/` does not match the no-slash `/api/admin`, which would reach the app (401), so the rule is the only thing that stops it. Publicly the answer is 403 from Cloudflare (`smoke-test.sh --tunnel` accepts 404 or 403) |
 | Rate limiting rule (the free plan allows one) | path starts with `/api/auth/`, about 20 requests per 10 s per address | extra protection in front of the app's own limits |
 | Always Use HTTPS, minimum TLS 1.2 | on | the app only speaks https |
 | SSL/TLS mode | Full | the tunnel itself is encrypted; the origin hop is local |
 Cloudflare's free-plan terms limit serving video or large amounts of non-HTML files through its proxy, and a request body is capped
 (about 100 MB; verify): fine for a friend circle (videos are ≤ 50 MB), not for a public video service.
+
+**Updating cloudflared (decision D12-9: apt only, by hand).** The package's own update timer is disabled and masked (`cloudflared-update.timer`,
+`cloudflared-update.service`; the unit files are kept as `*.disabled-apt-only`; to undo: `sudo systemctl unmask` both, move the files back, `daemon-reload`,
+`enable --now` the timer). `unattended-upgrades` only allows Ubuntu's origins, so nothing updates the connector by itself, and the package ships no systemd unit,
+so **an apt upgrade does not restart `irl-cloudflared`: the old binary keeps running until you do it yourself.**
+```bash
+cloudflared --version; apt-cache policy cloudflared               # write down the current version first (rollback needs it)
+sudo apt update && sudo apt install --only-upgrade cloudflared
+sudo systemctl restart irl-cloudflared                             # a few seconds without the API
+curl -s http://127.0.0.1:20241/ready                              # 200 and readyConnections 4
+systemctl show -p MainPID --value irl-cloudflared | xargs -I{} ps -o user= -p {}   # cloudflared (not root)
+deploy/scripts/smoke-test.sh https://api.<yourdomain> --tunnel --check-redirect    # 0 failed
+```
+Rolling back to the old version only works while the repository still offers it (NOT verified): `sudo apt install cloudflared=<old version>` and restart the unit.
+Check for a new version before a demo and whenever Cloudflare announces a security fix. The tunnel config, the credential and the unit are not touched by an update.
 
 ## 5. Startup, sleep and recovery (what returns by itself)
 | Event | What happens | You do |
@@ -187,7 +209,7 @@ them (or run `gradlew --stop`) when you serve friends.
 | `/api/health` answers 503 DOWN | MySQL: `systemctl status mysql`, port 3307, TLS settings in `DB_URL` |
 | Server stops when you close the terminal | the keep-alive task is not running (`Get-ScheduledTask IRL-WSL-KeepAlive`) or WSL was shut down (`wsl --shutdown`) |
 | Backend refuses to start with a list of problems | that list is the production guard; fix each item in `backend.env` |
-| Sign-up does not send a code | `FAST2SMS_API_KEY`, the account balance/KYC, `journalctl -u irl-backend` (a provider refusal is logged by class only) |
+| Sign-up does not send a code | `FAST2SMS_API_KEY`, the account balance (Quick SMS costs about Rs 7 per code; status 416 = empty wallet), `journalctl -u irl-backend` (a provider refusal is logged by class only) |
 
 ## 13. Never commit
 `cert.pem`, `deploy/cloudflared/*.json`, the filled `config.yml`, any filled `*.env` (`backend.env`, `moderation.env`, `backup.env`), `backup.my.cnf`,

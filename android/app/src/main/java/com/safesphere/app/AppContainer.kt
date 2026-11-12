@@ -14,6 +14,7 @@ import com.safesphere.app.core.network.ApiCallHandler
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.SessionEndReason
 import com.safesphere.app.core.network.SessionEnder
+import com.safesphere.app.core.network.UploadTimeoutInterceptor
 import com.safesphere.app.feature.account.data.DataStorePendingDeletionStore
 import com.safesphere.app.feature.account.data.RemoteAccountRepository
 import com.safesphere.app.feature.account.data.remote.AccountApi
@@ -174,6 +175,8 @@ class AppContainer(context: Context) {
             .readTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .addInterceptor(AuthInterceptor(sessionStorage, backendHttpUrl))
+            // Only photo / video / poster uploads (marked on their calls) get 120 s read and write timeouts.
+            .addInterceptor(UploadTimeoutInterceptor())
             .build()
     }
 
@@ -243,6 +246,9 @@ class AppContainer(context: Context) {
         RemoteExperienceRepository(retrofit.create(ExperienceApi::class.java), apiCallHandler, backendBaseUrl())
     }
 
+    /** IRL redesign (R1): "my own posts changed" (memory only), so the feed reads again when it is shown next. */
+    val feedFreshness = com.safesphere.app.feature.social.domain.FeedFreshness()
+
     // ---- Phase 13C: butterflies, the Cocoon and Discover (nothing stored on the phone) ---------------------
 
     val discoverRepository: DiscoverRepository by lazy {
@@ -288,6 +294,11 @@ class AppContainer(context: Context) {
 
     /** E20: "Collapse strong language", a choice about the viewer only, kept on this phone. */
     val viewerPreferences: ViewerPreferences by lazy { DataStoreViewerPreferences(appContext) }
+
+    /** IRL redesign (R6): the signed-in account's own Home city, remembered on this phone. */
+    val homeCityChoice: com.safesphere.app.feature.social.domain.HomeCityChoice by lazy {
+        com.safesphere.app.feature.social.domain.HomeCityChoice(viewerPreferences) { currentSession.value?.user?.id }
+    }
 
     /** Q9: private places, recently used places and the last audience, encrypted on this phone, never uploaded. */
     private val placesStore: PlacesStore by lazy {

@@ -24,12 +24,12 @@ interface FeedActions {
     fun openPost(post: Post, toComments: Boolean)
     fun react(post: Post)
     fun save(post: Post)
-    fun why(item: DiscoverItem)
     fun nearMe()
     fun category(interest: Interest)
     fun share()
     fun findPeople()
     fun chooseCity()
+    fun openPerson(profileId: String)
 }
 
 /** A feed row and the strong-language choice that changes how its post card looks. */
@@ -87,11 +87,8 @@ class DiscoverFeedAdapter(
                         context.getString(SocialLabels.of(it))) } ?: context.getString(R.string.discover_section_theme)
                     HeaderKind.CONNECTIONS -> context.getString(R.string.feed_header_connections)
                 }
-                val subtitle = when (item.kind) {
-                    HeaderKind.TALKING -> R.string.feed_header_talking_sub
-                    HeaderKind.CONNECTIONS -> R.string.feed_header_connections_sub
-                    else -> null
-                }
+                // R3: section names only; the small print under them is gone.
+                val subtitle: Int? = null
                 b.subtitle.isVisible = subtitle != null
                 if (subtitle != null) b.subtitle.setText(subtitle)
             }
@@ -102,12 +99,11 @@ class DiscoverFeedAdapter(
                 val card = ExperienceCards.of(post, item.item.reasons, row.collapseStrongLanguage)
                 CardBinder.bind((holder as Bound<ItemExperienceCardBinding>).binding, CardRow(card,
                     onOpen = { actions.openPost(post, toComments = false) },
-                    onWhy = if (item.item.reasons.isNotEmpty() &&
-                        item.item.reasons != listOf(com.safesphere.app.feature.social.domain.DiscoverReason.FROM_A_CONNECTION))
-                        ({ actions.why(item.item) }) else null,
+                    // R3: no "Why?" on feed cards (a question nobody asked on every post); the order is explained in About.
                     onReact = { actions.react(post) },
                     onSave = { actions.save(post) },
-                    onComments = { actions.openPost(post, toComments = true) }), images)
+                    onComments = { actions.openPost(post, toComments = true) },
+                    onAuthor = card.authorId?.takeUnless { card.own }?.let { id -> { actions.openPerson(id) } }), images)
             }
             FeedItem.End -> message(holder, R.string.discover_edition_end, R.string.feed_end_message,
                 R.string.feed_share_yours) { actions.share() }

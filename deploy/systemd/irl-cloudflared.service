@@ -9,9 +9,14 @@ After=network-online.target nginx.service irl-backend.service
 Type=simple
 User=cloudflared
 Group=cloudflared
-# The tunnel credentials file lives in /etc/irl/cloudflared (mode 600, owner cloudflared). cert.pem must NOT be left on the laptop
-# after the tunnel is created (it can manage every tunnel and DNS record of the account).
-ExecStart=/usr/bin/cloudflared --no-autoupdate --config /etc/irl/cloudflared/config.yml tunnel run
+# The tunnel credentials stay ROOT-OWNED, mode 0400, in /etc/cloudflared/<id>.json (nothing is copied, nothing under /etc/irl is
+# opened to this user: /etc/irl is 750 root:irl). systemd (running as root) reads the file named by the symlink
+# /etc/cloudflared/tunnel.json and hands it to this service ONLY, as a 0400 file owned by `cloudflared` in a private directory
+# (/run/credentials/irl-cloudflared.service/tunnel.json); the config's `credentials-file` points there. The config itself holds no
+# secret (/etc/cloudflared/irl-tunnel.yml, 644). cert.pem must NOT be left on the laptop after the tunnel is created (it can manage
+# every tunnel and DNS record of the account); this unit never needs it (ProtectHome=true hides the home folder).
+LoadCredential=tunnel.json:/etc/cloudflared/tunnel.json
+ExecStart=/usr/bin/cloudflared --no-autoupdate --config /etc/cloudflared/irl-tunnel.yml tunnel run
 # It must come back by itself after a network drop, a sleep or a restart of Windows.
 Restart=always
 RestartSec=5

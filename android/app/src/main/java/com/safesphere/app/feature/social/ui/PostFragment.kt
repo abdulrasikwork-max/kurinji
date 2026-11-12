@@ -50,7 +50,6 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
 
     private lateinit var photoAdapter: PhotoAdapter
     private lateinit var commentAdapter: CommentAdapter
-    private lateinit var kindChips: ChoiceChips<CommentKind>
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -61,7 +60,6 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.photoList.adapter = photoAdapter
         PagerSnapHelper().attachToRecyclerView(binding.photoList)
         binding.perspectiveList.adapter = commentAdapter
-        kindChips = ChoiceChips(binding.kindGroup) { it?.let(viewModel::onKind) }
         binding.perspectiveInput.doAfterTextChanged { viewModel.onText(it?.toString().orEmpty()) }
         // Phase 13E: a private nudge first (the draft is checked on this phone only).
         binding.sendButton.setOnClickListener {
@@ -189,10 +187,17 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.meta.text = listOfNotNull(CardTexts.meta(requireContext(), card),
             getString(R.string.social_edited).takeIf { post.edited }).joinToString(" · ")
         binding.questionBadge.isVisible = card.isAsk
-        binding.authorRow.isClickable = author != null && !post.own
-        binding.authorRow.contentDescription = author?.let { getString(R.string.post_author_description, it.displayName) }
+        // R5: your own name opens your profile (the You tab); it used to do nothing.
+        binding.authorRow.isClickable = author != null
+        binding.authorRow.contentDescription = author?.let {
+            getString(if (post.own) R.string.post_author_own_description else R.string.post_author_description, it.displayName)
+        }
         binding.authorRow.setOnClickListener {
-            if (author != null && !post.own) findNavController().navigate(R.id.personProfileFragment,
+            if (author != null && post.own) {
+                // Go back to You when this post was opened from there; a second You on top would make Back loop.
+                val nav = findNavController()
+                if (!nav.popBackStack(R.id.youFragment, false)) nav.navigate(R.id.youFragment)
+            } else if (author != null) findNavController().navigate(R.id.personProfileFragment,
                 bundleOf(PersonProfileViewModel.ARG_PROFILE_ID to author.publicId))
         }
 
@@ -235,6 +240,14 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.marksBlock.isVisible = !post.own
         CardBinder.bindReaction(binding.reactButton, post.youReacted, state.canReact) { viewModel.onReact() }
         CardBinder.bindSave(binding.saveButton, post.saved, state.canSave) { viewModel.onSave() }
+        // R7 (A23, second account): a question names nowhere to go, so "I went" and "Going there?" belong to experiences.
+        binding.goingRow.isVisible = post.type == com.safesphere.app.feature.social.domain.PostType.EXPERIENCE
+        // IRL-R14: a visit and its rating belong to an exact place. Only there the button says "I went" (it marks, then asks
+        // "How was it?"); on any other experience it opens the composer, so it says "Share yours".
+        val marksVisit = post.precision == Precision.EXACT && post.placeId != null
+        binding.wentButton.setText(if (marksVisit) R.string.went_label else R.string.feed_share_yours)
+        binding.wentButton.contentDescription =
+            getString(if (marksVisit) R.string.went_description else R.string.went_share_description)
         binding.wentButton.setOnClickListener { iWent(post) }
         // Phase 13F (F9): the sheet only navigates; its "Save" is this screen's own Save.
         binding.goingButton.setOnClickListener {
@@ -252,7 +265,7 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             viewModel.onSavedShown()
             Haptics.confirm(binding.saveButton)
             binding.saveButton.announceForAccessibility(getString(R.string.save_announcement))
-            ButterflyFlight.fly(binding.saveButton, requireActivity().findViewById(R.id.cocoonFragment)) { }
+            ButterflyFlight.fly(binding.saveButton, requireActivity().findViewById(R.id.youFragment)) { }
         }
 
         // Comments: the title carries the number the viewer can read (U1), the same as the list below it.
@@ -270,8 +283,6 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
             else R.string.post_comments_none)
         binding.writeBlock.isVisible = post.canComment
         binding.perspectivesClosed.isVisible = !post.canComment && !post.own
-        kindChips.show(state.kinds.map { it to getString(ExperienceLabels.of(it)) }, state.kind)
-        binding.kindGroup.isVisible = state.replyTo == null
         binding.replyBlock.isVisible = state.replyTo != null
         binding.replyingTo.text = state.replyTo?.let {
             getString(R.string.social_replying_to, it.author?.displayName.orEmpty())
@@ -319,7 +330,8 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
     }
 
     private fun row(p: Perspective, post: Post, state: PostUiState): CommentRow {
-        val kind = getString(ExperienceLabels.of(p.kind))
+        // R1: a comment is a comment; only an Answer (on a question) keeps its word, because the author can mark it.
+        val kind = if (p.kind == CommentKind.ANSWER) getString(ExperienceLabels.of(p.kind)) else ""
         val name = p.author?.displayName.orEmpty()
         val notes = buildList {
             if (p.helped) add(getString(R.string.social_helped))

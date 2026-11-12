@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.safesphere.app.feature.social.domain.ViewerPreferences
 import java.io.IOException
@@ -37,7 +38,16 @@ class DataStoreViewerPreferences(context: Context) : ViewerPreferences {
         dataStore.edit { if (userId == null) it.remove(KEY_SMART_ACCOUNT) else it[KEY_SMART_ACCOUNT] = userId }
     }
 
+    override val homeCity: Flow<String?> = dataStore.data
+        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+        .map { it[KEY_HOME_CITY] }
+
+    override suspend fun setHomeCity(value: String?) {
+        dataStore.edit { if (value == null) it.remove(KEY_HOME_CITY) else it[KEY_HOME_CITY] = value }
+    }
+
     private companion object {
+        val KEY_HOME_CITY = stringPreferencesKey("home_city")
         val KEY_SMART_ACCOUNT = longPreferencesKey("smart_understanding_account")
         val KEY_STRONG_LANGUAGE = booleanPreferencesKey("collapse_strong_language")
     }

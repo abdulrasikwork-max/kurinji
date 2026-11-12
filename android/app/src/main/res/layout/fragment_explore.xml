@@ -16,6 +16,15 @@
         android:paddingEnd="@dimen/screen_padding"
         android:paddingBottom="@dimen/space_xl">
 
+        <!-- R3: Explore is a tab now, so it carries its own title. -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/space_sm"
+            android:accessibilityHeading="true"
+            android:text="@string/explore_title"
+            android:textAppearance="@style/TextAppearance.Kurinji.ScreenTitle" />
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

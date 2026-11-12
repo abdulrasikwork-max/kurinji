@@ -40,6 +40,27 @@
     <color name="hero_on">#F4F4F4</color>
     <color name="hero_on_variant">#C4C4C4</color>
 
-    <color name="mark_path">#F1F4EA</color>
-    <color name="mark_accent">#ADFF2F</color>
+
+    <!-- The social palette at night (ThemeOverlay.IRL.Social): cherry-black page, cream words, cream actions; cherry is a surface. -->
+    <color name="c_page">#140707</color>
+    <color name="c_surface">#221010</color>
+    <color name="c_surface_sunk">#2C1513</color>
+    <color name="c_surface_low">#1A0A0A</color>
+    <color name="c_surface_container">#261211</color>
+    <color name="c_surface_high">#2F1715</color>
+    <color name="c_surface_highest">#381C19</color>
+    <color name="c_ink">#EEDCC8</color>
+    <color name="c_ink_soft">#C4AD9C</color>
+    <color name="c_outline">#9A8073</color>
+    <color name="c_line">#3A1E1B</color>
+    <color name="c_action">#EEDCC8</color>
+    <color name="c_on_action">#5D0703</color>
+    <color name="c_fill">#EEDCC8</color>
+    <color name="c_on_fill">#5D0703</color>
+    <color name="c_soft">#5D0703</color>
+    <color name="c_on_soft">#EEDCC8</color>
+    <color name="c_accent">#F2C4AE</color>
+    <color name="c_panel">#5D0703</color>
+    <color name="c_on_panel">#EEDCC8</color>
+    <color name="c_on_panel_soft">#D9B9A6</color>
 </resources>

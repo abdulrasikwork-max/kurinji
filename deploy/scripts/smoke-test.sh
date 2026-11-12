@@ -6,8 +6,9 @@
 #     BASE_URL         for example https://<your domain>   (NO default: nothing is invented)
 #     --allow-http     permit a plain http:// BASE_URL (ONLY for a local rehearsal; production must be https)
 #     --check-redirect also check that http://<host>/ redirects to https (needs the proxy on port 80)
-#     --tunnel         laptop + Cloudflare Tunnel (L1): also check the answer came through Cloudflare, that /api/admin/* is
-#                      not served to the internet, and that Cloudflare does not cache the API
+#     --tunnel         laptop + Cloudflare Tunnel (L1): also check the answer came through Cloudflare, that /api/admin and
+#                      /api/admin/* are not served to the internet (404 from nginx or 403 from the Cloudflare rule), and that
+#                      Cloudflare does not cache the API
 #
 # Exit status 0 only if every check passes.
 set -u -o pipefail
@@ -87,8 +88,17 @@ if header health Server | grep -qiE 'nginx/[0-9]|apache|tomcat|jetty'; then bad 
 if [ "$tunnel" -eq 1 ]; then
   echo "== Cloudflare tunnel"
   header health CF-Ray | grep -q . && ok "the answer came through Cloudflare (CF-Ray header present)" || bad "no CF-Ray header: this address is not behind Cloudflare"
-  req admin /api/admin/evaluation
-  [ "$code" = "404" ] && ok "/api/admin/* is not served to the internet (404, not even 401)" || bad "/api/admin/evaluation answered $code (expected 404 from nginx)"
+  # The admin API has two walls: nginx answers 404 for /api/admin/ and (since 2026-11-10) a Cloudflare WAF rule answers 403 for any path
+  # starting with /api/admin. Either is fine; what must never happen is the app answering (its errors are JSON with a "status" field).
+  # The body is never printed: Cloudflare's block page carries the visitor's own address.
+  for adminpath in /api/admin/evaluation /api/admin; do
+    req admin "$adminpath"
+    if { [ "$code" = "404" ] || [ "$code" = "403" ]; } && ! grep -q '"status"[[:space:]]*:' "$tmp/admin.body"; then
+      ok "$adminpath is not served to the internet (answered $code, not by the app)"
+    else
+      bad "$adminpath answered $code (expected 404 from nginx or 403 from Cloudflare, never the app)"
+    fi
+  done
   req again /api/health
   if header again cf-cache-status | grep -qi 'hit'; then bad "Cloudflare served /api/health from its cache (add the Cache Rule: bypass for the API host)"; else ok "Cloudflare did not serve /api/health from its cache"; fi
   req prot2 /api/explore/understanding

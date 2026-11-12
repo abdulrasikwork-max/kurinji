@@ -1,11 +1,13 @@
 package com.safesphere.app.feature.social.data.remote
 
+import com.safesphere.app.core.network.UploadTimeoutInterceptor
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -29,10 +31,12 @@ interface ExperienceApi {
     suspend fun nearbyPlaces(@Query("area") areaCell: String): List<PlaceDto>
 
     /** The body is the JPEG itself (image/jpeg); Phase 17C: or the MP4 itself (video/mp4). */
+    @Headers(UploadTimeoutInterceptor.HEADER_LINE) // 120 s read / write (UploadTimeoutInterceptor)
     @POST("api/media")
     suspend fun upload(@Body jpeg: RequestBody): UploadedDto
 
     /** Phase 17C: a video's poster frame (image/jpeg). */
+    @Headers(UploadTimeoutInterceptor.HEADER_LINE)
     @POST("api/media/{id}/poster")
     suspend fun uploadPoster(@Path("id") mediaId: String, @Body jpeg: RequestBody): UploadedDto
 

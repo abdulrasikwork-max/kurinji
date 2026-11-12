@@ -5,6 +5,28 @@ Line: **OUT THERE. TOGETHER.** Results and decisions: `docs/PHASE17E.md` (17E), 
 Icon: `docs/design/irl-icon.md` (the Phase 16 Go-K, `kurinji-16-icon.md`, is history). (Phase 13F's "field journal"
 system and Phase 16's red brand are retired; decision E17-1 superseded the colour part of U4, its emergency rule stands.)
 
+> **2026-11-12 (decisions IRL-C1 to IRL-C6): two palettes.** The sections below describe "Ink & Lime", which is now the
+> palette of the SAFETY screens only (unchanged). The social side (posts, people, places, You, settings, account, sign-in,
+> onboarding) wears **Black Cherry `#5D0703` and Cream Vanilla `#EEDCC8`** through `ThemeOverlay.IRL.Social`:
+> - **Where:** `core/ui/SocialPalette` (by feature package) → `ViewBindingFragment` gives those fragments a themed context
+>   (views, sheets, dialogs, list rows); `MainActivity` colours the shared page and toolbar per destination; the bottom bar
+>   carries the overlay. The overlay names only `c_*` colours and no emergency, safe, caution or hero role.
+> - **Day:** page `c_page` cream, cards `c_surface` #FAF3EA, text `c_ink` #1F0A08 / `c_ink_soft` #5A413A, actions and the
+>   fill of a given mark = cherry with cream words (10.5:1), tonal `c_soft` #E8C9B5.
+> - **Night:** page #140707, cards #221010, text and actions cream; cherry is only a surface (panel, tonal fill).
+> - **Brand surfaces** (launcher icon, opening screen): `brand_cherry`, `brand_cream`, `brand_blush` #E8A48C, fixed.
+> - **Icon and mark (IRL-C10, approved by the owner on 2026-11-12; the Kolam butterfly, IRL-C9, was rejected the same day):** the
+>   Tamil letter ஐ (said like the English "I"; a shout of delight; the old word for wonder), our own one-line drawing,
+>   one colour (`docs/design/irl-icon.md`). In-app mark `ic_brand_mark` uses the text colour (theme attribute).
+> - **Opening (IRL-C11, direction approved by the owner on 2026-11-12):** plain cherry launch screen, then ONE centred lockup every time: the mark writes
+>   itself (`art_opening_meet`, 560 ms), "IRL" (Fraunces, 60sp) from 300 ms, "OUT THERE. TOGETHER." from 520 ms; a returning
+>   person is taken on after 1000 ms. First run only: the lockup moves up (380 ms) and "YOUR WORLD. / YOUR PEOPLE. / YOUR
+>   FREEDOM." lands line by line with "LET'S GO". No other words. Sections further down that describe the earlier opening are history.
+> - **Type:** Fraunces SemiBold (`irl_serif`, OFL, `docs/licences/Fraunces-OFL.txt`) for headlines and the wordmark; the
+>   rest Mukta Malar. Safety hero text and the opening capitals stay Mukta Malar.
+> - **Tests:** `SocialPaletteTest` (pairs day and night, safety values pinned, no safety screen can wear the overlay),
+>   `ContrastTest` (brand pairs; the k_* brand is still not red).
+
 ## Name (2026-11-03)
 
 The visible name is **IRL** (In Real Life), everywhere a person reads the app's name: launcher label, strings, the

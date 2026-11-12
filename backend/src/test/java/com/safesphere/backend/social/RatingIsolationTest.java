@@ -85,10 +85,21 @@ class RatingIsolationTest {
     }
 
     @Test
-    void theOnlyPublicRatingIsTheGuardedAverage_readsAreByTheOwnersIdOrReturnTwoNumbers() throws IOException {
+    void theOnlyPublicRatingIsTheGuardedAverage_readsAreByTheOwnersIdOrStayInsideTheRatingCode() throws IOException {
         String repository = code(MAIN.resolve("social/repository/PlaceVisitRepository.java"));
         // every per-row read is by (user, place) or by place for a merge; the one cross-person read returns two numbers
-        assertThat(repository).contains("findByUserIdAndPlaceId").contains("Totals totals(");
+        assertThat(repository).contains("findByUserIdAndPlaceId").contains("List<RaterRow> raters(");
+        // Phase 18A-1: the per-rater rows are read in ONE place, to compute the text, and no answer type carries them
+        long callers = 0;
+        try (Stream<Path> files = Files.walk(MAIN)) {
+            for (Path file : files.filter(p -> p.toString().endsWith(".java")).toList()) {
+                if (code(file).contains(".raters(")) callers++;
+            }
+        }
+        assertThat(callers).as("only PlaceRatings reads the raters").isEqualTo(1);
+        assertThat(code(MAIN.resolve("social/service/PlaceRatings.java"))).contains("visits.raters(").contains("RatingPolicy.display(raters, links)");
+        assertThat(code(MAIN.resolve("social/dto/PlaceDtos.java"))).doesNotContain("RaterRow").doesNotContain("weight");
+        assertThat(code(MAIN.resolve("social/dto/DiscoverDtos.java"))).doesNotContain("RaterRow").doesNotContain("weight");
         assertThat(repository).doesNotContain("findByUserId(").doesNotContain("List<PlaceVisit> findAll");
         String ratings = code(MAIN.resolve("social/service/PlaceRatings.java"));
         assertThat(ratings).contains("DailyStateService.INDIA").contains("memo");

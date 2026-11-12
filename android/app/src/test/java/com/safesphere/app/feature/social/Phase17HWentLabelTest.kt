@@ -23,13 +23,13 @@ class Phase17HWentLabelTest {
 
     @Test
     fun `each visible state of the button has its own spoken label`() {
-        assertTrue(string("place_went_description_state").startsWith("You went to"))
+        assertTrue(string("place_went_description_state").startsWith("You have been to"))
         assertTrue(string("place_went_description_state").contains("not rated"))
         val rated = string("place_went_description_rated")
-        assertTrue(rated.startsWith("You went to"))
+        assertTrue(rated.startsWith("You have been to"))
         assertTrue("the person's own number is spoken", rated.contains("%2\$s out of 5"))
         // The first-visit prompt is only for a person who has not been marked as having gone.
-        assertTrue(string("place_share_yours_description").startsWith("I went here"))
+        assertTrue(string("place_share_yours_description").startsWith("Been here"))
     }
 
     @Test

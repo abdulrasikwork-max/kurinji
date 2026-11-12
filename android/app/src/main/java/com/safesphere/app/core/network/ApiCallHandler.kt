@@ -3,6 +3,8 @@ package com.safesphere.app.core.network
 import com.google.gson.Gson
 import com.safesphere.app.feature.auth.domain.SessionStorage
 import java.io.IOException
+import java.io.InterruptedIOException
+import java.net.SocketTimeoutException
 import kotlin.coroutines.cancellation.CancellationException
 import retrofit2.HttpException
 
@@ -30,7 +32,7 @@ class ApiCallHandler(private val sessionEnder: SessionEnder, private val ageGate
         } catch (e: HttpException) {
             e
         } catch (e: IOException) {
-            return ApiResult.Failure(ApiError.NO_CONNECTION)
+            return ApiResult.Failure(ApiError.NO_CONNECTION, timedOut = isTimeout(e))
         } catch (e: Exception) {
             return ApiResult.Failure(ApiError.UNKNOWN) // for example an unreadable response body
         }
@@ -65,6 +67,10 @@ class ApiCallHandler(private val sessionEnder: SessionEnder, private val ageGate
     private data class ErrorBody(val message: String? = null, val code: String? = null)
 
     private companion object {
+        /** A read or write that ran out of time (OkHttp: SocketTimeoutException, or InterruptedIOException "timeout"). */
+        fun isTimeout(e: IOException): Boolean =
+            e is SocketTimeoutException || (e is InterruptedIOException && e.message == "timeout")
+
         /** Errors whose text our own backend writes for people (safe to show); every other error uses app text. */
         val SERVER_WORDED = setOf(ApiError.CONFLICT, ApiError.TOO_MANY_ATTEMPTS, ApiError.FORBIDDEN)
     }

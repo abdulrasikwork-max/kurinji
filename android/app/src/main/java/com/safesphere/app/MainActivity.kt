@@ -64,7 +64,16 @@ class MainActivity : AppCompatActivity() {
         // Tab screens have no "up" arrow; every other screen with a toolbar does.
         val appBarConfiguration = AppBarConfiguration(NavigationRules.tabDestinations)
         binding.toolbar.setupWithNavController(navController, appBarConfiguration)
-        binding.bottomNavigation.setUpWithTabs(navController)
+        binding.bottomNavigation.setUpWithTabs(navController) {
+            (navHost.childFragmentManager.primaryNavigationFragment as? com.safesphere.app.navigation.TabReselect)
+                ?.onTabReselected()
+        }
+        // R1: on the composer the toolbar arrow asks the same "discard?" question as the back button (it has a draft
+        // to lose); everywhere else the arrow keeps its normal behaviour.
+        binding.toolbar.setNavigationOnClickListener {
+            if (navController.currentDestination?.id == R.id.composeFragment) onBackPressedDispatcher.onBackPressed()
+            else androidx.navigation.ui.NavigationUI.navigateUp(navController, appBarConfiguration)
+        }
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             updateChrome(destination)
@@ -87,9 +96,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var barWanted = false
+    private var keyboardOpen = false
+
     private fun updateChrome(destination: NavDestination) {
         binding.toolbar.isVisible = destination.id !in NavigationRules.destinationsWithoutToolbar
-        binding.bottomNavigation.isVisible = destination.id in NavigationRules.bottomBarDestinations
+        barWanted = destination.id in NavigationRules.bottomBarDestinations
+        binding.bottomNavigation.isVisible = barWanted && !keyboardOpen
         bannersAllowed = destination.id in NavigationRules.bannerDestinations
         if (bannersAllowed) startBanners()
         // Phase 15: re-applied on every screen change; the banner state does not change when the person comes back
@@ -98,7 +111,10 @@ class MainActivity : AppCompatActivity() {
         if (bannersStarted && bannersAllowed) session.onScreenVisible()
         if (bannersAllowed) openAgeScreenIfDue()
         if (NavigationRules.opensSosFrom(destination.id)) openSosIfRequested()
+        val chrome = chromeContext(destination)
+        updateToolbarColours(chrome)
         updateSystemBars(
+            chrome = chrome,
             onHero = destination.id in NavigationRules.destinationsOnHero,
             onInk = destination.id in NavigationRules.destinationsOnInk
         )
@@ -217,10 +233,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * IRL (2026-11-12): the shared page and toolbar take the colours of the screen they frame. A screen of the social
+     * side (core/ui/SocialPalette, by the destination's fragment class) gets the social palette; every other screen,
+     * and so every safety screen, gets this activity's own theme as before.
+     */
+    private val socialChrome by lazy { com.safesphere.app.core.ui.SocialPalette.wrap(this) }
+
+    private fun chromeContext(destination: NavDestination): android.content.Context {
+        val className = (destination as? androidx.navigation.fragment.FragmentNavigator.Destination)?.className
+        return if (com.safesphere.app.core.ui.SocialPalette.appliesTo(className)) socialChrome else this
+    }
+
+    private fun updateToolbarColours(chrome: android.content.Context) {
+        val surface = MaterialColors.getColor(chrome, com.google.android.material.R.attr.colorSurface, getColor(R.color.k_page))
+        val onSurface = MaterialColors.getColor(chrome, com.google.android.material.R.attr.colorOnSurface, getColor(R.color.k_ink))
+        binding.toolbar.setBackgroundColor(surface)
+        binding.toolbar.setTitleTextColor(onSurface)
+        binding.toolbar.setNavigationIconTint(onSurface)
+    }
+
+    /**
      * Every screen sits on the page (or night) surface; the IRL opening screen sits on the launch ink edge to edge.
      * Status-bar and navigation-bar icons are switched between light and dark to stay readable.
      */
-    private fun updateSystemBars(onHero: Boolean, onInk: Boolean) {
+    private fun updateSystemBars(chrome: android.content.Context, onHero: Boolean, onInk: Boolean) {
         val isNightMode = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
         val needsLightIcons = onHero || onInk || isNightMode
@@ -231,7 +267,8 @@ class MainActivity : AppCompatActivity() {
         }
         val backgroundAttr = if (onHero) R.attr.colorHero else com.google.android.material.R.attr.colorSurface
         binding.root.setBackgroundColor(
-            if (onInk) getColor(R.color.splash_background) else MaterialColors.getColor(binding.root, backgroundAttr)
+            if (onInk) getColor(R.color.splash_background)
+            else MaterialColors.getColor(chrome, backgroundAttr, getColor(R.color.k_page))
         )
     }
 
@@ -247,6 +284,9 @@ class MainActivity : AppCompatActivity() {
                     WindowInsetsCompat.Type.ime()
             )
             view.setPadding(insets.left, insets.top, insets.right, insets.bottom)
+            // R7 (A23): with the keyboard open the bar sat on top of it and took a fifth of what was left of the screen.
+            keyboardOpen = windowInsets.isVisible(WindowInsetsCompat.Type.ime())
+            binding.bottomNavigation.isVisible = barWanted && !keyboardOpen
             WindowInsetsCompat.CONSUMED
         }
     }

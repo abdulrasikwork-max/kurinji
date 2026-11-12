@@ -14,9 +14,14 @@ object ComposeMediaTexts {
         MediaStage.UPLOADING -> context.getString(R.string.social_media_uploading) // the bar shows how much
         MediaStage.FINISHING -> context.getString(R.string.social_video_finishing)
         MediaStage.READY -> null
-        MediaStage.FAILED -> context.getString(R.string.social_photo_failed)
+        MediaStage.FAILED -> context.getString(failedText(item))
         MediaStage.REFUSED -> context.getString(refusal(item.refusal))
     }
+
+    /** A failed (not refused) item: "too slow on this connection" after a timeout, else the general retry words. */
+    @StringRes
+    fun failedText(item: ComposeMedia): Int =
+        if (item.timedOut) R.string.social_media_timed_out else R.string.social_photo_failed
 
     /** The progress bar: the share while sending, moving (-1) while preparing or finishing, none otherwise. */
     fun progress(item: ComposeMedia): Int? = when (item.stage) {

@@ -12,15 +12,20 @@ import java.time.Duration;
 import java.util.Map;
 
 /**
- * Phase 17B: delivers codes through Fast2SMS's OTP route (POST /dev/bulkV2, route=otp). Fast2SMS sends the fixed text
- * "Your OTP: 123456" from its own sender; it only DELIVERS: the code is made and checked by this server.
+ * Phase 17B (changed 2026-11-09): delivers codes through Fast2SMS's Quick SMS route (POST /dev/bulkV2, route=q, JSON body
+ * {route, message, numbers}). Fast2SMS closed its old OTP route (route=otp). Quick SMS needs no DLT registration; the text
+ * is ours, the sender is Fast2SMS's (a numeric / random sender, not a brand). It only DELIVERS: the code is made, stored,
+ * expired and checked by this server.
  *
- * Needs, on the Fast2SMS account (not in code): completed KYC (else status 996) and a first top-up of at least Rs 100
- * (else 999). Indian numbers only. The API key comes only from FAST2SMS_API_KEY.
+ * Needs, on the Fast2SMS account (not in code): a first top-up of at least Rs 100 (else status 999) and wallet balance
+ * (else 416); about Rs 7 per SMS. Indian numbers only. The API key comes only from FAST2SMS_API_KEY.
  *
- * Never logs the key, the code or the number; a refusal is reported by Fast2SMS's status code only.
+ * Never logs the key, the code, the message or the number; a refusal is reported by Fast2SMS's status code only.
  */
 public class Fast2SmsOtpSender implements OtpSender {
+
+    /** Plain ASCII on purpose: one English SMS holds 160 characters, one Unicode part only 70 (each part is billed). */
+    static final String MESSAGE_TEMPLATE = "%s is your IRL verification code. Do not share it with anyone.";
 
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(8);
@@ -50,7 +55,7 @@ public class Fast2SmsOtpSender implements OtpSender {
         if (code == null || !code.matches("^[0-9]{4,10}$")) throw new OtpDeliveryException("code not numeric");
         String body;
         try {
-            body = json.writeValueAsString(Map.of("route", "otp", "variables_values", code,
+            body = json.writeValueAsString(Map.of("route", "q", "message", MESSAGE_TEMPLATE.formatted(code),
                     "numbers", PhoneNumbers.national(phoneE164)));
         } catch (IOException e) {
             throw new OtpDeliveryException("request not built");

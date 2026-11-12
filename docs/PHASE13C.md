@@ -92,7 +92,7 @@ fonts, a week boundary passing on a live server (tested with fixed instants only
   lists, ≤ 20 search results.
 - **Isolation:** `SocialIsolationTest` unchanged and green: social reads no safety data (place signals are NOT shown on
   place pages for that reason); the only `@Scheduled` in social is still the photo clean-up.
-- **Phone:** nothing about other people stored; the chosen city is not saved; DTOs fail closed (unknown state/kind/
+- **Phone:** nothing about other people stored; the chosen city is not saved (changed 2026-11-12 by IRL-R6: the person's own Home city is remembered per account, `docs/IRL_REDESIGN.md` section 3.1); DTOs fail closed (unknown state/kind/
   section/reason dropped; a tally on someone else's post or under 3 dropped).
 
 ## 6. Viva notes

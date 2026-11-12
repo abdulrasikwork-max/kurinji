@@ -27,7 +27,7 @@ they are permanent rules); new class maps to the matching `.claude/rules/` file.
 ## 1. Product
 
 **Brand: IRL — In Real Life** (the user's decision, 2026-11-03; replaces Kurinji; trademark, domain and store checks
-still to do). Line **"OUT THERE. TOGETHER."**, icon **"the Meet"** (`docs/design/irl-icon.md`), opening screen and name
+still to do). Line **"OUT THERE. TOGETHER."**, icon **the Tamil letter ai** (`docs/design/irl-icon.md`), opening screen and name
 rules in `docs/DESIGN_SYSTEM.md`. **Package, applicationId (`com.safesphere.app`), signing, database, API and code names
 stay SafeSphere** (a rebrand, not a new app; `KurinjiTextsTest` pins it).
 
@@ -41,7 +41,7 @@ Phases 1–3 are the foundation.
 
 - Safety is **not** the identity, the main screen, onboarding, navigation or branding; it appears when someone moves
   from reading to going ("Going there?" sheet, You → Safety, active walk/SOS banners). **Every safety guarantee is kept.**
-- Structure: **Discover · ✚ Share · Saved · You** (the Saved tab keeps the nav id `cocoonFragment`). Experience + Ask
+- Structure: **Home · Explore · ✚ Share · You** (2026-11-11, `docs/IRL_REDESIGN.md`; "Want to go" (saves) is under You, nav id `cocoonFragment`; Home = `discoverFragment`). Experience + Ask
   posts (Takes in V2), Perspectives (comments), mutual Connections, visibility Everyone / Connections / Only me.
 - 🦋 butterfly = a **reaction** on others' Experiences (the author sees a count from 3, never who); **Save** = a private
   bookmark (D-3). Today's state: a closed list, connections only, the IST day only (D-7).
@@ -54,8 +54,8 @@ Phases 1–3 are the foundation.
   **U2** Discover may show "Talking now", ordered by the newest visible comment, never by totals, no numbers; **U3**
   Discover auto-loads the next page but always **ends** with an "all caught up" card; **U4** emergency UI never relies on
   colour: siren icon + the words SOS/Emergency + its own black-and-red treatment; **U5** (2026-11-03, `docs/PHASE17G2.md`) a place shows ONE guarded average (1-5) only once ≥ 5 people who went (past probation) rated it: no count, name or time, once a day, never used to sort or rank. "I went" and own ratings are private.
-- Colours (E17-1, 2026-11-02): **"Ink & Lime"** (ink black + lime #ADFF2F, `docs/DESIGN_SYSTEM.md`); red again means only
-  emergency (`ContrastTest` pins the emergency values).
+- Colours (2026-11-12, IRL-C1): social side = **Black Cherry #5D0703 + Cream Vanilla #EEDCC8** (overlay, `SocialPalette`); safety
+  screens keep "Ink & Lime" (E17-1); bright red means only emergency (`ContrastTest`, `SocialPaletteTest` pin both).
 - Women's realities are an internal design principle only (D4). Chennai first; Tamil/Tanglish content from V1, Tamil UI
   in V2 (D5). 18+, self-declared date of birth, never stored (D6).
 - Final-year B.Tech IT team project: the student must be able to explain every important decision in a viva.
@@ -93,6 +93,7 @@ Phases 1–3 are the foundation.
 | 17J | Release readiness: sealed token, origin-checked token, R8, signing, https config, `prod` profile + `ProductionGuard` (`docs/PHASE17J.md`) | tested; minified build emulator-verified (partial) | signed release, real SMS |
 | 17K | targetSdk 36 (`docs/TARGETSDK36_PLAN.md`): AGP 8.13.2, Gradle 8.14.6, compile/target 36 | tested; back/Tamil/SOS/walk same as target 35 (API 37 emulator) | Android 16 phones |
 | D12 + L1 | Deployment prep + friend pilot from the owner's laptop: WSL2, nginx, Cloudflare Tunnel to a permanent `api.<domain>`, real client address (`docs/D12_DEPLOYMENT.md`, `deploy/LAPTOP.md`) | tested, rehearsed on this PC | **nothing deployed**: no domain, tunnel, WSL, SMS account |
+| IRL redesign | R1-R7 + 2026-11-12 identity (social palette, Fraunces, mark = Tamil letter ai + new opening (IRL-C10/11, approved), "Been here", "Want to go"; `docs/IRL_REDESIGN.md`) | tested (1069/0), A23 dark mode (5 screens) | light mode, large text, TalkBack, media upload |
 | 17I | brand; regression | planned | — |
 
 Next migration **V31**. Each phase or sub-phase needs its own plan and the user's approval first.
@@ -187,7 +188,7 @@ cd android
   safetycircle, emergency (+ `entry`: SOS shortcut/tile), safewalk, circlealert, evidence, moderation, intelligence,
   account, social, going (navigation bridge only). `feature/map`, `feature/home` and `feature/rise` no longer exist.
   No screen shows "Coming soon".
-- **Navigation:** Discover · ✚ Share (action → composer) · Saved · You; start = Discover. Bar on tabs + reading screens
+- **Navigation:** Home · Explore · ✚ Share (action → composer) · You; start = Home (`discoverFragment`); Saved and "Settings and more" (`moreFragment`) under You. Bar on tabs + reading screens
   (post, place/category page, person profile); task/safety screens have toolbar + back. Safety banners (SOS, walk,
   deletion, sign in to sync) on every tab and reading screen via `MainActivity` + `SessionStatusViewModel`, never on the
   SOS screen. Nearby (`communityFragment`) is under You → Safety.
@@ -211,7 +212,7 @@ cd android
   not register their own location launcher or read a stream (`Phase17DLocationTest`); a rough position never places
   anything (≤ 100 m for reports and places); screens stop location searches in `onStop`.
 - **Nothing about other people is stored on the phone (Q3):** one Coil `ImageLoader` on the shared OkHttp client, memory
-  cache only; videos stream with the sign-in header, play only after a tap; social data is never persisted.
+  cache only; videos stream with the sign-in header, play only after a tap; social data is never persisted (the person's OWN Home city is, per account: IRL-R6).
 - **Wording is guarded by tests** (keep them green; extend them for new strings): `HonestyTextsTest`, `KurinjiTextsTest`,
   `SocialTextsTest`, `ModerationV2Test`, `AiModerationTest`, `CommunityTextsTest`, `ContrastTest`,
   `EmergencyTreatmentTest`, `ResourceEncodingTest`, `Phase17FGuardsTest`.
@@ -340,9 +341,9 @@ closed lists use binary collation.
 
 ## 10. Design system and UX (full spec: `docs/DESIGN_SYSTEM.md`; earlier identities in its History section)
 
-- **"Ink & Lime" (E17-1):** ink black is the action colour on light pages (lime words on it), lime #ADFF2F the action
-  colour in dark mode; lime is otherwise a FILL (a given mark, chosen tags, today's state) with ink on it, never text or
-  an icon on a light page; deep leaf green #3A6100 for accents read on light pages. Red means only emergency.
+- **Two palettes (IRL-C1):** social screens wear `ThemeOverlay.IRL.Social` (cream page / cherry actions by day; cherry-black
+  page, cream actions, cherry only as a surface at night); safety screens keep "Ink & Lime" (E17-1) untouched. Bright red
+  means only emergency. Headlines + wordmark: Fraunces (`irl_serif`); body, buttons, emergency text: Mukta Malar.
 - **Emergency UI (U4):** siren icon + the words SOS/Emergency + its black-and-red treatment, never colour alone; clear,
   fast, high contrast, low cognitive load, large touch targets, `keepScreenOn` while active. Emergency digits use the
   phone's sans.
@@ -388,11 +389,6 @@ closed lists use binary collation.
 - **Kotlin nests block comments:** a `/*` inside a KDoc (e.g. writing `/api/auth/*`) breaks compilation.
 - Retrofit `DELETE` endpoints that return 204 are declared with no return type (`suspend fun deleteX(...)`).
 - H2 tests do not validate MySQL-specific DDL (see §6).
-- **Real-phone testing over USB:** `android/local.properties` → `api.base.url=http://127.0.0.1:8080/`, rebuild, then
-  `adb -s <serial> reverse tcp:8080 tcp:8080` (lost on every reconnect). Remove the line to go back to the emulator
-  default `10.0.2.2`. Install for `--user 0` on Samsung (Secure Folder user blocks some adb commands). Phone clocks may
-  be off (the A23 was 74.6 s behind): capture times are phone time, `received_at`/`sealed_at` server time — compare
-  them only after measuring the offset.
 - **Time = UTC, always** (`docs/TIMESTAMPS.md`): `DATETIME(6)` holds UTC wall clock; `main()` calls `UtcTimeZone.install()`;
   JDBC URL keeps `connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true`; `TimestampStorageVerifier` refuses to start on
   a shifted value; entities truncate to micros; no `LocalDateTime.now()` without `ZoneOffset.UTC`/`Clock`
@@ -403,8 +399,7 @@ closed lists use binary collation.
 - **Live-check scripts (PowerShell 5.1):** `$home` is read-only; a one-element array returned from a function unrolls;
   Tamil text needs a UTF-8 **BOM**; wrap in try/finally. Full list: `docs/PLATFORM_CONSTRAINTS.md` (end).
 - **Python (13E):** none on PATH on this PC; how to run the service and its tools: `.claude/rules/moderation-service.md`.
-- **Emulator:** starting it with `-no-snapshot-save` can come back from an older snapshot with an older APK installed;
-  check `dumpsys package com.safesphere.app | lastUpdateTime` and reinstall before a walk-through.
+- **Real-phone testing over USB and the emulator snapshot gotcha:** end of `.claude/rules/android.md`.
 
 ---
 

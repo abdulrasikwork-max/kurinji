@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- IRL launcher background (2026-11-03): ink, fading into deep leaf at the bottom: the ground the two paths of the
-     mark rise from. Fixed colours (the launcher has no night mode). -->
+<!-- IRL launcher background (2026-11-12): Black Cherry, a little darker towards the bottom, behind the
+     mark. Fixed colours (the launcher has no night mode). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
@@ -10,10 +10,10 @@
     <path android:pathData="M0,0h108v108h-108z">
         <aapt:attr name="android:fillColor">
             <gradient
-                android:endColor="@color/launcher_ground"
+                android:endColor="@color/brand_cherry_deep"
                 android:endX="54"
                 android:endY="108"
-                android:startColor="@color/launcher_background"
+                android:startColor="@color/brand_cherry"
                 android:startX="54"
                 android:startY="0"
                 android:type="linear" />

@@ -1,16 +1,27 @@
-# /etc/systemd/system/irl-backup.service  (NOT VERIFIED: never run on a Linux host; see deploy/README.md)
+# /etc/systemd/system/irl-backup.service  (L1; see deploy/README.md section 7 and deploy/LAPTOP.md section 8)
 # One backup run: the database dump, then the evidence and photo folders. Started daily by irl-backup.timer.
+# INDEPENDENT of the IRL services: nothing Requires, Wants or is ordered after this unit, so a failed or running backup never
+# delays or stops the backend, nginx or the tunnel (and a failed one only shows up in `systemctl status irl-backup`).
 [Unit]
-Description=IRL backup (MySQL dump + evidence + media)
+Description=IRL backup (MySQL dump + evidence + media, encrypted with the PUBLIC key)
+# A catch-up run right after boot (Persistent=true on the timer) must wait for MySQL.
 After=mysql.service
 
 [Service]
 Type=oneshot
 User=irl
 Group=irl
-# Its own small file (mode 600): IRL_BACKUP_DIR, IRL_DB_DEFAULTS_FILE, EVIDENCE_STORAGE_DIR, SOCIAL_MEDIA_DIR and optionally
-# IRL_BACKUP_GPG_RECIPIENT, IRL_BACKUP_KEEP_DAYS (see deploy/scripts/backup.sh). The backend's secrets are NOT loaded here.
+# Its own small file (mode 600, NO secret in it): IRL_BACKUP_DIR, EVIDENCE_STORAGE_DIR, SOCIAL_MEDIA_DIR, IRL_BACKUP_GPG_RECIPIENT (the
+# public key's fingerprint), IRL_BACKUP_KEEP_DAYS (see deploy/env/backup.env.example). The backend's secrets are NOT loaded here.
+# It must NOT set IRL_DB_DEFAULTS_FILE: the line below does.
 EnvironmentFile=/etc/irl/backup.env
+# The database login stays ROOT-OWNED, mode 0400 in /etc/irl (as for the tunnel credential, D12-8): systemd reads it as root and gives it to this
+# service only, as a 0400 file owned by `irl` in a private directory (%d = that directory). backup.sh accepts only mode 400 or 600.
+LoadCredential=backup.my.cnf:/etc/irl/backup.my.cnf
+Environment=IRL_DB_DEFAULTS_FILE=%d/backup.my.cnf
+# GnuPG needs a WRITABLE home even to encrypt (lock files). Only the owner's PUBLIC key lives there; the private key is never on this
+# machine. It sits under the one writable path of this unit; backup.sh's retention only touches folders named irl-backup-*.
+Environment=GNUPGHOME=/var/backups/irl/.gnupg
 ExecStart=/opt/irl/deploy/scripts/backup.sh
 UMask=0077
 NoNewPrivileges=true

@@ -32,10 +32,11 @@ import java.util.Locale
 data class CardRow(
     val card: ExperienceCard,
     val onOpen: () -> Unit,
-    val onWhy: (() -> Unit)? = null,
     val onReact: (() -> Unit)? = null,
     val onSave: (() -> Unit)? = null,
-    val onComments: (() -> Unit)? = null
+    val onComments: (() -> Unit)? = null,
+    /** IRL redesign (R5): a tap on the author's photo or name opens their profile (null = it opens the post). */
+    val onAuthor: (() -> Unit)? = null
 )
 
 /** Phase 17E: where images come from (the ONE Coil loader; photo and profile-photo addresses). */
@@ -67,7 +68,7 @@ class ExperienceCardAdapter(private val images: CardImages) : ListAdapter<CardRo
     private object Diff : DiffUtil.ItemCallback<CardRow>() {
         override fun areItemsTheSame(old: CardRow, new: CardRow) = old.card.id == new.card.id
         override fun areContentsTheSame(old: CardRow, new: CardRow) = old.card == new.card &&
-            (old.onWhy == null) == (new.onWhy == null) && (old.onSave == null) == (new.onSave == null) &&
+            (old.onSave == null) == (new.onSave == null) &&
             (old.onReact == null) == (new.onReact == null)
     }
 }
@@ -114,6 +115,11 @@ object CardBinder {
         contextChips(b.contextChips, card, context)
 
         b.content.setOnClickListener { row.onOpen() }
+        // R5: the person is one tap away from their post in a list (TalkBack reaches them through the post page).
+        for (view in listOf(b.avatar, b.name)) {
+            view.setOnClickListener(row.onAuthor?.let { open -> android.view.View.OnClickListener { open() } })
+            view.isClickable = row.onAuthor != null
+        }
         b.content.contentDescription = CardTexts.spoken(context, card)
 
         bindReaction(b.reactButton, card.reacted, card.canReact && row.onReact != null, row.onReact)
@@ -127,8 +133,6 @@ object CardBinder {
         }
         b.commentButton.contentDescription = CardTexts.commentsSpoken(context, card.commentCount)
         b.commentButton.setOnClickListener { (row.onComments ?: row.onOpen)() }
-        b.whyButton.isVisible = row.onWhy != null
-        b.whyButton.setOnClickListener { row.onWhy?.invoke() }
         fitMarks(b, fit)
     }
 
@@ -142,13 +146,6 @@ object CardBinder {
         }
         for (button in listOf(b.reactButton, b.commentButton, b.saveButton)) {
             button.iconPadding = if (button.text.isNullOrEmpty()) 0 else gap
-        }
-        if (icons) {
-            b.whyButton.text = ""
-            b.whyButton.setIconResource(R.drawable.ic_info)
-        } else {
-            b.whyButton.setText(R.string.discover_why)
-            b.whyButton.icon = null
         }
     }
 

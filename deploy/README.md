@@ -21,8 +21,8 @@ backend -> moderation service 127.0.0.1:8091 (X-Moderation-Key)      backend -> 
 ```
 
 ## 0. What you need first (blockers, `docs/D12_DEPLOYMENT.md` §1)
-A server with SSH, a domain with an A record to it, an e-mail for the certificate, a Fast2SMS account (KYC + first top-up +
-API key), a release keystore, the privacy-policy and account-deletion page text, and a backup destination.
+A server with SSH, a domain with an A record to it, an e-mail for the certificate, a Fast2SMS account (first top-up + balance for
+Quick SMS at about Rs 7 per code + API key), a release keystore, the privacy-policy and account-deletion page text, and a backup destination.
 
 ## 1. Server preparation (NOT VERIFIED)
 ```bash

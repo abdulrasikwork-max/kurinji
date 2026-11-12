@@ -74,7 +74,7 @@ class Phase17g2ProbationAndLimitsTest {
         assertThat(social.json(social.placePage(reader, placeId, null)).get("rating").isNull())
                 .as("five accounts on probation make no rating").isTrue();
         clock.advance(Duration.ofDays(4)); // a new IST day and the accounts are now older than the 72 h probation
-        assertThat(social.json(social.placePage(reader, placeId, null)).get("rating").asText()).isEqualTo("4.3");
+        assertThat(social.json(social.placePage(reader, placeId, null)).get("rating").asText()).isEqualTo("4.0");
     }
 
     @Test

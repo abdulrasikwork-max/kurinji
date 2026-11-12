@@ -20,8 +20,8 @@ Plan (approved as written): `PHASE17B_PLAN.md`. Migration **V26** (next: **V27**
 
 **Backend** (`auth/phone`): `PhoneNumbers` (India, +91 E.164, hint = last 4 digits), `OtpProperties` (`app.otp.*`),
 `OtpSender` + `DevFileOtpSender` (default; writes masked number + code to a local file, never sends) +
-`Fast2SmsOtpSender` (`POST /dev/bulkV2`, `route=otp`, key from `FAST2SMS_API_KEY`, never logs key/code/number, refusals
-reported by Fast2SMS status code only) + `OtpSenderConfig`, `PhoneChallenge` (+ repository), `PhoneVerificationService`,
+`Fast2SmsOtpSender` (`POST /dev/bulkV2`, `route=q` since 2026-11-09 (was `route=otp`, closed by Fast2SMS), key from
+`FAST2SMS_API_KEY`, never logs key/code/message/number, refusals reported by Fast2SMS status code only) + `OtpSenderConfig`, `PhoneChallenge` (+ repository), `PhoneVerificationService`,
 `PhoneVerificationCleanupJob`; `PhoneVerificationException` (codes PHONE_NOT_VERIFIED, PHONE_INVALID, PHONE_REQUIRED,
 CHALLENGE_INVALID, OTP_INVALID, OTP_EXPIRED, OTP_LOCKED, OTP_WAIT, PHONE_IN_USE, PHONE_ALREADY_VERIFIED); `AuthService`
 register / login / `startPhoneVerification` / `verifyPhone`; `AuthController` + `SecurityConfig` (public
@@ -48,11 +48,23 @@ location: `LocationProvider.currentFix(areaOnly)`, `FusedLocationProvider` fallb
 
 ## 3. Fast2SMS (researched 2026-10-27)
 
-Suitable. The OTP route needs, on the account: **KYC** (else status 996) and **one top-up of at least Rs 100** (else
-999); Indian numbers only; fixed text "Your OTP: 123456" from Fast2SMS's sender (no "Kurinji" without DLT); repeated
-SMS to one number is blocked as spam (995) — our cooldown and caps stay below it. Per-SMS price not stated in text on
-their site (check the dashboard). **Not enabled:** set `OTP_PROVIDER=FAST2SMS` and `FAST2SMS_API_KEY` in `backend/.env`
-when ready. The adapter was tested only against a local stub; **no real SMS was sent**.
+**Changed 2026-11-09 (the original text is kept below for history):** Fast2SMS support said the old OTP API
+(`route=otp`, fixed text "Your OTP: 123456") is closed and recommended Quick SMS or DLT. The adapter now uses **Quick SMS**:
+`POST https://www.fast2sms.com/dev/bulkV2`, header `authorization: <key>`, JSON `{"route":"q","message":"<code> is your IRL
+verification code. Do not share it with anyone.","numbers":"<10 digits>"}`. No DLT, sender ID or template (the sender is a
+numeric / random sender, not a brand). About **Rs 7 per SMS**; needs the first Rs 100 top-up (else 999) and balance (else
+416); plain ASCII, ≤ 160 characters = one billed part. The server still makes, stores (HMAC), expires and checks the code and
+keeps every limit; only the delivery changed. **Verified by hand on 2026-11-09** with the user's key: one Quick SMS
+(`route=q`) was accepted (HTTP 200, `{"return":true,...}`) and **arrived on the user's phone**. The automated tests use a
+local stub only (no key, no SMS). Not yet tried: a resend inside a minute (Fast2SMS may refuse repeated SMS to one number as
+spam, 995), SMS pumping cost (8 codes per number per day and 30 starts per address per hour are the caps; at Rs 7 a code,
+watch the wallet), and Fast2SMS's statement that Quick SMS campaigns are "checked by our team" (content of live codes could
+be seen by a reviewer; a code alone cannot sign anyone in: the 256-bit challenge token is also needed). The privacy policy
+must name the SMS provider.
+
+*Original text (2026-10-27, route=otp, now closed):* the OTP route needed **KYC** (else status 996) and **one top-up of at
+least Rs 100** (else 999); Indian numbers only; fixed text "Your OTP: 123456" from Fast2SMS's sender (no "Kurinji" without
+DLT); repeated SMS to one number is blocked as spam (995) — our cooldown and caps stay below it.
 
 ## 4. Results
 

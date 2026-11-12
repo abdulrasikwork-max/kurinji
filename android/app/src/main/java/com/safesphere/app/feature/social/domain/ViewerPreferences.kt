@@ -21,4 +21,12 @@ interface ViewerPreferences {
     val smartUnderstandingAccount: Flow<Long?>
 
     suspend fun setSmartUnderstandingAccount(userId: Long?)
+
+    /**
+     * IRL redesign (R6): "<account id>:<city code>" of the Home city the person chose on this phone; null = none. Read and
+     * written only through [HomeCityChoice], which ignores another account's value.
+     */
+    val homeCity: Flow<String?>
+
+    suspend fun setHomeCity(value: String?)
 }

@@ -1,0 +1,9 @@
+# /etc/irl/backup.my.cnf  (mode 0400, owner root; loaded into irl-backup.service with LoadCredential=). It is normally written by
+# deploy/scripts/backup-db-account.sh, which generates the password and never prints it; this file only shows the shape.
+# The real file is git-ignored (.gitignore: deploy/**/backup.my.cnf).
+[client]
+user=irl_backup
+password=<generated, never typed or printed>
+host=127.0.0.1
+port=3307
+ssl-mode=REQUIRED

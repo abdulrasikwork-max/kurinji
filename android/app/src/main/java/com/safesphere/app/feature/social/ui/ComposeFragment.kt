@@ -48,7 +48,6 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         }
 
     private lateinit var photoAdapter: PhotoAdapter
-    private lateinit var typeChips: ChoiceChips<PostType>
     private lateinit var precisionChips: ChoiceChips<Precision>
     private lateinit var daypartChips: ChoiceChips<Daypart>
     private lateinit var facetChips: MultiChips<String>
@@ -57,11 +56,43 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
     private lateinit var commentChips: ChoiceChips<CommentPolicy>
     private var months = emptyList<java.time.YearMonth>()
 
+    /** R2: "Add details" is open (kept across a rotation). */
+    private var detailsOpen = false
+
+    /** R1: leaving with words or photos in the draft asks first (the back button and the toolbar arrow). */
+    private val confirmLeave = object : androidx.activity.OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.compose_discard_title)
+                .setMessage(R.string.compose_discard_message)
+                .setNegativeButton(R.string.compose_discard_keep, null)
+                .setPositiveButton(R.string.compose_discard_confirm) { _, _ ->
+                    viewModel.onDiscard()
+                    isEnabled = false
+                    findNavController().navigateUp()
+                }
+                .show()
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_DETAILS, detailsOpen)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         photoAdapter = PhotoAdapter(appContainer.imageLoader)
         binding.photoList.adapter = photoAdapter
-        typeChips = ChoiceChips(binding.typeGroup) { it?.let(viewModel::onType) }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, confirmLeave)
+        detailsOpen = savedInstanceState?.getBoolean(STATE_DETAILS) ?: false
+        binding.detailsToggle.setOnClickListener {
+            detailsOpen = !detailsOpen
+            render(viewModel.uiState.value)
+        }
+        binding.questionChip.setOnCheckedChangeListener { chip, on ->
+            if (chip.isPressed) viewModel.onType(if (on) PostType.ASK else PostType.EXPERIENCE)
+        }
         precisionChips = ChoiceChips(binding.precisionGroup) { it?.let(viewModel::onPrecision) }
         binding.cityButton.setOnClickListener {
             CityPicker.show(this, viewModel.uiState.value.city, allowOther = true) { viewModel.onCity(it) }
@@ -119,9 +150,10 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
 
     private fun render(state: ComposeUiState) {
         val experience = state.type == PostType.EXPERIENCE
-        typeChips.show(PostType.entries.map { it to getString(if (it == PostType.EXPERIENCE)
-            R.string.social_type_experience else R.string.social_type_ask) }, state.type)
-        binding.typeHint.setText(if (experience) R.string.social_type_experience_hint else R.string.social_type_ask_hint)
+        confirmLeave.isEnabled = state.hasDraft && state.sharedPostId == null
+        if (binding.questionChip.isChecked == experience) binding.questionChip.isChecked = !experience
+        binding.detailsBlock.isVisible = detailsOpen
+        binding.detailsToggle.setText(if (detailsOpen) R.string.compose_details_hide else R.string.compose_details_show)
         binding.bodyLayout.hint = getString(if (experience) R.string.social_body_label_experience else R.string.social_body_label_ask)
         binding.tipLayout.isVisible = experience
 
@@ -138,6 +170,8 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
 
         })
         binding.addPhotosButton.isEnabled = state.canAddMedia
+        binding.photoList.isVisible = state.media.isNotEmpty()
+        binding.addPhotosButton.setText(if (state.media.isEmpty()) R.string.compose_add_media else R.string.compose_add_more)
         state.notice?.let { notice ->
             viewModel.onNoticeHandled()
             Toast.makeText(requireContext(), when (notice) {
@@ -146,12 +180,7 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
             }, Toast.LENGTH_LONG).show()
         }
 
-        binding.placeText.text = when {
-            state.place != null -> state.place.name
-            state.precision == Precision.CITY -> getString(R.string.social_where_city_only)
-            state.precision == Precision.NONE -> getString(R.string.social_where_no_place)
-            else -> getString(R.string.social_where_none)
-        }
+        binding.choosePlaceButton.text = state.place?.name ?: getString(R.string.compose_place_add)
         val hasPlace = state.place != null
         binding.precisionTitle.isVisible = hasPlace
         binding.precisionGroup.isVisible = hasPlace
@@ -201,7 +230,8 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
             null -> null
         }
         binding.summaryLine.text = shown?.let { getString(R.string.social_location_summary, it) }.orEmpty()
-        binding.summaryLine.isVisible = shown != null
+        // R2: with no place there is nothing to explain; the row above already says "Add a place".
+        binding.summaryLine.isVisible = shown != null && state.precision != Precision.NONE
         val issues = buildList {
             if (state.mediaPending) add(getString(R.string.social_issue_photos_pending))
             if (state.mediaFailed) add(getString(R.string.social_issue_photos_failed))
@@ -209,7 +239,11 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         }
         binding.issuesText.isVisible = state.showIssues && issues.isNotEmpty()
         binding.issuesText.text = issues.joinToString("\n")
-        binding.shareButton.text = state.audience?.let { getString(R.string.social_share_with, getString(ExperienceLabels.of(it))) }
+        binding.shareButton.text = state.audience?.let {
+            // R6: "Share with Only me" is not sharing; a private note says so.
+            if (it == Audience.ONLY_ME) getString(R.string.social_share_only_me)
+            else getString(R.string.social_share_with, getString(ExperienceLabels.of(it)))
+        }
             ?: getString(R.string.social_share_choose_audience)
         binding.shareButton.isEnabled = !state.isBusy
         binding.progress.isVisible = state.isBusy
@@ -242,6 +276,8 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         /** Phase 17E ("I went"): the place of the post the person went to (an exact, public place) and its category. */
         const val ARG_PLACE_ID = "placeId"
         const val ARG_CATEGORY = "category"
+
+        private const val STATE_DETAILS = "detailsOpen"
     }
 
 }

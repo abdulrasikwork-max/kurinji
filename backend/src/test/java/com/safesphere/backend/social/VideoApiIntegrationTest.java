@@ -135,6 +135,39 @@ class VideoApiIntegrationTest {
     }
 
     @Test
+    void aPhoneVideoWithTheMovieBoxLast_isStoredWithItFirst_soPlaybackStartsFast_andRangesStillWork() throws Exception {
+        byte[] original = TestVideos.video().moovLast().build();       // what MediaMuxer on the phone produces
+        assertThat(TestVideos.indexOf(original, "moov".getBytes()))
+                .isGreaterThan(TestVideos.indexOf(original, "mdat".getBytes()));
+        String id = social.json(social.uploadVideo(asha, original).andExpect(status().isCreated())).get("mediaId").asText();
+        byte[] stored = Files.readAllBytes(storage.videoFile(keyOf(id)));
+
+        assertThat(stored).hasSameSizeAs(original);
+        assertThat(TestVideos.indexOf(stored, "moov".getBytes())).isLessThan(TestVideos.indexOf(stored, "mdat".getBytes()));
+        for (String leak : List.of(TestVideos.GPS, TestVideos.XMP_GPS, TestVideos.ANDROID_VERSION, TestVideos.FREE_TEXT)) {
+            assertThat(TestVideos.contains(stored, leak)).as(leak).isFalse();
+        }
+        // the first chunk offset (the picture track) still points at the picture bytes
+        int stco = TestVideos.indexOf(stored, "stco".getBytes());
+        assertThat((long) java.nio.ByteBuffer.wrap(stored).getInt(stco + 12))
+                .isEqualTo(TestVideos.indexOf(stored, TestVideos.PICTURE));
+        assertThat(jdbc.queryForObject("SELECT sha256 FROM post_media WHERE public_id = ?", String.class, id))
+                .isEqualTo(java.util.HexFormat.of().formatHex(
+                        java.security.MessageDigest.getInstance("SHA-256").digest(stored)));
+        assertThat(onlyTemporaryFilesLeft()).isZero();                  // the reordering left no scratch file behind
+
+        social.poster(asha, id, TestImages.jpeg(32, 18)).andExpect(status().isOk());
+        byte[] head = mockMvc.perform(get("/api/media/{id}/video", id)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(asha.token())).header(HttpHeaders.RANGE, "bytes=0-63"))
+                .andExpect(status().isPartialContent())
+                .andExpect(header().string("Content-Range", "bytes 0-63/" + stored.length))
+                .andReturn().getResponse().getContentAsByteArray();
+        assertThat(head).isEqualTo(Arrays.copyOfRange(stored, 0, 64));
+        assertThat(social.video(asha, id).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray())
+                .isEqualTo(stored);
+    }
+
+    @Test
     void visibility_ownerOnlyBeforeAttaching_thenExactlyWhereThePostIs() throws Exception {
         String id = social.videoId(asha);
         for (Person other : new Person[]{bala, chitra, blocked}) {

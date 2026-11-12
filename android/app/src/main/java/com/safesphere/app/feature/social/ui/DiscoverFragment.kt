@@ -35,7 +35,8 @@ import com.safesphere.app.feature.social.domain.Post
  * me, categories, places). It loads more while scrolling and then ends ("You're all caught up", U3). Search finds
  * places by name and categories by their words, never people.
  */
-class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDiscoverBinding::inflate), FeedActions {
+class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDiscoverBinding::inflate), FeedActions,
+    com.safesphere.app.navigation.TabReselect {
 
     private val viewModel by viewModels<DiscoverViewModel> { DiscoverViewModel.factory(appContainer) }
 
@@ -78,11 +79,6 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         binding.searchCategoryList.adapter = categoryResults
         binding.nearList.adapter = nearResults
         binding.cityButton.setOnClickListener { chooseCity() }
-        // Phase 17G-1: Explore starts in the city Discover is showing.
-        binding.exploreButton.setOnClickListener {
-            findNavController().navigate(R.id.exploreFragment,
-                bundleOf(ExploreViewModel.ARG_CITY to viewModel.uiState.value.city?.code))
-        }
         binding.searchToggle.setOnClickListener {
             searchOpen = !searchOpen
             nearOpen = false
@@ -117,6 +113,8 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
 
     override fun onResume() {
         super.onResume()
+        // R1: back from sharing or after a while away: the feed reads again (what is on the screen stays meanwhile).
+        viewModel.onShown()
         if (retryNearOnReturn) {
             retryNearOnReturn = false
             viewModel.onNearMe()
@@ -124,6 +122,18 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         // Phase 17A: the age was confirmed while this screen was away: what the server refused before is allowed now.
         if (ageRequiredWhenLeft && !appContainer.ageGate.required.value) viewModel.reload()
         ageRequiredWhenLeft = false
+    }
+
+    /** R1: the Home tab tapped again: close a panel, go to the top, read again. */
+    override fun onTabReselected() {
+        if (view == null) return
+        searchOpen = false
+        nearOpen = false
+        viewModel.onCloseNearby()
+        binding.feed.scrollToPosition(0)
+        binding.discoverHead.setExpanded(true)
+        viewModel.refresh()
+        render(viewModel.uiState.value)
     }
 
     override fun onPause() {
@@ -157,6 +167,10 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
             viewModel.onSavedShown()
             binding.feed.announceForAccessibility(getString(R.string.butterfly_saved_announcement))
             Haptics.confirm(binding.feed)
+        }
+        state.markFailure?.let {
+            viewModel.onMarkFailureShown()
+            android.widget.Toast.makeText(requireContext(), it.toMessage(requireContext()), android.widget.Toast.LENGTH_SHORT).show()
         }
         if (state.sessionExpired) {
             viewModel.onSessionExpiredHandled()
@@ -235,15 +249,6 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
 
     override fun save(post: Post) = viewModel.onSave(post)
 
-    override fun why(item: DiscoverItem) {
-        val lines = item.reasons.joinToString("\n") { "• " + getString(DiscoverTexts.of(it)) }
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.discover_why_title)
-            .setMessage(lines + "\n\n" + getString(R.string.discover_why_footer))
-            .setPositiveButton(R.string.action_got_it, null)
-            .show()
-    }
-
     override fun nearMe() {
         nearOpen = true
         searchOpen = false
@@ -260,6 +265,9 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
             PostCollectionViewModel.ARG_CITY to viewModel.uiState.value.city?.code))
 
     override fun share() = findNavController().navigate(R.id.composeFragment)
+
+    override fun openPerson(profileId: String) = findNavController().navigate(R.id.personProfileFragment,
+        bundleOf(PersonProfileViewModel.ARG_PROFILE_ID to profileId))
 
     override fun findPeople() = findNavController().navigate(R.id.connectionsFragment, null, navOptions {
         launchSingleTop = true

@@ -7,18 +7,19 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Phase 13F (docs/PHASE13F_PLAN.md F5, F6): Discover · Share · Cocoon · You, and where the chrome shows. */
+/** Phase 13F (docs/PHASE13F_PLAN.md F5, F6): Discover · Share · Cocoon · You, and where the chrome shows.
+ * IRL redesign (R3): Home · Explore · Share · You; Saved is a reading screen under You. */
 class NavigationRulesTest {
 
     @Test
     fun `three tabs, Share is an action between them, and the app opens on Discover`() {
-        assertEquals(setOf(R.id.discoverFragment, R.id.cocoonFragment, R.id.youFragment), NavigationRules.tabDestinations)
+        assertEquals(setOf(R.id.discoverFragment, R.id.exploreFragment, R.id.youFragment), NavigationRules.tabDestinations)
         assertEquals(R.id.discoverFragment, NavigationRules.START)
         assertFalse(NavigationRules.SHARE_ITEM in NavigationRules.tabDestinations)
 
         val menu = File("src/main/res/menu/bottom_navigation.xml").readText(Charsets.UTF_8)
         val ids = Regex("android:id=\"@\\+id/([A-Za-z]+)\"").findAll(menu).map { it.groupValues[1] }.toList()
-        assertEquals(listOf("discoverFragment", "navShare", "cocoonFragment", "youFragment"), ids)
+        assertEquals(listOf("discoverFragment", "exploreFragment", "navShare", "youFragment"), ids)
 
         val graph = File("src/main/res/navigation/nav_graph.xml").readText(Charsets.UTF_8)
         // Phase 17B: sign-up no longer signs in; the code screen does (then Discover, or the profile first).
@@ -31,7 +32,7 @@ class NavigationRulesTest {
 
     @Test
     fun `reading screens keep the bar, task and safety screens do not`() {
-        val reading = setOf(R.id.postFragment, R.id.postCollectionFragment, R.id.personProfileFragment)
+        val reading = setOf(R.id.postFragment, R.id.postCollectionFragment, R.id.personProfileFragment, R.id.cocoonFragment)
         assertTrue(NavigationRules.bottomBarDestinations.containsAll(reading))
         for (task in listOf(R.id.composeFragment, R.id.placePickerFragment, R.id.emergencyFragment, R.id.safeWalkFragment,
                 R.id.safetyFragment, R.id.settingsFragment, R.id.accountFragment)) {

@@ -7,7 +7,6 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
@@ -36,18 +35,15 @@ import com.safesphere.app.feature.social.ui.SocialLabels
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import kotlinx.coroutines.launch
 
 /**
- * Phase 13F (docs/PHASE13F_PLAN.md F18), redesigned in 17E: the You tab. The profile head on the ink panel (photo,
- * today's state; no counts), the social standing notice
- * (moved from Connections), then rows that open the person's own screens: experiences, connections, private places,
- * the compact Safety grid (opens the existing Safety screens; the SOS tile keeps its emergency look), reading choices, community, moderation (moderators only) and account. A hub between the social and
- * safety features: it only navigates; neither side's logic lives here.
+ * Phase 13F, redesigned in 17E, IRL redesign (R4): the You tab is a profile. The profile head on the ink panel (photo,
+ * today's state; no counts), the social standing notice, then a short list: your posts, Saved, your people, Safety (one
+ * row that opens the existing Safety screens) and "Settings and more" ([MoreFragment]). It only navigates; neither
+ * side's logic lives here.
  */
 class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::inflate) {
 
-    private val account by viewModels<ProfileViewModel> { ProfileViewModel.factory(appContainer) }
     private val journal by viewModels<JournalViewModel> { JournalViewModel.factory(appContainer) }
     private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
 
@@ -62,32 +58,26 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
         val nav = findNavController()
         binding.editProfileButton.setOnClickListener { nav.navigate(R.id.profileSetupFragment) }
         binding.makeProfileButton.setOnClickListener { nav.navigate(R.id.profileSetupFragment) }
-        binding.logoutButton.setOnClickListener { confirmLogout() }
         stackHeadForLargeText()
 
+        // R4: what is yours, then two quiet doors: Safety (the existing screens, unchanged) and everything else.
         binding.journalList.adapter = FeatureListAdapter(listOf(
             FeatureItem(R.drawable.ic_nav_discover, R.string.social_your_experiences, R.string.you_experiences_description) {
                 nav.navigate(R.id.myPostsFragment)
             },
+            FeatureItem(R.drawable.ic_bookmark, R.string.nav_cocoon, R.string.you_saved_description) {
+                nav.navigate(R.id.cocoonFragment)
+            },
             FeatureItem(R.drawable.ic_group, R.string.title_connections, R.string.you_connections_description) {
                 nav.navigate(R.id.connectionsFragment)
             },
-            FeatureItem(R.drawable.ic_lock, R.string.social_private_places, R.string.you_private_places_description) {
-                nav.navigate(R.id.privatePlacesFragment)
+            FeatureItem(R.drawable.ic_shield_outline, R.string.nav_safety, R.string.you_safety_description) {
+                nav.navigate(R.id.safetyFragment)
+            },
+            FeatureItem(R.drawable.ic_tune, R.string.title_more, R.string.you_more_description) {
+                nav.navigate(R.id.moreFragment)
             }
         ))
-        // Phase 17E: the compact Safety grid only opens the existing Safety screens.
-        binding.tileSos.setOnClickListener { nav.navigate(R.id.emergencyFragment) }
-        tile(binding.tileWalk, R.drawable.ic_route, R.string.you_tile_walk, R.string.you_tile_walk_sub) {
-            nav.navigate(R.id.safeWalkFragment)
-        }
-        tile(binding.tileCircle, R.drawable.ic_group, R.string.you_tile_circle, R.string.you_tile_circle_sub) {
-            nav.navigate(R.id.safetyCircleFragment)
-        }
-        tile(binding.tileNearby, R.drawable.ic_place, R.string.you_tile_nearby, R.string.you_tile_nearby_sub) {
-            nav.navigate(R.id.communityFragment)
-        }
-        binding.allSafetyButton.setOnClickListener { nav.navigate(R.id.safetyFragment) }
 
         // Phase 17E: the profile photo (picked without any permission; made square on the phone) and today's state.
         binding.photoBlock.setOnClickListener { photoMenu() }
@@ -95,55 +85,9 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
             val me = journal.uiState.value.profile ?: return@setOnClickListener
             DailyStates.pick(this, me.dailyState) { journal.onDailyState(it) }
         }
-        binding.communityList.adapter = FeatureListAdapter(listOf(
-            FeatureItem(R.drawable.ic_info, R.string.guidelines_title, R.string.you_guidelines_description) {
-                nav.navigate(R.id.guidelinesFragment)
-            },
-            FeatureItem(R.drawable.ic_history, R.string.my_reports_title, R.string.you_reports_description) {
-                nav.navigate(R.id.myReportsFragment)
-            },
-            FeatureItem(R.drawable.ic_person_outline, R.string.title_blocked_muted, R.string.you_blocked_description) {
-                nav.navigate(R.id.blockedMutedFragment)
-            }
-        ))
-        binding.moderationList.adapter = FeatureListAdapter(listOf(
-            FeatureItem(R.drawable.ic_shield_outline, R.string.profile_moderation_title,
-                R.string.profile_moderation_description) { nav.navigate(R.id.moderationFragment) }
-        ))
-        binding.accountList.adapter = FeatureListAdapter(listOf(
-            FeatureItem(R.drawable.ic_person_outline, R.string.profile_account_title, R.string.profile_account_description) {
-                nav.navigate(R.id.accountFragment)
-            },
-            FeatureItem(R.drawable.ic_lock, R.string.profile_privacy_title, R.string.profile_privacy_description) {
-                nav.navigate(R.id.privacyPolicyFragment)
-            },
-            FeatureItem(R.drawable.ic_tune, R.string.profile_settings_title, R.string.profile_settings_description) {
-                nav.navigate(R.id.settingsFragment)
-            },
-            FeatureItem(R.drawable.ic_info, R.string.profile_about_title, R.string.profile_about_description) {
-                nav.navigate(R.id.aboutFragment)
-            }
-        ))
-
-        // Phase 13E (E20): the viewer's own choice, on this phone only.
-        val preferences = appContainer.viewerPreferences
-        collectWhenStarted(preferences.collapseStrongLanguage) { on ->
-            if (binding.strongLanguageSwitch.isChecked != on) binding.strongLanguageSwitch.isChecked = on
-        }
-        binding.strongLanguageSwitch.setOnCheckedChangeListener { button, on ->
-            if (button.isPressed) viewLifecycleOwner.lifecycleScope.launch { preferences.setCollapseStrongLanguage(on) }
-        }
 
         collectWhenStarted(journal.uiState, ::renderJournal)
         collectWhenStarted(reports.uiState, ::renderStanding)
-        collectWhenStarted(account.uiState) { state ->
-            binding.accountLine.text = listOfNotNull(state.displayName, state.email).joinToString(" · ")
-            binding.accountLine.isVisible = state.displayName != null || state.email != null
-        }
-        collectWhenStarted(account.canModerate) { binding.moderationSection.isVisible = it }
-        collectWhenStarted(account.isLoggedOut) { loggedOut ->
-            if (loggedOut) nav.navigate(R.id.action_global_to_login)
-        }
 
         if (savedInstanceState == null) Motion.revealInSequence(listOf(binding.headerBlock))
     }
@@ -152,7 +96,6 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
         super.onStart()
         journal.load()
         reports.loadStanding()
-        account.refreshAccess()
     }
 
     private fun renderJournal(state: JournalUiState) {
@@ -255,15 +198,6 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
         }
     }
 
-    private fun tile(tile: com.safesphere.app.databinding.ItemSafetyTileBinding, icon: Int, title: Int, subtitle: Int,
-                     open: () -> Unit) {
-        tile.icon.setImageResource(icon)
-        tile.title.setText(title)
-        tile.subtitle.setText(subtitle)
-        tile.root.contentDescription = getString(title) + ". " + getString(subtitle)
-        tile.root.setOnClickListener { open() }
-    }
-
     /** Phase 17E: add or change the profile photo, or remove it. */
     private fun photoMenu() {
         val me = journal.uiState.value.profile ?: return
@@ -298,12 +232,4 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
             }
     }
 
-    private fun confirmLogout() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.logout_dialog_title)
-            .setMessage(R.string.logout_dialog_message)
-            .setNegativeButton(R.string.action_cancel, null)
-            .setPositiveButton(R.string.action_log_out) { _, _ -> account.onLogoutConfirmed() }
-            .show()
-    }
 }

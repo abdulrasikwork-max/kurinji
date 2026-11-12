@@ -63,6 +63,11 @@ class Phase17G3SmartUnderstandingTest {
         override suspend fun setSmartUnderstandingAccount(userId: Long?) {
             account.value = userId
         }
+        val city = MutableStateFlow<String?>(null)
+        override val homeCity: Flow<String?> = city
+        override suspend fun setHomeCity(value: String?) {
+            city.value = value
+        }
     }
 
     private var signedInAs: Long? = 7L
@@ -391,10 +396,12 @@ class Phase17G3SmartUnderstandingTest {
     }
 
     @Test
-    fun `the only thing kept on the phone is one account id, never any words`() {
+    fun `the only things kept on the phone are one account id and the own Home city code, never any words`() {
         val store = source("data", "DataStoreViewerPreferences.kt")
         assertTrue(store.contains("longPreferencesKey(\"smart_understanding_account\")"))
-        assertFalse(store.contains("stringPreferencesKey"))
+        // R6: the one string kept is the account's own Home city code (docs/IRL_REDESIGN.md); typed words are never kept.
+        assertEquals(1, store.split("stringPreferencesKey(").size - 1)
+        assertTrue(store.contains("stringPreferencesKey(\"home_city\")"))
         val viewModel = source("ui", "ExploreViewModel.kt")
         assertFalse(viewModel.contains("DataStore"))
         assertFalse(viewModel.contains("SharedPreferences"))

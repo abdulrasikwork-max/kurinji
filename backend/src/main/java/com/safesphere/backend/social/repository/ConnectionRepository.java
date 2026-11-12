@@ -43,4 +43,13 @@ public interface ConnectionRepository extends JpaRepository<Connection, Long> {
     @Query("select count(c) from Connection c where (c.userLow = :userId or c.userHigh = :userId)"
             + " and c.status = com.safesphere.backend.social.entity.ConnectionStatus.ACCEPTED")
     long countAccepted(@Param("userId") Long userId);
+
+
+    /**
+     * Phase 18A-1: the accepted connections BETWEEN the given people (both ends in [ids]). Used to treat connected raters of one
+     * place as one voice; the pairs are used in memory and never returned.
+     */
+    @Query("select c from Connection c where c.status = com.safesphere.backend.social.entity.ConnectionStatus.ACCEPTED"
+            + " and c.userLow in :ids and c.userHigh in :ids")
+    List<Connection> acceptedAmong(@Param("ids") java.util.Collection<Long> ids);
 }

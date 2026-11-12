@@ -7,6 +7,7 @@ import com.safesphere.backend.social.entity.Post;
 import com.safesphere.backend.social.entity.PostMedia;
 import com.safesphere.backend.social.media.ImageSanitizer;
 import com.safesphere.backend.social.media.MediaStorage;
+import com.safesphere.backend.social.media.Mp4FastStart;
 import com.safesphere.backend.social.media.Mp4Sanitizer;
 import com.safesphere.backend.social.repository.PostMediaRepository;
 import com.safesphere.backend.social.repository.PostRepository;
@@ -118,6 +119,7 @@ public class MediaService {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
+            stripped = withMovieFirst(stripped, checked);
             int bytes = (int) Files.size(stripped);
             String sha = sha256(stripped);
             key = MediaStorage.newKey();
@@ -260,6 +262,37 @@ public class MediaService {
             return body.read(buffer);
         } catch (IOException e) {
             throw new InvalidRequestException("The video could not be read");
+        }
+    }
+
+    /**
+     * Fast start: the phone's MediaMuxer writes the movie box (the index) after the media data, so a player needs extra
+     * round trips before the first picture. Puts it in front. Purely an optimisation: the reordered copy is checked by
+     * the sanitizer again (same picture size and length, every chunk offset inside the media data) and anything else
+     * keeps the already-checked copy, so a video is never refused because of this step.
+     */
+    private Path withMovieFirst(Path sanitized, Mp4Sanitizer.Result checked) {
+        Path reordered = storage.newTemporary();
+        Path scratch = null;
+        try {
+            if (!Mp4FastStart.moveMovieFirst(sanitized, reordered)) {
+                deleteQuietly(reordered);
+                return sanitized;
+            }
+            scratch = storage.newTemporary();
+            if (!checked.equals(Mp4Sanitizer.sanitize(reordered, scratch))) {
+                log.warn("Fast-start copy differed from the checked video; storing the original layout");
+                deleteQuietly(reordered);
+                return sanitized;
+            }
+            deleteQuietly(sanitized);
+            return reordered;
+        } catch (IOException | RuntimeException e) {
+            log.warn("Fast start skipped ({}); storing the original layout", e.getClass().getSimpleName());
+            deleteQuietly(reordered);
+            return sanitized;
+        } finally {
+            if (scratch != null) deleteQuietly(scratch);
         }
     }
 

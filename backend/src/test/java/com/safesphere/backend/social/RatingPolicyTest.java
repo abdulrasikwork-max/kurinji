@@ -61,4 +61,76 @@ class RatingPolicyTest {
         assertThat(RatingPolicy.isValid(-3)).isFalse();
         assertThat(RatingPolicy.isValid(null)).isFalse();
     }
+
+    // ---- Phase 18A-1: independent raters and weights ------------------------------------------------------------------------
+
+    private static RatingPolicy.Rater full(long id, int rating) {
+        return new RatingPolicy.Rater(id, rating, true, true);
+    }
+
+    @Test
+    void unconnectedEstablishedRaters_giveTheSameTextAsBefore() {
+        var five = java.util.List.of(full(1, 5), full(2, 5), full(3, 5), full(4, 5), full(5, 5));
+        assertThat(RatingPolicy.display(five, java.util.List.of())).isEqualTo(RatingPolicy.display(5, 25)).isEqualTo("4.3");
+        assertThat(RatingPolicy.display(five, null)).isEqualTo("4.3");
+    }
+
+    @Test
+    void fiveFriendsRatingAFriendsPlace_areOneVoice_andShowNothing() {
+        var five = java.util.List.of(full(1, 5), full(2, 5), full(3, 5), full(4, 5), full(5, 5));
+        // a chain 1-2-3-4-5: connected through each other, so one group
+        var chain = java.util.List.of(new RatingPolicy.Link(1, 2), new RatingPolicy.Link(2, 3), new RatingPolicy.Link(3, 4),
+                new RatingPolicy.Link(4, 5));
+        assertThat(RatingPolicy.display(five, chain)).isNull();
+        // a link to somebody who did not rate this place joins nothing
+        assertThat(RatingPolicy.display(five, java.util.List.of(new RatingPolicy.Link(1, 99)))).isEqualTo("4.3");
+    }
+
+    @Test
+    void aGroupAddsOneVoice_howeverManyMembersItHas() {
+        // four independent people say 2; a group of six friends says 5: five voices, the six count as one
+        var raters = new java.util.ArrayList<RatingPolicy.Rater>();
+        for (long id = 1; id <= 4; id++) raters.add(full(id, 2));
+        var links = new java.util.ArrayList<RatingPolicy.Link>();
+        for (long id = 10; id < 16; id++) {
+            raters.add(full(id, 5));
+            if (id > 10) links.add(new RatingPolicy.Link(10, id));
+        }
+        assertThat(RatingPolicy.display(raters, links)).isEqualTo("3.1");   // (17.5 + 8 + 5) / 10 = 3.05
+        assertThat(RatingPolicy.display(raters, java.util.List.of())).isEqualTo("3.7"); // unlinked: (17.5 + 8 + 30) / 15 = 3.7
+    }
+
+    @Test
+    void aNewOrOnePlaceAccount_countsHalf_neverZero() {
+        var young = new java.util.ArrayList<RatingPolicy.Rater>();
+        for (long id = 1; id <= 5; id++) young.add(new RatingPolicy.Rater(id, 5, false, true));
+        assertThat(RatingPolicy.display(young, null)).isEqualTo("4.0");     // (17.5 + 12.5) / 7.5
+        var narrow = new java.util.ArrayList<RatingPolicy.Rater>();
+        for (long id = 1; id <= 5; id++) narrow.add(new RatingPolicy.Rater(id, 5, true, false));
+        assertThat(RatingPolicy.display(narrow, null)).isEqualTo("4.0");
+        var both = new java.util.ArrayList<RatingPolicy.Rater>();
+        for (long id = 1; id <= 5; id++) both.add(new RatingPolicy.Rater(id, 5, false, false));
+        assertThat(RatingPolicy.display(both, null)).as("half, not a quarter").isEqualTo("4.0");
+    }
+
+    @Test
+    void insideAGroup_theEstablishedMemberWeighsMore_andTheGroupSpeaksWithItsStrongestWeight() {
+        var raters = new java.util.ArrayList<RatingPolicy.Rater>();
+        for (long id = 1; id <= 4; id++) raters.add(full(id, 3));
+        raters.add(full(10, 1));                                            // established friend says 1
+        raters.add(new RatingPolicy.Rater(11, 5, false, false));            // their new one-place friend says 5
+        var link = java.util.List.of(new RatingPolicy.Link(10, 11));
+        // the group's voice = (1*1 + 0.5*5) / 1.5 = 2.33, weight 1: (17.5 + 12 + 2.33) / 10 = 3.18
+        assertThat(RatingPolicy.display(raters, link)).isEqualTo("3.2");
+    }
+
+    @Test
+    void impossibleRaters_showNothing() {
+        assertThat(RatingPolicy.display(java.util.List.of(), null)).isNull();
+        assertThat(RatingPolicy.display(null, null)).isNull();
+        var bad = java.util.List.of(full(1, 5), full(2, 5), full(3, 5), full(4, 5), full(5, 9));
+        assertThat(RatingPolicy.display(bad, null)).isNull();
+        var twice = java.util.List.of(full(1, 5), full(1, 5), full(3, 5), full(4, 5), full(5, 5));
+        assertThat(RatingPolicy.display(twice, null)).isNull();
+    }
 }

@@ -19,10 +19,13 @@ import com.safesphere.app.R
  */
 object NavigationRules {
 
-    /** The three tabs. Share sits between them in the bar but is an action ([SHARE_ITEM]), never a tab. */
+    /**
+     * The three tabs (IRL redesign R3: Home, Explore, You). Share sits between them in the bar but is an action
+     * ([SHARE_ITEM]), never a tab. Saved (id cocoonFragment) is a reading screen reached from You.
+     */
     val tabDestinations = setOf(
         R.id.discoverFragment,
-        R.id.cocoonFragment,
+        R.id.exploreFragment,
         R.id.youFragment
     )
 
@@ -39,7 +42,8 @@ object NavigationRules {
     val readingDestinations = setOf(
         R.id.postFragment,
         R.id.postCollectionFragment,
-        R.id.personProfileFragment
+        R.id.personProfileFragment,
+        R.id.cocoonFragment
     )
 
     val bottomBarDestinations = tabDestinations + readingDestinations
@@ -89,7 +93,7 @@ object NavigationRules {
  * which is removed from the back stack after startup. Every tab switch pops back to Discover, and each tab keeps its
  * own state. The Share item opens the composer and leaves the selection where it was.
  */
-fun BottomNavigationView.setUpWithTabs(navController: NavController) {
+fun BottomNavigationView.setUpWithTabs(navController: NavController, onReselect: () -> Unit = {}) {
     // The Share disc keeps its own colours (it is an action, not a tab), so the bar's tint is kept off it.
     menu.findItem(NavigationRules.SHARE_ITEM)?.let { item -> item.icon = item.icon?.let(::Untinted) }
 
@@ -106,8 +110,8 @@ fun BottomNavigationView.setUpWithTabs(navController: NavController) {
         navController.navigate(item.itemId, null, options)
         true
     }
-    // Tapping the tab you are already on does nothing.
-    setOnItemReselectedListener { }
+    // R1: tapping the tab you are already on goes back to its top and reads it again (the screen decides: TabReselect).
+    setOnItemReselectedListener { onReselect() }
 
     navController.addOnDestinationChangedListener { _, destination, _ ->
         menu.findItem(destination.id)?.isChecked = true

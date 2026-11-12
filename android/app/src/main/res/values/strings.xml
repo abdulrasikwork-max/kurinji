@@ -46,7 +46,7 @@
     <string name="onboarding_connected_title">See it first-hand</string>
     <string name="onboarding_connected_body">Real experiences from real people: places, food, walks and things to try. Scroll, react, ask, then go and see for yourself.</string>
     <string name="onboarding_aware_title">A butterfly says it inspired you</string>
-    <string name="onboarding_aware_body">Its author only learns how many, and never who. Save anything you want to try: Saved is a list only you can see. Went there? Tap I went and tell people how it was.</string>
+    <string name="onboarding_aware_body">Its author only learns how many, and never who. Save anything you want to try: Want to go is a list only you can see. Been there? Tap Been here and tell people how it was.</string>
     <string name="onboarding_safe_title">Yours to control</string>
     <string name="onboarding_safe_body">No followers, no messages from strangers. You choose who sees each post and how exactly its place is shown. Nobody can use IRL to track you. SOS and your trusted people are in You, under Safety; set them up any time.</string>
 
@@ -488,6 +488,8 @@
     <string name="about_body">IRL: safety that expands your world. A privacy-focused safety app designed with women at the centre, built in phases as a final-year B.Tech project. Safe enough to live. Free enough to grow.
 
 This build has real accounts (with password change and account deletion), a Safety Circle, a manual SOS session, Safe Walk with check-ins and movement checks, Nearby (anonymous place signals) and "Check the way". Nobody can use IRL to track another person. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. During an active SOS you can record audio, photos or video as evidence: only when you tap, always with a visible notification, encrypted on your phone at once and uploaded to your private Evidence Vault. IRL never contacts emergency services and never records in the background on its own.
+
+The order of posts on Home uses what a post contains and the interests you chose; \"Talking now\" uses how recently someone commented. It never uses how many people saved, read or commented.
 
 Suggested recovery passphrases use the EFF Large Wordlist by the Electronic Frontier Foundation (CC BY 3.0). Passphrases are checked against the 10k-most-common password list from the SecLists project (MIT licence).</string>
     <string name="about_version_format">Version %1$s</string>
@@ -1122,11 +1124,11 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_find_invalid">A handle has 3 to 20 lower-case letters, digits, _ or .</string>
 
     <string name="social_incoming_title">Requests for you</string>
-    <string name="social_incoming_empty">No requests are waiting for you.</string>
+    <string name="social_incoming_empty">No requests waiting. Peaceful.</string>
     <string name="social_outgoing_title">Requests you sent</string>
     <string name="social_outgoing_empty">You have no requests waiting for an answer.</string>
     <string name="social_connections_title">Your connections</string>
-    <string name="social_connections_empty">No connections yet. Find someone by their handle, or share an invite code.</string>
+    <string name="social_connections_empty">Nobody yet. Find a friend by their handle, or send them an invite code.</string>
     <string name="social_accept">Accept</string>
     <string name="social_decline">Decline</string>
     <string name="social_cancel_request">Cancel request</string>
@@ -1213,21 +1215,16 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_your_experiences">Your posts</string>
     <string name="social_private_places">Private places</string>
     <string name="social_experiences_title">Posts</string>
-    <string name="social_experiences_empty">Nothing shared here yet.</string>
-    <string name="social_my_posts_empty">You have not shared anything yet. Tap Share to post your first experience.</string>
+    <string name="social_experiences_empty">Nothing shared yet. Give them time.</string>
+    <string name="social_my_posts_empty">Nothing here yet. Go somewhere, then tell us how it was.</string>
     <string name="social_show_more">Show more</string>
 
-    <string name="social_type_experience">Experience</string>
-    <string name="social_type_ask">Question</string>
-    <string name="social_type_experience_hint">Something you did or saw. Say how it really was.</string>
-    <string name="social_type_ask_hint">A question for people who have been there.</string>
-    <string name="social_body_label_experience">What happened?</string>
-    <string name="social_body_label_ask">Your question</string>
+    <string name="social_body_label_experience">What happened out there?</string>
+    <string name="social_body_label_ask">What do you want to know?</string>
     <string name="social_tip_label">A tip (optional)</string>
-    <string name="social_photos_title">Photos or a video (optional, up to 6)</string>
-    <string name="social_add_photos">Add photos or a video</string>
     <string name="social_photos_note">Photos and videos lose their hidden details, such as where and when they were taken, before they leave your phone. One video per post, up to 60 seconds and 50 MB.</string>
     <string name="social_photo_failed">Not added. Tap to try again</string>
+    <string name="social_media_timed_out">Too slow on this connection. Tap to try again</string>
     <string name="social_remove_photo">Remove photo</string>
     <string name="social_remove_video">Remove video</string>
 
@@ -1256,9 +1253,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="video_cannot_play">This video can\'t be played right now.</string>
     <string name="video_try_again">Try again</string>
 
-    <string name="social_where_title">Where</string>
-    <string name="social_choose_place">Choose a place</string>
-    <string name="social_where_none">Not chosen yet</string>
     <string name="social_where_city_only">Only the city</string>
     <string name="social_where_no_place">No place</string>
     <string name="social_precision_title">How much of the place to show</string>
@@ -1270,7 +1264,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_private_unknown_notice">Your private places on this phone could not be read, so only the city or no place can be shown. You can start that list again under Private places.</string>
     <string name="social_city_title">City</string>
     <string name="social_delay_notice">Others will see this 1 to 3 hours after you share it, so it never shows where you are right now.</string>
-    <string name="social_after_note">Sharing after you have left is a good habit.</string>
     <string name="social_when_title">When</string>
     <string name="social_daypart_title">Time of day (optional)</string>
     <string name="social_daypart_morning">Morning</string>
@@ -1291,8 +1284,9 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_comments_nobody">No one</string>
     <string name="social_location_summary">Location shown as: %1$s</string>
     <string name="social_share_with">Share with %1$s</string>
+    <string name="social_share_only_me">Keep it just for me</string>
     <string name="social_share_choose_audience">Choose who can see this</string>
-    <string name="social_shared">Shared</string>
+    <string name="social_shared">Posted. Phone down, you earned it.</string>
 
     <string name="social_issue_body_empty">Write what happened.</string>
     <string name="social_issue_body_too_long">An experience has at most 5000 characters.</string>
@@ -1345,7 +1339,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_post_not_found_message">This post was removed, or it is not shared with you.</string>
 
     <string name="social_perspectives_title">Comments</string>
-    <string name="social_perspectives_empty">No comments yet. Start the conversation.</string>
+    <string name="social_perspectives_empty">Quiet in here. Say the obvious thing.</string>
     <string name="social_perspectives_closed">The author has limited who can comment.</string>
     <string name="social_kind_been_here">Been here too</string>
     <string name="social_kind_question">Question</string>
@@ -1385,9 +1379,9 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_private_remove">Remove %1$s</string>
     <!-- Phase 13C: the butterfly, the Cocoon and Discover. No counts except the author's own private line; no ranking words. -->
     <string name="title_discover">Discover</string>
-    <string name="title_cocoon">Saved</string>
+    <string name="title_cocoon">Want to go</string>
     <string name="title_post_collection">Posts</string>
-    <string name="butterfly_saved_announcement">Saved. Only you can see it.</string>
+    <string name="butterfly_saved_announcement">Saved to Want to go. Only you can see it.</string>
     <string name="butterfly_author_fewer">Fewer than 3 people gave this a butterfly so far. Only you can see this line.</string>
     <string name="butterfly_author_count">%1$d people gave this a butterfly. Only you can see this line.</string>
     <string name="cocoon_saved_this_week">Saved this week</string>
@@ -1396,20 +1390,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="discover_section_city">New in %1$s</string>
     <string name="discover_section_theme">This week\'s theme</string>
     <string name="discover_edition_end">You\'re all caught up.</string>
-    <string name="discover_edition_empty">Nothing here yet this week. Be the first to share something.</string>
-    <string name="discover_why">Why?</string>
-    <string name="discover_why_title">Why am I seeing this?</string>
-    <string name="discover_why_footer">The order uses what a post contains and the interests you chose; Talking now uses how recently someone commented. It never uses how many people saved, read or commented.</string>
-    <string name="discover_reason_in_this_city">It is in the city you chose.</string>
-    <string name="discover_reason_recent">Shared since the start of last week.</string>
-    <string name="discover_reason_has_place">It says where.</string>
-    <string name="discover_reason_has_when">It says when: the month and the time of day.</string>
-    <string name="discover_reason_has_tip">It has a tip.</string>
-    <string name="discover_reason_matches_interests">It is about one of your interests.</string>
-    <string name="discover_reason_been_here_too">Someone else has been there too.</string>
-    <string name="discover_reason_open_ask">It is a question nobody has answered helpfully yet.</string>
-    <string name="discover_reason_theme">It fits this week\'s theme.</string>
-    <string name="discover_reason_from_connection">It is from one of your connections. This list is newest first.</string>
+    <string name="discover_edition_empty">Nothing shared here this week. Someone has to go first.</string>
     <string name="discover_search_hint">Search a place or a category</string>
     <string name="discover_search_button">Search</string>
     <string name="discover_search_clear">Clear</string>
@@ -1589,16 +1570,15 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- ===== Phase 13F: Kurinji UI (docs/PHASE13F_PLAN.md). KurinjiTextsTest: no emoji, no slang or hype. ===== -->
     <!-- IRL (2026-11-03): the brand line, shown in capitals (textAllCaps) so TalkBack reads words, not letters. -->
     <string name="motto">Out there. Together.</string>
-    <string name="nav_discover">Discover</string>
+    <string name="nav_discover">Home</string>
     <string name="nav_share">Share</string>
-    <string name="nav_cocoon">Saved</string>
+    <string name="nav_cocoon">Want to go</string>
     <string name="nav_you">You</string>
     <string name="cd_feature_row_plain">%1$s. %2$s.</string>
 
     <!-- You -->
     <string name="you_handle_city">\@%1$s · %2$s</string>
     <string name="you_no_profile">Make a profile to share experiences and connect with people. Your safety tools work without one.</string>
-    <string name="you_section_safety">Safety</string>
     <string name="you_section_reading">Reading</string>
     <string name="you_section_community">Community</string>
     <string name="you_section_account">Account</string>
@@ -1638,8 +1618,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="going_heads_up_no_place">I\'m heading out to try something new. I\'ll message you when I\'m back.</string>
 
     <!-- Share (F17) -->
-    <string name="compose_heading">Share an experience</string>
-    <string name="compose_subheading">What you did, how it was, and one tip. You choose who sees it and how exactly the place is shown.</string>
 
     <!-- Cocoon (F16) -->
 
@@ -1699,27 +1677,24 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="feed_tip_chip">Tip inside</string>
     <string name="feed_area_in_city">Around %1$s</string>
     <string name="feed_area_unknown">An area of about 1 km</string>
-    <string name="feed_loading">Loading more posts</string>
+    <string name="feed_loading">Asking around…</string>
     <string name="feed_header_talking">Talking now</string>
-    <string name="feed_header_talking_sub">Posts people commented on this week, newest comment first</string>
     <string name="feed_header_theme">This week: %1$s</string>
     <string name="feed_header_connections">From people you know</string>
-    <string name="feed_header_connections_sub">Newest first, from the last 30 days</string>
-    <string name="feed_end_message">Been somewhere good lately? Tell people how it was.</string>
+    <string name="feed_end_message">The rest is outside. Been somewhere lately?</string>
     <string name="feed_share_yours">Share yours</string>
-    <string name="feed_empty_title">Quiet here so far</string>
-    <string name="feed_connect_title">Find people you know</string>
+    <string name="feed_empty_title">Nobody\'s been anywhere. Unlikely.</string>
+    <string name="feed_connect_title">It\'s better with your people</string>
     <string name="feed_connect_message">Connect with friends to see what they share. Connections go both ways, and nobody else can see your list.</string>
     <string name="feed_connect_action">Find people</string>
     <string name="feed_choose_city_message">Pick a city above to see what people share there.</string>
     <string name="discover_near_me">Near me</string>
     <string name="discover_near_title">Places near you</string>
     <string name="discover_near_note">From one location check, only when you tap. Just your area (about 1 km) is sent, never where exactly you are.</string>
-    <string name="discover_near_empty">No places added around here yet. Share an experience to add the first.</string>
+    <string name="discover_near_empty">Nothing around here yet. You could be the first.</string>
     <string name="discover_near_permission">Allow location to see places around you. IRL checks once, only now.</string>
     <string name="discover_near_location_off">Location is switched off on this phone. Turn it on to see places around you.</string>
     <string name="discover_near_not_found">Could not find your location just now. Try again, or search a place by name.</string>
-    <string name="discover_reason_new_comments">People commented on it this week.</string>
     <string name="location_action_settings">Open settings</string>
     <string name="location_action_turn_on">Turn on location</string>
     <string name="location_action_retry">Try again</string>
@@ -1728,6 +1703,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_location_denied_settings">Location is not allowed for IRL. You can allow it in the app\'s settings, or share only the city.</string>
     <string name="post_more_actions">More options for this post</string>
     <string name="post_author_description">%1$s. Opens their profile</string>
+    <string name="post_author_own_description">%1$s. Opens your profile</string>
     <string name="post_comments_title_count">Comments · %1$d</string>
     <string name="post_comments_none">No comments.</string>
     <string name="post_open_place_description">%1$s. Opens the place</string>
@@ -1750,23 +1726,24 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="save_label">Save</string>
     <string name="saved_label">Saved</string>
     <string name="save_description">Save it to come back to. Only you can see what you save.</string>
-    <string name="save_remove_description">Saved. Tap to take it out of Saved.</string>
-    <string name="save_announcement">Saved. Only you can see it.</string>
-    <string name="marks_private_note">Only you see your butterflies and what you save. Nobody is told who.</string>
+    <string name="save_remove_description">Saved. Tap to take it out of Want to go.</string>
+    <string name="save_announcement">Saved to Want to go. Only you can see it.</string>
     <string name="feed_media_count">1 / %1$d</string>
     <string name="feed_media_count_spoken">%1$d photos or videos inside</string>
     <!-- "I went" (plan §4): from reading to sharing your own experience. -->
-    <string name="went_label">I went</string>
-    <string name="went_description">I went: mark this place, say how it was, or share your own experience of it</string>
+    <string name="went_label">Been here</string>
+    <string name="went_description">Been here: mark this place, say how it was, or share your own experience of it</string>
+    <!-- IRL-R14 (2026-11-12): a visit and its rating belong to an exact place. Where a post names none, the button says what it does. -->
+    <string name="went_share_description">Share yours: write your own experience. This post names no exact place, so there is no visit to mark or rate.</string>
+    <string name="saved_share_description">Share yours: write your own experience of this</string>
     <!-- Saved -->
     <string name="saved_intro">Only you can see what you save. Nobody is told.</string>
-    <string name="saved_empty_title">Nothing saved yet</string>
+    <string name="saved_empty_title">No plans yet. Bold.</string>
     <string name="saved_empty_message">Tap Save on any post you want to come back to: places to try, questions you want answered.</string>
-    <string name="saved_empty_action">Explore Discover</string>
+    <string name="saved_empty_action">Go to Home</string>
     <string name="saved_remove">Remove</string>
-    <string name="saved_remove_description">Remove from Saved: %1$s</string>
+    <string name="saved_remove_description">Remove from Want to go: %1$s</string>
     <!-- D-5: cities -->
-    <string name="discover_title">Discover</string>
     <string name="city_picker_title">Choose a city</string>
     <string name="city_picker_hint">Search cities</string>
     <string name="city_picker_note">Searched on your phone. What you type is not sent anywhere.</string>
@@ -1801,38 +1778,27 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="profile_photo_unreadable">This photo could not be read. Try another one.</string>
     <string name="profile_photo_description">Your profile photo</string>
     <!-- You -->
-    <string name="you_section_social">Your experiences</string>
-    <string name="you_safety_note">Everything here works even if you never post.</string>
-    <string name="you_safety_all">All safety tools</string>
-    <string name="you_tile_sos">SOS</string>
-    <string name="you_tile_sos_sub">5 seconds to cancel</string>
-    <string name="you_tile_walk">Safe Walk</string>
-    <string name="you_tile_walk_sub">Check-ins on the way</string>
-    <string name="you_tile_circle">Safety Circle</string>
-    <string name="you_tile_circle_sub">Your trusted people</string>
-    <string name="you_tile_nearby">Nearby</string>
-    <string name="you_tile_nearby_sub">Heads-ups about places</string>
     <!-- Place page -->
-    <string name="place_share_yours">I went here</string>
-    <string name="place_share_yours_description">I went here: mark that you went to %1$s and say how it was</string>
+    <string name="place_share_yours">Been here</string>
+    <string name="place_share_yours_description">Been here: mark that you have been to %1$s and say how it was</string>
     <!-- Phase 17G-2 (U5): "I went" is a private record; an optional 1 to 5; a place shows ONE average only from people who went -->
-    <string name="place_went_state">You went here · rate it</string>
-    <string name="place_went_rated">You went here · %1$s out of 5</string>
+    <string name="place_went_state">You\'ve been here · rate it</string>
+    <string name="place_went_rated">You\'ve been here · %1$s out of 5</string>
     <!-- Real-device sprint C7: once the visit exists the spoken label must say the state the text shows, not the first-visit prompt -->
-    <string name="place_went_description_state">You went to %1$s. You have not rated it. Open to rate it, share your experience, or take it back.</string>
-    <string name="place_went_description_rated">You went to %1$s and rated it %2$s out of 5. Open to change it, share your experience, or take it back.</string>
+    <string name="place_went_description_state">You have been to %1$s. You have not rated it. Open to rate it, share your experience, or take it back.</string>
+    <string name="place_went_description_rated">You have been to %1$s and rated it %2$s out of 5. Open to change it, share your experience, or take it back.</string>
     <string name="place_rating_line">%1$s out of 5 · from people who went</string>
     <string name="place_rating_description">Rated %1$s out of 5 by people who went</string>
     <string name="went_sheet_title">How was it?</string>
     <string name="went_sheet_note">Optional. Your rating is private to you. A place shows an average only once enough people who went have rated it.</string>
     <string name="went_rate_description">Rate %1$s out of 5</string>
     <string name="went_rate_chosen">%1$s out of 5, your rating</string>
-    <string name="went_status_none">You went here. You have not rated it.</string>
+    <string name="went_status_none">You\'ve been here. You have not rated it.</string>
     <string name="went_status_rated">Your rating: %1$s out of 5</string>
     <string name="went_rate_number">%1$s</string>
     <string name="went_clear">Take back my rating</string>
     <string name="went_share">Share your experience</string>
-    <string name="went_not">I did not go here</string>
+    <string name="went_not">I haven\'t been here</string>
     <string name="went_done">Done</string>
     <string name="place_page_note">Experiences shared with everyone, newest first.</string>
 
@@ -1885,9 +1851,8 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- Phase 17G-1: Explore (deterministic, on-phone understanding) and the experience tags -->
     <string name="explore_entry">Explore</string>
-    <string name="explore_entry_description">Explore. Describe what you are looking for.</string>
     <string name="explore_title">Explore</string>
-    <string name="explore_hint">What are you looking for?</string>
+    <string name="explore_hint">What are you in the mood for?</string>
     <string name="explore_helper">For example: a quiet cafe to study in the evening. Your words stay on this phone. Only the choices below are searched.</string>
     <!-- Phase 17G-3: the optional smart understanding (off by default; the provider is not named in the app) -->
     <string name="explore_helper_smart">For example: a quiet cafe to study in the evening. Smart understanding is on, so your words are sent when you search. Only the choices below are searched.</string>
@@ -1918,10 +1883,26 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="explore_hit_good_for">Good for: %1$s</string>
     <string name="explore_results_header">Places found</string>
     <string name="explore_end">That is all we found. Try fewer choices or another city.</string>
-    <string name="explore_empty_title">Nothing shared yet that fits</string>
+    <string name="explore_empty_title">Nothing fits. Yet.</string>
     <string name="explore_empty_message">Try fewer choices or another city. A place appears here once people share experiences about it with everyone.</string>
     <string name="explore_footer">Explore searches experiences that people shared with everyone, and lists places by how well they match what you asked for. It does not count people or reactions.</string>
     <string name="social_facets_title">Good for (optional)</string>
     <string name="social_facets_note">Choose up to 4. People who search Explore can find this place by these.</string>
     <string name="post_facets_line">Good for: %1$s</string>
+    <!-- IRL redesign (R1, R2): the short composer and the draft guard. -->
+    <string name="compose_add_media">Add photos or a video</string>
+    <string name="compose_add_more">Add more</string>
+    <string name="compose_question_chip">This is a question</string>
+    <string name="compose_place_add">Add a place (optional)</string>
+    <string name="compose_details_show">Add details</string>
+    <string name="compose_details_hide">Hide details</string>
+    <string name="compose_discard_title">Throw this away?</string>
+    <string name="compose_discard_message">Your words and photos will not be kept.</string>
+    <string name="compose_discard_keep">Keep writing</string>
+    <string name="compose_discard_confirm">Discard</string>
+    <!-- IRL redesign (R4): You as a profile; the rest one tap away. -->
+    <string name="title_more">Settings and more</string>
+    <string name="you_more_description">Private places, community, account, log out</string>
+    <string name="you_saved_description">Posts you kept to come back to. Only you see this list.</string>
+    <string name="you_safety_description">SOS, Safe Walk and your trusted people</string>
 </resources>

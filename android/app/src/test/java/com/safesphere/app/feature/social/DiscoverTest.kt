@@ -379,12 +379,20 @@ class DiscoverTest {
     }
 
     @Test
-    fun `the feed ends with an invitation to find people when nobody you know has posted`() {
+    fun `the feed invites to find people under the city's posts, and an empty Home says one thing only`() {
         val state = DiscoverUiState(city = city("CHENNAI"), edition = Edition(city("CHENNAI"), null, null, emptyList()),
             connectionsLoaded = true)
         val feed = DiscoverFeed.build(state)
-        assertTrue(FeedItem.ConnectPrompt in feed)
-        assertEquals(FeedItem.Empty, feed.last())
+        // R6 (A23 walk): two empty messages under each other read as a broken screen.
+        assertEquals(listOf(FeedItem.Shortcuts, FeedItem.Empty), feed)
+        assertEquals(listOf(FeedItem.Shortcuts, FeedItem.ChooseCity),
+            DiscoverFeed.build(DiscoverUiState(needsCity = true, connectionsLoaded = true)))
+
+        val stranger = DiscoverItem(FakeExperienceRepository.post(id = "s1"), listOf(DiscoverReason.IN_THIS_CITY))
+        val withPosts = DiscoverFeed.build(state.copy(
+            edition = Edition(city("CHENNAI"), null, null, listOf(EditionSection(EditionSectionKind.CITY, listOf(stranger))))))
+        assertTrue(FeedItem.ConnectPrompt in withPosts)
+        assertEquals(FeedItem.End, withPosts.last())
 
         // Emulator finding: a connection's posts already shown in the city list must not turn into "find people".
         val shown = DiscoverItem(FakeExperienceRepository.post(id = "b1"), listOf(DiscoverReason.IN_THIS_CITY))

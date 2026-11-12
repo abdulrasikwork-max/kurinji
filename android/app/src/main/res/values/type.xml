@@ -1,43 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        Kurinji type (Phase 16): Mukta Malar throughout, Bold (kurinji_display) for headlines, buttons and the wordmark,
+        Kurinji type (Phase 16; IRL 2026-11-12: headlines and the wordmark in Fraunces, irl_serif): Mukta Malar for the rest, Bold (kurinji_display) for names and buttons,
         set large and tight; drawn for Tamil and Latin together. Sizes in sp, so the phone's font size applies.
         The TextAppearance.SafeSphere.* names stay (every layout uses them); they point at the Kurinji styles.
     -->
 
     <!-- ===== Display and headlines (Mukta Malar Bold) ===== -->
     <style name="TextAppearance.Kurinji.Masthead" parent="TextAppearance.Material3.DisplaySmall">
-        <item name="android:fontFamily">@font/kurinji_display</item>
-        <item name="fontFamily">@font/kurinji_display</item>
+        <item name="android:fontFamily">@font/irl_serif</item>
+        <item name="fontFamily">@font/irl_serif</item>
         <item name="android:textSize">34sp</item>
-        <item name="android:letterSpacing">-0.03</item>
+        <item name="android:letterSpacing">-0.01</item>
         <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <style name="TextAppearance.Kurinji.Headline.Large" parent="TextAppearance.Material3.HeadlineLarge">
         <item name="android:textColor">?attr/colorOnSurface</item>
-        <item name="android:fontFamily">@font/kurinji_display</item>
-        <item name="fontFamily">@font/kurinji_display</item>
+        <item name="android:fontFamily">@font/irl_serif</item>
+        <item name="fontFamily">@font/irl_serif</item>
         <item name="android:textSize">30sp</item>
-        <item name="android:letterSpacing">-0.025</item>
-        <item name="android:lineSpacingMultiplier">0.95</item>
+        <item name="android:letterSpacing">-0.01</item>
+        <item name="android:lineSpacingMultiplier">1.0</item>
     </style>
 
     <style name="TextAppearance.Kurinji.Headline.Medium" parent="TextAppearance.Material3.HeadlineMedium">
         <item name="android:textColor">?attr/colorOnSurface</item>
-        <item name="android:fontFamily">@font/kurinji_display</item>
-        <item name="fontFamily">@font/kurinji_display</item>
+        <item name="android:fontFamily">@font/irl_serif</item>
+        <item name="fontFamily">@font/irl_serif</item>
         <item name="android:textSize">24sp</item>
-        <item name="android:letterSpacing">-0.02</item>
+        <item name="android:letterSpacing">-0.01</item>
     </style>
 
     <style name="TextAppearance.Kurinji.Headline.Small" parent="TextAppearance.Material3.HeadlineSmall">
         <item name="android:textColor">?attr/colorOnSurface</item>
-        <item name="android:fontFamily">@font/kurinji_display</item>
-        <item name="fontFamily">@font/kurinji_display</item>
+        <item name="android:fontFamily">@font/irl_serif</item>
+        <item name="fontFamily">@font/irl_serif</item>
         <item name="android:textSize">21sp</item>
-        <item name="android:letterSpacing">-0.015</item>
+        <item name="android:letterSpacing">-0.01</item>
     </style>
 
     <!-- Phase 16: the short thought on a feed card (the post's own words, the first lines). -->
@@ -59,10 +59,10 @@
 
     <!-- Phase 16: the wordmark "kurinji" (top bar, splash). -->
     <style name="TextAppearance.Kurinji.Wordmark" parent="TextAppearance.Material3.HeadlineSmall">
-        <item name="android:fontFamily">@font/kurinji_display</item>
-        <item name="fontFamily">@font/kurinji_display</item>
+        <item name="android:fontFamily">@font/irl_serif</item>
+        <item name="fontFamily">@font/irl_serif</item>
         <item name="android:textSize">26sp</item>
-        <item name="android:letterSpacing">-0.04</item>
+        <item name="android:letterSpacing">-0.01</item>
         <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
@@ -178,11 +178,15 @@
 
     <!-- On the dark "hero" panels -->
     <style name="TextAppearance.SafeSphere.Hero.Status" parent="TextAppearance.Kurinji.Headline.Medium">
+        <item name="android:fontFamily">@font/kurinji_display</item>
+        <item name="fontFamily">@font/kurinji_display</item>
         <item name="android:textSize">24sp</item>
         <item name="android:textColor">?attr/colorOnHero</item>
     </style>
 
     <style name="TextAppearance.SafeSphere.Hero.Title" parent="TextAppearance.Kurinji.Headline.Small">
+        <item name="android:fontFamily">@font/kurinji_display</item>
+        <item name="fontFamily">@font/kurinji_display</item>
         <item name="android:textSize">19sp</item>
         <item name="android:textColor">?attr/colorOnHero</item>
     </style>

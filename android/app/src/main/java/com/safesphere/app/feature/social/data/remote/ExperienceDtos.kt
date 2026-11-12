@@ -292,7 +292,8 @@ data class CommentDto(
     fun toDomain(): Perspective? {
         val author = author?.let { a ->
             val id = a.publicId ?: return@let null
-            com.safesphere.app.feature.social.domain.PersonSummary(id, a.handle.orEmpty(), a.displayName.orEmpty())
+            com.safesphere.app.feature.social.domain.PersonSummary(id, a.handle.orEmpty(), a.displayName.orEmpty(),
+                photoKey(a.photo)) // R7: a commenter's photo was dropped here, so comments only ever showed an initial
         }
         return Perspective(
             publicId = publicId ?: return null,

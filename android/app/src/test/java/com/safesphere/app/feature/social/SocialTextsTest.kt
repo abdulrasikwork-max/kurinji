@@ -106,7 +106,6 @@ class SocialTextsTest {
             "fragment_discover.xml", "fragment_saved.xml", "fragment_post_collection.xml",
             // Phase 17E
             "item_experience_card.xml", "item_saved.xml", "sheet_city_picker.xml", "sheet_daily_state.xml", "fragment_you.xml",
-            "item_safety_tile.xml",
             // Phase 17G-1: Explore
             "fragment_explore.xml", "item_explore_hit.xml",
             // Phase 17G-2 (U5): "I went" and the guarded rating

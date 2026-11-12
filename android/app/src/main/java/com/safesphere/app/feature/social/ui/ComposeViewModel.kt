@@ -65,6 +65,8 @@ data class ComposeMedia(
     /** 0..1 while UPLOADING. */
     val progress: Float = 0f,
     val refusal: MediaRefusal? = null,
+    /** FAILED because the connection was too slow (a timeout), not because it was lost or refused: "try again". */
+    val timedOut: Boolean = false,
     val durationMs: Long? = null,
     val preview: Any? = null
 ) {
@@ -117,6 +119,9 @@ data class ComposeUiState(
 
     /** Phase 17A: a photo that could not be added stops sharing until it is tried again or removed (it used to be left out silently). Phase 17C: videos too. */
     val mediaFailed: Boolean get() = media.any { it.problem }
+    /** IRL redesign (R1): there is something to lose, so leaving asks first. */
+    val hasDraft: Boolean get() = body.isNotBlank() || tip.isNotBlank() || media.isNotEmpty()
+
     val canAddMedia: Boolean get() = media.size < ComposerPolicy.MAX_PHOTOS
     val canAddVideo: Boolean get() = canAddMedia && media.count { it.isVideo } < ComposerPolicy.MAX_VIDEOS
 
@@ -136,7 +141,11 @@ class ComposeViewModel(
     private val repository: ExperienceRepository,
     private val placeMemory: PlaceMemory,
     private val mediaSource: MediaSource,
-    private val clock: Clock
+    private val clock: Clock,
+    private val freshness: com.safesphere.app.feature.social.domain.FeedFreshness =
+        com.safesphere.app.feature.social.domain.FeedFreshness(),
+    /** IRL redesign (R2): the city of the person's profile, when it names a catalog city (null = unknown). */
+    private val homeCity: suspend () -> City? = { null }
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ComposeUiState())
@@ -156,8 +165,13 @@ class ComposeViewModel(
 
     val currentMonth: YearMonth get() = YearMonth.now(clock)
 
+    /** The person chose something about the place themselves: the starting suggestion no longer applies. */
+    private var placeTouched = false
+
     init {
-        _uiState.update { it.copy(month = currentMonth) }
+        // R2: a post needs no place decision to be shared. It starts as "no place" and, once the profile's city is
+        // known, as "only the city" (so it still shows in that city); choosing a place is one optional tap.
+        _uiState.update { it.copy(month = currentMonth, precision = Precision.NONE) }
         viewModelScope.launch {
             val snapshot = placeMemory.snapshot()
             privateCells = snapshot.data.privatePlaces.map { it.cell }
@@ -166,6 +180,10 @@ class ComposeViewModel(
                     privatePlacesUnknown = snapshot.privatePlacesUnknown)
             }
             recheck()
+            val city = homeCity()
+            if (city != null && !city.isOther && !placeTouched) change {
+                if (it.place == null && it.precision == Precision.NONE) it.copy(precision = Precision.CITY, city = city) else it
+            }
         }
     }
 
@@ -187,7 +205,10 @@ class ComposeViewModel(
     }
     fun onAudience(audience: Audience) = change { it.copy(audience = audience) }
     fun onCommentPolicy(policy: CommentPolicy) = change { it.copy(commentPolicy = policy) }
-    fun onCity(city: City) = change { it.copy(city = city) }
+    fun onCity(city: City) {
+        placeTouched = true
+        change { it.copy(city = city) }
+    }
     fun onApproveFirst(on: Boolean) = change { it.copy(approveFirst = on) }
 
     fun onPrecision(precision: Precision) = change {
@@ -196,6 +217,7 @@ class ComposeViewModel(
 
     /** A place from the picker. Public posts default to the area (design §4.2); near a private place, to the city. */
     fun onPlaceChosen(place: Place) = change {
+        placeTouched = true
         val private = it.privatePlacesUnknown || PrivatePlacePolicy.isPrivate(place.cell, privateCells)
         it.copy(place = place, placeIsPrivate = private, precision = if (private) Precision.CITY else Precision.AREA)
     }
@@ -221,9 +243,15 @@ class ComposeViewModel(
         }
     }
 
-    fun onCityOnly() = change { it.copy(place = null, placeIsPrivate = false, precision = Precision.CITY) }
+    fun onCityOnly() {
+        placeTouched = true
+        change { it.copy(place = null, placeIsPrivate = false, precision = Precision.CITY) }
+    }
 
-    fun onNoPlace() = change { it.copy(place = null, placeIsPrivate = false, precision = Precision.NONE, city = null) }
+    fun onNoPlace() {
+        placeTouched = true
+        change { it.copy(place = null, placeIsPrivate = false, precision = Precision.NONE, city = null) }
+    }
 
     /**
      * Phase 17C: photos and videos from the picker, in the order picked. At most 6 items and one video per post: the
@@ -268,6 +296,14 @@ class ComposeViewModel(
         if (mediaId != null) viewModelScope.launch { repository.deleteUpload(mediaId) } // else the 24 h clean-up
     }
 
+    /**
+     * IRL redesign (R1): the person chose to throw the draft away. Running uploads stop, work files are deleted and the
+     * server's copies are removed (best effort), so nothing is left behind.
+     */
+    fun onDiscard() {
+        _uiState.value.media.map { it.key }.forEach(::onRemoveMedia)
+    }
+
     override fun onCleared() {
         preparedVideos.values.forEach(mediaSource::discard)
         preparedVideos.clear()
@@ -289,6 +325,7 @@ class ComposeViewModel(
                     state.place?.let { placeMemory.rememberUsed(it) }
                     preparedVideos.values.forEach(mediaSource::discard)
                     preparedVideos.clear()
+                    freshness.changed()
                     _uiState.update { it.copy(isBusy = false, sharedPostId = result.data.publicId) }
                 }
                 is ApiResult.Failure -> _uiState.update {
@@ -372,7 +409,10 @@ class ComposeViewModel(
             ApiError.TOO_MANY_ATTEMPTS -> MediaRefusal.DAILY_LIMIT
             else -> null
         }
-        set(key) { it.copy(stage = if (refusal != null) MediaStage.REFUSED else MediaStage.FAILED, refusal = refusal) }
+        set(key) {
+            it.copy(stage = if (refusal != null) MediaStage.REFUSED else MediaStage.FAILED, refusal = refusal,
+                timedOut = refusal == null && failure.timedOut)
+        }
         if (failure.isSessionExpired()) _uiState.update { it.copy(sessionExpired = true) }
     }
 
@@ -417,7 +457,10 @@ class ComposeViewModel(
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
                 ComposeViewModel(container.experienceRepository, container.placeMemory, container.mediaSource,
-                    Clock.systemDefaultZone())
+                    Clock.systemDefaultZone(), container.feedFreshness) {
+                    (container.socialRepository.ownProfile() as? ApiResult.Success)?.data?.city
+                        ?.let(com.safesphere.app.feature.social.domain.Cities::match)
+                }
 
             }
         }

@@ -124,7 +124,9 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
             }, onReact = { viewModel.marks.react(post) }, onSave = { viewModel.marks.save(post) }, onComments = {
                 findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to post.publicId,
                     PostViewModel.ARG_TO_COMMENTS to true))
-            })
+            }, onAuthor = post.author?.publicId?.takeUnless { post.own }?.let { id -> {
+                findNavController().navigate(R.id.personProfileFragment, bundleOf(PersonProfileViewModel.ARG_PROFILE_ID to id))
+            } })
         })
         binding.emptyBlock.isVisible = state.loaded && state.items.isEmpty()
         binding.emptyText.setText(if (state.notFound) R.string.collection_not_found else R.string.collection_empty)

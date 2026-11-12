@@ -32,7 +32,7 @@ import com.safesphere.app.feature.social.domain.Interest
 class ExploreFragment : ViewBindingFragment<FragmentExploreBinding>(FragmentExploreBinding::inflate) {
 
     private val viewModel by viewModels<ExploreViewModel> {
-        ExploreViewModel.factory(appContainer, Cities.listCity(arguments?.getString(ExploreViewModel.ARG_CITY)))
+        ExploreViewModel.factory(appContainer, Cities.listCity(arguments?.getString(ExploreViewModel.ARG_CITY) ?: appContainer.feedFreshness.cityCode))
     }
 
     private lateinit var categoryChips: MultiChips<Interest>

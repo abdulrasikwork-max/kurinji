@@ -128,7 +128,7 @@ released build (needed to read crash reports; it is in `app/build/outputs/mappin
 | Production domain, hosting, TLS certificate | Not available; `release.api.base.url` stays a placeholder. Then decide certificate pinning. |
 | Release keystore | Generate and **back up** a release key (losing it means no updates). Put its paths/passwords in `android/keystore.properties` or `IRL_KEYSTORE_*`; use Play App Signing. |
 | Version numbers | `1 / 1.0.0-rc1` is my proposal; confirm or change. |
-| Real OTP | Per `PHASE17B.md` the Fast2SMS OTP route needs KYC on the account and a first Rs 100 top-up; it sends a FIXED text ("Your OTP: 123456") from Fast2SMS's own sender, so **DLT registration is only needed for a branded sender/custom text** (not verified in practice: confirm with Fast2SMS and current TRAI rules before launch). Then a real-phone test (no real SMS was ever sent). Provider choice is yours (`OtpSender` is provider-neutral). |
+| Real OTP | Superseded 2026-11-09 (`PHASE17B.md` §3): Fast2SMS closed the OTP route; the adapter uses **Quick SMS (route=q, about Rs 7 per SMS, no DLT)**, one real SMS was accepted and arrived on the user's phone by hand; the app's full sign-up flow with a real SMS is not yet tried. DLT is only needed for a branded sender (confirm Fast2SMS and current TRAI rules before launch). Provider choice is yours (`OtpSender` is provider-neutral). |
 | Production secrets | `JWT_SECRET`, `OTP_SECRET`, `DB_PASSWORD`, `FAST2SMS_API_KEY`, `MODERATION_SERVICE_KEY`, vault escrow public key: generate on the server, never in git. |
 | Managed MySQL with TLS | The guard requires `sslMode`. |
 | Privacy policy + Play Data safety | Draft in `docs/RELEASE_PRIVACY_PLAY.md`; needs hosting at a public URL and your legal review. |

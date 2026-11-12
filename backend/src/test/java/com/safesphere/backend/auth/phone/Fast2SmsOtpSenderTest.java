@@ -17,7 +17,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Phase 17B: the Fast2SMS adapter against a local stub (never the real API, no key, no SMS): the request shape of the
- * OTP route, success, Fast2SMS refusals (KYC 996, wallet 999), HTTP errors and an unreadable answer.
+ * Quick SMS route (route=q, changed 2026-11-09 after Fast2SMS closed route=otp), success, Fast2SMS refusals (wallet 416,
+ * spam 995, old API 990, first top-up 999), HTTP errors and an unreadable answer.
  */
 class Fast2SmsOtpSenderTest {
 
@@ -54,27 +55,65 @@ class Fast2SmsOtpSenderTest {
     }
 
     @Test
-    void sendsTheOtpRoute_withTheNationalNumber_andTheKeyInTheHeader() throws Exception {
+    void sendsTheQuickSmsRoute_withTheNationalNumber_andTheKeyInTheHeader() throws Exception {
         sender().send("+919876543210", "482913");
 
         JsonNode sent = json.readTree(body.get());
-        assertThat(sent.get("route").asText()).isEqualTo("otp");
-        assertThat(sent.get("variables_values").asText()).isEqualTo("482913");
+        assertThat(sent.get("route").asText()).isEqualTo("q");
+        assertThat(sent.get("message").asText()).isEqualTo("482913 is your IRL verification code. Do not share it with anyone.");
         assertThat(sent.get("numbers").asText()).isEqualTo("9876543210");
         assertThat(key.get()).isEqualTo("test-key");
+        // exactly these three fields: no old OTP-route field, no sender id / template (Quick SMS needs none)
+        assertThat(sent.fieldNames()).toIterable().containsExactlyInAnyOrder("route", "message", "numbers");
+    }
+
+    @Test
+    void theMessage_isPlainAscii_oneSms_hasTheCodeOnce_andNeverTheNumber() throws Exception {
+        sender().send("+919876543210", "1234567890"); // the longest code the sender accepts
+
+        String text = json.readTree(body.get()).get("message").asText();
+        assertThat(text).hasSizeLessThanOrEqualTo(160); // one English SMS = one billed part
+        assertThat(text.chars().allMatch(c -> c >= 32 && c < 127)).isTrue(); // no Unicode: it would cut a part to 70 characters
+        assertThat(text).contains("IRL").contains("Do not share it");
+        assertThat(text.split("1234567890", -1)).hasSize(2); // the code appears exactly once
+        assertThat(text).doesNotContain("9876543210").doesNotContain("http");
     }
 
     @Test
     void aFast2SmsRefusal_isReportedByItsStatusCodeOnly() {
-        answer = "{\"return\":false,\"status_code\":996,\"message\":\"Before using OTP SMS API, complete KYC.\"}";
+        // 400 with a status code: wallet empty, spam block, old API, first top-up missing
+        answer = "{\"return\":false,\"status_code\":416,\"message\":\"You don't have sufficient wallet balance\"}";
         status = 400;
         assertThatThrownBy(() -> sender().send("+919876543210", "482913"))
                 .isInstanceOf(OtpSender.OtpDeliveryException.class)
-                .hasMessageContaining("996").hasMessageNotContaining("482913").hasMessageNotContaining("9876543210");
+                .hasMessageContaining("416").hasMessageNotContaining("482913").hasMessageNotContaining("9876543210");
+
+        answer = "{\"return\":false,\"status_code\":995,\"message\":\"Spamming detected\"}";
+        assertThatThrownBy(() -> sender().send("+919876543210", "482913")).hasMessageContaining("995");
+
+        answer = "{\"return\":false,\"status_code\":990,\"message\":\"You're hitting old API\"}";
+        assertThatThrownBy(() -> sender().send("+919876543210", "482913")).hasMessageContaining("990");
 
         answer = "{\"return\":false,\"status_code\":999,\"message\":\"Complete single transaction of minimum 100 INR\"}";
         status = 200; // Fast2SMS may answer 200 with return=false
         assertThatThrownBy(() -> sender().send("+919876543210", "482913")).hasMessageContaining("999");
+    }
+
+    @Test
+    void anHttp200WithoutReturnTrue_isNotSuccess() {
+        answer = "{\"message\":[\"queued\"]}"; // no "return": true
+        assertThatThrownBy(() -> sender().send("+919876543210", "482913"))
+                .isInstanceOf(OtpSender.OtpDeliveryException.class).hasMessageContaining("200");
+    }
+
+    @Test
+    void aRefusalNeverEchoesTheMessageTheBodyOrTheKey() {
+        answer = "{\"return\":false,\"status_code\":407,\"message\":\"Invalid words used in message 482913 9876543210\"}";
+        status = 400;
+        assertThatThrownBy(() -> sender().send("+919876543210", "482913"))
+                .isInstanceOf(OtpSender.OtpDeliveryException.class)
+                .hasMessageContaining("407").hasMessageNotContaining("Invalid words").hasMessageNotContaining("482913")
+                .hasMessageNotContaining("9876543210").hasMessageNotContaining("test-key");
     }
 
     @Test

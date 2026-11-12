@@ -30,7 +30,10 @@ server {
     add_header Referrer-Policy "no-referrer" always;
 
     access_log /var/log/nginx/irl.access.log irl_privacy;
-    error_log  /var/log/nginx/irl.error.log warn;
+    # crit, NOT warn/error: nginx's error lines ("connect() failed ... upstream") carry the client address and the full request
+    # line including the query string, and one is written for every request while the backend is down or restarting (found in the
+    # L1 verification, 2026-11-09). Only real faults are logged now; 502s on /api/* are still visible in the access log (except /api/health: access_log off).
+    error_log  /var/log/nginx/irl.error.log crit;
 
     # Videos are at most 50 MB and uploads are RAW bodies (not multipart). 60m covers the largest (Cloudflare's free plan caps a
     # request body at 100 MB, which is above this; check Cloudflare's current limits).

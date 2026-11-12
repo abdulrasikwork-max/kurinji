@@ -26,6 +26,8 @@
     <color name="k_line">#DCDFD3</color>
     <!-- Phase 17C: the label on a video still (ink at 85 %): white text on it stays above 12:1 on any picture. -->
     <color name="k_video_badge">#D90E100C</color>
+    <!-- The words and play mark on that label: white in light AND dark mode (k_surface turns dark at night). -->
+    <color name="k_on_video_badge">#FFFFFF</color>
 
     <!-- Brand -->
     <color name="k_lime">#ADFF2F</color>
@@ -65,25 +67,50 @@
     <color name="hero_accent">#A9C7E8</color>
     <color name="hero_caution">#F5B544</color>
 
-    <!-- The in-app IRL mark ("the Meet": two paths and the sun): the white path in ink, the lime path and the sun in
-         leaf green on light pages (lime is never drawn on a light page). Night: values-night. -->
-    <color name="mark_path">#0E100C</color>
-    <color name="mark_accent">#3A6100</color>
-
-    <!-- The launcher always draws the icon on its own background: fixed colours, no night variant. -->
-    <color name="launcher_background">#0E100C</color>
-    <color name="launcher_white">#FFFFFF</color>
-    <color name="launcher_lime">#ADFF2F</color>
-    <!-- The ground the two paths rise from: ink fading into deep leaf at the bottom of the icon. -->
-    <color name="launcher_ground">#1A2A05</color>
-    <!-- The IRL opening screen (always ink, like the launch screen): soft words and the rings around the sun. -->
-    <color name="opening_soft">#B7BDAB</color>
-    <color name="opening_ring">#3A6100</color>
+    <!-- ===== IRL "Black Cherry & Cream Vanilla" (2026-11-12, the owner's decision; docs/DESIGN_SYSTEM.md) =====
+         The brand's two colours, fixed (launcher icon, opening screen: no night variant). Black Cherry is a very dark red,
+         used ONLY by the brand surfaces and the social palette below; it never appears on a safety screen, and bright red
+         still means only emergency (ss_emergency, unchanged). -->
+    <color name="brand_cherry">#5D0703</color>
+    <color name="brand_cream">#EEDCC8</color>
+    <!-- The second path of the mark and small accents on cherry. -->
+    <color name="brand_blush">#E8A48C</color>
+    <!-- The bottom of the launcher icon: cherry fading darker. -->
+    <color name="brand_cherry_deep">#2A0302</color>
+    <!-- Soft words on the opening screen (always cherry). -->
+    <color name="opening_soft">#D9B9A6</color>
     <!-- The SOS shortcut keeps its emergency look (black disc, red ring). -->
     <color name="launcher_red">#D0102A</color>
     <color name="launcher_sos">#121212</color>
 
-    <color name="splash_background">#0E100C</color>
+    <color name="splash_background">#5D0703</color>
+
+    <!-- ===== The social palette (c_*): only through ThemeOverlay.IRL.Social, which core/ui/SocialPalette puts on the
+         social, profile, sign-in and settings screens. Safety screens keep every k_*, ss_*, hero_* value above.
+         Day: a cream page, cherry actions with cream words. Night (values-night): a cherry-black page, cream words and
+         cream actions; cherry is a SURFACE there (it is 1.5:1 on black, never text). SocialPaletteTest checks the pairs. -->
+    <color name="c_page">#EEDCC8</color>
+    <color name="c_surface">#FAF3EA</color>
+    <color name="c_surface_sunk">#E3CFB8</color>
+    <color name="c_surface_low">#F4E8D9</color>
+    <color name="c_surface_container">#E9D5BF</color>
+    <color name="c_surface_high">#E3CFB8</color>
+    <color name="c_surface_highest">#DCC6AE</color>
+    <color name="c_ink">#1F0A08</color>
+    <color name="c_ink_soft">#5A413A</color>
+    <color name="c_outline">#8A6F63</color>
+    <color name="c_line">#DCC6AE</color>
+    <color name="c_action">#5D0703</color>
+    <color name="c_on_action">#EEDCC8</color>
+    <!-- The fill of a given mark, a chosen tag, the chosen tab (the role lime has on safety screens). -->
+    <color name="c_fill">#5D0703</color>
+    <color name="c_on_fill">#EEDCC8</color>
+    <color name="c_soft">#E8C9B5</color>
+    <color name="c_on_soft">#4A0502</color>
+    <color name="c_accent">#5D0703</color>
+    <color name="c_panel">#5D0703</color>
+    <color name="c_on_panel">#EEDCC8</color>
+    <color name="c_on_panel_soft">#D9B9A6</color>
 
     <!-- Avatar circles (a person's initial when there is no photo): white text reaches 4.5:1 on each. No red. -->
     <color name="avatar_1">#3A6100</color>

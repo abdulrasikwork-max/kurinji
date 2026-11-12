@@ -103,7 +103,8 @@
                 style="@style/Widget.Kurinji.Button.Tonal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/went_label"
+                android:contentDescription="@string/saved_share_description"
+                android:text="@string/feed_share_yours"
                 app:icon="@drawable/ic_flag" />
 
             <com.google.android.material.button.MaterialButton

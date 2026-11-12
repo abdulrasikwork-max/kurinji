@@ -317,14 +317,8 @@
                                 app:icon="@drawable/ic_bookmark" />
                         </LinearLayout>
 
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:text="@string/marks_private_note"
-                            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
-
                         <LinearLayout
+                            android:id="@+id/goingRow"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/space_md"
@@ -417,15 +411,6 @@
         android:paddingEnd="6dp"
         android:paddingBottom="6dp"
         android:visibility="gone">
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/kindGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:chipSpacingHorizontal="6dp"
-            app:selectionRequired="true"
-            app:singleLine="true"
-            app:singleSelection="true" />
 
         <LinearLayout
             android:id="@+id/replyBlock"

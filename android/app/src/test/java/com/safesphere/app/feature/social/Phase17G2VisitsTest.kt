@@ -304,7 +304,7 @@ class Phase17G2VisitsTest {
             assertTrue(name, s[name]!!.contains("%1\$s") && s[name]!!.contains("out of 5") && !s[name]!!.contains("%d") && !s[name]!!.contains("%1\$d"))
         }
         assertTrue(s["went_rate_chosen"]!!.endsWith("your rating"))   // the chosen number says so in words, not colour alone
-        assertEquals("I went here", s["place_share_yours"])
+        assertEquals("Been here", s["place_share_yours"])
         for ((name, text) in s.filterKeys { it.startsWith("went_") || it.startsWith("place_went") || it.startsWith("place_rating") }) {
             assertFalse("$name: no ranking or engagement word", Regex("\\b(best|top|popular|trending|rank|ranked|hot)\\b", RegexOption.IGNORE_CASE).containsMatchIn(text))
         }

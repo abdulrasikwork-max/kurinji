@@ -170,12 +170,12 @@ class Phase17g2VisitsApiTest {
             social.rate(raters.get(i), placeId, 5).andExpect(status().isOk());
         }
         JsonNode page = social.json(social.placePage(chitra, placeId, null).andExpect(status().isOk()));
-        assertThat(page.get("rating").asText()).isEqualTo("4.3");                      // (17.5 + 25) / 10
+        assertThat(page.get("rating").asText()).isEqualTo("4.0");                      // 18A-1: five 10-day-old, one-place accounts count half: (17.5 + 12.5) / 7.5
         String raw = social.placePage(chitra, placeId, null).andReturn().getResponse().getContentAsString();
         assertThat(raw).doesNotContain("raters").doesNotContain("count").doesNotContain("average").doesNotContain("votes");
         for (Person rater : raters) assertThat(raw).doesNotContain(rater.publicId()).doesNotContain(rater.handle());
         // the same text for everybody who may read the page; the posts shown are not affected by it
-        assertThat(social.json(social.placePage(bala, placeId, null)).get("rating").asText()).isEqualTo("4.3");
+        assertThat(social.json(social.placePage(bala, placeId, null)).get("rating").asText()).isEqualTo("4.0");
     }
 
     @Test
@@ -198,14 +198,14 @@ class Phase17g2VisitsApiTest {
             social.went(raters.get(i), placeId).andExpect(status().isOk());
             social.rate(raters.get(i), placeId, 5).andExpect(status().isOk());
         }
-        assertThat(social.json(social.placePage(chitra, placeId, null)).get("rating").asText()).isEqualTo("4.3");
+        assertThat(social.json(social.placePage(chitra, placeId, null)).get("rating").asText()).isEqualTo("4.0");
         social.went(raters.get(5), placeId).andExpect(status().isOk());
         social.rate(raters.get(5), placeId, 1).andExpect(status().isOk());
         assertThat(social.json(social.placePage(chitra, placeId, null)).get("rating").asText())
-                .as("same IST day: unchanged, so before/after cannot be compared").isEqualTo("4.3");
+                .as("same IST day: unchanged, so before/after cannot be compared").isEqualTo("4.0");
         clock.advance(Duration.ofDays(1));
         assertThat(social.json(social.placePage(chitra, placeId, null)).get("rating").asText())
-                .isEqualTo("4.0");                                                      // (17.5 + 26) / 11 = 3.95
+                .isEqualTo("3.8");                                                      // (17.5 + 12.5 + 0.5) / 8 = 3.81
     }
 
     @Test
@@ -285,6 +285,29 @@ class Phase17g2VisitsApiTest {
     }
 
     /** [count] new people; [aged] puts their accounts well past the 72 h probation. */
+    @Test
+    void fiveConnectedRaters_areOneVoice_soThePlaceShowsNothing_untilIndependentPeopleRate() throws Exception {
+        String placeId = place(asha);
+        visible(exact(asha, "EVERYONE", placeId));
+        List<Person> friends = people("Friend", 5, true);
+        for (int i = 1; i < 5; i++) social.connect(friends.get(0), friends.get(i));
+        for (Person friend : friends) {
+            social.went(friend, placeId).andExpect(status().isOk());
+            social.rate(friend, placeId, 5).andExpect(status().isOk());
+        }
+        assertThat(social.json(social.placePage(chitra, placeId, null)).get("rating").isNull())
+                .as("five friends are one voice").isTrue();
+        // every one of them still sees their own rating: nothing is hidden from its owner
+        assertThat(social.json(social.placePage(friends.get(2), placeId, null)).get("yourVisit").get("rating").asInt()).isEqualTo(5);
+        for (Person other : people("Other", 4, true)) {
+            social.went(other, placeId).andExpect(status().isOk());
+            social.rate(other, placeId, 3).andExpect(status().isOk());
+        }
+        clock.advance(Duration.ofDays(1));
+        // five voices, each from 10/11-day-old one-place accounts (half): (17.5 + 0.5*5 + 4*0.5*3) / 7.5 = 3.47
+        assertThat(social.json(social.placePage(chitra, placeId, null)).get("rating").asText()).isEqualTo("3.5");
+    }
+
     private List<Person> people(String name, int count, boolean aged) throws Exception {
         List<Person> out = new ArrayList<>();
         for (int i = 0; i < count; i++) {

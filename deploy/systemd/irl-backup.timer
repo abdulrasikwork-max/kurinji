@@ -1,10 +1,12 @@
-# /etc/systemd/system/irl-backup.timer  (NOT VERIFIED: never run on a Linux host)
+# /etc/systemd/system/irl-backup.timer  (L1; NOT ENABLED until the manual backup, encryption and restore tests pass)
 [Unit]
-Description=Daily IRL backup
+Description=Daily IRL backup (09:00 India time)
 
 [Timer]
-# 03:30 server time; if the server was off then, run at the next boot.
-OnCalendar=*-*-* 03:30:00
+# 09:00 IST every day (= 03:30 UTC; the distro runs on UTC, the zone is spelled out so nobody has to convert).
+OnCalendar=*-*-* 09:00:00 Asia/Kolkata
+# If the laptop (or WSL) was OFF at 09:00, run once as soon as the timer starts at the next boot instead of missing the day.
+# The service waits for MySQL (After=mysql.service). The timer is independent of the IRL services: it is WantedBy timers.target only.
 Persistent=true
 RandomizedDelaySec=10min
 

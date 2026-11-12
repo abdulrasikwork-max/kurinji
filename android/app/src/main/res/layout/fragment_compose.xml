@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Phase 13B: Share (design §9.5). Choice chips are added in code; nothing about the audience is preselected the first time. -->
+<!-- IRL redesign (R2): Share, made short. The photos or video first, then a few words, then (optionally) a place and who
+     sees it, then Share. Everything else (a tip, when, "good for", category, who can comment) is under "Add details",
+     closed until asked for, with working defaults. The place starts as the profile's city (or no place), so nothing but
+     the words and the audience (asked once, then remembered) is needed. Choice chips are added in code. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -12,34 +15,25 @@
         android:orientation="vertical"
         android:padding="@dimen/screen_padding">
 
-        <TextView
+        <!-- 1. Photos or a video -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/photoList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:accessibilityHeading="true"
-            android:text="@string/compose_heading"
-            android:textAppearance="@style/TextAppearance.Kurinji.Headline.Large" />
+            android:orientation="horizontal"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-        <TextView
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/addPhotosButton"
+            style="@style/Widget.Kurinji.Button.Tonal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xs"
-            android:layout_marginBottom="@dimen/space_md"
-            android:text="@string/compose_subheading"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+            android:minHeight="72dp"
+            android:text="@string/compose_add_media"
+            app:icon="@drawable/ic_camera"
+            app:iconGravity="textStart" />
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/typeGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:selectionRequired="true"
-            app:singleSelection="true" />
-
-        <TextView
-            android:id="@+id/typeHint"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
-
+        <!-- 2. The words -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/bodyLayout"
             android:layout_width="match_parent"
@@ -53,66 +47,31 @@
                 android:layout_height="wrap_content"
                 android:gravity="top"
                 android:inputType="textMultiLine|textCapSentences"
-                android:minLines="4" />
+                android:minLines="3" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tipLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_sm"
-            android:hint="@string/social_tip_label">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/tipInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textMultiLine|textCapSentences" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <TextView
-            style="@style/SocialSectionTitle"
-            android:text="@string/social_photos_title" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/social_photos_note"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/photoList"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_sm"
-            android:orientation="horizontal"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/addPhotosButton"
-            style="@style/Widget.SafeSphere.Button.Secondary"
+        <com.google.android.material.chip.Chip
+            android:id="@+id/questionChip"
+            style="@style/Widget.Kurinji.Chip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:checkable="true"
             android:minHeight="@dimen/min_touch_target"
-            android:text="@string/social_add_photos" />
+            android:text="@string/compose_question_chip" />
 
-        <TextView
-            style="@style/SocialSectionTitle"
-            android:text="@string/social_where_title" />
-
-        <TextView
-            android:id="@+id/placeText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-
+        <!-- 3. Where (optional): one row; the place picker is one tap away. -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/choosePlaceButton"
             style="@style/Widget.SafeSphere.Button.Secondary"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:gravity="start|center_vertical"
             android:minHeight="@dimen/min_touch_target"
-            android:text="@string/social_choose_place" />
+            android:text="@string/compose_place_add"
+            app:icon="@drawable/ic_place"
+            app:iconTint="?attr/colorOnSurface" />
 
         <TextView
             android:id="@+id/precisionTitle"
@@ -166,67 +125,15 @@
             app:noticeText="@string/social_delay_notice"
             app:noticeType="info" />
 
+        <!-- What others will see of the place, in words. -->
         <TextView
-            android:id="@+id/whenTitle"
-            style="@style/SocialSectionTitle"
-            android:text="@string/social_when_title" />
-
-        <Spinner
-            android:id="@+id/monthSpinner"
+            android:id="@+id/summaryLine"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="@dimen/min_touch_target" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_sm"
-            android:text="@string/social_daypart_title"
-            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/daypartGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:singleSelection="true" />
-
-        <!-- Phase 17G-1: optional Explore tags, an Experience only (hidden for an Ask). -->
-        <TextView
-            android:id="@+id/facetsTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_sm"
-            android:text="@string/social_facets_title"
-            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/facetGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/facetsNote"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/social_facets_note"
+            android:layout_marginTop="@dimen/space_xs"
             android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/social_after_note"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
-
-        <TextView
-            style="@style/SocialSectionTitle"
-            android:text="@string/social_category_title" />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/categoryGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:singleSelection="true" />
-
+        <!-- 4. Who sees it: asked the first time, remembered afterwards. -->
         <TextView
             style="@style/SocialSectionTitle"
             android:text="@string/social_audience_title" />
@@ -242,42 +149,125 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:accessibilityLiveRegion="polite"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
 
-        <TextView
-            android:id="@+id/commentsTitle"
-            android:layout_width="match_parent"
+        <!-- 5. Everything optional, closed until asked for. -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/detailsToggle"
+            style="@style/Widget.SafeSphere.Button.Text"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:text="@string/social_comments_title"
-            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/commentGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:singleSelection="true" />
-
-        <!-- Phase 13D (Q6): only with "Everyone can add perspectives". -->
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/approveFirstSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
             android:minHeight="@dimen/min_touch_target"
-            android:text="@string/approve_first_switch"
-            android:visibility="gone" />
+            android:text="@string/compose_details_show"
+            app:icon="@drawable/ic_tune" />
 
-        <!-- What others will see of the place, in words (Phase 16: the 13F postmark is gone). -->
-        <TextView
-            android:id="@+id/summaryLine"
+        <LinearLayout
+            android:id="@+id/detailsBlock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:drawablePadding="@dimen/space_sm"
-            android:gravity="center_vertical"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-            app:drawableStartCompat="@drawable/ic_place"
-            app:drawableTint="?attr/colorPrimary" />
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tipLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:hint="@string/social_tip_label">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/tipInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textMultiLine|textCapSentences" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:id="@+id/whenTitle"
+                style="@style/SocialSectionTitle"
+                android:text="@string/social_when_title" />
+
+            <Spinner
+                android:id="@+id/monthSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/min_touch_target" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/social_daypart_title"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/daypartGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:singleSelection="true" />
+
+            <!-- Phase 17G-1: optional Explore tags, an Experience only (hidden for a question). -->
+            <TextView
+                android:id="@+id/facetsTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/social_facets_title"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/facetGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/facetsNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/social_facets_note"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+            <TextView
+                style="@style/SocialSectionTitle"
+                android:text="@string/social_category_title" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/categoryGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:singleSelection="true" />
+
+            <TextView
+                android:id="@+id/commentsTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_md"
+                android:text="@string/social_comments_title"
+                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/commentGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:singleSelection="true" />
+
+            <!-- Phase 13D (Q6): only with "Anyone who can see it". -->
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/approveFirstSwitch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/min_touch_target"
+                android:text="@string/approve_first_switch"
+                android:visibility="gone" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/social_photos_note"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/issuesText"
@@ -288,7 +278,7 @@
             android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
             android:visibility="gone" />
 
-        <!-- Phase 17A: next to the Share button, where the person is when sharing fails (it was at the top). -->
+        <!-- Phase 17A: next to the Share button, where the person is when sharing fails. -->
         <com.safesphere.app.core.ui.components.NoticeView
             android:id="@+id/errorNotice"
             android:layout_width="match_parent"

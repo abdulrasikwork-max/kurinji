@@ -137,6 +137,13 @@
         android:label="@string/nav_you"
         tools:layout="@layout/fragment_you" />
 
+    <!-- IRL redesign (R4): You → Settings and more (private places, reading, community, account, log out) -->
+    <fragment
+        android:id="@+id/moreFragment"
+        android:name="com.safesphere.app.feature.profile.ui.MoreFragment"
+        android:label="@string/title_more"
+        tools:layout="@layout/fragment_more" />
+
     <!-- You → Safety: the safety tools (secondary screen since 13F) -->
     <fragment
         android:id="@+id/safetyFragment"

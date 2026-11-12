@@ -221,13 +221,6 @@
                 android:layout_weight="1" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/whyButton"
-                style="@style/Widget.Kurinji.Button.Small"
-                android:contentDescription="@string/discover_why_title"
-                android:text="@string/discover_why"
-                android:visibility="gone" />
-
-            <com.google.android.material.button.MaterialButton
                 android:id="@+id/saveButton"
                 style="@style/Widget.Kurinji.Button.Mark"
                 android:text="@string/save_label"

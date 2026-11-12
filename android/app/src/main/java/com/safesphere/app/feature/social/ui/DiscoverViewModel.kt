@@ -52,6 +52,8 @@ data class DiscoverUiState(
     val marking: Set<String> = emptySet(),
     /** One-shot: a save was confirmed by the server (the screen says "Saved" once and the butterfly flies). */
     val savedNow: String? = null,
+    /** IRL redesign (R1), one-shot: a butterfly or Save could not be sent. Said in a short message; the feed stays. */
+    val markFailure: ApiResult.Failure? = null,
     val failure: ApiResult.Failure? = null,
     val sessionExpired: Boolean = false
 )
@@ -60,13 +62,18 @@ data class DiscoverUiState(
  * Phase 13C, rebuilt in Phase 16 (docs/PHASE16.md): Discover is one feed (DiscoverFeed): the city's week (with "Talking
  * now", U2) and posts from people you know, which load the next page as the person nears the end and then END (U3).
  * Saving with the butterfly works from the feed. "Near me" lists places around the person's ~1 km area from ONE fix;
- * only the 6-character area leaves the phone. Nothing is stored on the phone, not even the chosen city.
+ * only the 6-character area leaves the phone. Nothing about other people is stored on the phone; since R6 the person's
+ * own Home city is remembered per account ([HomeCityChoice]), so Home does not ask again at every start.
  */
 class DiscoverViewModel(
     private val repository: DiscoverRepository,
     private val social: SocialRepository,
     private val experiences: ExperienceRepository,
-    private val locationProvider: LocationProvider
+    private val locationProvider: LocationProvider,
+    private val freshness: com.safesphere.app.feature.social.domain.FeedFreshness =
+        com.safesphere.app.feature.social.domain.FeedFreshness(),
+    private val homeCity: com.safesphere.app.feature.social.domain.HomeCityChoice? = null,
+    private val nowMs: () -> Long = { System.nanoTime() / 1_000_000 }
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DiscoverUiState())
@@ -74,13 +81,21 @@ class DiscoverViewModel(
 
     private var started = false
     private var connectionsCursor: String? = null
+    private var loadedAtMs = 0L
+    private var seenVersion = 0
 
-    /** Reads the profile's city once, and loads posts from people you know in parallel. */
+    /** Reads the remembered city (R6), else the profile's city, once; loads posts from people you know in parallel. */
     fun start() {
         if (started) return
         started = true
+        stamp()
         reloadConnections()
         viewModelScope.launch {
+            val remembered = homeCity?.get()
+            if (remembered != null) {
+                show(remembered)
+                return@launch
+            }
             val city = when (val profile = social.ownProfile()) {
                 is ApiResult.Success -> Cities.match(profile.data?.city)
                 is ApiResult.Failure -> {
@@ -88,12 +103,19 @@ class DiscoverViewModel(
                     null
                 }
             }
-            if (city == null) _uiState.update { it.copy(needsCity = true) } else onCity(city)
+            if (city == null) _uiState.update { it.copy(needsCity = true) } else show(city)
         }
     }
 
+    /** The person chose a city on Home: shown, and remembered for this account on this phone (R6). */
     fun onCity(city: City) {
         if (city.isOther) return
+        show(city)
+        viewModelScope.launch { homeCity?.set(city) }
+    }
+
+    private fun show(city: City) {
+        freshness.cityCode = city.code
         _uiState.update { it.copy(city = city, needsCity = false, edition = null, nearby = null, nearNotice = null) }
         loadEdition()
     }
@@ -103,6 +125,34 @@ class DiscoverViewModel(
         _uiState.update { it.copy(failure = null) }
         if (_uiState.value.city != null) loadEdition()
         reloadConnections()
+    }
+
+    /**
+     * IRL redesign (R1): reads the feed again WITHOUT emptying it first (the tab was tapped again, the person came back
+     * after sharing, or the feed is old). The posts on the screen stay until the new ones arrive.
+     */
+    fun refresh() {
+        if (!started) return
+        stamp()
+        _uiState.update { it.copy(failure = null) }
+        if (_uiState.value.city != null) loadEdition()
+        if (!_uiState.value.connectionsLoading) {
+            connectionsCursor = null
+            loadConnections(replace = true)
+        }
+    }
+
+    /** The screen is shown again: read again when the person's own posts changed or the feed is older than [STALE_MS]. */
+    fun onShown() {
+        if (!started) return
+        if (freshness.version != seenVersion || nowMs() - loadedAtMs > STALE_MS) refresh()
+    }
+
+    fun onMarkFailureShown() = _uiState.update { it.copy(markFailure = null) }
+
+    private fun stamp() {
+        loadedAtMs = nowMs()
+        seenVersion = freshness.version
     }
 
     /** U3: the next page of posts from people you know, when the person nears the end (never past the last page). */
@@ -137,8 +187,11 @@ class DiscoverViewModel(
                     confirmed()
                 }
                 is ApiResult.Failure -> {
-                    _uiState.update { it.withPost(postId, undo).copy(marking = it.marking - key) }
-                    fail(result)
+                    // R1: one mark that did not go through is said once; it must not make the whole feed look broken.
+                    _uiState.update {
+                        it.withPost(postId, undo).copy(marking = it.marking - key, markFailure = result,
+                            sessionExpired = it.sessionExpired || result.isSessionExpired())
+                    }
                 }
             }
         }
@@ -218,7 +271,7 @@ class DiscoverViewModel(
         loadConnections()
     }
 
-    private fun loadConnections() {
+    private fun loadConnections(replace: Boolean = false) {
         if (_uiState.value.connectionsLoading) return
         _uiState.update { it.copy(connectionsLoading = true) }
         viewModelScope.launch {
@@ -227,7 +280,7 @@ class DiscoverViewModel(
                     connectionsCursor = result.data.nextCursor
                     _uiState.update {
                         it.copy(connectionsLoading = false, connectionsLoaded = true,
-                            connections = it.connections + result.data.items,
+                            connections = if (replace) result.data.items else it.connections + result.data.items,
                             connectionsHasMore = result.data.nextCursor != null)
                     }
                 }
@@ -246,10 +299,13 @@ class DiscoverViewModel(
     companion object {
         const val SEARCH_MIN = 2
 
+        /** A feed older than this is read again when it is shown (R1). */
+        const val STALE_MS = 5 * 60 * 1000L
+
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
                 DiscoverViewModel(container.discoverRepository, container.socialRepository,
-                    container.experienceRepository, container.screenLocationProvider)
+                    container.experienceRepository, container.screenLocationProvider, container.feedFreshness, homeCity = container.homeCityChoice)
             }
         }
     }

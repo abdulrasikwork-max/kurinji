@@ -9,7 +9,7 @@ Loaded when working on files under `android/`. Safety features: `android-safety.
 
 > **Read with care (checked against the code on 2026-11-03):** this text was written phase by phase. Since 13F
 > there is no `feature/home` (no Home screen, no `HomeStatus`): "Home banner" now means the session banners in
-> `MainActivity` (`SessionStatusViewModel`), "Profile" means the You tab. Since Phase 16/17E the third tab is **Saved**
+> `MainActivity` (`SessionStatusViewModel`), "Profile" means the You tab. Since the IRL redesign (2026-11-11) the bar is Home · Explore · ✚ Share · You and **Saved** is a row of You
 > (`SavedFragment`, nav id still `cocoonFragment`); Cocoon / Want / Been are gone. `feature/rise` was removed in 13F.
 > When this text and the code disagree, the code wins: flag it to the user.
 
@@ -21,11 +21,12 @@ Loaded when working on files under `android/`. Safety features: `android-safety.
   (You), settings, safetycircle, emergency (+ `entry`: SOS shortcut/tile), safewalk, circlealert, evidence, moderation
   (Phase 7), intelligence (Phase 8), account (Phase 10A), social (Phase 13), going (Phase 13F bridge, navigation only).
   `feature/map` (10A), `feature/home` and `feature/rise` (13F, D9) were removed. No screen shows "Coming soon".
-- **Navigation (13F):** Discover · ✚ Share (action → composer) · Cocoon · You; start = Discover. Bar on tabs + reading
+- **Navigation (13F, changed by the IRL redesign 2026-11-11, `docs/IRL_REDESIGN.md`):** Home (`discoverFragment`) · Explore (`exploreFragment`) · ✚ Share (action → composer) · You; start = Home; Saved (`cocoonFragment`) and "Settings and more" (`moreFragment`, `MoreFragment`) are reached from You; a tab re-tap goes to the top and refreshes (`TabReselect`). Bar on tabs + reading
   screens (post, place/category page, person profile); task/safety screens toolbar + back. Safety banners (SOS, walk,
   deletion, sign in to sync) on every tab and reading screen via `MainActivity` + `SessionStatusViewModel`, never on the
   SOS screen. Social and safety never import each other; `feature/going` imports neither (`GoingThereTest`).
 - **DI:** manual `AppContainer` (composition root) via `Fragment.appContainer`; each ViewModel has `factory(container)`.
+- **Two palettes (2026-11-12, IRL-C1):** `core/ui/SocialPalette.appliesTo(className)` (feature packages social, profile, settings, account, auth, onboarding) decides who wears `ThemeOverlay.IRL.Social` (`c_*` colours). `ViewBindingFragment` overrides `getContext()` and `onGetLayoutInflater` for those fragments, so `requireContext()` there is already themed: open sheets and dialogs with it, never with `requireActivity()`. `MainActivity.chromeContext` colours the shared page and toolbar per destination; the bottom bar has the overlay in `activity_main.xml`. Safety features are not in the list and must never be (`SocialPaletteTest`). Headlines use `@font/irl_serif` (Fraunces); `TextAppearance.SafeSphere.Hero.*` stay Mukta Malar.
 - **Networking:** exactly **one** Retrofit instance; all APIs are created from it in `AppContainer`. `AuthInterceptor` adds the
   Bearer token only to the backend origin (scheme+host+port, 17J) and never to `/api/auth/*`. **No HTTP logging interceptor** (bodies contain passwords).
 - **Errors:** Phase 3+ repositories use `core/network/ApiCallHandler` → `ApiResult<T>` (`Success` / `Failure(ApiError, message?)`).
@@ -83,3 +84,11 @@ Loaded when working on files under `android/`. Safety features: `android-safety.
   `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\Users\Public` (backend: `-Dspring-boot.run.jvmArguments=...`).
 - **Tests:** JUnit4 + kotlinx-coroutines-test, `MainDispatcherRule`, fakes in `src/test/.../testing/` (FakeAuthRepository,
   FakeSafetyCircleRepository, FakeEmergencyRepository, FakeAuthApi, FakeSessionStorage…). Countdown tested with virtual time.
+- **Device and emulator gotchas (moved verbatim from CLAUDE.md §12 on 2026-11-12):**
+  - **Real-phone testing over USB:** `android/local.properties` → `api.base.url=http://127.0.0.1:8080/`, rebuild, then
+  `adb -s <serial> reverse tcp:8080 tcp:8080` (lost on every reconnect). Remove the line to go back to the emulator
+  default `10.0.2.2`. Install for `--user 0` on Samsung (Secure Folder user blocks some adb commands). Phone clocks may
+  be off (the A23 was 74.6 s behind): capture times are phone time, `received_at`/`sealed_at` server time — compare
+  them only after measuring the offset.
+  - **Emulator:** starting it with `-no-snapshot-save` can come back from an older snapshot with an older APK installed;
+  check `dumpsys package com.safesphere.app | lastUpdateTime` and reinstall before a walk-through.
