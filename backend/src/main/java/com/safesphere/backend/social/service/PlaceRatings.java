@@ -66,7 +66,7 @@ public class PlaceRatings {
                 .minusDays(RatingPolicy.ESTABLISHED_AFTER_DAYS);
         List<RatingPolicy.Rater> raters = rows.stream().map(row -> new RatingPolicy.Rater(row.userId(), row.rating(),
                 !row.accountCreatedAt().isAfter(establishedBefore),
-                row.placesRated() >= RatingPolicy.BROAD_FROM_PLACES)).toList();
+                row.placesRated() >= RatingPolicy.BROAD_FROM_PLACES, Boolean.TRUE.equals(row.atPlace()))).toList();
         List<RatingPolicy.Link> links = connections.acceptedAmong(rows.stream().map(RaterRow::userId).toList()).stream()
                 .map(c -> new RatingPolicy.Link(c.getUserLow(), c.getUserHigh())).toList();
         return RatingPolicy.display(raters, links);

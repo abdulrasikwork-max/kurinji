@@ -99,11 +99,14 @@ class MySqlPlaceRatersQueryTest {
             for (Map<String, Object> row : jdbc.queryForList(
                     "SELECT v.user_id, v.rating, u.created_at,"
                             + " (SELECT COUNT(*) FROM place_visits o WHERE o.user_id = v.user_id AND o.rating IS NOT NULL) AS rated"
+                            + ", v.at_place"
                             + " FROM place_visits v JOIN users u ON u.id = v.user_id"
-                            + " WHERE v.place_id = ? AND v.rating IS NOT NULL AND u.enabled = 1 AND u.erased_at IS NULL",
+                            + " WHERE v.place_id = ? AND v.rating IS NOT NULL AND u.enabled = 1 AND u.erased_at IS NULL"
+                            + " AND NOT EXISTS (SELECT 1 FROM posts p WHERE p.author_id = v.user_id AND p.place_id = v.place_id"
+                            + " AND p.disclosed = 1)",
                     placeId)) {
                 viaSql.add(row.get("user_id") + "|" + row.get("rating") + "|"
-                        + ((LocalDateTime) row.get("created_at")).toEpochSecond(ZoneOffset.UTC) + "|" + row.get("rated"));
+                        + ((LocalDateTime) row.get("created_at")).toEpochSecond(ZoneOffset.UTC) + "|" + row.get("rated") + "|" + truth(row.get("at_place")));
             }
             assertEquals(viaSql, viaRepository, "raters of place " + placeId);
         }
@@ -132,9 +135,13 @@ class MySqlPlaceRatersQueryTest {
         assertTrue(connections.acceptedAmong(List.of(everyone.get(0))).isEmpty());
     }
 
+    private static boolean truth(Object value) {
+        return value instanceof Boolean b ? b : value instanceof Number n && n.intValue() != 0;
+    }
+
     private static String text(RaterRow row) {
         return row.userId() + "|" + row.rating() + "|" + row.accountCreatedAt().toEpochSecond(ZoneOffset.UTC) + "|"
-                + row.placesRated();
+                + row.placesRated() + "|" + Boolean.TRUE.equals(row.atPlace());
     }
 
     private static String shippedUrl() throws IOException {

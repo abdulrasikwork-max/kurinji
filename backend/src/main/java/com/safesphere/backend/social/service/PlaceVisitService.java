@@ -3,6 +3,7 @@ package com.safesphere.backend.social.service;
 import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.common.exception.ResourceNotFoundException;
+import com.safesphere.backend.community.service.GeoCell;
 import com.safesphere.backend.social.dto.PlaceDtos.VisitResponse;
 import com.safesphere.backend.social.entity.Place;
 import com.safesphere.backend.social.entity.PlaceVisit;
@@ -14,6 +15,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class PlaceVisitService {
     static final String NOT_FOUND = "Place not found";
     static final String WENT_FIRST = "Mark that you went there first";
     static final String CHOOSE = "Choose 1 to 5";
+    static final String BAD_CELL = "Invalid cell";
     /** How many of a place's newest posts are looked at to decide that the caller can see the place. */
     static final int SEE_WINDOW = 20;
 
@@ -63,14 +66,36 @@ public class PlaceVisitService {
     /** "I went": the caller's private record for a place they can see (idempotent; keeps an earlier rating). */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public VisitResponse went(long userId, String placePublicId) {
+        return went(userId, placePublicId, null);
+    }
+
+    /**
+     * Phase 18A-2: the same, and when the phone sent the 7-character [cell] it is in, the visit is marked "at the place" if that
+     * cell is the place's cell or one of the cells around it. The cell is compared here and dropped: it is not stored, not
+     * logged and not echoed. A visit marked earlier from somewhere else can be confirmed by a later call; a confirmation is
+     * never taken back. The answer is the same either way, so the app cannot tell (and cannot probe) what was decided.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public VisitResponse went(long userId, String placePublicId, String cell) {
         access.requireMember(userId);
+        String here = cell == null || cell.isBlank() ? null : cell.trim().toLowerCase(Locale.ROOT);
+        if (here != null && !GeoCell.isValid(here, GeoCell.BLOCK_PRECISION)) throw new InvalidRequestException(BAD_CELL);
         Place place = places.requirePlace(placePublicId);
         if (!canSee(userId, place)) throw new ResourceNotFoundException(NOT_FOUND);
+        boolean atPlace = here != null && GeoCell.neighbourhood(place.getCell()).contains(here);
         PlaceVisit existing = visits.findByUserIdAndPlaceId(userId, place.getId()).orElse(null);
-        if (existing != null) return view(existing);
+        if (existing != null) {
+            if (atPlace && !existing.isAtPlace()) {
+                existing.confirmAtPlace();
+                return view(visits.saveAndFlush(existing));
+            }
+            return view(existing);
+        }
         limits.visit(userId);
         try {
-            return view(visits.saveAndFlush(new PlaceVisit(userId, place.getId(), now())));
+            PlaceVisit visit = new PlaceVisit(userId, place.getId(), now());
+            if (atPlace) visit.confirmAtPlace();
+            return view(visits.saveAndFlush(visit));
         } catch (DataIntegrityViolationException e) {
             // A double tap: the other request stored it, which is what was asked.
             return view(visits.findByUserIdAndPlaceId(userId, place.getId()).orElseThrow(() -> e));
@@ -130,11 +155,16 @@ public class PlaceVisitService {
                 moving.moveTo(intoId);
                 visits.save(moving);
             } else if (staying.getRating() == null && moving.getRating() != null) {
+                if (staying.isAtPlace()) moving.confirmAtPlace(); // 18A-2: the kept row is confirmed if either was
                 visits.delete(staying);
                 visits.flush();
                 moving.moveTo(intoId);
                 visits.save(moving);
             } else {
+                if (moving.isAtPlace() && !staying.isAtPlace()) {
+                    staying.confirmAtPlace();
+                    visits.save(staying);
+                }
                 visits.delete(moving);
             }
             visits.flush();

@@ -133,4 +133,49 @@ class RatingPolicyTest {
         var twice = java.util.List.of(full(1, 5), full(1, 5), full(3, 5), full(4, 5), full(5, 5));
         assertThat(RatingPolicy.display(twice, null)).isNull();
     }
+
+    // ---- Phase 18A-2: presence ----
+
+    private static RatingPolicy.Rater there(long id, int rating, boolean full) {
+        return new RatingPolicy.Rater(id, rating, full, full, true);
+    }
+
+    @Test
+    void aVisitConfirmedAtThePlace_countsOneAndAHalfTimes() {
+        var home = new java.util.ArrayList<RatingPolicy.Rater>();
+        for (long id = 1; id <= 4; id++) home.add(full(id, 3));
+        home.add(full(5, 1));
+        assertThat(RatingPolicy.display(home, null)).isEqualTo("3.1");      // (17.5 + 12 + 1) / 10 = 3.05
+        var one = new java.util.ArrayList<RatingPolicy.Rater>();
+        for (long id = 1; id <= 4; id++) one.add(full(id, 3));
+        one.add(there(5, 1, true));
+        assertThat(RatingPolicy.display(one, null)).isEqualTo("3.0");       // (17.5 + 12 + 1.5) / 10.5 = 2.95
+        var young = new java.util.ArrayList<RatingPolicy.Rater>();
+        for (long id = 1; id <= 5; id++) young.add(there(id, 5, false));
+        assertThat(RatingPolicy.display(young, null)).isEqualTo("4.1");     // 0.75 each: (17.5 + 18.75) / 8.75 = 4.14
+    }
+
+    @Test
+    void presenceNeverReplacesIndependence_fiveFriendsAtThePlaceStillShowNothing() {
+        var raters = new java.util.ArrayList<RatingPolicy.Rater>();
+        var links = new java.util.ArrayList<RatingPolicy.Link>();
+        for (long id = 1; id <= 5; id++) raters.add(there(id, 5, true));
+        for (long id = 2; id <= 5; id++) links.add(new RatingPolicy.Link(1, id));
+        assertThat(RatingPolicy.display(raters, links)).isNull();
+        raters.remove(4);                                                   // and four people at the place are still four
+        assertThat(RatingPolicy.display(raters, null)).isNull();
+    }
+
+    @Test
+    void noWeightIsEverZero_andTheFourWeightsAreTheOnlyOnes() {
+        var seen = new java.util.TreeSet<String>();
+        for (boolean established : new boolean[] {false, true}) {
+            for (boolean broad : new boolean[] {false, true}) {
+                for (boolean atPlace : new boolean[] {false, true}) {
+                    seen.add(RatingPolicy.weight(new RatingPolicy.Rater(1, 3, established, broad, atPlace)).stripTrailingZeros().toPlainString());
+                }
+            }
+        }
+        assertThat(seen).containsExactly("0.5", "0.75", "1", "1.5");
+    }
 }

@@ -1462,4 +1462,10 @@ A compact list of every phase's endpoints and config keys; the sections above ha
   `GET /api/places/{id}/posts` answers two more fields: `rating` = ONE guarded average as text ("4.3") or `null` (needs ≥ 5 counted raters, accounts
   past probation; Bayesian, one decimal; recomputed at most once per IST day; never a count, name or time) and `yourVisit` = `{rating|null}` or `null`
   (the caller's own only). Nothing orders by either.
+- Phase 18A-2 (V31, `docs/PHASE18_TRUST_PLAN.md`; backend built 2026-11-14, Android not yet): `PUT /api/places/{id}/went` accepts an OPTIONAL body
+  `{cell}` = the 7-character cell the phone is in (no coordinate; no body = as before). A malformed cell is `400 "Invalid cell"`. The server compares it
+  with the place's cell and the cells around it, keeps one private bit and drops the cell; the answer is the SAME `200 {rating|null}` whether presence
+  was confirmed or not, and no endpoint returns the bit. `POST /api/posts` and `PUT /api/posts/{id}` accept `disclosed` (bool, Experience only;
+  ignored on a question; an edit can turn it on, `false` or absent never turns it off); every post answer adds `disclosed` (bool). The rating of a
+  person who has a disclosed post at a place is not counted in that place's `rating` (their own `yourVisit` is unchanged).
 - Phase D12: `GET /api/health` (public, `{status: UP|DOWN}`, 503 when the database does not answer; `docs/D12_DEPLOYMENT.md`).

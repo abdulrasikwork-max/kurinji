@@ -5,6 +5,7 @@ import com.safesphere.backend.social.dto.PlaceDtos.PlaceRequest;
 import com.safesphere.backend.social.dto.PlaceDtos.PlaceResponse;
 import com.safesphere.backend.social.dto.PlaceDtos.RatingRequest;
 import com.safesphere.backend.social.dto.PlaceDtos.VisitResponse;
+import com.safesphere.backend.social.dto.PlaceDtos.WentRequest;
 import com.safesphere.backend.social.service.PlaceService;
 import com.safesphere.backend.social.service.PlaceVisitService;
 import jakarta.validation.Valid;
@@ -56,8 +57,10 @@ public class PlaceController {
 
     /** Phase 17G-2 (U5): "I went" - the caller's private record (a place they can see; idempotent). */
     @PutMapping("/{publicId}/went")
-    public VisitResponse went(@AuthenticationPrincipal Jwt jwt, @PathVariable String publicId) {
-        return visits.went(CurrentUser.id(jwt), publicId);
+    public VisitResponse went(@AuthenticationPrincipal Jwt jwt, @PathVariable String publicId,
+                              @Valid @RequestBody(required = false) WentRequest request) {
+        // Phase 18A-2: the body is optional (an older app sends none); with a cell the server may confirm presence.
+        return visits.went(CurrentUser.id(jwt), publicId, request == null ? null : request.cell());
     }
 
     /** Takes "I went" back, and the rating with it. */

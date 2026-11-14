@@ -40,6 +40,13 @@ public class PlaceVisit {
     @Column(name = "rated_at")
     private LocalDateTime ratedAt;
 
+    /**
+     * Phase 18A-2 (V31): "Been here" was tapped while the phone was in the place's cell or a cell around it. One bit; the cell
+     * the phone sent is never stored. Served to nobody (not even the owner); read only for the weight in RatingPolicy.
+     */
+    @Column(name = "at_place", nullable = false)
+    private boolean atPlace;
+
     /** Required by JPA. */
     protected PlaceVisit() {
     }
@@ -59,6 +66,15 @@ public class PlaceVisit {
     public void clearRating() {
         this.rating = null;
         this.ratedAt = null;
+    }
+
+    /** Presence confirmed. Only ever raised: nothing sets it back to false. */
+    public void confirmAtPlace() {
+        this.atPlace = true;
+    }
+
+    public boolean isAtPlace() {
+        return atPlace;
     }
 
     /** A duplicate place was merged into [placeId]: this visit follows it. */

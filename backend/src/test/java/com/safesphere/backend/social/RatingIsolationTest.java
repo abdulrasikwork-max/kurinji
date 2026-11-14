@@ -113,6 +113,44 @@ class RatingIsolationTest {
         assertThat(sql.toLowerCase()).doesNotContain("create table place_ratings");
     }
 
+    /** Phase 18A-2: presence and disclosure. */
+    @Test
+    void presenceIsOneStoredBit_neverAnAnswer_andTheCellIsNeverKept() throws IOException {
+        String place = code(MAIN.resolve("social/dto/PlaceDtos.java"));
+        String discover = code(MAIN.resolve("social/dto/DiscoverDtos.java"));
+        assertThat(place).contains("record WentRequest(").contains("record VisitResponse(Integer rating)");
+        for (String dto : List.of(place.replaceAll("record WentRequest\\([^)]*\\)", ""), discover)) {
+            assertThat(Pattern.compile("(?i)atPlace|at_place|present|confirmed").matcher(dto).find()).isFalse();
+        }
+        // the entity keeps a boolean and no cell; the service compares and neither stores nor logs the cell
+        String entity = code(MAIN.resolve("social/entity/PlaceVisit.java"));
+        assertThat(entity).contains("private boolean atPlace;").doesNotContain("String cell").doesNotContain("setAtPlace");
+        String service = code(MAIN.resolve("social/service/PlaceVisitService.java"));
+        assertThat(service).contains("GeoCell.neighbourhood(place.getCell()).contains(here)").doesNotContain("LoggerFactory");
+        // only the rating code reads the bit
+        List<String> readers = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(MAIN)) {
+            for (Path file : files.filter(p -> p.toString().endsWith(".java")).toList()) {
+                if (Pattern.compile("\\.isAtPlace\\(|\\.atPlace\\(|v\\.atPlace").matcher(code(file)).find()) {
+                    readers.add(MAIN.relativize(file).toString().replace('\\', '/'));
+                }
+            }
+        }
+        assertThat(readers).containsExactlyInAnyOrder("social/service/PlaceVisitService.java", "social/service/PlaceRatings.java",
+                "social/policy/RatingPolicy.java",
+                "social/repository/PlaceVisitRepository.java");
+        String sql = Files.readString(SQL.resolveSibling("V31__presence_and_disclosure.sql"), StandardCharsets.UTF_8);
+        assertThat(sql).contains("ck_place_visits_at_place").contains("ck_posts_disclosed");
+        assertThat(sql.replaceAll("(?m)^--.*$", "").toLowerCase()).doesNotContain("cell").doesNotContain("create table");
+    }
+
+    @Test
+    void aDisclosedVisitIsLeftOutInTheOneRatersQuery_andDisclosureIsNeverTurnedOff() throws IOException {
+        assertThat(code(MAIN.resolve("social/repository/PlaceVisitRepository.java"))).contains("NOT EXISTS").contains("p.disclosed = true");
+        String post = code(MAIN.resolve("social/entity/Post.java"));
+        assertThat(post).contains("public void disclose()").doesNotContain("setDisclosed").doesNotContain("disclosed = false");
+    }
+
     private static long count(String text, String needle) {
         long n = 0;
         for (int at = text.indexOf(needle); at >= 0; at = text.indexOf(needle, at + 1)) n++;

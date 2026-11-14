@@ -6,7 +6,7 @@ paths:
 ---
 # Database migrations (moved verbatim from CLAUDE.md §7 on 2026-11-03)
 
-The key rules of every applied migration. Conventions (next file **V30**) stay in `CLAUDE.md` §7. Never edit an applied
+The key rules of every applied migration. Conventions (next file **V32**) stay in `CLAUDE.md` §7. Never edit an applied
 migration; verify each new one on real MySQL (backup, CHECK dry run on a scratch copy, apply).
 
 | Migration | Table | Key rules |
@@ -66,5 +66,7 @@ migration; verify each new one on real MySQL (backup, CHECK dry run on a scratch
 
 | V30 | `place_visits` | Phase 17G-2 (U5): one row per (person, place): `id`, `user_id` FK users + `place_id` FK places both `ON DELETE CASCADE`, `rating` TINYINT NULL, `created_at`, `rated_at` NULL; `UNIQUE (user_id, place_id)`; CHECK `rating IS NULL OR rating BETWEEN 1 AND 5`, CHECK `rated_at` set exactly when `rating` is (both on non-FK columns); index (place_id, rating). Private to its owner; the rating lives on the visit row, so it cannot exist without "I went". Backup first; dry run on a scratch table 15/15 (4 accepted + 11 refused); applied on MySQL 8.0 (2026-11-03) |
 
-Conventions: never edit an applied migration; next file is **V31**; snake_case; `DATETIME(6)` stored in UTC; constraint
+| V31 | `place_visits.at_place`, `posts.disclosed` | Phase 18A-2 (P18-4, P18-5): two `TINYINT(1) NOT NULL DEFAULT 0` columns, each with a CHECK `IN (0, 1)` (non-FK columns); existing rows become 0; no new table (the eraser already covers both tables). `at_place` = "Been here" was tapped in the place's cell or a cell around it: one private bit, the cell is never stored, served to nobody. `disclosed` = the author said the visit was paid or free: shown as a label, turned on only (in code), and that author's rating for the place is left out of `PlaceVisitRepository.raters`. Backup first; dry run on scratch copies 6 accepted + 6 refused; applied on MySQL 8.0.46, the DEVELOPMENT database (2026-11-14). NOT applied on the pilot |
+
+Conventions: never edit an applied migration; next file is **V32**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.

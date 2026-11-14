@@ -35,7 +35,9 @@ public final class PostDtos {
 
             Boolean approveFirst,
             /** Phase 17G-1: Explore tags ("Good for..."), an Experience only, none to four from the closed list. */
-            @Size(max = 8, message = "Choose at most 4 tags") List<@Size(max = 30) String> facets) {
+            @Size(max = 8, message = "Choose at most 4 tags") List<@Size(max = 30) String> facets,
+            /** Phase 18A-2: "I was paid, or got this free" (an Experience only; null or false = not said). */
+            Boolean disclosed) {
     }
 
     /**
@@ -54,7 +56,9 @@ public final class PostDtos {
             @Size(max = 12, message = "Unknown comment setting") String commentPolicy,
             Boolean approveFirst,
             /** Phase 17G-1: null = the tags stay as they are; an empty list = remove them all; otherwise the new tags. */
-            @Size(max = 8, message = "Choose at most 4 tags") List<@Size(max = 30) String> facets) {
+            @Size(max = 8, message = "Choose at most 4 tags") List<@Size(max = 30) String> facets,
+            /** Phase 18A-2: true turns the "paid or gifted" label on; null or false leaves it as it is (it is never turned off). */
+            Boolean disclosed) {
     }
 
     /**
@@ -102,6 +106,7 @@ public final class PostDtos {
      * Phase 16 (U1): [commentCount] = how many perspectives THIS viewer can read on the post (the length of the list
      * GET /api/posts/{id}/comments gives them); the only public number on a post.
      * Phase 17G-1: [facets] = the Explore tags the author chose (closed list, never a count); empty when none.
+     * Phase 18A-2: [disclosed] = the author said the visit was paid for or free of charge; every reader sees the label.
      */
     public record PostResponse(String publicId, String type, PersonSummary author, boolean own, String body, String tip,
                                String category, String precision, PostPlace place, String areaCell, String city,
@@ -110,14 +115,14 @@ public final class PostDtos {
                                Instant postedAt, Instant visibleFrom, boolean youReacted, boolean saved,
                                ButterflyTally butterflies, boolean approveFirst, ModerationView moderation,
                                String collapsed, boolean strongLanguage, Boolean supportSuggested, int commentCount,
-                               List<String> facets) {
+                               List<String> facets, boolean disclosed) {
 
         /** The same answer with the one-time support flag (the author's own write answer). */
         public PostResponse withSupport(boolean support) {
             return new PostResponse(publicId, type, author, own, body, tip, category, precision, place, areaCell, city,
                     experiencedMonth, daypart, postedPeriod, edited, media, audience, commentPolicy, canComment,
                     postedAt, visibleFrom, youReacted, saved, butterflies, approveFirst, moderation, collapsed,
-                    strongLanguage, support ? Boolean.TRUE : null, commentCount, facets);
+                    strongLanguage, support ? Boolean.TRUE : null, commentCount, facets, disclosed);
         }
     }
 

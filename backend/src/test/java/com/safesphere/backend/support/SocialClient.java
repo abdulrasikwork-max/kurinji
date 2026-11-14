@@ -340,6 +340,11 @@ public final class SocialClient {
         return perform(who.token(), put("/api/places/{id}/went", placeId), null);
     }
 
+    /** Phase 18A-2: "Been here" with the cell the phone is in. */
+    public ResultActions went(Person who, String placeId, String cell) throws Exception {
+        return perform(who.token(), put("/api/places/{id}/went", placeId), java.util.Map.of("cell", cell));
+    }
+
     public ResultActions notWent(Person who, String placeId) throws Exception {
         return perform(who.token(), delete("/api/places/{id}/went", placeId), null);
     }

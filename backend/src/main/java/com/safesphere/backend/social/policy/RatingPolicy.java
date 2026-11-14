@@ -48,18 +48,30 @@ public final class RatingPolicy {
     public static final int BROAD_FROM_PLACES = 3;
     private static final BigDecimal FULL = BigDecimal.ONE;
     private static final BigDecimal HALF = new BigDecimal("0.5");
+    /** Phase 18A-2: how much more a rating counts when "Been here" was tapped at the place. */
+    public static final BigDecimal PRESENT_FACTOR = new BigDecimal("1.5");
 
     /** One counted rating with the two facts that decide its weight. Server-side only: never part of an answer. */
-    public record Rater(long userId, int rating, boolean established, boolean broad) {
+    public record Rater(long userId, int rating, boolean established, boolean broad, boolean atPlace) {
+
+        /** A rater whose visit was not confirmed at the place. */
+        public Rater(long userId, int rating, boolean established, boolean broad) {
+            this(userId, rating, established, broad, false);
+        }
     }
 
     /** Two raters who are connected to each other (an accepted connection). */
     public record Link(long a, long b) {
     }
 
-    /** Full weight for an established account that rates different places; half otherwise. Never zero: nobody is silenced. */
-    static BigDecimal weight(Rater rater) {
-        return rater.established() && rater.broad() ? FULL : HALF;
+    /**
+     * Full weight for an established account that rates different places; half otherwise. Phase 18A-2 (P18-4): a visit that was
+     * confirmed at the place counts {@link #PRESENT_FACTOR} times that (0.75 or 1.5). Never zero: nobody is silenced. Presence
+     * only makes a voice louder; it never replaces the {@link #MIN_RATERS} independent groups.
+     */
+    public static BigDecimal weight(Rater rater) {
+        BigDecimal base = rater.established() && rater.broad() ? FULL : HALF;
+        return rater.atPlace() ? base.multiply(PRESENT_FACTOR) : base;
     }
 
     /**

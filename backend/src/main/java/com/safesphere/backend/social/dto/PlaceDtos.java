@@ -27,6 +27,13 @@ public final class PlaceDtos {
             @Max(value = 5, message = "Choose 1 to 5") Integer rating) {
     }
 
+    /**
+     * Phase 18A-2: the OPTIONAL body of PUT /api/places/{id}/went. [cell] = the 7-character cell the phone is in right now (no
+     * coordinate). It is compared with the place's cell and dropped; nothing in any answer says what the comparison found.
+     */
+    public record WentRequest(@Size(max = 12, message = "Invalid cell") String cell) {
+    }
+
     /** Phase 17G-2 (U5): the caller's OWN visit: [rating] is their own rating or null (went, not rated). Never anyone else's. */
     public record VisitResponse(Integer rating) {
     }

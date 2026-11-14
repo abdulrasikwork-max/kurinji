@@ -96,7 +96,7 @@ Phases 1–3 are the foundation.
 | IRL redesign | R1-R7 + 2026-11-12 identity (social palette, Fraunces, mark = Tamil letter ai + new opening (IRL-C10/11, approved), "Been here", "Want to go"; `docs/IRL_REDESIGN.md`) | tested (1069/0), A23 dark mode (5 screens) | light mode, large text, TalkBack, media upload |
 | 17I | brand; regression | planned | — |
 
-Next migration **V31**. Each phase or sub-phase needs its own plan and the user's approval first.
+Next migration **V32**. Each phase or sub-phase needs its own plan and the user's approval first.
 
 **Never implement early:** Verified Nearby Assistance (Phase 12; "Circle Response" in `PHASE10_DESIGN.md` §32 stays a
 proposal); advanced route intelligence (a real route planner needs an on-device routing graph + a new privacy review,
@@ -268,7 +268,7 @@ cd android
 
 ## 7. Database (MySQL `safesphere`, Flyway) — per-migration rules in `.claude/rules/database.md`
 
-Conventions: never edit an applied migration; next file is **V31**; snake_case; `DATETIME(6)` stored in UTC; constraint
+Conventions: never edit an applied migration; next file is **V32**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci. "One active /
 one primary / one open" via a generated marker column + unique index. MySQL forbids CHECKs on cascading-FK columns
 (enforce those rules in code); write NULL cases out with `COALESCE` (a NULL makes `IN` UNKNOWN, which a CHECK lets pass);
@@ -285,6 +285,7 @@ closed lists use binary collation.
 | V25–V28 | e-mail verification (superseded); phone verification `phone_challenges`; `post_media.kind` (video); `cities`, `saved_posts`, `daily_states`, `profiles.photo_key` |
 | V29 | `post_facets` (Explore tags on experiences, 13 closed codes, ≤ 4 per post in code) |
 | V30 | `place_visits` ("I went" + optional rating 1–5 on the same row, private to its owner) |
+| V31 | `place_visits.at_place`, `posts.disclosed` (18A-2) |
 
 ---
 

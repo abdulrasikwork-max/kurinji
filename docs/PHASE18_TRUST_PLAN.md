@@ -96,3 +96,136 @@ mostly said, per question, only from 5 groups: "Mostly quiet · Best in the morn
   (the two opt-in real-MySQL classes).
 - **Not verified:** the live pilot still runs the old jar; the pilot's own MySQL (8 in WSL) was not touched. **Known limit:** `acceptedAmong` uses two `IN` lists of all raters of the place (fine for the
   pilot; a place with thousands of raters needs a join instead).
+
+## 18A-2 detailed plan (2026-11-14): presence (A3) + disclosure (A5), migration V31 - AWAITING THE OWNER'S APPROVAL, nothing built
+
+Gate: the pilot's backup + rehearsed restore passed on 2026-11-14 (`docs/D12_DEPLOYMENT.md` section 10). Code inspected for
+this plan: `V30`, `PlaceVisit`, `PlaceVisitService`, `PlaceVisitRepository.raters`, `PlaceRatings`, `RatingPolicy`,
+`PlaceController`, `PostDtos`, `GeoCell`, `SocialIsolationTest`, Android `DiscoverApi`, `PlaceVisits`, `WentSheet`, `ExperienceDtos`.
+
+### Scope (two changes to section 18A above, both proposed, the owner decides)
+- **V31 holds only what 18A-2 uses:** `place_visits.at_place` and `posts.disclosed`. The table `place_rating_holds` moves to
+  18A-3 with the burst hold that reads it (then V32; 18B becomes V33). An unused table should not reach the pilot early.
+- **The report reason "Undisclosed promotion" moves to 18A-3.** It is a new value in FIVE closed-list CHECKs of V23
+  (`content_reports`, `posts.moderation_reason`, `comments.moderation_reason`, `social_strikes`, `social_standing`) plus the
+  moderator screens: moderation work, reviewed with A4. Until then a person reports such a post as Spam or Other.
+
+### Migration V31 (`V31__presence_and_disclosure.sql`)
+```sql
+ALTER TABLE place_visits ADD COLUMN at_place TINYINT(1) NOT NULL DEFAULT 0,
+    ADD CONSTRAINT ck_place_visits_at_place CHECK (at_place IN (0, 1));
+ALTER TABLE posts ADD COLUMN disclosed TINYINT(1) NOT NULL DEFAULT 0,
+    ADD CONSTRAINT ck_posts_disclosed CHECK (disclosed IN (0, 1));
+```
+Neither column is part of a foreign key (CHECK allowed); NOT NULL, so no NULL case; existing rows become 0; no new table, so
+`AccountEraserCoverageTest` is unaffected (`place_visits` and `posts` are already erased with the account).
+
+### A3 presence (backend)
+- `PUT /api/places/{id}/went` accepts an OPTIONAL body `{"cell": "<7 characters>"}` (`@RequestBody(required = false)`; an
+  old app sends none and behaves as today). Malformed cell: 400. A valid cell is compared with `GeoCell.neighbourhood(place.cell)`
+  (the place's cell and the cells around it; the exact set is read from `GeoCell` when building); inside it, `at_place = 1`.
+  **The cell is compared and dropped: never stored, never logged.**
+- A row that exists with `at_place = 0` may be raised to 1 by a later call with a matching cell (the person marked it from
+  home and comes back); it is never lowered. One upgrade per row, so no new limit is needed.
+- `VisitResponse` does NOT change: the app is never told whether presence was confirmed (no badge, nothing to probe).
+- `RaterRow` + `RatingPolicy.Rater` gain `atPlace`; `weight` = (0.5 or 1.0 as in P18-2) x 1.5 when present. Still 5
+  independent groups; presence never replaces that. Proposed decision **P18-4**: x 1.5.
+- `mergePlace`: the surviving row is present if either row was.
+
+### A3 presence (Android)
+- "Been here" sends `went` at once WITHOUT a cell (the tap must never wait for GPS). Only if location is ALREADY allowed
+  (no prompt on this tap), `PlaceVisits` asks the existing `PreciseFix` path for one fix, at most about 10 s, accuracy
+  100 m or better (the 17D rule), and then sends the same `PUT` again with the cell. Denied, rough or late: nothing more is
+  sent. The search stops in `onStop`. No screen registers a launcher or reads a stream (`Phase17DLocationTest` stays green).
+- Honesty: one line in the "How was it?" sheet and in About, e.g. "If location is on, we check that you are near this
+  place. Nobody sees it." (wording through `SocialTextsTest` / `HonestyTextsTest`).
+
+### A5 disclosure (backend)
+- `PostRequest.disclosed` (Boolean, Experience only; ignored for a question). `PostEditRequest.disclosed`: may be turned ON
+  later, never OFF (like the audience, which may only narrow). `PostResponse.disclosed` for every reader of the post.
+- `raters` gains: `AND NOT EXISTS (a post by this rater at this place with disclosed = true)`. The rating is still saved
+  and shown to its owner. This is said up front in the composer ("your rating for this place will not count towards its
+  average"), so it is a stated rule, not a silent one.
+- No change to Home, Explore or any order: a disclosed post is listed like any other.
+
+### A5 disclosure (Android)
+- Composer, under "Add details", Experience only: switch "I was paid, or got this free" + the one-line consequence.
+- Card and post page: a plain text label "Paid or gifted visit" (neutral colour: not amber, which means moderation; not red).
+- Edit screen: the switch can be turned on; once on it is shown locked.
+
+### Files
+- **Backend:** `V31__presence_and_disclosure.sql`; `PlaceVisit`, `Post`; `PlaceDtos` (went body), `PostDtos`;
+  `PlaceController`, `PlaceVisitService`, `PostService`; `PlaceVisitRepository.raters`, `PlaceRatings`, `RatingPolicy`.
+- **Android:** `DiscoverApi`, `RemoteDiscoverRepository`, `DiscoverRepository`, `PlaceVisits`, `PostFragment`,
+  `PostCollectionFragment`, `WentSheet`; `ExperienceDtos`, composer draft + `ComposeFragment` / `ComposeViewModel`, card
+  adapter, `item_experience_card.xml`, `fragment_post.xml`, `strings.xml`. No new permission, dependency or service.
+- **Docs:** `API.md` (+ appendix), `DECISIONS.md` (P18-4 to P18-6), `STATUS.md`, `HANDOFF.md`, `.claude/rules/database.md`,
+  `backend.md`, `android-social.md`, `CLAUDE.md` (next migration V32; it is at its 40k limit: move text, add one line).
+
+### Tests
+- `RatingPolicyTest`: present weighs x 1.5; five present but CONNECTED raters still show nothing; no weight is ever 0.
+- `Phase17g2VisitsApiTest`: no body, near cell, far cell, malformed cell (400), upgrade 0 to 1, never 1 to 0, answer
+  unchanged; a disclosed author's rating is not counted and is still returned to them.
+- Post API tests: disclosed stored and returned to author / connection / stranger; edit on, not off; a question ignores it.
+- `RatingIsolationTest`: no DTO field for presence; only `PlaceRatings` reads it. `SocialIsolationTest`, `EvaluationIsolationTest` untouched.
+- `MySqlPlaceRatersQueryTest` (opt-in, real MySQL): the changed `raters` query.
+- Android: `PlaceVisits` (first call without a cell; a second only when allowed AND precise; none when denied), composer
+  draft, the label, text guard tests, `Phase17DLocationTest`.
+
+### Verification order (each step reported with its real result)
+1. Backend + Android unit tests, `assembleDebug`, lint.
+2. **Development MySQL (Windows):** backup, dry run of the two CHECKs on a scratch copy (accepted and rejected values),
+   apply V31 by starting the backend, `SAFESPHERE_MYSQL_TESTS=true`, a live API walk (two accounts).
+3. Emulator, then the A23 (Been here at / away from a place cannot be told apart on screen: checked in the database on
+   the DEVELOPMENT server only).
+4. **Pilot: a separate step with its own approval.** `restore-rehearsal.sh` PASS immediately before, stop `irl-backend`,
+   keep the old jar, new jar, read the journal for the Flyway line that V31 was applied, smoke test. Rollback = that
+   run's dump + the old jar (Flyway only goes forward). Note: that jar also brings 18A-1 to the pilot for the first time.
+
+### Privacy and security review points
+- A social request carries a cell and no coordinate (already the rule; places are created the same way). The cell says
+  where the person is at that moment: it is used for one comparison and dropped; `at_place` is one private bit on the
+  person's own row, served to nobody (not even to them), erased with the account.
+- Nobody can use it to watch a person: no other account, and no moderator screen, reads `at_place`.
+- A mock location defeats presence: it raises the cost of a fake rating, it is not proof (documented limit).
+- Disclosure is self-declared: an undeclared paid visit is caught only by a report (human decision, 18A-3 adds the reason).
+
+### Risks
+- A second request after the tap on a slow line (the pilot's hotspot): small, sent only when a precise fix exists.
+- The weight table grows (0.5, 0.75, 1.0, 1.5): still one pure function with a case table.
+- "Turn on, never off" for disclosure may surprise someone who switched it on by mistake: they can delete the post.
+
+### Decisions the owner is asked for
+1. V31 = the two columns only; holds table and the new report reason move to 18A-3 (recommended).
+2. Presence weight x 1.5 (P18-4).
+3. Presence is automatic when location is already allowed, with the sentence in the sheet and About (recommended), or an
+   explicit switch in the sheet.
+4. Disclosure can be turned on by an edit but not off (recommended).
+5. The composer tells the author up front that a disclosed visit's rating does not count (recommended).
+
+### 18A-2 backend as built (2026-11-14) - the owner approved all five decisions as recommended ("approved, start with the migration and backend")
+
+- **Status: backend implemented, compiled, tested; V31 verified and applied on the DEVELOPMENT MySQL. Android: not started. Pilot: not touched (old jar, schema V30).**
+- Built exactly as planned above: `V31__presence_and_disclosure.sql`; `PlaceVisit.atPlace` (`confirmAtPlace()`, no setter back);
+  `Post.disclosed` (`disclose()`, on only); `PlaceDtos.WentRequest`; `PlaceController.went` (optional body);
+  `PlaceVisitService.went(user, place, cell)` + merge rule; `PlaceVisitRepository.raters` (`atPlace`, NOT EXISTS disclosed post);
+  `PlaceRatings`; `RatingPolicy.weight` (x `PRESENT_FACTOR` 1.5, now public for its test); `PostDtos` + `PostService`.
+  One detail decided while building: a BLANK cell counts as no cell (200), only a non-blank malformed one is 400.
+- **Tests:** full backend suite **928 run, 0 failures, 0 errors, 4 skipped** (the two opt-in real-MySQL classes); was 914. New:
+  `Phase18a2PresenceDisclosureApiTest` (9), `RatingPolicyTest` +3 (12 to 15), `RatingIsolationTest` +2 (6 to 8). Android and
+  Python not touched, not re-run.
+- **Real MySQL 8.0.46 (development database on Windows):** backup `safesphere-before-v31.sql` (46 tables, session scratchpad:
+  it does not survive the session); dry run on scratch copies of both tables with all 16 + 16 real rows: **6 accepted + 6
+  refused** (2, -1 and NULL refused for each column; existing rows 0; default 0), scratch tables dropped; Flyway on start-up:
+  "Successfully applied 1 migration ... now at version v31", health 200, backend stopped again; columns and both CHECKs read back
+  from `information_schema`. `MySqlPlaceRatersQueryTest`: **2 run, 0 failures** with 6 visits temporarily marked present and one
+  rater temporarily given a disclosed post at the place (the repository and plain SQL agree; the disclosed rater is left out:
+  4 of 5); that temporary data was put back (0 present, 0 disclosed, the visit's owner restored).
+- **NOT verified:** a live two-account API walk against MySQL (no test account with a known password on the development
+  server; H2 API tests + the real-MySQL query test stand in for it); anything on Android; anything on the pilot.
+- **Next:** Android (presence call + honesty line; composer switch, label, edit lock), then emulator and A23, then the pilot
+  deploy as its own approved step after a fresh `restore-rehearsal.sh` PASS.
+
+### Viva questions this step must answer
+Why a boolean and not the cell? Why is presence optional? Why can a mock location not buy a rating by itself (5 independent
+groups still needed)? Why does a paid post stay visible but stop counting? Why is the person not told "confirmed"?

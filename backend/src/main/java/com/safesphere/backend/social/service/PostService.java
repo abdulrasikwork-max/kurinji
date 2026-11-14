@@ -182,6 +182,7 @@ public class PostService {
                 precision == Precision.AREA ? place.getAreaCell() : null, precision == Precision.CITY ? city : null);
         post.setSharing(audience, commentPolicy);
         post.setApproveFirst(approveFirst);
+        if (type == PostType.EXPERIENCE && Boolean.TRUE.equals(request.disclosed())) post.disclose(); // 18A-2
         posts.saveAndFlush(post);
         attach(userId, post, mediaIds);
         saveFacets(post.getId(), facets);
@@ -260,6 +261,8 @@ public class PostService {
             if (post.isInReview()) revisions.save(new PostRevision(post.getId(), post.getBody(), post.getTip(), now));
         }
         post.setApproveFirst(approveFirst);
+        // 18A-2: a disclosure can be added later; nothing turns it off again.
+        if (post.getType() == PostType.EXPERIENCE && Boolean.TRUE.equals(request.disclosed())) post.disclose();
         post.setContent(body, tip, category, month == null ? null : month.atDay(1), daypart);
         post.setLocation(precision, placeId, areaCell, newCity);
         post.setSharing(audience, commentPolicy);
@@ -436,7 +439,7 @@ public class PostService {
                             post.getModerationSource(), post.getModerationSpans()) : null,
                     own ? null : collapsed(post.getModeration(), post.getModerationSource()),
                     post.isStrongLanguage(), null, readable.getOrDefault(post.getId(), 0),
-                    facetsByPost.getOrDefault(post.getId(), List.of())));
+                    facetsByPost.getOrDefault(post.getId(), List.of()), post.isDisclosed()));
         }
         return out;
     }
