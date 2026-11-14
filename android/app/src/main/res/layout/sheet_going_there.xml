@@ -44,12 +44,6 @@
         app:drawableStartCompat="@drawable/ic_route" />
 
     <TextView
-        android:id="@+id/wayRow"
-        style="@style/Widget.Kurinji.SheetRow"
-        android:text="@string/going_way"
-        app:drawableStartCompat="@drawable/ic_place" />
-
-    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_md"

@@ -163,32 +163,12 @@
         android:label="@string/sos_options_title"
         tools:layout="@layout/fragment_sos_options" />
 
-    <fragment
-        android:id="@+id/communityFragment"
-        android:name="com.safesphere.app.feature.community.ui.CommunityFragment"
-        android:label="@string/nav_community"
-        tools:layout="@layout/fragment_community" />
-
     <!-- Phase 7: moderator screens (secondary; the server checks the role on every call) -->
     <fragment
         android:id="@+id/moderationFragment"
         android:name="com.safesphere.app.feature.moderation.ui.ModerationFragment"
         android:label="@string/title_moderation"
-        tools:layout="@layout/fragment_moderation">
-        <action
-            android:id="@+id/action_moderation_to_case"
-            app:destination="@id/moderationCaseFragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/moderationCaseFragment"
-        android:name="com.safesphere.app.feature.moderation.ui.ModerationCaseFragment"
-        android:label="@string/title_moderation_case"
-        tools:layout="@layout/fragment_moderation_case">
-        <argument
-            android:name="caseId"
-            app:argType="string" />
-    </fragment>
+        tools:layout="@layout/fragment_moderation" />
 
     <!-- Phase 13D: a reported post, perspective or person (moderators; the server checks the role on every call) -->
     <fragment
@@ -261,16 +241,12 @@
         android:name="com.safesphere.app.feature.safewalk.ui.SafeWalkFragment"
         android:label="@string/title_safe_walk"
         tools:layout="@layout/fragment_safe_walk">
-        <!-- Phase 13F: filled in by "Going there?"; the person still presses Start or Check the way. -->
+        <!-- Phase 13F: filled in by "Going there?"; the person still presses Start. -->
         <argument
             android:name="destinationLabel"
             android:defaultValue="@null"
             app:argType="string"
             app:nullable="true" />
-        <argument
-            android:name="checkWay"
-            android:defaultValue="false"
-            app:argType="boolean" />
     </fragment>
 
     <!-- Phase 10A: Account and security (password change, account deletion) -->

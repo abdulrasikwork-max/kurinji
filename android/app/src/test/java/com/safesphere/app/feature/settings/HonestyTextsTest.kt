@@ -3,8 +3,6 @@ package com.safesphere.app.feature.settings
 import com.safesphere.app.R
 import com.safesphere.app.core.network.SessionEndReason
 import com.safesphere.app.core.ui.sessionEndTexts
-import com.safesphere.app.feature.community.domain.CommunityPolicy
-import com.safesphere.app.feature.community.ui.CommunityTexts
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -66,12 +64,12 @@ class HonestyTextsTest {
     fun `the Safety hub opens each tool once, and the retired Home screen is gone`() {
         val hub = File("src/main/java/com/safesphere/app/feature/safety/ui/SafetyFragment.kt").readText(Charsets.UTF_8)
         for (destination in listOf("R.id.emergencyFragment", "R.id.safeWalkFragment", "R.id.safetyCircleFragment",
-                "R.id.evidenceVaultFragment", "R.id.communityFragment", "R.id.emergencyHistoryFragment")) {
+                "R.id.evidenceVaultFragment", "R.id.emergencyHistoryFragment")) {
             assertTrue(destination, hub.contains(destination))
         }
         // One row per tool (the Ready check may also link to the Safety Circle from its own row).
         for (title in listOf("feature_safe_walk_title", "feature_safety_circle_title", "feature_evidence_vault_title",
-                "safety_hub_nearby_title", "feature_emergency_history_title")) {
+                "feature_emergency_history_title")) {
             assertEquals(title, 1, Regex("R\\.string\\.$title\\b").findAll(hub).count())
         }
         assertFalse(File("src/main/res/layout/fragment_home.xml").exists())
@@ -81,7 +79,6 @@ class HonestyTextsTest {
     @Test
     fun `identity and language lines are in place`() {
         val strings = allStrings()
-        assertEquals("Nearby", strings["nav_community"])
         assertTrue(strings.getValue("feature_safety_circle_description").contains("choose to keep in the loop"))
         assertTrue(strings.getValue("safety_circle_empty_message").contains("choose to keep in the loop"))
         assertTrue(strings.getValue("safe_walk_setup_body").contains("Using support is a choice, not a weakness."))
@@ -102,13 +99,6 @@ class HonestyTextsTest {
         assertTrue("strings that tell people to avoid places: $problems", problems.isEmpty())
     }
 
-    @Test
-    fun `the area summary leads with where you can go`() {
-        val parts = CommunityTexts.briefParts(CommunityPolicy.AreaBrief(incidents = 1, conditions = 2, havens = 3, nearestHavenMeters = 120))
-        assertEquals(listOf(R.plurals.brief_havens to 3, R.plurals.brief_incidents to 1, R.plurals.brief_conditions to 2), parts)
-        val noHavens = CommunityTexts.briefParts(CommunityPolicy.AreaBrief(1, 0, 0, null))
-        assertEquals(listOf(R.plurals.brief_incidents to 1), noHavens) // nothing is hidden, zeros are left out
-    }
 
     @Test
     fun `the sign-out dialog says why`() {

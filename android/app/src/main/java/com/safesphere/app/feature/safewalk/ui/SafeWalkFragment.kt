@@ -1,17 +1,8 @@
 package com.safesphere.app.feature.safewalk.ui
 
 import android.content.pm.PackageManager
-import android.graphics.Typeface
 import android.os.Bundle
-import android.text.SpannableStringBuilder
-import android.text.Spanned
-import android.text.style.StyleSpan
 import android.view.View
-import androidx.core.widget.doAfterTextChanged
-import com.safesphere.app.core.network.isSessionExpired
-import com.safesphere.app.feature.intelligence.ui.IntelligenceTexts
-import com.safesphere.app.feature.intelligence.ui.WayCheckState
-import com.safesphere.app.feature.intelligence.ui.WayCheckViewModel
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -73,7 +64,7 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
     private val notificationLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { startPendingWalk() }
 
-    /** What to do once the location dialog is answered (start the walk, or run "Check the way"), whatever the answer. */
+    /** What to do once the location dialog is answered (start the walk), whatever the answer. */
     private var afterLocationAsk: (() -> Unit)? = null
 
     /**
@@ -88,36 +79,18 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
         afterLocationAsk = null
     }
 
-    /** Phase 8D: "Check the way" lives in its own ViewModel, so it can never touch the walk itself. */
-    private val wayCheck by viewModels<WayCheckViewModel> { WayCheckViewModel.factory(appContainer) }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         buildIntervalChips()
 
         binding.startWalkButton.setOnClickListener { onStartTapped() }
-        binding.checkWayButton.setOnClickListener {
-            val label = binding.destinationInput.text?.toString()
-            if (hasLocationPermission() || locationAsk.permanentlyDenied) {
-                wayCheck.onCheck(label) // the check says what is missing; the set-up line below has the button
-            } else {
-                afterLocationAsk = { wayCheck.onCheck(label) } // asked at the moment of need; the check runs whatever the answer
-                locationAsk.ask()
-            }
-        }
         binding.movementChecksSwitch.setOnCheckedChangeListener { _, _ -> renderSetupLocation() }
         binding.setupLocationButton.setOnClickListener { locationAsk.act(setupNeed()) }
-        binding.destinationInput.doAfterTextChanged { wayCheck.onDestinationChanged() }
         // Phase 13F (F10): "Going there?" only fills in the place; nothing starts until the person presses a button.
         val prefill = arguments?.getString(ARG_DESTINATION_LABEL)
         if (savedInstanceState == null && !prefill.isNullOrBlank() && binding.destinationInput.text.isNullOrEmpty()) {
             binding.destinationInput.setText(prefill)
         }
-        if (savedInstanceState == null && arguments?.getBoolean(ARG_CHECK_WAY) == true) {
-            binding.checkWayButton.post { binding.checkWayButton.requestRectangleOnScreen(android.graphics.Rect(0, 0,
-                binding.checkWayButton.width, binding.checkWayButton.height), false) }
-        }
-        collectWhenStarted(wayCheck.state, ::renderWayCheck)
         binding.checkInButton.setOnClickListener { viewModel.onCheckInClicked() }
         binding.arrivedButton.setOnClickListener { confirm(R.string.safe_walk_confirm_arrived, R.string.action_arrived) { viewModel.onArrivedConfirmed() } }
         binding.cancelWalkButton.setOnClickListener { confirm(R.string.safe_walk_confirm_cancel, R.string.action_cancel_walk) { viewModel.onCancelConfirmed() } }
@@ -215,38 +188,6 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
             is SafeWalkUiState.Ended -> renderEnded(state.status)
             SafeWalkUiState.Loading -> Unit
         }
-    }
-
-    /** Phase 8D: the brief, or why there is none. Never blocks or delays "Start". */
-    private fun renderWayCheck(state: WayCheckState) {
-        binding.checkWayButton.isEnabled = state != WayCheckState.Checking
-        binding.wayBlock.isVisible = state != WayCheckState.Idle
-        binding.wayFooter.isVisible = state is WayCheckState.Ready
-        when (state) {
-            WayCheckState.Idle -> return
-            is WayCheckState.Ready -> {
-                val brief = state.brief
-                val lines = IntelligenceTexts.wayLines(requireContext(), brief, state.destinationDescription)
-                val text = SpannableStringBuilder(lines.first()).apply {
-                    setSpan(StyleSpan(Typeface.BOLD), 0, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    lines.drop(1).forEach { append("\n").append(it) }
-                }
-                binding.wayNotice.setWarning(brief.hasConfirmedConcerns)
-                binding.wayNotice.setMessage(text)
-                binding.wayBlock.contentDescription = (lines + getString(R.string.way_footer)).joinToString(" ")
-            }
-            is WayCheckState.Failed -> {
-                if (state.failure.isSessionExpired()) showSessionExpiredDialog()
-                showWayMessage(state.failure.toMessage(requireContext()))
-            }
-            else -> showWayMessage(getString(IntelligenceTexts.wayMessage(state) ?: return))
-        }
-    }
-
-    private fun showWayMessage(text: String) {
-        binding.wayNotice.setWarning(false)
-        binding.wayNotice.setMessage(text)
-        binding.wayBlock.contentDescription = text
     }
 
     private fun renderSetup(state: SafeWalkUiState.Setup) {
@@ -512,9 +453,6 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
     companion object {
         /** Phase 13F (F10): a place name the "Going there?" sheet fills in; the person can change or clear it. */
         const val ARG_DESTINATION_LABEL = "destinationLabel"
-
-        /** Phase 13F: opened from "Check the way": the screen scrolls to that button (nothing runs by itself). */
-        const val ARG_CHECK_WAY = "checkWay"
 
         private val SEARCHING_STATUSES = setOf(LocationStreamStatus.IDLE, LocationStreamStatus.SEARCHING, LocationStreamStatus.AVAILABLE)
     }

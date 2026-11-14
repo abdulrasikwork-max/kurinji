@@ -33,56 +33,6 @@
             android:layout_marginTop="@dimen/space_md"
             android:indeterminate="true" />
 
-        <LinearLayout
-            android:id="@+id/content"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <com.safesphere.app.core.ui.components.SectionHeaderView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_lg"
-                android:layout_marginBottom="@dimen/space_md"
-                app:sectionTitle="@string/section_open_cases" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/caseList"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
-            <TextView
-                android:id="@+id/noCases"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/moderation_no_cases"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-
-            <com.safesphere.app.core.ui.components.SectionHeaderView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/section_spacing"
-                android:layout_marginBottom="@dimen/space_md"
-                app:sectionTitle="@string/section_open_appeals" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/appealList"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
-            <TextView
-                android:id="@+id/noAppeals"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/moderation_no_appeals"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-        </LinearLayout>
-
         <!-- Phase 13D: posts, perspectives and people (its own queue; the server answers 403 to non-moderators). -->
         <LinearLayout
             android:id="@+id/contentQueue"

@@ -15,8 +15,7 @@ import org.junit.Test
 class GoingThereTest {
 
     private val main = File("src/main/java/com/safesphere/app")
-    private val safety = listOf("emergency", "safewalk", "circlealert", "safetycircle", "evidence", "community",
-        "intelligence")
+    private val safety = listOf("emergency", "safewalk", "circlealert", "safetycircle", "evidence")
 
     private fun sources(pkg: String) = File(main, "feature/$pkg").walkTopDown().filter { it.isFile && it.extension == "kt" }
         .toList().also { assertTrue("no sources in $pkg", it.isNotEmpty()) }

@@ -53,3 +53,15 @@ any deploy to the pilot (the laptop setup and the live jar stay exactly as they 
 
 ## As built
 (filled in per unit)
+
+### A1 Android: Nearby and intelligence (2026-11-15)
+- Removed: `feature/community` (15 files), `feature/intelligence` (9), the signal half of `feature/moderation` (case screen,
+  case / appeal adapters, policy, texts, queue view model), 8 layouts, the Nearby row of the Safety hub, "Check the way"
+  on the Safe Walk set-up screen and in the "Going there?" sheet, their nav destinations and `AppContainer` wiring.
+- Kept and reduced: `ModerationRepository` / `ModerationApi` = only `access()`; `ModerationFragment` shows the content
+  queue only and now says "not allowed" or the failure from `ContentQueueUiState.answered`.
+- Tests: the Nearby, intelligence and signal-moderation test classes deleted; `Phase17FGuardsTest` lost its three
+  Nearby-only cases; `GoingThereTest` and `HonestyTextsTest` updated; the two permission-rule cases of
+  `Phase17HPermissionDenialTest` live on in the new `RuntimePermissionAskTest`.
+- Result: **971 run, 0 failures, 0 errors, 0 skipped** (1086 before); `assembleDebug` OK; lint **0 errors, 365 warnings**
+  (98 before: the rest are resources left without a user, removed in unit C). Not seen on a screen yet.

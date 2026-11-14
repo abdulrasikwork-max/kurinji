@@ -76,50 +76,6 @@
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Phase 8D: optional, only on tap. Decision support; it never changes the walk. -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/checkWayButton"
-                style="@style/Widget.SafeSphere.Button.Secondary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs"
-                android:text="@string/action_check_the_way" />
-
-            <TextView
-                android:id="@+id/wayIntro"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs"
-                android:text="@string/way_intro"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
-
-            <LinearLayout
-                android:id="@+id/wayBlock"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:accessibilityLiveRegion="polite"
-                android:focusable="true"
-                android:importantForAccessibility="yes"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <com.safesphere.app.core.ui.components.NoticeView
-                    android:id="@+id/wayNotice"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:importantForAccessibility="noHideDescendants"
-                    app:noticeType="info" />
-
-                <TextView
-                    android:id="@+id/wayFooter"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_xs"
-                    android:importantForAccessibility="no"
-                    android:text="@string/way_footer"
-                    android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
-            </LinearLayout>
 
             <TextView
                 android:id="@+id/intervalLabel"

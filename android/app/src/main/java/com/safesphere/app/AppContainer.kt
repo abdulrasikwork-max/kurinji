@@ -119,17 +119,9 @@ import com.safesphere.app.feature.evidence.domain.PassphrasePolicy
 import com.safesphere.app.feature.evidence.session.EvidenceRecovery
 import com.safesphere.app.feature.evidence.session.EvidenceVault
 import com.safesphere.app.feature.evidence.session.VaultLock
-import com.safesphere.app.feature.community.data.DataStoreCommunityOutbox
-import com.safesphere.app.feature.community.data.RemoteCommunityRepository
-import com.safesphere.app.feature.community.data.remote.CommunityApi
-import com.safesphere.app.feature.community.domain.CommunityOutbox
-import com.safesphere.app.feature.community.domain.CommunityRepository
 import com.safesphere.app.feature.moderation.data.RemoteModerationRepository
 import com.safesphere.app.feature.moderation.data.remote.ModerationApi
 import com.safesphere.app.feature.moderation.domain.ModerationRepository
-import com.safesphere.app.feature.intelligence.data.RemoteIntelligenceRepository
-import com.safesphere.app.feature.intelligence.data.remote.IntelligenceApi
-import com.safesphere.app.feature.intelligence.domain.IntelligenceRepository
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -223,13 +215,12 @@ class AppContainer(context: Context) {
 
     /**
      * What a sign-out removes from this phone (the active SOS record incl. unsent endings, the Safe Walk record, the
-     * Safety Circle copy for offline SMS, unsent community reports). Phase 11 C1: also run, BEFORE the new session is
+     * Safety Circle copy for offline SMS). Phase 11 C1: also run, BEFORE the new session is
      * saved, when another account signs in on this phone, so the new account never sees the previous one's data.
      */
     private suspend fun clearAccountScopedData() {
         activeEmergencyStore.clearAll()
         activeJourneyStore.clear()
-        communityOutbox.clear()
         circleAlertStore.clear()
         placeMemory.clearAll() // Phase 13B (Q9): private and recent places belong to the account that marked them
     }
@@ -570,16 +561,7 @@ class AppContainer(context: Context) {
     /** Set by SafetyTrackingService: true while it runs with the microphone service type. */
     val microphoneInForeground = MutableStateFlow(false)
 
-    // ---- Phase 6: Community Safety Intelligence (place signals) ----------------------------------
-
-    private val communityApi: CommunityApi by lazy { retrofit.create(CommunityApi::class.java) }
-
-    val communityRepository: CommunityRepository by lazy { RemoteCommunityRepository(communityApi, apiCallHandler) }
-
-    /** Reports made offline (cell + category only), cleared on logout. */
-    val communityOutbox: CommunityOutbox by lazy { DataStoreCommunityOutbox(appContext) }
-
-    /** The same location provider, for screens that need one fix while they are open (Community). */
+    /** The same location provider, for screens that need one fix while they are open. */
     val screenLocationProvider: LocationProvider get() = locationProvider
 
     // ---- Phase 7: moderation (the server checks the role on every call) --------------------------
@@ -587,13 +569,6 @@ class AppContainer(context: Context) {
     private val moderationApi: ModerationApi by lazy { retrofit.create(ModerationApi::class.java) }
 
     val moderationRepository: ModerationRepository by lazy { RemoteModerationRepository(moderationApi, apiCallHandler) }
-
-    // ---- Phase 8: Safety Intelligence (the area picture comes with the community area answer) -------------
-
-    private val intelligenceApi: IntelligenceApi by lazy { retrofit.create(IntelligenceApi::class.java) }
-
-    /** Region packs for "Check the way": only 5-character region cells are ever sent. */
-    val intelligenceRepository: IntelligenceRepository by lazy { RemoteIntelligenceRepository(intelligenceApi, apiCallHandler) }
 
     // ---- Phase 13F (D9): Rise "Proof" is retired; its encrypted notes on this phone are deleted once, with a notice --
 
@@ -665,7 +640,6 @@ class AppContainer(context: Context) {
                     if (signedOut) {
                         activeEmergencyStore.clearAll() // incl. SOS endings not told to the server yet
                         activeJourneyStore.clear()
-                        communityOutbox.clear() // unsent reports belong to the account that made them
                         placeMemory.clearAll() // Phase 13B (Q9): private and recent places
                     }
                 }

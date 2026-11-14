@@ -21,6 +21,8 @@ data class ContentQueueUiState(
     val isLoading: Boolean = false,
     /** False until the server answered; also false after a 403 (the queue is hidden and emptied). */
     val allowed: Boolean = false,
+    /** True once the server answered at all (so "not a moderator" is told apart from "not asked yet"). */
+    val answered: Boolean = false,
     val cases: List<ContentCaseSummary> = emptyList(),
     val appeals: List<ContentAppeal> = emptyList(),
     /** One-shot: a review was recorded. */
@@ -49,7 +51,7 @@ class ContentQueueViewModel(private val repository: ContentModerationRepository)
                 return@launch
             }
             _uiState.update {
-                it.copy(isLoading = false, allowed = true,
+                it.copy(isLoading = false, allowed = true, answered = true,
                     cases = (cases as ApiResult.Success).data, appeals = (appeals as ApiResult.Success).data)
             }
         }
@@ -73,9 +75,9 @@ class ContentQueueViewModel(private val repository: ContentModerationRepository)
 
     private fun fail(failure: ApiResult.Failure) = _uiState.update {
         if (failure.error == ApiError.FORBIDDEN) {
-            ContentQueueUiState() // not (or no longer) a moderator: nothing stays on screen
+            ContentQueueUiState(answered = true) // not (or no longer) a moderator: nothing stays on screen
         } else {
-            it.copy(isLoading = false, failure = failure, sessionExpired = failure.isSessionExpired())
+            it.copy(isLoading = false, answered = true, failure = failure, sessionExpired = failure.isSessionExpired())
         }
     }
 

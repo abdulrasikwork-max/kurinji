@@ -166,7 +166,7 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
     private fun featureItems(): List<FeatureItem> {
         val nav = findNavController()
         return listOf(
-            // Phase 4B: check-ins are part of Safe Walk; "Check the way" is on its set-up screen.
+            // Phase 4B: check-ins are part of Safe Walk.
             FeatureItem(R.drawable.ic_route, R.string.feature_safe_walk_title, R.string.safety_hub_walk_description) {
                 nav.navigate(R.id.safeWalkFragment)
             },
@@ -179,9 +179,6 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
             // Phase 17F: shake to start SOS and audio in an SOS - both off until the person turns them on.
             FeatureItem(R.drawable.ic_tune, R.string.sos_options_title, R.string.sos_options_hub_description) {
                 nav.navigate(R.id.sosOptionsFragment)
-            },
-            FeatureItem(R.drawable.ic_community_outline, R.string.safety_hub_nearby_title, R.string.safety_hub_nearby_description) {
-                nav.navigate(R.id.communityFragment)
             },
             FeatureItem(R.drawable.ic_history, R.string.feature_emergency_history_title,
                 R.string.feature_emergency_history_description) { nav.navigate(R.id.emergencyHistoryFragment) },

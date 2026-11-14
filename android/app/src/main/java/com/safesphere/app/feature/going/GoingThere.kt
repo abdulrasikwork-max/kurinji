@@ -18,7 +18,7 @@ import com.safesphere.app.databinding.SheetGoingThereBinding
  * - Save to Cocoon: the opener's own save (the butterfly), or "In your Cocoon" when it is already there.
  * - Let someone know (Heads-up, F4): the person's own share sheet with a note they can edit. No location, no link;
  *   Kurinji sends and keeps nothing.
- * - Walk with check-ins / Check the way: the Safe Walk screen with the place filled in. Nothing starts by itself.
+ * - Walk with check-ins: the Safe Walk screen with the place filled in. Nothing starts by itself.
  */
 object GoingThere {
 
@@ -54,11 +54,6 @@ object GoingThere {
             dialog.dismiss()
             fragment.findNavController().navigate(R.id.safeWalkFragment, bundleOf(ARG_DESTINATION_LABEL to place))
         }
-        sheet.wayRow.setOnClickListener {
-            dialog.dismiss()
-            fragment.findNavController().navigate(R.id.safeWalkFragment,
-                bundleOf(ARG_DESTINATION_LABEL to place, ARG_CHECK_WAY to true))
-        }
         dialog.setContentView(sheet.root)
         dialog.show()
     }
@@ -69,5 +64,4 @@ object GoingThere {
 
     // The Safe Walk screen's argument names (nav_graph.xml), by value: the bridge never imports safety code.
     private const val ARG_DESTINATION_LABEL = "destinationLabel"
-    private const val ARG_CHECK_WAY = "checkWay"
 }
