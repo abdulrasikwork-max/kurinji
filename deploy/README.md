@@ -102,6 +102,11 @@ Copy backups OFF the server (another disk, host or storage: your choice). Withou
 **not encrypted** and contain personal data and ciphertext evidence: protect the destination. A restore into a scratch
 database needs admin rights: `restore-check.sh ... --scratch-db irl_restorecheck_1`.
 
+**Before a migration (the pilot's gate):** `sudo bash deploy/scripts/restore-rehearsal.sh` takes one fresh plain backup into
+`/var/backups/irl-rehearsal`, restores it into a scratch database, compares every table (rows + `CHECKSUM TABLE`) and the Flyway
+history with the live database, and drops the scratch database. The live database is only read. Migrate only after
+`REHEARSAL: PASS`. (First run on the pilot 2026-11-14: PASS; `docs/D12_DEPLOYMENT.md` section 10.)
+
 **Deploying a new version:** `backup.sh`, stop `irl-backend`, replace `app.jar`, start, read the log for Flyway, run the smoke
 test. Rolling back = restore the database backup AND the previous jar (Flyway only goes forward).
 
