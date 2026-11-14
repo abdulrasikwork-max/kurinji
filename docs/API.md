@@ -1467,5 +1467,6 @@ A compact list of every phase's endpoints and config keys; the sections above ha
   with the place's cell and the cells around it, keeps one private bit and drops the cell; the answer is the SAME `200 {rating|null}` whether presence
   was confirmed or not, and no endpoint returns the bit. `POST /api/posts` and `PUT /api/posts/{id}` accept `disclosed` (bool, Experience only;
   ignored on a question; an edit can turn it on, `false` or absent never turns it off); every post answer adds `disclosed` (bool). The rating of a
-  person who has a disclosed post at a place is not counted in that place's `rating` (their own `yourVisit` is unchanged).
+  person who has a disclosed post at a place is not counted in that place's `rating` (their own `yourVisit` is unchanged). The app sends `{cell}` only as a
+  second, silent call after the plain one, and only when the phone itself found that it is in the place's cell or a cell around it.
 - Phase D12: `GET /api/health` (public, `{status: UP|DOWN}`, 503 when the database does not answer; `docs/D12_DEPLOYMENT.md`).

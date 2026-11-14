@@ -58,6 +58,10 @@ interface DiscoverApi {
     @PUT("api/places/{id}/went")
     suspend fun went(@Path("id") placeId: String): VisitDto
 
+    /** Phase 18A-2: the same call with the cell the phone is in, sent only when the phone itself found it is at the place. */
+    @PUT("api/places/{id}/went")
+    suspend fun wentAt(@Path("id") placeId: String, @Body body: WentRequestDto): VisitDto
+
     @DELETE("api/places/{id}/went")
     suspend fun notWent(@Path("id") placeId: String)
 
@@ -151,6 +155,9 @@ data class PlacePageDto(
 data class VisitDto(val rating: Int? = null) {
     fun toDomain() = Visit(rating?.takeIf(Visit::isValid))
 }
+
+/** Phase 18A-2: body of PUT places/{id}/went: a 7-character cell, never a coordinate. */
+data class WentRequestDto(val cell: String)
 
 /** Body of PUT places/{id}/rating. */
 data class RatingRequestDto(val rating: Int)

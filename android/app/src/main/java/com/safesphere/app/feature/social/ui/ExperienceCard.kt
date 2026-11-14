@@ -36,6 +36,8 @@ data class ExperienceCard(
     val photo: MediaRef?,
     /** Why it is collapsed, for the line shown instead of the words; null = not collapsed. */
     val collapse: CardCollapse?,
+    /** Phase 18A-2: the author said the visit was paid for or free of charge. */
+    val disclosed: Boolean = false,
     val place: StampPlace,
     val month: YearMonth?,
     val daypart: Daypart?,
@@ -86,6 +88,7 @@ object ExperienceCards {
             hasTip = collapse == null && !post.tip.isNullOrBlank(),
             photo = if (collapse != null) null else post.media.firstOrNull(),
             collapse = collapse,
+            disclosed = post.disclosed,
             place = placeOf(post),
             month = post.experiencedMonth,
             daypart = post.daypart,

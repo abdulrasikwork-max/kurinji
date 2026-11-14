@@ -33,6 +33,12 @@ interface DiscoverRepository {
      */
     suspend fun went(placeId: String): ApiResult<Visit>
 
+    /**
+     * Phase 18A-2: the same mark, with the 7-character cell the phone is in. Called only after the phone itself found that it is at
+     * the place (PresenceCell); the answer is the same as [went] and never says what the server concluded.
+     */
+    suspend fun wentAt(placeId: String, cell: String): ApiResult<Visit>
+
     /** Takes "I went" back, and the rating with it. */
     suspend fun notWent(placeId: String): ApiResult<Unit>
 

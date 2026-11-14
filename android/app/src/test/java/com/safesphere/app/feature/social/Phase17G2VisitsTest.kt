@@ -96,6 +96,9 @@ class Phase17G2VisitsTest {
         override suspend fun placePage(placeId: String, cursor: String?): PlacePageDto = throw UnsupportedOperationException()
         override suspend fun searchPlaces(query: String, city: String?): List<PlaceDto> = throw UnsupportedOperationException()
         override suspend fun went(placeId: String): VisitDto { calls += "went:$placeId"; return VisitDto(null) }
+        override suspend fun wentAt(placeId: String, body: com.safesphere.app.feature.social.data.remote.WentRequestDto): VisitDto {
+            calls += "wentAt:$placeId:${body.cell}"; return VisitDto(null)
+        }
         override suspend fun notWent(placeId: String) { calls += "notWent:$placeId" }
         override suspend fun rate(placeId: String, body: RatingRequestDto): VisitDto { calls += "rate:$placeId:${body.rating}"; return VisitDto(body.rating) }
         override suspend fun clearRating(placeId: String): VisitDto { calls += "clear:$placeId"; return VisitDto(null) }

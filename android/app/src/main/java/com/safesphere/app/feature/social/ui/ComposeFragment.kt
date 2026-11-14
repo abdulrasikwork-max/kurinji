@@ -126,6 +126,7 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
             DraftNudgeDialogs.beforeSharing(this, text, onlyMe = state.audience == Audience.ONLY_ME) { viewModel.onShare() }
         }
         binding.approveFirstSwitch.setOnCheckedChangeListener { _, on -> viewModel.onApproveFirst(on) }
+        binding.disclosedSwitch.setOnCheckedChangeListener { _, on -> viewModel.onDisclosed(on) }
 
         months = ComposerPolicy.monthsOffered(viewModel.currentMonth)
         binding.monthSpinner.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item,
@@ -217,6 +218,10 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
         commentChips.show(CommentPolicy.entries.map { it to getString(ExperienceLabels.of(it)) }, state.commentPolicy)
         binding.approveFirstSwitch.isVisible = state.canApproveFirst
         if (binding.approveFirstSwitch.isChecked != state.approveFirst) binding.approveFirstSwitch.isChecked = state.approveFirst
+        // Phase 18A-2: an Experience only; the consequence is said as soon as it is switched on.
+        binding.disclosedSwitch.isVisible = state.type == PostType.EXPERIENCE
+        if (binding.disclosedSwitch.isChecked != state.disclosed) binding.disclosedSwitch.isChecked = state.disclosed
+        binding.disclosedNote.isVisible = state.type == PostType.EXPERIENCE && state.disclosed
 
         val shown = when (state.precision) {
             Precision.EXACT -> state.place?.name

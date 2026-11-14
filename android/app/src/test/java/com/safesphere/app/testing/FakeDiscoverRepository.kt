@@ -50,6 +50,11 @@ class FakeDiscoverRepository : DiscoverRepository {
         return visitResult
     }
 
+    override suspend fun wentAt(placeId: String, cell: String): ApiResult<Visit> {
+        visitCalls += "wentAt:$placeId:$cell"
+        return visitResult
+    }
+
     override suspend fun notWent(placeId: String): ApiResult<Unit> {
         visitCalls += "notWent:$placeId"
         return notWentResult

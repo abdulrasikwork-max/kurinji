@@ -89,6 +89,8 @@ data class Post(
     val placeId: String? = null,
     /** Phase 13D (Q6): perspectives from people not connected with the author wait for the author's approval. */
     val approveFirst: Boolean = false,
+    /** Phase 18A-2: the author said the visit was paid for or free of charge; every reader sees the label. */
+    val disclosed: Boolean = false,
     /** Phase 13D: own posts only, what a moderator (or a collapse while reviewing) did to it; null = nothing. */
     val ownModeration: OwnModeration? = null,
     /** Phase 13D: other people's posts only: shown behind a tap, and why (never who). */
@@ -145,7 +147,9 @@ data class PostDraft(
     /** Phase 13D (Q6): only with "Everyone can add perspectives". */
     val approveFirst: Boolean = false,
     /** Phase 17G-1: Explore tags ("Good for..."), an Experience only, at most [ExploreFacets.MAX_PER_POST]. */
-    val facets: List<String> = emptyList()
+    val facets: List<String> = emptyList(),
+    /** Phase 18A-2: "I was paid, or got this free" (an Experience only). */
+    val disclosed: Boolean = false
 )
 
 /** A photo uploaded (sanitised) and ready to attach; Phase 17C: also a video's answer (its poster comes after). */

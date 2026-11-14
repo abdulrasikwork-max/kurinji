@@ -9,6 +9,7 @@ import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
 import com.safesphere.app.feature.social.domain.City
+import com.safesphere.app.core.location.LocationProvider
 import com.safesphere.app.feature.social.domain.DiscoverRepository
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.Place
@@ -51,7 +52,11 @@ data class PostCollectionUiState(
  * Phase 13C (C10, C11): a place page (its exact-place Everyone experiences and Asks) or a category page. Newest first,
  * 20 at a time, more only on "Show more". No rankings, no counts. (17G-2, U5: the place page may carry one guarded average rating.)
  */
-class PostCollectionViewModel(private val repository: DiscoverRepository) : ViewModel() {
+class PostCollectionViewModel(
+    private val repository: DiscoverRepository,
+    /** Phase 18A-2: for the quiet "at the place" check after "Been here"; null = never looked up. */
+    private val locationProvider: LocationProvider? = null
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PostCollectionUiState())
     val uiState: StateFlow<PostCollectionUiState> = _uiState.asStateFlow()
@@ -68,7 +73,11 @@ class PostCollectionViewModel(private val repository: DiscoverRepository) : View
         onVisit = { v -> _uiState.update { it.copy(visit = v) } },
         onWent = { _uiState.update { it.copy(visitSheet = true) } },
         onBusy = { b -> _uiState.update { it.copy(visitBusy = b) } },
-        onFailure = { failure -> _uiState.update { it.copy(failure = failure, sessionExpired = failure.isSessionExpired()) } })
+        onFailure = { failure -> _uiState.update { it.copy(failure = failure, sessionExpired = failure.isSessionExpired()) } },
+        cellIfAt = locationProvider?.let { provider -> { _ -> PresenceCell.ifAt(provider) { _uiState.value.place?.cell } } })
+
+    /** The screen went out of view: location is only looked up while it is open (17D). */
+    fun onScreenHidden() = visits.stopLooking()
 
     private fun placeId(): String? = _uiState.value.place?.publicId
 
@@ -154,7 +163,7 @@ class PostCollectionViewModel(private val repository: DiscoverRepository) : View
         const val ARG_CITY = "city"
 
         fun factory(container: AppContainer) = viewModelFactory {
-            initializer { PostCollectionViewModel(container.discoverRepository) }
+            initializer { PostCollectionViewModel(container.discoverRepository, container.screenLocationProvider) }
         }
     }
 }

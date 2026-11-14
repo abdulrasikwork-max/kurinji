@@ -491,6 +491,8 @@ This build has real accounts (with password change and account deletion), a Safe
 
 The order of posts on Home uses what a post contains and the interests you chose; \"Talking now\" uses how recently someone commented. It never uses how many people saved, read or commented.
 
+When you tap \"Been here\" and location is already allowed for IRL, your phone checks whether you are near that place and, only if you are, tells IRL so. IRL never asks for location for this, keeps only a yes or no, and shows it to nobody. A post marked \"Paid or gifted visit\" means its author said they were paid or got it free; their rating does not count towards the average of that place.
+
 Suggested recovery passphrases use the EFF Large Wordlist by the Electronic Frontier Foundation (CC BY 3.0). Passphrases are checked against the 10k-most-common password list from the SecLists project (MIT licence).</string>
     <string name="about_version_format">Version %1$s</string>
     <string name="terms_body">IRL is a student prototype, not a released product, and there are no final terms of use yet. It is not an emergency service: it never contacts the police, an ambulance or anyone else for you, and an SMS that was sent is not proof that it was delivered or read. In an emergency, call 112 or your local emergency number. Do not rely on IRL as your only way to get help. Terms of use will be written and reviewed before any public release.</string>
@@ -1441,6 +1443,9 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="review_upheld">Reviewed by another moderator: the decision stays.</string>
     <string name="review_overturned">Reviewed by another moderator: the decision was undone.</string>
     <string name="approve_first_switch">Approve comments from people I\'m not connected with first</string>
+    <string name="compose_disclosed_switch">I was paid, or got this free</string>
+    <string name="compose_disclosed_note">Readers will see \"Paid or gifted visit\" on this post, and your rating for this place will not count towards its average. This cannot be switched off after sharing.</string>
+    <string name="post_disclosed_label">Paid or gifted visit</string>
     <string name="approve_first_line">The author approves comments from people they are not connected with first.</string>
     <string name="perspective_awaiting_yours">Waiting for your approval</string>
     <string name="perspective_awaiting_author">Waiting for the author\'s approval</string>
@@ -1791,6 +1796,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="place_rating_description">Rated %1$s out of 5 by people who went</string>
     <string name="went_sheet_title">How was it?</string>
     <string name="went_sheet_note">Optional. Your rating is private to you. A place shows an average only once enough people who went have rated it.</string>
+    <string name="went_presence_note">If location is already allowed for IRL, your phone checks whether you are near this place. Only if you are, it tells IRL so. Nobody else sees it.</string>
     <string name="went_rate_description">Rate %1$s out of 5</string>
     <string name="went_rate_chosen">%1$s out of 5, your rating</string>
     <string name="went_status_none">You\'ve been here. You have not rated it.</string>

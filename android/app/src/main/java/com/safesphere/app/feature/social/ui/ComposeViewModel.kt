@@ -101,6 +101,8 @@ data class ComposeUiState(
     val commentPolicy: CommentPolicy = CommentPolicy.EVERYONE,
     /** Phase 13D (Q6): approve perspectives from people the author is not connected with first. */
     val approveFirst: Boolean = false,
+    /** Phase 18A-2: "I was paid, or got this free" (an Experience only; off for a question). */
+    val disclosed: Boolean = false,
     val media: List<ComposeMedia> = emptyList(),
     /** One-shot (Phase 17C): some picked items were not added. */
     val notice: ComposeNotice? = null,
@@ -210,6 +212,7 @@ class ComposeViewModel(
         change { it.copy(city = city) }
     }
     fun onApproveFirst(on: Boolean) = change { it.copy(approveFirst = on) }
+    fun onDisclosed(on: Boolean) = change { it.copy(disclosed = on) }
 
     fun onPrecision(precision: Precision) = change {
         if (precision in it.allowedPrecisions) it.copy(precision = precision) else it
@@ -440,7 +443,8 @@ class ComposeViewModel(
         commentPolicy = ComposerPolicy.effectiveCommentPolicy(state.audience, state.commentPolicy),
         mediaIds = state.media.filter { it.ready }.mapNotNull { it.mediaId },
         approveFirst = state.approveFirst && state.canApproveFirst,
-        facets = if (state.type == PostType.EXPERIENCE) state.facets else emptyList()
+        facets = if (state.type == PostType.EXPERIENCE) state.facets else emptyList(),
+        disclosed = state.type == PostType.EXPERIENCE && state.disclosed
     )
 
     private fun issuesOf(state: ComposeUiState) =

@@ -93,7 +93,9 @@ class PostViewModel(
     private val discover: DiscoverRepository,
     private val postId: String,
     private val freshness: com.safesphere.app.feature.social.domain.FeedFreshness =
-        com.safesphere.app.feature.social.domain.FeedFreshness()
+        com.safesphere.app.feature.social.domain.FeedFreshness(),
+    /** Phase 18A-2: for the quiet "at the place" check after "Been here"; null = never looked up. */
+    private val locationProvider: com.safesphere.app.core.location.LocationProvider? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PostUiState())
@@ -223,7 +225,13 @@ class PostViewModel(
         onVisit = { v -> _uiState.update { it.copy(visit = v) } },
         onWent = { _uiState.update { it.copy(visitSheet = true) } },
         onBusy = { b -> _uiState.update { it.copy(visitBusy = b) } },
-        onFailure = { failure -> fail(failure) })
+        onFailure = { failure -> fail(failure) },
+        cellIfAt = locationProvider?.let { provider ->
+            { placeId -> PresenceCell.ifAt(provider) { (repository.place(placeId) as? ApiResult.Success)?.data?.cell } }
+        })
+
+    /** The screen went out of view: location is only looked up while it is open (17D). */
+    fun onScreenHidden() = visits.stopLooking()
 
     /** The place a visit can be marked for: the post's own, when it names an exact place; otherwise none. */
     private fun visitPlaceId(): String? = _uiState.value.post?.let { if (it.precision == Precision.EXACT) it.placeId else null }
@@ -312,7 +320,8 @@ class PostViewModel(
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
                 PostViewModel(container.experienceRepository, container.discoverRepository,
-                    createSavedStateHandle().get<String>(ARG_POST_ID).orEmpty(), container.feedFreshness)
+                    createSavedStateHandle().get<String>(ARG_POST_ID).orEmpty(), container.feedFreshness,
+                    container.screenLocationProvider)
             }
         }
     }

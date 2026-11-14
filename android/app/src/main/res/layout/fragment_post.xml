@@ -216,6 +216,21 @@
                         android:text="@string/review_ask"
                         android:visibility="gone" />
 
+                    <!-- Phase 18A-2: the author said the visit was paid for or free. Words, not colour. -->
+                    <TextView
+                        android:id="@+id/disclosedLine"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:drawablePadding="@dimen/space_sm"
+                        android:gravity="center_vertical"
+                        android:text="@string/post_disclosed_label"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:visibility="gone"
+                        app:drawableStartCompat="@drawable/ic_info"
+                        app:drawableTint="?attr/colorOnSurfaceVariant" />
+
                     <!-- Their words: every word of the post. -->
                     <TextView
                         android:id="@+id/body"

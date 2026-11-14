@@ -28,6 +28,14 @@
             android:text="@string/went_sheet_note"
             android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
 
+        <!-- Phase 18A-2: said plainly, because the phone may look at its location after this tap. -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:text="@string/went_presence_note"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
         <LinearLayout
             android:id="@+id/ratingRow"
             android:layout_width="match_parent"

@@ -226,6 +226,41 @@ Neither column is part of a foreign key (CHECK allowed); NOT NULL, so no NULL ca
 - **Next:** Android (presence call + honesty line; composer switch, label, edit lock), then emulator and A23, then the pilot
   deploy as its own approved step after a fresh `restore-rehearsal.sh` PASS.
 
+### 18A-2 Android as built (2026-11-14, evening)
+
+- **Status: implemented, compiled, tested (unit tests). NOT seen on any screen: no emulator or phone walk yet. Not committed.**
+- **Presence - one change from the plan, towards less data (P18-4, amended):** the phone decides "am I at the place?" ITSELF
+  and sends its cell ONLY then. `PresenceCell.near(placeCell, lat, lng)` = the place's own cell or one of the eight around
+  it (from `GeoHash.bounds`); `PresenceCell.ifAt` = the shared `preciseFix` (10 s window, 100 m rule, never a permission
+  prompt), then the place's cell (already in the place page's state; on the post page one `GET /api/places/{id}`, asked only
+  after a good position exists). So "Been here" tapped at home sends NOTHING about where the person is; the plan would have
+  sent the home cell for the server to compare and drop. The server check stays (it does not trust the phone).
+- `PlaceVisits`: `went` is sent at once as before (the sheet opens, nothing waits); then `confirmPresence` runs quietly and,
+  if at the place, calls `DiscoverRepository.wentAt(placeId, cell)` (`PUT .../went {cell}`, `WentRequestDto`). Its answer and
+  any failure are ignored. `stopLooking()` on `onStop` of both screens (`onScreenHidden`) and before "I haven't been here".
+  `PostCollectionViewModel` and `PostViewModel` take an optional `LocationProvider` (`container.screenLocationProvider`).
+- **Disclosure:** composer switch `disclosedSwitch` "I was paid, or got this free" under the approve-first switch (Experience
+  only) with `disclosedNote` shown when on (label, rating not counted, cannot be switched off); `PostDraft.disclosed`,
+  `PostRequestDto.disclosed` (sent only as `true`, never for a question), `PostDto.disclosed` → `Post.disclosed` (missing =
+  false), `ExperienceCard.disclosed`; label `disclosedLine` "Paid or gifted visit" (neutral colour, info icon) on the feed
+  card and above the words on the post page; in the card's spoken description.
+- **Words:** `went_presence_note` in the "How was it?" sheet; one paragraph added to `about_body`.
+- **Not built, and why:** the "edit lock" of the plan: the app has NO edit screen (editing is API only), so there is nothing
+  to lock. The small rail card on Home ("Talking now") has no visible label (its spoken description has it; the post page
+  shows it). Saved rows and Explore results show no label either (they open the post page, which does).
+- **Tests:** Android **1086 run, 0 failures, 0 errors, 0 skipped** (was 1069); new `Phase18A2TrustTest` (17: near / not near,
+  at the place, beside it, elsewhere, rough, no permission / approximate / location off with zero position requests, empty
+  window, take back, screen hidden, silent failure, no provider, post page, request shape, disclosure DTOs, card, words and
+  colours); `Phase17G2VisitsTest`'s fake API gained the new method. `assembleDebug` OK; lint **0 errors, 98 warnings**
+  (unchanged). Backend not touched since its 928 / 0 run.
+- **IMPORTANT before installing this build anywhere:** `android/local.properties` points at the PILOT, whose jar is the old
+  one. Against the old jar a disclosed post would be accepted WITHOUT the disclosure (the old server ignores the unknown
+  field) and shown without a label: a silent loss. Do not use this build against the pilot until the pilot runs the new jar.
+- **NOT verified:** every screen (composer switch + note, label on card and post, the sheet line, About), light / dark, large
+  text, TalkBack, the presence call on a real phone with real GPS (at a place and away from it), the A23, the pilot.
+- **Known limit:** leaving the screen within the 10 s (for example "Share your experience" straight from the sheet) stops the
+  search (17D rule: location only while the screen is open), so that visit is not confirmed unless "Been here" is opened again.
+
 ### Viva questions this step must answer
 Why a boolean and not the cell? Why is presence optional? Why can a mock location not buy a rating by itself (5 independent
 groups still needed)? Why does a paid post stay visible but stop counting? Why is the person not told "confirmed"?

@@ -180,6 +180,24 @@
                 app:drawableStartCompat="@drawable/ic_info"
                 app:drawableTint="?attr/colorOnSurfaceVariant" />
 
+            <!-- Phase 18A-2: the author said the visit was paid for or free. Words, not colour. -->
+            <TextView
+                android:id="@+id/disclosedLine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_md"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="@dimen/space_md"
+                android:drawablePadding="@dimen/space_sm"
+                android:gravity="center_vertical"
+                android:importantForAccessibility="no"
+                android:text="@string/post_disclosed_label"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone"
+                app:drawableStartCompat="@drawable/ic_info"
+                app:drawableTint="?attr/colorOnSurfaceVariant" />
+
             <!-- Where (only what the author revealed) and whether there is a tip inside. -->
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/contextChips"

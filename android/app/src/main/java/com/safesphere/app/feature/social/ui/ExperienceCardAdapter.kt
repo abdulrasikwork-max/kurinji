@@ -112,6 +112,7 @@ object CardBinder {
         b.quote.text = card.thought.orEmpty()
         b.collapsedLine.isVisible = card.collapse != null
         b.collapsedLine.text = card.collapse?.let { context.getString(CardTexts.collapsedLine(it)) }.orEmpty()
+        b.disclosedLine.isVisible = card.disclosed
         contextChips(b.contextChips, card, context)
 
         b.content.setOnClickListener { row.onOpen() }
@@ -265,6 +266,7 @@ object CardTexts {
         if (card.isAsk) context.getString(R.string.feed_question_badge) else null,
         meta(context, card),
         card.thought ?: card.collapse?.let { context.getString(collapsedLine(it)) },
+        if (card.disclosed) context.getString(R.string.post_disclosed_label) else null,
         card.photo?.takeIf { it.isVideo }?.durationMs?.let {
             context.getString(R.string.feed_video_spoken, VideoRules.durationLabel(it.toLong()))
         },

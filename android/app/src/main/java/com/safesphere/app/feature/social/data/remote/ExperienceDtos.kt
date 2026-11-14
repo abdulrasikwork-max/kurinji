@@ -80,7 +80,9 @@ data class PostRequestDto(
     val mediaIds: List<String>,
     val approveFirst: Boolean = false,
     /** Phase 17G-1: Explore tags; null (not sent) for an Ask or when none were chosen. */
-    val facets: List<String>? = null
+    val facets: List<String>? = null,
+    /** Phase 18A-2: true when the author said the visit was paid or free; null (not sent) otherwise and always for an Ask. */
+    val disclosed: Boolean? = null
 ) {
     companion object {
         /** Only for a draft that passed ComposerPolicy (precision and audience chosen). */
@@ -106,7 +108,8 @@ data class PostRequestDto(
                 approveFirst = draft.approveFirst && policy == CommentPolicy.EVERYONE,
                 // Phase 17G-1: tags belong to Experiences only; the server refuses them on an Ask.
                 facets = if (experience) ExploreFacets.cleaned(draft.facets).take(ExploreFacets.MAX_PER_POST)
-                    .ifEmpty { null } else null
+                    .ifEmpty { null } else null,
+                disclosed = if (experience && draft.disclosed) true else null
             )
         }
     }
@@ -171,7 +174,9 @@ data class PostDto(
     /** Phase 16 (U1): comments this viewer can read; a missing or negative number counts as none. */
     val commentCount: Int? = null,
     /** Phase 17G-1: Explore tags; missing (an older answer) = none, an unknown code is dropped. */
-    val facets: List<String>? = null
+    val facets: List<String>? = null,
+    /** Phase 18A-2: missing (an older server) = not disclosed. */
+    val disclosed: Boolean? = null
 ) {
     fun toDomain(): Post? {
         val author = author?.let { a ->
@@ -215,7 +220,8 @@ data class PostDto(
             collapsed = if (own == true) null else collapsedOf(collapsed),
             strongLanguage = strongLanguage == true,
             commentCount = (commentCount ?: 0).coerceAtLeast(0),
-            facets = ExploreFacets.cleaned(facets)
+            facets = ExploreFacets.cleaned(facets),
+            disclosed = disclosed == true
         )
     }
 

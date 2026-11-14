@@ -76,6 +76,11 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
     }
 
     /** Phase 13D: confirmations of the report and review flows, and their failures. */
+    override fun onStop() {
+        super.onStop()
+        viewModel.onScreenHidden() // 18A-2: the quiet "at the place" check runs only while this screen is open
+    }
+
     private fun renderReports(state: ReportUiState) {
         state.message?.let {
             Toast.makeText(requireContext(), when (it) {
@@ -207,6 +212,7 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.collapsedNotice.setMessage(getString(ModerationLabels.collapsedLine(post.collapsed)))
         binding.body.isVisible = !hide
         binding.body.text = post.body.trim()
+        binding.disclosedLine.isVisible = post.disclosed // 18A-2: shown even while the words are collapsed
         photoAdapter.submitList(if (hide) emptyList() else
             post.media.map { media ->
                 PhotoCell(media.mediaId, appContainer.experienceRepository.photoUrl(media.mediaId), null, null,

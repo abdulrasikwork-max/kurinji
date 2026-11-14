@@ -60,6 +60,11 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        viewModel.onScreenHidden() // 18A-2: the quiet "at the place" check runs only while this screen is open
+    }
+
     private fun render(state: PostCollectionUiState) {
         when (val c = state.collection) {
             is PostCollection.OfPlace -> {

@@ -15,6 +15,7 @@ import com.safesphere.app.feature.social.domain.PlacePage
 import com.safesphere.app.feature.social.domain.PostPage
 import com.safesphere.app.feature.social.domain.Visit
 import com.safesphere.app.feature.social.data.remote.RatingRequestDto
+import com.safesphere.app.feature.social.data.remote.WentRequestDto
 
 /**
  * Phase 13C: Discover on the backend; Phase 17E: reactions and Saved. All error handling is in [ApiCallHandler]; nothing is
@@ -49,6 +50,9 @@ class RemoteDiscoverRepository(
         orNotFound(handler.execute { api.placePage(placeId, cursor).toDomain() })
 
     override suspend fun went(placeId: String): ApiResult<Visit> = handler.execute { api.went(placeId).toDomain() }
+
+    override suspend fun wentAt(placeId: String, cell: String): ApiResult<Visit> =
+        handler.execute { api.wentAt(placeId, WentRequestDto(cell)).toDomain() }
 
     override suspend fun notWent(placeId: String): ApiResult<Unit> = handler.execute { api.notWent(placeId) }
 
