@@ -1,5 +1,7 @@
 # Experience platform: product and technical design
 
+> **SUPERSEDED on 2026-11-15** by `IRL_DIRECTION.md` (the owner changed the product direction). Kept as history and viva material; do not build from it.
+
 **Date:** 2026-10-22 · **Type:** design only. **Status of everything below: planned.** No product code, migration,
 navigation, dependency or test was changed for this document.
 

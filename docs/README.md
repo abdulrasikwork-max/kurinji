@@ -12,7 +12,9 @@ larger phases also have a design or plan doc written and approved before the wor
 - `design/` — `irl-icon.md` (current icon), `irl/`, `kurinji-16-icon.md`, `kurinji-13f-direction.html` (history).
 - `PLATFORM_CONSTRAINTS.md` — what Android allows and what it does not (honest limits).
 - `TIMESTAMPS.md` — UTC storage rules and the one-time fix.
-- `EXPERIENCE_PLATFORM_DESIGN.md` — the product direction (Phase 13+), decisions D1–D15; appendix = product history.
+- `IRL_DIRECTION.md` — **the current product direction (2026-11-15)**: verified community, moments, "Who's in?", verification, safety placement, phases N0–N8.
+- `PHASE_N1.md` — plan and results of the strip phase. `history/CLAUDE_2026-11-15.md` — `CLAUDE.md` as it was before the direction change.
+- `EXPERIENCE_PLATFORM_DESIGN.md` — the PREVIOUS product direction (2026-10-22, superseded on 2026-11-15), decisions D1–D15; appendix = product history.
 - `AUDIT_NEXT.md` — 2026-10-22 audit (safety findings still apply; Part II product direction superseded).
 - `EMAIL_SETUP.md`, `EMAIL_VERIFICATION.md` — V25 e-mail verification (superseded by Phase 17B).
 - `licences/` — third-party licences.

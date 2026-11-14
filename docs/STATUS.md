@@ -147,3 +147,15 @@ social `ExperienceCard(s)`, `ExperienceCardAdapter` + `CardTexts`, `BeenInvitati
 **17E is in the repository** (V28): backend `social/policy/CityCatalog` (+ `resources/cities/cities-v1.tsv`, replaces `CityAreas` and the `City` enum), `service/PlaceCityBackfill`, `PostMarkService` (replaces `ButterflyService`), `entity/SavedPost`, `Butterfly` = reaction, `ProfilePhotoService` (+ `ImageSanitizer.sanitizeSquare`), `DailyStateService` + `entity/DailyState`, moderation `PERSON_REMOVE_PHOTO`; Android `feature/social/domain/Cities` (bundled byte-identical catalog), `ui/CityPicker`, `DailyStates`, `PostMarks`, `SavedFragment` + `SavedViewModel` (Cocoon/BeenInvitation removed), `MarksFit`, `PhotoPreparer.prepareAvatar`, Ink & Lime tokens (`k_page`, `k_lime`, `k_action`, `k_leaf`, `k_panel`…; attrs `colorLime`, `colorOnLime`, `colorAccentText`, `colorPanel*`): `docs/PHASE17E.md`.
 **Note:** `C:\Users\ABDUL RAFIQ\Desktop\CLAUDE.md` (outside the repo) is an old copy (says "4A has not started"); this
 repo copy is the current one.
+
+## Direction change of 2026-11-15 (N phases)
+
+On 2026-11-15 the owner approved a new product direction (`IRL_DIRECTION.md`). Everything above this line is the record
+of the product as built to 18A-2; it stays as history. Phases 5 to 9, 17G and 18A are retired from the app in N1
+(code: git tag `pre-n1`). 18A-2 was never verified on a device; 18A-3, 18B and 17I are cancelled.
+
+| Phase | Scope | Status |
+|---|---|---|
+| N0 | Direction record: `IRL_DIRECTION.md`, `CLAUDE.md` sections 1 and 2 (old copy: `history/CLAUDE_2026-11-15.md`), decisions N-1 to N-16 | done 2026-11-15 (documents only; no code, no test run) |
+| N1 | Strip the retired features on both sides, migration V32 (`PHASE_N1.md`) | approved 2026-11-15; results per unit in `PHASE_N1.md` |
+| N2 to N8 | Phone-only sign-in; community and verification; moments; responses; safety trim; push; pilot launch | planned |

@@ -1,5 +1,7 @@
 # Phase 18 plan: place trust (18A) and the Next-person card (18B) (2026-11-12)
 
+> **CANCELLED on 2026-11-15** (direction change, `IRL_DIRECTION.md`): 18A-1 and 18A-2 are removed from the app in N1 (18A-2 was never verified on a device); 18A-3 and 18B are not built. Kept as history.
+
 Status: **18A-1 (rules A1 and A2) implemented and tested on 2026-11-12 (H2, and since the afternoon of 2026-11-12 its two queries on real MySQL 8.0.46, the development database, read-only; not deployed to the pilot). 18A-2, 18A-3 and 18B: planned, approved by the owner on 2026-11-12, not built.** ("plan the trust system first,
 then the Next-person card"); each part still needs the owner's approval of this plan before code (CLAUDE.md section 3).
 

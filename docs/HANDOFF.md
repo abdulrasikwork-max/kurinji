@@ -1,6 +1,68 @@
+# CHECKPOINT 2026-11-15: NEW PRODUCT DIRECTION approved; N0 done (documents); N1 (strip) approved and in progress on branch `irl-next`
+
+**This is the newest checkpoint. Read `docs/IRL_DIRECTION.md` first. Everything below this section describes the OLD product (to 18A-2) and is history.**
+
+- **What happened:** the owner reviewed the product, rejected ratings / "Been here" / "Want to go" and the place-first model, and approved: IRL = a verified, real-name community for self-expression, "Who's in?" as the mechanic that turns a post into a real-life plan, safety as a quiet layer, first community MIET Engineering College. All decisions: `DECISIONS.md` N-1 to N-16.
+- **18A-2 is abandoned unverified** (never seen on a screen); 18A-3, 18B and 17I are cancelled. Their "next step" lists below no longer apply.
+- **Git:** tag `pre-n1` = `fd669b9` (the last commit of the old product, the checkout for the viva). Work happens on branch `irl-next`, one local commit per unit, nothing pushed by the session.
+- **N0 (done, documents only, no code, no test run):** `IRL_DIRECTION.md` (new), `CLAUDE.md` sections 1 and 2 replaced (the old file verbatim in `docs/history/CLAUDE_2026-11-15.md`), `DECISIONS.md` N-1 to N-16, `STATUS.md`, `README.md`, "superseded" headers on `EXPERIENCE_PLATFORM_DESIGN.md` and `PHASE18_TRUST_PLAN.md`, `PHASE_N1.md` (the plan).
+- **N1 (approved):** plan, units and real results in `PHASE_N1.md`.
+- **The pilot is UNTOUCHED:** `https://api.irlnow.in` still runs the old jar on schema V30 with the two test accounts. No deploy, no migration, no data change in N0/N1. Its data is wiped later as its own approved step (N-12). Hosting stays the laptop (N-14). The Android build installed on the A23 is still the old one (2026-11-12).
+- **Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search.
+
+---
+
+# CHECKPOINT 2026-11-14 (about 19:45 IST): trust step 18A-2 BUILT and COMMITTED on both sides (backend + Android), NOT verified on a device, pilot untouched
+
+**This is the newest checkpoint. STOP MARKER: the owner stopped here on purpose. Resume from "Next step" below; do not start it before the owner says so. Nothing is pushed by the session.**
+
+## Commits (local `main`, 3 ahead of `origin/main` = `5cd370c`; this checkpoint text itself is NOT committed)
+| Commit | What |
+|---|---|
+| `8a4d984` | Pilot gate: `deploy/scripts/restore-rehearsal.sh`, first run PASS (section below) |
+| `07c7d65` | **18A-2 backend:** migration V31, presence, disclosure, tests, docs |
+| `fd669b9` | **18A-2 Android:** presence, disclosure, tests, docs |
+
+## What is completed (implemented, compiled, tested)
+- **V31** `place_visits.at_place`, `posts.disclosed` (two 0/1 columns with CHECKs). Applied on the DEVELOPMENT MySQL only.
+- **Presence (P18-4, amended):** backend `PUT /api/places/{id}/went` takes an optional `{cell}`, keeps one private bit, drops the cell, answers the same either way; a confirmed visit weighs x 1.5; still 5 independent groups. Android: after "Been here" is saved, the phone checks BY ITSELF whether it is in the place's cell or a cell around it (`PresenceCell`, shared `preciseFix`, 10 s, 100 m rule, never a permission prompt) and only then sends its cell in a second, silent call; elsewhere nothing about the position is sent.
+- **Disclosure (P18-5):** `disclosed` on post create / edit (on only) / answers; the author's rating for that place is left out of the public average but stays theirs. Android: composer switch "I was paid, or got this free" with its consequences said up front, label "Paid or gifted visit" on the feed card and the post page (also spoken), one line in the "How was it?" sheet, one paragraph in About.
+- **Scope (P18-6):** the holds table and the report reason "Undisclosed promotion" are NOT in V31; they belong to 18A-3 (V32).
+- Records: `docs/PHASE18_TRUST_PLAN.md` (plan, "backend as built", "Android as built"), `DECISIONS.md` P18-4 to P18-6, `API.md`, `STATUS.md`, `.claude/rules/` (backend, database, android-social).
+
+## Test / build / lint results (each run on the final tree of its side)
+- **Backend:** 928 run, 0 failures, 0 errors, 4 skipped (the two opt-in real-MySQL classes). Not re-run after the Android work (no backend file changed since).
+- **Real MySQL 8.0.46 (development):** backup first; V31 dry run on scratch copies 6 accepted + 6 refused; Flyway "Successfully applied 1 migration ... now at version v31"; `MySqlPlaceRatersQueryTest` 2 run, 0 failures (with temporary presence + disclosure data, put back afterwards).
+- **Android:** 1086 run, 0 failures, 0 errors, 0 skipped (new `Phase18A2TrustTest`, 17); `assembleDebug` OK; lint 0 errors, 98 warnings (unchanged).
+- Python: not touched, not re-run.
+
+## NOT verified (never claim otherwise)
+- **Emulator:** no walk at all. Not seen: the composer switch and its note, the label on a card and on the post page, the sheet line, the About paragraph; light / dark mode; large text (2.0x); a 320 dp screen.
+- **Galaxy A23:** nothing. The build on the phone is still the OLD one (2026-11-12).
+- **Accessibility:** TalkBack by ear (the switch, the label in the card's spoken text, the sheet line).
+- **GPS / presence on a real phone:** at a place (confirmed), beside it, away from it (nothing sent), location off, permission denied, approximate only, indoors (no good position in 10 s), leaving the screen inside the 10 s; the extra traffic on the slow hotspot line.
+- **Backend live:** a two-account API walk against MySQL (no development account with a known password); H2 API tests + the real-MySQL query test stand in for it.
+- **Not built by design or by fact:** no edit lock (the app has no edit screen); no visible label on the small "Talking now" rail card, Saved rows or Explore results (the post page they open shows it).
+
+## The pilot is UNTOUCHED
+- `https://api.irlnow.in` still runs the old jar (sha256 `485f627c...`, 2026-11-11) on schema **V30**. No deploy, no migration, no data change, no SMS. The only thing done there today was the owner's read-only `restore-rehearsal.sh` run (PASS, 12:58 UTC).
+- **Do NOT install the new Android build against the pilot before the pilot runs the new jar:** the old server accepts a disclosed post and silently drops the disclosure (no label). `android/local.properties` currently points at the pilot.
+- The development database is at **V31**: an older backend jar refuses to start against it (the working tree is fine). Its pre-V31 backup was in a session scratchpad and may be gone.
+- Backups: still only the plain same-disk rehearsal folder; the encrypted daily off-laptop backup still waits for the second laptop.
+
+## Next step (after this checkpoint; needs the owner's go-ahead)
+Continue the remaining 18A-2 work, in this order:
+1. **Emulator walk against the DEVELOPMENT backend** (schema V31; a build with `api.base.url` pointing at the dev server, two accounts through the dev OTP file): every screen in the "not verified" list, light + dark, 2.0x text; fix what it finds.
+2. **A23:** only against a backend that runs the new jar. Real GPS at and away from a place; TalkBack by ear.
+3. **Pilot deploy = its own approved step:** fresh `restore-rehearsal.sh` PASS immediately before, stop `irl-backend`, keep the old jar, install the new one, read the journal for the V31 line, smoke test; that jar also brings 18A-1 to the pilot for the first time. Rollback = that run's dump + the old jar.
+4. Then 18A-3 (burst hold + the new report reason, V32) with its own plan and approval; then 18B.
+Also open, unchanged: the push (the owner's), encrypted off-laptop backups, launcher / themed icon check, trademark search.
+
+---
+
 # CHECKPOINT 2026-11-14 (about 18:45 IST): pilot backup + rehearsed restore gate PASSED - working tree, NOT committed, NOT pushed
 
-**This is the newest checkpoint. The gate the owner set for V31 is passed (result below). V31 itself is NOT started: it needs its own plan and the owner's approval, and a fresh run of the script right before the migration. No push by the session.**
+**(Superseded by the 19:45 checkpoint above: the gate work is committed as `8a4d984` and 18A-2 is built and committed.) The gate the owner set for V31 is passed (result below). V31 itself is NOT started: it needs its own plan and the owner's approval, and a fresh run of the script right before the migration. No push by the session.**
 
 - **RESULT (the owner ran the script as root, 12:58 UTC): `REHEARSAL: PASS (46 tables, 176 rows, Flyway 30 applied, newest V30)`.** Backup `/var/backups/irl-rehearsal/irl-backup-20261114T125851Z` (plain, root only, same disk; db 22,085 bytes, media 10,828,764 bytes); restored into `irl_restorecheck_20261114_125853` in 4 s; 46 of 46 tables identical in rows AND `CHECKSUM TABLE`; no table changed during the run; media 10 = 10 files; scratch database dropped. Full record: `docs/D12_DEPLOYMENT.md` section 10. Not covered: the application was not started against the restored copy; the media archive was listed, not unpacked; nothing is off the laptop or encrypted yet. (The bullets below were written before the run; "NOT run" in them is now out of date.)
 

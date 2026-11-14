@@ -26,91 +26,78 @@ they are permanent rules); new class maps to the matching `.claude/rules/` file.
 
 ## 1. Product
 
-**Brand: IRL — In Real Life** (the user's decision, 2026-11-03; replaces Kurinji; trademark, domain and store checks
-still to do). Line **"OUT THERE. TOGETHER."**, icon **the Tamil letter ai** (`docs/design/irl-icon.md`), opening screen and name
-rules in `docs/DESIGN_SYSTEM.md`. **Package, applicationId (`com.safesphere.app`), signing, database, API and code names
-stay SafeSphere** (a rebrand, not a new app; `KurinjiTextsTest` pins it).
+**Brand: IRL — In Real Life.** Line **"OUT THERE. TOGETHER."**, icon **the Tamil letter ai** (`docs/design/irl-icon.md`).
+**Package, applicationId (`com.safesphere.app`), signing, database, API and code names stay SafeSphere** (`KurinjiTextsTest`).
 
-**Direction — FINAL (the user, 2026-10-22; design `docs/EXPERIENCE_PLATFORM_DESIGN.md`, decisions D1–D15 in its §15;
-built in Phases 13–17):** a social platform for real-world experiences and exploration, with the existing safety
-technology as a trust layer underneath — *people share first-hand experiences of places and activities, written for
-the next person, so others feel inspired and equipped to go experience the world themselves, with quiet safety built
-in.* Philosophy: **"Experience it. Share it forward. Fear less."** Do **not** treat it as a planning/outings app or return
-to `AUDIT_NEXT.md` Part II (superseded). Do not keep re-opening the core concept. The project is not being restarted;
-Phases 1–3 are the foundation.
+**Direction (the owner, 2026-11-15; full record and reasons: `docs/IRL_DIRECTION.md`; it REPLACES the place-first
+"experience platform" of 2026-10-22, whose text is in `docs/history/CLAUDE_2026-11-15.md`):** IRL is a **verified,
+real-name community for self-expression**; the first community is **MIET Engineering College**. People say what is on
+their mind to the people who share their real place, and **"Who's in?"** turns a post into a real-life plan. Safety is a
+quiet supporting layer, never the identity.
 
-- Safety is **not** the identity, the main screen, onboarding, navigation or branding; it appears when someone moves
-  from reading to going ("Going there?" sheet, You → Safety, active walk/SOS banners). **Every safety guarantee is kept.**
-- Structure: **Home · Explore · ✚ Share · You** (2026-11-11, `docs/IRL_REDESIGN.md`; "Want to go" (saves) is under You, nav id `cocoonFragment`; Home = `discoverFragment`). Experience + Ask
-  posts (Takes in V2), Perspectives (comments), mutual Connections, visibility Everyone / Connections / Only me.
-- 🦋 butterfly = a **reaction** on others' Experiences (the author sees a count from 3, never who); **Save** = a private
-  bookmark (D-3). Today's state: a closed list, connections only, the IST day only (D-7).
-- **Permanent product rules:** no follower/following, no public counts (except U1; the U5 place average carries no count), no DMs, no reels/stories, no streaks,
-  no popularity rankings, no endless feed, no presence/online status, notifications only from people. **Nobody can use
-  the platform to monitor another person** (no family/partner/guardian mode, no location on request, no remote view;
-  applies to social features too).
-- Changed by the user on 2026-10-26 (Phase 16, `docs/PHASE16.md`): **U1** a post shows how many comments the viewer can
-  read (only comments; computed through the comment visibility rule, so it reveals nothing the viewer could not count);
-  **U2** Discover may show "Talking now", ordered by the newest visible comment, never by totals, no numbers; **U3**
-  Discover auto-loads the next page but always **ends** with an "all caught up" card; **U4** emergency UI never relies on
-  colour: siren icon + the words SOS/Emergency + its own black-and-red treatment; **U5** (2026-11-03, `docs/PHASE17G2.md`) a place shows ONE guarded average (1-5) only once ≥ 5 people who went (past probation) rated it: no count, name or time, once a day, never used to sort or rank. "I went" and own ratings are private.
-- Colours (2026-11-12, IRL-C1): social side = **Black Cherry #5D0703 + Cream Vanilla #EEDCC8** (overlay, `SocialPalette`); safety
-  screens keep "Ink & Lime" (E17-1); bright red means only emergency (`ContrastTest`, `SocialPaletteTest` pin both).
-- Women's realities are an internal design principle only (D4). Chennai first; Tamil/Tanglish content from V1, Tamil UI
-  in V2 (D5). 18+, self-declared date of birth, never stored (D6).
+- **Community, not proximity:** a community is a real institution that IRL recognises (nobody owns it; no channels, no
+  roles beyond verifier / moderator / platform admin). One community per person at launch. No location is used anywhere
+  in the social product.
+- **Verification:** no college e-mail. A trusted person sees the college ID once: in person (a verifier approves) or by
+  an uploaded photo (an admin approves). Kept: name, department, graduation year, the roll number only in keyed
+  (unreadable) form; the image is deleted at the decision. Bans attach to roll number + phone number. 18+ only. The owner
+  and the project teammates are the root admins.
+- **Moments:** text, one photo or up to 30 s of voice, **made now inside the app (no gallery)**, 24 h life (a few can be
+  kept on the profile). Two kinds: **Say** and **Who's in?** (optional time and a plain-text "where", never a place
+  record). Audience: the community, or "my people" (mutual connections).
+- **Responses:** **Same** (the author sees who; others see "a few / many", never a number) · **Say more** · **I'm in**
+  (only on a "Who's in?"; the author accepts each person; the list is visible to the author and the accepted only) ·
+  **private reply** to the author (one per person per post until answered; default: from my people only). No public
+  comment threads, no upvotes, no ranking, no followers.
+- **Structure:** **Today** (the community wall, 24 h, ends) · **✚ Create** · **Replies** · **You** (real name,
+  department, year, live and kept moments; rows My people, Safety, Settings).
+- **Sign-in:** phone number + code only (no e-mail, no password). **Push:** Firebase messaging (approved 2026-11-15).
+- **Safety (kept):** SOS, Safety Circle, basic Safe Walk, under You plus the app shortcut, tile and opt-in shake; banners
+  only while one runs. The Safety Circle message opens the SMS app (no automatic `SEND_SMS`). **Retired from the app
+  (kept in git tag `pre-n1` and in `docs/` for the viva):** Nearby signals + trust, safety intelligence, route/stop
+  checks, the Evidence Vault and SOS audio, the Phase 9 evaluation work, places, ratings, Explore.
+- **Hosting:** the owner's laptop (WSL2, nginx, Cloudflare Tunnel, Spring Boot, MySQL) for development, demo and the
+  controlled MIET pilot. No paid cloud without the owner's decision.
+- **Still permanent:** nobody can use IRL to monitor another person (no presence, no "last seen", no viewer lists, no
+  location on request); a social restriction never touches SOS, Safe Walk or the Safety Circle; bright red means only
+  emergency; women's realities are an internal design principle; Tamil/Tanglish content from V1.
 - Final-year B.Tech IT team project: the student must be able to explain every important decision in a viva.
-- History (SafeSphere "as built to Phase 11": SAFE / RISE; Rise retired in 13F, D9): appendix of
-  `docs/EXPERIENCE_PLATFORM_DESIGN.md`.
 
 ---
 
 ## 2. Status (full record: `docs/STATUS.md`; per phase: `docs/PHASE*.md`; latest: `docs/HANDOFF.md`)
 
-| Phase | Scope | Status | Not verified (never claim otherwise) |
-|---|---|---|---|
-| 0–3 | Planning; Android foundation; Spring Boot + MySQL + JWT; Safety Circle + manual SOS | Done; 2 and 3 live verified | — |
-| 4A–4D | Location + notifications; Safe Walk; route/stop/battery checks; SMS fallback, Context Packet, Call 112 | implemented, tested; A23: 4A/4B core, 4D (real SMS, Call 112) verified | 4C route/pocket; Samsung "Optimized" ends a walk silently (said in-app) |
-| 5 | Evidence Vault + hardening (V10) + restore on a new phone (V11) | implementation-complete, emulator-verified | A23 partial (+ unlock + one item played, sprint C8); the rest deferred (`PHASE5.md` §11.5.1) |
-| 6 | Community place signals ("Nearby") | implemented, tested, emulator | real phone |
-| 7 | Verification, trust, moderation | implemented, tested, emulator | TalkBack, dark mode, A23 |
-| 8 | Safety Intelligence (area picture, patterns, "Check the way"; no route planner) | implemented, tested, emulator | TalkBack, real phone, real pattern episode |
-| 9 | "Evidence before AI": 9A attack simulation, 9B counters, 9C coordination, 9D neighbour join | 9B and 9C accepted, frozen; 9D awaiting the user's review; **no learned model** | real-world rates, TalkBack, A23 |
-| 10 | 10A foundation + 10A.4 session continuity; 10B Rise (retired in 13F) | verified (MySQL, emulator) | TalkBack, real phone; 10C not built |
-| 11 | SOS without internet (V18) + C1 device sessions (V19) | verified (emulator incl. server down; A23: offline SOS + forced refresh PASS) | TalkBack, the real 25 h idle (deferred) |
-| 12 | Verified Nearby Assistance | not started | — |
-| 13A–13F | Identity, experiences, discovery, moderation v2, AI v1, new UI/navigation | each implemented, tested, live MySQL, emulator | real phone, TalkBack speech, dark mode; 13R research track planned |
-| 14 | Security, privacy + abuse-resistance audit (P14-1…3 fixed) | implemented, tested, live MySQL | real phone |
-| 15 | Final integration + acceptance testing | PARTIAL: 31/36 PASS, 0 FAIL | 5 NOT VERIFIED (real phone, TalkBack…) |
-| V25 | E-mail verification | superseded by 17B (history) | real mailbox |
-| 16 | UX reset (U1–U4) | implemented, tested, emulator | physical phone, TalkBack, real e-mail |
-| 17A–17E | Stabilise; phone OTP (V26); media (V27); location UX; social redesign (V28) | each implemented, tested, verified (MySQL/emulator; 17B also on the A23) | no real SMS sent; physical phone; TalkBack by ear; 17E on the A23 install + launch only |
-| IRL | Rebrand, icon "the Meet", opening screen | implemented, tested, emulator; local commit | physical phone, TalkBack |
-| 17F | Emergency: opt-in shake SOS, audio in an SOS after advance consent, last-known position, one-step Nearby report; no migration (`PHASE17F.md`) | implemented, tested, emulator, A23 (shake screen-on) | screen-off shake unreliable (said in-app); TalkBack countdown speech |
-| 17G-1 | Deterministic Explore: closed-list tags (V29), typed words understood ON THE PHONE (EN/Tamil/Tanglish list), structured query, deterministic server engine; no AI (`docs/PHASE17G.md`) | implemented, tested, live MySQL 31/31, emulator, A23 | Tamil word-list review, Tanglish spelling rule (user's decision) |
-| 17G-3 | Optional AI understanding of a typed Explore request: OFF by default, key only in the Python service, caps + breaker, consent, any failure → the 17G-1 word list (`docs/PHASE17G3.md`) | implemented, tested, verified live with Groq + emulator + A23 | live 422 path, the service's own log |
-| 17G-2 | "I went" = a private record + optional 1–5 rating (V30); a place shows ONE guarded average (U5) from ≥ 5 raters, no count (`docs/PHASE17G2.md`) | implemented, tested, live MySQL, emulator (2.0x), A23 | TalkBack by ear on the button label |
-| 17H | Real-device sprint: A23 + API 26/29/33 emulators (`docs/REAL_DEVICE_SPRINT.md`); 11 defects fixed | closed PARTIAL 2026-11-07 | 25 h idle, overnight battery, SOS countdown speech, screen-off shake |
-| 17J | Release readiness: sealed token, origin-checked token, R8, signing, https config, `prod` profile + `ProductionGuard` (`docs/PHASE17J.md`) | tested; minified build emulator-verified (partial) | signed release, real SMS |
-| 17K | targetSdk 36 (`docs/TARGETSDK36_PLAN.md`): AGP 8.13.2, Gradle 8.14.6, compile/target 36 | tested; back/Tamil/SOS/walk same as target 35 (API 37 emulator) | Android 16 phones |
-| D12 + L1 | Deployment prep + friend pilot from the owner's laptop: WSL2, nginx, Cloudflare Tunnel to a permanent `api.<domain>`, real client address (`docs/D12_DEPLOYMENT.md`, `deploy/LAPTOP.md`) | tested, rehearsed on this PC | **nothing deployed**: no domain, tunnel, WSL, SMS account |
-| IRL redesign | R1-R7 + 2026-11-12 identity (social palette, Fraunces, mark = Tamil letter ai + new opening (IRL-C10/11, approved), "Been here", "Want to go"; `docs/IRL_REDESIGN.md`) | tested (1069/0), A23 dark mode (5 screens) | light mode, large text, TalkBack, media upload |
-| 17I | brand; regression | planned | — |
+**Until N4/N5 replace them, the old social screens and rules (posts, places, comments, cells, time bands, delays) are
+still in the code and its tests; sections 5-13 below describe that code. Where they contradict section 1, section 1
+is the product; flag the conflict instead of "fixing" the new work to fit an old rule.**
 
-Next migration **V32**. Each phase or sub-phase needs its own plan and the user's approval first.
+| Phase | Scope | Status |
+|---|---|---|
+| 0–4D, 11, 17F | Foundation, auth, Safety Circle, SOS (also without internet), location, Safe Walk, SMS, shake SOS | Kept. Done and verified as recorded in `docs/STATUS.md` (A23: SOS, offline SOS, 4A/4B core, 4D) |
+| 4C | Safe Walk route / stop / battery checks | To be removed in N6 (never verified on a real phone) |
+| 5–9, 12 | Evidence Vault, Nearby, trust, intelligence, evaluation; Verified Nearby Assistance | **Retired from the app in N1** (history: tag `pre-n1`, phase docs); 12 never built |
+| 10, 14, 15, 17A–17D, 17H–17K, D12 + L1 | Account, security audit, acceptance, OTP, media, location UX, device sprint, release readiness, targetSdk 36, laptop pilot | Kept as foundations; status as recorded in `docs/STATUS.md` |
+| 13A–13F, 16, 17E, IRL redesign | Profiles, connections, posts, discovery, moderation v2, text check, navigation | Profiles, connections, blocks, moderation, text check, photo pipeline KEPT; posts / places / feed / comments stay until N4/N5 replace them |
+| 17G-1/2/3, 18A-1/2 | Explore, AI understanding, "I went" + ratings, rating trust, presence, disclosure | **Removed in N1** (18A-2 was never verified on a device); 18A-3, 18B, 17I cancelled |
+| **N0** | Record the new direction (docs, this file) | done 2026-11-15 (documents only) |
+| **N1** | Strip: remove the retired features on both sides, migration V32 | approved 2026-11-15; see `docs/PHASE_N1.md` |
+| N2 | Phone-only sign-in, real name, no password | planned |
+| N3 | Community, membership, verification, bans, admin screens | planned |
+| N4 | Moments, capture-only Create, the wall, daily question | planned |
+| N5 | Same / Say more / I'm in, private replies, plan threads, Replies tab | planned |
+| N6 | Safety trim (route checks out, SMS-app fallback only, Safety Circle offer on plans) | planned |
+| N7 | Firebase push | planned |
+| N8 | Pilot launch at MIET (backups, SMS provider, policy texts, seeding, moderators) | planned |
 
-**Never implement early:** Verified Nearby Assistance (Phase 12; "Circle Response" in `PHASE10_DESIGN.md` §32 stays a
-proposal); advanced route intelligence (a real route planner needs an on-device routing graph + a new privacy review,
-`PHASE8_DESIGN.md` §16.4). Rise is retired.
+Next migration **V32** (N1). Each phase or sub-phase needs its own plan and the owner's approval first.
 
-**AI/ML rules:** everything users see from Phase 8/9 safety intelligence is decided by rules; no learned model there
-without gates G1–G3 and the user's decision. **D2 (2026-10-22):** learned models are allowed for content moderation only
-(Tamil/Tanglish/English text, images), under "models produce evidence → a tested deterministic policy decides → only
-humans restrict people"; they run only in the Python moderation service and as a plain-Kotlin linear model on the phone
-(`ModelPlacesTest` pins exactly those places). No learned model acts until gates L1–L3 (`PHASE13E_PLAN.md` E2) and the
-user's decision (`app.moderation.ai.model-mode`). Promoting rules-2 (`app.intelligence.rules-2-mode=ACTIVE`) is the
-user's decision, never a default. Phase 9 is frozen; nothing that decides what people see may read a 9B counter
-(`EvaluationIsolationTest`). **D-2:** AI Explore may use an external model API (Groq free tier first, Claude possible; 17G-3) with request text + candidate place facts only;
-the deterministic engine must work without it.
+**Never implement early:** other communities / the community request system, multiple memberships, video, iPhone,
+Tamil UI, companies, sub-communities, ads, any new AI feature.
+
+**AI/ML rules (D2, unchanged):** learned models are allowed for content moderation only (Tamil/Tanglish/English text),
+under "models produce evidence → a tested deterministic policy decides → only humans restrict people"; they run only
+in the Python moderation service and as a plain-Kotlin linear model on the phone (`ModelPlacesTest`). No learned model
+acts until gates L1–L3 (`PHASE13E_PLAN.md` E2) and the owner's decision (`app.moderation.ai.model-mode`).
 
 ---
 
@@ -295,7 +282,7 @@ closed lists use binary collation.
   limits **429** (our message shown).
 - Every authenticated endpoint can answer 401 with `WWW-Authenticate: Bearer error="invalid_token",
   error_description="credentials_changed|account_deleted|account_unavailable|session_revoked"`.
-- Social answers never carry coordinates (cells only) or exact times for others (bands only); no counts except U1 and
+- (OLD social code, until N4/N5:) social answers never carry coordinates (cells only) or exact times for others (bands only); no counts except U1 and
   the author-only butterfly count (from 3).
 - Update `docs/API.md` (and its appendix index) with every endpoint change.
 
@@ -315,7 +302,7 @@ closed lists use binary collation.
 - Never claim emergency-service integration, SMS delivery, or that contacts were notified unless it happened and was
   confirmed. SMS "sent" ≠ delivered.
 - Document platform limitations honestly (`docs/PLATFORM_CONSTRAINTS.md`).
-- **Social features (Phase 13, built; design doc §4):** no coordinates in any social request or response (cells
+- **Social features (Phase 13, built; design doc §4; OLD social code, replaced in N4/N5: the new product uses no location and no delay, see section 1):** no coordinates in any social request or response (cells
   only); public times as bands, never timestamps; private places stay on the phone; EXIF stripped on the phone and
   re-encoded on the server; one visibility definition (social `Visibility`) for every read path, tested with
   author / connection / stranger / blocked users; connection lists, block lists and saves visible only to their
@@ -422,8 +409,8 @@ closed lists use binary collation.
 | Content can be hidden automatically (reversible); people are restricted only by a human, with a reason, audited, appealable to another moderator; no shadow bans | Automatic punishment fails unsafely; moderator abuse is auditable |
 | AI produces evidence → a deterministic policy decides → only humans restrict (D2); an outage publishes; self-harm never stored | An AI mistake must not silence anyone; infrastructure failure must not silence people |
 | Safety intelligence = deterministic rules, no score, "unknown" is never "safe"; no text claims a place or person is safe | Explainable, attack-resistant, honest |
-| Social: no followers, mutual connections only, no DMs, no presence, no counts except U1; cells and time bands only; private places stay on the phone | Following someone's real-world posts is monitoring; public posts must not reveal routines |
-| Every list of others' posts is ordered by `visible_from`, never `created_at` | The order must not reveal the time the delay hides |
+| OLD social code only (until N4/N5; section 1 replaces it: private replies and plan threads exist, no places): no followers, mutual connections only, no DMs, no presence, no counts except U1; cells and time bands only; private places stay on the phone | Following someone's real-world posts is monitoring; public posts must not reveal routines |
+| OLD social code only (until N4): every list of others' posts is ordered by `visible_from`, never `created_at` | The order must not reveal the time the delay hides |
 | Phone OTP for new accounts (provider-neutral `OtpSender`); e-mail + password stays the sign-in | Sign-ups were stuck without a mail server; codes and limits stay in tested code |
 | Media: metadata stripped on the phone and again on the server; videos tap to play, never stored on the phone | Location privacy; Q3 (nothing about other people on the phone) |
 | Visible brand IRL; package, applicationId, signing and code names stay SafeSphere | A rebrand must update the installed app in place |
