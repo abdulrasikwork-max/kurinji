@@ -25,8 +25,7 @@ class Phase17FGuardsTest {
 
     private val newStrings = listOf(
         "sos_options_subtitle", "sos_options_shake_body", "sos_options_shake_no_sensor", "sos_options_shake_no_notifications",
-        "sos_options_audio_body", "sos_options_audio_no_permission", "sos_options_audio_denied", "sos_options_voice_notice",
-        "audio_question_message", "evidence_recording_started_auto", "shake_countdown_text", "shake_started_text",
+        "sos_options_voice_notice", "shake_countdown_text", "shake_started_text",
         "walk_line_caption", "walk_line_cd", "walk_line_cd_inside", "walk_line_cd_outside", "location_last_known",
         "report_sheet_intro", "radar_legend"
     )
@@ -48,15 +47,24 @@ class Phase17FGuardsTest {
         }
     }
 
+    /** Phase N1: audio in an SOS left with the Evidence Vault. Nothing may ask for it, offer it or be able to record. */
     @Test
-    fun `the audio question tells the whole truth before anyone agrees`() {
-        val question = string("audio_question_message").lowercase()
-        for (fact in listOf("encrypted", "notification", "stop it any time", "nothing is recorded outside an sos", "sos options", "microphone")) {
-            assertTrue("mentions \"$fact\"", question.contains(fact))
+    fun `nothing asks about, offers or can record audio in an SOS`() {
+        val hub = File(main, "java/com/safesphere/app/feature/safety/ui/SafetyFragment.kt").readText(Charsets.UTF_8)
+        val options = File(main, "res/layout/fragment_sos_options.xml").readText(Charsets.UTF_8)
+        val sos = File(main, "res/layout/fragment_emergency.xml").readText(Charsets.UTF_8)
+        for ((name, text) in listOf("Safety hub" to hub, "SOS options" to options, "SOS screen" to sos)) {
+            assertFalse("$name still mentions audio", text.contains("audio", ignoreCase = true))
+            assertFalse("$name still mentions evidence", text.contains("evidence", ignoreCase = true))
         }
-        assertTrue("both answers are explicit", string("audio_question_yes").isNotBlank() && string("audio_question_no") == "No")
-        val body = string("sos_options_audio_body").lowercase()
-        assertTrue(body.contains("nothing is recorded outside an sos") && body.contains("stop it any time"))
+        assertFalse(manifest.contains("RECORD_AUDIO"))
+        assertFalse(manifest.contains("microphone", ignoreCase = true))
+        assertFalse(File(main, "java/com/safesphere/app/feature/evidence").exists())
+        val recorders = kotlinFiles("").filter { text -> listOf("MediaRecorder", "AudioRecord").any { it in text.readText(Charsets.UTF_8) } }
+        assertEquals("no code can record sound", emptyList<String>(), recorders.map { it.name })
+        for (text in listOf(string("emergency_limits_notice"), string("sos_options_subtitle"), string("sos_options_hub_description"))) {
+            assertFalse(text.contains("audio", ignoreCase = true) && !text.contains("never records", ignoreCase = true))
+        }
     }
 
     @Test
@@ -92,23 +100,21 @@ class Phase17FGuardsTest {
         assertEquals(
             setOf(
                 "INTERNET", "ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "POST_NOTIFICATIONS", "FOREGROUND_SERVICE",
-                "FOREGROUND_SERVICE_LOCATION", "ACCESS_NETWORK_STATE", "SEND_SMS", "RECORD_AUDIO", "FOREGROUND_SERVICE_MICROPHONE",
-                "USE_BIOMETRIC"
+                "FOREGROUND_SERVICE_LOCATION", "ACCESS_NETWORK_STATE", "SEND_SMS"
             ).map { "android.permission.$it" }.toSet(),
             permissions
         )
         assertFalse(manifest.contains("BOOT_COMPLETED"))
         val services = Regex("<service\\s+android:name=\"([^\"]+)\"").findAll(manifest).map { it.groupValues[1] }.toSet()
         assertEquals(
-            "the shake adds no service: the tile, the one tracking service and the upload job only",
-            setOf(
-                ".feature.emergency.entry.SosTileService", ".core.tracking.SafetyTrackingService",
-                ".feature.evidence.session.EvidenceUploadJobService"
-            ),
+            "the shake adds no service: the tile and the one tracking service only",
+            setOf(".feature.emergency.entry.SosTileService", ".core.tracking.SafetyTrackingService"),
             services
         )
         val receiver = Regex("<receiver\\s+android:name=\"\\.feature\\.emergency\\.trigger\\.ShakeCountdownCancelReceiver\"\\s+android:exported=\"false\"")
         assertTrue("the Cancel receiver is not exported", receiver.containsMatchIn(manifest))
+        assertTrue("the one service has the location type only", manifest.contains("android:foregroundServiceType=\"location\""))
+        assertFalse("no file provider is left", manifest.contains("<provider"))
     }
 
     @Test
@@ -117,14 +123,6 @@ class Phase17FGuardsTest {
         assertEquals(listOf("ShakeSensor.kt"), registering)
         val users = kotlinFiles("").filter { it.name != "ShakeSensor.kt" && Regex("\\.start\\(::onSample\\)|sensor\\.start\\(").containsMatchIn(it.readText(Charsets.UTF_8)) }
         assertEquals(listOf("ShakeSos.kt"), users.map { it.name })
-    }
-
-    @Test
-    fun `the audio question never blocks the way to SOS`() {
-        val hub = File(main, "java/com/safesphere/app/feature/safety/ui/SafetyFragment.kt").readText(Charsets.UTF_8)
-        assertFalse("the question must be dismissable (Back = ask next time)", hub.contains("setCancelable(false)"))
-        assertTrue("not shown while an SOS runs", hub.contains("sosRecorder.state.value.current != null"))
-        assertTrue("not shown during a Safe Walk", hub.contains("safeWalk.state.value.isActive"))
     }
 
     @Test
@@ -142,8 +140,7 @@ class Phase17FGuardsTest {
     fun `the pure shake and walk-line rules use no Android types`() {
         val pure = listOf(
             "feature/emergency/trigger/ShakePolicy.kt", "feature/emergency/trigger/ShakeArming.kt",
-            "feature/safewalk/domain/WalkLineGeometry.kt", "feature/safewalk/domain/WalkLineLabels.kt",
-            "feature/evidence/domain/AutoAudioPolicy.kt"
+            "feature/safewalk/domain/WalkLineGeometry.kt", "feature/safewalk/domain/WalkLineLabels.kt"
         )
         for (path in pure) {
             val text = File(main, "java/com/safesphere/app/$path").readText(Charsets.UTF_8)

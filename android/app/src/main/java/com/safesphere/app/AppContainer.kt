@@ -24,7 +24,6 @@ import com.safesphere.app.feature.account.domain.PendingDeletionStore
 import com.safesphere.app.feature.account.session.AccountDataWiper
 import com.safesphere.app.feature.account.session.SessionRenewer
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.withContext
 import com.safesphere.app.core.tracking.CompositeTrackingNoticeSource
 import com.safesphere.app.core.tracking.TrackingNoticeSource
 import com.safesphere.app.feature.safewalk.data.DataStoreActiveJourneyStore
@@ -75,9 +74,9 @@ import com.safesphere.app.feature.emergency.data.RemoteEmergencyLocationReposito
 import com.safesphere.app.feature.emergency.data.RemoteEmergencyRepository
 import com.safesphere.app.feature.emergency.data.remote.EmergencyApi
 import com.safesphere.app.feature.emergency.domain.ActiveEmergencyStore
-import com.safesphere.app.feature.emergency.domain.EmergencyIds
 import com.safesphere.app.feature.emergency.session.SosRecorder
 import com.safesphere.app.core.retired.RiseRetirement
+import com.safesphere.app.core.retired.VaultRetirement
 import com.safesphere.app.feature.emergency.entry.SosLaunchRequest
 import com.safesphere.app.feature.emergency.data.DataStoreSosOptionsStore
 import com.safesphere.app.feature.emergency.domain.SosOptionsStore
@@ -104,27 +103,11 @@ import com.safesphere.app.feature.circlealert.session.CircleAlertController
 import com.safesphere.app.feature.circlealert.session.CircleAlertCoordinator
 import com.safesphere.app.feature.safetycircle.data.remote.SafetyContactApi
 import com.safesphere.app.feature.safetycircle.domain.SafetyCircleRepository
-import android.os.SystemClock
 import com.safesphere.app.core.crypto.AndroidKeystoreKeyWrapper
-import com.safesphere.app.feature.evidence.capture.AndroidStorageSpace
-import com.safesphere.app.feature.evidence.capture.EvidenceRecorder
-import com.safesphere.app.feature.evidence.capture.MediaRecorderSegmentWriter
-import com.safesphere.app.feature.evidence.data.EvidenceFiles
-import com.safesphere.app.feature.evidence.data.RemoteEvidenceRepository
-import com.safesphere.app.feature.evidence.data.remote.EvidenceApi
-import com.safesphere.app.feature.evidence.session.AndroidEvidenceUploadScheduler
-import com.safesphere.app.feature.evidence.data.RecoveryKeyStore
-import com.safesphere.app.feature.evidence.domain.PassphraseGenerator
-import com.safesphere.app.feature.evidence.domain.PassphrasePolicy
-import com.safesphere.app.feature.evidence.session.EvidenceRecovery
-import com.safesphere.app.feature.evidence.session.EvidenceVault
-import com.safesphere.app.feature.evidence.session.VaultLock
 import com.safesphere.app.feature.moderation.data.RemoteModerationRepository
 import com.safesphere.app.feature.moderation.data.remote.ModerationApi
 import com.safesphere.app.feature.moderation.domain.ModerationRepository
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -344,13 +327,11 @@ class AppContainer(context: Context) {
     /** A pending deletion this phone knows about (account id + date only); survives a sign-out. */
     val pendingDeletion: PendingDeletionStore by lazy { DataStorePendingDeletionStore(appContext) }
 
-    /** Removes a DELETED account's evidence and recovery key from this phone (a sign-out clears the rest). */
+    /** Removes what this phone kept for a DELETED account (its SOS options; a sign-out clears the rest). */
     val accountDataWiper: AccountDataWiper by lazy {
         AccountDataWiper(
             parts = listOf(
-                { userId -> evidenceVault.forgetAccount(userId) },
-                { userId -> withContext(Dispatchers.IO) { recoveryKeyStore.remove(userId) } },
-                // Phase 17F: the deleted account's shake / audio choices
+                // Phase 17F: the deleted account's shake choice
                 { userId -> sosOptionsStore.forget(userId) }
             ),
             pendingDeletion = pendingDeletion
@@ -443,12 +424,9 @@ class AppContainer(context: Context) {
     /** Destination text -> place (platform Geocoder). Shared by Safe Walk and "Check the way" (Phase 8D). */
     val destinationResolver: DestinationResolver by lazy { GeocoderDestinationResolver(appContext) }
 
-    /**
-     * What the ONE tracking foreground service shows: an audio evidence recording first (the person must always see
-     * it), then an active emergency, then a Safe Walk.
-     */
+    /** What the ONE tracking foreground service shows: an active emergency first, then a Safe Walk. */
     val trackingNoticeSource: TrackingNoticeSource by lazy {
-        CompositeTrackingNoticeSource(listOf(evidenceRecorder, emergencyLocationSharing, safeWalk))
+        CompositeTrackingNoticeSource(listOf(emergencyLocationSharing, safeWalk))
     }
 
     /** True while an emergency or a walk wants the location service type (used by SafetyTrackingService). */
@@ -482,84 +460,8 @@ class AppContainer(context: Context) {
         )
     }
 
-    // ---- Phase 5: Emergency Evidence Vault -------------------------------------------------------
-
-    private val evidenceApi: EvidenceApi by lazy { retrofit.create(EvidenceApi::class.java) }
-
-    val evidenceFiles: EvidenceFiles by lazy { EvidenceFiles(appContext.filesDir, appContext.cacheDir) }
-
-    /** The one holder of the phone's encrypted evidence (sealing, recovery, upload, deletion, viewing). */
-    val evidenceVault: EvidenceVault by lazy {
-        EvidenceVault(
-            scope = applicationScope,
-            io = Dispatchers.IO,
-            files = evidenceFiles,
-            keyWrapper = AndroidKeystoreKeyWrapper(),
-            repository = evidenceRepository,
-            connectivityMonitor = AndroidConnectivityMonitor(appContext),
-            session = sessionStorage.session,
-            pinnedVaultKeyId = BuildConfig.EVIDENCE_VAULT_KEY_ID.takeIf { it.isNotBlank() },
-            uploadScheduler = AndroidEvidenceUploadScheduler(appContext),
-            recoveryKeys = recoveryKeyStore
-        )
-    }
-
-    private val evidenceRepository by lazy { RemoteEvidenceRepository(evidenceApi, apiCallHandler) }
-
-    /** Each account's recovery key on this phone (restore on a new phone, docs/PHASE5.md §11). */
-    private val recoveryKeyStore: RecoveryKeyStore by lazy { RecoveryKeyStore(evidenceFiles, AndroidKeystoreKeyWrapper()) }
-
-    /** Recovery passphrase set-up / change / restore. The passphrase never leaves the phone. */
-    val evidenceRecovery: EvidenceRecovery by lazy {
-        EvidenceRecovery(
-            io = Dispatchers.IO,
-            vault = evidenceVault,
-            repository = evidenceRepository,
-            store = recoveryKeyStore,
-            keyWrapper = AndroidKeystoreKeyWrapper()
-        )
-    }
-
-    /** The signed-in person (name and email are kept out of recovery passphrases). */
+    /** The signed-in person. */
     val currentUser = sessionStorage.session.map { it?.user }
-
-    /** Loaded from assets on first use (call off the main thread). */
-    val passphrasePolicy: PassphrasePolicy by lazy {
-        val common = appContext.assets.open("common_passwords_10k.txt").bufferedReader().useLines { lines ->
-            lines.map { it.trim().lowercase() }.filter { it.isNotEmpty() }.toSet()
-        }
-        PassphrasePolicy(common)
-    }
-
-    val passphraseGenerator: PassphraseGenerator by lazy {
-        PassphraseGenerator(appContext.assets.open("eff_large_wordlist.txt").bufferedReader().useLines(PassphraseGenerator::parseEffList))
-    }
-
-    /** The vault screen's viewing lock (the phone's screen lock); any account change locks it. */
-    val vaultLock: VaultLock by lazy { VaultLock(applicationScope, evidenceVault.currentUserId) }
-
-    /** MediaRecorder must only be used from one thread. */
-    private val recorderDispatcher by lazy { Executors.newSingleThreadExecutor().asCoroutineDispatcher() }
-
-    /** The one holder of audio evidence recording; also a notice source of the tracking service. */
-    val evidenceRecorder: EvidenceRecorder by lazy {
-        EvidenceRecorder(
-            scope = applicationScope,
-            recorderDispatcher = recorderDispatcher,
-            vault = evidenceVault,
-            writer = MediaRecorderSegmentWriter(appContext),
-            storage = AndroidStorageSpace(appContext.filesDir),
-            // Phase 11: evidence belongs to an SOS the server has (a local id is not one yet).
-            activeEmergencyId = emergencyLocationSharing.state.map {
-                if (it.signedOut || it.emergencyId?.let(EmergencyIds::isLocal) == true) null else it.emergencyId
-            },
-            currentUserId = evidenceVault.currentUserId,
-            elapsedMillis = SystemClock::elapsedRealtime
-        )
-    }
-
-    /** Set by SafetyTrackingService: true while it runs with the microphone service type. */
-    val microphoneInForeground = MutableStateFlow(false)
 
     /** The same location provider, for screens that need one fix while they are open. */
     val screenLocationProvider: LocationProvider get() = locationProvider
@@ -574,16 +476,20 @@ class AppContainer(context: Context) {
 
     val riseRetirement: RiseRetirement by lazy { RiseRetirement(appContext.filesDir) }
 
+    // ---- Phase N1: the Evidence Vault is retired; what it kept on this phone is deleted once, with a notice ----------
+
+    val vaultRetirement: VaultRetirement by lazy { VaultRetirement(appContext.filesDir, appContext.cacheDir) }
+
     /** Phase 13F (F11): set only by the non-exported SosEntryActivity (shortcut, tile); memory only. */
     val sosLaunchRequest: SosLaunchRequest = SosLaunchRequest()
 
-    // ---- Phase 17F: SOS options (shake gesture, audio consent) ---------------------------------------------
+    // ---- Phase 17F: SOS options (shake gesture) ---------------------------------------------------------------
 
     /** Whether any screen of IRL is on the display (the shake gesture opens the SOS screen itself only then). */
     val appVisibility: com.safesphere.app.core.lifecycle.AppVisibility
         get() = (appContext as com.safesphere.app.SafeSphereApp).appVisibility
 
-    /** The person's own SOS choices (shake, audio), per account, on this phone only. */
+    /** The person's own SOS choice (shake), per account, on this phone only. */
     val sosOptionsStore: SosOptionsStore by lazy { DataStoreSosOptionsStore(appContext) }
 
     /** The shake sensor, shared by the holder and by the options screen (which hides the switch without one). */
@@ -623,9 +529,8 @@ class AppContainer(context: Context) {
 
     init {
         applicationScope.launch(Dispatchers.IO) { riseRetirement.retire() }
+        applicationScope.launch(Dispatchers.IO) { vaultRetirement.retire() }
         currentSession // Phase 11 C1: start following the session now, so the dialog never reads a stale "null"
-        evidenceVault // seal captures interrupted by a crash and resume uploads right away
-        evidenceRecorder // watches the active emergency (stops recording when it ends)
         circleAlerts // start watching walks and emergencies right away (e.g. after a restart into a walk)
         sosRecorder // record an SOS that started or ended offline as soon as the server can be reached
         shakeSos // Phase 17F: starts listening for the shake gesture if (and only if) the person switched it on
@@ -644,7 +549,7 @@ class AppContainer(context: Context) {
                     }
                 }
         }
-        // Phase 10A.3: the server said the account is deleted: remove what a sign-out keeps (evidence, recovery key).
+        // Phase 10A.3: the server said the account is deleted: remove what a sign-out keeps (the SOS options).
         applicationScope.launch {
             sessionEnder.ended.collect { end ->
                 if (end.reason == SessionEndReason.ACCOUNT_DELETED) accountDataWiper.wipe(end.userId)

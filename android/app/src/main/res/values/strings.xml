@@ -128,7 +128,7 @@
     <string name="session_password_changed_title">Password changed</string>
     <string name="session_password_changed">The password of this account was changed, so this phone was signed out. Log in with the new password. If you did not change it, someone else knows your password: log in and change it again as soon as you can.</string>
     <string name="session_account_deleted_title">Account deleted</string>
-    <string name="session_account_deleted">This account has been deleted. IRL is removing its evidence and recovery key from this phone as well.</string>
+    <string name="session_account_deleted">This account has been deleted. IRL is removing what it kept for it on this phone as well.</string>
     <string name="session_account_unavailable">This account is switched off. Please contact the IRL team.</string>
     <!-- Phase 11 C1: the server needs a sign-in again, but nothing on this phone was deleted and SOS still works. -->
     <string name="session_sign_in_to_sync_title">Sign in to sync</string>
@@ -437,7 +437,7 @@
     <string name="profile_about_title">About IRL</string>
     <string name="profile_about_description">Version and project information</string>
     <string name="logout_dialog_title">Log out?</string>
-    <string name="logout_dialog_message">This signs you out on this phone. Your evidence stays encrypted on this phone for when you sign in again; your Safety Circle copy for offline SMS and any unsent Nearby reports are removed.</string>
+    <string name="logout_dialog_message">This signs you out on this phone. Your Safety Circle copy for offline SMS is removed.</string>
 
     <!-- Settings (Phase 10A: only rows that work; SettingsHonestyTest) -->
     <string name="settings_section_account">Account</string>
@@ -467,7 +467,7 @@
     <string name="account_password_same">Choose a password different from your current one.</string>
     <string name="account_password_required">Enter your password.</string>
     <string name="account_section_delete">Delete account</string>
-    <string name="account_delete_explainer">Your account is deleted 7 days after you ask, not at once. Until then everything keeps working, SOS included, and you can cancel with your password. Asking is not possible during an emergency or within 24 hours after one. Everything your account holds on the server is deleted, including your profile, posts, photos and comments, your connections, your saved list, your Evidence Vault, your emergencies and walks, your Safety Circle and your Nearby reports; once it is gone it cannot be restored. Afterwards this phone removes the account\'s evidence and recovery key too.</string>
+    <string name="account_delete_explainer">Your account is deleted 7 days after you ask, not at once. Until then everything keeps working, SOS included, and you can cancel with your password. Asking is not possible during an emergency or within 24 hours after one. Everything your account holds on the server is deleted, including your profile, posts, photos and comments, your connections, your saved list, your emergencies and walks, your Safety Circle and your Nearby reports; once it is gone it cannot be restored.</string>
     <string name="account_delete_button">Delete my account…</string>
     <string name="account_delete_confirm_title">Delete your account?</string>
     <string name="account_delete_confirm_message">Enter your password. Nothing is deleted for 7 days; you can cancel until then.</string>
@@ -479,21 +479,19 @@
     <string name="account_deletion_pending">This account will be deleted on %1$s. Until then everything keeps working. If you did not ask for this, cancel it in Account and security.</string>
     <string name="account_deletion_pending_requested">This account will be deleted on %1$s (asked on %2$s). Until then everything keeps working. If you did not ask for this, cancel it in Account and security.</string>
     <string name="account_deletion_pending_soon">This account will be deleted soon (it was waiting until 24 hours after your last emergency). You can still cancel it in Account and security.</string>
-    <!-- Login, after a deleted account's date: its evidence may still be on this phone -->
-    <string name="login_deleted_account_notice">An account on this phone was due to be deleted. If it has been deleted, its evidence and recovery key may still be on this phone. If you cancelled the deletion, just log in instead.</string>
+    <!-- Login, after a deleted account's date: its SOS options may still be on this phone -->
+    <string name="login_deleted_account_notice">An account on this phone was due to be deleted. If it has been deleted, some of its settings may still be on this phone. If you cancelled the deletion, just log in instead.</string>
     <string name="login_remove_deleted_account_data">Remove its data from this phone</string>
-    <string name="login_remove_deleted_account_confirm">This removes that account\'s evidence and recovery key from this phone. Do this only if the account was deleted: if it still exists, you would have to restore its evidence with the recovery passphrase.</string>
+    <string name="login_remove_deleted_account_confirm">This removes that account\'s settings (its SOS options) from this phone. If the account still exists, you would only have to choose them again.</string>
 
     <!-- Information pages -->
     <string name="about_body">IRL: safety that expands your world. A privacy-focused safety app designed with women at the centre, built in phases as a final-year B.Tech project. Safe enough to live. Free enough to grow.
 
-This build has real accounts (with password change and account deletion), a Safety Circle, a manual SOS session, Safe Walk with check-ins and movement checks, Nearby (anonymous place signals) and "Check the way". Nobody can use IRL to track another person. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. During an active SOS you can record audio, photos or video as evidence: only when you tap, always with a visible notification, encrypted on your phone at once and uploaded to your private Evidence Vault. IRL never contacts emergency services and never records in the background on its own.
+This build has real accounts (with password change and account deletion), a Safety Circle, a manual SOS session, Safe Walk with check-ins and movement checks, Nearby (anonymous place signals) and "Check the way". Nobody can use IRL to track another person. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. IRL never contacts emergency services and never records sound, photos or video during an SOS.
 
 The order of posts on Home uses what a post contains and the interests you chose; \"Talking now\" uses how recently someone commented. It never uses how many people saved, read or commented.
 
-When you tap \"Been here\" and location is already allowed for IRL, your phone checks whether you are near that place and, only if you are, tells IRL so. IRL never asks for location for this, keeps only a yes or no, and shows it to nobody. A post marked \"Paid or gifted visit\" means its author said they were paid or got it free; their rating does not count towards the average of that place.
-
-Suggested recovery passphrases use the EFF Large Wordlist by the Electronic Frontier Foundation (CC BY 3.0). Passphrases are checked against the 10k-most-common password list from the SecLists project (MIT licence).</string>
+When you tap \"Been here\" and location is already allowed for IRL, your phone checks whether you are near that place and, only if you are, tells IRL so. IRL never asks for location for this, keeps only a yes or no, and shows it to nobody. A post marked \"Paid or gifted visit\" means its author said they were paid or got it free; their rating does not count towards the average of that place.</string>
     <string name="about_version_format">Version %1$s</string>
     <string name="terms_body">IRL is a student prototype, not a released product, and there are no final terms of use yet. It is not an emergency service: it never contacts the police, an ambulance or anyone else for you, and an SMS that was sent is not proof that it was delivered or read. In an emergency, call 112 or your local emergency number. Do not rely on IRL as your only way to get help. Terms of use will be written and reviewed before any public release.</string>
     <string name="privacy_policy_body">Privacy notice for this prototype build. It describes what this build actually does. It is written by the project team, is not legal advice and is not a final privacy policy.
@@ -512,7 +510,6 @@ Stop and route checks (if switched on): the destination text you type is looked 
 
 Safety Circle SMS (only if you switch on automatic SMS, or when you tap Text yourself): your phone sends an SMS to your enabled contacts with your name, the time, what happened and a map link to your last location. To work without internet, your enabled contacts\' names and numbers are kept on this phone (deleted when you log out). The server records only that a message was sent, to which contact and its status; never the number or the text. Tapping Call 112 opens your phone\'s dialer; IRL records that it was opened, not whether you called.
 
-Evidence Vault (only during an active SOS, only when you tap): audio from your microphone, or a photo or video taken with your phone\'s own camera app. Each item is encrypted on this phone right away with its own key, which is protected by your phone\'s secure hardware; the unencrypted file is deleted. The IRL server receives only the encrypted file, its size, two fingerprints (SHA-256), the capture times and a chain-of-custody log; it cannot open the evidence. If the server offers a vault recovery key, a copy of each item\'s key is sealed for it, so the evidence can still be recovered if your phone is lost; that recovery key is kept offline by the IRL operator, not on the server. If you set up a recovery passphrase, the server also stores a copy of each item\'s key locked with a key that only your passphrase opens; the passphrase itself never leaves your phone, so IRL cannot read it or reset it (someone holding the server\'s data could try to guess a weak passphrase, which is why short or common ones are refused). The server records when that locked copy was last fetched. No location, file name or device details are sent with evidence. You can delete evidence everywhere with your password once the emergency has ended. The camera app you use may keep its own copy; check its settings.
 
 Nearby (only when you open it): your phone turns one location fix into an area code of about 1 km to look at your area, and of about 150 m to report or answer. Your coordinates never leave the phone. A report says only the kind of place problem (or a safe place) and that block; it has no text, photo, name or time, and nobody is shown who shared it. It starts to count after a random delay, shows only to about 1 km until a second person confirms it, and is deleted at the end of its lifetime. You can see and withdraw your own reports in Nearby. Privately, the server keeps a few counters about how your reports turned out (never places or times); they halve every 90 days and are never shown, not even to you. If you flag a signal, a moderator sees only codes and a pseudonym valid for that one case. Moderation decisions are logged with reason codes for 365 days.
 
@@ -522,9 +519,9 @@ Counts: once a week the server counts, system-wide, how the Nearby rules worked 
 
 Rise: everything you write or choose in Rise (goals, steps, how you expected and how it went, dates) stays on this phone in a file encrypted with a key held by your phone\'s secure hardware, separately for each account. None of it is sent to the IRL server or to anyone. Rise has no reminders or notifications. Signing out keeps it; Delete all Rise data, deleting your account, or uninstalling the app removes it.
 
-Account deletion: you need your password; it is refused during an emergency and for 24 hours after one, and it waits 7 days (cancel with your password; signing in does not cancel it). Then the server deletes your account and everything it holds: emergencies and their locations, walks, Safety Circle, evidence files and records, recovery data and Nearby contributions. If you ever acted as a moderator, your account row stays as an anonymous, switched-off record so that the moderation log keeps who decided what; your name, email and safety data are still deleted. After the deletion, this phone removes the account\'s evidence and recovery key the next time it learns of it, or when you tap the button on the login screen.
+Account deletion: you need your password; it is refused during an emergency and for 24 hours after one, and it waits 7 days (cancel with your password; signing in does not cancel it). Then the server deletes your account and everything it holds: emergencies and their locations, walks, Safety Circle and Nearby contributions. If you ever acted as a moderator, your account row stays as an anonymous, switched-off record so that the moderation log keeps who decided what; your name, email and safety data are still deleted. After the deletion, this phone removes the settings it kept for the account the next time it learns of it, or when you tap the button on the login screen.
 
-Retention in short: emergency locations, walks and evidence stay until you delete them or your account; walk destinations and last locations are deleted when a walk ends normally; Nearby signals expire on their own; moderation log 365 days; weekly counts 104 weeks.
+Retention in short: emergency locations and walks stay until you delete them or your account; walk destinations and last locations are deleted when a walk ends normally; Nearby signals expire on their own; moderation log 365 days; weekly counts 104 weeks.
 
 A complete privacy policy will be written and reviewed before any public release.</string>
 
@@ -586,7 +583,7 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- ===== Emergency SOS ===== -->
     <string name="emergency_idle_title">Emergency SOS</string>
     <string name="emergency_idle_body">Starts a five second countdown. If you do not cancel it, your SOS starts on this phone, even without internet, and is recorded on your account as soon as IRL\'s server can be reached.</string>
-    <string name="emergency_limits_notice">During SOS, IRL asks for your location and saves it to your own emergency record. If you switched on automatic SMS (Safety Circle screen), your Safety Circle is texted with a map link; otherwise you can text them yourself. IRL never calls emergency services, and records audio, photos or video only when you choose it: by tapping, or (for audio) in advance in SOS options. In an emergency, call 112 or your local emergency number.</string>
+    <string name="emergency_limits_notice">During SOS, IRL asks for your location and saves it to your own emergency record. If you switched on automatic SMS (Safety Circle screen), your Safety Circle is texted with a map link; otherwise you can text them yourself. IRL never calls emergency services and never records sound, photos or video. In an emergency, call 112 or your local emergency number.</string>
     <string name="action_start_sos">Start SOS</string>
     <string name="action_view_emergency_history">View emergency history</string>
     <string name="emergency_countdown_label">Starting emergency in</string>
@@ -634,7 +631,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="emergency_ended_unsent_sign_in_resolved">Your SOS has ended on this phone. IRL saves it to your history once you sign in again.</string>
     <string name="emergency_ended_unsent_sign_in_cancelled">Marked as a false alarm on this phone. IRL saves it to your history once you sign in again.</string>
     <!-- Phase 11: SOS without internet -->
-    <string name="emergency_not_on_server_yet">Your SOS is running on this phone. IRL\'s server has not been reached yet, so it keeps trying in the background. SMS to your Safety Circle needs no internet, and your location is collected and saved once the server is reached. Evidence recording opens once the server has your SOS. You can call 112 at any time.</string>
+    <string name="emergency_not_on_server_yet">Your SOS is running on this phone. IRL\'s server has not been reached yet, so it keeps trying in the background. SMS to your Safety Circle needs no internet, and your location is collected and saved once the server is reached. You can call 112 at any time.</string>
     <string name="location_card_waiting_for_server">Your location is being collected on this phone. It is saved to your emergency record once IRL\'s server has your SOS.</string>
     <string name="emergency_not_on_server_refused">Your SOS is running on this phone, but IRL\'s server did not accept it. Text your Safety Circle with the buttons below, or call 112.</string>
     <string name="emergency_ended_unsent_resolved">Your SOS has ended on this phone. IRL saves it to your history once its server can be reached.</string>
@@ -1663,6 +1660,9 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="safety_hub_tile_not_added">SOS was not added. You can add it from the Quick Settings edit screen.</string>
 
     <!-- Rise retired (D9) -->
+    <!-- N1: the Evidence Vault is retired; what it kept on this phone is deleted once, with this notice -->
+    <string name="vault_retired_title">The Evidence Vault has been retired</string>
+    <string name="vault_retired_message">The recordings, photos and videos it kept on this phone were deleted. IRL no longer records sound, photos or video during an SOS. SOS, Safe Walk and your Safety Circle work as before.</string>
     <string name="rise_retired_title">Rise has been retired</string>
     <string name="rise_retired_message">Its notes on this phone were deleted. Nothing from Rise was ever on a server. Your saved list and \"Only me\" posts are the place for plans you keep to yourself.</string>
     <!-- ===== Phase 16: UX reset (docs/PHASE16.md) ===== -->
@@ -1810,8 +1810,8 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- Phase 17F: SOS options (shake, audio), the shake countdown notification -->
     <string name="sos_options_title">SOS options</string>
-    <string name="sos_options_subtitle">Two optional ways to make an SOS quicker. Both are off until you turn them on, and you can change them any time.</string>
-    <string name="sos_options_hub_description">Shake to start SOS, and recording audio in an SOS</string>
+    <string name="sos_options_subtitle">An optional way to make an SOS quicker. It is off until you turn it on, and you can change it any time.</string>
+    <string name="sos_options_hub_description">Shake to start SOS</string>
     <string name="sos_options_shake_title">Shake to start SOS</string>
     <string name="sos_options_shake_body">Shake the phone firmly three times and the same 5-second SOS countdown starts. You can cancel it. A shake never sends anything by itself. It works while IRL is open. During a Safe Walk it also tries with the screen off (the countdown is then a notification with a Cancel button), but many phones pause their motion sensor when the screen is off, so do not rely on shaking then. The SOS button, the Quick Settings tile and the launcher shortcut always work.</string>
     <string name="sos_options_shake_no_sensor">This phone has no motion sensor, so shaking cannot be used.</string>

@@ -63,7 +63,7 @@ class Phase15IntegrationFixesTest {
     fun deletionExplainer_namesTheSocialContentToo() {
         val strings = File("src/main/res/values/strings.xml").readText(Charsets.UTF_8)
         val text = Regex("<string name=\"account_delete_explainer\">([^<]*)</string>").find(strings)!!.groupValues[1]
-        for (word in listOf("profile", "posts", "photos", "comments", "connections", "saved list", "Evidence Vault")) {
+        for (word in listOf("profile", "posts", "photos", "comments", "connections", "saved list", "emergencies", "Safety Circle")) {
             assertTrue("deletion text should name $word", text.contains(word))
         }
     }

@@ -25,33 +25,24 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
- * Which foreground service types the ONE service needs right now (Phase 5): location while an emergency or walk tracks
- * location (and permission is granted), microphone while audio evidence is recorded (and RECORD_AUDIO is granted).
+ * Which foreground service type the ONE service needs right now: location while an emergency or walk tracks location
+ * (and permission is granted). The microphone type left with the Evidence Vault in N1.
  * Null = nothing to do. On Android 9 (no types) the value is 0, which still means "run".
  */
 internal object ForegroundTypes {
     fun current(context: Context, container: com.safesphere.app.AppContainer): Int? {
         val location = container.locationTrackingNeeded() && hasPermission(context, android.Manifest.permission.ACCESS_COARSE_LOCATION)
-        val microphone = container.evidenceRecorder.state.value.isRecording &&
-            hasPermission(context, android.Manifest.permission.RECORD_AUDIO)
-        if (!location && !microphone) return null
+        if (!location) return null
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return 0
-        var types = 0
-        if (location) types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-        if (microphone && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-        return types
+        return ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
     }
-
-    fun hasMicrophone(types: Int): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && (types and ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE) != 0
 
     private fun hasPermission(context: Context, permission: String): Boolean =
         ContextCompat.checkSelfPermission(context, permission) == android.content.pm.PackageManager.PERMISSION_GRANTED
 }
 
 /**
- * The ONE foreground service (types "location" and, since Phase 5, "microphone") that keeps SafeSphere's location
- * updates and an audio evidence recording running while
+ * The ONE foreground service (type "location") that keeps SafeSphere's location updates running while
  * the screen is off or another app is open. It does no tracking itself: the work happens in the
  * shared holder ([TrackingNoticeSource], here the emergency location sharing). This service only keeps
  * the process in the foreground and shows the required ongoing notification, and it stops itself as soon
@@ -92,8 +83,6 @@ class SafetyTrackingService : Service() {
                         stopTracking()
                         return@collect
                     }
-                    // Phase 5: recording audio adds the microphone type (and stopping removes it); this happens right
-                    // after the person tapped "Record" on the visible SOS screen, when Android allows it.
                     val wanted = ForegroundTypes.current(this@SafetyTrackingService, container)
                     when {
                         wanted == null -> stopTracking()
@@ -108,7 +97,6 @@ class SafetyTrackingService : Service() {
 
     override fun onDestroy() {
         container.trackingServiceRunning.value = false
-        container.microphoneInForeground.value = false
         scope.cancel()
         super.onDestroy()
     }
@@ -117,7 +105,6 @@ class SafetyTrackingService : Service() {
     private fun promote(notice: TrackingNotice, types: Int): Boolean = try {
         ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(notice), types)
         activeTypes = types
-        container.microphoneInForeground.value = ForegroundTypes.hasMicrophone(types)
         true
     } catch (e: Exception) {
         // SecurityException (permission missing) or ForegroundServiceStartNotAllowedException (background start).
@@ -128,7 +115,6 @@ class SafetyTrackingService : Service() {
 
     private fun stopTracking() {
         container.trackingServiceRunning.value = false
-        container.microphoneInForeground.value = false
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
         stopSelf()
     }

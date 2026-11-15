@@ -65,3 +65,30 @@ any deploy to the pilot (the laptop setup and the live jar stay exactly as they 
   `Phase17HPermissionDenialTest` live on in the new `RuntimePermissionAskTest`.
 - Result: **971 run, 0 failures, 0 errors, 0 skipped** (1086 before); `assembleDebug` OK; lint **0 errors, 365 warnings**
   (98 before: the rest are resources left without a user, removed in unit C). Not seen on a screen yet.
+
+### A2 Android: Evidence Vault and SOS audio (2026-11-15)
+- Removed: `feature/evidence` (25 files), `core/crypto/EvidenceCipher` and `RecoveryKeyCrypto`, `EscrowKey` (from
+  `KeyWrapping.kt`), `core/ui/ScreenLockGate`, 4 layouts, the FileProvider and its paths file, `EvidenceUploadJobService`,
+  the two passphrase word lists and their notice file in assets, the build setting `evidence.vault.key.id`.
+- Screens: the evidence card on the SOS screen, the evidence line and "Open Evidence Vault" on the emergency detail
+  screen, the vault rows of the Safety hub and Settings, the audio switch in SOS options and the one-time audio question
+  on the Safety hub, the vault destination in the nav graph. `EmergencyContext` no longer carries evidence counts (a
+  server that still sends them is fine: the field is ignored).
+- Manifest: `RECORD_AUDIO`, `FOREGROUND_SERVICE_MICROPHONE`, `USE_BIOMETRIC` and the microphone feature are gone; the
+  one tracking service has the type `location` only (`ForegroundTypes`).
+- Kept: `LocalKeyWrapper` / `AndroidKeystoreKeyWrapper` (the session and the private places file use them; the Keystore
+  alias keeps its old name so existing files still open); `AccountDataWiper` (now only forgets the deleted account's SOS
+  options and clears the marker); `SosOptionsStore` (shake only; `forget` still removes the old audio keys).
+- New: `core/retired/VaultRetirement` deletes `files/evidence`, `files/evidence-capture` and `cache/evidence-view` once
+  at start; `MainActivity` shows a one-time notice, only when the vault held an item or an unsealed capture (the old
+  build created the empty folders on every phone).
+- Texts: the visible strings that promised recording or the vault were reworded (SOS limits notice, About, privacy
+  policy, sign-out, account deletion, the Login notice, SOS options). The now unused vault strings stay until unit C.
+  Known left-over for unit C: About and the privacy policy still mention Nearby and "Check the way" (from A1).
+- Tests: the evidence, cipher, recovery and `AutoAudioPolicy` test classes deleted; `FakeEvidenceParts` reduced to
+  `FakeKeyWrapper`; `Phase17FGuardsTest` (permission and service lists; a new case: nothing asks about, offers or can
+  record audio), `GoingThereTest`, `HonestyTextsTest`, `Phase15IntegrationFixesTest`, `AccountTest` updated; new
+  `VaultRetirementTest` (5).
+- Result: **872 run, 0 failures, 0 errors, 0 skipped** (971 before); `assembleDebug` OK; lint **0 errors, 512 warnings**
+  (365 before: more resources without a user, removed in unit C). Not seen on a screen; the SOS screen and the tracking
+  service's type changed, so the real SOS and Safe Walk of the manual check at the end matter.

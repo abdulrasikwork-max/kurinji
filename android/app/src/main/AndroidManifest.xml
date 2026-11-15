@@ -29,23 +29,8 @@
     -->
     <uses-permission android:name="android.permission.SEND_SMS" />
 
-    <!--
-        Phase 5 (Evidence Vault). RECORD_AUDIO is asked only when the person taps "Record audio" during an ACTIVE
-        emergency; recording is always visible (the tracking notification says "Recording audio" and Android shows its
-        microphone indicator), never automatic, never hidden. FOREGROUND_SERVICE_MICROPHONE lets the one tracking
-        service keep recording with the screen off (Android 14+).
-        Photos and videos are taken by the phone's own camera app into a private file this app hands out (FileProvider
-        below), so SafeSphere needs NO camera permission. Note: never declare CAMERA here: an app that declares it but
-        has not been granted it may not use the camera-app intents at all (Android throws a SecurityException).
-    -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <!-- Phase 5 hardening: the vault screen asks for the phone's own screen lock (BiometricPrompt with PIN/pattern/
-         password fallback). A normal install-time permission: no prompt; the app never sees a fingerprint or PIN. -->
-    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
-    <uses-feature
-        android:name="android.hardware.microphone"
-        android:required="false" />
+    <!-- N1: the sound-recording, recording-service and screen-lock permissions left with the Evidence Vault. Never
+         declare CAMERA here: an app that declares it but has not been granted it may not use the camera-app intents at all. -->
     <uses-feature
         android:name="android.hardware.camera.any"
         android:required="false" />
@@ -102,31 +87,11 @@
             </intent-filter>
         </service>
 
-        <!-- Started only from a visible screen during an active emergency; not reachable by other apps.
-             "microphone" only while the person records audio evidence (Phase 5). -->
+        <!-- Started only from a visible screen during an active emergency or walk; not reachable by other apps. -->
         <service
             android:name=".core.tracking.SafetyTrackingService"
             android:exported="false"
-            android:foregroundServiceType="location|microphone" />
-
-        <!-- Phase 5: hands the camera app ONE private, write-only-for-this-capture file (no camera permission needed).
-             Not exported; access is granted per capture with a temporary URI permission. -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.evidence"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/evidence_capture_paths" />
-        </provider>
-
-        <!-- Phase 5 hardening: resumes evidence uploads when the network is back, even after the app process was
-             killed. Only the system's JobScheduler can bind it (BIND_JOB_SERVICE); not reachable by other apps. -->
-        <service
-            android:name=".feature.evidence.session.EvidenceUploadJobService"
-            android:exported="false"
-            android:permission="android.permission.BIND_JOB_SERVICE" />
+            android:foregroundServiceType="location" />
 
         <!-- Phase 4B: the "I'm OK" button on a Safe Walk check-in notification. Only our own PendingIntent reaches it. -->
         <receiver

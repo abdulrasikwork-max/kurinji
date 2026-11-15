@@ -27,10 +27,7 @@ data class EmergencyContext(
     val locationCount: Long,
     val highestLevel: Int,
     val escalations: List<ContextEscalation>,
-    val alerts: List<ContextAlert>,
-    /** Phase 5: how many evidence items the vault holds for this emergency (sealed = verified by the server). */
-    val evidenceItems: Long = 0,
-    val evidenceSealed: Long = 0
+    val alerts: List<ContextAlert>
 ) {
     override fun toString(): String = "EmergencyContext(id=$emergencyId, status=$status, location=<redacted>)"
 }

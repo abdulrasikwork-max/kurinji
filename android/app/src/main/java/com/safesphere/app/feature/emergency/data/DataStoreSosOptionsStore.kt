@@ -9,14 +9,12 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.safesphere.app.feature.emergency.domain.AutoAudioChoice
 import com.safesphere.app.feature.emergency.domain.SosOptions
 import com.safesphere.app.feature.emergency.domain.SosOptionsStore
 import java.io.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.sosOptionsDataStore: DataStore<Preferences> by preferencesDataStore(name = "sos_options")
@@ -30,27 +28,13 @@ class DataStoreSosOptionsStore(context: Context) : SosOptionsStore {
         .catch { error -> if (error is IOException) emit(emptyPreferences()) else throw error }
         .map { preferences ->
             SosOptions(
-                shakeOn = preferences[shakeKey(userId)] ?: false,
-                autoAudio = preferences[audioKey(userId)]?.let { name -> AutoAudioChoice.entries.firstOrNull { it.name == name } }
-                    ?: AutoAudioChoice.NOT_ASKED
+                shakeOn = preferences[shakeKey(userId)] ?: false
             )
         }
         .distinctUntilChanged()
 
     override suspend fun setShake(userId: Long, on: Boolean) {
         dataStore.edit { it[shakeKey(userId)] = on }
-    }
-
-    override suspend fun setAutoAudio(userId: Long, choice: AutoAudioChoice) {
-        dataStore.edit { it[audioKey(userId)] = choice.name }
-    }
-
-    override suspend fun lastRecordedEmergency(userId: Long): Long? =
-        dataStore.data.catch { error -> if (error is IOException) emit(emptyPreferences()) else throw error }
-            .first()[recordedKey(userId)]
-
-    override suspend fun markRecordingStarted(userId: Long, emergencyId: Long) {
-        dataStore.edit { it[recordedKey(userId)] = emergencyId }
     }
 
     override suspend fun forget(userId: Long) {

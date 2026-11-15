@@ -218,6 +218,19 @@ class MainActivity : AppCompatActivity() {
                     .show()
             }
         }
+        // Phase N1: the Evidence Vault was retired and what it kept on this phone deleted; say so once.
+        lifecycleScope.launch {
+            val retirement = appContainer.vaultRetirement
+            val pending = withContext(Dispatchers.IO) { retirement.retire(); retirement.noticePending() }
+            if (pending) {
+                MaterialAlertDialogBuilder(this@MainActivity)
+                    .setTitle(R.string.vault_retired_title)
+                    .setMessage(R.string.vault_retired_message)
+                    .setPositiveButton(R.string.action_got_it) { _, _ -> retirement.noticeShown() }
+                    .setOnCancelListener { retirement.noticeShown() }
+                    .show()
+            }
+        }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 session.sessionExpired.collect { expired ->

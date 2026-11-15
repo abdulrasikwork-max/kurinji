@@ -31,10 +31,6 @@ import com.safesphere.app.feature.circlealert.ui.deliveryLabelFor
 import com.safesphere.app.feature.circlealert.ui.openEmergencyDialer
 import com.safesphere.app.feature.circlealert.ui.openSmsComposer
 import com.safesphere.app.feature.safetycircle.domain.SafetyContact
-import androidx.core.os.bundleOf
-import com.safesphere.app.feature.evidence.ui.EvidenceCaptureViewModel
-import com.safesphere.app.feature.evidence.ui.EvidenceCardController
-import com.safesphere.app.feature.evidence.ui.EvidenceVaultFragment
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -46,18 +42,12 @@ import kotlin.math.roundToInt
  * keeps being saved with the screen off.
  * Phase 4D: "Call 112" opens the dialer (the person presses call); each Safety Circle contact shows what they were
  * told and a "Text" button that opens the SMS app. Automatic SMS only if the person opted in.
- * Phase 5: an Evidence card (audio recorded only while the person keeps it on; photo / video through the camera app),
- * everything encrypted on the phone at once ([EvidenceCardController]).
  */
 class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(FragmentEmergencyBinding::inflate) {
 
     private val viewModel by viewModels<EmergencyViewModel> { EmergencyViewModel.factory(appContainer) }
 
     private val serviceStarter = TrackingServiceStarter(this) { viewModel.consumeNotificationPrompt() }
-
-    /** Phase 5: audio / photo / video evidence for the active emergency. */
-    private val evidenceViewModel by viewModels<EvidenceCaptureViewModel> { EvidenceCaptureViewModel.factory(appContainer) }
-    private val evidenceCard = EvidenceCardController(this) { evidenceViewModel }
 
     private val locationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
@@ -86,30 +76,18 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         }
         binding.failedCallButton.setOnClickListener { openDialer() }
 
-        evidenceCard.bind(binding.evidenceCard) {
-            val active = viewModel.uiState.value as? EmergencyUiState.Active
-            findNavController().navigate(
-                R.id.evidenceVaultFragment, bundleOf(EvidenceVaultFragment.ARG_EMERGENCY_ID to (active?.event?.id ?: -1L))
-            )
-        }
-        collectWhenStarted(evidenceViewModel.card, evidenceCard::render)
-
         // Phase 13F (F11, F3): opened from the SOS shortcut or tile, the countdown starts by itself once the screen knows
         // no SOS is running (Idle). It stays cancellable for 5 s, exactly as after a tap on Start SOS. Once only.
         var autoStart = savedInstanceState == null && arguments?.getBoolean(ARG_AUTO_START) == true
         val autoTrigger =
             if (arguments?.getString(ARG_TRIGGER) == EmergencyTrigger.SHAKE.name) EmergencyTrigger.SHAKE else EmergencyTrigger.MANUAL
         collectWhenStarted(viewModel.uiState) { state ->
-            // Phase 11: evidence belongs to an SOS the server has recorded (not to one with a local id yet).
-            evidenceViewModel.setEmergency((state as? EmergencyUiState.Active)?.takeUnless { it.notOnServerYet }?.event?.id)
             if (autoStart && state != EmergencyUiState.Loading) {
                 autoStart = false
                 if (state == EmergencyUiState.Idle) viewModel.onStartSosClicked(autoTrigger)
             }
             render(state)
             renderLocation(viewModel.locationUi.value)
-            // Phase 17F: audio by itself only if the person agreed beforehand (AutoAudioPolicy); never asks for a permission.
-            if (state is EmergencyUiState.Active && !state.notOnServerYet) evidenceCard.autoStartIfDue()
         }
         collectWhenStarted(viewModel.circleAlertState) {
             (viewModel.uiState.value as? EmergencyUiState.Active)?.let(::renderCircle)
@@ -133,11 +111,6 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         super.onStop()
         // Next time the screen is visible, make sure the service is (still) running.
         serviceStarter.reset()
-    }
-
-    override fun onDestroyView() {
-        evidenceCard.unbind()
-        super.onDestroyView()
     }
 
     private fun render(state: EmergencyUiState) {
@@ -204,7 +177,6 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         binding.notOnServerNotice.setMessage(getString(
             if (state.recordRefused) R.string.emergency_not_on_server_refused else R.string.emergency_not_on_server_yet
         ))
-        binding.evidenceCard.root.isVisible = !state.notOnServerYet
         renderCircle(state)
 
         binding.endProgress.isVisible = state.isEnding

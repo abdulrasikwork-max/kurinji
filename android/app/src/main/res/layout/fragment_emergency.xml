@@ -290,11 +290,6 @@
                 android:minHeight="56dp"
                 android:visibility="gone" />
 
-            <!-- Phase 5: audio / photo / video evidence, encrypted on the phone and uploaded to the person's vault -->
-            <include
-                android:id="@+id/evidenceCard"
-                layout="@layout/view_evidence_card" />
-
             <com.safesphere.app.core.ui.components.SectionHeaderView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

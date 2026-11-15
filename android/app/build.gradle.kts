@@ -17,8 +17,6 @@ val localProperties = Properties().apply {
 }
 val apiBaseUrl: String = localProperties.getProperty("api.base.url")?.takeIf { it.isNotBlank() }
     ?: "http://10.0.2.2:8080/"
-val evidenceVaultKeyId: String = localProperties.getProperty("evidence.vault.key.id")?.trim()
-    ?.takeIf { it.matches(Regex("^[0-9a-f]{64}$")) } ?: ""
 
 // Phase 17A (R1): DEBUG builds may use plain http:// only to the development hosts AND the host of api.base.url (for
 // example a PC on the same Wi-Fi, http://192.168.1.20:8080/), so a real phone works without a USB cable and
@@ -89,9 +87,6 @@ android {
         versionName = appVersionName
 
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
-        // Phase 5: optional pin of the evidence vault recovery key (its SHA-256 key id, printed by VaultKeyTool).
-        // When set, the app refuses any other escrow key the server offers. Empty = trust the server's key.
-        buildConfigField("String", "EVIDENCE_VAULT_KEY_ID", "\"$evidenceVaultKeyId\"")
     }
 
     signingConfigs {

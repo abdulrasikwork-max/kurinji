@@ -6,7 +6,30 @@
 - **18A-2 is abandoned unverified** (never seen on a screen); 18A-3, 18B and 17I are cancelled. Their "next step" lists below no longer apply.
 - **Git:** tag `pre-n1` = `fd669b9` (the last commit of the old product, the checkout for the viva). Work happens on branch `irl-next`, one local commit per unit, nothing pushed by the session.
 - **N0 (done, documents only, no code, no test run):** `IRL_DIRECTION.md` (new), `CLAUDE.md` sections 1 and 2 replaced (the old file verbatim in `docs/history/CLAUDE_2026-11-15.md`), `DECISIONS.md` N-1 to N-16, `STATUS.md`, `README.md`, "superseded" headers on `EXPERIENCE_PLATFORM_DESIGN.md` and `PHASE18_TRUST_PLAN.md`, `PHASE_N1.md` (the plan).
-- **N1 (approved):** plan, units and real results in `PHASE_N1.md`.
+- **N1 (approved):** plan, units and real results in `PHASE_N1.md`. The three N1 questions are ANSWERED by the owner (not waiting): drop the retired tables in V32 = yes; delete old vault files from test phones with a one-time notice = yes; one local commit per unit, never pushed = yes.
+
+## Resumed 2026-11-15 (the owner said: continue N1 to the end, local commits, no push, no deploy). N1-A2 is DONE and committed; results in `PHASE_N1.md`. The text below is the state at the stop, kept as history.
+
+**Exact git state**
+- Branch `irl-next` (no upstream; never pushed). `main` is untouched at `fd669b9`; the local ref `origin/main` is also `fd669b9`. Tag `pre-n1` = `fd669b9`.
+- Commits on `irl-next`: `0214bac` N0 (documents only) and `cc3e68e` N1-A1 (Android: Nearby + intelligence retired).
+- **Uncommitted, and the Android app does NOT compile in this state** (unit A2 was started and interrupted): `feature/emergency/domain/SosOptions.kt`, `feature/emergency/data/DataStoreSosOptionsStore.kt`, `feature/safety/ui/SosOptionsViewModel.kt`, `feature/safety/ui/SosOptionsFragment.kt` (the audio choice removed from them; everything that still uses it is unchanged), plus this checkpoint text in `docs/HANDOFF.md`.
+- Nothing was pushed by the session. No deploy, no migration, no database change anywhere. The backend was not touched at all (no Java, SQL or Python file changed).
+
+**Done in this session**
+1. Product review and redesign discussion (no code): the old product rejected; the new direction approved (`docs/IRL_DIRECTION.md`, decisions N-1 to N-16).
+2. Audit of the pilot problems, read from code and the 2026-11-11 measurements (no phone or server touched): the new-account photo hold (`DecisionPolicy.java:72`, `PostService.java:529`, probation 72 h in `SocialProperties.java:89`; a held post waits for a moderator forever and its author cannot approve it, `ContentModerationService.java:498`); video stalls = camera bitrate (5.69 Mbit/s test clip, no compression in `VideoPreparer`) above the hotspot uplink (about 2.4 Mbit/s) plus the platform `VideoView` opening 13-17 requests; the "move outside" message = `PlacePickerViewModel.kt:156` showing one text for two different results of `PreciseFix.kt:53` (which one hit the owner's phone was NOT determined); typed place names = `PlaceService.java:51`. All of these belong to code that the new direction removes or replaces.
+3. N0: committed (`0214bac`).
+4. N1-A1: committed (`cc3e68e`). Android **971 run, 0 failures, 0 errors, 0 skipped**; `assembleDebug` OK; lint **0 errors, 365 warnings** (resources left without a user, to be removed in unit C). NOT seen on any screen.
+5. N1-A2 inspected and begun (the four files above), not finished, not built, not tested.
+
+**Hosting:** unchanged. The owner's laptop (WSL2, nginx, Cloudflare Tunnel, Spring Boot, MySQL) is still the server for development, demo and the pilot; `https://api.irlnow.in` still runs the old jar on schema V30. The development database is still at V31. Nothing in `deploy/` was changed.
+
+**Exact next step (after the owner's go-ahead, in a fresh session)**
+1. Read `docs/IRL_DIRECTION.md` and `docs/PHASE_N1.md`.
+2. Either throw the four half-edited files away (`git restore android/`) and redo A2 in one piece, or continue from them. A2 still has to: remove the audio question and the vault row from `SafetyFragment`, the audio card from `fragment_sos_options.xml`, the evidence card from `EmergencyFragment` / `fragment_emergency.xml` (`view_evidence_card.xml`), the evidence line and "open vault" button from `EmergencyDetailFragment`, the vault rows in `SettingsFragment` and the nav graph, the evidence block and `microphoneInForeground` from `AppContainer`, the microphone type from `SafetyTrackingService` and the manifest (`RECORD_AUDIO`, `FOREGROUND_SERVICE_MICROPHONE`, `USE_BIOMETRIC`, the FileProvider, `EvidenceUploadJobService`), `feature/evidence`, the evidence-only parts of `core/crypto` (`EvidenceCipher`, `RecoveryKeyCrypto`; `KeyWrapping` stays, the session and the places store use it), `core/ui/ScreenLockGate`, what is left of `AccountDataWiper`; add a `VaultRetirement` like `core/retired/RiseRetirement` (delete `files/evidence`, `files/evidence-capture`, `cache/evidence-view` once, then a one-time notice in `MainActivity`); fix the tests (`Phase17FGuardsTest` permission list and `AutoAudioPolicy` path, `GoingThereTest` package list, the evidence tests and fakes).
+3. Build, run the Android tests and lint, record the numbers in `PHASE_N1.md`, one local commit.
+4. Then A3, B1, B2, B3, B4 (V32 on the development MySQL only, backup first), C, as in `PHASE_N1.md`.
 - **The pilot is UNTOUCHED:** `https://api.irlnow.in` still runs the old jar on schema V30 with the two test accounts. No deploy, no migration, no data change in N0/N1. Its data is wiped later as its own approved step (N-12). Hosting stays the laptop (N-14). The Android build installed on the A23 is still the old one (2026-11-12).
 - **Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search.
 

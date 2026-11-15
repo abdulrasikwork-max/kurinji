@@ -60,8 +60,6 @@ class RemoteCircleAlertRepository(
         latestLocationLink = latestLocation?.mapLink,
         latestLocationAt = latestLocation?.recordedAt?.let(Instant::parse),
         locationCount = locationCount,
-        evidenceItems = evidence?.items ?: 0,
-        evidenceSealed = evidence?.sealed ?: 0,
         highestLevel = highestLevel,
         escalations = escalations.orEmpty().map {
             ContextEscalation(it.level, it.reason, Instant.parse(it.at), it.source == "SAFE_WALK")

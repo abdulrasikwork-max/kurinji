@@ -74,52 +74,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Audio -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="@dimen/space_md">
-
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/audioSwitch"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="48dp"
-                    android:text="@string/sos_options_audio_title"
-                    android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_xs"
-                    android:text="@string/sos_options_audio_body"
-                    android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-
-                <TextView
-                    android:id="@+id/audioStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_sm"
-                    android:accessibilityLiveRegion="polite"
-                    android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-                    android:visibility="gone" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/audioPermissionButton"
-                    style="@style/Widget.SafeSphere.Button.Text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minHeight="@dimen/min_touch_target"
-                    android:visibility="gone" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
         <!-- Voice: said plainly, not hidden -->
         <com.safesphere.app.core.ui.components.NoticeView
             android:layout_width="match_parent"

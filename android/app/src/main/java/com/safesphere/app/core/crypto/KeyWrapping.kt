@@ -5,22 +5,15 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.security.keystore.StrongBoxUnavailableException
 import java.security.GeneralSecurityException
-import java.security.KeyFactory
 import java.security.KeyStore
-import java.security.MessageDigest
-import java.security.PublicKey
-import java.security.spec.MGF1ParameterSpec
-import java.security.spec.X509EncodedKeySpec
-import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.OAEPParameterSpec
-import javax.crypto.spec.PSource
 
 /**
- * Seals and opens per-item evidence keys with a key that never leaves secure hardware.
+ * Seals and opens small secrets (the session's refresh secret and access token, the key of the private places file)
+ * with a key that never leaves secure hardware.
  * A test implementation replaces it on the JVM (the Android Keystore only exists on a device).
  */
 interface LocalKeyWrapper {
@@ -30,16 +23,16 @@ interface LocalKeyWrapper {
 }
 
 /**
- * Android Keystore AES-256-GCM "vault master key" (alias [ALIAS]). Created on first use, in StrongBox when the phone
+ * Android Keystore AES-256-GCM key (alias [ALIAS]; the name is from the retired Evidence Vault and stays, because the
+ * private places file on existing phones is sealed with it). Created on first use, in StrongBox when the phone
  * has one, otherwise in the TEE / software Keystore. It is non-exportable: even with root access the raw key bytes
  * cannot be copied out on hardware-backed phones.
  *
- * Deliberately NOT bound to the screen lock or biometrics: evidence must still be sealed while the phone is locked in a
- * pocket during an emergency. The cost: whoever unlocks the phone and opens the app can play the evidence (the vault
- * screen says so). Wrapped value = 12-byte IV | ciphertext+tag.
+ * Deliberately NOT bound to the screen lock or biometrics: the session must open while the phone is locked in a pocket
+ * during an emergency. Wrapped value = 12-byte IV | ciphertext+tag.
  */
 class AndroidKeystoreKeyWrapper(
-    /** Phase 11 C1: a separate key (alias [SESSION_ALIAS]) protects the refresh secret; evidence keeps [ALIAS]. */
+    /** Phase 11 C1: a separate key (alias [SESSION_ALIAS]) protects the session; the places file keeps [ALIAS]. */
     private val alias: String = ALIAS
 ) : LocalKeyWrapper {
 
@@ -52,7 +45,7 @@ class AndroidKeystoreKeyWrapper(
     override fun unwrap(wrapped: ByteArray): ByteArray {
         if (wrapped.size <= IV_BYTES) throw GeneralSecurityException("Wrapped key is too short")
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE, existingKey() ?: throw GeneralSecurityException("Vault key is missing on this phone"),
+        cipher.init(Cipher.DECRYPT_MODE, existingKey() ?: throw GeneralSecurityException("Device key is missing on this phone"),
             GCMParameterSpec(128, wrapped, 0, IV_BYTES))
         return cipher.doFinal(wrapped, IV_BYTES, wrapped.size - IV_BYTES)
     }
@@ -96,39 +89,3 @@ class AndroidKeystoreKeyWrapper(
     }
 }
 
-/**
- * The vault recovery key (escrow): the server publishes only the PUBLIC half of an RSA key whose private half is kept
- * offline by the operator. Sealing the item key with it means the uploaded ciphertext stays recoverable if this phone
- * is lost or destroyed, while neither the running server nor a database thief can open it.
- * RSA-OAEP with SHA-256 for both the hash and MGF1 (spelled out: some providers default MGF1 to SHA-1).
- */
-class EscrowKey private constructor(val keyId: String, private val publicKey: PublicKey) {
-
-    fun wrap(itemKey: ByteArray): ByteArray {
-        val cipher = Cipher.getInstance("RSA/ECB/OAEPPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey, OAEP)
-        return cipher.doFinal(itemKey)
-    }
-
-    companion object {
-        val OAEP = OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT)
-        private const val MIN_BITS = 3072
-
-        /**
-         * Parses the server's key and checks that its id really is the SHA-256 of the key bytes. If [pinnedKeyId] is
-         * set (build config), any other key is refused: a tampered server cannot swap in a key it controls.
-         */
-        fun parse(publicKeyBase64: String, claimedKeyId: String, pinnedKeyId: String?): EscrowKey {
-            val der = Base64.getDecoder().decode(publicKeyBase64)
-            val actualId = MessageDigest.getInstance("SHA-256").digest(der).toHex()
-            if (actualId != claimedKeyId) throw GeneralSecurityException("Vault key id does not match the key")
-            if (!pinnedKeyId.isNullOrBlank() && !pinnedKeyId.equals(actualId, ignoreCase = true)) {
-                throw GeneralSecurityException("Vault key is not the one this app trusts")
-            }
-            val key = KeyFactory.getInstance("RSA").generatePublic(X509EncodedKeySpec(der))
-            val bits = (key as java.security.interfaces.RSAPublicKey).modulus.bitLength()
-            if (bits < MIN_BITS) throw GeneralSecurityException("Vault key is too weak")
-            return EscrowKey(actualId, key)
-        }
-    }
-}

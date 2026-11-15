@@ -45,12 +45,8 @@ data class OwnerContextDto(
     val locationCount: Long,
     val highestLevel: Int,
     val escalations: List<ContextEscalationDto>?,
-    val circleAlerts: List<ContextAlertDto>?,
-    /** Phase 5: counts only (null from an older server). */
-    val evidence: ContextEvidenceDto? = null
+    val circleAlerts: List<ContextAlertDto>?
 )
-
-data class ContextEvidenceDto(val items: Long, val sealed: Long, val uploading: Long, val deleted: Long)
 
 data class ContextEmergencyDto(val id: Long, val status: String, val startedAt: String, val endedAt: String?)
 

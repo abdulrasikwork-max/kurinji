@@ -18,7 +18,7 @@ import com.safesphere.app.databinding.FragmentSettingsBinding
  * Settings (rebuilt in Phase 10A): only rows that do something. Each opens an existing screen or the phone's own
  * settings for this app (permissions, notifications); nothing here is a placeholder ("Coming soon" rows are not
  * allowed: SettingsHonestyTest). Preferences that belong to a feature stay on that feature's screen (automatic SMS
- * in Safety Circle, the recovery passphrase in the Evidence Vault, movement checks in Safe Walk).
+ * in Safety Circle, movement checks in Safe Walk).
  */
 class SettingsFragment : ViewBindingFragment<FragmentSettingsBinding>(FragmentSettingsBinding::inflate) {
 
@@ -35,7 +35,6 @@ class SettingsFragment : ViewBindingFragment<FragmentSettingsBinding>(FragmentSe
 
             Header(R.string.settings_section_safety),
             Row(R.string.settings_safety_circle) { navController.navigate(R.id.safetyCircleFragment) },
-            Row(R.string.settings_evidence_vault) { navController.navigate(R.id.evidenceVaultFragment) },
             Row(R.string.sos_options_title) { navController.navigate(R.id.sosOptionsFragment) },
             Row(R.string.settings_emergency_history) { navController.navigate(R.id.emergencyHistoryFragment) },
 

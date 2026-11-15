@@ -183,20 +183,20 @@ class AccountTest {
     fun `the wipe runs every part even if one fails, and keeps the marker until all succeeded`() = runTest {
         val store = FakePendingDeletionStore(PendingDeletion(7, now))
         val ran = mutableListOf<String>()
-        var failVault = true
+        var failFirst = true
         val wiper = AccountDataWiper(
             listOf(
-                { id -> ran += "vault $id"; if (failVault) error("disk") },
-                { id -> ran += "recovery $id" }
+                { id -> ran += "options $id"; if (failFirst) error("disk") },
+                { id -> ran += "other $id" }
             ),
             store
         )
 
         assertFalse(wiper.wipe(7))
-        assertEquals(listOf("vault 7", "recovery 7"), ran)
+        assertEquals(listOf("options 7", "other 7"), ran)
         assertEquals(PendingDeletion(7, now), store.pending.first())
 
-        failVault = false
+        failFirst = false
         assertTrue(wiper.wipe(7))
         assertNull(store.pending.first())
     }

@@ -223,18 +223,6 @@
             app:argType="long" />
     </fragment>
 
-    <!-- Phase 5: the Evidence Vault of one emergency (-1 = all of the person's evidence) -->
-    <fragment
-        android:id="@+id/evidenceVaultFragment"
-        android:name="com.safesphere.app.feature.evidence.ui.EvidenceVaultFragment"
-        android:label="@string/title_evidence_vault"
-        tools:layout="@layout/fragment_evidence_vault">
-        <argument
-            android:name="emergencyId"
-            android:defaultValue="-1L"
-            app:argType="long" />
-    </fragment>
-
     <!-- Phase 4B: Safe Walk (secondary screen) -->
     <fragment
         android:id="@+id/safeWalkFragment"

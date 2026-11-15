@@ -15,9 +15,6 @@ import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentEmergencyDetailBinding
 import com.safesphere.app.feature.circlealert.domain.EmergencyContext
-import androidx.core.os.bundleOf
-import androidx.navigation.fragment.findNavController
-import com.safesphere.app.feature.evidence.ui.EvidenceVaultFragment
 
 /**
  * Phase 4D: what happened during one emergency, from its Emergency Context Packet (OWNER projection, assembled by the
@@ -73,16 +70,6 @@ class EmergencyDetailFragment : ViewBindingFragment<FragmentEmergencyDetailBindi
         }
         binding.detailOpenMap.isVisible = link != null
         binding.detailOpenMap.setOnClickListener { link?.let(::openLink) }
-
-        binding.detailEvidence.text = if (context.evidenceItems == 0L) {
-            getString(R.string.detail_no_evidence)
-        } else {
-            resources.getQuantityString(R.plurals.detail_evidence, context.evidenceItems.toInt(),
-                context.evidenceItems.toInt(), context.evidenceSealed.toInt())
-        }
-        binding.detailOpenVault.setOnClickListener {
-            findNavController().navigate(R.id.evidenceVaultFragment, bundleOf(EvidenceVaultFragment.ARG_EMERGENCY_ID to context.emergencyId))
-        }
 
         val entries = detailEntriesFor(context)
         binding.detailTimeline.text = if (entries.isEmpty()) {

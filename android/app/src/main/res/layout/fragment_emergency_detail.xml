@@ -84,28 +84,6 @@
                 android:lineSpacingExtra="4dp"
                 android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
-            <!-- Phase 5: evidence counts from the context packet + the way into the vault -->
-            <com.safesphere.app.core.ui.components.SectionHeaderView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/section_spacing"
-                android:layout_marginBottom="@dimen/space_sm"
-                app:sectionTitle="@string/section_evidence" />
-
-            <TextView
-                android:id="@+id/detailEvidence"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/detailOpenVault"
-                style="@style/Widget.SafeSphere.Button.Secondary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:text="@string/action_open_evidence_vault" />
-
             <com.safesphere.app.core.ui.components.NoticeView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
