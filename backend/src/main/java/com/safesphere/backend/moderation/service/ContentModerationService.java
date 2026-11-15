@@ -4,8 +4,8 @@ import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.ForbiddenException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.common.exception.ResourceNotFoundException;
-import com.safesphere.backend.community.service.GeoCell;
-import com.safesphere.backend.community.service.Independence;
+import com.safesphere.backend.common.geo.GeoCell;
+import com.safesphere.backend.common.independence.Independence;
 import com.safesphere.backend.config.ModerationProperties;
 import com.safesphere.backend.moderation.assessment.AssessmentService;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.AppealAccepted;
@@ -231,7 +231,6 @@ public class ContentModerationService {
         Restriction pause = pauseOf(action);
         LocalDateTime until = pause == null ? null : now.plus(stepOf(action).length());
         // Phase 13E (E27): a decision about content the automatic check had collapsed or held is counted.
-        ModerationState systemState = l.contentSource() == ModerationSource.SYSTEM ? l.contentState() : null;
         ModerationAction entry = ModerationAction.social(moderatorId, action, reason, c.getPublicId(),
                 c.getTargetKind(), l.subjectId, until, now);
         String decision = entry.getPublicId();
@@ -263,7 +262,6 @@ public class ContentModerationService {
         actions.saveAndFlush(entry);
         if (strike) strikes.save(new SocialStrike(l.subjectId, why, StrikePolicy.weight(why), decision, now));
         cases.saveAndFlush(c);
-        if (systemState != null && CONTENT_ACTIONS.contains(action)) assessmentService.reviewed(c, systemState, action);
         return detail(load(c), moderatorId, now);
     }
 
@@ -470,6 +468,7 @@ public class ContentModerationService {
         }
         changed += strikes.deleteOlderThan(now.minus(properties.auditRetention()));
         changed += standings.deleteEnded(now);
+        changed += moderation.maintain(); // N1: the audit log retention (it ran with the Nearby clean-up before)
         return changed;
     }
 

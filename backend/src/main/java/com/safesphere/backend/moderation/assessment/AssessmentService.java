@@ -3,7 +3,6 @@ package com.safesphere.backend.moderation.assessment;
 import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.common.exception.ResourceNotFoundException;
 import com.safesphere.backend.config.ModerationAiProperties;
-import com.safesphere.backend.evaluation.service.OutcomeRecorder;
 import com.safesphere.backend.moderation.assessment.ContentAssessment.Status;
 import com.safesphere.backend.moderation.assessment.DecisionPolicy.Action;
 import com.safesphere.backend.moderation.assessment.DecisionPolicy.Context;
@@ -82,14 +81,13 @@ public class AssessmentService {
     private final SocialAccess access;
     private final UserRepository users;
     private final ModerationAiProperties properties;
-    private final OutcomeRecorder recorder;
     private final TransactionTemplate ownTransaction;
     private final Clock clock;
 
     public AssessmentService(ModerationServiceClient client, ContentAssessmentRepository assessments,
                              PostRepository posts, CommentRepository comments, PostMediaRepository mediaRows,
                              ContentCaseRepository cases, SocialAccess access, UserRepository users,
-                             ModerationAiProperties properties, OutcomeRecorder recorder,
+                             ModerationAiProperties properties,
                              PlatformTransactionManager transactions, Clock clock) {
         this.client = client;
         this.assessments = assessments;
@@ -100,7 +98,6 @@ public class AssessmentService {
         this.access = access;
         this.users = users;
         this.properties = properties;
-        this.recorder = recorder;
         this.ownTransaction = new TransactionTemplate(transactions);
         this.clock = clock;
         if (!properties.active()) {
@@ -159,8 +156,6 @@ public class AssessmentService {
             }
             target.save();
         }
-        recorder.aiChecked(decision.action(), decision.rule(),
-                answer.map(Answer::lexiconVersion).orElse(OutcomeRecorder.NONE));
     }
 
     // ---- the author ---------------------------------------------------------------------------------------------------
@@ -200,14 +195,6 @@ public class AssessmentService {
             default -> Optional.empty();
         };
         return row.map(AssessmentService::view).orElse(null);
-    }
-
-    /** E27: a moderator decided about content the check had collapsed or held (KEEP = the check was overruled). */
-    public void reviewed(ContentCase c, ModerationState systemState, ActionType action) {
-        Optional<ContentAssessment> row = c.getTargetKind() == TargetKind.POST ? assessments.findByPostId(c.getPostId())
-                : assessments.findByCommentId(c.getCommentId());
-        recorder.aiReviewed(systemState, action, row.map(ContentAssessment::getLexiconVersion)
-                .filter(v -> v != null).orElse(OutcomeRecorder.NONE));
     }
 
     // ---- the job: retries, the probation wait, retention -------------------------------------------------------------

@@ -3,7 +3,7 @@ package com.safesphere.backend.social.service;
 import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.common.exception.ResourceNotFoundException;
-import com.safesphere.backend.community.service.GeoCell;
+import com.safesphere.backend.common.geo.GeoCell;
 import com.safesphere.backend.social.dto.PlaceDtos.VisitResponse;
 import com.safesphere.backend.social.entity.Place;
 import com.safesphere.backend.social.entity.PlaceVisit;

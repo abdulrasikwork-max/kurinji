@@ -1,6 +1,6 @@
 package com.safesphere.backend.social.policy;
 
-import com.safesphere.backend.community.service.GeoCell;
+import com.safesphere.backend.common.geo.GeoCell;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;

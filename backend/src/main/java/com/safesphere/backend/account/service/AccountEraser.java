@@ -1,6 +1,5 @@
 package com.safesphere.backend.account.service;
 
-import com.safesphere.backend.community.service.CommunityService;
 import com.safesphere.backend.config.AccountProperties;
 import com.safesphere.backend.emergency.entity.EmergencyStatus;
 import com.safesphere.backend.emergency.repository.EmergencyEventRepository;
@@ -51,7 +50,6 @@ public class AccountEraser {
     public static final Set<String> DELETED_REFERENCES = Set.of(
             "safety_contacts.user_id", "emergency_events.user_id", "safe_journeys.user_id",
             "evidence_custody_events.user_id", "evidence_recovery_envelopes.user_id", "evidence_recovery_failures.user_id",
-            "signal_contributions.user_id", "contributor_standing.user_id", "signal_flags.user_id",
             "moderation_actions.subject_user_id", "moderation_appeals.user_id", "device_sessions.user_id",
             // Phase 13A (V20): the social identity.
             "profiles.user_id", "connections.user_low", "connections.user_high", "connection_invites.owner_id",
@@ -91,8 +89,6 @@ public class AccountEraser {
             "DELETE FROM journey_events WHERE journey_id IN " + JOURNEYS,
             "DELETE FROM safe_journeys WHERE user_id = ?",
             "DELETE FROM safety_contacts WHERE user_id = ?",
-            "DELETE FROM signal_flags WHERE user_id = ?",
-            "DELETE FROM contributor_standing WHERE user_id = ?",
             // Phase 11 C1: every sign-in ends (an anonymised tombstone keeps no session either).
             "DELETE FROM device_sessions WHERE user_id = ?",
             "DELETE FROM email_verification_tokens WHERE user_id = ?",
@@ -157,7 +153,6 @@ public class AccountEraser {
     private final EmergencyEventRepository emergencies;
     private final EvidenceItemRepository evidence;
     private final EvidenceStorage storage;
-    private final CommunityService community;
     private final JdbcTemplate jdbc;
     private final PasswordEncoder passwordEncoder;
     private final AccountProperties properties;
@@ -167,7 +162,7 @@ public class AccountEraser {
     private final SecureRandom random = new SecureRandom();
 
     public AccountEraser(UserRepository users, EmergencyEventRepository emergencies, EvidenceItemRepository evidence,
-                         EvidenceStorage storage, CommunityService community, JdbcTemplate jdbc,
+                         EvidenceStorage storage, JdbcTemplate jdbc,
                          PasswordEncoder passwordEncoder, AccountProperties properties, Clock clock,
                          PlatformTransactionManager transactions, MediaStorage media) {
         this.media = media;
@@ -175,7 +170,6 @@ public class AccountEraser {
         this.emergencies = emergencies;
         this.evidence = evidence;
         this.storage = storage;
-        this.community = community;
         this.jdbc = jdbc;
         this.passwordEncoder = passwordEncoder;
         this.properties = properties;
@@ -227,7 +221,6 @@ public class AccountEraser {
         User user = users.findByIdForUpdate(userId).orElse(null);
         Outcome blocked = blocked(user);
         if (blocked != null) return blocked; // an SOS started between the two steps: the account stays
-        community.eraseContributor(userId);
         for (String statement : OWNED_DATA) run(statement, userId);
         boolean decidedSomething = jdbc.queryForObject(
                 "SELECT (SELECT COUNT(*) FROM moderation_actions WHERE actor_id = ?)"

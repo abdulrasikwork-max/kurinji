@@ -6,7 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.safesphere.backend.community.service.GeoCell;
+import com.safesphere.backend.common.geo.GeoCell;
 import com.safesphere.backend.social.policy.EditionPolicy;
 import com.safesphere.backend.social.policy.ProfileLists.Interest;
 import com.safesphere.backend.support.SocialClient;

@@ -15,10 +15,6 @@ import org.springframework.data.repository.query.Param;
 /** The audit log. Only inserts and the retention delete; no update method exists on purpose. */
 public interface ModerationActionRepository extends JpaRepository<ModerationAction, Long> {
 
-    /** The newest restriction about this person (for their own standing view and their appeal). */
-    Optional<ModerationAction> findFirstBySubjectUserIdAndActionOrderByOccurredAtDescIdDesc(Long subjectUserId,
-                                                                                          ActionType action);
-
     List<ModerationAction> findAllByOrderByOccurredAtDescIdDesc(Pageable page);
 
     /** Phase 13D: the decisions taken on one case (oldest first). */
@@ -36,10 +32,6 @@ public interface ModerationActionRepository extends JpaRepository<ModerationActi
     List<ModerationAction> findAboutPersonSince(@Param("subject") long subject,
                                                 @Param("actions") Collection<ActionType> actions,
                                                 @Param("since") LocalDateTime since, Pageable page);
-
-    /** Phase 9B (gate G1): how many different moderators took one of [actions] since [since]. A count, no one named. */
-    @Query("select count(distinct a.actorId) from ModerationAction a where a.action in :actions and a.occurredAt >= :since")
-    long countActorsSince(@Param("actions") Collection<ActionType> actions, @Param("since") LocalDateTime since);
 
     @Modifying
     @Query("delete from ModerationAction a where a.occurredAt <= :cutoff")

@@ -1,3 +1,61 @@
+# CHECKPOINT 2026-11-15 (second session, end): N1 Android side DONE and committed (A1, A2, A3); backend unit B1 STARTED, uncommitted, main code compiles, tests NOT compiled and NOT run
+
+**This is the newest checkpoint. Read `docs/IRL_DIRECTION.md` and `docs/PHASE_N1.md` (plan + "As built" per unit) first. The owner's standing instruction for N1: finish it in this order (B1, B2, B3, B4 = V32, C = closeout), one local commit per finished unit, validate with tests / build / lint, laptop server unchanged, never push, never deploy. The product direction is decided; do not reopen it.**
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). `main` = `origin/main` = tag `pre-n1` = `fd669b9`, untouched.
+- Commits on `irl-next`, oldest first: `0214bac` N0 (documents) · `cc3e68e` N1-A1 · `757dc4f` N1-A2 · `3a519c2` N1-A3.
+- **Uncommitted = unit B1 in progress (backend only) + this checkpoint text.** `git status`: about 86 deleted files (packages `community`, `intelligence`, `evaluation` with their tests, four config classes, five coordination tests), 4 renames (`GeoCell`, `Independence` and their tests), about 30 modified files, one new file `backend/src/main/resources/db/migration/V32__retire_removed_features.sql`.
+- **Backend status:** `mvn -q -o compile` (main code) finished with exit code 0 and no error line. The TEST code has not been compiled and is expected to fail to compile (see "Still to do for B1"). No backend test was run in this session.
+- Nothing pushed, nothing deployed, no database touched (V32 is a file only, applied nowhere). The pilot (`https://api.irlnow.in`, old jar, schema V30) and `deploy/` are untouched. The development MySQL is still at V31.
+
+## Done in this session (implemented, compiled, tested; none of it seen on a screen)
+| Unit | Commit | Result |
+|---|---|---|
+| A2 Android: Evidence Vault + audio in an SOS | `757dc4f` | 872 run, 0 failures; `assembleDebug` OK; lint 0 errors / 512 warnings |
+| A3 Android: Explore, ratings, presence, disclosure, Save, butterfly, today's state | `3a519c2` | 766 run, 0 failures; `assembleDebug` OK; lint 0 errors / 622 warnings |
+
+What was removed, kept and reworded: `PHASE_N1.md` "As built" A2 and A3. The lint warnings are almost all resources without a user; they are removed in unit C.
+
+## B1 (backend: Nearby side), where it stands
+Done in the working tree:
+- `GeoCell` moved to `common/geo`, `Independence` to `common/independence` (with their tests); imports rewritten everywhere.
+- Deleted: packages `community`, `intelligence`, `evaluation` (main and test), `ModerationCase`, `ModerationCaseRepository`, `CoordinationCheck`, `config/CommunityProperties`, `CoordinationProperties`, `EvaluationProperties`, `IntelligenceProperties`, the tests `Coordination*ApiIntegrationTest`, `DismissedCoordinationApiIntegrationTest`, `CoordinationIsolationTest`.
+- `ModerationService` rewritten small: `access`, `requireModerator` (shared with content moderation), `changeRole`, `auditLog`, `maintain()` (audit retention; now called at the end of `ContentModerationService.maintain()`, because the Nearby clean-up job that called it is gone).
+- `ModerationController` = only `GET /api/moderation/access`. `AdminController` lost `GET /api/admin/evaluation`. `ModerationDtos` = `Access`, `AccountAge`, `AppealDecision`, `RoleChange`, `AuditEntry` (field `category` replaced by `targetKind`: an API change for `API.md`).
+- `ModerationAction` lost `signalCategory`, `onCase`, `restriction`; `ModerationActionRepository` lost two queries. **Decision taken: the Java enums in `ModerationEnums` stay as they are**; V32 deletes the old Phase 7 audit rows instead.
+- `AssessmentService` no longer uses `OutcomeRecorder` (`reviewed()` and its call in `ContentModerationService.act` removed). To write into the docs: the weekly AI counters that gates L1 to L3 were going to read are gone with `evaluation`.
+- `AccountEraser`: no `CommunityService`, no `signal_flags` / `contributor_standing` statements, three entries removed from `DELETED_REFERENCES`.
+- `application.properties`: `app.community.*`, `app.intelligence.*`, `app.evaluation.*`, `app.moderation.coordination.*`, `removal-hold`, `max-flags-per-day` removed; `ModerationProperties` lost `removalHold` and `maxFlagsPerDay`.
+- `V32__retire_removed_features.sql` created with the B1 part only: drops `moderation_cases`, `signal_flags`, `signal_contributions`, `contributor_standing`, `place_signals`, `area_patterns`, `evaluation_counters`; deletes `moderation_actions` rows with action `QUARANTINE`, `DISMISS`, `REMOVE`, `RESTRICT`; drops `moderation_actions.signal_category`. **The file grows in B2 and B3 and is applied only in B4.**
+- `AccountEraserCoverageTest` now ignores tables that a later migration drops (`DROP TABLE`).
+
+Still to do for B1 (the exact next steps):
+1. `cd backend`, set `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\Users\Public`, run `mvn -q -o test-compile` and fix what it reports.
+2. `src/test/resources/application.properties`: remove the `app.community.*`, `app.moderation.coordination.*`, `app.intelligence.*` lines (around lines 23 to 38).
+3. Tests: `ModerationApiIntegrationTest` keeps only its access, role, audit and disabled-moderator cases (the signal cases go); repair the tests that only had an import rewritten and still use Nearby helpers (`Phase14SecurityRegressionTest`, `SocialAccountDeletionTest`, and the others `git status` lists as modified); `SocialIsolationTest` and `ModelPlacesTest` must stay green; check no test still expects `GET /api/admin/evaluation` or the `category` field of the audit log.
+4. `mvn test` (baseline before N1: 928 run, 0 failures, 4 skipped), write the numbers under "B1" in `PHASE_N1.md`, one local commit `N1-B1 (backend): ...`.
+
+## Then, in this order (each = its own local commit, results into `PHASE_N1.md`)
+- **B2 backend: evidence.** Delete the `evidence` package (with `tools/VaultKeyTool`), its part of `EmergencyContextService` and DTOs (the app already ignores the `evidence` field), `EvidenceProperties`, `app.evidence.*`, the evidence statements, references and file step in `AccountEraser` / `AccountDeletionJob`. Add to V32: drop the evidence tables, children first (exact names and order from V9 to V11).
+- **B3 backend: social add-ons.** Delete package `explore`, `ExploreController` / `ExploreService` / `ExplorePolicy` / `ExploreFacets` / `PostFacet*`, `PlaceVisit*`, `RatingPolicy`, `PlaceRatings`, `PostMarkService`, `Butterfly*`, `SavedPost*`, `DailyState*`, `ButterflyTally`, `disclosed` and `facets` on posts, their endpoints and limits; Python `moderation-service` `understand.py` and its route; update `ModelPlacesTest`, `SocialIsolationTest`. Add to V32: drop `post_facets`, `place_visits`, `butterflies`, `saved_posts`, `daily_states`, and `posts.disclosed` with its CHECK (see V31).
+- **B4 migration V32.** Development MySQL only: `mysqldump` backup first (file outside the repo, path noted), dry run on a scratch copy, then start the backend and read "Successfully applied 1 migration ... v32"; real-MySQL tests with `SAFESPHERE_MYSQL_TESTS=true`. The pilot is NOT migrated.
+- **C closeout.** Remove unused Android resources (lint `UnusedResources`; the vault strings; `ButterflyDrawable` if unused); fix left-over words (About and the privacy policy still mention Nearby and "Check the way"; `account_delete_explainer` still says "saved list"); update `docs/API.md` (+ appendix), `.claude/rules/*.md`, `CLAUDE.md` (permissions, packages, navigation, next migration V33, test list), `STATUS.md`, `DECISIONS.md` (enums kept; AI gate counters gone); full test runs on both sides; then the manual emulator check of `PHASE_N1.md`.
+
+## Not verified (never claim otherwise)
+- Nothing of N1 has been seen on a screen or a phone. A2 changed the SOS screen and the tracking service's declared type (`location` only), so the real SOS and Safe Walk of the final manual check matter.
+- The one-time "Evidence Vault has been retired" notice (`VaultRetirement`) is unit-tested only.
+- The new Android build only stops calling the removed features; the old pilot server still offers them.
+
+## Working notes for the next session
+- Shell here-documents here turn `\\` into `\` and can break on long texts: for Java or Kotlin strings with `\\s`, and for long documents, use the Edit / Write tools.
+- `git rm` refuses files that an earlier `sed` touched: use `git rm -f`.
+- Android checks: `cd android`, same `JAVA_TOOL_OPTIONS`, `./gradlew.bat testDebugUnitTest assembleDebug lintDebug -q --continue`; totals from `app/build/test-results/testDebugUnitTest/*.xml`, lint from `app/build/reports/lint-results-debug.xml`.
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search.
+
+---
+
 # CHECKPOINT 2026-11-15: NEW PRODUCT DIRECTION approved; N0 done (documents); N1 (strip) approved and in progress on branch `irl-next`
 
 **This is the newest checkpoint. Read `docs/IRL_DIRECTION.md` first. Everything below this section describes the OLD product (to 18A-2) and is history.**

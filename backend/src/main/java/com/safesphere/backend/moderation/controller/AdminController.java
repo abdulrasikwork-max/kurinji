@@ -1,6 +1,5 @@
 package com.safesphere.backend.moderation.controller;
 
-import com.safesphere.backend.evaluation.dto.EvaluationDtos.Report;
 import com.safesphere.backend.moderation.dto.ModerationDtos.AuditEntry;
 import com.safesphere.backend.moderation.dto.ModerationDtos.RoleChange;
 import com.safesphere.backend.moderation.service.ModerationService;
@@ -19,8 +18,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Phase 7 administration: appointing moderators and reading the moderation audit log; Phase 9B adds the evaluation
- * report (weekly, system-wide counters; no place or person). ADMIN only (SecurityConfig
+ * Phase 7 administration: appointing moderators and reading the moderation audit log. ADMIN only (SecurityConfig
  * and ModerationService both check, from the database). There is deliberately no endpoint that creates an ADMIN.
  */
 @RestController
@@ -44,10 +42,4 @@ public class AdminController {
         return service.auditLog(CurrentUser.id(jwt), page);
     }
 
-    /** Phase 9B: weekly, system-wide outcome counters with derived rates (docs/PHASE9.md §27). */
-    @GetMapping("/evaluation")
-    public Report evaluation(@AuthenticationPrincipal Jwt jwt,
-                             @RequestParam(name = "weeks", defaultValue = "12") int weeks) {
-        return service.evaluationReport(CurrentUser.id(jwt), weeks);
-    }
 }

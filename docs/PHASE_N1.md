@@ -116,3 +116,29 @@ any deploy to the pilot (the laptop setup and the live jar stay exactly as they 
   `Phase15IntegrationFixesTest` updated; `IrlRedesignTest` gained a guard that no social code names the removed calls.
 - Result: **766 run, 0 failures, 0 errors, 0 skipped** (872 before); `assembleDebug` OK; lint **0 errors, 622 warnings**
   (512 before; unused resources, unit C). Not seen on a screen.
+
+### B1 Backend: Nearby side (2026-11-15)
+- Moved: `GeoCell` to `common/geo`, `Independence` to `common/independence` (with their tests); content reports and
+  places use them from there.
+- Removed: packages `community`, `intelligence`, `evaluation` (main and test), `ModerationCase` and its repository,
+  `CoordinationCheck`, `config/CommunityProperties`, `CoordinationProperties`, `EvaluationProperties`,
+  `IntelligenceProperties`, their `app.*` settings, the Nearby clean-up job, `GET /api/admin/evaluation`, every
+  `/api/community/**`, `/api/intelligence/**`, `/api/moderation/cases/**` and `/api/moderation/appeals/**` endpoint.
+- Kept and reduced: `ModerationService` (access, `requireModerator`, role changes, audit log, audit retention, now
+  called from `ContentModerationService.maintain()`); `ModerationController` = `GET /api/moderation/access` only;
+  `ModerationDtos.AuditEntry` carries `targetKind` instead of `category` (API change); `ModerationAction` lost
+  `signalCategory`, `onCase`, `restriction`. The Java enums in `ModerationEnums` stay as they are; V32 deletes the old
+  Phase 7 audit rows instead.
+- `AssessmentService` no longer writes evaluation counters: the weekly AI counters that gates L1 to L3 were going to
+  read are gone with `evaluation` (to be re-decided before any learned model acts; recorded in `DECISIONS.md` in unit C).
+- `AccountEraser`: no Nearby statements or references; `AccountEraserCoverageTest` ignores tables that a later
+  migration drops.
+- V32 (file only, applied nowhere): the B1 part (seven tables, the Phase 7 audit rows, `moderation_actions.signal_category`).
+- Tests: `ModerationApiIntegrationTest` rewritten (6 cases: who may moderate, access, role claims, the retired endpoints
+  answer 404, role changes with the audit log's field list, a disabled moderator); the test helper `CommunityClient` is
+  now `ApiTestClient` without the Nearby calls; the Nearby deletion case left `AccountLifecycleApiIntegrationTest`; the
+  two counter assertions left `AssessmentIntegrationTest`; `ExploreFacetsParityTest` lost the comparison with the app's
+  copy (the app's file was removed in A3).
+- Result: full run **665 run, 0 failures, 1 error, 4 skipped** (928 before N1); the one error was that parity case
+  reading the app file A3 deleted. After removing it the three changed classes were re-run (0 failures); the full
+  suite was NOT run again in B1 (it is run again in B2). Main code compiled. No database touched.

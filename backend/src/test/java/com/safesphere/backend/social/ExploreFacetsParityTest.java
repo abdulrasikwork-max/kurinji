@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 class ExploreFacetsParityTest {
 
     private static final Path FILE = Path.of("src/main/resources/explore/explore-facets-v1.tsv");
-    private static final Path APP_COPY = Path.of("../android/app/src/main/resources/explore/explore-facets-v1.tsv");
     private static final Path V29 = Path.of("src/main/resources/db/migration/V29__explore_facets.sql");
     private static final Pattern FORBIDDEN = Pattern.compile(
             "safe|safety|danger|women|woman|ladies|lit\\b|lighting|harass|unsafe", Pattern.CASE_INSENSITIVE);
@@ -39,12 +38,6 @@ class ExploreFacetsParityTest {
             assertThat(facet.tanglish()).isNotBlank();
         }
         assertThat(ExploreFacets.codes()).hasSize(13);
-    }
-
-    @Test
-    void theAppCopy_isByteIdentical() throws IOException {
-        assertThat(Files.readAllBytes(APP_COPY)).as("the app's copy of explore-facets-v1.tsv")
-                .isEqualTo(Files.readAllBytes(FILE));
     }
 
     @Test

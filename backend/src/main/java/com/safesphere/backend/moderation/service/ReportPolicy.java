@@ -1,6 +1,6 @@
 package com.safesphere.backend.moderation.service;
 
-import com.safesphere.backend.community.service.Independence;
+import com.safesphere.backend.common.independence.Independence;
 import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
 import java.time.LocalDateTime;
 import java.util.ArrayList;

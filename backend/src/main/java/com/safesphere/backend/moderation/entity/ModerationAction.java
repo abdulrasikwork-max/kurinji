@@ -1,6 +1,5 @@
 package com.safesphere.backend.moderation.entity;
 
-import com.safesphere.backend.community.entity.SignalCategory;
 import com.safesphere.backend.moderation.entity.ModerationEnums.ActionReason;
 import com.safesphere.backend.moderation.entity.ModerationEnums.ActionType;
 import com.safesphere.backend.moderation.entity.ModerationEnums.TargetKind;
@@ -51,10 +50,6 @@ public class ModerationAction {
     @Column(name = "target_kind", updatable = false, length = 7)
     private TargetKind targetKind;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "signal_category", updatable = false, length = 30)
-    private SignalCategory signalCategory;
-
     @Column(name = "subject_user_id", updatable = false)
     private Long subjectUserId;
 
@@ -78,22 +73,6 @@ public class ModerationAction {
         this.action = action;
         this.reason = reason;
         this.occurredAt = now;
-    }
-
-    public static ModerationAction onCase(long actorId, ActionType action, ActionReason reason, String caseRef,
-                                          SignalCategory category, LocalDateTime now) {
-        ModerationAction entry = new ModerationAction(actorId, action, reason, now);
-        entry.caseRef = caseRef;
-        entry.signalCategory = category;
-        return entry;
-    }
-
-    public static ModerationAction restriction(long actorId, ActionReason reason, String caseRef, SignalCategory category,
-                                               long subjectUserId, LocalDateTime until, LocalDateTime now) {
-        ModerationAction entry = onCase(actorId, ActionType.RESTRICT, reason, caseRef, category, now);
-        entry.subjectUserId = subjectUserId;
-        entry.restrictedUntil = until;
-        return entry;
     }
 
     public static ModerationAction aboutPerson(long actorId, ActionType action, ActionReason reason, long subjectUserId,
@@ -152,10 +131,6 @@ public class ModerationAction {
 
     public String getCaseRef() {
         return caseRef;
-    }
-
-    public SignalCategory getSignalCategory() {
-        return signalCategory;
     }
 
     public Long getSubjectUserId() {

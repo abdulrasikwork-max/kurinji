@@ -153,7 +153,7 @@ class AccountLifecycleApiIntegrationTest {
         String email = email();
         String token = registerAndGetToken(mockMvc, objectMapper, email);
         jdbc.update("UPDATE users SET enabled = FALSE WHERE email = ?", email);
-        for (String path : List.of("/api/safety-contacts", "/api/emergencies", "/api/journeys", "/api/community/mine")) {
+        for (String path : List.of("/api/safety-contacts", "/api/emergencies", "/api/journeys", "/api/profiles/me")) {
             mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, bearer(token)))
                     .andExpect(status().isUnauthorized())
                     .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE,
@@ -339,26 +339,6 @@ class AccountLifecycleApiIntegrationTest {
         login(email, PASSWORD).andExpect(status().isUnauthorized());
         login("erased-" + userId + "@erased.invalid", PASSWORD).andExpect(status().isUnauthorized());
         registerAndGetToken(mockMvc, objectMapper, email); // the original address is free again
-    }
-
-    @Test
-    void deletion_withdrawsTheCommunityContributions_andRemovesASignalNobodyElseBacks() throws Exception {
-        String email = email();
-        String token = registerAndGetToken(mockMvc, objectMapper, email);
-        String cell = "tdr1v9" + "bcdefghjkmnpqrstuvwxyz".charAt((int) (Math.random() * 22));
-        mockMvc.perform(post("/api/community/reports").header(HttpHeaders.AUTHORIZATION, bearer(token))
-                        .contentType(MediaType.APPLICATION_JSON).content(body(Map.of("category", "POOR_LIGHTING", "cell", cell))))
-                .andExpect(status().isAccepted());
-        long userId = users.findByEmail(email).orElseThrow().getId();
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM signal_contributions WHERE user_id = ?", Long.class, userId))
-                .isEqualTo(1);
-        requestDeletion(token, PASSWORD).andExpect(status().isAccepted());
-        clock.advance(Duration.ofDays(8));
-        assertThat(job.run()).containsEntry(Outcome.DELETED, 1);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM signal_contributions WHERE user_id = ?", Long.class, userId))
-                .isZero();
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM place_signals WHERE cell = ? AND category = 'POOR_LIGHTING'",
-                Long.class, cell)).isZero();
     }
 
     // ---- helpers ----------------------------------------------------------------------------------------------

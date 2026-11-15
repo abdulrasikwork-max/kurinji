@@ -2,7 +2,7 @@ package com.safesphere.backend.social;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.safesphere.backend.community.service.GeoCell;
+import com.safesphere.backend.common.geo.GeoCell;
 import com.safesphere.backend.social.policy.CityCatalog;
 import com.safesphere.backend.social.policy.CityCatalog.City;
 import java.io.IOException;

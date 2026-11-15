@@ -140,7 +140,7 @@ class SocialAccountDeletionTest {
         assertThat(photoKeys).anyMatch(media::hasVideo);
         // Phase 17G-2 (V30): p went to (and rated) a place the friend wrote about; the friend marked it too. p's visit must
         // go with the account; the friend's must stay.
-        String cell = com.safesphere.backend.community.service.GeoCell.encode(10.80 + Math.random() * 0.05, 79.10 + Math.random() * 0.05, 7);
+        String cell = com.safesphere.backend.common.geo.GeoCell.encode(10.80 + Math.random() * 0.05, 79.10 + Math.random() * 0.05, 7);
         String placeId = social.json(social.createPlace(friend, "Deletion Place " + java.util.UUID.randomUUID().toString().substring(0, 8),
                 "NATURE_OUTDOORS", cell).andExpect(status().isOk())).get("publicId").asText();
         Map<String, Object> exact = SocialClient.experienceBody("EVERYONE", "EXACT");

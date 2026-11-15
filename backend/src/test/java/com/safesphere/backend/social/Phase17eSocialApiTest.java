@@ -201,7 +201,7 @@ class Phase17eSocialApiTest {
 
     @Test
     void aPlaceInANewCatalogCity_getsItsCity_andCanBeListedThere() throws Exception {
-        String delhi = com.safesphere.backend.community.service.GeoCell.encode(28.6139, 77.2090, 7);
+        String delhi = com.safesphere.backend.common.geo.GeoCell.encode(28.6139, 77.2090, 7);
         String id = social.place(asha, "India Gate lawns", delhi);
         social.createPlace(asha, "India Gate lawns", "NATURE_OUTDOORS", delhi).andExpect(jsonPath("$.city").value("DELHI"));
         assertThat(jdbc.queryForObject("SELECT city FROM places WHERE public_id = ?", String.class, id))

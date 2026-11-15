@@ -2,7 +2,7 @@ package com.safesphere.backend.moderation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.safesphere.backend.community.service.Independence;
+import com.safesphere.backend.common.independence.Independence;
 import com.safesphere.backend.moderation.service.ReportPolicy;
 import com.safesphere.backend.moderation.service.ReportPolicy.Tally;
 import com.safesphere.backend.moderation.service.ReportPolicy.Vote;

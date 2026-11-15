@@ -144,10 +144,6 @@ class AssessmentIntegrationTest {
         social.act(mod, caseId, "CONTENT_KEEP", "NO_VIOLATION").andExpect(status().isOk());
         assertThat(social.json(social.getPost(bala, id).andExpect(status().isOk())).get("collapsed").isNull()).isTrue();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM social_strikes", Integer.class)).isZero();
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM evaluation_counters WHERE metric = 'AI_REVIEWED'"
-                + " AND dimension = 'HELD.CONTENT_KEEP'", Integer.class)).isEqualTo(1);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM evaluation_counters WHERE metric = 'AI_CHECKED'"
-                + " AND dimension = 'HOLD_FOR_REVIEW.SEVERE'", Integer.class)).isEqualTo(1);
     }
 
     @Test

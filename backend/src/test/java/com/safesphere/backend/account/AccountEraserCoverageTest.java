@@ -18,11 +18,12 @@ import org.junit.jupiter.api.Test;
 /**
  * Phase 10A.3 drift guard: every foreign key to users(id) in the migrations is handled by account deletion, either
  * deleted with the person or (audit trail of decisions) kept on an anonymised row. A new table that refers to a person
- * fails this test until AccountEraser deals with it.
+ * fails this test until AccountEraser deals with it. A table that a later migration drops (N1, V32) is not counted.
  */
 class AccountEraserCoverageTest {
 
     private static final Pattern TABLE = Pattern.compile("(?i)^\\s*(CREATE|ALTER)\\s+TABLE\\s+(\\w+)");
+    private static final Pattern DROPPED = Pattern.compile("(?i)^\\s*DROP\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(\\w+)");
     private static final Pattern USER_FK = Pattern.compile("(?i)FOREIGN\\s+KEY\\s*\\((\\w+)\\)\\s*REFERENCES\\s+users\\s*\\(");
 
     @Test
@@ -32,6 +33,13 @@ class AccountEraserCoverageTest {
             for (Path file : files.filter(f -> f.toString().endsWith(".sql")).sorted().toList()) {
                 String table = null;
                 for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
+                    // N1 (V32): a table dropped by a later migration no longer refers to anyone.
+                    Matcher dropped = DROPPED.matcher(line);
+                    if (dropped.find()) {
+                        String gone = dropped.group(1).toLowerCase() + ".";
+                        found.removeIf(reference -> reference.startsWith(gone));
+                        continue;
+                    }
                     Matcher t = TABLE.matcher(line);
                     if (t.find()) table = t.group(2).toLowerCase();
                     Matcher fk = USER_FK.matcher(line);
