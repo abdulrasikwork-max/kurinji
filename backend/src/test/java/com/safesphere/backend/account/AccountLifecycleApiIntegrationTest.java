@@ -15,14 +15,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safesphere.backend.account.service.AccountDeletionJob;
 import com.safesphere.backend.account.service.AccountEraser.Outcome;
-import com.safesphere.backend.evidence.repository.EvidenceItemRepository;
-import com.safesphere.backend.evidence.service.EvidenceStorage;
 import com.safesphere.backend.support.MutableClock;
 import com.safesphere.backend.support.MutableClockConfig;
 import com.safesphere.backend.user.entity.User;
 import com.safesphere.backend.user.repository.UserRepository;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -64,8 +60,6 @@ class AccountLifecycleApiIntegrationTest {
     @Autowired private MutableClock clock;
     @Autowired private AccountDeletionJob job;
     @Autowired private UserRepository users;
-    @Autowired private EvidenceItemRepository evidence;
-    @Autowired private EvidenceStorage storage;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private JwtEncoder jwtEncoder;
 
@@ -240,7 +234,7 @@ class AccountLifecycleApiIntegrationTest {
     }
 
     @Test
-    void deletion_afterTheGracePeriod_removesTheEvidenceFilesAndEveryOwnedRow_andNobodyElsesData() throws Exception {
+    void deletion_afterTheGracePeriod_removesEveryOwnedRow_andNobodyElsesData() throws Exception {
         String email = email();
         String token = registerAndGetToken(mockMvc, objectMapper, email);
         String otherEmail = email();
@@ -249,11 +243,6 @@ class AccountLifecycleApiIntegrationTest {
         addContact(other);
         long emergency = startEmergency(token);
         long otherEmergency = startEmergency(other);
-        long item = declareEvidence(token, emergency);
-        long otherItem = declareEvidence(other, otherEmergency);
-        Path file = storage.root().resolve(evidence.findById(item).orElseThrow().getStorageKey() + ".part");
-        Path otherFile = storage.root().resolve(evidence.findById(otherItem).orElseThrow().getStorageKey() + ".part");
-        assertThat(file).exists();
         resolve(token, emergency);
         clock.advance(Duration.ofHours(25));
         requestDeletion(token, PASSWORD).andExpect(status().isAccepted());
@@ -264,13 +253,11 @@ class AccountLifecycleApiIntegrationTest {
         clock.advance(Duration.ofMinutes(2));
         assertThat(job.run()).containsEntry(Outcome.DELETED, 1);
 
-        assertThat(Files.exists(file)).isFalse();
         assertThat(users.findByEmail(email)).isEmpty();
-        for (String table : List.of("safety_contacts", "emergency_events", "evidence_custody_events")) {
+        for (String table : List.of("safety_contacts", "emergency_events")) {
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM " + table + " WHERE user_id = ?", Long.class, userId))
                     .as(table).isZero();
         }
-        assertThat(evidence.findById(item)).isEmpty();
         mockMvc.perform(get("/api/users/me").header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE,
@@ -279,8 +266,6 @@ class AccountLifecycleApiIntegrationTest {
         registerAndGetToken(mockMvc, objectMapper, email); // the address is free again
 
         // The other person's data is untouched.
-        assertThat(otherFile).exists();
-        assertThat(evidence.findById(otherItem)).isPresent();
         mockMvc.perform(get("/api/safety-contacts").header(HttpHeaders.AUTHORIZATION, bearer(other)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
         mockMvc.perform(get("/api/emergencies/" + otherEmergency).header(HttpHeaders.AUTHORIZATION, bearer(other)))
@@ -388,24 +373,6 @@ class AccountLifecycleApiIntegrationTest {
         mockMvc.perform(post("/api/safety-contacts").header(HttpHeaders.AUTHORIZATION, bearer(token))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(contact)))
                 .andExpect(status().isCreated());
-    }
-
-    private long declareEvidence(String token, long emergency) throws Exception {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("clientRef", UUID.randomUUID().toString());
-        body.put("kind", "PHOTO");
-        body.put("mediaType", "image/jpeg");
-        body.put("sequenceNo", 0);
-        body.put("sizeBytes", 100);
-        body.put("ciphertextSha256", "a".repeat(64));
-        body.put("plaintextSha256", "b".repeat(64));
-        body.put("encryption", "SSEV1");
-        body.put("capturedStartedAt", Instant.now().minusSeconds(5).toString());
-        body.put("capturedEndedAt", Instant.now().toString());
-        return json(mockMvc.perform(post("/api/emergencies/" + emergency + "/evidence")
-                        .header(HttpHeaders.AUTHORIZATION, bearer(token)).contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(body)))
-                .andExpect(status().isCreated())).get("id").asLong();
     }
 
     private String body(Map<String, ?> values) throws Exception {

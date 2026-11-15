@@ -22,3 +22,12 @@ DROP TABLE evaluation_counters;
 -- (fk_moderation_appeals_action cascades). Role changes and every content decision stay.
 DELETE FROM moderation_actions WHERE action IN ('QUARANTINE', 'DISMISS', 'REMOVE', 'RESTRICT');
 ALTER TABLE moderation_actions DROP COLUMN signal_category;
+
+-- ---- B2: the Evidence Vault (V9, V10, V11) ---------------------------------------------------------------------------
+-- Children first: the custody ledger refers to the items. The encrypted files themselves are not in the database; the
+-- evidence folder (EVIDENCE_STORAGE_DIR) is removed by hand, after this migration, where one exists.
+
+DROP TABLE evidence_custody_events;
+DROP TABLE evidence_recovery_failures;
+DROP TABLE evidence_recovery_envelopes;
+DROP TABLE evidence_items;

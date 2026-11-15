@@ -13,7 +13,6 @@ import com.safesphere.backend.emergencycontext.EmergencyContextDtos.LatestLocati
 import com.safesphere.backend.emergencycontext.EmergencyContextDtos.OwnerContext;
 import com.safesphere.backend.emergencycontext.EmergencyContextDtos.SafetyCircleContext;
 import com.safesphere.backend.emergencycontext.EmergencyContextDtos.TimelineEntry;
-import com.safesphere.backend.evidence.service.EvidenceService;
 import com.safesphere.backend.escalation.entity.EscalationEvent;
 import com.safesphere.backend.escalation.entity.EscalationLevel;
 import com.safesphere.backend.escalation.repository.EscalationEventRepository;
@@ -57,7 +56,6 @@ public class EmergencyContextService {
     private final CircleAlertRepository alertRepository;
     private final SafetyContactRepository contactRepository;
     private final UserRepository userRepository;
-    private final EvidenceService evidenceService;
     private final Clock clock;
 
     public EmergencyContextService(EmergencyEventRepository emergencyRepository,
@@ -67,9 +65,7 @@ public class EmergencyContextService {
                                    CircleAlertRepository alertRepository,
                                    SafetyContactRepository contactRepository,
                                    UserRepository userRepository,
-                                   EvidenceService evidenceService,
                                    Clock clock) {
-        this.evidenceService = evidenceService;
         this.emergencyRepository = emergencyRepository;
         this.locationRepository = locationRepository;
         this.journeyRepository = journeyRepository;
@@ -150,15 +146,8 @@ public class EmergencyContextService {
                 locationRepository.countByEmergencyId(emergency.getId()),
                 highest,
                 List.copyOf(timeline.values()),
-                alerts,
-                evidenceSummary(emergency.getId())
+                alerts
         );
-    }
-
-    private EmergencyContextDtos.EvidenceSummary evidenceSummary(long emergencyId) {
-        EvidenceService.Summary summary = evidenceService.summary(emergencyId);
-        return new EmergencyContextDtos.EvidenceSummary(summary.items(), summary.sealed(), summary.uploading(),
-                summary.deleted());
     }
 
     /** The allow-list: name, type, status, times, location link. Nothing else is read into it. */

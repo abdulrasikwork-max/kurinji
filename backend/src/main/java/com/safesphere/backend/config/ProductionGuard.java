@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
  *       open both.</li>
  *   <li>a database URL without TLS ({@code useSSL=false}, or no {@code sslMode=REQUIRED|VERIFY_CA|VERIFY_IDENTITY}):
  *       passwords and personal data would cross the network in clear text.</li>
- *   <li>a relative evidence or photo folder: it would follow whatever directory the process was started from, so a
+ *   <li>a relative photo folder: it would follow whatever directory the process was started from, so a
  *       restart elsewhere would silently "lose" every file.</li>
  * </ul>
  * Things that are only worth a warning (the operator may do it on purpose) are logged, not refused.
@@ -34,16 +34,13 @@ public class ProductionGuard {
 
     private static final Logger log = LoggerFactory.getLogger(ProductionGuard.class);
 
-    public ProductionGuard(OtpProperties otp, EvidenceProperties evidence, SocialProperties social,
+    public ProductionGuard(OtpProperties otp, SocialProperties social,
                            @Value("${spring.datasource.url:}") String databaseUrl,
                            @Value("${app.moderation.ai.key:}") String moderationKey) {
         List<String> problems = problems(otp.providerKind().name(), otp.fast2smsApiKey(), otp.secret(), databaseUrl,
-                evidence.storageDir(), social.mediaDir());
+                social.mediaDir());
         if (!problems.isEmpty()) {
             throw new IllegalStateException("Refusing to start with the prod profile: " + String.join("; ", problems));
-        }
-        if (evidence.vaultPublicKey() == null || evidence.vaultPublicKey().isBlank()) {
-            log.warn("Production: EVIDENCE_VAULT_PUBLIC_KEY is empty, so there is no recovery escrow for evidence.");
         }
         if (moderationKey == null || moderationKey.isBlank()) {
             log.warn("Production: MODERATION_SERVICE_KEY is empty, so posts are published without the automatic check.");
@@ -53,7 +50,7 @@ public class ProductionGuard {
 
     /** What is wrong, in words for the operator; empty = fine. Pure, so it is tested without starting Spring. */
     public static List<String> problems(String otpProvider, String fast2smsApiKey, String otpSecret, String databaseUrl,
-                                        Path evidenceDir, Path mediaDir) {
+                                        Path mediaDir) {
         List<String> out = new ArrayList<>();
         if (!"FAST2SMS".equalsIgnoreCase(otpProvider)) {
             out.add("OTP_PROVIDER must be FAST2SMS (DEV_FILE sends no SMS and writes codes to a file)");
@@ -68,9 +65,6 @@ public class ProductionGuard {
                 || !(url.contains("sslmode=required") || url.contains("sslmode=verify_ca")
                 || url.contains("sslmode=verify_identity"))) {
             out.add("DB_URL must use TLS: add sslMode=REQUIRED (or VERIFY_CA / VERIFY_IDENTITY) and remove useSSL=false");
-        }
-        if (evidenceDir == null || !evidenceDir.isAbsolute()) {
-            out.add("EVIDENCE_STORAGE_DIR must be an absolute path");
         }
         if (mediaDir == null || !mediaDir.isAbsolute()) {
             out.add("SOCIAL_MEDIA_DIR must be an absolute path");

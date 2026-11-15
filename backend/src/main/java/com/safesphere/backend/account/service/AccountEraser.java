@@ -3,8 +3,6 @@ package com.safesphere.backend.account.service;
 import com.safesphere.backend.config.AccountProperties;
 import com.safesphere.backend.emergency.entity.EmergencyStatus;
 import com.safesphere.backend.emergency.repository.EmergencyEventRepository;
-import com.safesphere.backend.evidence.repository.EvidenceItemRepository;
-import com.safesphere.backend.evidence.service.EvidenceStorage;
 import com.safesphere.backend.social.media.MediaStorage;
 import com.safesphere.backend.user.entity.User;
 import com.safesphere.backend.user.repository.UserRepository;
@@ -28,7 +26,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * Phase 10A.3: deletes ONE account whose grace period is over, in three steps:
  *
  *   1. check (locked): still due, no ACTIVE emergency, none ended within 24 h (else the date moves later: POSTPONED);
- *      collect the storage keys of the person's evidence files and (Phase 13B) photo files;
+ *      collect the storage keys of the person's (Phase 13B) photo files;
  *   2. delete those files (outside any transaction; a failure stops here and the job tries again next run,
  *      so no row is deleted while one of its files is still on disk);
  *   3. in one transaction: check again, delete every row the person owns, children first (the same rows the database
@@ -49,7 +47,6 @@ public class AccountEraser {
      */
     public static final Set<String> DELETED_REFERENCES = Set.of(
             "safety_contacts.user_id", "emergency_events.user_id", "safe_journeys.user_id",
-            "evidence_custody_events.user_id", "evidence_recovery_envelopes.user_id", "evidence_recovery_failures.user_id",
             "moderation_actions.subject_user_id", "moderation_appeals.user_id", "device_sessions.user_id",
             // Phase 13A (V20): the social identity.
             "profiles.user_id", "connections.user_low", "connections.user_high", "connection_invites.owner_id",
@@ -76,12 +73,6 @@ public class AccountEraser {
 
     /** Owned rows that go in both cases, children before parents. Each statement takes the user id once per "?". */
     private static final List<String> OWNED_DATA = List.of(
-            "DELETE FROM evidence_custody_events WHERE user_id = ?",
-            "DELETE FROM evidence_custody_events WHERE evidence_id IN (SELECT id FROM evidence_items WHERE emergency_id IN "
-                    + EMERGENCIES + ")",
-            "DELETE FROM evidence_items WHERE emergency_id IN " + EMERGENCIES,
-            "DELETE FROM evidence_recovery_envelopes WHERE user_id = ?",
-            "DELETE FROM evidence_recovery_failures WHERE user_id = ?",
             "DELETE FROM circle_alerts WHERE emergency_id IN " + EMERGENCIES + " OR journey_id IN " + JOURNEYS,
             "DELETE FROM escalation_events WHERE emergency_id IN " + EMERGENCIES + " OR journey_id IN " + JOURNEYS,
             "DELETE FROM emergency_locations WHERE emergency_id IN " + EMERGENCIES,
@@ -151,8 +142,6 @@ public class AccountEraser {
 
     private final UserRepository users;
     private final EmergencyEventRepository emergencies;
-    private final EvidenceItemRepository evidence;
-    private final EvidenceStorage storage;
     private final JdbcTemplate jdbc;
     private final PasswordEncoder passwordEncoder;
     private final AccountProperties properties;
@@ -161,15 +150,12 @@ public class AccountEraser {
     private final MediaStorage media;
     private final SecureRandom random = new SecureRandom();
 
-    public AccountEraser(UserRepository users, EmergencyEventRepository emergencies, EvidenceItemRepository evidence,
-                         EvidenceStorage storage, JdbcTemplate jdbc,
+    public AccountEraser(UserRepository users, EmergencyEventRepository emergencies, JdbcTemplate jdbc,
                          PasswordEncoder passwordEncoder, AccountProperties properties, Clock clock,
                          PlatformTransactionManager transactions, MediaStorage media) {
         this.media = media;
         this.users = users;
         this.emergencies = emergencies;
-        this.evidence = evidence;
-        this.storage = storage;
         this.jdbc = jdbc;
         this.passwordEncoder = passwordEncoder;
         this.properties = properties;
@@ -180,15 +166,6 @@ public class AccountEraser {
     public Outcome eraseIfDue(long userId) {
         Check check = tx.execute(status -> check(userId));
         if (check.outcome() != null) return check.outcome();
-        for (String key : check.storageKeys()) {
-            try {
-                storage.delete(key);
-            } catch (RuntimeException e) {
-                log.warn("Account deletion: an evidence file could not be removed ({}); trying again next run",
-                        e.getClass().getSimpleName());
-                return Outcome.FILES_FAILED;
-            }
-        }
         for (String key : check.mediaKeys()) {
             try {
                 media.delete(key);
@@ -201,20 +178,20 @@ public class AccountEraser {
         return tx.execute(status -> erase(userId));
     }
 
-    private record Check(Outcome outcome, List<String> storageKeys, List<String> mediaKeys) {
+    private record Check(Outcome outcome, List<String> mediaKeys) {
     }
 
     private Check check(long userId) {
         User user = users.findByIdForUpdate(userId).orElse(null);
         Outcome blocked = blocked(user);
-        if (blocked != null) return new Check(blocked, List.of(), List.of());
+        if (blocked != null) return new Check(blocked, List.of());
         // Phase 13B: every photo the person uploaded (attached to their posts or not); a photo is always its owner's.
         // Phase 17E: and their profile photo (stored the same way, its key on the profile).
         List<String> mediaKeys = new java.util.ArrayList<>(jdbc.queryForList(
                 "SELECT storage_key FROM post_media WHERE owner_id = ?", String.class, userId));
         mediaKeys.addAll(jdbc.queryForList("SELECT photo_key FROM profiles WHERE user_id = ? AND photo_key IS NOT NULL",
                 String.class, userId));
-        return new Check(null, evidence.storageKeysOf(userId), mediaKeys);
+        return new Check(null, mediaKeys);
     }
 
     private Outcome erase(long userId) {

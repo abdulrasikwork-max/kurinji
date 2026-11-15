@@ -20,28 +20,28 @@ class ProductionGuardTest {
     private static final String SECRET = "x".repeat(40);
     private static final Path ABSOLUTE = Path.of(System.getProperty("java.io.tmpdir")).toAbsolutePath();
 
-    private static List<String> check(String provider, String key, String secret, String url, Path evidence, Path media) {
-        return ProductionGuard.problems(provider, key, secret, url, evidence, media);
+    private static List<String> check(String provider, String key, String secret, String url, Path media) {
+        return ProductionGuard.problems(provider, key, secret, url, media);
     }
 
     @Test
     void a_complete_production_setup_passes() {
-        assertThat(check("FAST2SMS", "key", SECRET, GOOD_URL, ABSOLUTE, ABSOLUTE)).isEmpty();
-        assertThat(check("fast2sms", "key", SECRET, GOOD_URL.replace("VERIFY_IDENTITY", "REQUIRED"), ABSOLUTE, ABSOLUTE))
+        assertThat(check("FAST2SMS", "key", SECRET, GOOD_URL, ABSOLUTE)).isEmpty();
+        assertThat(check("fast2sms", "key", SECRET, GOOD_URL.replace("VERIFY_IDENTITY", "REQUIRED"), ABSOLUTE))
                 .isEmpty();
     }
 
     @Test
     void the_development_otp_sink_is_refused() {
-        assertThat(check("DEV_FILE", "", SECRET, GOOD_URL, ABSOLUTE, ABSOLUTE)).hasSize(1)
+        assertThat(check("DEV_FILE", "", SECRET, GOOD_URL, ABSOLUTE)).hasSize(1)
                 .allMatch(m -> m.contains("OTP_PROVIDER"));
     }
 
     @Test
     void a_missing_sms_key_or_otp_secret_is_refused() {
-        assertThat(check("FAST2SMS", " ", SECRET, GOOD_URL, ABSOLUTE, ABSOLUTE)).anyMatch(m -> m.contains("FAST2SMS_API_KEY"));
-        assertThat(check("FAST2SMS", "key", "", GOOD_URL, ABSOLUTE, ABSOLUTE)).anyMatch(m -> m.contains("OTP_SECRET"));
-        assertThat(check("FAST2SMS", "key", null, GOOD_URL, ABSOLUTE, ABSOLUTE)).anyMatch(m -> m.contains("OTP_SECRET"));
+        assertThat(check("FAST2SMS", " ", SECRET, GOOD_URL, ABSOLUTE)).anyMatch(m -> m.contains("FAST2SMS_API_KEY"));
+        assertThat(check("FAST2SMS", "key", "", GOOD_URL, ABSOLUTE)).anyMatch(m -> m.contains("OTP_SECRET"));
+        assertThat(check("FAST2SMS", "key", null, GOOD_URL, ABSOLUTE)).anyMatch(m -> m.contains("OTP_SECRET"));
     }
 
     @Test
@@ -50,22 +50,21 @@ class ProductionGuardTest {
                 + "&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true";
         for (String url : new String[] {dev, "jdbc:mysql://db/safesphere", "jdbc:mysql://db/s?sslMode=DISABLED",
                 "jdbc:mysql://db/s?sslMode=PREFERRED", "jdbc:mysql://db/s?useSSL=false&sslMode=REQUIRED", "", null}) {
-            assertThat(check("FAST2SMS", "key", SECRET, url, ABSOLUTE, ABSOLUTE))
+            assertThat(check("FAST2SMS", "key", SECRET, url, ABSOLUTE))
                     .as("url %s", url).anyMatch(m -> m.contains("DB_URL"));
         }
     }
 
     @Test
     void relative_storage_folders_are_refused() {
-        List<String> problems = check("FAST2SMS", "key", SECRET, GOOD_URL, Path.of("evidence-store"),
+        List<String> problems = check("FAST2SMS", "key", SECRET, GOOD_URL,
                 Path.of("social-media-store"));
-        assertThat(problems).anyMatch(m -> m.contains("EVIDENCE_STORAGE_DIR"));
         assertThat(problems).anyMatch(m -> m.contains("SOCIAL_MEDIA_DIR"));
     }
 
     @Test
     void every_problem_is_reported_at_once() {
-        assertThat(check("DEV_FILE", "", "", "", Path.of("a"), Path.of("b"))).hasSize(5);
+        assertThat(check("DEV_FILE", "", "", "", Path.of("b"))).hasSize(4);
     }
 
     @Test

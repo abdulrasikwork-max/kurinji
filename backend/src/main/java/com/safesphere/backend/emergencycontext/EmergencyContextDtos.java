@@ -20,16 +20,8 @@ public final class EmergencyContextDtos {
             long locationCount,
             int highestLevel,
             List<TimelineEntry> escalations,
-            List<AlertEntry> circleAlerts,
-            EvidenceSummary evidence
+            List<AlertEntry> circleAlerts
     ) {
-    }
-
-    /**
-     * Phase 5: how much evidence the vault holds for this emergency (counts only, OWNER projection only). The Safety
-     * Circle projection deliberately has no evidence field at all.
-     */
-    public record EvidenceSummary(long items, long sealed, long uploading, long deleted) {
     }
 
     public record Emergency(Long id, String status, String triggerType, Instant startedAt, Instant endedAt) {

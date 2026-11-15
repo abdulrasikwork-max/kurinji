@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Phase 13A rule, enforced on the source (EXPERIENCE_PLATFORM_DESIGN.md §4.8, §5): the social features never read
- * safety data (emergencies, journeys, escalations, the Safety Circle, circle alerts, the context packet, evidence), and
+ * safety data (emergencies, journeys, escalations, the Safety Circle, circle alerts, the context packet), and
  * the safety features never depend on the social features. Connections are never trusted people. A source scan also
  * catches fully qualified names, not only imports (the IntelligenceIsolationTest method).
  */
@@ -23,7 +23,7 @@ class SocialIsolationTest {
     private static final Path MAIN = Path.of("src", "main", "java", "com", "safesphere", "backend");
 
     private static final List<String> SAFETY = List.of("emergency", "emergencycontext", "escalation", "journey",
-            "safetycontact", "circlealert", "evidence");
+            "safetycontact", "circlealert");
 
     private static final Pattern SAFETY_REFERENCE =
             Pattern.compile("com\\.safesphere\\.backend\\.(" + String.join("|", SAFETY) + ")\\b");

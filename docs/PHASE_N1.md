@@ -142,3 +142,22 @@ any deploy to the pilot (the laptop setup and the live jar stay exactly as they 
 - Result: full run **665 run, 0 failures, 1 error, 4 skipped** (928 before N1); the one error was that parity case
   reading the app file A3 deleted. After removing it the three changed classes were re-run (0 failures); the full
   suite was NOT run again in B1 (it is run again in B2). Main code compiled. No database touched.
+
+### B2 Backend: evidence (2026-11-15)
+- Removed: package `evidence` (controllers, services, entities, repositories, `tools/VaultKeyTool`, `SsevFormat`) with
+  its tests and the test-only vault key file, `config/EvidenceProperties`, every `app.evidence.*` setting, every
+  `/api/emergencies/{id}/evidence/**` and recovery endpoint.
+- `EmergencyContextService` / `OwnerContext`: no `evidence` summary any more (API change; the N1 app already ignores
+  the field). `AccountEraser`: no evidence statements, references or file step; `AccountDeletionJob`: no evidence
+  folder sweep. `ProductionGuard` no longer checks `EVIDENCE_STORAGE_DIR` or warns about the vault key.
+- V32 (file only): drops `evidence_custody_events`, `evidence_recovery_failures`, `evidence_recovery_envelopes`,
+  `evidence_items`. The encrypted files are not in the database: the evidence folder is removed by hand where one exists.
+- NOT changed on purpose: `deploy/` (env examples, `backup.sh`, `preflight.sh`, `restore-*.sh`, the backup unit) still
+  names `EVIDENCE_STORAGE_DIR`. The pilot runs the old jar; those scripts change together with the pilot's own deploy.
+- Tests: `AccountLifecycleApiIntegrationTest` (deletion case without evidence), `ProductionGuardTest`,
+  `SocialIsolationTest` (package list). **Found and fixed:** `AccountEraserCoverageTest` read the migrations in file-name
+  order, where `V32` sorts before `V9`, so a drop of a V9 table was seen before its creation; it now reads them in
+  version order.
+- Result: full run **621 run, 1 failure, 0 errors, 4 skipped**; the failure was that ordering fault in the test. After
+  the fix the three changed classes were re-run (20 run, 0 failures); the full suite is run again in B3. No database
+  touched.

@@ -26,11 +26,19 @@ class AccountEraserCoverageTest {
     private static final Pattern DROPPED = Pattern.compile("(?i)^\\s*DROP\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?(\\w+)");
     private static final Pattern USER_FK = Pattern.compile("(?i)FOREIGN\\s+KEY\\s*\\((\\w+)\\)\\s*REFERENCES\\s+users\\s*\\(");
 
+    /** The number in "V32__name.sql". */
+    private static int version(Path file) {
+        String name = file.getFileName().toString();
+        return Integer.parseInt(name.substring(1, name.indexOf("__")));
+    }
+
     @Test
     void everyReferenceToAUserIsDeletedOrDeliberatelyKept() throws IOException {
         Set<String> found = new HashSet<>();
         try (Stream<Path> files = Files.list(Path.of("src/main/resources/db/migration"))) {
-            for (Path file : files.filter(f -> f.toString().endsWith(".sql")).sorted().toList()) {
+            // In version order (V9 before V32; file names alone would sort V32 first), so a later DROP is seen later.
+            for (Path file : files.filter(f -> f.toString().endsWith(".sql"))
+                    .sorted(java.util.Comparator.comparingInt(AccountEraserCoverageTest::version)).toList()) {
                 String table = null;
                 for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
                     // N1 (V32): a table dropped by a later migration no longer refers to anyone.

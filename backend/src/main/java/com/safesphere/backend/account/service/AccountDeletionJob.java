@@ -2,7 +2,6 @@ package com.safesphere.backend.account.service;
 
 import com.safesphere.backend.auth.service.DeviceSessionService;
 import com.safesphere.backend.config.AccountProperties;
-import com.safesphere.backend.evidence.service.EvidenceStorageReconciler;
 import com.safesphere.backend.user.repository.UserRepository;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -18,8 +17,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Phase 10A.3: every 15 minutes, deletes the accounts whose grace period is over (AccountEraser, at most
- * app.account.deletion-batch per run), then sweeps the evidence folder for ciphertext no record refers to any more
- * (the same reconciliation that runs at start-up). It deletes data only and never sends anything.
+ * app.account.deletion-batch per run). It deletes data only and never sends anything.
  * Turned off with app.account.deletion-job-enabled=false (the tests call [run] directly).
  */
 @Component
@@ -30,14 +28,13 @@ public class AccountDeletionJob {
     private final UserRepository users;
     private final AccountEraser eraser;
     private final AccountService accounts;
-    private final EvidenceStorageReconciler reconciler;
     private final AccountProperties properties;
     private final Clock clock;
     private final boolean enabled;
     private final DeviceSessionService sessions;
 
     public AccountDeletionJob(UserRepository users, AccountEraser eraser, AccountService accounts,
-                              EvidenceStorageReconciler reconciler, AccountProperties properties, Clock clock,
+                              AccountProperties properties, Clock clock,
                               @org.springframework.beans.factory.annotation.Value(
                                       "${app.account.deletion-job-enabled:true}") boolean enabled,
                               DeviceSessionService sessions) {
@@ -45,7 +42,6 @@ public class AccountDeletionJob {
         this.users = users;
         this.eraser = eraser;
         this.accounts = accounts;
-        this.reconciler = reconciler;
         this.properties = properties;
         this.clock = clock;
         this.enabled = enabled;
@@ -77,9 +73,6 @@ public class AccountDeletionJob {
             }
             outcomes.merge(outcome, 1, Integer::sum);
         }
-        int erased = outcomes.getOrDefault(AccountEraser.Outcome.DELETED, 0)
-                + outcomes.getOrDefault(AccountEraser.Outcome.ANONYMISED, 0);
-        if (erased > 0) reconciler.reconcile();
         if (!due.isEmpty()) {
             log.info("Account deletion: {} deleted, {} anonymised, {} postponed, {} to retry",
                     outcomes.getOrDefault(AccountEraser.Outcome.DELETED, 0),
