@@ -43,13 +43,11 @@ public class ProfileService {
     private final Relationships relationships;
     private final SocialLimits limits;
     private final SocialProperties properties;
-    private final DailyStateService dailyStates;
     private final Clock clock;
 
     public ProfileService(ProfileRepository profiles, SocialAccess access, Relationships relationships,
-                          SocialLimits limits, SocialProperties properties, DailyStateService dailyStates,
+                          SocialLimits limits, SocialProperties properties,
                           Clock clock) {
-        this.dailyStates = dailyStates;
         this.profiles = profiles;
         this.access = access;
         this.relationships = relationships;
@@ -149,8 +147,7 @@ public class ProfileService {
         Relationship relationship = relationships.relationship(viewerId, profile.getUserId());
         return new PersonProfileResponse(profile.getPublicId(), profile.getHandle(), profile.getDisplayName(),
                 profile.getBio(), ProfileLists.decode(profile.getLanguages()), ProfileLists.decode(profile.getInterests()),
-                profile.getCity(), relationship, profile.getPhotoKey(),
-                dailyStates.visibleTo(relationship, profile.getUserId()));
+                profile.getCity(), relationship, profile.getPhotoKey());
     }
 
     /**
@@ -175,8 +172,7 @@ public class ProfileService {
         boolean waiting = availableAt != null && now().isBefore(availableAt);
         return new OwnProfileResponse(profile.getPublicId(), profile.getHandle(), profile.getDisplayName(),
                 profile.getBio(), ProfileLists.decode(profile.getLanguages()), ProfileLists.decode(profile.getInterests()),
-                profile.getCity(), waiting ? availableAt.toInstant(ZoneOffset.UTC) : null, profile.getPhotoKey(),
-                dailyStates.own(profile.getUserId()));
+                profile.getCity(), waiting ? availableAt.toInstant(ZoneOffset.UTC) : null, profile.getPhotoKey());
     }
 
     private static void requireText(ProfileTextPolicy.Result result, String message) {

@@ -8,7 +8,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safesphere.backend.social.media.MediaStorage;
-import com.safesphere.backend.social.service.DailyStateService;
 import com.safesphere.backend.social.service.SocialMediaCleanupJob;
 import com.safesphere.backend.support.MutableClock;
 import com.safesphere.backend.support.MutableClockConfig;
@@ -36,8 +35,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 /**
  * Phase 17E: the profile photo (square, re-encoded, no metadata, a new key per upload, served only through the profile
- * visibility rule, in every person summary) and today's state (D-7: connections only, never on a card, ends at midnight
- * IST, no history), each from four points of view: the person, a connection, a stranger, someone blocked.
+ * visibility rule, in every person summary), from four points of view: the person, a connection, a stranger, someone
+ * blocked. (Today's state was retired in N1.)
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -135,66 +134,6 @@ class Phase17eSocialApiTest {
         clock.advance(Duration.ofDays(2));          // older than the unattached-upload lifetime
         cleanup.run();
         assertThat(media.exists(key)).isTrue();
-    }
-
-    // ---- Daily state ----
-
-    @Test
-    void dailyState_onlyThePersonAndConnections_neverOnCardsOrLists() throws Exception {
-        social.setDailyState(asha, "curious").andExpect(status().isOk())
-                .andExpect(jsonPath("$.dailyState").value("CURIOUS"));
-        social.ownProfile(asha).andExpect(jsonPath("$.dailyState").value("CURIOUS"));
-        social.profile(bala, asha).andExpect(jsonPath("$.dailyState").value("CURIOUS"));
-        social.profile(chitra, asha).andExpect(jsonPath("$.dailyState").isEmpty());
-        social.profile(dev, asha).andExpect(status().isNotFound());
-
-        String post = social.experience(asha, "EVERYONE");
-        for (Person viewer : new Person[] {bala, chitra}) {
-            String card = social.getPost(viewer, post).andReturn().getResponse().getContentAsString();
-            assertThat(card).doesNotContain("dailyState").doesNotContain("CURIOUS");
-        }
-        String list = social.connections(bala).andReturn().getResponse().getContentAsString();
-        assertThat(list).doesNotContain("CURIOUS");
-
-        // Removing the connection hides it at once.
-        social.removeConnection(bala, asha).andExpect(status().isNoContent());
-        social.profile(bala, asha).andExpect(jsonPath("$.dailyState").isEmpty());
-    }
-
-    @Test
-    void dailyState_closedList_change_andClear() throws Exception {
-        social.setDailyState(asha, "TRAVELLING").andExpect(status().isBadRequest());
-        social.setDailyState(asha, "").andExpect(status().isBadRequest());
-        social.setDailyState(asha, "PLANNING").andExpect(status().isOk());
-        social.setDailyState(asha, "QUIET_DAY").andExpect(status().isOk());
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM daily_states WHERE user_id = ?", Integer.class,
-                asha.id())).isEqualTo(1);
-        social.profile(bala, asha).andExpect(jsonPath("$.dailyState").value("QUIET_DAY"));
-        social.clearDailyState(asha).andExpect(status().isNoContent());
-        social.clearDailyState(asha).andExpect(status().isNoContent());
-        social.profile(bala, asha).andExpect(jsonPath("$.dailyState").isEmpty());
-    }
-
-    @Test
-    void dailyState_endsExactlyAtMidnightIst_andTheCleanUpKeepsNoHistory() throws Exception {
-        // 23:59:50 IST = 18:29:50 UTC, on the next such moment from now.
-        Instant now = Instant.now();
-        Instant target = LocalDate.ofInstant(now, ZoneOffset.UTC).atTime(18, 29, 50).toInstant(ZoneOffset.UTC);
-        if (!target.isAfter(now)) target = target.plus(Duration.ofDays(1));
-        clock.advance(Duration.between(now, target));
-
-        social.setDailyState(asha, "CELEBRATING").andExpect(status().isOk());
-        social.profile(bala, asha).andExpect(jsonPath("$.dailyState").value("CELEBRATING"));
-        String setOn = jdbc.queryForObject("SELECT set_on FROM daily_states WHERE user_id = ?", String.class,
-                asha.id());
-        assertThat(LocalDate.parse(setOn)).isEqualTo(LocalDate.ofInstant(clock.instant(), DailyStateService.INDIA));
-
-        clock.advance(Duration.ofSeconds(15));      // 00:00:05 IST the next day
-        social.profile(bala, asha).andExpect(jsonPath("$.dailyState").isEmpty());
-        social.ownProfile(asha).andExpect(jsonPath("$.dailyState").isEmpty());
-        assertThat(cleanup.run().dailyStates()).isGreaterThanOrEqualTo(1);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM daily_states WHERE user_id = ?", Integer.class,
-                asha.id())).isZero();
     }
 
     // ---- Cities (D-5) ----

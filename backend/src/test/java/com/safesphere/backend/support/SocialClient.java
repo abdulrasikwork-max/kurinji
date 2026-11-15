@@ -298,7 +298,7 @@ public final class SocialClient {
     }
 
 
-    // ---- Phase 17E: profile photo and daily state ----
+    // ---- Phase 17E: profile photo; Phase 13C: Discover ----
 
     public ResultActions ownProfile(Person who) throws Exception {
         return perform(who.token(), get("/api/profiles/me"), null);
@@ -317,89 +317,11 @@ public final class SocialClient {
         return perform(viewer.token(), get("/api/profiles/{id}/photo/{key}", owner.publicId(), key), null);
     }
 
-    public ResultActions setDailyState(Person who, String state) throws Exception {
-        return perform(who.token(), put("/api/profiles/me/daily-state"), Map.of("state", state));
-    }
-
-    public ResultActions clearDailyState(Person who) throws Exception {
-        return perform(who.token(), delete("/api/profiles/me/daily-state"), null);
-    }
-
-    // ---- Phase 17E: butterfly reactions and Saved; Phase 13C: Discover ----
-
-    public ResultActions react(Person who, String postId) throws Exception {
-        return perform(who.token(), put("/api/posts/{id}/reaction", postId), null);
-    }
-
-    public ResultActions unreact(Person who, String postId) throws Exception {
-        return perform(who.token(), delete("/api/posts/{id}/reaction", postId), null);
-    }
-
-    /** Phase 17G-2 (U5): "I went". */
-    public ResultActions went(Person who, String placeId) throws Exception {
-        return perform(who.token(), put("/api/places/{id}/went", placeId), null);
-    }
-
-    /** Phase 18A-2: "Been here" with the cell the phone is in. */
-    public ResultActions went(Person who, String placeId, String cell) throws Exception {
-        return perform(who.token(), put("/api/places/{id}/went", placeId), java.util.Map.of("cell", cell));
-    }
-
-    public ResultActions notWent(Person who, String placeId) throws Exception {
-        return perform(who.token(), delete("/api/places/{id}/went", placeId), null);
-    }
-
-    public ResultActions rate(Person who, String placeId, Object rating) throws Exception {
-        java.util.Map<String, Object> body = new java.util.HashMap<>();
-        body.put("rating", rating);
-        return perform(who.token(), put("/api/places/{id}/rating", placeId), body);
-    }
-
-    public ResultActions clearRating(Person who, String placeId) throws Exception {
-        return perform(who.token(), delete("/api/places/{id}/rating", placeId), null);
-    }
-
-    public ResultActions save(Person who, String postId) throws Exception {
-        return perform(who.token(), put("/api/posts/{id}/save", postId), null);
-    }
-
-    public ResultActions unsave(Person who, String postId) throws Exception {
-        return perform(who.token(), delete("/api/posts/{id}/save", postId), null);
-    }
-
-    public ResultActions saved(Person who, String cursor) throws Exception {
-        var builder = get("/api/saved");
-        if (cursor != null) builder.param("cursor", cursor);
-        return perform(who.token(), builder, null);
-    }
-
-    /** The post ids of a Saved page ({items[{post, savedPeriod}], nextCursor}). */
-    public List<String> savedIds(ResultActions page) throws Exception {
-        List<String> ids = new ArrayList<>();
-        for (JsonNode item : json(page.andExpect(status().isOk())).get("items")) {
-            ids.add(item.get("post").get("publicId").asText());
-        }
-        return ids;
-    }
 
     public ResultActions edition(Person who, String city) throws Exception {
         var builder = get("/api/discover/edition");
         if (city != null) builder.param("city", city);
         return perform(who.token(), builder, null);
-    }
-
-    /** Phase 17G-1: an Explore search with a structured request body. */
-    public ResultActions explore(Person who, Map<String, ?> body) throws Exception {
-        return perform(who.token(), post("/api/explore/search"), body);
-    }
-
-    /** Phase 17G-1: the public ids of the places an Explore answer lists, in order. */
-    public List<String> explorePlaceIds(ResultActions answer) throws Exception {
-        List<String> ids = new ArrayList<>();
-        for (JsonNode hit : json(answer.andExpect(status().isOk())).get("hits")) {
-            ids.add(hit.get("place").get("publicId").asText());
-        }
-        return ids;
     }
 
     /** Every post id in an Edition, all sections together, in order. */

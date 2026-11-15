@@ -78,7 +78,7 @@ class Phase16SocialApiTest {
         social.commentId(bala, post, "BEEN_HERE", "Worth the walk.", null);
         JsonNode answer = social.json(social.getPost(dev, post).andExpect(status().isOk()));
         assertThat(answer.get("commentCount").asInt()).isEqualTo(1);
-        assertThat(answer.get("butterflies").isNull()).isTrue(); // still no butterfly number for others
+        assertThat(answer.has("butterflies")).isFalse(); // N1: reactions are retired; no other number exists
         JsonNode page = social.json(social.profilePosts(dev, asha, null).andExpect(status().isOk()));
         assertThat(page.get("items").get(0).get("commentCount").asInt()).isEqualTo(1);
     }

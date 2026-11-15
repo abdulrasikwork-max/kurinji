@@ -122,13 +122,6 @@ public class Post {
     @Column(name = "approve_first", nullable = false)
     private boolean approveFirst;
 
-    /**
-     * Phase 18A-2 (V31): the author said "I was paid, or got this free". Shown to every reader as a label; the author's rating
-     * for the place then does not count in its public average. Self-declared; only ever turned on.
-     */
-    @Column(name = "disclosed", nullable = false)
-    private boolean disclosed;
-
     /** Required by JPA. */
     protected Post() {
     }
@@ -216,15 +209,6 @@ public class Post {
 
     public void setApproveFirst(boolean approveFirst) {
         this.approveFirst = approveFirst;
-    }
-
-    /** Marks the visit as paid or gifted. There is no way back: a disclosure is not withdrawn. */
-    public void disclose() {
-        this.disclosed = true;
-    }
-
-    public boolean isDisclosed() {
-        return disclosed;
     }
 
     public ModerationState getModeration() {

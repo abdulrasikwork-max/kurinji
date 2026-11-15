@@ -21,6 +21,9 @@ DROP TABLE evaluation_counters;
 -- community pauses) refer to cases that no longer exist; they go, and their appeals go with them
 -- (fk_moderation_appeals_action cascades). Role changes and every content decision stay.
 DELETE FROM moderation_actions WHERE action IN ('QUARANTINE', 'DISMISS', 'REMOVE', 'RESTRICT');
+-- The log entries of decided Phase 7 appeals: a content appeal always names what it was about (target_kind), a
+-- Phase 7 one never did.
+DELETE FROM moderation_actions WHERE action IN ('APPEAL_UPHELD', 'APPEAL_OVERTURNED') AND target_kind IS NULL;
 ALTER TABLE moderation_actions DROP COLUMN signal_category;
 
 -- ---- B2: the Evidence Vault (V9, V10, V11) ---------------------------------------------------------------------------
@@ -31,3 +34,17 @@ DROP TABLE evidence_custody_events;
 DROP TABLE evidence_recovery_failures;
 DROP TABLE evidence_recovery_envelopes;
 DROP TABLE evidence_items;
+
+-- ---- B3: the social add-ons (V22, V28, V29, V30, V31) ----------------------------------------------------------------
+-- Reactions, saved posts, today's state, Explore tags, visits with their ratings, and the disclosure flag on posts.
+-- Each of these tables only refers to users, posts or places; nothing refers to them.
+
+DROP TABLE butterflies;
+DROP TABLE saved_posts;
+DROP TABLE daily_states;
+DROP TABLE post_facets;
+DROP TABLE place_visits;
+
+-- The CHECK goes first: MySQL refuses to drop a column that a CHECK still names.
+ALTER TABLE posts DROP CHECK ck_posts_disclosed;
+ALTER TABLE posts DROP COLUMN disclosed;

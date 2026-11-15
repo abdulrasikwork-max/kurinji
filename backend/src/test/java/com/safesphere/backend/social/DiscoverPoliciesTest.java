@@ -3,7 +3,6 @@ package com.safesphere.backend.social;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.safesphere.backend.common.geo.GeoCell;
-import com.safesphere.backend.social.policy.ButterflyTally;
 import com.safesphere.backend.social.policy.CityCatalog;
 import com.safesphere.backend.social.policy.EditionPolicy;
 import com.safesphere.backend.social.policy.EditionPolicy.Candidate;
@@ -116,17 +115,6 @@ class DiscoverPoliciesTest {
         assertThat(EditionPolicy.reasons(Section.ASKS, bare)).containsExactly(Reason.IN_THIS_CITY, Reason.OPEN_ASK);
         assertThat(EditionPolicy.reasons(Section.THEME, bare))
                 .containsExactly(Reason.IN_THIS_CITY, Reason.THEME_OF_THE_WEEK);
-    }
-
-    // ---- Tally (C2) ----
-
-    @Test
-    void tally_hidesSmallNumbers() {
-        for (long people = 0; people < ButterflyTally.FLOOR; people++) {
-            assertThat(ButterflyTally.of(people)).isEqualTo(new ButterflyTally(null, true));
-        }
-        assertThat(ButterflyTally.of(3)).isEqualTo(new ButterflyTally(3, false));
-        assertThat(ButterflyTally.of(41)).isEqualTo(new ButterflyTally(41, false));
     }
 
     private static String city(double lat, double lng) {

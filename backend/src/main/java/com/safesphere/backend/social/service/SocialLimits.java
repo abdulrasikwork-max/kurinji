@@ -24,13 +24,8 @@ public class SocialLimits {
     static final String TOO_MANY_PHOTOS = "You have added many photos today. Please try again tomorrow.";
     static final String TOO_MANY_VIDEOS = "You have added many videos today. Please try again tomorrow.";
     static final String TOO_MANY_COMMENTS = "You have written many perspectives today. Please try again tomorrow.";
-    static final String TOO_MANY_BUTTERFLIES =
-            "You have given or taken back many butterflies and saves today. Please try again tomorrow.";
     static final String TOO_MANY_DISCOVER = "You have opened a lot of lists this hour. Please try again later.";
     static final String TOO_MANY_SEARCHES = "Too many place searches. Please try again later.";
-    static final String TOO_MANY_VISITS = "You have marked many places today. Please try again tomorrow.";
-    static final String TOO_MANY_RATINGS = "You have changed many ratings today. Please try again tomorrow.";
-    static final String TOO_MANY_EXPLORES = "You have searched a lot this hour. Please try again later.";
 
     private final AttemptLimiter lookups;
     private final AttemptLimiter requests;
@@ -42,12 +37,8 @@ public class SocialLimits {
     private final AttemptLimiter media;
     private final AttemptLimiter videos;
     private final AttemptLimiter comments;
-    private final AttemptLimiter butterflies;
     private final AttemptLimiter discover;
     private final AttemptLimiter searches;
-    private final AttemptLimiter explores;
-    private final AttemptLimiter visits;
-    private final AttemptLimiter ratingWrites;
     private final AttemptLimiter probationPosts;
     private final AttemptLimiter probationComments;
 
@@ -63,12 +54,8 @@ public class SocialLimits {
         this.media = new AttemptLimiter(properties.mediaPerDay(), Duration.ofDays(1), keys, clock);
         this.videos = new AttemptLimiter(properties.videosPerDay(), Duration.ofDays(1), keys, clock);
         this.comments = new AttemptLimiter(properties.commentsPerDay(), Duration.ofDays(1), keys, clock);
-        this.butterflies = new AttemptLimiter(properties.butterfliesPerDay(), Duration.ofDays(1), keys, clock);
         this.discover = new AttemptLimiter(properties.discoverReadsPerHour(), Duration.ofHours(1), keys, clock);
         this.searches = new AttemptLimiter(properties.placeSearchesPerHour(), Duration.ofHours(1), keys, clock);
-        this.explores = new AttemptLimiter(properties.exploreSearchesPerHour(), Duration.ofHours(1), keys, clock);
-        this.visits = new AttemptLimiter(properties.visitsPerDay(), Duration.ofDays(1), keys, clock);
-        this.ratingWrites = new AttemptLimiter(properties.ratingWritesPerDay(), Duration.ofDays(1), keys, clock);
         this.probationPosts = new AttemptLimiter(properties.probationPostsPerDay(), Duration.ofDays(1), keys, clock);
         this.probationComments = new AttemptLimiter(properties.probationCommentsPerDay(), Duration.ofDays(1), keys,
                 clock);
@@ -130,31 +117,12 @@ public class SocialLimits {
         if (!comments.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_COMMENTS);
     }
 
-    public void butterfly(long userId) {
-        if (!butterflies.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_BUTTERFLIES);
-    }
-
     public void discover(long userId) {
         if (!discover.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_DISCOVER);
     }
 
     public void search(long userId) {
         if (!searches.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_SEARCHES);
-    }
-
-    /** Phase 17G-2: a NEW "I went" mark (repeating one that exists costs nothing). */
-    public void visit(long userId) {
-        if (!visits.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_VISITS);
-    }
-
-    /** Phase 17G-2: giving, changing or taking back a rating. */
-    public void ratingWrite(long userId) {
-        if (!ratingWrites.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_RATINGS);
-    }
-
-    /** Phase 17G-1: one Explore search. */
-    public void explore(long userId) {
-        if (!explores.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_EXPLORES);
     }
 
     private static String key(long userId) {

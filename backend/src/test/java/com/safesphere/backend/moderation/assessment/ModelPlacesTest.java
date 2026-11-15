@@ -50,10 +50,9 @@ class ModelPlacesTest {
 
     /**
      * Every outbound HTTP call of the backend is pinned here. Phase 17B added exactly one more: the SMS provider
-     * adapter (it delivers verification codes; it never talks to the moderation service and never logs). Phase 17G-3 added
-     * the third and last: the optional Explore understanding client. It talks ONLY to our own internal service (the same
-     * Python process as the moderation check), never to a provider; the provider key and address exist only in
-     * moderation-service/kurinji_moderation/understand.py (see onlyUnderstandPy_namesTheProvider...).
+     * adapter (it delivers verification codes; it never talks to the moderation service and never logs). The third
+     * client of Phase 17G-3 (the optional Explore understanding) was retired in N1, with its provider adapter in the
+     * Python service: since then nothing in the product calls an AI provider.
      */
     @Test
     void onlyThePinnedClients_makeOutboundCalls() throws IOException {
@@ -64,26 +63,21 @@ class ModelPlacesTest {
                 if (outbound.matcher(Files.readString(file)).find()) found.add(file.getFileName().toString());
             }
         }
-        assertThat(found).containsExactlyInAnyOrder("ModerationServiceClient.java", "Fast2SmsOtpSender.java",
-                "UnderstandingClient.java");
+        assertThat(found).containsExactlyInAnyOrder("ModerationServiceClient.java", "Fast2SmsOtpSender.java");
         String sms = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "auth", "phone",
                 "Fast2SmsOtpSender.java")));
         assertThat(sms).doesNotContain("/v1/assess").doesNotContain("/v1/understand").doesNotContain("Logger")
                 .doesNotContain("log.");
         String moderation = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "moderation",
                 "assessment", "ModerationServiceClient.java")));
-        String understanding = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "explore",
-                "UnderstandingClient.java")));
-        assertThat(moderation).as("each client calls only its own route").doesNotContain("/v1/understand");
-        assertThat(understanding).as("each client calls only its own route").doesNotContain("/v1/assess");
+        assertThat(moderation).as("the client calls only its own route").doesNotContain("/v1/understand");
     }
 
     @Test
     void theClients_neverLogTheTextOrTheKey() throws IOException {
         for (Path file : List.of(
                 MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "moderation", "assessment",
-                        "ModerationServiceClient.java")),
-                MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "explore", "UnderstandingClient.java")))) {
+                        "ModerationServiceClient.java")))) {
             String client = Files.readString(file);
             Matcher logs = Pattern.compile("log\\.(warn|info|debug|error|trace)\\(([^;]*);").matcher(client);
             int seen = 0;
@@ -97,25 +91,21 @@ class ModelPlacesTest {
     }
 
     /**
-     * Phase 17G-3 (decision D-2): the provider's address, header and key belong to ONE file, the Python service's
-     * understand.py. Neither the Java backend nor the app may name the provider or hold its key; no other Python file may open
-     * a network connection of its own.
+     * Since N1 (the 17G-3 provider adapter is retired): no file of the Python service, the Java backend or the app
+     * names an AI provider or holds a provider key, and no Python file opens a network connection of its own.
      */
     @Test
-    void onlyUnderstandPy_namesTheProviderAndItsKey() throws IOException {
+    void nothingNamesAnAiProviderOrItsKey() throws IOException {
         Pattern provider = Pattern.compile("api\\.anthropic\\.com|api\\.groq\\.com|x-api-key|IRL_UNDERSTANDING_API_KEY|ANTHROPIC_API_KEY|GROQ_API_KEY|gsk_",
                 Pattern.CASE_INSENSITIVE);
         List<String> pythonHits = new ArrayList<>();
         try (Stream<Path> files = Files.walk(SERVICE)) {
             for (Path file : files.filter(p -> p.toString().endsWith(".py")).toList()) {
                 String name = file.getFileName().toString();
-                if (name.equals("test_understand.py")) continue;   // the stub-based tests name the header they check
                 if (provider.matcher(Files.readString(file, StandardCharsets.UTF_8)).find()) pythonHits.add(name);
             }
         }
-        // understand.py is the only caller of a provider and the only reader of the key variables (from_environment); the
-        // smoke tool (run by the key's owner) names the variable in its messages only. server.py names nothing.
-        assertThat(pythonHits).containsExactlyInAnyOrder("understand.py", "smoke_understand.py");
+        assertThat(pythonHits).as("no Python file names a provider or a provider key").isEmpty();
         String server = Files.readString(SERVICE.resolve(Path.of("kurinji_moderation", "server.py")), StandardCharsets.UTF_8);
         assertThat(server).doesNotContain("api.anthropic.com").doesNotContain("api.groq.com").doesNotContain("x-api-key")
                 .doesNotContain("urllib").doesNotContain("API_KEY");
@@ -142,7 +132,7 @@ class ModelPlacesTest {
     }
 
     @Test
-    void understandPy_isTheOnlyPythonFileThatOpensConnections() throws IOException {
+    void noPythonFile_opensConnections() throws IOException {
         List<String> networked = new ArrayList<>();
         Pattern net = Pattern.compile("^\\s*(?:from|import)\\s+(urllib|ssl|socket)\\b", Pattern.MULTILINE);
         try (Stream<Path> files = Files.walk(SERVICE)) {
@@ -153,15 +143,14 @@ class ModelPlacesTest {
                 if (net.matcher(Files.readString(file, StandardCharsets.UTF_8)).find()) networked.add(name);
             }
         }
-        assertThat(networked).containsExactly("understand.py");
+        assertThat(networked).isEmpty();
     }
 
     @Test
     void theService_usesOnlyThePythonStandardLibrary() throws IOException {
-        // 17G-3 added urllib and ssl for understand.py (the optional Explore understanding); no other file may import them
-        // (understandPy_isTheOnlyPythonFileThatOpensConnections).
+        // N1: urllib and ssl left the list with understand.py (noPythonFile_opensConnections).
         Set<String> stdlib = Set.of("argparse", "hashlib", "hmac", "http", "json", "math", "os", "random", "re", "sys",
-                "threading", "time", "unicodedata", "io", "unittest", "contextlib", "shutil", "statistics", "urllib", "ssl");
+                "threading", "time", "unicodedata", "io", "unittest", "contextlib", "shutil", "statistics");
         Pattern imports = Pattern.compile("^\\s*(?:from\\s+([\\w.]+)\\s+import|import\\s+([\\w.]+))", Pattern.MULTILINE);
         List<String> outside = new ArrayList<>();
         try (Stream<Path> files = Files.walk(SERVICE)) {

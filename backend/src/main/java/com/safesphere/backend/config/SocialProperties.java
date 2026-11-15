@@ -30,7 +30,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param mediaDir             13B: folder of the photo files (never served statically)
  * @param maxMediaBytes        13B: largest photo upload accepted
  * @param unattachedMediaLifetime 13B: an uploaded photo never attached to a post is deleted after this
- * @param butterfliesPerDay   13C, 17E: marks a person may change per day (butterfly reactions and saves, given or taken back)
  * @param discoverReadsPerHour 13C: Edition, connections, place and category pages a person may load per hour
  * @param placeSearchesPerHour 13C: place-name searches per person per hour
  * @param probation            13D (M16): how long a new account is on probation (its reports do not count yet, lower
@@ -40,9 +39,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param maxVideoBytes        17C (D-6): largest video upload accepted (at most 50 MiB)
  * @param videosPerDay         17C: videos a person may upload per day (separate from photos: a video is up to 10 times
  *                             larger, so this bounds the disk one account can fill before the 24 h clean-up)
- * @param exploreSearchesPerHour 17G-1: Explore searches per person per hour
- * @param visitsPerDay         17G-2 (U5): new "I went" marks per person per day
- * @param ratingWritesPerDay   17G-2 (U5): ratings a person may give, change or take back per day
  */
 @ConfigurationProperties(prefix = "app.social")
 public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCooldown, Duration handleReservation,
@@ -52,11 +48,10 @@ public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCool
                                Integer placesPerDay, Integer placeLookupsPerHour, Integer postsPerDay,
                                Integer mediaPerDay, Integer commentsPerDay, Duration exactDelayMin,
                                Duration exactDelayMax, Path mediaDir, Integer maxMediaBytes,
-                               Duration unattachedMediaLifetime, Integer butterfliesPerDay,
+                               Duration unattachedMediaLifetime,
                                Integer discoverReadsPerHour, Integer placeSearchesPerHour, Duration probation,
                                Integer probationPostsPerDay, Integer probationCommentsPerDay, Integer maxVideoBytes,
-                               Integer videosPerDay, Integer exploreSearchesPerHour, Integer visitsPerDay,
-                               Integer ratingWritesPerDay) {
+                               Integer videosPerDay) {
 
     /** Decision D-6: a video is at most 50 MiB. */
     public static final int VIDEO_BYTES_LIMIT = 50 * 1024 * 1024;
@@ -83,7 +78,6 @@ public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCool
         if (mediaDir == null) mediaDir = Path.of("social-media-store");
         if (maxMediaBytes == null) maxMediaBytes = 5 * 1024 * 1024;
         if (unattachedMediaLifetime == null) unattachedMediaLifetime = Duration.ofHours(24);
-        if (butterfliesPerDay == null) butterfliesPerDay = 200;
         if (discoverReadsPerHour == null) discoverReadsPerHour = 240;
         if (placeSearchesPerHour == null) placeSearchesPerHour = 120;
         if (probation == null) probation = Duration.ofHours(72);
@@ -91,11 +85,7 @@ public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCool
         if (probationCommentsPerDay == null) probationCommentsPerDay = 10;
         if (maxVideoBytes == null) maxVideoBytes = VIDEO_BYTES_LIMIT;
         if (videosPerDay == null) videosPerDay = 10;
-        if (exploreSearchesPerHour == null) exploreSearchesPerHour = 120;
-        if (visitsPerDay == null) visitsPerDay = 20;
-        if (ratingWritesPerDay == null) ratingWritesPerDay = 40;
-        if (maxVideoBytes < 1024 || maxVideoBytes > VIDEO_BYTES_LIMIT || videosPerDay < 1 || exploreSearchesPerHour < 1
-                || visitsPerDay < 1 || ratingWritesPerDay < 1) {
+        if (maxVideoBytes < 1024 || maxVideoBytes > VIDEO_BYTES_LIMIT || videosPerDay < 1) {
             throw new IllegalStateException("app.social.* values are invalid");
         }
 
@@ -110,7 +100,7 @@ public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCool
                 || exactDelayMin.isNegative() || exactDelayMax.compareTo(exactDelayMin) < 0
                 || maxMediaBytes < 1024 || maxMediaBytes > 5 * 1024 * 1024
                 || unattachedMediaLifetime.compareTo(Duration.ofMinutes(1)) < 0
-                || butterfliesPerDay < 1 || discoverReadsPerHour < 1 || placeSearchesPerHour < 1) {
+                || discoverReadsPerHour < 1 || placeSearchesPerHour < 1) {
             throw new IllegalStateException("app.social.* values are invalid");
         }
     }

@@ -5,23 +5,11 @@ import com.safesphere.backend.social.dto.PostDtos.PostResponse;
 import java.util.List;
 
 /**
- * Phase 13C: Discover; Phase 17E: butterfly reactions and Saved. No answer carries a count (the author's thresholded number lives in
- * PostResponse.butterflies), a coordinate, or another person's timestamp.
+ * Phase 13C: Discover. No answer carries a count, a coordinate, or another person's timestamp.
  */
 public final class DiscoverDtos {
 
     private DiscoverDtos() {
-    }
-
-    /** Phase 17E: the answer to PUT /api/posts/{id}/reaction and /save (always true: the mark is there). */
-    public record MarkResponse(boolean marked) {
-    }
-
-    /** Phase 17E: one saved post as the owner may see it now, and when it was saved (a band). */
-    public record SavedItem(PostResponse post, String savedPeriod) {
-    }
-
-    public record SavedPage(List<SavedItem> items, String nextCursor) {
     }
 
     /** A post picked for a list, with the reason codes that explain why ("Why am I seeing this?"). */
@@ -42,7 +30,6 @@ public final class DiscoverDtos {
     }
 
     /** A place page: the place and its exact-place Everyone posts, newest first. */
-    public record PlacePage(PlaceResponse place, List<PostResponse> items, String nextCursor, String rating,
-                            PlaceDtos.VisitResponse yourVisit) {
+    public record PlacePage(PlaceResponse place, List<PostResponse> items, String nextCursor) {
     }
 }

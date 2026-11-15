@@ -161,3 +161,31 @@ any deploy to the pilot (the laptop setup and the live jar stay exactly as they 
 - Result: full run **621 run, 1 failure, 0 errors, 4 skipped**; the failure was that ordering fault in the test. After
   the fix the three changed classes were re-run (20 run, 0 failures); the full suite is run again in B3. No database
   touched.
+
+### B3 Backend: social add-ons (2026-11-15)
+- Removed: package `explore` (the optional AI "understanding": client, gate, service, controller, settings) and
+  `ExploreController` / `ExploreService` / `ExplorePolicy` / `ExploreFacets` / `PostFacet*` with the tag file;
+  `PlaceVisit*`, `RatingPolicy`, `PlaceRatings`; `PostMarkService`, `Butterfly*`, `ButterflyTally`, `SavedPost*`;
+  `DailyState*`; `Post.disclosed`. Endpoints gone: `/api/explore/**`, `PUT|DELETE /api/places/{id}/went` and `/rating`,
+  `PUT|DELETE /api/posts/{id}/reaction` and `/save`, `GET /api/saved`, `PUT|DELETE /api/profiles/me/daily-state`.
+- Answers changed (API change; the N1 app already ignores these fields): `PostResponse` lost `youReacted`, `saved`,
+  `butterflies`, `facets`, `disclosed`; post create / edit no longer read `facets` or `disclosed`; `PlacePage` lost
+  `rating` and `yourVisit`; both profile answers lost `dailyState`.
+- Kept and reduced: `SocialLimits` / `SocialProperties` (no mark, visit, rating or Explore limits),
+  `SocialMediaCleanupJob` (photos only; still the one scheduled task of `social`), `ContentModerationService` place
+  merge (posts only), `AccountEraser` (five references and their statements gone).
+- Python `moderation-service`: `understand.py`, its route `/v1/understand`, `data/explore-vocabulary-v1.tsv`,
+  `tests/test_understand.py`, `tools/smoke_understand.py` and the README section removed; `/v1/health` no longer
+  carries `understanding`. **No file of the product names an AI provider or opens a provider connection any more.**
+- V32 (file only): drops `butterflies`, `saved_posts`, `daily_states`, `post_facets`, `place_visits`, the CHECK
+  `ck_posts_disclosed` and the column `posts.disclosed`; also deletes the log entries of decided Phase 7 appeals
+  (`APPEAL_*` with no `target_kind`; a content appeal always has one).
+- Tests: the Explore, understanding, rating, visit, reaction and 18A-2 test classes deleted; the daily state cases cut
+  from `Phase17eSocialApiTest`; marks cut from `SocialFourUserTest`, `ContentModerationIntegrationTest`,
+  `SocialAccountDeletionTest`, `DiscoverPoliciesTest`; `ModelPlacesTest` now pins two outbound clients (moderation
+  service, SMS) and asserts that NO Python file opens a connection or names a provider; `SocialIsolationTest` unchanged
+  and green.
+- Result: backend, clean build: **496 run, 0 failures, 0 errors, 2 skipped** (the opt-in real-MySQL class). A first,
+  incremental run showed 1 error (`PostPolicyTest`: a compiled inner class missing from `target`, a stale build, gone
+  after `mvn clean`). Python service: **38 run, OK**. No database touched.
+- Not changed on purpose: `deploy/env/*.example` still mention `EXPLORE_UNDERSTANDING_MODE` (pilot files, see B2).

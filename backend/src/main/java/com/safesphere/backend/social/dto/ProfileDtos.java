@@ -26,32 +26,26 @@ public final class ProfileDtos {
 
     /**
      * The caller's own profile. [handleChangeAvailableAt] is set while the handle cannot change yet. Phase 17E: [photo] =
-     * the key of the profile photo (null = none; GET /api/profiles/{publicId}/photo/{photo}); [dailyState] = today's
-     * state (IST), null when none.
+     * the key of the profile photo (null = none; GET /api/profiles/{publicId}/photo/{photo}).
      */
     public record OwnProfileResponse(String publicId, String handle, String displayName, String bio,
                                      List<String> languages, List<String> interests, String city,
-                                     Instant handleChangeAvailableAt, String photo, String dailyState) {
+                                     Instant handleChangeAvailableAt, String photo) {
     }
 
     /**
-     * Someone's profile as the viewer may see it. Phase 17E: [photo] as in OwnProfileResponse; [dailyState] ONLY when the
-     * viewer and this person are connected (D-7), null for everyone else.
+     * Someone's profile as the viewer may see it. Phase 17E: [photo] as in OwnProfileResponse.
      */
     public record PersonProfileResponse(String publicId, String handle, String displayName, String bio,
                                         List<String> languages, List<String> interests, String city,
-                                        Relationship relationship, String photo, String dailyState) {
+                                        Relationship relationship, String photo) {
     }
 
     /**
      * A person in a list (connections, requests, blocks, mutes) and the author of a post or a perspective. Phase 17E:
-     * [photo] = the profile photo's key or null. Never a daily state: this goes to strangers on every card.
+     * [photo] = the profile photo's key or null.
      */
     public record PersonSummary(String publicId, String handle, String displayName, String photo) {
     }
 
-    /** Phase 17E: body of PUT /api/profiles/me/daily-state. */
-    public record DailyStateRequest(@NotNull(message = "Choose a state") @Size(max = 20, message = "Unknown state")
-                                    String state) {
-    }
 }

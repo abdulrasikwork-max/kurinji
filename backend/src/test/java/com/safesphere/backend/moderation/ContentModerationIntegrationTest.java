@@ -101,7 +101,6 @@ class ContentModerationIntegrationTest {
     @Test
     void hold_remove_strike_appeal_overturn() throws Exception {
         String post = social.experience(asha, "EVERYONE");
-        social.save(chitra, post).andExpect(status().isOk());
         social.report(chitra, "POST", post, "THREAT", null).andExpect(status().isAccepted());
         String caseId = postCase(post);
 
@@ -110,7 +109,6 @@ class ContentModerationIntegrationTest {
                 .andExpect(jsonPath("$.summary.contentState").value("HELD"));
         social.getPost(chitra, post).andExpect(status().isNotFound());
         social.getPost(bala, post).andExpect(status().isNotFound());
-        assertThat(social.savedIds(social.saved(chitra, null))).isEmpty();
         assertThat(social.postIds(social.profilePosts(bala, asha, null))).doesNotContain(post);
         social.getPost(asha, post).andExpect(status().isOk()).andExpect(jsonPath("$.moderation.state").value("HELD"))
                 .andExpect(jsonPath("$.moderation.reason").value("NEEDS_REVIEW"));

@@ -191,11 +191,11 @@ class SocialFourUserTest {
 
     /**
      * Phase 13C: every new read path from each point of view, plus a fifth person who MUTED the owner: the Edition,
-     * From your connections, category pages, the butterfly and the Cocoon. Lists leave out the blocked pair and the
+     * From your connections and category pages. Lists leave out the blocked pair and the
      * muted author; a deliberate visit by the muter still works.
      */
     @Test
-    void discover_butterflies_andCocoon_fromEachPointOfView() throws Exception {
+    void discover_fromEachPointOfView() throws Exception {
         Person muter = social.person("Muter");
         social.connect(owner, muter);
         social.mute(muter, owner).andExpect(status().isNoContent());
@@ -228,29 +228,6 @@ class SocialFourUserTest {
             assertThat(social.postIds(social.categoryPage(viewer, "ACTIVITIES_SPORT", "COIMBATORE", null)))
                     .doesNotContain(everyone);
         }
-
-        // Saves (17E): anyone who can see it; never the blocked; the muter by a deliberate visit.
-        social.save(connection, connectionsOnly).andExpect(status().isOk());
-        social.save(stranger, connectionsOnly).andExpect(status().isNotFound());
-        social.save(stranger, everyone).andExpect(status().isOk());
-        social.save(blocked, everyone).andExpect(status().isNotFound());
-        social.save(muter, everyone).andExpect(status().isOk());
-        social.save(owner, everyone).andExpect(status().isBadRequest());
-        // Reactions follow the same rule.
-        social.react(stranger, connectionsOnly).andExpect(status().isNotFound());
-        social.react(blocked, everyone).andExpect(status().isNotFound());
-        social.react(stranger, everyone).andExpect(status().isOk());
-        // The muter's own Cocoon still shows what they saved (mute hides lists of others, not one's own choices).
-        assertThat(social.savedIds(social.saved(muter, null))).containsExactly(everyone);
-        assertThat(social.savedIds(social.saved(stranger, null))).containsExactly(everyone);
-        // Each sees only their own state; only the owner gets the (thresholded) number.
-        social.getPost(connection, everyone).andExpect(jsonPath("$.saved").value(false))
-                .andExpect(jsonPath("$.butterflies").isEmpty());
-        social.getPost(stranger, everyone).andExpect(jsonPath("$.saved").value(true))
-                .andExpect(jsonPath("$.youReacted").value(true))
-                .andExpect(jsonPath("$.butterflies").isEmpty());
-        social.getPost(owner, everyone).andExpect(jsonPath("$.butterflies.fewerThanThree").value(true))
-                .andExpect(jsonPath("$.butterflies.count").isEmpty());
     }
 
     private org.springframework.test.web.servlet.ResultActions byId(Person viewer, Person target) throws Exception {

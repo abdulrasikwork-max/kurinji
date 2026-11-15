@@ -12,8 +12,6 @@ import com.safesphere.backend.social.dto.PostDtos.PostPlace;
 import com.safesphere.backend.social.dto.PostDtos.PostRequest;
 import com.safesphere.backend.social.dto.PostDtos.PostResponse;
 import com.safesphere.backend.social.dto.PostDtos.Span;
-import com.safesphere.backend.social.entity.Butterfly;
-import com.safesphere.backend.social.entity.SavedPost;
 import com.safesphere.backend.social.entity.Comment;
 import com.safesphere.backend.social.entity.Place;
 import com.safesphere.backend.social.entity.Post;
@@ -25,24 +23,18 @@ import com.safesphere.backend.social.entity.PostEnums.ModerationSource;
 import com.safesphere.backend.social.entity.PostEnums.ModerationState;
 import com.safesphere.backend.social.entity.PostEnums.PostType;
 import com.safesphere.backend.social.entity.PostEnums.Precision;
-import com.safesphere.backend.social.entity.PostFacet;
 import com.safesphere.backend.social.entity.PostMedia;
 import com.safesphere.backend.social.entity.PostRevision;
 import com.safesphere.backend.social.entity.Profile;
 import com.safesphere.backend.social.event.ContentWritten;
 import com.safesphere.backend.social.media.MediaStorage;
-import com.safesphere.backend.social.policy.ButterflyTally;
 import com.safesphere.backend.social.policy.CityCatalog;
-import com.safesphere.backend.social.policy.ExploreFacets;
 import com.safesphere.backend.social.policy.PostDelay;
 import com.safesphere.backend.social.policy.PostPolicy;
 import com.safesphere.backend.social.policy.TimeBands;
 import com.safesphere.backend.social.policy.Visibility;
-import com.safesphere.backend.social.repository.ButterflyRepository;
-import com.safesphere.backend.social.repository.SavedPostRepository;
 import com.safesphere.backend.social.repository.CommentRepository;
 import com.safesphere.backend.social.repository.PlaceRepository;
-import com.safesphere.backend.social.repository.PostFacetRepository;
 import com.safesphere.backend.social.repository.PostMediaRepository;
 import com.safesphere.backend.social.repository.PostRepository;
 import com.safesphere.backend.social.repository.PostRevisionRepository;
@@ -99,9 +91,6 @@ public class PostService {
     private final PostRepository posts;
     private final PostMediaRepository mediaRows;
     private final CommentRepository comments;
-    private final ButterflyRepository butterflies;
-    private final SavedPostRepository savedPosts;
-    private final PostFacetRepository postFacets;
     private final PlaceService placeService;
     private final PlaceRepository places;
     private final ProfileRepository profiles;
@@ -117,7 +106,6 @@ public class PostService {
     private final SecureRandom random = new SecureRandom();
 
     public PostService(PostRepository posts, PostMediaRepository mediaRows, CommentRepository comments,
-                       ButterflyRepository butterflies, SavedPostRepository savedPosts, PostFacetRepository postFacets,
                        PlaceService placeService, PlaceRepository places, ProfileRepository profiles,
                        ProfileService profileService, Relationships relationships, SocialAccess access,
                        SocialLimits limits, SocialProperties properties, MediaStorage storage,
@@ -127,9 +115,6 @@ public class PostService {
         this.posts = posts;
         this.mediaRows = mediaRows;
         this.comments = comments;
-        this.butterflies = butterflies;
-        this.savedPosts = savedPosts;
-        this.postFacets = postFacets;
         this.placeService = placeService;
         this.places = places;
         this.profiles = profiles;
@@ -149,7 +134,6 @@ public class PostService {
         boolean probation = access.onProbation(user);
         limits.post(userId, probation);
         PostType type = parse(PostType.class, request.type(), "Choose Experience or Ask");
-        List<String> facets = facets(request.facets(), type);
         Precision precision = parse(Precision.class, request.precision(), "Choose how much of the place to show");
         Audience audience = parse(Audience.class, request.audience(), "Choose who can see this");
         CommentPolicy commentPolicy = audience == Audience.ONLY_ME ? CommentPolicy.NOBODY
@@ -182,10 +166,8 @@ public class PostService {
                 precision == Precision.AREA ? place.getAreaCell() : null, precision == Precision.CITY ? city : null);
         post.setSharing(audience, commentPolicy);
         post.setApproveFirst(approveFirst);
-        if (type == PostType.EXPERIENCE && Boolean.TRUE.equals(request.disclosed())) post.disclose(); // 18A-2
         posts.saveAndFlush(post);
         attach(userId, post, mediaIds);
-        saveFacets(post.getId(), facets);
         boolean support = checkWords(post, user);
         return respond(userId, List.of(post), now).get(0).withSupport(support);
     }
@@ -202,8 +184,6 @@ public class PostService {
         User user = access.requireMember(userId);
         Post post = requireOwn(userId, publicId);
         Audience audience = parse(Audience.class, request.audience(), "Choose who can see this");
-        // Phase 17G-1: null = the tags stay; [] = remove them; a list = the new tags (an Ask never has any).
-        List<String> newFacets = request.facets() == null ? null : facets(request.facets(), post.getType());
         Precision precision = parse(Precision.class, request.precision(), "Choose how much of the place to show");
         if (!PostPolicy.isNarrowerOrSame(post.getAudience(), audience)
                 || !PostPolicy.isNarrowerOrSame(post.getPrecision(), precision)) {
@@ -261,18 +241,11 @@ public class PostService {
             if (post.isInReview()) revisions.save(new PostRevision(post.getId(), post.getBody(), post.getTip(), now));
         }
         post.setApproveFirst(approveFirst);
-        // 18A-2: a disclosure can be added later; nothing turns it off again.
-        if (post.getType() == PostType.EXPERIENCE && Boolean.TRUE.equals(request.disclosed())) post.disclose();
         post.setContent(body, tip, category, month == null ? null : month.atDay(1), daypart);
         post.setLocation(precision, placeId, areaCell, newCity);
         post.setSharing(audience, commentPolicy);
         post.markEdited(now);
         posts.saveAndFlush(post);
-        if (newFacets != null) {
-            postFacets.deleteAllOfPost(post.getId());
-            postFacets.flush();
-            saveFacets(post.getId(), newFacets);
-        }
         // Phase 13E (E14): new words are checked again ("post clean, then edit" must not slip through).
         boolean support = textChanged && checkWords(post, user);
         return respond(userId, List.of(post), now).get(0).withSupport(support);
@@ -286,9 +259,6 @@ public class PostService {
                 .map(PostMedia::getStorageKey).toList();
         // Phase 13D (M14): always allowed, also during a review (a refusal would tell the author that someone reported
         // it). A case and its reports about this post go with it (V23 cascades; the clean-up job removes any left).
-        butterflies.deleteAllOfPost(post.getId());
-        savedPosts.deleteAllOfPost(post.getId());
-        postFacets.deleteAllOfPost(post.getId()); // 17G-1: MySQL cascades; the test database does not
         revisions.deleteByPost(post.getId());
         comments.deleteRepliesOfPost(post.getId());
         comments.deleteAllOfPost(post.getId());
@@ -379,7 +349,7 @@ public class PostService {
     }
 
     /**
-     * Builds the answers for [list] as [viewerId] may see them (batch loads of author, places, photos and butterflies).
+     * Builds the answers for [list] as [viewerId] may see them (batch loads of author, places and photos).
      * The caller has already checked that the viewer may see every post in [list] (Visibility).
      */
     public List<PostResponse> respond(long viewerId, List<Post> list, LocalDateTime now) {
@@ -394,18 +364,7 @@ public class PostService {
         List<Long> postIds = list.stream().map(Post::getId).toList();
         Map<Long, List<PostMedia>> mediaByPost = mediaRows.findByPostIdIn(postIds)
                 .stream().collect(Collectors.groupingBy(PostMedia::getPostId));
-        // Phase 17E: the viewer's OWN butterflies and saves, and (author only) how many people reacted to their Experiences.
-        Set<Long> reacted = butterflies.findByUserIdAndPostIdIn(viewerId, postIds).stream()
-                .map(Butterfly::getPostId).collect(Collectors.toSet());
-        Set<Long> savedIds = savedPosts.findByUserIdAndPostIdIn(viewerId, postIds).stream()
-                .map(SavedPost::getPostId).collect(Collectors.toSet());
-        List<Long> tallied = list.stream().filter(p -> showsTally(viewerId, p)).map(Post::getId).toList();
-        Map<Long, Long> counts = new HashMap<>();
-        if (!tallied.isEmpty()) {
-            for (Object[] row : butterflies.countByPostIds(tallied)) counts.put((Long) row[0], (Long) row[1]);
-        }
         Map<Long, Integer> readable = readableCounts(viewerId, list);
-        Map<Long, List<String>> facetsByPost = facetsOf(postIds);
         List<PostResponse> out = new ArrayList<>(list.size());
         for (Post post : list) {
             boolean own = post.getAuthorId() == viewerId;
@@ -432,42 +391,13 @@ public class PostService {
                     own ? post.getAudience().name() : null, post.getCommentPolicy().name(), canComment,
                     own ? post.getCreatedAt().toInstant(ZoneOffset.UTC) : null,
                     own ? post.getVisibleFrom().toInstant(ZoneOffset.UTC) : null,
-                    reacted.contains(post.getId()), savedIds.contains(post.getId()),
-                    showsTally(viewerId, post) ? ButterflyTally.of(counts.getOrDefault(post.getId(), 0L)) : null,
                     post.isApproveFirst(),
                     own ? moderationView(post.getModeration(), post.getModerationReason(), post.getModerationDecision(),
                             post.getModerationSource(), post.getModerationSpans()) : null,
                     own ? null : collapsed(post.getModeration(), post.getModerationSource()),
-                    post.isStrongLanguage(), null, readable.getOrDefault(post.getId(), 0),
-                    facetsByPost.getOrDefault(post.getId(), List.of()), post.isDisclosed()));
+                    post.isStrongLanguage(), null, readable.getOrDefault(post.getId(), 0)));
         }
         return out;
-    }
-
-    /** Phase 17G-1: the Explore tags of each post in [postIds], in the order of the tag list (one query for the whole list). */
-    private Map<Long, List<String>> facetsOf(List<Long> postIds) {
-        Map<Long, List<String>> byPost = new HashMap<>();
-        for (PostFacet row : postFacets.findByPostIdIn(postIds)) {
-            byPost.computeIfAbsent(row.getPostId(), id -> new ArrayList<>()).add(row.getFacet());
-        }
-        List<String> order = ExploreFacets.all().stream().map(ExploreFacets.Facet::code).toList();
-        byPost.values().forEach(codes -> codes.sort(java.util.Comparator.comparingInt(order::indexOf)));
-        return byPost;
-    }
-
-    /** Phase 17G-1: the tags of a write request, checked: closed list, no repeats, at most 4, none on an Ask. */
-    private static List<String> facets(List<String> raw, PostType type) {
-        ExploreFacets.Checked checked = ExploreFacets.check(raw, ExploreFacets.MAX_PER_POST);
-        if (!checked.ok()) throw new InvalidRequestException(checked.problem());
-        if (type == PostType.ASK && !checked.codes().isEmpty()) {
-            throw new InvalidRequestException("Tags are for experiences, not questions");
-        }
-        return checked.codes();
-    }
-
-    private void saveFacets(long postId, List<String> codes) {
-        if (codes.isEmpty()) return;
-        postFacets.saveAllAndFlush(codes.stream().map(code -> new PostFacet(postId, code)).toList());
     }
 
     /**
@@ -541,12 +471,6 @@ public class PostService {
             throw new InvalidRequestException("Approving perspectives first works when everyone can add them");
         }
         return value;
-    }
-
-    /** C2: only the author of an Experience shared with others learns anything about its butterflies (reactions). */
-    private static boolean showsTally(long viewerId, Post post) {
-        return post.getAuthorId() == viewerId && post.getType() == PostType.EXPERIENCE
-                && post.getAudience() != Audience.ONLY_ME;
     }
 
     /** Photo files go only after the rows are gone for good; a file left behind is removed by the clean-up job. */

@@ -1,7 +1,6 @@
 package com.safesphere.backend.social.dto;
 
 import com.safesphere.backend.social.dto.ProfileDtos.PersonSummary;
-import com.safesphere.backend.social.policy.ButterflyTally;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
@@ -33,11 +32,7 @@ public final class PostDtos {
             @Size(max = 12, message = "Unknown comment setting") String commentPolicy,
             @Size(max = 6, message = "Add at most 6 photos or videos") List<@Size(max = 40) String> mediaIds,
 
-            Boolean approveFirst,
-            /** Phase 17G-1: Explore tags ("Good for..."), an Experience only, none to four from the closed list. */
-            @Size(max = 8, message = "Choose at most 4 tags") List<@Size(max = 30) String> facets,
-            /** Phase 18A-2: "I was paid, or got this free" (an Experience only; null or false = not said). */
-            Boolean disclosed) {
+            Boolean approveFirst) {
     }
 
     /**
@@ -54,11 +49,7 @@ public final class PostDtos {
             @Size(max = 12, message = "Unknown time of day") String daypart,
             @Size(max = 12, message = "Unknown audience") String audience,
             @Size(max = 12, message = "Unknown comment setting") String commentPolicy,
-            Boolean approveFirst,
-            /** Phase 17G-1: null = the tags stay as they are; an empty list = remove them all; otherwise the new tags. */
-            @Size(max = 8, message = "Choose at most 4 tags") List<@Size(max = 30) String> facets,
-            /** Phase 18A-2: true turns the "paid or gifted" label on; null or false leaves it as it is (it is never turned off). */
-            Boolean disclosed) {
+            Boolean approveFirst) {
     }
 
     /**
@@ -91,9 +82,6 @@ public final class PostDtos {
      * A post as the viewer may see it. [place] only for EXACT, [areaCell] (6 characters) only for AREA, [city] only for
      * CITY. [audience], [postedAt] and [visibleFrom] only for the author (null for everyone else); [postedPeriod] is the
      * band others see (THIS_WEEK / THIS_MONTH / EARLIER).
-     * Phase 17E (D-3): [youReacted] = the viewer put their OWN butterfly on it, [saved] = the viewer saved it (never anyone
-     * else's marks); [butterflies] only for the author of an Experience shared with others: how many people reacted, a
-     * number from 3 people up (C2), null for everyone else. Nobody learns how often a post was saved.
      * Phase 13D: [approveFirst] = perspectives from people not connected with the author wait for approval (Q6);
      * [moderation] only for the author (null when nothing happened); [collapsed] for everyone else: null, UNDER_REVIEW
      * (collapsed while a moderator looks at it) or BY_MODERATOR (a moderator decided to keep it collapsed). Nothing
@@ -105,24 +93,21 @@ public final class PostDtos {
      * going through something hard, so the app shows a support line.
      * Phase 16 (U1): [commentCount] = how many perspectives THIS viewer can read on the post (the length of the list
      * GET /api/posts/{id}/comments gives them); the only public number on a post.
-     * Phase 17G-1: [facets] = the Explore tags the author chose (closed list, never a count); empty when none.
-     * Phase 18A-2: [disclosed] = the author said the visit was paid for or free of charge; every reader sees the label.
      */
     public record PostResponse(String publicId, String type, PersonSummary author, boolean own, String body, String tip,
                                String category, String precision, PostPlace place, String areaCell, String city,
                                String experiencedMonth, String daypart, String postedPeriod, boolean edited,
                                List<MediaRef> media, String audience, String commentPolicy, boolean canComment,
-                               Instant postedAt, Instant visibleFrom, boolean youReacted, boolean saved,
-                               ButterflyTally butterflies, boolean approveFirst, ModerationView moderation,
-                               String collapsed, boolean strongLanguage, Boolean supportSuggested, int commentCount,
-                               List<String> facets, boolean disclosed) {
+                               Instant postedAt, Instant visibleFrom,
+                               boolean approveFirst, ModerationView moderation,
+                               String collapsed, boolean strongLanguage, Boolean supportSuggested, int commentCount) {
 
         /** The same answer with the one-time support flag (the author's own write answer). */
         public PostResponse withSupport(boolean support) {
             return new PostResponse(publicId, type, author, own, body, tip, category, precision, place, areaCell, city,
                     experiencedMonth, daypart, postedPeriod, edited, media, audience, commentPolicy, canComment,
-                    postedAt, visibleFrom, youReacted, saved, butterflies, approveFirst, moderation, collapsed,
-                    strongLanguage, support ? Boolean.TRUE : null, commentCount, facets, disclosed);
+                    postedAt, visibleFrom, approveFirst, moderation, collapsed,
+                    strongLanguage, support ? Boolean.TRUE : null, commentCount);
         }
     }
 

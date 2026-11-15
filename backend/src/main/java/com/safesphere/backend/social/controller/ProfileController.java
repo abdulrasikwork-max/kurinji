@@ -1,11 +1,9 @@
 package com.safesphere.backend.social.controller;
 
 import com.safesphere.backend.security.CurrentUser;
-import com.safesphere.backend.social.dto.ProfileDtos.DailyStateRequest;
 import com.safesphere.backend.social.dto.ProfileDtos.OwnProfileResponse;
 import com.safesphere.backend.social.dto.ProfileDtos.PersonProfileResponse;
 import com.safesphere.backend.social.dto.ProfileDtos.ProfileRequest;
-import com.safesphere.backend.social.service.DailyStateService;
 import com.safesphere.backend.social.service.ProfilePhotoService;
 import com.safesphere.backend.social.service.ProfileService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,12 +36,10 @@ public class ProfileController {
 
     private final ProfileService profiles;
     private final ProfilePhotoService photos;
-    private final DailyStateService dailyStates;
 
-    public ProfileController(ProfileService profiles, ProfilePhotoService photos, DailyStateService dailyStates) {
+    public ProfileController(ProfileService profiles, ProfilePhotoService photos) {
         this.profiles = profiles;
         this.photos = photos;
-        this.dailyStates = dailyStates;
     }
 
     @GetMapping("/me")
@@ -67,19 +63,6 @@ public class ProfileController {
     public void removePhoto(@AuthenticationPrincipal Jwt jwt) {
         photos.remove(CurrentUser.id(jwt));
     }
-
-    @PutMapping("/me/daily-state")
-    public Map<String, String> setDailyState(@AuthenticationPrincipal Jwt jwt,
-                                             @Valid @RequestBody DailyStateRequest request) {
-        return Map.of("dailyState", dailyStates.set(CurrentUser.id(jwt), request.state()));
-    }
-
-    @DeleteMapping("/me/daily-state")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void clearDailyState(@AuthenticationPrincipal Jwt jwt) {
-        dailyStates.clear(CurrentUser.id(jwt));
-    }
-
     @GetMapping("/by-handle/{handle}")
     public PersonProfileResponse byHandle(@AuthenticationPrincipal Jwt jwt, @PathVariable String handle) {
         return profiles.byHandle(CurrentUser.id(jwt), handle);
