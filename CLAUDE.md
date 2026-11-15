@@ -80,7 +80,7 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | 13A–13F, 16, 17E, IRL redesign | Profiles, connections, posts, discovery, moderation v2, text check, navigation | Profiles, connections, blocks, moderation, text check, photo pipeline KEPT; posts / places / feed / comments stay until N4/N5 replace them |
 | 17G-1/2/3, 18A-1/2 | Explore, AI understanding, "I went" + ratings, rating trust, presence, disclosure | **Removed in N1** (18A-2 was never verified on a device); 18A-3, 18B, 17I cancelled |
 | **N0** | Record the new direction (docs, this file) | done 2026-11-15 (documents only) |
-| **N1** | Strip: remove the retired features on both sides, migration V32 | implemented, compiled, tested 2026-11-15 (Android 766+, backend 496, Python 38; V32 applied on the DEVELOPMENT MySQL only); results per unit in `docs/PHASE_N1.md`; manual check NOT finished (started 2026-11-15, see there) |
+| **N1** | Strip: remove the retired features on both sides, migration V32 | implemented, compiled, tested 2026-11-15 (Android 766, backend 496, Python 38; V32 applied on the DEVELOPMENT MySQL only); results per unit in `docs/PHASE_N1.md`; manual check NOT finished (started 2026-11-15, see there) |
 | N2 | Phone-only sign-in, real name, no password | planned |
 | N3 | Community, membership, verification, bans, admin screens | planned |
 | N4 | Moments, capture-only Create, the wall, daily question | planned |
