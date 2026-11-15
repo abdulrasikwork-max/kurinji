@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
@@ -60,6 +61,8 @@ public class PhoneCodeService {
     private final OtpSender sender;
     private final OtpProperties properties;
     private final TransactionTemplate transactions;
+    /** Confirmation checks run in their OWN transaction: a wrong try stays counted when the caller's action fails. */
+    private final TransactionTemplate ownTransactions;
     private final Clock clock;
     private final byte[] codeKey;
     private final AttemptLimiter startsPerAddress;
@@ -74,6 +77,8 @@ public class PhoneCodeService {
         this.sender = sender;
         this.properties = properties;
         this.transactions = new TransactionTemplate(transactionManager);
+        this.ownTransactions = new TransactionTemplate(transactionManager);
+        this.ownTransactions.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.clock = clock;
         this.codeKey = codeKey(properties.secret(), jwt.secret());
         int maxKeys = auth.maxTrackedKeys();
@@ -154,6 +159,49 @@ public class PhoneCodeService {
         return phone;
     }
 
+    // ---- confirmation of a sensitive action (N-7) ----------------------------------------------------------------
+
+    /** What a confirmation code check found. */
+    public enum Confirmation { CONFIRMED, WRONG, LOCKED, EXPIRED, INVALID }
+
+    /**
+     * POST /api/users/me/confirmation: a fresh code to the signed-in person's own verified number [phoneE164] (the
+     * caller looks it up from the account, never from the request). Same code rules as sign-in.
+     */
+    public CodeChallengeResponse startConfirmation(long userId, String phoneE164, String address) {
+        requireStartAllowed(address);
+        return deliver(openWithRetry(PhoneCode.Purpose.CONFIRM, phoneE164, userId));
+    }
+
+    /**
+     * Checks a confirmation code of [userId]. Runs in its own transaction (a wrong try is counted, a right code is used
+     * up, whatever the caller's action then does). A challenge of another account or of a sign-in is INVALID: it
+     * reveals nothing about it. The right code ends the challenge (one use).
+     */
+    public Confirmation checkConfirmation(long userId, String token, String rawCode) {
+        if (token == null || !TOKEN.matcher(token).matches()) return Confirmation.INVALID;
+        String code = rawCode == null ? "" : rawCode.replaceAll("\\s", "");
+        String tokenHash = RefreshSecrets.hash(token);
+        return ownTransactions.execute(status -> {
+            LocalDateTime now = now();
+            PhoneCode row = codes.findByTokenHashForUpdate(tokenHash).orElse(null);
+            if (row == null || row.getPurpose() != PhoneCode.Purpose.CONFIRM || row.getUserId() == null
+                    || row.getUserId() != userId || !row.isLive(now)) {
+                return Confirmation.INVALID;
+            }
+            Checked refused = checkCode(row, code, now);
+            if (refused == null) {
+                codes.delete(row);
+                return Confirmation.CONFIRMED;
+            }
+            return switch (refused.result()) {
+                case WRONG -> refused.triesLeft() <= 0 ? Confirmation.LOCKED : Confirmation.WRONG;
+                case LOCKED -> Confirmation.LOCKED;
+                default -> Confirmation.EXPIRED;
+            };
+        });
+    }
+
     // ---- shared by both purposes --------------------------------------------------------------------------------
 
     /** Every request that can send a code counts against one per-address limit (checked before any work). */
@@ -222,16 +270,17 @@ public class PhoneCodeService {
     }
 
     /**
-     * Opens a code for [phoneE164] in its own transaction. Two simultaneous starts for one number collide on
-     * uk_phone_codes_purpose_phone; the losing attempt is retried once as a whole (Phase 14: never catch a unique-key
-     * error inside a transaction and carry on).
+     * Opens a code for [phoneE164] in its OWN transaction (also when a caller has one open: the row must be committed
+     * before the SMS goes out, and a read-only caller must not swallow the change). Two simultaneous starts for one
+     * number collide on uk_phone_codes_purpose_phone; the losing attempt is retried once as a whole (Phase 14: never
+     * catch a unique-key error inside a transaction and carry on).
      */
     Opened openWithRetry(PhoneCode.Purpose purpose, String phoneE164, Long userId) {
         try {
-            return transactions.execute(status -> open(purpose, phoneE164, userId));
+            return ownTransactions.execute(status -> open(purpose, phoneE164, userId));
         } catch (DataIntegrityViolationException first) {
             try {
-                return transactions.execute(status -> open(purpose, phoneE164, userId));
+                return ownTransactions.execute(status -> open(purpose, phoneE164, userId));
             } catch (DataIntegrityViolationException second) {
                 throw PhoneVerificationException.waitFor(0);
             }

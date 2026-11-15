@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 /**
  * The one JSON shape every error uses, so the Android app only needs to understand one format.
  * fieldErrors is only present for validation failures (field name -> message).
- * code (V25) is present only where the app must react to one specific refusal (e.g. EMAIL_NOT_VERIFIED); a stable
+ * code (V25) is present only where the app must react to one specific refusal (e.g. PHONE_INVALID, OTP_INVALID); a stable
  * upper-case code, never an exception name or internal detail.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

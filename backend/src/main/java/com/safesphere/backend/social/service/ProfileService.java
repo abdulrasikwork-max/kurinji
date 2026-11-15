@@ -14,6 +14,7 @@ import com.safesphere.backend.social.policy.HandlePolicy;
 import com.safesphere.backend.social.policy.ProfileLists;
 import com.safesphere.backend.social.policy.ProfileTextPolicy;
 import com.safesphere.backend.social.repository.ProfileRepository;
+import jakarta.persistence.EntityManager;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -44,10 +45,12 @@ public class ProfileService {
     private final SocialLimits limits;
     private final SocialProperties properties;
     private final Clock clock;
+    private final EntityManager entityManager;
 
     public ProfileService(ProfileRepository profiles, SocialAccess access, Relationships relationships,
                           SocialLimits limits, SocialProperties properties,
-                          Clock clock) {
+                          Clock clock, EntityManager entityManager) {
+        this.entityManager = entityManager;
         this.profiles = profiles;
         this.access = access;
         this.relationships = relationships;
@@ -72,8 +75,6 @@ public class ProfileService {
             case INVALID_FORMAT -> throw new InvalidRequestException(HANDLE_INVALID);
             case RESERVED -> throw new ConflictException(HANDLE_UNAVAILABLE);
         }
-        String displayName = ProfileTextPolicy.clean(request.displayName());
-        requireText(ProfileTextPolicy.checkDisplayName(displayName), "Enter a name of 1 to 40 characters");
         String bio = emptyToNull(ProfileTextPolicy.clean(request.bio()));
         requireText(ProfileTextPolicy.checkBio(bio), "Write a bio of at most 160 characters");
         String city = emptyToNull(ProfileTextPolicy.clean(request.city()));
@@ -100,10 +101,13 @@ public class ProfileService {
             requireAvailable(handle, userId, now);
             profile.changeHandle(handle, now, now.plus(properties.handleReservation()));
         }
-        profile.edit(displayName, bio, languages, interests, city, now);
+        profile.edit(bio, languages, interests, city, now);
         try {
             // saveAndFlush so a race on the unique handle fails here, as a clear 409.
-            return toOwn(profiles.saveAndFlush(profile));
+            Profile saved = profiles.saveAndFlush(profile);
+            // N2: the shown name is the account's real name, read from users by the row (a new row has not read it yet).
+            entityManager.refresh(saved);
+            return toOwn(saved);
         } catch (DataIntegrityViolationException e) {
             throw new ConflictException(HANDLE_UNAVAILABLE);
         }

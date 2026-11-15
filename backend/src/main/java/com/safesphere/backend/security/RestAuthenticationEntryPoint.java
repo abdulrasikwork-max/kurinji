@@ -43,7 +43,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
     /**
      * Phase 10A: the reason ActiveAccountCheck refused an otherwise valid token (RFC 6750 error_description), or null.
      * Only a token this server signed, unexpired, reaches that check, so only the account's own token holder learns it
-     * (the phone removes a deleted account's data, or says the password was changed). Expired, forged or missing
+     * (the phone removes a deleted account's data, or says it was signed out from another phone). Expired, forged or missing
      * tokens keep the plain "Bearer" answer.
      */
     static String accountReason(Throwable failure) {

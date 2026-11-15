@@ -1,5 +1,6 @@
 package com.safesphere.backend.moderation.service;
 
+import com.safesphere.backend.auth.phone.PhoneNumbers;
 import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.ForbiddenException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
@@ -23,7 +24,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Locale;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,7 +85,10 @@ public class ModerationService {
         if (change.role() == UserRole.ADMIN) {
             throw new InvalidRequestException("Administrators are appointed in the database only");
         }
-        User target = users.findByEmail(change.email().trim().toLowerCase(Locale.ROOT))
+        // Phase N2: accounts are found by their verified number (there is no e-mail any more).
+        String phone = PhoneNumbers.normalize(change.phone());
+        User target = (phone == null ? java.util.Optional.<User>empty()
+                : users.findByPhoneE164AndPhoneVerifiedAtIsNotNull(phone))
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
         if (target.getId() == adminId) throw new ConflictException("You cannot change your own role.");
         if (target.getRole() == UserRole.ADMIN) throw new ConflictException("Administrators are managed in the database.");

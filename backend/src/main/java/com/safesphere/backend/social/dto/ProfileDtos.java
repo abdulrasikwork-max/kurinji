@@ -14,10 +14,12 @@ public final class ProfileDtos {
     private ProfileDtos() {
     }
 
-    /** Body of PUT /api/profiles/me. Lengths are checked exactly (in characters) by ProfileTextPolicy. */
+    /**
+     * Body of PUT /api/profiles/me. Lengths are checked exactly (in characters) by ProfileTextPolicy. Phase N2: no name
+     * here; every profile shows the account's real name ([OwnProfileResponse#displayName] etc. carry it).
+     */
     public record ProfileRequest(
             @NotNull(message = "Handle is required") @Size(max = 40, message = "Handle is too long") String handle,
-            @NotNull(message = "Name is required") @Size(max = 200, message = "Name is too long") String displayName,
             @Size(max = 1000, message = "Bio is too long") String bio,
             @Size(max = 6, message = "Choose at most 6 languages") List<String> languages,
             @Size(max = 10, message = "Choose at most 10 interests") List<String> interests,

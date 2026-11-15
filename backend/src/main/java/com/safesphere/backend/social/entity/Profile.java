@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Formula;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -48,7 +49,11 @@ public class Profile {
     @Column(name = "handle_changed_at")
     private LocalDateTime handleChangedAt;
 
-    @Column(name = "display_name", nullable = false, length = 40)
+    /**
+     * Phase N2 (N-23, V33): the profile has no name of its own any more; it shows the account's real name (users.name),
+     * read with the row (no extra query, never written from here).
+     */
+    @Formula("(SELECT u.name FROM users u WHERE u.id = user_id)")
     private String displayName;
 
     @Column(length = 160)
@@ -87,8 +92,7 @@ public class Profile {
     }
 
     /** Sets the editable fields (already checked by the policies). Null bio/city/lists = none. */
-    public void edit(String displayName, String bio, String languages, String interests, String city, LocalDateTime now) {
-        this.displayName = displayName;
+    public void edit(String bio, String languages, String interests, String city, LocalDateTime now) {
         this.bio = bio;
         this.languages = languages;
         this.interests = interests;

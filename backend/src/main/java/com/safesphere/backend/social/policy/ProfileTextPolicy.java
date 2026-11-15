@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
  */
 public final class ProfileTextPolicy {
 
-    public static final int DISPLAY_NAME_MAX = 40;
     public static final int BIO_MAX = 160;
     public static final int CITY_MAX = 60;
 
@@ -42,13 +41,6 @@ public final class ProfileTextPolicy {
             }
         });
         return out.toString().replaceAll(" {2,}", " ").trim();
-    }
-
-    public static Result checkDisplayName(String cleaned) {
-        if (cleaned == null || cleaned.isEmpty()) return Result.EMPTY;
-        if (length(cleaned) > DISPLAY_NAME_MAX) return Result.TOO_LONG;
-        if (LINK.matcher(cleaned).find()) return Result.CONTAINS_LINK;
-        return Result.OK;
     }
 
     /** An empty bio is allowed (stored as none). */

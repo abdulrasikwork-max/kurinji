@@ -49,7 +49,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(ApiError.of(ex.getStatus(), ex.getMessage(), request.getRequestURI()));
     }
 
-    /** A database rule (for example the unique email) was broken. */
+    /** A database rule (for example a unique handle) was broken. */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleDataIntegrity(HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

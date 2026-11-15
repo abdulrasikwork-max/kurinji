@@ -1,6 +1,5 @@
 package com.safesphere.backend.social;
 
-import static com.safesphere.backend.support.TestAccounts.PASSWORD;
 import static com.safesphere.backend.support.TestAccounts.bearer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -40,7 +39,7 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(MutableClockConfig.class)
+@Import({MutableClockConfig.class, com.safesphere.backend.support.CapturingOtpSenderConfig.class})
 class SocialAccountDeletionTest {
 
     @Autowired private MockMvc mockMvc;
@@ -168,7 +167,8 @@ class SocialAccountDeletionTest {
     private void requestDeletion(Person p) throws Exception {
         mockMvc.perform(post("/api/users/me/deletion").header(HttpHeaders.AUTHORIZATION, bearer(p.token()))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("password", PASSWORD))))
+                        .content(objectMapper.writeValueAsString(
+                                com.safesphere.backend.support.TestAccounts.confirmation(mockMvc, objectMapper, p.token()))))
                 .andExpect(status().isAccepted());
     }
 }

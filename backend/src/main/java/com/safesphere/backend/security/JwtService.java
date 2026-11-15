@@ -16,9 +16,9 @@ import org.springframework.stereotype.Service;
  * Creates login tokens. This is the ONLY place a JWT is built, so token rules live in one spot.
  *
  * A token contains: iss (who issued it), sub (the user id), iat (issued at) and exp (expires at), plus, once the
- * password was changed, cca (the credentials stamp, Phase 10A). Since Phase 10A.4 also sid (a random id of this
- * sign-in, kept by renewals) and auth_time (when the password was last typed for it). It does not contain the password
- * or the password hash. A JWT is signed, not encrypted: anyone
+ * other phones were signed out, cca (the credentials stamp, Phase 10A). Since Phase 10A.4 also sid (a random id of this
+ * sign-in, kept by renewals) and auth_time (when the code was last entered for it). It contains no
+ * phone number and no code. A JWT is signed, not encrypted: anyone
  * holding it can read these claims, which is why nothing sensitive goes in.
  */
 @Service
@@ -45,8 +45,8 @@ public class JwtService {
     }
 
     /**
-     * Phase 10A.4: a token for an existing session (renewal, password change) keeps its [sessionId] ("sid": which
-     * phone's sign-in this is) and [authTime] ("auth_time": when the person last typed the password there).
+     * Phase 10A.4: a token for an existing session (renewal, signing out the other phones) keeps its [sessionId] ("sid": which
+     * phone's sign-in this is) and [authTime] ("auth_time": when the person last entered a code there).
      */
     public IssuedToken issueToken(User user, String sessionId, Instant authTime) {
         Instant now = Instant.now(clock);

@@ -17,8 +17,6 @@ import java.util.Map;
 import java.util.UUID;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
@@ -31,7 +29,6 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 public final class TestAccounts {
 
-    public static final String PASSWORD = "correct-horse-battery";
     /** Phase 13A: every test account declares an adult date of birth (sign-up requires one). */
     public static final String ADULT_BIRTH_DATE = "1998-05-14";
 
@@ -53,9 +50,7 @@ public final class TestAccounts {
                         .content(body))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
-        JsonNode json = objectMapper.readTree(answer);
-        legacyCredentials(mockMvc, json.get("user").get("id").asLong(), key);
-        return json;
+        return objectMapper.readTree(answer);
     }
 
     /**
@@ -86,6 +81,38 @@ public final class TestAccounts {
     }
 
     /**
+     * Phase N2: asks for a confirmation code with [token] (POST /api/users/me/confirmation) and reads it from the
+     * capturing sender; returns {challenge, code} ready to send with a confirmed action. [key] = the account's test key.
+     * Needs CapturingOtpSenderConfig in the test's context.
+     */
+    public static Map<String, String> confirmation(MockMvc mockMvc, ObjectMapper objectMapper, String token, String key)
+            throws Exception {
+        String answer = mockMvc.perform(post("/api/users/me/confirmation")
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String challenge = objectMapper.readTree(answer).get("challenge").asText();
+        String code = context(mockMvc).getBean(CapturingOtpSenderConfig.CapturingOtpSender.class)
+                .lastCodeFor(e164For(key));
+        return Map.of("challenge", challenge, "code", code);
+    }
+
+    /** [confirmation] for the account of [token] (its number is read from the account; for helpers without a key). */
+    public static Map<String, String> confirmation(MockMvc mockMvc, ObjectMapper objectMapper, String token)
+            throws Exception {
+        String payload = new String(java.util.Base64.getUrlDecoder().decode(token.split("[.]")[1]), StandardCharsets.UTF_8);
+        long userId = objectMapper.readTree(payload).get("sub").asLong();
+        String phone = context(mockMvc).getBean(com.safesphere.backend.user.repository.UserRepository.class)
+                .findById(userId).orElseThrow().getPhoneE164();
+        String answer = mockMvc.perform(post("/api/users/me/confirmation")
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String code = context(mockMvc).getBean(CapturingOtpSenderConfig.CapturingOtpSender.class).lastCodeFor(phone);
+        return Map.of("challenge", objectMapper.readTree(answer).get("challenge").asText(), "code", code);
+    }
+
+    /**
      * A sign-up ticket for [phoneE164], stored as the right sign-in code would leave it (only its hash is stored).
      * Returns the ticket itself.
      */
@@ -100,17 +127,6 @@ public final class TestAccounts {
         row.issueTicket(RefreshSecrets.hash(ticket), now.plusMinutes(30));
         codes.saveAndFlush(row);
         return ticket;
-    }
-
-    /**
-     * N2 transition (removed in unit N2-B2): the account tests of the password-confirmed actions still send a password
-     * and look accounts up by e-mail until B2 replaces both with a texted code; this writes the two old columns.
-     */
-    private static void legacyCredentials(MockMvc mockMvc, long userId, String key) {
-        ApplicationContext context = context(mockMvc);
-        String hash = context.getBean(PasswordEncoder.class).encode(PASSWORD);
-        context.getBean(JdbcTemplate.class).update("UPDATE users SET email = ?, password_hash = ? WHERE id = ?",
-                key.trim().toLowerCase(Locale.ROOT), hash, userId);
     }
 
     /** A valid Indian mobile number (10 digits) derived from [key], so every test account gets its own. */

@@ -48,19 +48,21 @@ public class EmergencyController {
         return service.get(CurrentUser.id(jwt), id);
     }
 
-    /** Phase 10A.4: from another sign-in than the one that started the SOS, the body must hold the password. */
+    /** Phase 10A.4 (N2): from another sign-in than the one that started the SOS, the body must hold a fresh code. */
     @PutMapping("/{id}/cancel")
     public EmergencyResponse cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable long id,
                                     @RequestBody(required = false) EndEmergencyRequest request) {
         return service.end(CurrentUser.id(jwt), id, EmergencyStatus.CANCELLED, CurrentUser.sessionId(jwt),
-                request == null ? null : request.password(), request == null ? null : request.endedAt());
+                request == null ? null : request.challenge(), request == null ? null : request.code(),
+                request == null ? null : request.endedAt());
     }
 
     @PutMapping("/{id}/resolve")
     public EmergencyResponse resolve(@AuthenticationPrincipal Jwt jwt, @PathVariable long id,
                                      @RequestBody(required = false) EndEmergencyRequest request) {
         return service.end(CurrentUser.id(jwt), id, EmergencyStatus.RESOLVED, CurrentUser.sessionId(jwt),
-                request == null ? null : request.password(), request == null ? null : request.endedAt());
+                request == null ? null : request.challenge(), request == null ? null : request.code(),
+                request == null ? null : request.endedAt());
     }
 
     /** Phase 4D, level 4: the person tapped "Call 112" (the phone's dialer opened). Recorded once. */

@@ -40,12 +40,12 @@ public class EmergencyEvent {
 
     /**
      * Phase 10A.4 (V17): the sign-in (token "sid") that started this emergency, kept ONLY while it is ACTIVE (cleared
-     * when it ends). Another sign-in needs the password to end it. Null for emergencies started by an older token.
+     * when it ends). Another sign-in needs a fresh code to end it (N2). Null for emergencies started by an older token.
      */
     @Column(name = "started_session", length = 36)
     private String startedSession;
 
-    /** Phase 10A.4 (V17): ended from a different sign-in than the one that started it (with the password). */
+    /** Phase 10A.4 (V17): ended from a different sign-in than the one that started it (with a fresh code). */
     @Column(name = "ended_elsewhere", nullable = false)
     private boolean endedElsewhere;
 

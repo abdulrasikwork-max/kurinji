@@ -39,12 +39,12 @@ public final class SocialClient {
     public Person person(String name) throws Exception {
         String email = "social." + UUID.randomUUID() + "@example.com";
         String token = TestAccounts.registerAndGetToken(mockMvc, objectMapper, email);
-        long id = users.findByEmail(email).orElseThrow().getId();
+        long id = users.findByPhoneE164AndPhoneVerifiedAtIsNotNull(TestAccounts.e164For(email)).orElseThrow().getId();
         // The "x" keeps a letter in the suffix: with 8 random hex characters that all happened to be digits (~2 % of
         // runs), HandlePolicy saw only the name's letters, and a name like "Mod" is a reserved word (409). This was
         // the intermittent 13C failure (docs/PHASE13C.md C-D7), found in 13D.
         String handle = name.toLowerCase() + "_x" + UUID.randomUUID().toString().replace("-", "").substring(0, 7);
-        var response = perform(token, put("/api/profiles/me"), Map.of("handle", handle, "displayName", name))
+        var response = perform(token, put("/api/profiles/me"), Map.of("handle", handle))
                 .andReturn().getResponse();
         if (response.getStatus() != 200) {
             throw new AssertionError("Profile not created (" + response.getStatus() + "): " + response.getContentAsString());

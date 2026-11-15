@@ -9,7 +9,7 @@ import java.time.ZoneOffset;
 /**
  * What the API returns about an emergency. endedAt is null while it is still ACTIVE; journeyId is the Safe Walk
  * it was started from (Phase 4B), or null. endedElsewhere (Phase 10A.4): it was ended from another sign-in than the one
- * that started it (that needed the account password). The session id itself is never returned.
+ * that started it (that needed a fresh code, before N2 the account password). The session id itself is never returned.
  * startedOffline (Phase 11): the SOS began on a phone without a connection; its times are the phone's. The phone's
  * reference (clientRef) is never returned either: the phone already knows it.
  */

@@ -1,6 +1,6 @@
 package com.safesphere.backend.emergency.service;
 
-import com.safesphere.backend.account.service.PasswordGuard;
+import com.safesphere.backend.account.service.CodeGuard;
 import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.ForbiddenException;
 import com.safesphere.backend.user.entity.User;
@@ -45,17 +45,17 @@ public class EmergencyService {
     private final EscalationEventRepository escalationRepository;
     private final Clock clock;
     private final UserRepository users;
-    private final PasswordGuard passwords;
+    private final CodeGuard codes;
 
     public EmergencyService(EmergencyEventRepository repository, JourneyService journeyService,
                             EscalationEventRepository escalationRepository, Clock clock, UserRepository users,
-                            PasswordGuard passwords) {
+                            CodeGuard codes) {
         this.repository = repository;
         this.journeyService = journeyService;
         this.escalationRepository = escalationRepository;
         this.clock = clock;
         this.users = users;
-        this.passwords = passwords;
+        this.codes = codes;
     }
 
     @Transactional
@@ -63,7 +63,7 @@ public class EmergencyService {
         return start(userId, requestedTrigger, null);
     }
 
-    /** Phase 10A.4: [sessionId] = the sign-in starting the SOS; only it may end the SOS without the password. */
+    /** Phase 10A.4: [sessionId] = the sign-in starting the SOS; only it may end the SOS without a fresh code (N2). */
     @Transactional
     public EmergencyResponse start(long userId, TriggerType requestedTrigger, String sessionId) {
         return start(userId, new CreateEmergencyRequest(requestedTrigger), sessionId);
@@ -162,32 +162,27 @@ public class EmergencyService {
     /** "False alarm": ACTIVE -> CANCELLED. */
     @Transactional
     public EmergencyResponse cancel(long userId, long emergencyId) {
-        return end(userId, emergencyId, EmergencyStatus.CANCELLED, null, null);
+        return end(userId, emergencyId, EmergencyStatus.CANCELLED, null, null, null, null);
     }
 
     /** "I'm safe": ACTIVE -> RESOLVED. */
     @Transactional
     public EmergencyResponse resolve(long userId, long emergencyId) {
-        return end(userId, emergencyId, EmergencyStatus.RESOLVED, null, null);
+        return end(userId, emergencyId, EmergencyStatus.RESOLVED, null, null, null, null);
     }
 
     /**
-     * Phase 10A.4: ending an ACTIVE emergency. The sign-in that started it ends it as before (no password). Any OTHER
-     * sign-in (another phone, or someone who signed in elsewhere with the password) must send the account password:
-     * without one 403, a wrong one 409 (counted with the other password checks, 429 after 5 in 15 min). The record then
-     * says it was ended elsewhere, so the first phone and the history can show it. Rule order: ownership (404), still
-     * ACTIVE (409), then the password, so the password check says nothing about other people's emergencies.
+     * Phase 10A.4 (N2: a code instead of the password): ending an ACTIVE emergency. The sign-in that started it ends it
+     * as before (no confirmation). Any OTHER sign-in (another phone) must confirm with a fresh code texted to the
+     * account's number ([challenge] + [code], CodeGuard): without one 403, a wrong one 409 (counted with the other code
+     * checks, 429 after 5 in 15 min). The record then says it was ended elsewhere, so the first phone and the history
+     * can show it. Rule order: ownership (404), still ACTIVE (409), then the code, so the check says nothing about other
+     * people's emergencies. Phase 11: [endedAt] = when a phone that was offline ended it (clamped between the start and
+     * now).
      */
     @Transactional
     public EmergencyResponse end(long userId, long emergencyId, EmergencyStatus finalStatus, String sessionId,
-                                 String password) {
-        return end(userId, emergencyId, finalStatus, sessionId, password, null);
-    }
-
-    /** Phase 11: [endedAt] = when a phone that was offline ended it (clamped between the start and now). */
-    @Transactional
-    public EmergencyResponse end(long userId, long emergencyId, EmergencyStatus finalStatus, String sessionId,
-                                 String password, Instant endedAt) {
+                                 String challenge, String code, Instant endedAt) {
         EmergencyEvent event = repository.findByIdAndUserIdForUpdate(emergencyId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND));
         if (event.getStatus() != EmergencyStatus.ACTIVE) {
@@ -195,11 +190,11 @@ public class EmergencyService {
         }
         boolean elsewhere = event.startedByAnotherSignIn(sessionId);
         if (elsewhere) {
-            if (password == null || password.isEmpty()) {
+            if (challenge == null || challenge.isEmpty() || code == null || code.isEmpty()) {
                 throw new ForbiddenException(ELSEWHERE);
             }
             User user = users.findById(userId).orElseThrow(() -> new ResourceNotFoundException(NOT_FOUND));
-            passwords.require(user, password);
+            codes.require(user, challenge, code);
         }
         if (endedAt == null) {
             event.end(finalStatus, elsewhere);
@@ -211,7 +206,7 @@ public class EmergencyService {
     }
 
     static final String ELSEWHERE =
-            "This SOS was started on another phone. Enter your account password to end it here.";
+            "This SOS was started on another phone. Confirm with a code texted to your number to end it here.";
 
     /**
      * Level 4, the emergency pathway (Phase 4D): the person tapped "Call 112" and the phone opened its dialer.

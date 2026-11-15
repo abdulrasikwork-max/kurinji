@@ -70,7 +70,8 @@ class ProfileApiIntegrationTest {
                 "Quiet cafés,  long walks", List.of("en", "ta", "en"), List.of("HIDDEN_GEMS", "food_cafes"), " Chennai "))
                 .andExpect(status().isOk()));
         assertThat(body.get("handle").asText()).isEqualTo(handle);
-        assertThat(body.get("displayName").asText()).isEqualTo("Asha Devi");
+        // Phase N2 (N-23): a profile has no name of its own; it shows the account's real name (a sent name is ignored).
+        assertThat(body.get("displayName").asText()).isEqualTo("Test User");
         assertThat(body.get("bio").asText()).isEqualTo("Quiet cafés, long walks");
         assertThat(body.get("city").asText()).isEqualTo("Chennai");
         assertThat(body.get("languages").toString()).isEqualTo("[\"ta\",\"en\"]");
@@ -133,14 +134,14 @@ class ProfileApiIntegrationTest {
     void text_linksBlankNamesAndUnknownCodes_areRefused_tamilTextIsKept() throws Exception {
         Person asha = person();
         String handle = unique("asha");
-        save(asha, profile(handle, "   ")).andExpect(status().isBadRequest());
         save(asha, profile(handle, "Asha", "visit https://example.org", null, null, null))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value("Links are not allowed in a profile"));
         save(asha, profile(handle, "Asha", null, List.of("fr"), null, null)).andExpect(status().isBadRequest());
         save(asha, profile(handle, "Asha", null, null, List.of("PARTIES"), null)).andExpect(status().isBadRequest());
         save(asha, profile(handle, "Asha", null, null, null, "Chennai 600001")).andExpect(status().isBadRequest());
         save(asha, profile(handle, "ஆஷா தேவி", "கடற்கரை நடை", List.of("ta"), null, "சென்னை"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.displayName").value("ஆஷா தேவி"));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.bio").value("கடற்கரை நடை"))
+                .andExpect(jsonPath("$.displayName").value("Test User"));
     }
 
     // ---- looking someone up ---------------------------------------------------------------------------------------
@@ -225,7 +226,8 @@ class ProfileApiIntegrationTest {
     private Person person() throws Exception {
         String email = "profile." + UUID.randomUUID() + "@example.com";
         String token = registerAndGetToken(mockMvc, objectMapper, email);
-        return new Person(token, users.findByEmail(email).orElseThrow().getId());
+        return new Person(token, users.findByPhoneE164AndPhoneVerifiedAtIsNotNull(
+                com.safesphere.backend.support.TestAccounts.e164For(email)).orElseThrow().getId());
     }
 
     private static Map<String, Object> profile(String handle, String displayName) {

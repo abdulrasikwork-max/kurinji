@@ -14,10 +14,6 @@ import org.springframework.data.repository.query.Param;
  */
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    Optional<User> findByEmail(String email);
-
-    boolean existsByEmail(String email);
-
     /**
      * Locks the user row until the transaction ends (SELECT ... FOR UPDATE). The evidence custody ledger uses it so
      * that two appends for one person get consecutive sequence numbers and an unbroken hash chain.

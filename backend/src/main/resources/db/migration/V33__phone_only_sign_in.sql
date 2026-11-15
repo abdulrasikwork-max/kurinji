@@ -12,6 +12,7 @@
 --   of a cascading foreign key.
 -- * The e-mail address, its V25 verification and the password hash leave the users table; V25's link table goes.
 -- * profiles.display_name goes: the profile shows users.name (the real name) everywhere.
+-- * device_sessions may end with the new reason OTHERS_SIGNED_OUT ("Sign out all other phones", N-26).
 --
 -- Accounts without a verified phone (created before 17B and never verified) stay as they are, but can no longer sign
 -- in or keep a session (the server refuses them: owner's decision N-22). Nothing else is deleted.
@@ -70,3 +71,8 @@ ALTER TABLE users
 
 ALTER TABLE profiles DROP CHECK ck_profiles_display_name;
 ALTER TABLE profiles DROP COLUMN display_name;
+
+-- N-26: "Sign out all other phones" ends sessions with its own reason; PASSWORD_CHANGED stays for rows from before N2.
+ALTER TABLE device_sessions DROP CHECK ck_device_sessions_reason;
+ALTER TABLE device_sessions ADD CONSTRAINT ck_device_sessions_reason CHECK (revoked_reason IS NULL OR revoked_reason IN
+    ('SIGNED_OUT', 'PASSWORD_CHANGED', 'OTHERS_SIGNED_OUT', 'REUSE_DETECTED', 'ACCOUNT_DISABLED', 'EXPIRED'));

@@ -22,12 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
  *
  *  - [start]: a sign-in (login, register) gets a session; its id becomes the access tokens' "sid".
  *  - [refresh]: a valid secret is replaced by a new one (rotation) and the caller gets a new access token. Also works
- *    when the access token expired days ago: that is its purpose (an SOS must not need the password after idle time).
+ *    when the access token expired days ago: that is its purpose (an SOS must not need a new code after idle time).
  *  - The secret just replaced, shown again within [AccountProperties#refreshReuseGrace], is a lost answer on a poor
  *    connection and is rotated once more; shown later, it is REUSE (someone else may hold a copy): the session ends.
  *  - Refused: revoked or idle-expired sessions, deleted or disabled accounts, unknown tokens. Refusals never throw
  *    inside the transaction, so a revocation they cause is committed.
- *  - Password change ends every OTHER session of the account; sign-out ends the caller's.
+ *  - Signing out the other phones (N2) ends every OTHER session of the account; sign-out ends the caller's.
  */
 @Service
 public class DeviceSessionService {
@@ -131,10 +131,10 @@ public class DeviceSessionService {
     }
 
     /**
-     * The same phone signed in again with the password (after "sign in to sync") and showed the refresh token of its
+     * The same phone signed in again with a code (after "sign in to sync") and showed the refresh token of its
      * old sign-in: that old session ends, and an SOS it started (still ACTIVE) moves to [newSessionId], so "I'm safe"
-     * from this phone needs no password. Nothing happens unless the token is the current or just-replaced secret of a
-     * session of the SAME account (a revoked one too: the password was typed just now).
+     * from this phone needs no confirmation. Nothing happens unless the token is the current or just-replaced secret of a
+     * session of the SAME account (a revoked one too: the code was entered just now).
      */
     @Transactional
     public void succeed(long userId, String previousRefreshToken, String newSessionId) {
@@ -163,11 +163,14 @@ public class DeviceSessionService {
         return create(userId, sessionId, auth, now()).refreshToken();
     }
 
-    /** Password change: every other session of [userId] ends; the caller's own one counts as freshly signed in. */
+    /**
+     * N2 (N-26), confirmed with a fresh code: every other session of [userId] ends; the caller's own one counts as
+     * freshly signed in.
+     */
     @Transactional
-    public void passwordChanged(long userId, String callerSessionId) {
+    public void othersSignedOut(long userId, String callerSessionId) {
         LocalDateTime now = now();
-        sessions.revokeAllExcept(userId, callerSessionId, SessionRevocation.PASSWORD_CHANGED, now);
+        sessions.revokeAllExcept(userId, callerSessionId, SessionRevocation.OTHERS_SIGNED_OUT, now);
         if (callerSessionId != null) {
             sessions.findBySessionIdForUpdate(callerSessionId)
                     .filter(s -> s.getUserId() == userId && !s.isRevoked())

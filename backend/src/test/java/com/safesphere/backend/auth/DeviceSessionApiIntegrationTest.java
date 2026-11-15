@@ -1,6 +1,6 @@
 package com.safesphere.backend.auth;
 
-import static com.safesphere.backend.support.TestAccounts.PASSWORD;
+import com.safesphere.backend.support.TestAccounts;
 import static com.safesphere.backend.support.TestAccounts.bearer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -56,8 +56,8 @@ import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Phase 11 C1 "session continuity": device sessions with a rotating refresh secret (V19). An expired access token is
- * recovered through the refresh secret (an SOS after days without the app must reach the server without the password);
- * reuse, sign-out, password change, deletion and disabling end sessions; accounts stay isolated.
+ * recovered through the refresh secret (an SOS after days without the app must reach the server without a new code);
+ * reuse, sign-out, signing out the other phones, deletion and disabling end sessions; accounts stay isolated.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -257,21 +257,21 @@ class DeviceSessionApiIntegrationTest {
     }
 
     @Test
-    void passwordChange_endsEveryOtherSession_butKeepsTheCallersOne() throws Exception {
+    void signingOutTheOtherPhones_endsEveryOtherSession_butKeepsTheCallersOne() throws Exception {
         String email = email();
         Session phone = register(email);
         Session otherPhone = login(email);
-        JsonNode changed = json(mockMvc.perform(put("/api/users/me/password")
+        JsonNode changed = json(mockMvc.perform(post("/api/users/me/sessions/sign-out-others")
                         .header(HttpHeaders.AUTHORIZATION, bearer(phone.accessToken()))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("currentPassword", PASSWORD,
-                                "newPassword", "a-new-long-password"))))
+                        .content(objectMapper.writeValueAsString(
+                                TestAccounts.confirmation(mockMvc, objectMapper, phone.accessToken(), email))))
                 .andExpect(status().isOk()));
         // The caller already has a session: it keeps its refresh secret (none is sent).
         assertThat(changed.get("refreshToken").isNull()).isTrue();
         refresh(otherPhone.refreshToken()).andExpect(status().isUnauthorized())
                 .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, refusal("session_revoked")));
-        assertThat(revokedReason(otherPhone)).isEqualTo("PASSWORD_CHANGED");
+        assertThat(revokedReason(otherPhone)).isEqualTo("OTHERS_SIGNED_OUT");
         Session recovered = refreshOk(phone.refreshToken());
         me(recovered.accessToken()).andExpect(status().isOk());
         // The caller's sign-in counts as freshly authenticated.
@@ -303,7 +303,8 @@ class DeviceSessionApiIntegrationTest {
         long userId = claims(phone.accessToken()).get("sub").asLong();
         mockMvc.perform(post("/api/users/me/deletion").header(HttpHeaders.AUTHORIZATION, bearer(phone.accessToken()))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("password", PASSWORD))))
+                        .content(objectMapper.writeValueAsString(
+                                TestAccounts.confirmation(mockMvc, objectMapper, phone.accessToken(), email))))
                 .andExpect(status().isAccepted());
         // During the grace period the account (and its sessions) keep working.
         Session during = refreshOk(otherPhone.refreshToken());

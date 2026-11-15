@@ -1,6 +1,5 @@
 package com.safesphere.backend.account;
 
-import static com.safesphere.backend.support.TestAccounts.PASSWORD;
 import static com.safesphere.backend.support.TestAccounts.bearer;
 import static com.safesphere.backend.support.TestAccounts.registerAndGetToken;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,7 +40,7 @@ import org.springframework.test.web.servlet.ResultActions;
 
 /**
  * Phase 10A.4 "session continuity": token renewal (a long SOS never loses its server connection to an expiring token)
- * and the rule that only the sign-in that started an SOS ends it without the account password.
+ * and the rule that only the sign-in that started an SOS ends it without confirming (N2: a fresh texted code).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -89,7 +88,7 @@ class SessionContinuityApiIntegrationTest {
 
         long emergency = startEmergency(token);
         String duringSos = json(renew(token).andExpect(status().isOk())).get("accessToken").asText();
-        endWith(duringSos, emergency, "resolve", null).andExpect(status().isOk()); // same sign-in: no password
+        endWith(duringSos, emergency, "resolve", null).andExpect(status().isOk()); // same sign-in: no code
 
         Map<String, Object> walk = new LinkedHashMap<>();
         walk.put("checkInIntervalMinutes", 10);
@@ -104,12 +103,12 @@ class SessionContinuityApiIntegrationTest {
         String email = email();
         String token = registerAndGetToken(mockMvc, objectMapper, email);
         String other = login(email);
-        String changed = json(mockMvc.perform(put("/api/users/me/password").header(HttpHeaders.AUTHORIZATION, bearer(token))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("currentPassword", PASSWORD, "newPassword", "another-long-one"))))
+        String changed = json(mockMvc.perform(post("/api/users/me/sessions/sign-out-others")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token)).contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(confirm(token, email))))
                 .andExpect(status().isOk())).get("accessToken").asText();
         renew(other).andExpect(status().isUnauthorized());
-        // The phone that changed the password keeps its sign-in (same session id).
+        // The phone that signed the others out keeps its sign-in (same session id).
         assertThat(claims(changed).get("sid").asText()).isEqualTo(claims(token).get("sid").asText());
         assertThat(claims(other).get("sid").asText()).isNotEqualTo(claims(token).get("sid").asText());
     }
@@ -117,7 +116,7 @@ class SessionContinuityApiIntegrationTest {
     // ---- who may end an ACTIVE SOS ----------------------------------------------------------------------------
 
     @Test
-    void anotherSignIn_needsThePasswordToEndAnSos_andTheRecordSaysItWasEndedElsewhere() throws Exception {
+    void anotherSignIn_needsAFreshCodeToEndAnSos_andTheRecordSaysItWasEndedElsewhere() throws Exception {
         String email = email();
         String phone = registerAndGetToken(mockMvc, objectMapper, email);
         String elsewhere = login(email);
@@ -126,13 +125,13 @@ class SessionContinuityApiIntegrationTest {
                 .isEqualTo(claims(phone).get("sid").asText());
 
         endWith(elsewhere, emergency, "resolve", null).andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.message").value("This SOS was started on another phone. Enter your account password to end it here."));
-        endWith(elsewhere, emergency, "cancel", "wrong-password").andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Password is incorrect"));
+                .andExpect(jsonPath("$.message").value("This SOS was started on another phone. Confirm with a code texted to your number to end it here."));
+        endWith(elsewhere, emergency, "cancel", wrong(confirm(elsewhere, email))).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("That code is not right, or it has ended. Ask for a new code."));
         mockMvc.perform(get("/api/emergencies/" + emergency).header(HttpHeaders.AUTHORIZATION, bearer(phone)))
                 .andExpect(jsonPath("$.status").value("ACTIVE"));
 
-        endWith(elsewhere, emergency, "resolve", PASSWORD).andExpect(status().isOk())
+        endWith(elsewhere, emergency, "resolve", confirm(elsewhere, email)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("RESOLVED"))
                 .andExpect(jsonPath("$.endedElsewhere").value(true));
         // The first phone sees it; the session id is gone from the row (only needed while ACTIVE).
@@ -144,7 +143,7 @@ class SessionContinuityApiIntegrationTest {
     }
 
     @Test
-    void theStartingPhone_endsItsSosWithoutAPassword_alsoWithARenewedToken() throws Exception {
+    void theStartingPhone_endsItsSosWithoutACode_alsoWithARenewedToken() throws Exception {
         String phone = registerAndGetToken(mockMvc, objectMapper, email());
         long emergency = startEmergency(phone);
         String renewed = json(renew(phone).andExpect(status().isOk())).get("accessToken").asText();
@@ -154,16 +153,19 @@ class SessionContinuityApiIntegrationTest {
     }
 
     @Test
-    void wrongPasswordsForEndingAnSos_shareTheAccountLimit_andOtherPeopleStill404() throws Exception {
+    void wrongCodesForEndingAnSos_shareTheAccountLimit_andOtherPeopleStill404() throws Exception {
         String email = email();
         String phone = registerAndGetToken(mockMvc, objectMapper, email);
         String elsewhere = login(email);
         long emergency = startEmergency(phone);
-        for (int i = 0; i < 5; i++) endWith(elsewhere, emergency, "resolve", "wrong-" + i).andExpect(status().isConflict());
-        endWith(elsewhere, emergency, "resolve", PASSWORD).andExpect(status().isTooManyRequests());
-        // The phone that started it is not blocked by the limit (no password needed there).
-        String stranger = registerAndGetToken(mockMvc, objectMapper, email());
-        endWith(stranger, emergency, "resolve", PASSWORD).andExpect(status().isNotFound());
+        for (int i = 0; i < 5; i++) {
+            endWith(elsewhere, emergency, "resolve", wrong(confirm(elsewhere, email))).andExpect(status().isConflict());
+        }
+        endWith(elsewhere, emergency, "resolve", confirm(elsewhere, email)).andExpect(status().isTooManyRequests());
+        // The phone that started it is not blocked by the limit (no code needed there).
+        String strangerKey = email();
+        String stranger = registerAndGetToken(mockMvc, objectMapper, strangerKey);
+        endWith(stranger, emergency, "resolve", confirm(stranger, strangerKey)).andExpect(status().isNotFound());
         endWith(phone, emergency, "resolve", null).andExpect(status().isOk());
     }
 
@@ -207,11 +209,23 @@ class SessionContinuityApiIntegrationTest {
                 .andExpect(status().isCreated())).get("id").asLong();
     }
 
-    private ResultActions endWith(String token, long emergency, String action, String password) throws Exception {
+    /** A fresh confirmation code for [key]'s account, asked for with [token] (Phase N2). */
+    private Map<String, String> confirm(String token, String key) throws Exception {
+        return com.safesphere.backend.support.TestAccounts.confirmation(mockMvc, objectMapper, token, key);
+    }
+
+    private static Map<String, String> wrong(Map<String, String> confirmation) {
+        Map<String, String> wrong = new java.util.HashMap<>(confirmation);
+        wrong.put("code", confirmation.get("code").equals("000000") ? "111111" : "000000");
+        return wrong;
+    }
+
+    private ResultActions endWith(String token, long emergency, String action, Map<String, String> confirmation)
+            throws Exception {
         var request = put("/api/emergencies/" + emergency + "/" + action).header(HttpHeaders.AUTHORIZATION, bearer(token));
-        if (password != null) {
+        if (confirmation != null) {
             request = request.contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(Map.of("password", password)));
+                    .content(objectMapper.writeValueAsString(confirmation));
         }
         return mockMvc.perform(request);
     }

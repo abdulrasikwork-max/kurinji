@@ -16,8 +16,7 @@ import java.time.temporal.ChronoUnit;
 
 /**
  * A SafeSphere account. Maps to the "users" table created by migration V1.
- * Phase N2: an account exists only for a verified phone number; no e-mail, no password (V33). [email] and
- * [passwordHash] are left over from before N2 and are removed with them.
+ * Phase N2: an account exists only for a verified phone number; no e-mail, no password (V33).
  * Timestamps are LocalDateTime values that always hold UTC.
  */
 @Entity
@@ -31,12 +30,6 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(length = 255)
-    private String email;
-
-    @Column(name = "password_hash", length = 100)
-    private String passwordHash;
-
     @Column(nullable = false)
     private boolean enabled = true;
 
@@ -45,7 +38,10 @@ public class User {
     @Column(nullable = false, length = 20)
     private UserRole role = UserRole.USER;
 
-    /** Phase 10A (V16): the credentials stamp. Tokens carry it; a different stamp = a revoked token. Null = never changed. */
+    /**
+     * Phase 10A (V16): the credentials stamp. Tokens carry it; a different stamp = a revoked token. Null = never changed.
+     * N2: set when the person signs out their other phones (before N2: by a password change).
+     */
     @Column(name = "credentials_changed_at")
     private LocalDateTime credentialsChangedAt;
 
@@ -112,14 +108,6 @@ public class User {
 
     public String getName() {
         return name;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
     }
 
     public boolean isEnabled() {
@@ -193,7 +181,7 @@ public class User {
 
     /**
      * The credentials stamp tokens carry (claim "cca"): microseconds since the epoch of [credentialsChangedAt], or null
-     * while the password was never changed. Exact equality is compared, so no clock or second-rounding question arises.
+     * while it was never set. Exact equality is compared, so no clock or second-rounding question arises.
      */
     public Long credentialsStamp() {
         if (credentialsChangedAt == null) return null;
@@ -201,10 +189,14 @@ public class User {
         return instant.getEpochSecond() * 1_000_000L + instant.getNano() / 1_000L;
     }
 
-    /** Phase 10A: a new password hash and a new stamp; every token issued before is refused from now on. */
-    public void changePassword(String newPasswordHash, LocalDateTime now) {
-        this.passwordHash = newPasswordHash;
+    /** N2 (N-26): a new stamp; every token issued before is refused from now on (the caller gets a fresh one). */
+    public void signOutEverywhereElse(LocalDateTime now) {
         this.credentialsChangedAt = now.truncatedTo(ChronoUnit.MICROS);
+    }
+
+    /** N2 (N-24): the person's real name, already checked by RealNamePolicy. */
+    public void rename(String name) {
+        this.name = name;
     }
 
     public void requestDeletion(LocalDateTime now, LocalDateTime dueAt) {
@@ -225,16 +217,14 @@ public class User {
     }
 
     /**
-     * Turns the row into an anonymous, disabled tombstone (V16 CHECKs): no name, no e-mail, no usable password, no role,
-     * every token refused. Used only when the moderation audit log still refers to this account.
+     * Turns the row into an anonymous, disabled tombstone (V16 CHECKs): no name, no number, no role, every token
+     * refused. Used only when the moderation audit log still refers to this account.
      */
-    public void erase(String unusablePasswordHash, LocalDateTime now) {
+    public void erase(LocalDateTime now) {
         LocalDateTime at = now.truncatedTo(ChronoUnit.MICROS);
         this.name = "Deleted account";
-        this.email = "erased-" + id + "@erased.invalid";
         this.phoneE164 = null; // Phase 17B (V26 CHECK): a tombstone keeps no number
         this.phoneVerifiedAt = null;
-        this.passwordHash = unusablePasswordHash;
         this.enabled = false;
         this.role = UserRole.USER;
         this.credentialsChangedAt = at;

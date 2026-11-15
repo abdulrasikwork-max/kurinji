@@ -29,9 +29,12 @@ public final class ModerationDtos {
     public record AppealDecision(@NotNull(message = "Decision is required") AppealStatus decision) {
     }
 
-    /** ADMIN: change someone's role. [role] may only be USER or MODERATOR (ADMIN is set in the database only). */
+    /**
+     * ADMIN: change someone's role. [role] may only be USER or MODERATOR (ADMIN is set in the database only). Phase N2:
+     * the account is named by its verified mobile number ([phone], typed in any common way).
+     */
     public record RoleChange(
-            @NotNull(message = "Email is required") String email,
+            @NotNull(message = "Mobile number is required") String phone,
             @NotNull(message = "Role is required") UserRole role) {
     }
 

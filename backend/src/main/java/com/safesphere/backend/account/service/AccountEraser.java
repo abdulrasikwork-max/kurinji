@@ -6,18 +6,15 @@ import com.safesphere.backend.emergency.repository.EmergencyEventRepository;
 import com.safesphere.backend.social.media.MediaStorage;
 import com.safesphere.backend.user.entity.User;
 import com.safesphere.backend.user.repository.UserRepository;
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -126,21 +123,18 @@ public class AccountEraser {
     private final UserRepository users;
     private final EmergencyEventRepository emergencies;
     private final JdbcTemplate jdbc;
-    private final PasswordEncoder passwordEncoder;
     private final AccountProperties properties;
     private final Clock clock;
     private final TransactionTemplate tx;
     private final MediaStorage media;
-    private final SecureRandom random = new SecureRandom();
 
     public AccountEraser(UserRepository users, EmergencyEventRepository emergencies, JdbcTemplate jdbc,
-                         PasswordEncoder passwordEncoder, AccountProperties properties, Clock clock,
+                         AccountProperties properties, Clock clock,
                          PlatformTransactionManager transactions, MediaStorage media) {
         this.media = media;
         this.users = users;
         this.emergencies = emergencies;
         this.jdbc = jdbc;
-        this.passwordEncoder = passwordEncoder;
         this.properties = properties;
         this.clock = clock;
         this.tx = new TransactionTemplate(transactions);
@@ -187,9 +181,7 @@ public class AccountEraser {
                         + " + (SELECT COUNT(*) FROM moderation_appeals WHERE decided_by = ?)",
                 Long.class, userId, userId) > 0;
         if (decidedSomething) {
-            byte[] secret = new byte[32];
-            random.nextBytes(secret);
-            user.erase(passwordEncoder.encode(Base64.getEncoder().encodeToString(secret)), now());
+            user.erase(now());
             users.saveAndFlush(user);
             return Outcome.ANONYMISED;
         }

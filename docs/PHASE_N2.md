@@ -87,3 +87,31 @@ Changing the phone number (N3), the college ID check and the name lock (N3), ban
   password columns for the account tests B2 rewrites.
 - Result: backend **492 run, 0 failures, 0 errors, 2 skipped** (the opt-in real-MySQL class; 496 before N2: the
   password test cases left, the sign-in cases came in). `mvn compile` clean. Not run against MySQL (V33 is applied in B3).
+
+### B2 backend: codes instead of the password, one name (2026-11-15)
+- New: `account/service/CodeGuard` (replaces `PasswordGuard`, same rules: wrong = 409, never 401; 5 wrong codes per
+  15 min per account for all confirmed actions together = 429; `app.account.code-failures` / `code-failure-window`
+  replace `password-failures` / `password-failure-window`), `PhoneCodeService.startConfirmation` / `checkConfirmation`
+  (purpose CONFIRM, the account's own number, one use; a challenge of another account or of a sign-in is simply
+  "not right"; the check runs in its own transaction so a wrong try stays counted when the action is refused).
+- Endpoints: `POST /api/users/me/confirmation` (texts the code), `POST /api/users/me/sessions/sign-out-others`
+  (N-26; `{challenge, code}`; new credentials stamp, every other session ends with the new reason
+  `OTHERS_SIGNED_OUT`, refused while an SOS or a Safe Walk runs, the caller keeps its sign-in), `PUT /api/users/me/name`
+  (N-24, RealNamePolicy); deletion request and cancel take `{challenge, code}`; ending an SOS from another sign-in takes
+  `{challenge, code, endedAt?}` (403 without, 409 wrong). `PUT /api/users/me/password` is gone (404).
+- Every refusal of an action is checked before the code, so a refused action does not use the code up.
+- `users`: `email` and `password_hash` gone from the entity; `erase()` keeps no number and no secret; BCrypt and the
+  `PasswordEncoder` bean are gone; `MailProperties` (V25 leftover) removed. `UserResponse.email` replaced by
+  `phoneHint`. Admin role change takes `{phone, role}` (any common way of typing the number; verified accounts only).
+- One name (N-23): `profiles.display_name` dropped from the entity; `Profile.displayName` is read from `users.name`
+  with the row (`@Formula`); `PUT /api/profiles/me` no longer takes a name (a sent one is ignored); the API field
+  `displayName` stays, so the profile, people lists and the moderators' person view show the real name.
+- Found and fixed on the way: opening a code inside a caller's read-only transaction did not save a rotated
+  challenge token (the new token was then "not right"); opening a code now always runs in its own transaction.
+- V33 extended: the session-reason CHECK gets `OTHERS_SIGNED_OUT` (`PASSWORD_CHANGED` stays for old rows).
+- Tests: `AccountLifecycleApiIntegrationTest` rewritten for codes (14: sign-out-others revocation, shared limit, one-use
+  and foreign codes, the confirmation endpoint, refusal during an SOS / walk, name change, the password endpoint gone,
+  deletion refusals / grace / cancel / erase / postponement / anonymisation); `SessionContinuityApiIntegrationTest`
+  (SOS ended elsewhere with a code), `DeviceSessionApiIntegrationTest` (sign-out-others, deletion), role changes by
+  number, profile name = real name; `TestAccounts.confirmation(...)`; the transitional e-mail / password helper gone.
+- Result: backend **494 run, 0 failures, 0 errors, 2 skipped** (clean build).

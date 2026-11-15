@@ -70,13 +70,13 @@ class ModerationApiIntegrationTest {
         api.getAs(user, "/api/moderation/content-cases/" + UUID.randomUUID()).andExpect(status().isForbidden());
         api.postAs(user, "/api/moderation/content-cases/" + UUID.randomUUID() + "/actions",
                 Map.of("action", "CONTENT_KEEP", "reason", "NO_VIOLATION")).andExpect(status().isForbidden());
-        api.putAs(user, "/api/admin/roles", Map.of("email", user.email(), "role", "MODERATOR"))
+        api.putAs(user, "/api/admin/roles", Map.of("phone", TestAccounts.e164For(user.email()), "role", "MODERATOR"))
                 .andExpect(status().isForbidden());
         api.getAs(user, "/api/admin/moderation-log").andExpect(status().isForbidden());
 
         Account moderator = withRole(api.account(), UserRole.MODERATOR);
         api.getAs(moderator, "/api/admin/moderation-log").andExpect(status().isForbidden());
-        api.putAs(moderator, "/api/admin/roles", Map.of("email", user.email(), "role", "MODERATOR"))
+        api.putAs(moderator, "/api/admin/roles", Map.of("phone", TestAccounts.e164For(user.email()), "role", "MODERATOR"))
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(get("/api/moderation/content-cases")).andExpect(status().isUnauthorized());
@@ -124,18 +124,18 @@ class ModerationApiIntegrationTest {
         Account helper = api.account();
         api.getAs(helper, "/api/moderation/content-cases").andExpect(status().isForbidden());
 
-        api.putAs(admin, "/api/admin/roles", Map.of("email", helper.email().toUpperCase(), "role", "MODERATOR"))
+        api.putAs(admin, "/api/admin/roles", Map.of("phone", "+91 " + TestAccounts.phoneFor(helper.email()), "role", "MODERATOR"))
                 .andExpect(status().isNoContent());
         api.getAs(helper, "/api/moderation/content-cases").andExpect(status().isOk());
 
-        api.putAs(admin, "/api/admin/roles", Map.of("email", helper.email(), "role", "USER")).andExpect(status().isNoContent());
+        api.putAs(admin, "/api/admin/roles", Map.of("phone", TestAccounts.e164For(helper.email()), "role", "USER")).andExpect(status().isNoContent());
         api.getAs(helper, "/api/moderation/content-cases").andExpect(status().isForbidden());
 
-        api.putAs(admin, "/api/admin/roles", Map.of("email", helper.email(), "role", "ADMIN")).andExpect(status().isBadRequest());
-        api.putAs(admin, "/api/admin/roles", Map.of("email", admin.email(), "role", "USER")).andExpect(status().isConflict());
+        api.putAs(admin, "/api/admin/roles", Map.of("phone", TestAccounts.e164For(helper.email()), "role", "ADMIN")).andExpect(status().isBadRequest());
+        api.putAs(admin, "/api/admin/roles", Map.of("phone", TestAccounts.e164For(admin.email()), "role", "USER")).andExpect(status().isConflict());
         Account otherAdmin = withRole(api.account(), UserRole.ADMIN);
-        api.putAs(admin, "/api/admin/roles", Map.of("email", otherAdmin.email(), "role", "USER")).andExpect(status().isConflict());
-        api.putAs(admin, "/api/admin/roles", Map.of("email", "nobody." + UUID.randomUUID() + "@example.com", "role", "MODERATOR"))
+        api.putAs(admin, "/api/admin/roles", Map.of("phone", TestAccounts.e164For(otherAdmin.email()), "role", "USER")).andExpect(status().isConflict());
+        api.putAs(admin, "/api/admin/roles", Map.of("phone", TestAccounts.e164For("nobody." + UUID.randomUUID()), "role", "MODERATOR"))
                 .andExpect(status().isNotFound());
 
         JsonNode log = api.json(api.getAs(admin, "/api/admin/moderation-log").andExpect(status().isOk()));

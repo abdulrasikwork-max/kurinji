@@ -28,15 +28,6 @@ class ProfileTextPolicyTest {
     }
 
     @Test
-    void displayName_needs1to40Characters_countedAsCharacters_andNoLinks() {
-        assertThat(ProfileTextPolicy.checkDisplayName("")).isEqualTo(Result.EMPTY);
-        assertThat(ProfileTextPolicy.checkDisplayName("ஆஷா தேவி")).isEqualTo(Result.OK);
-        assertThat(ProfileTextPolicy.checkDisplayName("a".repeat(40))).isEqualTo(Result.OK);
-        assertThat(ProfileTextPolicy.checkDisplayName("a".repeat(41))).isEqualTo(Result.TOO_LONG);
-        assertThat(ProfileTextPolicy.checkDisplayName("Asha shop.com")).isEqualTo(Result.CONTAINS_LINK);
-    }
-
-    @Test
     void bio_isOptional_atMost160_andNoLinks() {
         assertThat(ProfileTextPolicy.checkBio(null)).isEqualTo(Result.OK);
         assertThat(ProfileTextPolicy.checkBio("Quiet cafés and long walks by the sea.")).isEqualTo(Result.OK);

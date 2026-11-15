@@ -133,7 +133,7 @@ public class DeviceSession {
         this.expiresAt = micros(newExpiry);
     }
 
-    /** The password was typed again for this sign-in (password change on this phone). */
+    /** This sign-in was confirmed again (N2: it signed out the other phones; before N2: a password change). */
     public void reauthenticated(LocalDateTime now) {
         this.authenticatedAt = micros(now);
     }

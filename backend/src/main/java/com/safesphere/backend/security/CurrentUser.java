@@ -13,7 +13,7 @@ public final class CurrentUser {
 
     /** Phase 10A.4: the id of this sign-in (one phone's session), kept across renewals. */
     public static final String SESSION_CLAIM = "sid";
-    /** Phase 10A.4: when the password was last typed for this sign-in (epoch seconds). */
+    /** Phase 10A.4: when the code was last entered for this sign-in (epoch seconds). */
     public static final String AUTH_TIME_CLAIM = "auth_time";
 
     private static final Pattern UUID_PATTERN =
@@ -36,7 +36,7 @@ public final class CurrentUser {
         return value instanceof String s && UUID_PATTERN.matcher(s).matches() ? s : null;
     }
 
-    /** When the password was last typed for this sign-in; tokens without the claim count from their issue time. */
+    /** When the code was last entered for this sign-in; tokens without the claim count from their issue time. */
     public static Instant authTime(Jwt jwt) {
         Object value = jwt.getClaims().get(AUTH_TIME_CLAIM);
         if (value instanceof Number n) return Instant.ofEpochSecond(n.longValue());

@@ -23,7 +23,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
  *
  * Before Phase 10A a disabled or deleted account's token kept working for up to 24 h on every endpoint except
  * GET /api/users/me, and nothing could end a stolen session. The stamp is compared for EXACT equality (not "issued
- * after"), so a token issued in the same second as a password change, or by a server whose clock was off, is never
+ * after"), so a token issued in the same second as a sign-out of the other phones, or by a server whose clock was off, is never
  * accepted by mistake. Only the account's own token holder ever learns the reason (the phone uses it to decide whether
  * to remove the account's data); it reveals nothing about any other account.
  */

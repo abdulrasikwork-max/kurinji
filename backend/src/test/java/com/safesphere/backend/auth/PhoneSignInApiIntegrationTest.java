@@ -115,8 +115,10 @@ class PhoneSignInApiIntegrationTest {
         JsonNode a = start(known).andExpect(status().isOk()).json();
         JsonNode b = start(unknown).andExpect(status().isOk()).json();
         assertThat(fieldNames(a)).isEqualTo(fieldNames(b));
-        for (String field : new String[] {"codeSent", "resendInSeconds", "codeExpiresInSeconds"}) {
-            assertThat(a.get(field)).as(field).isEqualTo(b.get(field));
+        assertThat(a.get("codeSent")).isEqualTo(b.get("codeSent"));
+        for (JsonNode answer : new JsonNode[] {a, b}) { // the same rules; seconds may differ by the time between calls
+            assertThat(answer.get("resendInSeconds").asLong()).isBetween(55L, 60L);
+            assertThat(answer.get("codeExpiresInSeconds").asLong()).isBetween(295L, 300L);
         }
         assertThat(sms.countFor("+91" + known)).isEqualTo(knownBefore + 1);
         assertThat(sms.countFor("+91" + unknown)).isEqualTo(1);
