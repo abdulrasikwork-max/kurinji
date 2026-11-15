@@ -1,4 +1,56 @@
-# CHECKPOINT 2026-11-15 (fourth session): N1 is COMPLETE. The manual emulator check is done (manually verified on the `irl_api33` emulator; no real phone); one wording fix found and committed. Nothing pushed, nothing deployed. Next: the plan for N2, which needs the owner's approval before any code.
+# CHECKPOINT 2026-11-15 (fifth session, stopped at the owner's request: 5-hour limit): N2 IN PROGRESS. B1, B2, B3, A1 done and committed; A2 STARTED, UNCOMMITTED, NOT COMPILED; C not started. Nothing pushed, nothing deployed.
+
+**This is the newest checkpoint. Read `docs/PHASE_N2.md` (the approved plan, the owner's 5 decisions, and "As built" per unit) first. Standing instructions, unchanged: the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N2 plan is APPROVED (owner, 2026-11-15) with all five recommended decisions; continue it, do not re-plan.**
+
+## Owner's N2 decisions (recorded in `PHASE_N2.md`; to be written into `DECISIONS.md` as N-21 to N-26 in unit C)
+1. The 173 development accounts without a verified phone stay in the database, unusable (no session, no sign-in); not erased (N-22).
+2. The separate profile display name is dropped; the real name is shown everywhere (N-23).
+3. The real name can be edited in N2; locked after the ID check of N3 (N-24).
+4. Changing the phone number is deferred to N3 (admin re-links after an ID check) (N-25).
+5. "Sign out all other phones" is included (N-26).
+Plus N-21 (suggested wording): sign-in and sign-up are one flow, phone number + texted code only; a new number gets a one-use 30-minute sign-up ticket.
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). `main` = `origin/main` = tag `pre-n1` = `fd669b9`, untouched.
+- N2 commits, oldest first: `7cdc64d` N2-B1 · `6ddcb05` N2-B2 · `88aa5a1` N2-B3 · `e1bf39b` N2-A1 · then one documents-only commit with this checkpoint (`git log -1`).
+- **UNCOMMITTED (unit A2, work in progress, NOT compiled, NOT tested):**
+  - new: `android/.../core/confirm/ConfirmationCodes.kt` (`ConfirmationCodes`, `CodeRequest`, `Confirmation`, `NoConfirmationCodes`), `android/.../core/ui/CodeConfirmDialog.kt` (`Fragment.showCodeConfirmDialog`, FLAG_SECURE, onConfirm / onResend / onDismiss / onClosed)
+  - account: `AccountApi.kt` (confirmation, sign-out-others, name, deletion/cancel with `CodeConfirmationDto`; password change gone), `RemoteAccountRepository.kt` (implements `request()` + `signOutOtherPhones` + `changeName` + deletion with `Confirmation`), `AccountModels.kt` (`AccountRepository : ConfirmationCodes`; `PasswordProblem` and the password checks gone), `AccountViewModel.kt` (`ConfirmedAction`, `CodeNeeded`, `onAskCode` → `onConfirm`, `onSaveName`), `AccountFragment.kt`, `res/layout/fragment_account.xml` (name section + "Your other phones" section; password section gone)
+  - SOS: `EmergencyDtos.kt` (`EndEmergencyRequestDto(challenge, code, endedAt)`), `EmergencyRepository.kt` / `RemoteEmergencyRepository.kt` (`confirmation: Confirmation?` instead of `password`), `SosRecorder.kt` (`confirmation = null`), `EmergencyUiState.kt` (`codeNeededFor` + `codeRequest` replace `passwordNeededFor`), `EmergencyViewModel.kt` (new param `confirmationCodes` = `container.accountRepository` in the factory; FORBIDDEN → `askForCode`; `onEndWithCode`, `onEndCodeDismissed`, `onEndCodeResend`), `EmergencyFragment.kt` (the shared code dialog instead of the password prompt)
+  - `res/values/strings.xml`: the password strings removed; new `confirm_code_*`, `account_section_name`, `account_name_*`, `account_save_name`, `account_section_phones`, `account_phones_explainer`, `account_sign_out_others*`, `account_others_signed_out`; session / deletion / SOS-elsewhere texts reworded for codes; About and the privacy notice: the account paragraphs rewritten for phone sign-in, the stale Rise paragraph removed.
+- `android/local.properties` is the owner's copy (pilot address); not changed in this session.
+
+## Results so far (real numbers)
+| Unit | Commit | Result |
+|---|---|---|
+| B1 backend: phone sign-in, `phone_codes`, sign-up ticket, V33 file | `7cdc64d` | backend 492 run, 0 failures, 2 skipped |
+| B2 backend: `CodeGuard` (codes instead of the password), sign-out-others, name change, role change by number, one name, BCrypt/e-mail gone | `6ddcb05` | backend 494 run, 0 failures, 2 skipped (clean build) |
+| B3 V33 on the DEVELOPMENT MySQL | `88aa5a1` | backup, pre-check, dry run 3 accepted + 12 refused, applied "now at version v33", 198/198 entity columns, curl walk on MySQL, `MySqlTimestampStorageTest` 2/2 |
+| A1 Android: number → code → "About you" | `e1bf39b` | Android 760 run, 0 failures; `assembleDebug` OK; lint 0 errors, 91 warnings |
+| A2 Android: confirmation dialog, Account, SOS end with a code, texts | uncommitted | NOT compiled, NOT tested |
+| C close | not started | |
+Python moderation service: not touched in N2 (38 OK from N1).
+
+## Database / schema
+- **Development MySQL: V33** (29 tables). Backup taken before: `C:\Users\ABDUL RAFIQ\Desktop\SafeSphere-Phase3\db-backups\safesphere-dev-before-v33-20261115.sql`. Development test accounts made in this session: two "Mysql Check" accounts (curl walk). An older jar (V32 or before) refuses to start against it.
+- **Pilot: unchanged** (old jar, V30). Do not install the N2 build against the pilot.
+
+## Issues found and handled
+- B2: opening a code inside a caller's read-only transaction lost a rotated challenge token (fixed: codes are opened in their own transaction, `PhoneCodeService.openWithRetry` uses `ownTransactions`).
+- A stale test class after a failed compile gave `NoClassDefFoundError: MutableClock` once; a clean build (`rm -rf target/classes target/test-classes`) fixed it.
+- Windows shells mangle Tamil in curl command lines; send such bodies from a UTF-8 file (`--data-binary @file`).
+- No blockers.
+
+## The exact next step to resume N2
+1. `git status` (expect the A2 files above) and `git log --oneline -6`.
+2. **Finish A2:** `cd android`, `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:/Users/Public`, `./gradlew.bat compileDebugKotlin` and fix what it reports (expected: `AppContainer` may need nothing new; check every user of `AccountPolicy.MIN_PASSWORD_LENGTH`, `PasswordProblem`, `passwordNeededFor`, `onEndWithPassword`, `label_password`, `account_*password*` strings). Then the tests: `FakeEmergencyRepository` (signature `confirmation: Confirmation?`), `EmergencyViewModelTest` (the password cases → code cases: FORBIDDEN asks for a code via a fake `ConfirmationCodes`, `onEndWithCode`, dismiss, resend), `AccountTest` (password-change and password-dialog cases → name change, sign-out-others, deletion/cancel with `Confirmation`), `SessionContinuityTest`, `HonestyTextsTest` / `KurinjiTextsTest` / `ResourceEncodingTest` for the new strings. Add a guard test: no visible string offers a password or an e-mail sign-in (the safety-contact e-mail field and `login_subtitle`'s "No password, no e-mail" are allowed). Run `testDebugUnitTest assembleDebug lintDebug`, write "A2" under "As built" in `PHASE_N2.md`, commit `N2-A2 (Android): ...`.
+3. **Unit C:** `docs/API.md` (+ appendix: `/api/auth/phone/start|verify|resend|change`, `/api/auth/sign-up`, `/api/users/me/confirmation`, `/api/users/me/sessions/sign-out-others`, `/api/users/me/name`, `{challenge, code}` on deletion / cancel / SOS end, `/api/admin/roles {phone, role}`, removed: `/register`, `/login`, `PUT /me/password`), `DECISIONS.md` N-21 to N-26, `.claude/rules/*.md` (backend auth/account, database V33 row, android auth), `CLAUDE.md` (status row N2, next migration V34, §6/§8/§9 auth wording), `STATUS.md`, `README.md` index for `PHASE_N2.md`; full runs on both sides (backend `mvn test`, Android `testDebugUnitTest assembleDebug lintDebug`); then the **manual emulator walk** (development backend jar on V33, a `10.0.2.2`-only debug build with `local.properties` put back at once): new number → code from the development code file → "About you" (try an under-18 date and a name with digits) → profile → Home; sign out → sign in again with the same number; Account: change the name, sign out other phones (code), delete + cancel (codes); an SOS started on one sign-in ended from a second one with a code; the SOS countdown/cancel, tile and shortcut still work. Record it in `PHASE_N2.md`, commit, update this checkpoint. Stop the backend and the emulator afterwards.
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, the pilot's own move to the new jar and schema (V32 + V33 delete data there: its own approved step with a fresh `restore-rehearsal.sh` PASS first), the N6 note on the first-SOS countdown behind the permission dialogs.
+
+---
+
+# CHECKPOINT 2026-11-15 (fourth session; superseded by the checkpoint above): N1 is COMPLETE. The manual emulator check is done (manually verified on the `irl_api33` emulator; no real phone); one wording fix found and committed. Nothing pushed, nothing deployed. Next: the plan for N2, which needs the owner's approval before any code.
 
 **Standing instructions, unchanged:** the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is.
 
