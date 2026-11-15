@@ -4,15 +4,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * Phase 17B: deletes ended verifications, V25 links left from before, and accounts never activated within
- * app.otp.unverified-retention (7 days). Deletion only: nothing scheduled ever sends a message.
+ * Phase 17B, N2: deletes ended codes and sign-up tickets. Deletion only: nothing scheduled ever sends a message.
  */
 @Component
 public class PhoneVerificationCleanupJob {
 
-    private final PhoneVerificationService verification;
+    private final PhoneCodeService verification;
 
-    public PhoneVerificationCleanupJob(PhoneVerificationService verification) {
+    public PhoneVerificationCleanupJob(PhoneCodeService verification) {
         this.verification = verification;
     }
 

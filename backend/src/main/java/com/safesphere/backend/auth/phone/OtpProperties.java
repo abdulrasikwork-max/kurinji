@@ -4,7 +4,7 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * The app.otp.* settings (Phase 17B). Every value has a safe default; secrets only from the environment.
+ * The app.otp.* settings (Phase 17B; N2: one flow for sign-in and sign-up, ticketLifetime). Every value has a safe default; secrets only from the environment.
  *
  * @param provider               DEV_FILE (default: codes written to [devFile] on this computer, nothing sent) or FAST2SMS
  * @param secret                 HMAC key for stored codes (OTP_SECRET, 32+ characters); empty = derived from JWT_SECRET
@@ -17,10 +17,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param resendCooldown         wait between two codes for one challenge
  * @param maxSendsPerChallenge   codes one challenge may send
  * @param sendsPerNumberPerDay   codes one number may receive per 24 h (all challenges; anti SMS bombing)
- * @param startsPerAddress       sign-up / start / resend / change requests per network address per [addressWindow]
+ * @param startsPerAddress       start / resend / change / confirmation requests per network address per [addressWindow]
  * @param verifyFailuresPerAddress wrong codes per network address per [addressWindow] (anti brute force)
  * @param addressWindow          the window of both address limits
- * @param unverifiedRetention    an account never activated this long after sign-up is removed by the clean-up
+ * @param ticketLifetime         Phase N2: how long a sign-up ticket works after the right code (one use)
  * @param cleanupInterval        how often the clean-up runs
  */
 @ConfigurationProperties(prefix = "app.otp")
@@ -28,7 +28,7 @@ public record OtpProperties(String provider, String secret, String devFile, Stri
                             Duration codeLifetime, Duration challengeLifetime, Integer maxAttempts,
                             Duration resendCooldown, Integer maxSendsPerChallenge, Integer sendsPerNumberPerDay,
                             Integer startsPerAddress, Integer verifyFailuresPerAddress, Duration addressWindow,
-                            Duration unverifiedRetention, Duration cleanupInterval) {
+                            Duration ticketLifetime, Duration cleanupInterval) {
 
     public enum Provider { DEV_FILE, FAST2SMS }
 
@@ -47,7 +47,7 @@ public record OtpProperties(String provider, String secret, String devFile, Stri
         if (startsPerAddress == null) startsPerAddress = 30;
         if (verifyFailuresPerAddress == null) verifyFailuresPerAddress = 50;
         if (addressWindow == null) addressWindow = Duration.ofHours(1);
-        if (unverifiedRetention == null) unverifiedRetention = Duration.ofDays(7);
+        if (ticketLifetime == null) ticketLifetime = Duration.ofMinutes(30);
         if (cleanupInterval == null) cleanupInterval = Duration.ofHours(1);
         try {
             Provider.valueOf(provider.trim().toUpperCase(java.util.Locale.ROOT));
@@ -58,11 +58,11 @@ public record OtpProperties(String provider, String secret, String devFile, Stri
             throw new IllegalStateException("OTP_SECRET must be at least 32 characters (or empty to derive it)");
         }
         if (notPositive(codeLifetime) || notPositive(challengeLifetime) || notPositive(resendCooldown) || notPositive(addressWindow)
-                || notPositive(unverifiedRetention) || notPositive(cleanupInterval) || maxAttempts < 1 || maxAttempts > 20
+                || notPositive(ticketLifetime) || notPositive(cleanupInterval) || maxAttempts < 1 || maxAttempts > 20
                 || maxSendsPerChallenge < 1 || maxSendsPerChallenge > 20 || sendsPerNumberPerDay < 1
                 || startsPerAddress < 1 || verifyFailuresPerAddress < 1
                 || challengeLifetime.compareTo(codeLifetime) < 0
-                || unverifiedRetention.compareTo(challengeLifetime) <= 0) {
+                || ticketLifetime.compareTo(Duration.ofHours(24)) > 0) {
             throw new IllegalStateException("app.otp.* values are invalid");
         }
     }

@@ -56,8 +56,8 @@ public class AccountEraser {
             // Phase 13D (V23): reports by or about the person, cases about them, their strikes and pause.
             "content_reports.reporter_id", "content_reports.person_id", "content_cases.person_id",
             "social_strikes.user_id", "social_standing.user_id",
-            // V25: a pending e-mail verification link. Phase 17B (V26): a phone verification in progress.
-            "email_verification_tokens.user_id", "phone_challenges.user_id");
+            // Phase N2 (V33): a confirmation code in progress (V25 and V26 code tables were dropped by V33).
+            "phone_codes.user_id");
 
     /** References that keep the account row (anonymised): the moderation audit trail of decisions this person took. */
     public static final Set<String> KEPT_REFERENCES = Set.of("moderation_actions.actor_id", "moderation_appeals.decided_by");
@@ -76,8 +76,8 @@ public class AccountEraser {
             "DELETE FROM safety_contacts WHERE user_id = ?",
             // Phase 11 C1: every sign-in ends (an anonymised tombstone keeps no session either).
             "DELETE FROM device_sessions WHERE user_id = ?",
-            "DELETE FROM email_verification_tokens WHERE user_id = ?",
-            "DELETE FROM phone_challenges WHERE user_id = ?",
+            // Phase N2: codes in progress for the person or their number (a sign-in code names no account).
+            "DELETE FROM phone_codes WHERE user_id = ? OR phone_e164 = (SELECT phone_e164 FROM users WHERE id = ?)",
             // Phase 13A: the profile, connections in both directions, invites, and blocks/mutes by or of the person.
             "DELETE FROM connections WHERE user_low = ? OR user_high = ?",
             "DELETE FROM connection_invites WHERE owner_id = ?",

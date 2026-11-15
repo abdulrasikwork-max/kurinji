@@ -10,21 +10,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 
 /**
  * A SafeSphere account. Maps to the "users" table created by migration V1.
- * Only the BCrypt hash of the password is stored, never the password itself.
+ * Phase N2: an account exists only for a verified phone number; no e-mail, no password (V33). [email] and
+ * [passwordHash] are left over from before N2 and are removed with them.
  * Timestamps are LocalDateTime values that always hold UTC.
  */
 @Entity
-@Table(
-        name = "users",
-        uniqueConstraints = @UniqueConstraint(name = "uk_users_email", columnNames = "email")
-)
+@Table(name = "users")
 public class User {
 
     @Id
@@ -34,10 +31,10 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, length = 255)
+    @Column(length = 255)
     private String email;
 
-    @Column(name = "password_hash", nullable = false, length = 100)
+    @Column(name = "password_hash", length = 100)
     private String passwordHash;
 
     @Column(nullable = false)
@@ -67,13 +64,6 @@ public class User {
     @Column(name = "age_confirmed_at")
     private LocalDateTime ageConfirmedAt;
 
-    /**
-     * V25: when the person opened an e-mail verification link. Phase 17B took e-mail links out of the sign-up flow: no
-     * new value is ever written; a set value now only means "activated before V26" (see [isActivated]).
-     */
-    @Column(name = "email_verified_at")
-    private LocalDateTime emailVerifiedAt;
-
     /** Phase 17B (V26): the account's mobile number, +91 and 10 digits; verified once [phoneVerifiedAt] is set. */
     @Column(name = "phone_e164", length = 16)
     private String phoneE164;
@@ -92,10 +82,14 @@ public class User {
     protected User() {
     }
 
-    public User(String name, String email, String passwordHash) {
+    /**
+     * Phase N2: a new account, created only after a code sent to [phoneE164] was entered (sign-in and sign-up are one
+     * flow): the number is verified from the first moment.
+     */
+    public User(String name, String phoneE164, LocalDateTime phoneVerifiedAt) {
         this.name = name;
-        this.email = email;
-        this.passwordHash = passwordHash;
+        this.phoneE164 = phoneE164;
+        this.phoneVerifiedAt = phoneVerifiedAt.truncatedTo(ChronoUnit.MICROS);
     }
 
     @PrePersist
@@ -103,6 +97,8 @@ public class User {
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS);
         this.createdAt = now;
         this.updatedAt = now;
+        // V26 CHECK: verified never before created, even when the service clock is a little behind this one.
+        if (phoneVerifiedAt != null && phoneVerifiedAt.isBefore(now)) this.phoneVerifiedAt = now;
     }
 
     @PreUpdate
@@ -185,19 +181,6 @@ public class User {
 
     public boolean isPhoneVerified() {
         return phoneVerifiedAt != null;
-    }
-
-    /**
-     * Phase 17B: the account was activated: a phone code was entered, or (accounts from before V26) the V25 e-mail link
-     * was opened. Only an activated account may hold a session; only a phone-verified one may start a new sign-in.
-     */
-    public boolean isActivated() {
-        return phoneVerifiedAt != null || emailVerifiedAt != null;
-    }
-
-    /** Phase 17B: the number a new account signed up with (not verified yet). */
-    public void setUnverifiedPhone(String phoneE164) {
-        if (phoneVerifiedAt == null) this.phoneE164 = phoneE164;
     }
 
     /** Phase 17B: a code sent to [phoneE164] was entered; the number becomes the account's verified number. */

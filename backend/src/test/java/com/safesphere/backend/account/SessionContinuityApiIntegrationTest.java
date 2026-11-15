@@ -45,7 +45,7 @@ import org.springframework.test.web.servlet.ResultActions;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(MutableClockConfig.class)
+@Import({MutableClockConfig.class, com.safesphere.backend.support.CapturingOtpSenderConfig.class})
 class SessionContinuityApiIntegrationTest {
 
     @Autowired private MockMvc mockMvc;
@@ -103,9 +103,7 @@ class SessionContinuityApiIntegrationTest {
     void aRevokedToken_cannotBeRenewed() throws Exception {
         String email = email();
         String token = registerAndGetToken(mockMvc, objectMapper, email);
-        String other = json(mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(Map.of("email", email, "password", PASSWORD)))))
-                .get("accessToken").asText();
+        String other = login(email);
         String changed = json(mockMvc.perform(put("/api/users/me/password").header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("currentPassword", PASSWORD, "newPassword", "another-long-one"))))
@@ -194,10 +192,10 @@ class SessionContinuityApiIntegrationTest {
         return "session." + UUID.randomUUID().toString().substring(0, 12) + "@example.com";
     }
 
+    /** Phase N2: the same account signs in on another phone (a new code). */
     private String login(String email) throws Exception {
-        return json(mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("email", email, "password", PASSWORD))))
-                .andExpect(status().isOk())).get("accessToken").asText();
+        return com.safesphere.backend.support.TestAccounts.signIn(mockMvc, objectMapper, email, null)
+                .get("accessToken").asText();
     }
 
     private ResultActions renew(String token) throws Exception {

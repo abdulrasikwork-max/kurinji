@@ -61,7 +61,7 @@ import org.springframework.test.web.servlet.ResultActions;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(MutableClockConfig.class)
+@Import({MutableClockConfig.class, com.safesphere.backend.support.CapturingOtpSenderConfig.class})
 class DeviceSessionApiIntegrationTest {
 
     private static final String ISSUER = "https://safesphere.example";
@@ -345,15 +345,13 @@ class DeviceSessionApiIntegrationTest {
         long emergency = json(mockMvc.perform(post("/api/emergencies")
                         .header(HttpHeaders.AUTHORIZATION, bearer(phone.accessToken())))
                 .andExpect(status().isCreated())).get("id").asLong();
-        // "Sign in to sync" on the phone: the person types the password again; the phone shows its old refresh token.
-        JsonNode body = json(mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("email", email, "password", PASSWORD,
-                                "previousRefreshToken", phone.refreshToken()))))
-                .andExpect(status().isOk()));
+        // "Sign in to sync" on the phone: the person enters a new code; the phone shows its old refresh token.
+        JsonNode body = com.safesphere.backend.support.TestAccounts.signIn(mockMvc, objectMapper, email,
+                phone.refreshToken());
         String again = body.get("accessToken").asText();
         assertThat(revokedReason(phone)).isEqualTo("SIGNED_OUT");
         refresh(phone.refreshToken()).andExpect(status().isUnauthorized());
-        // Ending the SOS from the new sign-in needs no password: it is the same phone, not "another one".
+        // Ending the SOS from the new sign-in needs no confirmation: it is the same phone, not "another one".
         mockMvc.perform(put("/api/emergencies/" + emergency + "/resolve").header(HttpHeaders.AUTHORIZATION, bearer(again)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.endedElsewhere").value(false));
@@ -366,10 +364,7 @@ class DeviceSessionApiIntegrationTest {
         long emergency = json(mockMvc.perform(post("/api/emergencies")
                         .header(HttpHeaders.AUTHORIZATION, bearer(alice.accessToken())))
                 .andExpect(status().isCreated())).get("id").asLong();
-        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("email", bob.email(), "password", PASSWORD,
-                                "previousRefreshToken", alice.refreshToken()))))
-                .andExpect(status().isOk());
+        com.safesphere.backend.support.TestAccounts.signIn(mockMvc, objectMapper, bob.email(), alice.refreshToken());
         assertThat(revokedReason(alice)).isNull();
         assertThat(jdbc.queryForObject("SELECT started_session FROM emergency_events WHERE id = ?", String.class, emergency))
                 .isEqualTo(claims(alice.accessToken()).get("sid").asText());
@@ -438,17 +433,16 @@ class DeviceSessionApiIntegrationTest {
         return "Bearer error=\"invalid_token\", error_description=\"" + reason + "\"";
     }
 
-    /** V25: sign-up, e-mail verified, first sign-in (sign-up itself no longer starts a session). */
+    /** Phase N2: sign-up (with a ticket) is the first sign-in. */
     private Session register(String email) throws Exception {
         JsonNode body = com.safesphere.backend.support.TestAccounts.registerVerifiedAndLogin(mockMvc, objectMapper,
                 "Test User", email);
         return new Session(email, body.get("accessToken").asText(), body.get("refreshToken").asText());
     }
 
+    /** Phase N2: the same account signs in on another phone (a new code). */
     private Session login(String email) throws Exception {
-        JsonNode body = json(mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("email", email, "password", PASSWORD))))
-                .andExpect(status().isOk()));
+        JsonNode body = com.safesphere.backend.support.TestAccounts.signIn(mockMvc, objectMapper, email, null);
         return new Session(email, body.get("accessToken").asText(), body.get("refreshToken").asText());
     }
 
@@ -460,7 +454,7 @@ class DeviceSessionApiIntegrationTest {
     private Session refreshOk(String refreshToken) throws Exception {
         JsonNode body = json(refresh(refreshToken).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tokenType").value("Bearer")));
-        return new Session(body.get("user").get("email").asText(), body.get("accessToken").asText(),
+        return new Session(body.get("user").get("id").asText(), body.get("accessToken").asText(),
                 body.get("refreshToken").asText());
     }
 

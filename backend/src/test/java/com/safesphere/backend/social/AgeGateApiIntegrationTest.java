@@ -1,6 +1,5 @@
 package com.safesphere.backend.social;
 
-import static com.safesphere.backend.support.TestAccounts.PASSWORD;
 import static com.safesphere.backend.support.TestAccounts.bearer;
 import static com.safesphere.backend.support.TestAccounts.registerAndGetToken;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,7 +58,7 @@ class AgeGateApiIntegrationTest {
         register(email, today().minusYears(18).plusDays(1).toString())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("You must be 18 or older to use this app"));
-        assertThat(users.findByEmail(email)).isEmpty();
+        assertThat(account(email)).isEmpty();
     }
 
     @Test
@@ -67,9 +66,8 @@ class AgeGateApiIntegrationTest {
         String email = email();
         register(email, today().minusYears(18).toString())
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value("PHONE_VERIFICATION_REQUIRED"));
-        // Sign-up answers with a phone challenge, not the user; the confirmation is on the account itself.
-        assertThat(users.findByEmail(email).orElseThrow().isAgeConfirmed()).isTrue();
+                .andExpect(jsonPath("$.user.ageConfirmed").value(true));
+        assertThat(account(email).orElseThrow().isAgeConfirmed()).isTrue();
     }
 
     @Test
@@ -97,7 +95,8 @@ class AgeGateApiIntegrationTest {
     void anAccountFromBeforeV20_confirmsOnce_andKeepsItsFirstConfirmationTime() throws Exception {
         String email = email();
         String token = registerAndGetToken(mockMvc, objectMapper, email);
-        jdbc.update("UPDATE users SET age_confirmed_at = NULL WHERE email = ?", email);
+        jdbc.update("UPDATE users SET age_confirmed_at = NULL WHERE phone_e164 = ?",
+                com.safesphere.backend.support.TestAccounts.e164For(email));
         me(token).andExpect(jsonPath("$.ageConfirmed").value(false));
 
         confirm(token, today().minusYears(17).toString()).andExpect(status().isBadRequest());
@@ -105,11 +104,11 @@ class AgeGateApiIntegrationTest {
 
         confirm(token, "1990-01-01").andExpect(status().isNoContent());
         me(token).andExpect(jsonPath("$.ageConfirmed").value(true));
-        LocalDateTime first = users.findByEmail(email).orElseThrow().getAgeConfirmedAt();
+        LocalDateTime first = account(email).orElseThrow().getAgeConfirmedAt();
 
         clock.advance(java.time.Duration.ofDays(3));
         confirm(token, "1990-01-01").andExpect(status().isNoContent());
-        assertThat(users.findByEmail(email).orElseThrow().getAgeConfirmedAt()).isEqualTo(first);
+        assertThat(account(email).orElseThrow().getAgeConfirmedAt()).isEqualTo(first);
     }
 
     @Test
@@ -119,12 +118,18 @@ class AgeGateApiIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    private ResultActions register(String email, String dateOfBirth) throws Exception {
-        Map<String, Object> body = new HashMap<>(Map.of("name", "Age Test", "email", email, "password", PASSWORD,
-                "phone", com.safesphere.backend.support.TestAccounts.phoneFor(email)));
+    /** Phase N2: sign-up with a ticket for [key]'s number (the code flow itself: PhoneSignInApiIntegrationTest). */
+    private ResultActions register(String key, String dateOfBirth) throws Exception {
+        String ticket = com.safesphere.backend.support.TestAccounts.seedTicket(mockMvc,
+                com.safesphere.backend.support.TestAccounts.e164For(key));
+        Map<String, Object> body = new HashMap<>(Map.of("name", "Age Test", "ticket", ticket));
         if (dateOfBirth != null) body.put("dateOfBirth", dateOfBirth);
-        return mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+        return mockMvc.perform(post("/api/auth/sign-up").contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)));
+    }
+
+    private java.util.Optional<com.safesphere.backend.user.entity.User> account(String key) {
+        return users.findByPhoneE164AndPhoneVerifiedAtIsNotNull(com.safesphere.backend.support.TestAccounts.e164For(key));
     }
 
     private ResultActions confirm(String token, String dateOfBirth) throws Exception {

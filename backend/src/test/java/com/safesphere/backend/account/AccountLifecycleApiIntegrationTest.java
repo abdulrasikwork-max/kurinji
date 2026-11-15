@@ -50,7 +50,7 @@ import org.springframework.test.web.servlet.ResultActions;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import(MutableClockConfig.class)
+@Import({MutableClockConfig.class, com.safesphere.backend.support.CapturingOtpSenderConfig.class})
 class AccountLifecycleApiIntegrationTest {
 
     private static final String NEW_PASSWORD = "a-new-long-passphrase";
@@ -62,6 +62,7 @@ class AccountLifecycleApiIntegrationTest {
     @Autowired private UserRepository users;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private JwtEncoder jwtEncoder;
+    @Autowired private com.safesphere.backend.support.CapturingOtpSenderConfig.CapturingOtpSender sms;
 
     @BeforeEach
     @AfterEach
@@ -75,8 +76,7 @@ class AccountLifecycleApiIntegrationTest {
     void passwordChange_endsEveryOtherSession_andReturnsAWorkingToken() throws Exception {
         String email = email();
         String first = registerAndGetToken(mockMvc, objectMapper, email);
-        String second = login(email, PASSWORD).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        String secondToken = objectMapper.readTree(second).get("accessToken").asText();
+        String secondToken = signedIn(email).get("accessToken").asText();
 
         JsonNode changed = json(changePassword(first, PASSWORD, NEW_PASSWORD).andExpect(status().isOk()));
         String fresh = changed.get("accessToken").asText();
@@ -90,9 +90,7 @@ class AccountLifecycleApiIntegrationTest {
                             "Bearer error=\"invalid_token\", error_description=\"credentials_changed\""));
         }
         mockMvc.perform(get("/api/users/me").header(HttpHeaders.AUTHORIZATION, bearer(fresh))).andExpect(status().isOk());
-        login(email, PASSWORD).andExpect(status().isUnauthorized());
-        String later = objectMapper.readTree(login(email, NEW_PASSWORD).andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString()).get("accessToken").asText();
+        String later = signedIn(email).get("accessToken").asText();
         mockMvc.perform(get("/api/safety-contacts").header(HttpHeaders.AUTHORIZATION, bearer(later))).andExpect(status().isOk());
     }
 
@@ -207,8 +205,8 @@ class AccountLifecycleApiIntegrationTest {
                 .andExpect(jsonPath("$.deletionRequestedAt").value(scheduled.get("deletionRequestedAt").asText()));
         String email = json(mockMvc.perform(get("/api/users/me").header(HttpHeaders.AUTHORIZATION, bearer(token))))
                 .get("email").asText();
-        login(email, PASSWORD).andExpect(status().isOk())
-                .andExpect(jsonPath("$.user.deletionDueAt").value(scheduled.get("deletionDueAt").asText()));
+        assertThat(signedIn(email).get("user").get("deletionDueAt").asText())
+                .isEqualTo(scheduled.get("deletionDueAt").asText());
         // During the grace period everything keeps working, SOS included.
         long during = startEmergency(token);
         resolve(token, during);
@@ -262,8 +260,8 @@ class AccountLifecycleApiIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE,
                         "Bearer error=\"invalid_token\", error_description=\"account_deleted\""));
-        login(email, PASSWORD).andExpect(status().isUnauthorized());
-        registerAndGetToken(mockMvc, objectMapper, email); // the address is free again
+        assertThat(codeAnswer(email)).isEqualTo("SIGN_UP_NEEDED"); // the number has no account any more
+        registerAndGetToken(mockMvc, objectMapper, email); // the number is free again
 
         // The other person's data is untouched.
         mockMvc.perform(get("/api/safety-contacts").header(HttpHeaders.AUTHORIZATION, bearer(other)))
@@ -321,9 +319,8 @@ class AccountLifecycleApiIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE,
                         "Bearer error=\"invalid_token\", error_description=\"account_deleted\""));
-        login(email, PASSWORD).andExpect(status().isUnauthorized());
-        login("erased-" + userId + "@erased.invalid", PASSWORD).andExpect(status().isUnauthorized());
-        registerAndGetToken(mockMvc, objectMapper, email); // the original address is free again
+        assertThat(codeAnswer(email)).isEqualTo("SIGN_UP_NEEDED"); // a tombstone keeps no number
+        registerAndGetToken(mockMvc, objectMapper, email); // the number is free again
     }
 
     // ---- helpers ----------------------------------------------------------------------------------------------
@@ -332,9 +329,20 @@ class AccountLifecycleApiIntegrationTest {
         return "account." + UUID.randomUUID().toString().substring(0, 12) + "@example.com";
     }
 
-    private ResultActions login(String email, String password) throws Exception {
-        return mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
-                .content(body(Map.of("email", email, "password", password))));
+    /** Phase N2: [key]'s account signs in again with a texted code; the session part of the answer. */
+    private JsonNode signedIn(String key) throws Exception {
+        return com.safesphere.backend.support.TestAccounts.signIn(mockMvc, objectMapper, key, null);
+    }
+
+    /** Phase N2: what the right code for [key]'s number leads to (SIGNED_IN or SIGN_UP_NEEDED). */
+    private String codeAnswer(String key) throws Exception {
+        String phone = com.safesphere.backend.support.TestAccounts.e164For(key);
+        JsonNode challenge = json(mockMvc.perform(post("/api/auth/phone/start").contentType(MediaType.APPLICATION_JSON)
+                .content(body(Map.of("phone", phone)))).andExpect(status().isOk()));
+        String code = sms.lastCodeFor(phone);
+        return json(mockMvc.perform(post("/api/auth/phone/verify").contentType(MediaType.APPLICATION_JSON)
+                        .content(body(Map.of("challenge", challenge.get("challenge").asText(), "code", code))))
+                .andExpect(status().isOk())).get("status").asText();
     }
 
     private ResultActions changePassword(String token, String current, String next) throws Exception {

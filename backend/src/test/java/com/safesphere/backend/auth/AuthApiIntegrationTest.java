@@ -4,30 +4,26 @@ import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
-import com.safesphere.backend.user.entity.User;
+import com.safesphere.backend.support.TestAccounts;
 import com.safesphere.backend.user.repository.UserRepository;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 import javax.crypto.spec.SecretKeySpec;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -37,210 +33,50 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * End-to-end tests of the HTTP API: real controllers, real security filter chain, real BCrypt and JWT,
- * an in-memory database. They cover registration, hashing, login, JWT checks and the protected endpoint.
+ * End-to-end tests of the token side of the API: real controllers, real security filter chain, real JWT, an in-memory
+ * database. Accounts are made through the real sign-up (Phase N2; the code flow itself is PhoneSignInApiIntegrationTest).
+ * They cover the token a sign-up returns and every way a token is refused on a protected endpoint.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
 class AuthApiIntegrationTest {
 
-    private static final String PASSWORD = "correct-horse-battery";
     private static final String ISSUER = "https://safesphere.example";
 
     @Autowired private MockMvc mockMvc;
     @Autowired private UserRepository userRepository;
-    @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private JwtEncoder jwtEncoder;
     @Autowired private JwtDecoder jwtDecoder;
 
-    @BeforeEach
-    void cleanDatabase() {
-        userRepository.deleteAll();
-    }
-
-    // ---------------------------------------------------------------- registration
-
-    /** Phase 17B: sign-up creates an account that is not activated and starts NO session; a code goes to the phone. */
     @Test
-    void register_createsAccountWaitingForThePhoneCode_withoutAnySession() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("Asha Devi", "Asha@Example.com", PASSWORD)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value("PHONE_VERIFICATION_REQUIRED"))
-                .andExpect(jsonPath("$.challenge", not(emptyOrNullString())))
-                .andExpect(jsonPath("$.codeSent").value(true))
-                .andExpect(jsonPath("$.needsPhone").value(false))
-                .andExpect(jsonPath("$.phoneHint").value(org.hamcrest.Matchers.endsWith(
-                        com.safesphere.backend.support.TestAccounts.phoneFor("asha@example.com").substring(6))))
-                .andExpect(jsonPath("$.accessToken").doesNotExist())
-                .andExpect(jsonPath("$.refreshToken").doesNotExist())
-                .andExpect(jsonPath("$.token").doesNotExist())
-                .andExpect(jsonPath("$.user").doesNotExist())
-                .andExpect(jsonPath("$.passwordHash").doesNotExist());
-        User saved = userRepository.findByEmail("asha@example.com").orElseThrow();
-        assertFalse(saved.isActivated());
-        assertFalse(saved.isPhoneVerified());
-    }
+    void signUp_returnsAJwtWithTheUserIdAndExpiry_andNothingSecret() throws Exception {
+        JsonNode session = signUp("Asha Devi");
+        long userId = session.get("user").get("id").asLong();
 
-    @Test
-    void register_withoutAValidIndianMobileNumber_returns400() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(java.util.Map.of("name", "Asha", "email",
-                                "asha@example.com", "password", PASSWORD, "dateOfBirth",
-                                com.safesphere.backend.support.TestAccounts.ADULT_BIRTH_DATE, "phone", "12345"))))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("PHONE_INVALID"));
-        assertTrue(userRepository.findByEmail("asha@example.com").isEmpty());
-    }
-
-    @Test
-    void register_storesBcryptHash_notThePlainPassword() throws Exception {
-        register("Asha Devi", "asha@example.com", PASSWORD);
-
-        User saved = userRepository.findByEmail("asha@example.com").orElseThrow();
-        assertNotEquals(PASSWORD, saved.getPasswordHash());
-        assertTrue(saved.getPasswordHash().startsWith("$2"), "expected a BCrypt hash");
-        assertTrue(passwordEncoder.matches(PASSWORD, saved.getPasswordHash()));
-        assertFalse(passwordEncoder.matches("some-other-password", saved.getPasswordHash()));
-    }
-
-    @Test
-    void register_normalizesEmailToLowerCase() throws Exception {
-        register("Asha Devi", "Asha@Example.COM", PASSWORD);
-
-        assertTrue(userRepository.findByEmail("asha@example.com").isPresent());
-    }
-
-    @Test
-    void register_duplicateEmail_returns409_evenWithDifferentCase() throws Exception {
-        register("Asha Devi", "asha@example.com", PASSWORD);
-
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("Other Person", "ASHA@example.com", PASSWORD)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.message").value("An account with this email already exists"));
-    }
-
-    @Test
-    void register_invalidInput_returns400WithFieldErrors() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("", "not-an-email", "short")))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Validation failed"))
-                .andExpect(jsonPath("$.fieldErrors.name").exists())
-                .andExpect(jsonPath("$.fieldErrors.email").exists())
-                .andExpect(jsonPath("$.fieldErrors.password").exists());
-    }
-
-    @Test
-    void register_malformedJson_returns400() throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{ this is not json"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400));
-    }
-
-    @Test
-    void register_passwordLongerThan72Bytes_returns400() throws Exception {
-        // 72 characters passes @Size; 72 two-byte characters is 144 bytes, which BCrypt cannot handle.
-        String tooManyBytes = "é".repeat(72);
-
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson("Asha Devi", "asha@example.com", tooManyBytes)))
-                .andExpect(status().isBadRequest());
-    }
-
-    // ---------------------------------------------------------------- login
-
-    @Test
-    void login_withCorrectCredentials_returnsJwtWithUserIdAndExpiry() throws Exception {
-        register("Asha Devi", "asha@example.com", PASSWORD);
-        Long userId = userRepository.findByEmail("asha@example.com").orElseThrow().getId();
-
-        MvcResult result = mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("asha@example.com", PASSWORD)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken", not(emptyOrNullString())))
-                .andExpect(jsonPath("$.user.email").value("asha@example.com"))
-                .andReturn();
-
-        String token = tokenFrom(result);
-        Jwt jwt = jwtDecoder.decode(token);
+        Jwt jwt = jwtDecoder.decode(session.get("accessToken").asText());
         assertEquals(String.valueOf(userId), jwt.getSubject());
         assertEquals(ISSUER, jwt.getIssuer().toString());
         assertTrue(jwt.getExpiresAt().isAfter(Instant.now()));
-        // The token must not carry anything sensitive.
-        assertFalse(jwt.getClaims().containsKey("password"));
-        assertFalse(jwt.getClaims().containsKey("passwordHash"));
+        for (String secret : new String[] {"password", "passwordHash", "phone", "phoneE164", "email"}) {
+            assertFalse(jwt.getClaims().containsKey(secret), secret);
+        }
     }
 
     @Test
-    void login_isCaseInsensitiveForEmail() throws Exception {
-        register("Asha Devi", "asha@example.com", PASSWORD);
-
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("ASHA@Example.com", PASSWORD)))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void login_wrongPassword_returns401_withGenericMessage() throws Exception {
-        register("Asha Devi", "asha@example.com", PASSWORD);
-
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("asha@example.com", "wrong-password")))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Invalid email or password"))
-                .andExpect(jsonPath("$.accessToken").doesNotExist());
-    }
-
-    @Test
-    void login_unknownEmail_returnsExactlyTheSame401AsWrongPassword() throws Exception {
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("nobody@example.com", PASSWORD)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Invalid email or password"));
-    }
-
-    @Test
-    void login_missingFields_returns400() throws Exception {
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fieldErrors.email").exists())
-                .andExpect(jsonPath("$.fieldErrors.password").exists());
-    }
-
-    // ---------------------------------------------------------------- protected endpoint
-
-    @Test
-    void me_withValidToken_returnsProfileWithoutSecrets() throws Exception {
-        String token = register("Asha Devi", "asha@example.com", PASSWORD);
+    void me_withValidToken_returnsTheAccountWithoutSecrets() throws Exception {
+        String token = signUp("Asha Devi").get("accessToken").asText();
 
         mockMvc.perform(get("/api/users/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.name").value("Asha Devi"))
-                .andExpect(jsonPath("$.email").value("asha@example.com"))
                 .andExpect(jsonPath("$.createdAt", not(emptyOrNullString())))
                 .andExpect(jsonPath("$.passwordHash").doesNotExist())
-                .andExpect(jsonPath("$.password").doesNotExist());
+                .andExpect(jsonPath("$.password").doesNotExist())
+                .andExpect(jsonPath("$.phoneE164").doesNotExist());
     }
 
     @Test
@@ -258,8 +94,7 @@ class AuthApiIntegrationTest {
 
     @Test
     void me_withExpiredToken_returns401() throws Exception {
-        register("Asha Devi", "asha@example.com", PASSWORD);
-        Long userId = userRepository.findByEmail("asha@example.com").orElseThrow().getId();
+        long userId = signUp("Asha Devi").get("user").get("id").asLong();
         Instant now = Instant.now();
         String expired = sign(jwtEncoder, userId, now.minus(2, ChronoUnit.HOURS), now.minus(1, ChronoUnit.HOURS));
 
@@ -269,8 +104,7 @@ class AuthApiIntegrationTest {
 
     @Test
     void me_withTokenSignedByAnotherKey_returns401() throws Exception {
-        register("Asha Devi", "asha@example.com", PASSWORD);
-        Long userId = userRepository.findByEmail("asha@example.com").orElseThrow().getId();
+        long userId = signUp("Asha Devi").get("user").get("id").asLong();
         byte[] otherKey = "a-completely-different-secret-key-0123456789".getBytes(StandardCharsets.UTF_8);
         JwtEncoder attackerEncoder = new NimbusJwtEncoder(new ImmutableSecret<>(new SecretKeySpec(otherKey, "HmacSHA256")));
         Instant now = Instant.now();
@@ -282,10 +116,11 @@ class AuthApiIntegrationTest {
 
     @Test
     void me_withValidTokenOfDeletedUser_returns401() throws Exception {
-        String token = register("Asha Devi", "asha@example.com", PASSWORD);
-        userRepository.deleteAll();
+        JsonNode session = signUp("Asha Devi");
+        userRepository.deleteById(session.get("user").get("id").asLong());
 
-        mockMvc.perform(get("/api/users/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+        mockMvc.perform(get("/api/users/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + session.get("accessToken").asText()))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -297,41 +132,12 @@ class AuthApiIntegrationTest {
 
     // ---------------------------------------------------------------- helpers
 
-    /**
-     * Registers a user through the real endpoint, marks the phone verified (Phase 17B; the code flow itself is in
-     * PhoneVerificationApiIntegrationTest), signs in and returns the JWT.
-     */
-    private String register(String name, String email, String password) throws Exception {
-        mockMvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson(name, email, password)))
-                .andExpect(status().isCreated());
-        com.safesphere.backend.support.TestAccounts.markVerified(mockMvc, email);
-        MvcResult result = mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson(email, password)))
-                .andExpect(status().isOk())
-                .andReturn();
-        return tokenFrom(result);
+    private JsonNode signUp(String name) throws Exception {
+        return TestAccounts.registerVerifiedAndLogin(mockMvc, objectMapper, name,
+                "auth." + UUID.randomUUID() + "@example.com");
     }
 
-    private String tokenFrom(MvcResult result) throws Exception {
-        JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
-        return json.get("accessToken").asText();
-    }
-
-    private String registerJson(String name, String email, String password) throws Exception {
-        return objectMapper.writeValueAsString(
-                java.util.Map.of("name", name, "email", email, "password", password,
-                        "dateOfBirth", com.safesphere.backend.support.TestAccounts.ADULT_BIRTH_DATE,
-                        "phone", com.safesphere.backend.support.TestAccounts.phoneFor(email)));
-    }
-
-    private String loginJson(String email, String password) throws Exception {
-        return objectMapper.writeValueAsString(java.util.Map.of("email", email, "password", password));
-    }
-
-    private static String sign(JwtEncoder encoder, Long userId, Instant issuedAt, Instant expiresAt) {
+    private static String sign(JwtEncoder encoder, long userId, Instant issuedAt, Instant expiresAt) {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(ISSUER)
                 .subject(String.valueOf(userId))

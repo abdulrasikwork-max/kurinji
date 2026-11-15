@@ -25,19 +25,21 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 /**
- * Phase 7 sign-in / sign-up abuse limits through the real endpoints, with small limits so the tests stay short.
- * Every request carries its own network address (MockMvc remoteAddr), like real clients on different networks.
+ * Sign-in / sign-up abuse limits through the real endpoints, with small limits so the tests stay short. Every request
+ * carries its own network address (MockMvc remoteAddr), like real clients on different networks.
+ * Phase N2: the password limits are gone with the password; what is left is new accounts per address (Phase 7), wrong
+ * codes per address, and codes per number per day (Phase 17B, anti SMS bombing).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
-        "app.auth.login-failures-per-account=3",
-        "app.auth.login-failures-per-address=5",
-        "app.auth.registrations-per-address=2"
+        "app.auth.registrations-per-address=2",
+        "app.otp.verify-failures-per-address=3",
+        "app.otp.sends-per-number-per-day=2",
+        "app.otp.resend-cooldown=1s"
 })
 class AuthThrottleApiIntegrationTest {
 
-    private static final String TOO_MANY_SIGN_INS = "Too many sign-in attempts. Please wait a few minutes and try again.";
     private static final AtomicInteger ADDRESSES = new AtomicInteger(1);
 
     @TestConfiguration
@@ -59,58 +61,39 @@ class AuthThrottleApiIntegrationTest {
     }
 
     @Test
-    void wrongPasswordsForOneAccount_pauseThatAccount_evenForTheRightPassword_untilTheWindowEnds() throws Exception {
-        String email = register();
-        for (int i = 0; i < 3; i++) login(email, "wrong-password-" + i, newAddress()).andExpect(status().isUnauthorized());
-
-        login(email, TestAccounts.PASSWORD, newAddress()).andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.message").value(TOO_MANY_SIGN_INS));
-        login(register(), TestAccounts.PASSWORD, newAddress()).andExpect(status().isOk()); // other people unaffected
-
-        clock.advance(Duration.ofMinutes(15));
-        login(email, TestAccounts.PASSWORD, newAddress()).andExpect(status().isOk());
-    }
-
-    @Test
-    void unknownEmail_isLimitedExactlyLikeAKnownOne_soTheLimitRevealsNothing() throws Exception {
-        String unknown = "nobody." + UUID.randomUUID() + "@example.com";
-        for (int i = 0; i < 3; i++) login(unknown, "whatever-password", newAddress()).andExpect(status().isUnauthorized());
-        login(unknown, "whatever-password", newAddress()).andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.message").value(TOO_MANY_SIGN_INS));
-    }
-
-    @Test
-    void aSuccessfulSignIn_clearsTheAccountCounter() throws Exception {
-        String email = register();
-        login(email, "wrong-1", newAddress()).andExpect(status().isUnauthorized());
-        login(email, "wrong-2", newAddress()).andExpect(status().isUnauthorized());
-        login(email, TestAccounts.PASSWORD, newAddress()).andExpect(status().isOk());
-        login(email, "wrong-3", newAddress()).andExpect(status().isUnauthorized());
-        login(email, "wrong-4", newAddress()).andExpect(status().isUnauthorized());
-        login(email, TestAccounts.PASSWORD, newAddress()).andExpect(status().isOk());
-    }
-
-    @Test
-    void oneAddressTryingManyAccounts_isStopped_otherAddressesAreNot() throws Exception {
-        String stuffer = newAddress();
-        for (int i = 0; i < 5; i++) {
-            login("victim" + i + "." + UUID.randomUUID() + "@example.com", "guess", stuffer).andExpect(status().isUnauthorized());
-        }
-        String someone = register();
-        login(someone, TestAccounts.PASSWORD, stuffer).andExpect(status().isTooManyRequests());
-        login(someone, TestAccounts.PASSWORD, newAddress()).andExpect(status().isOk());
-    }
-
-    @Test
     void accountFarmingFromOneAddress_isLimited() throws Exception {
         String farm = newAddress();
-        registerFrom(farm).andExpect(status().isCreated());
-        registerFrom(farm).andExpect(status().isCreated());
-        registerFrom(farm).andExpect(status().isTooManyRequests())
+        signUpFrom(farm).andExpect(status().isCreated());
+        signUpFrom(farm).andExpect(status().isCreated());
+        signUpFrom(farm).andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.message").value("Too many new accounts from this network. Please try again later."));
-        registerFrom(newAddress()).andExpect(status().isCreated());
+        signUpFrom(newAddress()).andExpect(status().isCreated());
         clock.advance(Duration.ofHours(1));
-        registerFrom(farm).andExpect(status().isCreated());
+        signUpFrom(farm).andExpect(status().isCreated());
+    }
+
+    @Test
+    void guessingCodesFromOneAddress_isStopped_otherAddressesAreNot() throws Exception {
+        String guesser = newAddress();
+        for (int i = 0; i < 3; i++) {
+            verifyFrom(guesser).andExpect(status().isBadRequest());
+        }
+        verifyFrom(guesser).andExpect(status().isTooManyRequests()).andExpect(jsonPath("$.code").value("OTP_WAIT"));
+        verifyFrom(newAddress()).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void oneNumber_getsALimitedNumberOfTextsPerDay_whoeverAsks() throws Exception {
+        String phone = "9" + String.format("%09d", Math.floorMod(UUID.randomUUID().getMostSignificantBits(), 1_000_000_000L));
+        startFrom(newAddress(), phone).andExpect(status().isOk());
+        // A new code is made only when the old one is dead: make it expire, then ask again from elsewhere.
+        clock.advance(Duration.ofMinutes(31));
+        startFrom(newAddress(), phone).andExpect(status().isOk());
+        clock.advance(Duration.ofMinutes(31));
+        startFrom(newAddress(), phone).andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("OTP_WAIT"));
+        clock.advance(Duration.ofDays(1));
+        startFrom(newAddress(), phone).andExpect(status().isOk());
     }
 
     // ---- Helpers ---------------------------------------------------------------------------------------------------
@@ -120,31 +103,25 @@ class AuthThrottleApiIntegrationTest {
         return "10." + (n / 65536 % 256) + "." + (n / 256 % 256) + "." + (n % 256);
     }
 
-    private String register() throws Exception {
-        String email = "throttle." + UUID.randomUUID() + "@example.com";
-        registerFrom(newAddress(), email).andExpect(status().isCreated());
-        TestAccounts.markVerified(mockMvc, email); // Phase 17B: sign-in needs a verified phone
-        return email;
+    private ResultActions signUpFrom(String address) throws Exception {
+        String ticket = TestAccounts.seedTicket(mockMvc, TestAccounts.e164For("farm." + UUID.randomUUID()));
+        String body = objectMapper.writeValueAsString(Map.of("ticket", ticket, "name", "Test User",
+                "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE));
+        return send("/api/auth/sign-up", body, address);
     }
 
-    private ResultActions registerFrom(String address) throws Exception {
-        return registerFrom(address, "farm." + UUID.randomUUID() + "@example.com");
+    private ResultActions verifyFrom(String address) throws Exception {
+        String challenge = (UUID.randomUUID().toString() + UUID.randomUUID()).replace("-", "").substring(0, 43);
+        return send("/api/auth/phone/verify",
+                objectMapper.writeValueAsString(Map.of("challenge", challenge, "code", "123456")), address);
     }
 
-    private ResultActions registerFrom(String address, String email) throws Exception {
-        String body = objectMapper.writeValueAsString(Map.of("name", "Test User", "email", email,
-                "password", TestAccounts.PASSWORD, "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE,
-                "phone", TestAccounts.phoneFor(email)));
-        return mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(body)
-                .with(request -> {
-                    request.setRemoteAddr(address);
-                    return request;
-                }));
+    private ResultActions startFrom(String address, String phone) throws Exception {
+        return send("/api/auth/phone/start", objectMapper.writeValueAsString(Map.of("phone", phone)), address);
     }
 
-    private ResultActions login(String email, String password, String address) throws Exception {
-        String body = objectMapper.writeValueAsString(Map.of("email", email, "password", password));
-        return mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content(body)
+    private ResultActions send(String path, String body, String address) throws Exception {
+        return mockMvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(body)
                 .with(request -> {
                     request.setRemoteAddr(address);
                     return request;

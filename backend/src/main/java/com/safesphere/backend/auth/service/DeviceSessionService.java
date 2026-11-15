@@ -70,7 +70,7 @@ public class DeviceSessionService {
         this.clock = clock;
     }
 
-    /** A new sign-in for [user]: the password was just typed. Runs in the caller's transaction. */
+    /** A new sign-in for [user]: the code was just entered. Runs in the caller's transaction. */
     @Transactional
     public Started start(User user) {
         LocalDateTime now = now();
@@ -106,8 +106,8 @@ public class DeviceSessionService {
             session.revoke(SessionRevocation.ACCOUNT_DISABLED, now);
             return new RefreshOutcome.Refused(ActiveAccountCheck.ACCOUNT_UNAVAILABLE);
         }
-        // V25 / Phase 17B: an account never activated gets no session; refuse a refresh anyway (defence in depth).
-        if (!user.isActivated()) return new RefreshOutcome.Refused(ActiveAccountCheck.ACCOUNT_UNAVAILABLE);
+        // Phase N2 (N-22): an account without a verified number gets no session.
+        if (!user.isPhoneVerified()) return new RefreshOutcome.Refused(ActiveAccountCheck.ACCOUNT_UNAVAILABLE);
         String secret = RefreshSecrets.newSecret();
         session.rotate(RefreshSecrets.hash(secret), now, now.plus(properties.refreshIdleTimeout()));
         return new RefreshOutcome.Refreshed(user, session.getSessionId(),

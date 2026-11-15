@@ -16,8 +16,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
  *
  *   - its account no longer exists or was erased            -> error_description "account_deleted"
  *   - its account is disabled                               -> "account_unavailable"
- *   - its account's e-mail is not verified (V25)            -> "account_unavailable" (never issued; defence in depth)
- *   - its credentials stamp ("cca") is not the current one  -> "credentials_changed" (the password was changed)
+ *   - its account has no verified phone number (N2)         -> "account_unavailable"
+ *   - its credentials stamp ("cca") is not the current one  -> "credentials_changed" (signed out everywhere else)
  *   - its sign-in ("sid") is a device session that ended   -> "session_revoked" (Phase 11 C1: signed out on that
  *     phone, or a refresh secret was reused). A "sid" without a session row (a sign-in from before V19) is accepted.
  *
@@ -55,9 +55,9 @@ public class ActiveAccountCheck implements OAuth2TokenValidator<Jwt> {
         if (found.isEmpty() || found.get().isErased()) return fail(ACCOUNT_DELETED);
         User user = found.get();
         if (!user.isEnabled()) return fail(ACCOUNT_UNAVAILABLE);
-        // V25 / Phase 17B: no token is ever issued before the account is activated; refuse one anyway (defence in depth).
-        // Accounts from before 17B without a phone stay activated (by e-mail): their sessions keep working.
-        if (!user.isActivated()) return fail(ACCOUNT_UNAVAILABLE);
+        // Phase N2 (decision N-22): only an account with a verified number may hold a session. Accounts from before 17B
+        // that never verified one are left in the database but cannot be used any more (no password to sign in with).
+        if (!user.isPhoneVerified()) return fail(ACCOUNT_UNAVAILABLE);
         Object claim = token.getClaims().get(STAMP_CLAIM);
         Long stamp;
         if (claim == null) {

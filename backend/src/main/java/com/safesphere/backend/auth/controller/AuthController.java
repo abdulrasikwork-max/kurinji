@@ -1,15 +1,15 @@
 package com.safesphere.backend.auth.controller;
 
 import com.safesphere.backend.auth.dto.AuthResponse;
-import com.safesphere.backend.auth.dto.LoginRequest;
 import com.safesphere.backend.auth.dto.PhoneVerificationDtos.ChangeRequest;
-import com.safesphere.backend.auth.dto.PhoneVerificationDtos.PhoneChallengeResponse;
+import com.safesphere.backend.auth.dto.PhoneVerificationDtos.CodeChallengeResponse;
 import com.safesphere.backend.auth.dto.PhoneVerificationDtos.ResendRequest;
+import com.safesphere.backend.auth.dto.PhoneVerificationDtos.SignUpRequest;
 import com.safesphere.backend.auth.dto.PhoneVerificationDtos.StartRequest;
 import com.safesphere.backend.auth.dto.PhoneVerificationDtos.VerifyRequest;
+import com.safesphere.backend.auth.dto.PhoneVerificationDtos.VerifyResponse;
 import com.safesphere.backend.auth.dto.RefreshRequest;
-import com.safesphere.backend.auth.dto.RegisterRequest;
-import com.safesphere.backend.auth.phone.PhoneVerificationService;
+import com.safesphere.backend.auth.phone.PhoneCodeService;
 import com.safesphere.backend.auth.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -22,53 +22,50 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * HTTP layer only: receives JSON, validates it with @Valid, delegates to AuthService. The client's network address
- * (TCP peer, never a forwarded header) is passed on only for the in-memory abuse limits.
+ * (TCP peer, never a forwarded header unless the production proxy setting says so) is passed on only for the
+ * in-memory abuse limits. Phase N2: no e-mail and no password anywhere; a phone number and a texted code are the
+ * only way in.
  */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthService authService;
-    private final PhoneVerificationService phoneVerification;
+    private final PhoneCodeService phoneCodes;
 
-    public AuthController(AuthService authService, PhoneVerificationService phoneVerification) {
+    public AuthController(AuthService authService, PhoneCodeService phoneCodes) {
         this.authService = authService;
-        this.phoneVerification = phoneVerification;
+        this.phoneCodes = phoneCodes;
     }
 
-    /** Phase 17B: 201 PHONE_VERIFICATION_REQUIRED and no session; the account works once the texted code is entered. */
-    @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    public PhoneChallengeResponse register(@Valid @RequestBody RegisterRequest request, HttpServletRequest http) {
-        return authService.register(request, http.getRemoteAddr());
-    }
-
-    @PostMapping("/login")
-    public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
-        return authService.login(request, http.getRemoteAddr());
-    }
-
-    /** Phase 17B: e-mail + password of an account without a verified phone (interrupted sign-up, older account). */
+    /** N2: a code for this number; the same answer whether or not it has an account. */
     @PostMapping("/phone/start")
-    public PhoneChallengeResponse startPhone(@Valid @RequestBody StartRequest request, HttpServletRequest http) {
-        return authService.startPhoneVerification(request, http.getRemoteAddr());
+    public CodeChallengeResponse start(@Valid @RequestBody StartRequest request, HttpServletRequest http) {
+        return authService.startSignIn(request.phone(), http.getRemoteAddr());
     }
 
-    /** Phase 17B: the right code verifies the number and signs in (the same answer as a sign-in). */
+    /** N2: the right code signs in (SIGNED_IN) or, for a number without an account, gives a ticket (SIGN_UP_NEEDED). */
     @PostMapping("/phone/verify")
-    public AuthResponse verifyPhone(@Valid @RequestBody VerifyRequest request, HttpServletRequest http) {
-        return authService.verifyPhone(request, http.getRemoteAddr());
+    public VerifyResponse verify(@Valid @RequestBody VerifyRequest request, HttpServletRequest http) {
+        return authService.verify(request, http.getRemoteAddr());
     }
 
     @PostMapping("/phone/resend")
-    public PhoneChallengeResponse resendCode(@Valid @RequestBody ResendRequest request, HttpServletRequest http) {
-        return phoneVerification.resend(request.challenge(), http.getRemoteAddr());
+    public CodeChallengeResponse resendCode(@Valid @RequestBody ResendRequest request, HttpServletRequest http) {
+        return phoneCodes.resend(request.challenge(), http.getRemoteAddr());
     }
 
-    /** Phase 17B: another number before the first one was verified (a typo, a lost SIM). */
+    /** Another number before the code was entered (a typo). */
     @PostMapping("/phone/change")
-    public PhoneChallengeResponse changeNumber(@Valid @RequestBody ChangeRequest request, HttpServletRequest http) {
-        return phoneVerification.change(request.challenge(), request.phone(), http.getRemoteAddr());
+    public CodeChallengeResponse changeNumber(@Valid @RequestBody ChangeRequest request, HttpServletRequest http) {
+        return phoneCodes.change(request.challenge(), request.phone(), http.getRemoteAddr());
+    }
+
+    /** N2: the ticket, a real name and an adult date of birth create the account and sign it in. */
+    @PostMapping("/sign-up")
+    @ResponseStatus(HttpStatus.CREATED)
+    public AuthResponse signUp(@Valid @RequestBody SignUpRequest request, HttpServletRequest http) {
+        return authService.signUp(request, http.getRemoteAddr());
     }
 
     /**

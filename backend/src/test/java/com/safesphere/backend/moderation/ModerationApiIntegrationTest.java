@@ -97,13 +97,13 @@ class ModerationApiIntegrationTest {
 
     @Test
     void aRoleCannotBeClaimedByTheClient() throws Exception {
-        String email = "claims.admin." + UUID.randomUUID() + "@example.com";
-        mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("name", "X", "email", email,
-                                "password", TestAccounts.PASSWORD, "role", "ADMIN",
-                                "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE, "phone", TestAccounts.phoneFor(email)))))
+        String phone = TestAccounts.e164For("claims.admin." + UUID.randomUUID());
+        String ticket = TestAccounts.seedTicket(mockMvc, phone);
+        mockMvc.perform(post("/api/auth/sign-up").contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Claims Admin", "ticket", ticket,
+                                "role", "ADMIN", "dateOfBirth", TestAccounts.ADULT_BIRTH_DATE))))
                 .andExpect(status().isCreated());
-        assertEquals(UserRole.USER, users.findByEmail(email).orElseThrow().getRole());
+        assertEquals(UserRole.USER, users.findByPhoneE164AndPhoneVerifiedAtIsNotNull(phone).orElseThrow().getRole());
     }
 
     @Test

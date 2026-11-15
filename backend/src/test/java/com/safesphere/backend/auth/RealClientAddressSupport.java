@@ -19,13 +19,14 @@ final class RealClientAddressSupport {
     private static final HttpClient CLIENT = HttpClient.newHttpClient();
 
     /**
-     * One failed sign-in for a brand-new, unknown e-mail address (so the per-ACCOUNT limit can never be the reason for a
-     * refusal), as if sent by a proxy on this machine that says the real client address is [forwardedFor].
-     * Returns the HTTP status: 401 = counted as a failed attempt, 429 = the address is over its limit.
+     * One failed sign-in (Phase N2: a code check with a challenge that does not exist, so no number's own limit can
+     * be the reason for a refusal), as if sent by a proxy on this machine that says the real client address is
+     * [forwardedFor]. Returns the HTTP status: 400 = counted as a failed attempt, 429 = the address is over its limit.
      */
     static int failedSignInFrom(int port, String forwardedFor) throws Exception {
-        String body = "{\"email\":\"nobody." + UUID.randomUUID() + "@example.com\",\"password\":\"not-the-password-1\"}";
-        HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/auth/login"))
+        String challenge = (UUID.randomUUID().toString() + UUID.randomUUID()).replace("-", "").substring(0, 43);
+        String body = "{\"challenge\":\"" + challenge + "\",\"code\":\"000000\"}";
+        HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/auth/phone/verify"))
                 .header("Content-Type", "application/json")
                 .header("X-Forwarded-For", forwardedFor)
                 .POST(HttpRequest.BodyPublishers.ofString(body))

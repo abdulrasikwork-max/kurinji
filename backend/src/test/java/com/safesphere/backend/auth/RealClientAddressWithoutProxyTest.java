@@ -14,8 +14,7 @@ import org.springframework.test.context.TestPropertySource;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {
         "server.forward-headers-strategy=none",
-        "app.auth.login-failures-per-address=3",
-        "app.auth.login-failures-per-account=1000"
+        "app.otp.verify-failures-per-address=3"
 })
 class RealClientAddressWithoutProxyTest {
 
@@ -25,7 +24,7 @@ class RealClientAddressWithoutProxyTest {
     @Test
     void aForgedForwardedAddressDoesNotEscapeTheLimit() throws Exception {
         for (int i = 0; i < 3; i++) {
-            assertThat(RealClientAddressSupport.failedSignInFrom(port, "198.51.100.10")).isEqualTo(401);
+            assertThat(RealClientAddressSupport.failedSignInFrom(port, "198.51.100.10")).isEqualTo(400);
         }
         assertThat(RealClientAddressSupport.failedSignInFrom(port, "198.51.100.10")).isEqualTo(429);
         assertThat(RealClientAddressSupport.failedSignInFrom(port, "203.0.113.77"))
