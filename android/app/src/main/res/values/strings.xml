@@ -1109,7 +1109,7 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- You → Safety -->
     <string name="safety_hub_section_tools">Tools</string>
-    <string name="safety_hub_walk_description">Check-ins while you travel, a look at the way before you go, and checks for unusual stops</string>
+    <string name="safety_hub_walk_description">Check-ins while you travel, and checks for unusual stops</string>
 
     <!-- Discover (F14) -->
     <string name="discover_masthead_no_city">Choose a city</string>

@@ -245,3 +245,42 @@ any deploy to the pilot (the laptop setup and the live jar stay exactly as they 
 - Not seen: everything else of the list above (sign-in, Home, a post, You, SOS countdown and real SOS, Safe Walk, the
   tile and shortcut, the vault notice). The session ended here; the steps to continue are at the top of `HANDOFF.md`.
 - Noted: onboarding page 1 still describes the old place-first product ("places, food, walks and things to try").
+
+### Manual check, continued (2026-11-15, fourth session): DONE on the emulator (manually verified there; no real phone)
+Set-up: the development backend from the jar (V32, "Successfully validated 32 migrations", started), the `irl_api33`
+emulator (API 33) without a window, a debug build whose only backend address is `http://10.0.2.2:8080/` (checked in
+the APK's dex files: no `api.irlnow.in`; `local.properties` put back at once, compared byte for byte). Read as screen
+text (`uiautomator dump`), three screenshots. A new development account was made for it (handle `n1check`, a made-up
+number, one made-up Safety Circle contact); it lives only in the development database.
+
+| Step | Seen |
+|---|---|
+| Onboarding | pages 1 to 3, then the Login screen (e-mail + password, as expected until N2) |
+| Sign-up | form, date picker, code screen ("We sent a 6-digit code to +91 ••••••1111"), code from the development OTP file accepted, profile form saved |
+| Home | the Home tab with Home · Share · You (no Explore); empty state "Choose a city" |
+| Post a text | composer (no "Good for" tags, no Save); "Only me" post created, its page shows the text, "Who can see it: Only me" |
+| You | name, handle, rows Your posts / Connections / Safety / Settings and more (no Saved, no vault) |
+| Safety hub | status "Nothing running", SOS tile, ready check, tools Safe Walk / Safety Circle / SOS options / Emergency History / Settings; no Nearby, no vault, no audio question |
+| Safety Circle | a contact added; automatic SMS shows "This device cannot send SMS" on this emulator |
+| SOS countdown + cancel | screenshot of "Starting emergency in 4/5" with CANCEL; CANCEL tapped: still idle 7 s later, no record made |
+| Real SOS | started (location and notification permission asked at the first start); active screen: Call 112, "Safety Circle has NOT been told automatically", location saved (±5 m); "Text" opened the SMS app with the prepared message (not sent) and the row then said "SMS app opened · check that you sent it"; "I'm safe" ended it ("Marked as safe"); two more ended with "False alarm" ("Emergency cancelled") |
+| Emergency history | 3 sessions (Resolved, Cancelled, Cancelled), none for the cancelled countdown; the detail screen shows times, last location, timeline; no evidence line |
+| Safe Walk | set-up (10 min), started; the one tracking service was in the foreground; "I'm OK" reset the timer to 09:59; "I've arrived" ended it ("You have arrived") and the service was gone |
+| Tile | added with `cmd statusbar add-tile`, clicked: the SOS screen opened (its countdown ran out while the screen was being read; ended as a false alarm) |
+| Shortcut | long-press on the IRL icon shows "SOS"; tapping it opened the 5 s countdown; CANCEL stopped it |
+| Permissions | `dumpsys package`: INTERNET, both locations, POST_NOTIFICATIONS, FOREGROUND_SERVICE(+_LOCATION), ACCESS_NETWORK_STATE, SEND_SMS; no RECORD_AUDIO, no microphone service, no USE_BIOMETRIC |
+| Backend log | no error; only the two expected start-up notices (development code file, automatic content check off) |
+
+Found and fixed (one string, guarded): the Safety hub's Safe Walk row still promised "a look at the way before you go"
+(Check the way, removed in A1). Now "Check-ins while you travel, and checks for unusual stops"; `HonestyTextsTest` checks
+it. After the fix: Android **766 run, 0 failures, 0 errors, 0 skipped**; `assembleDebug` OK; lint **0 errors, 91
+warnings**. The corrected row was not looked at on the screen again (text change only).
+
+Observed, NOT changed (for N6, the safety trim; a decision, not a bug): the 5 s countdown keeps running while the
+first-time location and notification permission dialogs cover the screen, so on the very first SOS the person cannot
+reach CANCEL in time; the SOS then starts (as an SOS should). Asking those permissions before the countdown (or pausing
+it while a system dialog is up) is worth weighing in N6.
+
+Still NOT seen: the one-time "Evidence Vault has been retired" notice (unit-tested only; this emulator showed none),
+dark mode, large text, TalkBack, any real phone, the old texts already listed (onboarding page 1 and 2 describe the old
+product; the privacy notice; Login is e-mail + password): they are rewritten in N2 / N4.

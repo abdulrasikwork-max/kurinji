@@ -1,4 +1,30 @@
-# CHECKPOINT 2026-11-15 (third session, end, about 16:30 IST): N1 is implemented, compiled and tested on both sides and committed (A1 to A3, B1 to B4, C). The ONLY thing left of N1 is the manual emulator check, which was started and stopped at the second onboarding page. Nothing pushed, nothing deployed.
+# CHECKPOINT 2026-11-15 (fourth session): N1 is COMPLETE. The manual emulator check is done (manually verified on the `irl_api33` emulator; no real phone); one wording fix found and committed. Nothing pushed, nothing deployed. Next: the plan for N2, which needs the owner's approval before any code.
+
+**Standing instructions, unchanged:** the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is.
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). `main` = `origin/main` = tag `pre-n1` = `fd669b9`, untouched.
+- After the checkpoint `936b190` one more commit: "N1: manual emulator check done; Safe Walk row wording" (`git log -1`). `git status` clean afterwards. `android/local.properties` is the owner's copy again (pilot address), compared byte for byte.
+
+## What this session did
+- Development backend (jar, V32) and the `irl_api33` emulator with a `10.0.2.2`-only debug build: sign-up with the development code, Home, an "Only me" text post, You, Safety hub, Safety Circle contact, SOS countdown + CANCEL, a real SOS (Text opens the SMS app; "I'm safe"; "False alarm"), Emergency history and detail, Safe Walk start / check-in / arrived (foreground service on, then gone), the Quick Settings tile, the launcher shortcut, the declared permissions. Table in `PHASE_N1.md`, "Manual check, continued".
+- Fixed: the Safe Walk row on the Safety hub still promised "a look at the way before you go" (Check the way, removed in A1); `HonestyTextsTest` guards it. Android after the fix: 766 run, 0 failures; `assembleDebug` OK; lint 0 errors, 91 warnings. Backend not touched (496 / 0 failures from B3 stand).
+- Development database: a new test account `n1check` (made-up number ending 1111) with 4 SOS records and one walk. Nothing else changed. Backend and emulator stopped.
+
+## Open (never claim otherwise)
+- Not seen: the one-time vault notice (unit-tested only), dark mode, large text, TalkBack, any real phone (the A23 still has the build of 2026-11-12).
+- For N6 (a decision, not changed): on the very first SOS the 5 s countdown keeps running behind the location and notification permission dialogs, so CANCEL cannot be reached in time.
+- Old texts rewritten later: onboarding pages 1 and 2 (old place-first product), the privacy notice, Login (e-mail + password) — N2 / N4.
+- Nothing of N1 is on the pilot (old jar, V30). Moving it to V32 deletes data: its own approved step, with a fresh `restore-rehearsal.sh` PASS first.
+
+## The exact first step for the next session
+Present the **plan for N2** (phone-only sign-in, real name, no password; `IRL_DIRECTION.md`) and wait for the owner's approval. Do not start N2 code before that.
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, the pilot's own move to the new jar and schema.
+
+---
+
+# CHECKPOINT 2026-11-15 (third session, end, about 16:30 IST; superseded by the checkpoint above: the manual check is done): N1 is implemented, compiled and tested on both sides and committed (A1 to A3, B1 to B4, C). The ONLY thing left of N1 is the manual emulator check, which was started and stopped at the second onboarding page. Nothing pushed, nothing deployed.
 
 **This is the newest checkpoint. The owner stopped the session here (session limit). Read `docs/IRL_DIRECTION.md` and the "As built" sections of `docs/PHASE_N1.md` first. Standing instructions, unchanged: the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is. N2 has NO plan and NO approval yet.**
 

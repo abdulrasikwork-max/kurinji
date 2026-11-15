@@ -73,6 +73,9 @@ class HonestyTextsTest {
             assertEquals(title, 1, Regex("R\\.string\\.$title\\b").findAll(hub).count())
         }
         assertFalse("the Evidence Vault row left in N1", hub.contains("evidenceVault"))
+        // N1 manual check: the Safe Walk row still promised "a look at the way" (Check the way, removed in N1-A1).
+        val walkRow = allStrings().getValue("safety_hub_walk_description").lowercase()
+        assertFalse("Safe Walk row promises the removed Check the way: $walkRow", "look at the way" in walkRow)
         assertFalse(File("src/main/res/layout/fragment_home.xml").exists())
         assertFalse(File("src/main/java/com/safesphere/app/feature/home").exists())
     }
