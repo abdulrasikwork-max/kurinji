@@ -219,7 +219,7 @@ any deploy to the pilot (the laptop setup and the live jar stay exactly as they 
 - **Android resources:** the 530 resources lint reported as unused were removed with a script that reads the lint
   report (517 value entries: 498 strings, 17 plurals, one colour, one dimension; 12 drawables: the bookmark, the
   Nearby tab icon, the eight daily-state icons, `ic_mark_on_ink`), then 22 comment lines left without a resource.
-  `strings.xml` 1 925 lines became about 1 310; still UTF-8 without a byte-order mark, well-formed (1 115 strings,
+  `strings.xml` 1 912 lines became 1 306; still UTF-8 without a byte-order mark, well-formed (1 115 strings,
   7 plurals). One style (`TextAppearance.Kurinji.ScreenTitle`) is still reported and was left. `ButterflyDrawable`
   stays: the onboarding pages draw with it.
 - **Words:** About no longer names Nearby or "Check the way"; the privacy notice lost its Nearby, "Check the way" and
@@ -237,3 +237,11 @@ any deploy to the pilot (the laptop setup and the live jar stay exactly as they 
   lint **0 errors, 91 warnings** (622 before unit C; 1 unused resource left). Backend **496 run, 0 failures, 0 errors,
   2 skipped** (clean build, run in B3; no backend source changed after it except one comment in V32, and the jar
   built after that change applied V32 and started). Python **38 run, OK**.
+
+### Manual check (2026-11-15): STARTED, NOT finished
+- Set-up that worked: the development backend from the jar on port 8080 (health 200), the `irl_api33` emulator without
+  a window, a debug build whose only backend address is `http://10.0.2.2:8080/` (`local.properties` put back at once).
+- Seen (as screen text): install over the older build, start without a crash, the first-run opening, onboarding page 1.
+- Not seen: everything else of the list above (sign-in, Home, a post, You, SOS countdown and real SOS, Safe Walk, the
+  tile and shortcut, the vault notice). The session ended here; the steps to continue are at the top of `HANDOFF.md`.
+- Noted: onboarding page 1 still describes the old place-first product ("places, food, walks and things to try").

@@ -1,6 +1,55 @@
+# CHECKPOINT 2026-11-15 (third session, end, about 16:30 IST): N1 is implemented, compiled and tested on both sides and committed (A1 to A3, B1 to B4, C). The ONLY thing left of N1 is the manual emulator check, which was started and stopped at the second onboarding page. Nothing pushed, nothing deployed.
+
+**This is the newest checkpoint. The owner stopped the session here (session limit). Read `docs/IRL_DIRECTION.md` and the "As built" sections of `docs/PHASE_N1.md` first. Standing instructions, unchanged: the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is. N2 has NO plan and NO approval yet.**
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). `main` = `origin/main` = tag `pre-n1` = `fd669b9`, untouched.
+- Commits on `irl-next`, oldest first: `0214bac` N0 · `cc3e68e` N1-A1 · `757dc4f` N1-A2 · `3a519c2` N1-A3 · `6292798` N1-B1 · `7ebc664` N1-B2 · `62c5221` N1-B3 · `24b27f7` N1-B4 · `06d0353` N1-C · then one documents-only commit with this checkpoint (see `git log -1`).
+- **Uncommitted: nothing** (after the checkpoint commit `git status` is clean). `android/local.properties` (git-ignored) is the owner's copy again and points at the pilot (`https://api.irlnow.in`); it was changed only for the length of one build and restored (compared byte for byte).
+
+## Completed in this session (each recorded with its real numbers in `PHASE_N1.md`)
+| Unit | Commit | What |
+|---|---|---|
+| B1 backend: Nearby side | `6292798` | `community`, `intelligence`, `evaluation` gone; `GeoCell` / `Independence` in `common`; moderation keeps access, roles, audit log |
+| B2 backend: evidence | `7ebc664` | `evidence` package, its settings, its part of the emergency context and of account deletion |
+| B3 backend + Python: social add-ons | `62c5221` | Explore and the AI "understanding" (backend client + Python provider adapter), visits and ratings, reactions, Saved, today's state, disclosure |
+| B4 migration V32 | `24b27f7` | DEVELOPMENT MySQL 8.0.46 only: backup, read-only pre-check, dry run on scratch copies, applied ("now at version v32"; 46 tables became 30) |
+| C close | `06d0353` | 530 unused Android resources removed, left-over Nearby / "Check the way" / "saved list" words removed, `API.md`, `.claude/rules/*`, `CLAUDE.md`, `DECISIONS.md` N-17 to N-20, `STATUS.md` |
+
+## Build / test / lint status (final tree)
+- **Android:** 766 run, 0 failures, 0 errors, 0 skipped; `assembleDebug` OK; lint 0 errors, 91 warnings (1 unused resource left: the style `TextAppearance.Kurinji.ScreenTitle`).
+- **Backend:** 496 run, 0 failures, 0 errors, 2 skipped (the opt-in real-MySQL class), on a CLEAN build in B3. After that run only test-neutral things changed in the backend: one more `DELETE` and one comment in `V32__retire_removed_features.sql` (both before the migration was applied). The full suite was NOT run again after those two edits; the jar built from the final file validated 32 migrations, applied V32 and started. `MySqlTimestampStorageTest` on real MySQL: 2 run, 0 failures (export the credentials from `backend/.env` first).
+- **Python moderation service:** 38 run, OK.
+- **Development database:** schema V32, 30 tables. Backup taken before: `C:\Users\ABDUL RAFIQ\Desktop\SafeSphere-Phase3\db-backups\safesphere-dev-before-v32-20261115.sql` (plain, same disk, outside the repository). An older jar no longer starts against this database.
+
+## NOT finished / NOT verified (never claim otherwise)
+- **The manual emulator check of N1 (`PHASE_N1.md`, "Manual check at the end") is NOT done.** What was really seen, on the `irl_api33` emulator with a build pointing at the development backend (`http://10.0.2.2:8080/`): the app installs over the older build and starts without a crash; the first-run opening (IRL, "OUT THERE. TOGETHER.", the three lines, "LET'S GO"); onboarding page 1 of 3 ("See it first-hand"). Read as screen text, one screenshot of the launch colour only. **Not seen:** sign-in, Home, posting a text, You, the SOS countdown and its cancel, a real SOS start and end, a Safe Walk start and end, the SOS tile and shortcut, the one-time "Evidence Vault has been retired" notice, dark mode, large text, TalkBack, any real phone.
+- Found on the way, NOT fixed (needs a decision in N2/N4, when these screens are rewritten): onboarding page 1 still says "Real experiences from real people: places, food, walks and things to try" (the old place-first product). The privacy notice still describes e-mail and password accounts, route and stop checks and has a Rise paragraph.
+- Nothing of N1 is on the pilot. `https://api.irlnow.in` still runs the old jar on schema V30; `deploy/` still names the evidence folder and the Explore setting on purpose (N-20). **Do not install the new Android build against the pilot.** Moving the pilot to V32 deletes data for good: its own approved step, with a fresh `restore-rehearsal.sh` PASS right before.
+- The Galaxy A23 still has the old build of 2026-11-12.
+
+## Decisions taken in this session (in `DECISIONS.md`)
+N-17 the moderation enums keep their Phase 7 values, V32 deletes the old audit rows · N-18 the weekly AI counters for gates L1 to L3 are gone with `evaluation` (to be designed again before a learned model may act) · N-19 no file of the product names or calls an AI provider any more · N-20 `deploy/` is not changed in N1.
+
+## AI evaluation asked for by the owner (an evaluation only; nothing built, nothing approved)
+Given in the session's final answer. Short form: one AI feature fits IRL without changing it, and it is the one the project already allows under rule D2: **moderation that understands how students here really write and speak**, in two parts: (1) a learned Tamil / Tanglish / English text classifier as "rung 2" behind the existing lexicon and `DecisionPolicy` (evidence only, shadow mode first, humans decide); (2) speech-to-text for the 30-second voice moments of N4, so that voice goes through the same check (a text rule cannot read a voice post at all). Everything else looked at (matching people to plans, a ranked wall, generated daily questions, plan parsing) is either against the product's rules or done as well by plain rules. Recommended timing: the dataset and offline evaluation can start any time and need no app change; anything that acts in the product only after N4 / N5 exist, with its own plan and the owner's decision (N-18, N-19 and "never implement early" apply).
+
+## The exact first step for the next session
+1. `git status` (expect clean) and `git log --oneline -11` on `irl-next`.
+2. **Finish the manual emulator check of N1** (about 30 minutes; nothing else is open in N1):
+   - Backend: `cd backend`, set `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:\Users\Public`, `mvn -o -q package -DskipTests`, then `java -jar target/safesphere-backend-0.2.0-phase2.jar` (port 8080, reads `backend/.env`; expect "Successfully validated 32 migrations" and "Started").
+   - App: build with `api.base.url=http://10.0.2.2:8080/` in `android/local.properties` for the length of the build ONLY, copy the APK away, put the owner's file back at once (it must point at the pilot again), and check the APK holds only the `10.0.2.2` address.
+   - Emulator: `emulator -avd irl_api33 -no-window -no-audio -no-boot-anim -no-snapshot-save`, `adb install -r`, then walk: sign in (a development account through the development OTP file, `app.otp.dev-file`), Home, post a text, You, start and cancel an SOS countdown, start and end a real SOS, start and end a Safe Walk, the SOS tile and shortcut. In Git Bash, `adb shell` paths need `MSYS_NO_PATHCONV=1` (otherwise `/sdcard/...` becomes a Windows path); reading the screen with `uiautomator dump` is much cheaper than screenshots.
+   - Record what was seen under a new "Manual check" heading in `PHASE_N1.md`, fix what it finds, one local commit. Stop the backend and the emulator afterwards.
+3. Only then: present the **plan for N2** (phone-only sign-in, real name, no password) and wait for the owner's approval. Do not start N2 code before that.
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, the pilot's own move to the new jar and schema.
+
+---
+
 # CHECKPOINT 2026-11-15 (second session, end): N1 Android side DONE and committed (A1, A2, A3); backend unit B1 STARTED, uncommitted, main code compiles, tests NOT compiled and NOT run
 
-**This is the newest checkpoint. Read `docs/IRL_DIRECTION.md` and `docs/PHASE_N1.md` (plan + "As built" per unit) first. The owner's standing instruction for N1: finish it in this order (B1, B2, B3, B4 = V32, C = closeout), one local commit per finished unit, validate with tests / build / lint, laptop server unchanged, never push, never deploy. The product direction is decided; do not reopen it.**
+**(Superseded by the checkpoint above: B1 to B4 and C are done and committed.) Read `docs/IRL_DIRECTION.md` and `docs/PHASE_N1.md` (plan + "As built" per unit) first. The owner's standing instruction for N1: finish it in this order (B1, B2, B3, B4 = V32, C = closeout), one local commit per finished unit, validate with tests / build / lint, laptop server unchanged, never push, never deploy. The product direction is decided; do not reopen it.**
 
 ## Exact git state
 - Branch `irl-next` (no upstream, never pushed). `main` = `origin/main` = tag `pre-n1` = `fd669b9`, untouched.
