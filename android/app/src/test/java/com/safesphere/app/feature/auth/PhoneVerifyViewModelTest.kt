@@ -5,6 +5,7 @@ import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthResult
 import com.safesphere.app.feature.auth.domain.PendingVerification
 import com.safesphere.app.feature.auth.domain.PhonePolicy
+import com.safesphere.app.feature.auth.domain.SignInResult
 import com.safesphere.app.feature.auth.ui.AfterVerification
 import com.safesphere.app.feature.auth.ui.PhoneVerifyViewModel
 import com.safesphere.app.testing.FakeAuthRepository
@@ -55,6 +56,19 @@ class PhoneVerifyViewModelTest {
         vm.onVerifyClicked("123456")
         runCurrent()
         assertEquals(AfterVerification.HOME, vm.uiState.value.done)
+    }
+
+    @Test
+    fun `N2 - a number without an account hands its ticket on to the name-and-age screen, signing nobody in`() = runTest {
+        repository.verifyResult = AuthResult.Success(SignInResult.SignUpNeeded(FakeAuthRepository.TICKET))
+        val vm = viewModel()
+        vm.onVerifyClicked("123456")
+        runCurrent()
+
+        assertEquals(AfterVerification.SIGN_UP, vm.uiState.value.done)
+        assertEquals(FakeAuthRepository.TICKET, pending.ticket.value)
+        assertNull(pending.challenge.value) // the code is used up
+        assertNull(repository.currentUserNow())
     }
 
     @Test
@@ -132,18 +146,6 @@ class PhoneVerifyViewModelTest {
         assertEquals("+919876509999", repository.lastChangedPhone)
         assertFalse(vm.uiState.value.askingForNumber)
         assertEquals("••••••9999", vm.uiState.value.phoneHint)
-    }
-
-    @Test
-    fun `an account without a number is asked for one first`() = runTest {
-        pending.begin(FakeAuthRepository.CHALLENGE.copy(phoneHint = null, needsPhone = true, codeSent = false,
-            resendInSeconds = 0))
-        val vm = viewModel()
-        assertTrue(vm.uiState.value.askingForNumber)
-        assertFalse(vm.uiState.value.canCancelNumberChange)
-        vm.onCodeChanged("123456") // no code screen yet: nothing sent
-        runCurrent()
-        assertEquals(0, repository.verifyCalls)
     }
 
     @Test

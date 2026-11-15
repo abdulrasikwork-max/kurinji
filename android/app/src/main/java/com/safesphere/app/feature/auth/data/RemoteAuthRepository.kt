@@ -4,14 +4,14 @@ import com.safesphere.app.core.network.SessionEnder
 import com.safesphere.app.core.network.UnauthorizedOutcome
 import com.safesphere.app.feature.auth.data.remote.AuthApi
 import com.safesphere.app.feature.auth.data.remote.AuthResponseDto
-import com.safesphere.app.feature.auth.data.remote.LoginRequestDto
 import com.safesphere.app.feature.auth.data.remote.PhoneChallengeDto
 import com.safesphere.app.feature.auth.data.remote.PhoneChangeRequestDto
 import com.safesphere.app.feature.auth.data.remote.PhoneResendRequestDto
 import com.safesphere.app.feature.auth.data.remote.PhoneStartRequestDto
 import com.safesphere.app.feature.auth.data.remote.PhoneVerifyRequestDto
 import com.safesphere.app.feature.auth.data.remote.RefreshRequestDto
-import com.safesphere.app.feature.auth.data.remote.RegisterRequestDto
+import com.safesphere.app.feature.auth.data.remote.SignUpRequestDto
+import com.safesphere.app.feature.auth.data.remote.VerifyResponseDto
 import com.google.gson.JsonParser
 import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthRepository
@@ -19,6 +19,8 @@ import com.safesphere.app.feature.auth.domain.AuthResult
 import com.safesphere.app.feature.auth.domain.AuthSession
 import com.safesphere.app.feature.auth.domain.AuthUser
 import com.safesphere.app.feature.auth.domain.PhoneChallenge
+import com.safesphere.app.feature.auth.domain.SignInResult
+import com.safesphere.app.feature.auth.domain.SignUpTicket
 import com.safesphere.app.feature.auth.domain.SessionStorage
 import java.io.IOException
 import java.time.LocalDate
@@ -37,7 +39,9 @@ import retrofit2.HttpException
  * Phase 11 C1:
  *  - Signing in keeps the refresh token. Signing in again to the SAME account (after "sign in to sync") keeps every
  *    bit of local safety data and shows the server the old refresh token, so the old sign-in ends there and its running
- *    SOS moves to the new one (no duplicate, no password needed to end it).
+ *    SOS moves to the new one (no duplicate, no code needed to end it). Phase N2: the phone cannot know the account
+ *    before the code is checked; it sends its old refresh token when the number's last 4 digits match its session, and
+ *    the server ignores a token of another account.
  *  - Signing in to a DIFFERENT account first removes the previous account's data from this phone
  *    ([onAccountSwitch], the same clean-up as a sign-out) and ends the previous sign-in on the server (best effort).
  *  - Signing out ends this phone's sign-in on the server (best effort, a few seconds at most), then locally.
@@ -54,62 +58,66 @@ class RemoteAuthRepository(
 
     override val signInNeeded: Flow<Boolean> = sessionStorage.session.map { it?.needsSignIn == true }
 
-    override suspend fun register(
-        name: String,
-        email: String,
-        password: String,
-        dateOfBirth: LocalDate,
-        phone: String
-    ): AuthResult<PhoneChallenge> =
-        // Phase 17B: sign-up starts no session (nothing is saved here); the texted code finishes it (verifyPhone).
-        challengeCall(unauthorizedMeans = AuthError.UNKNOWN) {
-            api.register(RegisterRequestDto(name = name, email = email, password = password,
-                dateOfBirth = dateOfBirth.toString(), phone = phone))
-        }
+    override suspend fun startSignIn(phone: String): AuthResult<PhoneChallenge> =
+        challengeCall { api.startSignIn(PhoneStartRequestDto(phone = phone)) }
 
-    override suspend fun startPhoneVerification(email: String, password: String, phone: String?): AuthResult<PhoneChallenge> =
-        challengeCall(unauthorizedMeans = AuthError.INVALID_CREDENTIALS) {
-            api.startPhoneVerification(PhoneStartRequestDto(email = email, password = password, phone = phone))
-        }
-
-    override suspend fun verifyPhone(challenge: PhoneChallenge, code: String): AuthResult<AuthUser> {
+    override suspend fun verifyCode(challenge: PhoneChallenge, code: String): AuthResult<SignInResult> {
         val previous = sessionStorage.session.first()
-        return authenticate(previous) { api.verifyPhone(PhoneVerifyRequestDto(challenge = challenge.token, code = code)) }
+        // Only this phone's own earlier sign-in, and only when it looks like the same number.
+        val sameNumber = previous?.takeIf { it.user.phoneHint != null && it.user.phoneHint == challenge.phoneHint }
+        return try {
+            val answer = api.verifyCode(PhoneVerifyRequestDto(challenge = challenge.token, code = code,
+                previousRefreshToken = sameNumber?.refreshToken))
+            when (answer.status) {
+                VerifyResponseDto.SIGNED_IN -> {
+                    val session = answer.session ?: throw IllegalStateException("no session")
+                    AuthResult.Success(SignInResult.SignedIn(save(previous, session)))
+                }
+                VerifyResponseDto.SIGN_UP_NEEDED -> {
+                    val ticket = answer.signUp?.toDomain() ?: throw IllegalStateException("no ticket")
+                    AuthResult.Success(SignInResult.SignUpNeeded(ticket))
+                }
+                else -> AuthResult.Failure(AuthError.UNKNOWN)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: HttpException) {
+            failureFor(e)
+        } catch (e: IOException) {
+            AuthResult.Failure(AuthError.NO_CONNECTION)
+        } catch (e: Exception) {
+            AuthResult.Failure(AuthError.UNKNOWN) // an unreadable or incomplete answer
+        }
+    }
+
+    override suspend fun signUp(ticket: SignUpTicket, name: String, dateOfBirth: LocalDate): AuthResult<AuthUser> {
+        val previous = sessionStorage.session.first()
+        return authenticate(previous) {
+            api.signUp(SignUpRequestDto(ticket = ticket.token, name = name, dateOfBirth = dateOfBirth.toString()))
+        }
     }
 
     override suspend fun resendCode(challenge: PhoneChallenge): AuthResult<PhoneChallenge> =
-        challengeCall(unauthorizedMeans = AuthError.UNKNOWN) { api.resendCode(PhoneResendRequestDto(challenge.token)) }
+        challengeCall { api.resendCode(PhoneResendRequestDto(challenge.token)) }
 
     override suspend fun changePhone(challenge: PhoneChallenge, phone: String): AuthResult<PhoneChallenge> =
-        challengeCall(unauthorizedMeans = AuthError.UNKNOWN) {
+        challengeCall {
             api.changePhone(PhoneChangeRequestDto(challenge = challenge.token, phone = phone))
         }
 
-    /** Phase 17B: one call that answers with a verification (nothing is saved on the phone). */
-    private suspend fun challengeCall(
-        unauthorizedMeans: AuthError,
-        call: suspend () -> PhoneChallengeDto
-    ): AuthResult<PhoneChallenge> =
+    /** Phase 17B: one call that answers with a code on its way (nothing is saved on the phone). */
+    private suspend fun challengeCall(call: suspend () -> PhoneChallengeDto): AuthResult<PhoneChallenge> =
         try {
             AuthResult.Success(call().toDomain())
         } catch (e: CancellationException) {
             throw e
         } catch (e: HttpException) {
-            failureFor(e, unauthorizedMeans)
+            failureFor(e)
         } catch (e: IOException) {
             AuthResult.Failure(AuthError.NO_CONNECTION)
         } catch (e: Exception) {
             AuthResult.Failure(AuthError.UNKNOWN) // includes an answer without a challenge token
         }
-
-    override suspend fun login(email: String, password: String): AuthResult<AuthUser> {
-        val previous = sessionStorage.session.first()
-        // Only the SAME account's old refresh token is ever sent (another account's would link two accounts).
-        val sameAccount = previous?.takeIf { it.user.email.equals(email.trim(), ignoreCase = true) }
-        return authenticate(previous) {
-            api.login(LoginRequestDto(email = email, password = password, previousRefreshToken = sameAccount?.refreshToken))
-        }
-    }
 
     override suspend fun refreshProfile(): AuthResult<AuthUser> = profile(afterRefresh = false)
 
@@ -147,35 +155,37 @@ class RemoteAuthRepository(
 
     private suspend fun authenticate(previous: AuthSession?, call: suspend () -> AuthResponseDto): AuthResult<AuthUser> =
         try {
-            val response = call()
-            val user = response.user.toDomain()
-            if (previous != null && previous.user.id != user.id) {
-                // Another account on this phone: the previous account's data goes first (never visible to the new one).
-                onAccountSwitch(previous.user.id)
-                previous.refreshToken?.let { endOnServer(it) }
-            }
-            sessionStorage.save(AuthSession(token = response.accessToken, user = user, refreshToken = response.refreshToken))
-            AuthResult.Success(user)
+            AuthResult.Success(save(previous, call()))
         } catch (e: CancellationException) {
             throw e // never swallow coroutine cancellation
         } catch (e: HttpException) {
-            // Phase 17B: the right password of an account without a verified phone gives PHONE_NOT_VERIFIED (no session).
-            failureFor(e, unauthorizedMeans = AuthError.INVALID_CREDENTIALS)
+            failureFor(e)
         } catch (e: IOException) {
             AuthResult.Failure(AuthError.NO_CONNECTION)
         } catch (e: Exception) {
             AuthResult.Failure(AuthError.UNKNOWN) // for example an unreadable response body
         }
 
+    /** Saves a new sign-in; another account's data on this phone goes first (never visible to the new one). */
+    private suspend fun save(previous: AuthSession?, response: AuthResponseDto): AuthUser {
+        val user = response.user.toDomain()
+        if (previous != null && previous.user.id != user.id) {
+            onAccountSwitch(previous.user.id)
+            previous.refreshToken?.let { endOnServer(it) }
+        }
+        sessionStorage.save(AuthSession(token = response.accessToken, user = user, refreshToken = response.refreshToken))
+        return user
+    }
+
     /**
      * The server's stable `code` (ApiError) decides first; only the codes whose words depend on the case (tries left,
      * seconds to wait) keep the server's message. Everything else falls back to the HTTP status.
      */
-    private fun failureFor(e: HttpException, unauthorizedMeans: AuthError): AuthResult.Failure {
+    private fun failureFor(e: HttpException): AuthResult.Failure {
         val (code, message) = errorBody(e)
         val coded = code?.let { CODES[it] }
         if (coded != null) return AuthResult.Failure(coded, message?.takeIf { coded in SERVER_WORDED })
-        return AuthResult.Failure(errorForHttpCode(e.code(), unauthorizedMeans))
+        return AuthResult.Failure(errorForHttpCode(e.code(), unauthorizedMeans = AuthError.UNKNOWN))
     }
 
     /** The stable `code` and the message of our error body, or nulls. The body can be read only once. */
@@ -202,7 +212,6 @@ class RemoteAuthRepository(
 
     private fun errorForHttpCode(code: Int, unauthorizedMeans: AuthError): AuthError = when (code) {
         401 -> unauthorizedMeans
-        409 -> AuthError.EMAIL_ALREADY_USED
         429 -> AuthError.TOO_MANY_ATTEMPTS
         400, 422 -> AuthError.VALIDATION
         in 500..599 -> AuthError.SERVER
@@ -214,12 +223,11 @@ class RemoteAuthRepository(
 
         /** Phase 17B: the backend's PhoneVerificationException codes. Unknown codes fall back to the HTTP status. */
         val CODES = mapOf(
-            "PHONE_NOT_VERIFIED" to AuthError.PHONE_NOT_VERIFIED,
             "PHONE_INVALID" to AuthError.PHONE_INVALID,
-            "PHONE_REQUIRED" to AuthError.PHONE_REQUIRED,
             "PHONE_IN_USE" to AuthError.PHONE_IN_USE,
-            "PHONE_ALREADY_VERIFIED" to AuthError.PHONE_ALREADY_VERIFIED,
             "CHALLENGE_INVALID" to AuthError.CHALLENGE_INVALID,
+            "TICKET_INVALID" to AuthError.TICKET_INVALID,
+            "ACCOUNT_UNAVAILABLE" to AuthError.ACCOUNT_UNAVAILABLE,
             "OTP_INVALID" to AuthError.OTP_INVALID,
             "OTP_EXPIRED" to AuthError.OTP_EXPIRED,
             "OTP_LOCKED" to AuthError.OTP_LOCKED,

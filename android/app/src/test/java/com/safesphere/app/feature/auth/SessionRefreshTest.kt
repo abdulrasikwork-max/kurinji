@@ -15,6 +15,7 @@ import com.safesphere.app.feature.auth.domain.AuthSession
 import com.safesphere.app.feature.auth.domain.AuthUser
 import com.safesphere.app.feature.auth.domain.SessionStorage
 import com.safesphere.app.testing.FakeAuthApi
+import com.safesphere.app.testing.FakeAuthRepository
 import com.safesphere.app.testing.FakeSessionStorage
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
@@ -46,13 +47,13 @@ import retrofit2.Response
  */
 class SessionRefreshTest {
 
-    private val user = AuthUser(7, "Asha", "asha@example.com")
+    private val user = AuthUser(7, "Asha", "••••••3210")
     private val expired = AuthSession("expired-token", user, refreshToken = "refresh-1")
     private val api = FakeAuthApi().apply {
         refreshOutcome = { FakeAuthApi.authResponse(token = "fresh-token", refresh = "refresh-2", user = userDto7()) }
     }
 
-    private fun userDto7() = UserDto(id = 7, name = "Asha", email = "asha@example.com", createdAt = null)
+    private fun userDto7() = UserDto(id = 7, name = "Asha", phoneHint = "••••••3210", createdAt = null)
 
     private fun setUp(session: AuthSession? = expired): Triple<FakeSessionStorage, SessionEnder, ApiCallHandler> {
         val storage = FakeSessionStorage(session)
@@ -218,7 +219,7 @@ class SessionRefreshTest {
     @Test
     fun `a refresh answer for another account is never saved`() = runTest {
         val storage = FakeSessionStorage(expired)
-        api.refreshOutcome = { FakeAuthApi.authResponse(token = "x", refresh = "y", user = UserDto(8, "B", "b@example.com", null)) }
+        api.refreshOutcome = { FakeAuthApi.authResponse(token = "x", refresh = "y", user = UserDto(8, "B", "••••••3210", null)) }
 
         assertEquals(RefreshOutcome.NotPossible, SessionRefresher(storage, api).refreshAfter("expired-token"))
         assertEquals(expired, storage.savedSession)
@@ -240,22 +241,22 @@ class SessionRefreshTest {
     fun `signing in again to the SAME account keeps local data and hands the old sign-in over`() = runTest {
         val storage = FakeSessionStorage(expired.copy(needsSignIn = true))
         val switches = mutableListOf<Long>()
-        api.loginOutcome = { FakeAuthApi.authResponse(token = "new-access", refresh = "new-refresh", user = userDto7()) }
+        api.verifyOutcome = { FakeAuthApi.signedIn(FakeAuthApi.authResponse(token = "new-access", refresh = "new-refresh", user = userDto7())) }
         val repository = RemoteAuthRepository(api, storage, SessionEnder(storage), onAccountSwitch = { switches += it })
 
-        repository.login("Asha@Example.com ", "password")
+        repository.verifyCode(FakeAuthRepository.CHALLENGE, "123456") // N2: the same number (last 4 digits) signs in again
 
-        assertEquals("refresh-1", api.lastLoginRequest?.previousRefreshToken)
+        assertEquals("refresh-1", api.lastVerifyRequest?.previousRefreshToken)
         assertTrue(switches.isEmpty()) // nothing of this person's is removed
         assertEquals(AuthSession("new-access", user, refreshToken = "new-refresh"), storage.savedSession)
-        assertTrue(api.signedOutTokens.isEmpty()) // the server ends the old sign-in as part of the login
+        assertTrue(api.signedOutTokens.isEmpty()) // the server ends the old sign-in as part of the sign-in
     }
 
     @Test
     fun `signing in to ANOTHER account first removes the previous account's data, and never sends its secret`() = runTest {
         val storage = FakeSessionStorage(expired.copy(needsSignIn = true))
-        val other = UserDto(id = 8, name = "Bina", email = "bina@example.com", createdAt = null)
-        api.loginOutcome = { FakeAuthApi.authResponse(token = "b-access", refresh = "b-refresh", user = other) }
+        val other = UserDto(id = 8, name = "Bina", phoneHint = "••••••9999", createdAt = null)
+        api.verifyOutcome = { FakeAuthApi.signedIn(FakeAuthApi.authResponse(token = "b-access", refresh = "b-refresh", user = other)) }
         var sessionDuringCleanUp: AuthSession? = null
         val switches = mutableListOf<Long>()
         val repository = RemoteAuthRepository(api, storage, SessionEnder(storage), onAccountSwitch = {
@@ -263,9 +264,9 @@ class SessionRefreshTest {
             sessionDuringCleanUp = storage.savedSession
         })
 
-        repository.login("bina@example.com", "password")
+        repository.verifyCode(FakeAuthRepository.CHALLENGE.copy(phoneHint = "••••••9999"), "123456")
 
-        assertNull(api.lastLoginRequest?.previousRefreshToken) // no link between the two accounts is sent
+        assertNull(api.lastVerifyRequest?.previousRefreshToken) // no link between the two accounts is sent
         assertEquals(listOf(7L), switches)
         assertEquals(7L, sessionDuringCleanUp?.user?.id) // the clean-up ran BEFORE the new account was saved
         assertEquals(listOf("refresh-1"), api.signedOutTokens) // the previous sign-in ends on the server

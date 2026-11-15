@@ -63,7 +63,6 @@ object NavigationRules {
         R.id.onboardingFragment,
         R.id.loginFragment,
         R.id.registerFragment,
-        R.id.forgotPasswordFragment,
         R.id.phoneVerifyFragment // Phase 17B: no session until the code is right
     )
 

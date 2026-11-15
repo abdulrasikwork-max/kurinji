@@ -67,29 +67,25 @@ class SocialPolicyTest {
 
     @Test
     fun `profile form - every field checked, Tamil text measured in characters`() {
-        val good = ProfileInput("asha_k", "ஆஷா தேவி", "கடற்கரை நடை", setOf(Language.TA), setOf(Interest.CITY_LIFE), "சென்னை")
+        val good = ProfileInput("asha_k", "கடற்கரை நடை", setOf(Language.TA), setOf(Interest.CITY_LIFE), "சென்னை")
         assertFalse(ProfileInputPolicy.check(good).any)
 
         val bad = ProfileInputPolicy.check(
-            ProfileInput("1asha", " ", "x".repeat(161), emptySet(), emptySet(), "Chennai 600001")
+            ProfileInput("1asha", "x".repeat(161), emptySet(), emptySet(), "Chennai 600001")
         )
         assertEquals(Problem.HANDLE_FORMAT, bad.handle)
-        assertEquals(Problem.NAME_REQUIRED, bad.displayName)
         assertEquals(Problem.BIO_TOO_LONG, bad.bio)
         assertEquals(Problem.CITY_INVALID, bad.city)
         assertTrue(bad.any)
     }
 
     @Test
-    fun `profile form - links, long names and reserved handles`() {
+    fun `profile form - links and reserved handles, N2 - no name of its own any more`() {
         val problems = ProfileInputPolicy.check(
-            ProfileInput("admin", "a".repeat(41), "see https://example.org", emptySet(), emptySet(), "")
+            ProfileInput("admin", "see https://example.org", emptySet(), emptySet(), "")
         )
         assertEquals(Problem.HANDLE_UNAVAILABLE, problems.handle)
-        assertEquals(Problem.NAME_TOO_LONG, problems.displayName)
         assertEquals(Problem.LINK, problems.bio)
         assertNull(problems.city)
-        assertEquals(Problem.LINK, ProfileInputPolicy.check(
-            ProfileInput("asha_k", "Asha shop.com", "", emptySet(), emptySet(), "")).displayName)
     }
 }

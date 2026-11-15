@@ -13,7 +13,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 
 /** A signed-in session for [userId] (the recorder only records for the signed-in person). */
-fun sessionFor(userId: Long) = AuthSession("token", AuthUser(userId, "Asha", "asha@example.com"))
+fun sessionFor(userId: Long) = AuthSession("token", AuthUser(userId, "Asha", "••••••3210"))
 
 /**
  * A REAL [SosRecorder] in the test's background scope (Phase 11). Background work does not run in

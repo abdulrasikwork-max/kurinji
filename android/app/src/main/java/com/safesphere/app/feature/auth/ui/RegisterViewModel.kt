@@ -6,12 +6,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.safesphere.app.AppContainer
 import com.safesphere.app.core.validation.FieldError
-import com.safesphere.app.core.validation.FormValidator
 import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthRepository
 import com.safesphere.app.feature.auth.domain.AuthResult
 import com.safesphere.app.feature.auth.domain.PendingVerification
-import com.safesphere.app.feature.auth.domain.PhonePolicy
+import com.safesphere.app.feature.auth.domain.RealNamePolicy
 import com.safesphere.app.feature.social.domain.AgePolicy
 import java.time.Clock
 import java.time.LocalDate
@@ -23,27 +22,27 @@ import kotlinx.coroutines.launch
 
 data class RegisterUiState(
     val fullNameError: FieldError? = null,
-    val emailError: FieldError? = null,
-    /** Phase 17B: the mobile number the code goes to. */
-    val phoneError: FieldError? = null,
     /** Phase 13A: the chosen date of birth (kept only in this screen's memory; stored nowhere). */
     val dateOfBirth: LocalDate? = null,
     val dateOfBirthError: FieldError? = null,
-    val passwordError: FieldError? = null,
-    val confirmPasswordError: FieldError? = null,
     val isLoading: Boolean = false,
     val authError: AuthError? = null,
     /** The server's own words, for errors whose text depends on the case (e.g. how long to wait). */
     val authMessage: String? = null,
-    /** Phase 17B, one-shot: the account exists and a code is on its way: open the code screen. */
-    val navigateToVerification: Boolean = false
+    /**
+     * No sign-up in this app's memory (the app was closed, or the ticket was used or ran out): the person enters the
+     * number again.
+     */
+    val lost: Boolean = false,
+    /** One-shot: the account exists and this phone is signed in: the profile (handle) comes next. */
+    val navigateToProfile: Boolean = false
 )
 
 /**
- * Validates locally, then creates the account through [AuthRepository]. The confirmation field is
- * only a typing check: it is never sent to the server. Phase 13A: the date of birth must be 18+ ([AgePolicy], the same
- * rule as the server); it is sent once and kept nowhere. Phase 17B: a mobile number ([PhonePolicy]) receives a code;
- * the verification is handed to the code screen through [PendingVerification] (memory only).
+ * Phase N2: "About you", only for a number that has no account yet (the code was right; the server gave a one-use
+ * ticket, handed over in memory by [PendingVerification]). The person's real name ([RealNamePolicy], the server's
+ * rule) and an adult date of birth ([AgePolicy], Phase 13A: sent once, stored nowhere) create the account. A refused
+ * name or age leaves the ticket usable for a corrected try.
  */
 class RegisterViewModel(
     private val authRepository: AuthRepository,
@@ -51,7 +50,7 @@ class RegisterViewModel(
     private val clock: Clock = Clock.systemUTC()
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(RegisterUiState())
+    private val _uiState = MutableStateFlow(RegisterUiState(lost = pendingVerification.ticket.value == null))
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
     /** Today's UTC date, for the date picker's limits. */
@@ -61,52 +60,49 @@ class RegisterViewModel(
         _uiState.update { it.copy(dateOfBirth = date, dateOfBirthError = dateOfBirthError(date)) }
     }
 
-    fun onRegisterClicked(fullName: String, email: String, phone: String, password: String, confirmPassword: String) {
+    fun onCreateClicked(fullName: String) {
         if (_uiState.value.isLoading) return
+        val ticket = pendingVerification.ticket.value
+        if (ticket == null) {
+            _uiState.update { it.copy(lost = true) }
+            return
+        }
         val dateOfBirth = _uiState.value.dateOfBirth
-        val normalizedPhone = PhonePolicy.normalize(phone)
-
-        val validation = RegisterUiState(
-            fullNameError = FormValidator.validateFullName(fullName),
-            emailError = FormValidator.validateEmail(email),
-            phoneError = when {
-                phone.isBlank() -> FieldError.REQUIRED
-                normalizedPhone == null -> FieldError.INVALID_PHONE
-                else -> null
-            },
-            dateOfBirth = dateOfBirth,
-            dateOfBirthError = dateOfBirthError(dateOfBirth),
-            passwordError = FormValidator.validateNewPassword(password),
-            confirmPasswordError = FormValidator.validateConfirmPassword(password, confirmPassword)
-        )
-        val hasErrors = validation.fullNameError != null || validation.emailError != null ||
-            validation.phoneError != null || validation.dateOfBirthError != null || validation.passwordError != null ||
-            validation.confirmPasswordError != null
-        if (hasErrors || dateOfBirth == null || normalizedPhone == null) {
-            _uiState.value = validation
+        val name = RealNamePolicy.clean(fullName)
+        val nameError = nameError(name)
+        val ageError = dateOfBirthError(dateOfBirth)
+        if (nameError != null || ageError != null || dateOfBirth == null) {
+            _uiState.value = RegisterUiState(fullNameError = nameError, dateOfBirth = dateOfBirth,
+                dateOfBirthError = ageError)
             return
         }
 
         _uiState.value = RegisterUiState(dateOfBirth = dateOfBirth, isLoading = true)
         viewModelScope.launch {
-            val result = authRepository.register(fullName.trim(), email.trim(), password, dateOfBirth, normalizedPhone)
-            _uiState.value = when (result) {
+            _uiState.value = when (val result = authRepository.signUp(ticket, name, dateOfBirth)) {
                 is AuthResult.Success -> {
-                    pendingVerification.begin(result.data)
-                    RegisterUiState(navigateToVerification = true) // the date of birth is forgotten once it was sent
+                    pendingVerification.clear()
+                    RegisterUiState(navigateToProfile = true) // the date of birth is forgotten once it was sent
                 }
-                is AuthResult.Failure -> RegisterUiState(
-                    dateOfBirth = dateOfBirth,
-                    // A number the server refuses belongs next to the number field, not in the notice.
-                    phoneError = if (result.error == AuthError.PHONE_INVALID) FieldError.INVALID_PHONE else null,
-                    authError = result.error.takeIf { it != AuthError.PHONE_INVALID },
-                    authMessage = result.message
-                )
+                is AuthResult.Failure -> if (result.error == AuthError.TICKET_INVALID ||
+                    result.error == AuthError.PHONE_IN_USE) {
+                    pendingVerification.clear()
+                    RegisterUiState(lost = true, authError = result.error)
+                } else {
+                    RegisterUiState(dateOfBirth = dateOfBirth, authError = result.error, authMessage = result.message)
+                }
             }
         }
     }
 
-    fun onNavigationHandled() = _uiState.update { it.copy(navigateToVerification = false) }
+    fun onNavigationHandled() = _uiState.update { it.copy(navigateToProfile = false) }
+
+    private fun nameError(name: String): FieldError? = when (RealNamePolicy.check(name)) {
+        RealNamePolicy.Result.OK -> null
+        RealNamePolicy.Result.TOO_SHORT -> if (name.isEmpty()) FieldError.REQUIRED else FieldError.NAME_TOO_SHORT
+        RealNamePolicy.Result.TOO_LONG -> FieldError.NAME_TOO_LONG
+        RealNamePolicy.Result.NOT_A_NAME -> FieldError.NOT_A_NAME
+    }
 
     private fun dateOfBirthError(date: LocalDate?): FieldError? = when (AgePolicy.check(date, today())) {
         AgePolicy.Result.ADULT -> null

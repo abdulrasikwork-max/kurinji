@@ -32,22 +32,5 @@ class FormValidatorTest {
         assertNull(FormValidator.validateFullName("Asha"))
     }
 
-    @Test
-    fun `new password needs minimum length and is never trimmed`() {
-        assertEquals(FieldError.REQUIRED, FormValidator.validateNewPassword(""))
-        assertEquals(FieldError.PASSWORD_TOO_SHORT, FormValidator.validateNewPassword("1234567"))
-        assertNull(FormValidator.validateNewPassword("12345678"))
-        // Eight spaces are eight characters: spaces are valid password characters.
-        assertNull(FormValidator.validateNewPassword("        "))
-    }
 
-    @Test
-    fun `confirmation must be present and identical`() {
-        assertEquals(FieldError.REQUIRED, FormValidator.validateConfirmPassword("abcdefgh", ""))
-        assertEquals(
-            FieldError.PASSWORDS_DO_NOT_MATCH,
-            FormValidator.validateConfirmPassword("abcdefgh", "abcdefgH")
-        )
-        assertNull(FormValidator.validateConfirmPassword("abcdefgh", "abcdefgh"))
-    }
 }

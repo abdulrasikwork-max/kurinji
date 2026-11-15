@@ -7,23 +7,22 @@ import retrofit2.http.POST
 /**
  * Retrofit turns this interface into real HTTP calls. Paths have no leading slash because they are
  * appended to the base URL (BuildConfig.API_BASE_URL). A non-2xx answer throws retrofit2.HttpException.
+ *
+ * Phase N2: the phone number and a texted code are the only way in (no e-mail, no password).
  */
 interface AuthApi {
 
-    /** Phase 17B: 201 with no session; a code goes to the phone and the answer is the verification to finish. */
-    @POST("api/auth/register")
-    suspend fun register(@Body body: RegisterRequestDto): PhoneChallengeDto
-
-    @POST("api/auth/login")
-    suspend fun login(@Body body: LoginRequestDto): AuthResponseDto
-
-    /** Phase 17B: e-mail + password of an account without a verified phone. */
+    /** A code for this number; the same answer whether or not it has an account. */
     @POST("api/auth/phone/start")
-    suspend fun startPhoneVerification(@Body body: PhoneStartRequestDto): PhoneChallengeDto
+    suspend fun startSignIn(@Body body: PhoneStartRequestDto): PhoneChallengeDto
 
-    /** Phase 17B: the right code signs in (the same answer as a sign-in). */
+    /** The right code: SIGNED_IN with a session, or SIGN_UP_NEEDED with a ticket. */
     @POST("api/auth/phone/verify")
-    suspend fun verifyPhone(@Body body: PhoneVerifyRequestDto): AuthResponseDto
+    suspend fun verifyCode(@Body body: PhoneVerifyRequestDto): VerifyResponseDto
+
+    /** N2: ticket + real name + adult date of birth create the account and sign it in (201). */
+    @POST("api/auth/sign-up")
+    suspend fun signUp(@Body body: SignUpRequestDto): AuthResponseDto
 
     @POST("api/auth/phone/resend")
     suspend fun resendCode(@Body body: PhoneResendRequestDto): PhoneChallengeDto

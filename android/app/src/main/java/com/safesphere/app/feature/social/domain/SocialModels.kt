@@ -80,7 +80,6 @@ data class InviteItem(val id: String, val expiresAt: Instant)
 /** What the person typed on the profile screen. */
 data class ProfileInput(
     val handle: String,
-    val displayName: String,
     val bio: String,
     val languages: Set<Language>,
     val interests: Set<Interest>,

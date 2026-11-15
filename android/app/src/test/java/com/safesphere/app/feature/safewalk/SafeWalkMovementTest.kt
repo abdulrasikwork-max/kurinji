@@ -55,7 +55,7 @@ class SafeWalkMovementTest {
     private val store = FakeActiveJourneyStore()
     private val battery = FakeBatteryMonitor(percent = 80)
     private val resolver = FakeDestinationResolver(DestinationLookup.Found(destination, "Station Road"))
-    private val sessionStorage = FakeSessionStorage(AuthSession("token", AuthUser(USER_ID, "Asha", "asha@example.com")))
+    private val sessionStorage = FakeSessionStorage(AuthSession("token", AuthUser(USER_ID, "Asha", "••••••3210")))
     private lateinit var server: FakeJourneyRepository
 
     private fun at(north: Double = 0.0, east: Double = 0.0): GeoPoint = GeoPoint(

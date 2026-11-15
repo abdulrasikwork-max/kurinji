@@ -126,26 +126,6 @@
                 android:visibility="gone" />
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/displayNameLayout"
-                style="@style/Widget.SafeSphere.TextInputLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:hint="@string/social_display_name_label"
-                app:counterEnabled="true"
-                app:counterMaxLength="40">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/displayNameInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:importantForAutofill="no"
-                    android:imeOptions="actionNext"
-                    android:inputType="textPersonName|textCapWords"
-                    android:maxLines="1" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/bioLayout"
                 style="@style/Widget.SafeSphere.TextInputLayout"
                 android:layout_width="match_parent"

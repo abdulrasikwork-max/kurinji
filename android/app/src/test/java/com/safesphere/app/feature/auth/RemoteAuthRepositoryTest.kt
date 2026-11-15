@@ -1,14 +1,18 @@
 package com.safesphere.app.feature.auth
 
 import com.safesphere.app.feature.auth.data.RemoteAuthRepository
-import com.safesphere.app.feature.auth.data.remote.RegisterRequestDto
+import com.safesphere.app.feature.auth.data.remote.SignUpRequestDto
+import com.safesphere.app.feature.auth.data.remote.VerifyResponseDto
 import com.safesphere.app.feature.auth.domain.AuthError
 import com.safesphere.app.feature.auth.domain.AuthResult
 import com.safesphere.app.feature.auth.domain.AuthSession
 import com.safesphere.app.feature.auth.domain.AuthUser
+import com.safesphere.app.feature.auth.domain.SignInResult
 import com.safesphere.app.testing.FakeAuthApi
+import com.safesphere.app.testing.FakeAuthRepository
 import com.safesphere.app.testing.FakeSessionStorage
 import java.io.IOException
+import java.time.LocalDate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -17,184 +21,167 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Tests the repository against a fake server: no network, no emulator needed. */
+/** Tests the repository against a fake server: no network, no emulator needed. Phase N2: phone and code only. */
 class RemoteAuthRepositoryTest {
 
     private val api = FakeAuthApi()
     private val storage = FakeSessionStorage()
     private val repository = RemoteAuthRepository(api, storage)
+    private val challenge = FakeAuthRepository.CHALLENGE
 
     private fun failureOf(result: AuthResult<*>): AuthError =
         (result as AuthResult.Failure).error
 
-    // ------------------------------------------------------------------ login
+    // ------------------------------------------------------------------ start
 
     @Test
-    fun `login success saves token and user, never the password`() = runTest {
-        api.loginOutcome = { FakeAuthApi.authResponse(token = "jwt-123") }
-
-        val result = repository.login("asha@example.com", "my-password")
+    fun `start sends the number and answers with the code request, saving nothing`() = runTest {
+        val result = repository.startSignIn("+919876543210")
 
         assertTrue(result is AuthResult.Success)
-        assertEquals("jwt-123", storage.savedSession?.token)
-        assertEquals("asha@example.com", storage.savedSession?.user?.email)
-        // The stored session has no password field at all, and the request object redacts it from logs.
-        assertFalse(api.lastLoginRequest.toString().contains("my-password"))
-        assertEquals("asha@example.com", repository.currentUser.first()?.email)
-    }
-
-    @Test
-    fun `login with wrong credentials maps 401 to INVALID_CREDENTIALS and saves nothing`() = runTest {
-        api.loginOutcome = { throw FakeAuthApi.httpError(401) }
-
-        val result = repository.login("asha@example.com", "wrong")
-
-        assertEquals(AuthError.INVALID_CREDENTIALS, failureOf(result))
-        assertNull(storage.savedSession)
+        assertEquals("+919876543210", api.lastStartRequest?.phone)
+        assertEquals("••••••3210", (result as AuthResult.Success).data.phoneHint)
         assertEquals(0, storage.saveCalls)
     }
 
     @Test
-    fun `no network maps to NO_CONNECTION`() = runTest {
-        api.loginOutcome = { throw IOException("unreachable") }
+    fun `start, resend and change fail closed on an answer without a token`() = runTest {
+        api.startOutcome = { FakeAuthApi.challengeDto(token = null) }
+        api.resendOutcome = { FakeAuthApi.challengeDto(token = " ") }
+        api.changeOutcome = { FakeAuthApi.challengeDto(token = null) }
 
-        assertEquals(AuthError.NO_CONNECTION, failureOf(repository.login("a@b.com", "x")))
+        assertEquals(AuthError.UNKNOWN, failureOf(repository.startSignIn("+919876543210")))
+        assertEquals(AuthError.UNKNOWN, failureOf(repository.resendCode(challenge)))
+        assertEquals(AuthError.UNKNOWN, failureOf(repository.changePhone(challenge, "+919876543211")))
     }
 
     @Test
-    fun `server error maps 500 to SERVER`() = runTest {
-        api.loginOutcome = { throw FakeAuthApi.httpError(500) }
-
-        assertEquals(AuthError.SERVER, failureOf(repository.login("a@b.com", "x")))
+    fun `network and server problems map to their errors`() = runTest {
+        api.startOutcome = { throw IOException("unreachable") }
+        assertEquals(AuthError.NO_CONNECTION, failureOf(repository.startSignIn("+919876543210")))
+        api.startOutcome = { throw FakeAuthApi.httpError(500) }
+        assertEquals(AuthError.SERVER, failureOf(repository.startSignIn("+919876543210")))
+        api.startOutcome = { throw FakeAuthApi.httpError(429) }
+        assertEquals(AuthError.TOO_MANY_ATTEMPTS, failureOf(repository.startSignIn("+919876543210")))
     }
 
-    @Test
-    fun `too many sign-in attempts maps 429 to TOO_MANY_ATTEMPTS`() = runTest {
-        api.loginOutcome = { throw FakeAuthApi.httpError(429) }
-
-        assertEquals(AuthError.TOO_MANY_ATTEMPTS, failureOf(repository.login("a@b.com", "x")))
-        assertNull(storage.savedSession)
-    }
+    // ------------------------------------------------------------------ verify
 
     @Test
-    fun `an unreadable response maps to UNKNOWN instead of crashing`() = runTest {
-        api.loginOutcome = { throw IllegalStateException("malformed json") }
+    fun `the right code for a known number signs in and saves the session`() = runTest {
+        val result = repository.verifyCode(challenge, "123456")
 
-        assertEquals(AuthError.UNKNOWN, failureOf(repository.login("a@b.com", "x")))
-    }
-
-    // ------------------------------------------------------------------ register
-
-    @Test
-    fun `register success does NOT sign in, it only returns the phone verification`() = runTest {
-        val result = repository.register("Asha Devi", "Asha@Example.com", "longenough1", ADULT, "+919876543210")
-
-        val challenge = (result as AuthResult.Success).data
-        assertEquals("c".repeat(43), challenge.token)
-        assertTrue(challenge.codeSent)
-        assertFalse(challenge.toString().contains("ccc")) // the token never reaches a log line
-        assertEquals("Asha Devi", api.lastRegisterRequest?.name)
-        assertEquals("+919876543210", api.lastRegisterRequest?.phone)
-        assertEquals("1998-05-14", api.lastRegisterRequest?.dateOfBirth) // Phase 13A: ISO date, as the server reads it
-        assertFalse(api.lastRegisterRequest.toString().contains("9876543210"))
-        assertNull(storage.savedSession) // Phase 17B: no session before the phone is verified
-        assertEquals(0, storage.saveCalls)
-    }
-
-    // ------------------------------------------------------------------ Phase 17B phone verification
-
-    @Test
-    fun `login of an unverified phone maps 403 PHONE_NOT_VERIFIED and saves nothing`() = runTest {
-        api.loginOutcome = { throw FakeAuthApi.httpError(403, "PHONE_NOT_VERIFIED") }
-
-        assertEquals(AuthError.PHONE_NOT_VERIFIED, failureOf(repository.login("asha@example.com", "right-password")))
-        assertNull(storage.savedSession)
-    }
-
-    @Test
-    fun `a 403 without that code is not mistaken for an unverified phone`() = runTest {
-        api.loginOutcome = { throw FakeAuthApi.httpError(403) }
-
-        assertEquals(AuthError.UNKNOWN, failureOf(repository.login("asha@example.com", "x")))
-    }
-
-    @Test
-    fun `the right code signs in and saves the session like a sign-in`() = runTest {
-        val challenge = (repository.register("A", "a@b.com", "longenough1", ADULT, "+919876543210")
-            as AuthResult.Success).data
-
-        val result = repository.verifyPhone(challenge, "123456")
-
-        assertTrue(result is AuthResult.Success)
+        val signedIn = (result as AuthResult.Success).data as SignInResult.SignedIn
+        assertEquals("Asha Devi", signedIn.user.name)
         assertEquals("verified-token", storage.savedSession?.token)
         assertEquals("new-refresh", storage.savedSession?.refreshToken)
+        assertEquals("••••••3210", storage.savedSession?.user?.phoneHint)
+        assertEquals("Asha Devi", repository.currentUser.first()?.name)
         assertEquals("123456", api.lastVerifyRequest?.code)
-        assertFalse(api.lastVerifyRequest.toString().contains("123456"))
+    }
+
+    @Test
+    fun `the right code for a new number gives a ticket and signs nobody in`() = runTest {
+        api.verifyOutcome = { FakeAuthApi.signUpNeeded() }
+
+        val result = repository.verifyCode(challenge, "123456")
+
+        val needed = (result as AuthResult.Success).data as SignInResult.SignUpNeeded
+        assertEquals("k".repeat(43), needed.ticket.token)
+        assertEquals(1800, needed.ticket.expiresInSeconds)
+        assertNull(storage.savedSession)
+        assertEquals(0, storage.saveCalls)
+    }
+
+    @Test
+    fun `an incomplete or unknown verify answer fails closed`() = runTest {
+        api.verifyOutcome = { FakeAuthApi.signUpNeeded(ticket = null) }
+        assertEquals(AuthError.UNKNOWN, failureOf(repository.verifyCode(challenge, "123456")))
+        api.verifyOutcome = { VerifyResponseDto(status = "SIGNED_IN") }
+        assertEquals(AuthError.UNKNOWN, failureOf(repository.verifyCode(challenge, "123456")))
+        api.verifyOutcome = { VerifyResponseDto(status = "SOMETHING_ELSE") }
+        assertEquals(AuthError.UNKNOWN, failureOf(repository.verifyCode(challenge, "123456")))
+        assertNull(storage.savedSession)
     }
 
     @Test
     fun `a wrong code keeps the server's words, other refusals map to their codes`() = runTest {
-        val challenge = (repository.register("A", "a@b.com", "longenough1", ADULT, "+919876543210")
-            as AuthResult.Success).data
         api.verifyOutcome = { throw FakeAuthApi.httpError(400, "OTP_INVALID", "That code is not right. 2 tries left.") }
-        val wrong = repository.verifyPhone(challenge, "000000") as AuthResult.Failure
+        val wrong = repository.verifyCode(challenge, "000000") as AuthResult.Failure
         assertEquals(AuthError.OTP_INVALID, wrong.error)
         assertEquals("That code is not right. 2 tries left.", wrong.message)
 
-        for ((code, error) in listOf("OTP_EXPIRED" to AuthError.OTP_EXPIRED, "CHALLENGE_INVALID" to AuthError.CHALLENGE_INVALID,
-                "PHONE_IN_USE" to AuthError.PHONE_IN_USE, "PHONE_REQUIRED" to AuthError.PHONE_REQUIRED)) {
-            api.verifyOutcome = { throw FakeAuthApi.httpError(400, code, "server text") }
-            val failure = repository.verifyPhone(challenge, "000000") as AuthResult.Failure
-            assertEquals(error, failure.error)
-            assertNull(failure.message) // only case-dependent words are shown from the server
+        for ((code, error) in listOf("OTP_EXPIRED" to AuthError.OTP_EXPIRED, "OTP_LOCKED" to AuthError.OTP_LOCKED,
+                "CHALLENGE_INVALID" to AuthError.CHALLENGE_INVALID, "ACCOUNT_UNAVAILABLE" to AuthError.ACCOUNT_UNAVAILABLE)) {
+            api.verifyOutcome = { throw FakeAuthApi.httpError(400, code, "server words") }
+            val refused = repository.verifyCode(challenge, "000000") as AuthResult.Failure
+            assertEquals(error, refused.error)
+            assertNull("only case-dependent words are passed on", refused.message)
         }
-        api.verifyOutcome = { throw FakeAuthApi.httpError(429, "OTP_LOCKED") }
-        assertEquals(AuthError.OTP_LOCKED, failureOf(repository.verifyPhone(challenge, "000000")))
         assertNull(storage.savedSession)
     }
 
     @Test
-    fun `start, resend and change answer with a verification, and an answer without a token fails closed`() = runTest {
-        val challenge = (repository.startPhoneVerification("a@b.com", "pw-123") as AuthResult.Success).data
-        assertFalse(api.lastStartRequest.toString().contains("pw-123"))
-        api.startOutcome = { throw FakeAuthApi.httpError(401) }
-        assertEquals(AuthError.INVALID_CREDENTIALS, failureOf(repository.startPhoneVerification("a@b.com", "wrong")))
+    fun `C1 - signing in again sends this phone's old refresh token only for the same number`() = runTest {
+        val sameNumber = FakeSessionStorage(AuthSession("old", AuthUser(7, "Asha Devi", "••••••3210"),
+            refreshToken = "old-refresh", needsSignIn = true))
+        RemoteAuthRepository(api, sameNumber).verifyCode(challenge, "123456")
+        assertEquals("old-refresh", api.lastVerifyRequest?.previousRefreshToken)
 
-        assertTrue(repository.resendCode(challenge) is AuthResult.Success)
-        api.resendOutcome = { throw FakeAuthApi.httpError(429, "OTP_WAIT", "You can ask for a new code in 40 seconds.") }
-        val wait = repository.resendCode(challenge) as AuthResult.Failure
-        assertEquals(AuthError.OTP_WAIT, wait.error)
-        assertEquals("You can ask for a new code in 40 seconds.", wait.message)
-
-        api.changeOutcome = { FakeAuthApi.challengeDto(token = null) }
-        assertEquals(AuthError.UNKNOWN, failureOf(repository.changePhone(challenge, "+919876500000")))
-        api.changeOutcome = { throw IOException("offline") }
-        assertEquals(AuthError.NO_CONNECTION, failureOf(repository.changePhone(challenge, "+919876500000")))
+        val otherNumber = FakeSessionStorage(AuthSession("old", AuthUser(9, "Ravi", "••••••9999"),
+            refreshToken = "other-refresh"))
+        RemoteAuthRepository(api, otherNumber).verifyCode(challenge, "123456")
+        assertNull(api.lastVerifyRequest?.previousRefreshToken)
     }
 
     @Test
-    fun `register with an existing email maps 409 to EMAIL_ALREADY_USED`() = runTest {
-        api.registerOutcome = { throw FakeAuthApi.httpError(409) }
+    fun `signing in to another account first removes the previous account's data and ends its sign-in`() = runTest {
+        val switched = mutableListOf<Long>()
+        val previous = FakeSessionStorage(AuthSession("old", AuthUser(9, "Ravi", "••••••9999"), refreshToken = "r9"))
+        RemoteAuthRepository(api, previous, onAccountSwitch = { switched += it }).verifyCode(challenge, "123456")
 
-        val result = repository.register("Asha Devi", "asha@example.com", "longenough1", ADULT, "+919876543210")
+        assertEquals(listOf(9L), switched)
+        assertEquals(listOf("r9"), api.signedOutTokens)
+        assertEquals(7L, previous.savedSession?.user?.id)
+    }
 
-        assertEquals(AuthError.EMAIL_ALREADY_USED, failureOf(result))
-        assertNull(storage.savedSession)
+    // ------------------------------------------------------------------ sign-up
+
+    @Test
+    fun `sign-up sends the ticket, the name and the date, then saves the new session`() = runTest {
+        val result = repository.signUp(FakeAuthRepository.TICKET, "Kavya Raman", LocalDate.of(2000, 1, 15))
+
+        assertTrue(result is AuthResult.Success)
+        val sent = api.lastSignUpRequest!!
+        assertEquals("k".repeat(43), sent.ticket)
+        assertEquals("Kavya Raman", sent.name)
+        assertEquals("2000-01-15", sent.dateOfBirth)
+        assertEquals("new-account-token", storage.savedSession?.token)
+        assertEquals("new-refresh", storage.savedSession?.refreshToken)
     }
 
     @Test
-    fun `register with rejected input maps 400 to VALIDATION`() = runTest {
-        api.registerOutcome = { throw FakeAuthApi.httpError(400) }
-
+    fun `sign-up refusals map to their errors and save nothing`() = runTest {
+        api.signUpOutcome = { throw FakeAuthApi.httpError(400, "TICKET_INVALID") }
+        assertEquals(AuthError.TICKET_INVALID,
+            failureOf(repository.signUp(FakeAuthRepository.TICKET, "Kavya Raman", LocalDate.of(2000, 1, 15))))
+        api.signUpOutcome = { throw FakeAuthApi.httpError(409, "PHONE_IN_USE") }
+        assertEquals(AuthError.PHONE_IN_USE,
+            failureOf(repository.signUp(FakeAuthRepository.TICKET, "Kavya Raman", LocalDate.of(2000, 1, 15))))
+        api.signUpOutcome = { throw FakeAuthApi.httpError(400) }
         assertEquals(AuthError.VALIDATION,
-            failureOf(repository.register("A", "a@b.com", "longenough1", ADULT, "+919876543210")))
+            failureOf(repository.signUp(FakeAuthRepository.TICKET, "K4vya", LocalDate.of(2000, 1, 15))))
+        api.signUpOutcome = { throw IllegalStateException("unreadable") }
+        assertEquals(AuthError.UNKNOWN,
+            failureOf(repository.signUp(FakeAuthRepository.TICKET, "Kavya Raman", LocalDate.of(2000, 1, 15))))
+        assertNull(storage.savedSession)
     }
 
     // ------------------------------------------------------------------ profile refresh
 
     @Test
     fun `refreshProfile updates the stored user and keeps the token`() = runTest {
-        val old = AuthSession("jwt-abc", AuthUser(7, "Old Name", "asha@example.com"))
+        val old = AuthSession("jwt-abc", AuthUser(7, "Old Name", "••••••3210"))
         val storage = FakeSessionStorage(old)
         api.meOutcome = { FakeAuthApi.userDto(name = "New Name") }
 
@@ -207,7 +194,7 @@ class RemoteAuthRepositoryTest {
 
     @Test
     fun `C1 - refreshProfile with an expired token and no refresh secret keeps the session and asks for a sign-in`() = runTest {
-        val storage = FakeSessionStorage(AuthSession("expired", AuthUser(7, "Asha", "asha@example.com")))
+        val storage = FakeSessionStorage(AuthSession("expired", AuthUser(7, "Asha", "••••••3210")))
         api.meOutcome = { throw FakeAuthApi.httpError(401) }
 
         val result = RemoteAuthRepository(api, storage).refreshProfile()
@@ -219,7 +206,7 @@ class RemoteAuthRepositoryTest {
 
     @Test
     fun `refreshProfile while offline keeps the session`() = runTest {
-        val storage = FakeSessionStorage(AuthSession("jwt", AuthUser(7, "Asha", "asha@example.com")))
+        val storage = FakeSessionStorage(AuthSession("jwt", AuthUser(7, "Asha", "••••••3210")))
         api.meOutcome = { throw IOException("offline") }
 
         val result = RemoteAuthRepository(api, storage).refreshProfile()
@@ -240,7 +227,7 @@ class RemoteAuthRepositoryTest {
 
     @Test
     fun `logout clears the stored session`() = runTest {
-        val storage = FakeSessionStorage(AuthSession("jwt", AuthUser(7, "Asha", "asha@example.com")))
+        val storage = FakeSessionStorage(AuthSession("jwt", AuthUser(7, "Asha", "••••••3210")))
 
         RemoteAuthRepository(api, storage).logout()
 
@@ -249,15 +236,12 @@ class RemoteAuthRepositoryTest {
     }
 
     @Test
-    fun `request objects never print passwords`() {
-        val text = RegisterRequestDto("Asha", "asha@example.com", "super-secret-pw", "1998-05-14", "+919876543210").toString()
-
-        assertFalse(text.contains("super-secret-pw"))
-        assertFalse(text.contains("asha@example.com"))
+    fun `request and answer objects never print the ticket, the name, the date or tokens`() {
+        val text = SignUpRequestDto("k".repeat(43), "Kavya Raman", "1998-05-14").toString() +
+            FakeAuthApi.signUpNeeded().toString() + FakeAuthRepository.TICKET.toString() + FakeAuthRepository.CHALLENGE
+        assertFalse(text.contains("kkkkk"))
+        assertFalse(text.contains("Kavya"))
         assertFalse(text.contains("1998-05-14"))
-    }
-
-    private companion object {
-        val ADULT: java.time.LocalDate = java.time.LocalDate.of(1998, 5, 14)
+        assertFalse(text.contains("tttt"))
     }
 }

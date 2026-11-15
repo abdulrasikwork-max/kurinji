@@ -33,7 +33,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_lg"
-            android:hint="@string/label_full_name">
+            android:hint="@string/label_real_name"
+            app:counterEnabled="true"
+            app:counterMaxLength="60"
+            app:helperText="@string/register_name_helper"
+            app:helperTextEnabled="true">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/fullNameInput"
@@ -42,47 +46,7 @@
                 android:autofillHints="name"
                 android:imeOptions="actionNext"
                 android:inputType="textPersonName|textCapWords"
-                android:maxLines="1" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/emailLayout"
-            style="@style/Widget.SafeSphere.TextInputLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:hint="@string/label_email">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/emailInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:autofillHints="emailAddress"
-                android:imeOptions="actionNext"
-                android:inputType="textEmailAddress"
-                android:maxLines="1" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <!-- Phase 17B: a 6-digit code goes to this number before the first sign-in (India only for now). -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/phoneLayout"
-            style="@style/Widget.SafeSphere.TextInputLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:hint="@string/label_mobile_number"
-            app:helperText="@string/register_phone_helper"
-            app:helperTextEnabled="true"
-            app:prefixText="+91 ">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/phoneInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:autofillHints="phoneNational"
-                android:imeOptions="actionNext"
-                android:inputType="phone"
-                android:maxLength="16"
+                android:maxLength="60"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -106,46 +70,6 @@
                 android:focusable="false"
                 android:importantForAutofill="no"
                 android:inputType="none"
-                android:maxLines="1" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/passwordLayout"
-            style="@style/Widget.SafeSphere.TextInputLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:hint="@string/label_password"
-            app:endIconMode="password_toggle">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/passwordInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:autofillHints="newPassword"
-                android:imeOptions="actionNext"
-                android:inputType="textPassword"
-                android:maxLength="72"
-                android:maxLines="1" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/confirmPasswordLayout"
-            style="@style/Widget.SafeSphere.TextInputLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:hint="@string/label_confirm_password"
-            app:endIconMode="password_toggle">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/confirmPasswordInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:autofillHints="newPassword"
-                android:imeOptions="actionDone"
-                android:inputType="textPassword"
-                android:maxLength="72"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -175,26 +99,5 @@
             android:minHeight="@dimen/menu_row_min_height"
             android:text="@string/action_create_account" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:gravity="center"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/register_have_account"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/loginButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/action_log_in" />
-        </LinearLayout>
     </LinearLayout>
 </ScrollView>

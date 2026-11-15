@@ -7,7 +7,6 @@ package com.safesphere.app.feature.social.domain
  */
 object ProfileInputPolicy {
 
-    const val DISPLAY_NAME_MAX = 40
     const val BIO_MAX = 160
     const val CITY_MAX = 60
 
@@ -17,16 +16,15 @@ object ProfileInputPolicy {
     private val CITY = Regex("^[\\p{L}\\p{M}][\\p{L}\\p{M} .'-]*$")
 
     enum class Problem {
-        HANDLE_FORMAT, HANDLE_UNAVAILABLE, NAME_REQUIRED, NAME_TOO_LONG, BIO_TOO_LONG, CITY_INVALID, LINK
+        HANDLE_FORMAT, HANDLE_UNAVAILABLE, BIO_TOO_LONG, CITY_INVALID, LINK
     }
 
     data class Problems(
         val handle: Problem? = null,
-        val displayName: Problem? = null,
         val bio: Problem? = null,
         val city: Problem? = null
     ) {
-        val any: Boolean get() = handle != null || displayName != null || bio != null || city != null
+        val any: Boolean get() = handle != null || bio != null || city != null
     }
 
     fun check(input: ProfileInput): Problems {
@@ -34,13 +32,6 @@ object ProfileInputPolicy {
             HandlePolicy.Result.OK -> null
             HandlePolicy.Result.INVALID_FORMAT -> Problem.HANDLE_FORMAT
             HandlePolicy.Result.RESERVED -> Problem.HANDLE_UNAVAILABLE
-        }
-        val name = input.displayName.trim()
-        val displayName = when {
-            name.isEmpty() -> Problem.NAME_REQUIRED
-            length(name) > DISPLAY_NAME_MAX -> Problem.NAME_TOO_LONG
-            LINK.containsMatchIn(name) -> Problem.LINK
-            else -> null
         }
         val bioText = input.bio.trim()
         val bio = when {
@@ -51,7 +42,7 @@ object ProfileInputPolicy {
         val cityText = input.city.trim().replace(Regex("\\s+"), " ")
         val city = if (cityText.isEmpty() || (length(cityText) <= CITY_MAX && CITY.matches(cityText))) null
         else Problem.CITY_INVALID
-        return Problems(handle, displayName, bio, city)
+        return Problems(handle, bio, city)
     }
 
     private fun length(text: String): Int = text.codePointCount(0, text.length)

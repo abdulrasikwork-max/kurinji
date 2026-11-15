@@ -38,7 +38,7 @@ class EmergencyLocationSharingTest {
     private val repository = FakeEmergencyLocationRepository()
     private val battery = FakeBatteryMonitor(percent = 42)
     private val connectivity = FakeConnectivityMonitor(online = true)
-    private val session = FakeSessionStorage(AuthSession("token", AuthUser(7, "Asha", "asha@example.com")))
+    private val session = FakeSessionStorage(AuthSession("token", AuthUser(7, "Asha", "••••••3210")))
 
     private fun TestScope.sharing() = EmergencyLocationSharing(
         scope = backgroundScope,
@@ -283,7 +283,7 @@ class EmergencyLocationSharingTest {
         assertEquals(2, sharing.state.value.pendingCount)
 
         // Signing in again (or a refresh) saves a new token: everything waiting goes out.
-        session.save(AuthSession("new-token", AuthUser(7, "Asha", "asha@example.com")))
+        session.save(AuthSession("new-token", AuthUser(7, "Asha", "••••••3210")))
         runCurrent()
         assertEquals(2, repository.uploads.size)
         assertEquals(2, repository.uploads.last().second.size)
@@ -293,7 +293,7 @@ class EmergencyLocationSharingTest {
     @Test
     fun `C1 - another account signing in on this phone stops the previous account's sharing`() = runTest {
         val sharing = started()
-        session.save(AuthSession("other", AuthUser(8, "Bina", "bina@example.com")))
+        session.save(AuthSession("other", AuthUser(8, "Bina", "••••••3210")))
         runCurrent()
         assertTrue(sharing.state.value.signedOut)
         assertFalse(sharing.state.value.isTracking)

@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-data class ProfileUiState(val displayName: String?, val email: String?)
+data class ProfileUiState(val displayName: String?, val phoneHint: String?)
 
 class ProfileViewModel(
     private val authRepository: AuthRepository,
@@ -23,7 +23,7 @@ class ProfileViewModel(
 ) : ViewModel() {
 
     val uiState: Flow<ProfileUiState> =
-        authRepository.currentUser.map { ProfileUiState(it?.name, it?.email) }
+        authRepository.currentUser.map { ProfileUiState(it?.name, it?.phoneHint?.let { hint -> "+91 $hint" }) }
 
     private val _isLoggedOut = MutableStateFlow(false)
 

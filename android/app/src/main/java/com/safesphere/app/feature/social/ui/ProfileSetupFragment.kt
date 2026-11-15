@@ -37,7 +37,7 @@ class ProfileSetupFragment :
         super.onViewCreated(view, savedInstanceState)
         addChips(binding.languageChips, Language.entries.map { it.name to SocialLabels.of(it) })
         addChips(binding.interestChips, Interest.entries.map { it.name to SocialLabels.of(it) })
-        listOf(binding.handleLayout, binding.displayNameLayout, binding.bioLayout, binding.cityLayout)
+        listOf(binding.handleLayout, binding.bioLayout, binding.cityLayout)
             .forEach { it.clearErrorOnTextChange() }
         binding.cityPickButton.setOnClickListener {
             CityPicker.show(this, com.safesphere.app.feature.social.domain.Cities.match(binding.cityInput.text?.toString()),
@@ -86,7 +86,6 @@ class ProfileSetupFragment :
         }
 
         show(binding.handleLayout, state.problems.handle)
-        show(binding.displayNameLayout, state.problems.displayName)
         show(binding.bioLayout, state.problems.bio)
         show(binding.cityLayout, state.problems.city)
 
@@ -119,7 +118,6 @@ class ProfileSetupFragment :
 
     private fun fill(profile: OwnProfile) {
         binding.handleInput.setText(profile.handle)
-        binding.displayNameInput.setText(profile.displayName)
         binding.bioInput.setText(profile.bio.orEmpty())
         binding.cityInput.setText(profile.city.orEmpty())
         check(binding.languageChips, profile.languages.map { it.name }.toSet())
@@ -128,7 +126,6 @@ class ProfileSetupFragment :
 
     private fun input() = ProfileInput(
         handle = binding.handleInput.text.toString(),
-        displayName = binding.displayNameInput.text.toString(),
         bio = binding.bioInput.text.toString(),
         languages = checked(binding.languageChips).mapNotNull { name -> Language.entries.firstOrNull { it.name == name } }
             .toSet(),

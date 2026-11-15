@@ -7,6 +7,9 @@ import kotlinx.coroutines.flow.flowOf
 /**
  * The single entry point the app uses for accounts. ViewModels know only this interface, never
  * Retrofit or DataStore, so the networking can change without touching any screen.
+ *
+ * Phase N2 (decision N-7): the phone number and a texted code are the only way in; there is no e-mail and no password.
+ * Sign-in and sign-up are one flow: [startSignIn] → [verifyCode] → (a new number only) [signUp].
  */
 interface AuthRepository {
 
@@ -14,40 +17,33 @@ interface AuthRepository {
     val currentUser: Flow<AuthUser?>
 
     /**
-     * Phase 11 C1: true while the server needs the password again ("sign in to sync"). The person is still signed in on
+     * Phase 11 C1: true while the server needs a new sign-in ("sign in to sync"). The person is still signed in on
      * this phone: SOS, Safety Circle texts and a Safe Walk keep working; only server sync waits.
      */
     val signInNeeded: Flow<Boolean> get() = flowOf(false)
 
     /**
-     * Creates an account on the server. Phase 17B: it does NOT sign in: the server texts a code to [phone] and the
-     * answer is the verification to finish with [verifyPhone]. Phase 13A: [dateOfBirth] must be 18+ (checked on the
-     * phone and on the server); it is sent once and stored nowhere.
+     * Texts a code to [phone] (already normalised, "+91…"). The answer is the same whether or not the number has an
+     * account; nothing is saved on the phone.
      */
-    suspend fun register(
-        name: String,
-        email: String,
-        password: String,
-        dateOfBirth: LocalDate,
-        phone: String
-    ): AuthResult<PhoneChallenge>
-
-    /** Checks credentials on the server and signs in. Phase 17B: [AuthError.PHONE_NOT_VERIFIED] until a phone is verified. */
-    suspend fun login(email: String, password: String): AuthResult<AuthUser>
+    suspend fun startSignIn(phone: String): AuthResult<PhoneChallenge>
 
     /**
-     * Phase 17B: the right password of an account without a verified phone (an interrupted sign-up, or an account from
-     * before 17B) gets a verification; [phone] is needed only when the account has no number yet.
+     * The right code signs this phone in to the number's account (saved like any sign-in; a running SOS of this phone's
+     * earlier sign-in to the same account moves over), or answers that the number has no account yet (a ticket).
      */
-    suspend fun startPhoneVerification(email: String, password: String, phone: String? = null): AuthResult<PhoneChallenge>
+    suspend fun verifyCode(challenge: PhoneChallenge, code: String): AuthResult<SignInResult>
 
-    /** Phase 17B: the right code verifies the number and signs this phone in (saved like a sign-in). */
-    suspend fun verifyPhone(challenge: PhoneChallenge, code: String): AuthResult<AuthUser>
+    /**
+     * Phase N2: creates the account with [ticket], the person's real [name] and an adult [dateOfBirth] (Phase 13A: sent
+     * once, stored nowhere), and signs this phone in.
+     */
+    suspend fun signUp(ticket: SignUpTicket, name: String, dateOfBirth: LocalDate): AuthResult<AuthUser>
 
-    /** Phase 17B: a new code to the same number (a cooldown and caps apply). */
+    /** A new code to the same number (a cooldown and caps apply). */
     suspend fun resendCode(challenge: PhoneChallenge): AuthResult<PhoneChallenge>
 
-    /** Phase 17B: another number, before the first one was verified. */
+    /** Another number, before the code was entered (a typo). */
     suspend fun changePhone(challenge: PhoneChallenge, phone: String): AuthResult<PhoneChallenge>
 
     /** Asks the server (GET /api/users/me) who the stored token belongs to. Clears the session if the token was rejected. */

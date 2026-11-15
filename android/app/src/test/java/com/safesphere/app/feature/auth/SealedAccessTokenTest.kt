@@ -47,8 +47,8 @@ class SealedAccessTokenTest {
     private lateinit var file: File
     private lateinit var dataStore: DataStore<Preferences>
     private val wrapper = FakeKeyWrapper()
-    private val user = AuthUser(7, "Asha", "asha@example.com")
-    private val otherUser = AuthUser(8, "Bala", "bala@example.com")
+    private val user = AuthUser(7, "Asha", "••••••3210")
+    private val otherUser = AuthUser(8, "Bala", "••••••4321")
 
     private val legacyKey = stringPreferencesKey("access_token")
     private val sealedKey = stringPreferencesKey("access_token_sealed")
@@ -306,7 +306,8 @@ class SealedAccessTokenTest {
         val restarted = storage().session.first()!!
         assertEquals("", restarted.token)
         assertTrue(restarted.needsSignIn)
-        assertEquals(user, restarted.user)
+        // N2: a session from before N2 has an e-mail and no number; it stays signed in, the e-mail is not read.
+        assertEquals(user.copy(phoneHint = null), restarted.user)
     }
 
     // ---- source guard ---------------------------------------------------------------------------------------------------

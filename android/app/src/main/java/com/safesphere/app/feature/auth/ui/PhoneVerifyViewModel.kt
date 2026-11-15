@@ -13,6 +13,7 @@ import com.safesphere.app.feature.auth.domain.AuthResult
 import com.safesphere.app.feature.auth.domain.PendingVerification
 import com.safesphere.app.feature.auth.domain.PhoneChallenge
 import com.safesphere.app.feature.auth.domain.PhonePolicy
+import com.safesphere.app.feature.auth.domain.SignInResult
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,13 +22,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** Phase 17B: where the code screen goes once the phone is verified (and this phone is signed in). */
-enum class AfterVerification { MAKE_PROFILE, HOME }
+/**
+ * Phase 17B / N2: where the code screen goes after the right code: signed in (a profile to make, or Home), or, for a
+ * number without an account, the name-and-age screen.
+ */
+enum class AfterVerification { MAKE_PROFILE, HOME, SIGN_UP }
 
 data class PhoneVerifyUiState(
     /** The last 4 digits of the number the code went to ("••••••3210"); null while no number is known. */
     val phoneHint: String? = null,
-    /** The number field is shown: the account has none yet, or the person chose "Use another number". */
+    /** The number field is shown: the person chose "Use another number" (a typo). */
     val askingForNumber: Boolean = false,
     /** Whether a number exists to go back to from "Use another number". */
     val canCancelNumberChange: Boolean = false,
@@ -45,20 +49,21 @@ data class PhoneVerifyUiState(
     val newCodeSent: Boolean = false,
     /**
      * Nothing to verify in this app's memory (the app was closed, or the code request ended on the server): the person
-     * signs in again, which resumes the same verification.
+     * enters the number again; a code already sent keeps working.
      */
     val lost: Boolean = false,
-    /** One-shot: verified and signed in; where to go. */
+    /** One-shot: the code was right; where to go. */
     val done: AfterVerification? = null
 ) {
     val canResend: Boolean get() = !askingForNumber && phoneHint != null && resendInSeconds == 0L && !isBusy
 }
 
 /**
- * Phase 17B: the "Enter the code" screen. Reads the verification handed over by sign-up or sign-in
+ * Phase 17B / N2: the "Enter the code" screen. Reads the code request handed over by the number screen
  * ([PendingVerification], memory only). Six digits are sent as soon as they are typed (once per code); wrong, expired
  * and locked codes, resend (with the server's cooldown counted down here) and a change of number are all on this screen.
- * Nothing is stored on the phone; a successful code signs in exactly like a sign-in.
+ * Nothing is stored on the phone. The right code signs in the number's account, or (a number without an account)
+ * hands a sign-up ticket to the name-and-age screen.
  */
 class PhoneVerifyViewModel(
     private val authRepository: AuthRepository,
@@ -157,17 +162,24 @@ class PhoneVerifyViewModel(
         lastSubmittedCode = code
         _uiState.update { it.copy(isBusy = true, codeError = null, authError = null, authMessage = null) }
         viewModelScope.launch {
-            when (val result = authRepository.verifyPhone(challenge, code)) {
+            when (val result = authRepository.verifyCode(challenge, code)) {
                 is AuthResult.Success -> {
-                    pending.clear()
                     countdown?.cancel()
-                    val next = if (needsProfile()) AfterVerification.MAKE_PROFILE else AfterVerification.HOME
+                    val next = when (val outcome = result.data) {
+                        is SignInResult.SignedIn -> {
+                            pending.clear()
+                            if (needsProfile()) AfterVerification.MAKE_PROFILE else AfterVerification.HOME
+                        }
+                        is SignInResult.SignUpNeeded -> {
+                            pending.signUpWith(outcome.ticket)
+                            AfterVerification.SIGN_UP
+                        }
+                    }
                     _uiState.update { it.copy(isBusy = false, done = next) }
                 }
                 is AuthResult.Failure -> {
                     // A new attempt at the same digits makes sense only after a connection problem.
                     if (result.error == AuthError.NO_CONNECTION || result.error == AuthError.SERVER) lastSubmittedCode = null
-                    if (result.error == AuthError.PHONE_REQUIRED) onUseAnotherNumber()
                     fail(result)
                 }
             }
@@ -177,7 +189,7 @@ class PhoneVerifyViewModel(
     private fun show(challenge: PhoneChallenge) {
         pending.update(challenge)
         _uiState.update {
-            it.copy(phoneHint = challenge.phoneHint, askingForNumber = challenge.needsPhone,
+            it.copy(phoneHint = challenge.phoneHint, askingForNumber = false,
                 canCancelNumberChange = false, codeSent = challenge.codeSent, resendInSeconds = challenge.resendInSeconds,
                 isBusy = false, lost = false)
         }
@@ -199,7 +211,7 @@ class PhoneVerifyViewModel(
         _uiState.update { it.copy(isBusy = false, authError = result.error, authMessage = result.message) }
     }
 
-    /** The verification is gone (app closed, or ended on the server): sign in again to resume it. */
+    /** The code request is gone (app closed, or ended on the server): enter the number again. */
     private fun lose(result: AuthResult.Failure? = null) {
         pending.clear()
         countdown?.cancel()

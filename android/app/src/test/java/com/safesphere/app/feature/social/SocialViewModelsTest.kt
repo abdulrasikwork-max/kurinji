@@ -75,12 +75,11 @@ class SocialViewModelsTest {
         vm.onPrefilled()
         assertNull(vm.uiState.value.prefill)
 
-        vm.onSave(ProfileInput("1x", "", "", emptySet(), emptySet(), ""))
+        vm.onSave(ProfileInput("1x", "", emptySet(), emptySet(), ""))
         assertEquals(ProfileInputPolicy.Problem.HANDLE_FORMAT, vm.uiState.value.problems.handle)
-        assertEquals(ProfileInputPolicy.Problem.NAME_REQUIRED, vm.uiState.value.problems.displayName)
         assertFalse(repository.calls.contains("saveProfile"))
 
-        vm.onSave(ProfileInput("asha_new", "Asha D", "", emptySet(), emptySet(), ""))
+        vm.onSave(ProfileInput("asha_new", "", emptySet(), emptySet(), ""))
         advanceUntilIdle()
         assertTrue(vm.uiState.value.saved)
         assertEquals("asha_new", vm.uiState.value.profile?.handle)
@@ -92,7 +91,7 @@ class SocialViewModelsTest {
         repository.saveResult = ApiResult.Failure(ApiError.CONFLICT, "That handle is not available")
         val vm = ProfileSetupViewModel(repository, clock)
         advanceUntilIdle()
-        vm.onSave(ProfileInput("taken_one", "Asha", "", emptySet(), emptySet(), ""))
+        vm.onSave(ProfileInput("taken_one", "", emptySet(), emptySet(), ""))
         advanceUntilIdle()
         assertEquals("That handle is not available", vm.uiState.value.failure?.message)
         assertTrue(vm.uiState.value.formReady)

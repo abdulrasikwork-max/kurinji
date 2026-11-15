@@ -55,7 +55,7 @@ class CircleAlertCoordinatorTest {
     private val sms = FakeSmsSender()
     private val store = FakeCircleAlertStore()
     private val server = FakeCircleAlertRepository()
-    private val sessionStorage = FakeSessionStorage(AuthSession("token", AuthUser(USER_ID, "Asha", "asha@example.com")))
+    private val sessionStorage = FakeSessionStorage(AuthSession("token", AuthUser(USER_ID, "Asha", "••••••3210")))
     private val walk = MutableStateFlow(SafeWalkState())
     private val emergency = MutableStateFlow(LocationSharingState())
 
@@ -321,7 +321,7 @@ class CircleAlertCoordinatorTest {
 
         // Signing in again (or a refresh) saves a new token: the waiting reports go out.
         server.unauthorized = false
-        sessionStorage.save(AuthSession("new-token", AuthUser(USER_ID, "Asha", "asha@example.com")))
+        sessionStorage.save(AuthSession("new-token", AuthUser(USER_ID, "Asha", "••••••3210")))
         runCurrent()
         assertEquals(2, server.reports.size)
     }
@@ -329,7 +329,7 @@ class CircleAlertCoordinatorTest {
     @Test
     fun `C1 - another account signing in on this phone gets none of the previous account's Circle copy`() = runTest {
         val alerts = optedIn()
-        sessionStorage.save(AuthSession("other", AuthUser(USER_ID + 1, "Bina", "bina@example.com")))
+        sessionStorage.save(AuthSession("other", AuthUser(USER_ID + 1, "Bina", "••••••3210")))
         runCurrent()
         assertTrue(alerts.state.value.recipients.isEmpty())
         assertFalse(alerts.state.value.autoSms)

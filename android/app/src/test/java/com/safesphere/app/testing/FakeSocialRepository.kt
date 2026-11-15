@@ -71,7 +71,7 @@ class FakeSocialRepository : SocialRepository {
     override suspend fun saveProfile(input: ProfileInput): ApiResult<OwnProfile> {
         calls += "saveProfile"
         savedInput = input
-        return saveResult ?: ApiResult.Success(ME.copy(handle = input.handle, displayName = input.displayName))
+        return saveResult ?: ApiResult.Success(ME.copy(handle = input.handle))
     }
 
     override suspend fun findByHandle(handle: String): ApiResult<PersonProfile> {

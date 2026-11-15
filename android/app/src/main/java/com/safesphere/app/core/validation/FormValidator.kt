@@ -7,7 +7,6 @@ package com.safesphere.app.core.validation
  */
 object FormValidator {
 
-    const val MIN_PASSWORD_LENGTH = 8
     private const val MIN_NAME_LENGTH = 2
 
     /** What a person may type: digits, spaces, ( ) . - and an optional leading +. */
@@ -37,19 +36,6 @@ object FormValidator {
             !EMAIL_REGEX.matches(trimmed) -> FieldError.INVALID_EMAIL
             else -> null
         }
-    }
-
-    /** For registration: the password must be present and long enough. Passwords are never trimmed. */
-    fun validateNewPassword(password: String): FieldError? = when {
-        password.isEmpty() -> FieldError.REQUIRED
-        password.length < MIN_PASSWORD_LENGTH -> FieldError.PASSWORD_TOO_SHORT
-        else -> null
-    }
-
-    fun validateConfirmPassword(password: String, confirmation: String): FieldError? = when {
-        confirmation.isEmpty() -> FieldError.REQUIRED
-        confirmation != password -> FieldError.PASSWORDS_DO_NOT_MATCH
-        else -> null
     }
 
     /** Required phone number in a believable format. */

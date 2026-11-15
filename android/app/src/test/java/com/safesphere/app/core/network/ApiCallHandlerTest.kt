@@ -15,7 +15,7 @@ import retrofit2.Response
 
 class ApiCallHandlerTest {
 
-    private val signedIn = AuthSession("jwt", AuthUser(1, "Asha", "asha@example.com"))
+    private val signedIn = AuthSession("jwt", AuthUser(1, "Asha", "••••••3210"))
     private val storage = FakeSessionStorage(signedIn)
     private val handler = ApiCallHandler(storage)
 

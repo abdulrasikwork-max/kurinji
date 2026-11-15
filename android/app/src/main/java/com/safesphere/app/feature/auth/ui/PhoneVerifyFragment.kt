@@ -111,6 +111,10 @@ class PhoneVerifyFragment : ViewBindingFragment<FragmentPhoneVerifyBinding>(Frag
                 viewModel.onDoneHandled()
                 findNavController().navigate(R.id.action_phone_verify_to_start)
             }
+            AfterVerification.SIGN_UP -> {
+                viewModel.onDoneHandled()
+                findNavController().navigate(R.id.action_phone_verify_to_register)
+            }
             null -> Unit
         }
     }

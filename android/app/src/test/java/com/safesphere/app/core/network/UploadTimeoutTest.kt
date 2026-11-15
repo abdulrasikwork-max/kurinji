@@ -102,7 +102,7 @@ class UploadTimeoutTest {
 
     // ---- a timeout is not "no connection" ----
 
-    private val handler = ApiCallHandler(FakeSessionStorage(AuthSession("jwt", AuthUser(1, "Asha", "asha@example.com"))))
+    private val handler = ApiCallHandler(FakeSessionStorage(AuthSession("jwt", AuthUser(1, "Asha", "••••••3210"))))
 
     @Test
     fun `a read or write that ran out of time is reported as timed out`() = runTest {

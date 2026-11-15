@@ -141,3 +141,29 @@ Changing the phone number (N3), the college ID check and the name lock (N3), ban
   accounts ("Mysql Check") were made on the way.
 - **Real-MySQL test:** `MySqlTimestampStorageTest` with `SAFESPHERE_MYSQL_TESTS=true`: 2 run, 0 failures.
 - An older jar (V32 or before) now refuses to start against the development database. The pilot stays on V30.
+
+### A1 Android: the sign-in flow (2026-11-15)
+- Screens: the first screen (`loginFragment`, kept as the destination id the rest of the app opens) asks for the
+  mobile number only ("Send code"; checked by `PhonePolicy` first); the code screen (`phoneVerifyFragment`) is kept
+  and now has three outcomes: a profile to make, Home, or (a number without an account) "About you"
+  (`registerFragment`: the real name, `RealNamePolicy.kt`, the server's rule, and the date of birth, 18+, stored
+  nowhere), which creates the account and opens the profile form. Back from "About you" goes to the number screen
+  (the code is used up); a used or ended ticket says so and offers "Enter your number again".
+- Removed: the e-mail and password fields, "Forgot password?" (fragment, view model, layout, its nav destination),
+  "Create an account" (sign-in and sign-up are one flow), the password and confirmation checks in `FormValidator`.
+- Domain / data: `AuthRepository` = `startSignIn`, `verifyCode` (`SignInResult.SignedIn` / `SignUpNeeded`),
+  `signUp`, `resendCode`, `changePhone`, `refreshProfile`, `logout`; `PendingVerification` also holds the sign-up
+  ticket (memory only); `AuthUser.email` became `phoneHint`; `AuthError` follows the server's codes (`TICKET_INVALID`,
+  `ACCOUNT_UNAVAILABLE` new; the password and e-mail ones gone). The DTOs fail closed (no token, no ticket, an unknown
+  status = an unreadable answer).
+- "Sign in to sync" (Phase 11 C1): the phone cannot know the account before the code is checked, so it sends its old
+  refresh token when the number's last 4 digits match its session; the server ignores another account's token.
+- Session storage: the masked number replaces the e-mail; a session saved before N2 (e-mail, no number) stays
+  readable and signed in (an SOS may run), and its e-mail is removed at the next write.
+- One name (N-23): the profile form no longer has "Name on your profile"; the request no longer sends one.
+  "Settings and more" shows the name and the masked number instead of the e-mail.
+- Tests: `LoginViewModelTest`, `RegisterViewModelTest`, `RemoteAuthRepositoryTest` rewritten; a sign-up case in
+  `PhoneVerifyViewModelTest`; new `RealNamePolicyTest` (same cases as the server); session refresh, sealed-token,
+  navigation, form-validator and social tests adjusted; the e-mail literals in test users became masked numbers.
+- Result: Android **760 run, 0 failures, 0 errors, 0 skipped**; `assembleDebug` OK; lint **0 errors, 91 warnings**.
+  Not seen on a screen yet (unit C).

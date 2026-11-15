@@ -56,7 +56,7 @@ class SessionContinuityTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val base = Instant.parse("2026-10-22T10:00:00Z")
-    private val user = AuthUser(7, "Asha", "asha@example.com")
+    private val user = AuthUser(7, "Asha", "••••••3210")
 
     // ---- TokenRenewalPolicy ------------------------------------------------------------------------------------
 

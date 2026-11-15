@@ -5,31 +5,29 @@ import com.safesphere.app.feature.auth.domain.AuthRepository
 import com.safesphere.app.feature.auth.domain.AuthResult
 import com.safesphere.app.feature.auth.domain.AuthUser
 import com.safesphere.app.feature.auth.domain.PhoneChallenge
+import com.safesphere.app.feature.auth.domain.SignInResult
+import com.safesphere.app.feature.auth.domain.SignUpTicket
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
-/** In-memory test double: ViewModel tests never touch the network or DataStore. */
+/** In-memory test double: ViewModel tests never touch the network or DataStore. Phase N2: phone and code only. */
 class FakeAuthRepository(signedInUser: AuthUser? = null) : AuthRepository {
 
     private val user = MutableStateFlow(signedInUser)
 
-    var loginResult: AuthResult<AuthUser> = AuthResult.Success(DEFAULT_USER)
-    /** Phase 17B: sign-up never signs in; it answers with a phone verification (a code was sent). */
-    var registerResult: AuthResult<PhoneChallenge> = AuthResult.Success(CHALLENGE)
     var startResult: AuthResult<PhoneChallenge> = AuthResult.Success(CHALLENGE)
-    var verifyResult: AuthResult<AuthUser> = AuthResult.Success(DEFAULT_USER)
+    var verifyResult: AuthResult<SignInResult> = AuthResult.Success(SignInResult.SignedIn(DEFAULT_USER))
+    var signUpResult: AuthResult<AuthUser> = AuthResult.Success(DEFAULT_USER)
     var resendResult: AuthResult<PhoneChallenge> = AuthResult.Success(CHALLENGE)
     var changeResult: AuthResult<PhoneChallenge> = AuthResult.Success(CHALLENGE)
     var refreshResult: AuthResult<AuthUser> = AuthResult.Success(DEFAULT_USER)
 
-    var loginCalls = 0
-        private set
-    var registerCalls = 0
-        private set
     var startCalls = 0
         private set
     var verifyCalls = 0
+        private set
+    var signUpCalls = 0
         private set
     var resendCalls = 0
         private set
@@ -37,17 +35,15 @@ class FakeAuthRepository(signedInUser: AuthUser? = null) : AuthRepository {
         private set
     var logoutCalls = 0
         private set
-    var lastLoginEmail: String? = null
-        private set
-    var lastRegisterName: String? = null
-        private set
-    var lastRegisterDateOfBirth: LocalDate? = null
-        private set
-    var lastRegisterPhone: String? = null
-        private set
-    var lastStartPassword: String? = null
+    var lastStartPhone: String? = null
         private set
     var lastVerifiedCode: String? = null
+        private set
+    var lastSignUpTicket: SignUpTicket? = null
+        private set
+    var lastSignUpName: String? = null
+        private set
+    var lastSignUpDateOfBirth: LocalDate? = null
         private set
     var lastChangedPhone: String? = null
         private set
@@ -57,36 +53,28 @@ class FakeAuthRepository(signedInUser: AuthUser? = null) : AuthRepository {
     /** The signed-in user right now (null = nobody). */
     fun currentUserNow(): AuthUser? = user.value
 
-    override suspend fun register(
-        name: String,
-        email: String,
-        password: String,
-        dateOfBirth: LocalDate,
-        phone: String
-    ): AuthResult<PhoneChallenge> {
-        registerCalls++
-        lastRegisterName = name
-        lastRegisterDateOfBirth = dateOfBirth
-        lastRegisterPhone = phone
-        return registerResult
-    }
-
-    override suspend fun login(email: String, password: String): AuthResult<AuthUser> {
-        loginCalls++
-        lastLoginEmail = email
-        return loginResult.also { if (it is AuthResult.Success) user.value = it.data }
-    }
-
-    override suspend fun startPhoneVerification(email: String, password: String, phone: String?): AuthResult<PhoneChallenge> {
+    override suspend fun startSignIn(phone: String): AuthResult<PhoneChallenge> {
         startCalls++
-        lastStartPassword = password
+        lastStartPhone = phone
         return startResult
     }
 
-    override suspend fun verifyPhone(challenge: PhoneChallenge, code: String): AuthResult<AuthUser> {
+    override suspend fun verifyCode(challenge: PhoneChallenge, code: String): AuthResult<SignInResult> {
         verifyCalls++
         lastVerifiedCode = code
-        return verifyResult.also { if (it is AuthResult.Success) user.value = it.data }
+        return verifyResult.also {
+            if (it is AuthResult.Success && it.data is SignInResult.SignedIn) {
+                user.value = (it.data as SignInResult.SignedIn).user
+            }
+        }
+    }
+
+    override suspend fun signUp(ticket: SignUpTicket, name: String, dateOfBirth: LocalDate): AuthResult<AuthUser> {
+        signUpCalls++
+        lastSignUpTicket = ticket
+        lastSignUpName = name
+        lastSignUpDateOfBirth = dateOfBirth
+        return signUpResult.also { if (it is AuthResult.Success) user.value = it.data }
     }
 
     override suspend fun resendCode(challenge: PhoneChallenge): AuthResult<PhoneChallenge> {
@@ -110,11 +98,14 @@ class FakeAuthRepository(signedInUser: AuthUser? = null) : AuthRepository {
     }
 
     companion object {
-        val DEFAULT_USER = AuthUser(id = 1, name = "Asha Devi", email = "asha@example.com")
+        val DEFAULT_USER = AuthUser(id = 1, name = "Asha Devi", phoneHint = "••••••3210")
 
         /** A code was just sent to ••••••3210; a new one may be asked for in 60 s. */
         val CHALLENGE = PhoneChallenge(token = "t".repeat(43), phoneHint = "••••••3210",
-            needsPhone = false, codeSent = true, resendInSeconds = 60, codeExpiresInSeconds = 300)
+            codeSent = true, resendInSeconds = 60, codeExpiresInSeconds = 300)
+
+        /** The right code for a number without an account. */
+        val TICKET = SignUpTicket(token = "k".repeat(43), phoneHint = "••••••3210", expiresInSeconds = 1800)
 
         fun failure(error: AuthError, message: String? = null) = AuthResult.Failure(error, message)
     }

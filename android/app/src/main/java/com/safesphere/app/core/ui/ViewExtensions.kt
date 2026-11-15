@@ -9,7 +9,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.textfield.TextInputLayout
 import com.safesphere.app.R
 import com.safesphere.app.core.validation.FieldError
-import com.safesphere.app.core.validation.FormValidator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
@@ -17,9 +16,8 @@ fun FieldError.toMessage(context: Context): String = when (this) {
     FieldError.REQUIRED -> context.getString(R.string.error_field_required)
     FieldError.INVALID_EMAIL -> context.getString(R.string.error_invalid_email)
     FieldError.NAME_TOO_SHORT -> context.getString(R.string.error_name_too_short)
-    FieldError.PASSWORD_TOO_SHORT ->
-        context.getString(R.string.error_password_too_short, FormValidator.MIN_PASSWORD_LENGTH)
-    FieldError.PASSWORDS_DO_NOT_MATCH -> context.getString(R.string.error_passwords_do_not_match)
+    FieldError.NAME_TOO_LONG -> context.getString(R.string.error_name_too_long)
+    FieldError.NOT_A_NAME -> context.getString(R.string.error_not_a_name)
     FieldError.INVALID_PHONE -> context.getString(R.string.error_invalid_phone)
     FieldError.SELECTION_REQUIRED -> context.getString(R.string.error_selection_required)
     FieldError.UNDER_AGE -> context.getString(R.string.error_under_age)

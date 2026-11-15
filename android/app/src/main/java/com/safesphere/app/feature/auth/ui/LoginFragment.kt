@@ -22,23 +22,16 @@ class LoginFragment : ViewBindingFragment<FragmentLoginBinding>(FragmentLoginBin
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.emailLayout.clearErrorOnTextChange()
-        binding.passwordLayout.clearErrorOnTextChange()
+        binding.phoneLayout.clearErrorOnTextChange()
 
         binding.loginButton.setOnClickListener { submit() }
-        binding.passwordInput.setOnEditorActionListener { _, actionId, _ ->
+        binding.phoneInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 submit()
                 true
             } else {
                 false
             }
-        }
-        binding.forgotPasswordButton.setOnClickListener {
-            findNavController().navigate(R.id.action_login_to_forgot_password)
-        }
-        binding.registerButton.setOnClickListener {
-            findNavController().navigate(R.id.action_login_to_register)
         }
         binding.removeDeletedAccountDataButton.setOnClickListener {
             MaterialAlertDialogBuilder(requireContext())
@@ -57,15 +50,11 @@ class LoginFragment : ViewBindingFragment<FragmentLoginBinding>(FragmentLoginBin
     }
 
     private fun submit() {
-        viewModel.onLoginClicked(
-            email = binding.emailInput.text.toString(),
-            password = binding.passwordInput.text.toString()
-        )
+        viewModel.onSendCodeClicked(binding.phoneInput.text.toString())
     }
 
     private fun render(state: LoginUiState) {
-        binding.emailLayout.showError(state.emailError)
-        binding.passwordLayout.showError(state.passwordError)
+        binding.phoneLayout.showError(state.phoneError)
 
         // Loading: show the progress bar and block double taps.
         binding.progress.isVisible = state.isLoading
@@ -76,11 +65,7 @@ class LoginFragment : ViewBindingFragment<FragmentLoginBinding>(FragmentLoginBin
         binding.errorNotice.isVisible = authError != null
         if (authError != null) binding.errorNotice.setMessage(authError.toMessage(requireContext(), state.authMessage))
 
-        if (state.navigateToHome) {
-            viewModel.onNavigationHandled()
-            findNavController().navigate(R.id.action_login_to_start)
-        }
-        // Phase 17B: an interrupted sign-up or an older account: the code screen (the form stays behind it).
+        // Phase N2: a code is on its way: the code screen (this one stays behind it for "back").
         if (state.navigateToVerification) {
             viewModel.onNavigationHandled()
             findNavController().navigate(R.id.action_login_to_phone_verify)

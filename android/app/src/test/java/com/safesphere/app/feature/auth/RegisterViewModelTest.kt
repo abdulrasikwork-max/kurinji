@@ -19,90 +19,57 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
+/** Phase N2: "About you", the real name and an adult date of birth for a number that has no account yet. */
 class RegisterViewModelTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repository = FakeAuthRepository()
-    private val pending = PendingVerification()
+    private val pending = PendingVerification().apply { signUpWith(FakeAuthRepository.TICKET) }
 
     /** "Today" is 22 October 2026 (UTC) in these tests. */
     private val clock = Clock.fixed(Instant.parse("2026-10-22T10:00:00Z"), ZoneOffset.UTC)
     private val viewModel = RegisterViewModel(repository, pending, clock)
 
     @Test
-    fun `empty form reports every field and never calls the server`() = runTest {
-        viewModel.onRegisterClicked("", "", "", "", "")
+    fun `an empty form reports both fields and never calls the server`() = runTest {
+        viewModel.onCreateClicked("   ")
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
         assertEquals(FieldError.REQUIRED, state.fullNameError)
-        assertEquals(FieldError.REQUIRED, state.emailError)
-        assertEquals(FieldError.REQUIRED, state.phoneError)
         assertEquals(FieldError.REQUIRED, state.dateOfBirthError)
-        assertEquals(FieldError.REQUIRED, state.passwordError)
-        assertEquals(FieldError.REQUIRED, state.confirmPasswordError)
-        assertEquals(0, repository.registerCalls)
+        assertEquals(0, repository.signUpCalls)
     }
 
     @Test
-    fun `short password, mismatched confirmation and a wrong number are reported locally`() = runTest {
-        viewModel.onDateOfBirthChosen(LocalDate.of(1998, 5, 14))
-        viewModel.onRegisterClicked("Asha Devi", "asha@example.com", "12345", "short", "different")
+    fun `the real-name rule is checked on the phone`() = runTest {
+        viewModel.onDateOfBirthChosen(LocalDate.of(2000, 1, 15))
+        viewModel.onCreateClicked("K4vya")
+        assertEquals(FieldError.NOT_A_NAME, viewModel.uiState.value.fullNameError)
+        viewModel.onCreateClicked("K")
+        assertEquals(FieldError.NAME_TOO_SHORT, viewModel.uiState.value.fullNameError)
+        viewModel.onCreateClicked("a".repeat(61))
+        assertEquals(FieldError.NAME_TOO_LONG, viewModel.uiState.value.fullNameError)
         advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertEquals(FieldError.PASSWORD_TOO_SHORT, state.passwordError)
-        assertEquals(FieldError.PASSWORDS_DO_NOT_MATCH, state.confirmPasswordError)
-        assertEquals(FieldError.INVALID_PHONE, state.phoneError)
-        assertNull(state.fullNameError)
-        assertNull(state.dateOfBirthError)
-        assertEquals(0, repository.registerCalls)
+        assertEquals(0, repository.signUpCalls)
     }
 
     @Test
-    fun `17B - a valid form registers with the normalised number and opens the code screen, signed out`() = runTest {
-        viewModel.onDateOfBirthChosen(LocalDate.of(1998, 5, 14))
-        viewModel.onRegisterClicked(" Asha Devi ", " asha@example.com ", "98765 43210", "longenough1", "longenough1")
+    fun `a valid form signs up with the ticket and the cleaned name, then opens the profile`() = runTest {
+        viewModel.onDateOfBirthChosen(LocalDate.of(2000, 1, 15))
+        viewModel.onCreateClicked("  கவியா   ராமன் ")
         assertTrue(viewModel.uiState.value.isLoading)
-
         advanceUntilIdle()
 
-        assertTrue(viewModel.uiState.value.navigateToVerification)
-        assertEquals(FakeAuthRepository.CHALLENGE, pending.challenge.value)
-        assertEquals("Asha Devi", repository.lastRegisterName)
-        assertEquals("+919876543210", repository.lastRegisterPhone)
-        assertEquals(LocalDate.of(1998, 5, 14), repository.lastRegisterDateOfBirth)
-        assertNull(repository.currentUserNow()) // no session before the code
-        assertNull(viewModel.uiState.value.dateOfBirth) // forgotten once the account exists
-        assertFalse(viewModel.uiState.value.toString().contains("longenough1")) // the state holds no password
-
-        viewModel.onNavigationHandled()
-        assertFalse(viewModel.uiState.value.navigateToVerification)
-    }
-
-    @Test
-    fun `17B - a number the server refuses is shown at the number field`() = runTest {
-        repository.registerResult = FakeAuthRepository.failure(AuthError.PHONE_INVALID)
-        viewModel.onDateOfBirthChosen(LocalDate.of(1998, 5, 14))
-        viewModel.onRegisterClicked("Asha Devi", "asha@example.com", "9876543210", "longenough1", "longenough1")
-        advanceUntilIdle()
-
-        assertEquals(FieldError.INVALID_PHONE, viewModel.uiState.value.phoneError)
-        assertNull(viewModel.uiState.value.authError)
-        assertNull(pending.challenge.value)
-    }
-
-    @Test
-    fun `17B - too many sign-ups keeps the server's words`() = runTest {
-        repository.registerResult = FakeAuthRepository.failure(AuthError.OTP_WAIT, "Too many codes asked for.")
-        viewModel.onDateOfBirthChosen(LocalDate.of(1998, 5, 14))
-        viewModel.onRegisterClicked("Asha Devi", "asha@example.com", "9876543210", "longenough1", "longenough1")
-        advanceUntilIdle()
-
-        assertEquals(AuthError.OTP_WAIT, viewModel.uiState.value.authError)
-        assertEquals("Too many codes asked for.", viewModel.uiState.value.authMessage)
+        assertEquals(FakeAuthRepository.TICKET, repository.lastSignUpTicket)
+        assertEquals("கவியா ராமன்", repository.lastSignUpName)
+        assertEquals(LocalDate.of(2000, 1, 15), repository.lastSignUpDateOfBirth)
+        assertTrue(viewModel.uiState.value.navigateToProfile)
+        assertNull(viewModel.uiState.value.dateOfBirth) // forgotten once it was sent
+        assertNull(pending.ticket.value)
+        assertEquals(FakeAuthRepository.DEFAULT_USER, repository.currentUserNow())
     }
 
     @Test
@@ -110,11 +77,11 @@ class RegisterViewModelTest {
         viewModel.onDateOfBirthChosen(LocalDate.of(2008, 10, 23)) // 18 tomorrow
         assertEquals(FieldError.UNDER_AGE, viewModel.uiState.value.dateOfBirthError)
 
-        viewModel.onRegisterClicked("Asha Devi", "asha@example.com", "9876543210", "longenough1", "longenough1")
+        viewModel.onCreateClicked("Asha Devi")
         advanceUntilIdle()
 
         assertEquals(FieldError.UNDER_AGE, viewModel.uiState.value.dateOfBirthError)
-        assertEquals(0, repository.registerCalls)
+        assertEquals(0, repository.signUpCalls)
     }
 
     @Test
@@ -126,16 +93,37 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun `email already in use surfaces as an error and keeps the chosen date`() = runTest {
-        repository.registerResult = FakeAuthRepository.failure(AuthError.EMAIL_ALREADY_USED)
-        viewModel.onDateOfBirthChosen(LocalDate.of(1998, 5, 14))
-
-        viewModel.onRegisterClicked("Asha Devi", "asha@example.com", "9876543210", "longenough1", "longenough1")
+    fun `a used or ended ticket sends the person back to the number`() = runTest {
+        repository.signUpResult = FakeAuthRepository.failure(AuthError.TICKET_INVALID)
+        viewModel.onDateOfBirthChosen(LocalDate.of(2000, 1, 15))
+        viewModel.onCreateClicked("Asha Devi")
         advanceUntilIdle()
 
-        assertEquals(AuthError.EMAIL_ALREADY_USED, viewModel.uiState.value.authError)
-        assertFalse(viewModel.uiState.value.navigateToVerification)
-        assertFalse(viewModel.uiState.value.isLoading)
-        assertEquals(LocalDate.of(1998, 5, 14), viewModel.uiState.value.dateOfBirth)
+        assertTrue(viewModel.uiState.value.lost)
+        assertNull(pending.ticket.value)
+        assertFalse(viewModel.uiState.value.navigateToProfile)
+    }
+
+    @Test
+    fun `other failures keep the form and the chosen date for another try`() = runTest {
+        repository.signUpResult = FakeAuthRepository.failure(AuthError.NO_CONNECTION)
+        viewModel.onDateOfBirthChosen(LocalDate.of(2000, 1, 15))
+        viewModel.onCreateClicked("Asha Devi")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(AuthError.NO_CONNECTION, state.authError)
+        assertEquals(LocalDate.of(2000, 1, 15), state.dateOfBirth)
+        assertFalse(state.lost)
+        assertEquals(FakeAuthRepository.TICKET, pending.ticket.value)
+    }
+
+    @Test
+    fun `without a ticket in memory the screen says so at once`() = runTest {
+        val empty = RegisterViewModel(repository, PendingVerification(), clock)
+        assertTrue(empty.uiState.value.lost)
+        empty.onCreateClicked("Asha Devi")
+        advanceUntilIdle()
+        assertEquals(0, repository.signUpCalls)
     }
 }

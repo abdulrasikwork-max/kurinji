@@ -29,7 +29,7 @@ class AgeGateTest {
 
     private val gate = AgeGate()
     private val handler = ApiCallHandler(
-        SessionEnder(FakeSessionStorage(AuthSession("jwt", AuthUser(1, "Asha", "asha@example.com")))), gate)
+        SessionEnder(FakeSessionStorage(AuthSession("jwt", AuthUser(1, "Asha", "••••••3210")))), gate)
 
     private fun conflict(body: String) = HttpException(Response.error<Any>(409, body.toResponseBody(null)))
 

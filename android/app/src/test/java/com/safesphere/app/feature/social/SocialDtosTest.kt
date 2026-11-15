@@ -24,10 +24,9 @@ class SocialDtosTest {
     @Test
     fun `profile request - trimmed, empty optional fields sent as none, closed codes`() {
         val dto = ProfileRequestDto.from(
-            ProfileInput(" asha_k ", " Asha ", "  ", setOf(Language.TA, Language.EN), setOf(Interest.HIDDEN_GEMS), " ")
+            ProfileInput(" asha_k ", "  ", setOf(Language.TA, Language.EN), setOf(Interest.HIDDEN_GEMS), " ")
         )
         assertEquals("asha_k", dto.handle)
-        assertEquals("Asha", dto.displayName)
         assertNull(dto.bio)
         assertNull(dto.city)
         assertEquals(setOf("ta", "en"), dto.languages.toSet())

@@ -50,7 +50,7 @@ class AccountTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val user = AuthUser(7, "Asha", "asha@example.com")
+    private val user = AuthUser(7, "Asha", "••••••3210")
     private val now = Instant.parse("2026-10-22T10:00:00Z")
 
     // ---- AccountPolicy -----------------------------------------------------------------------------------------
@@ -77,7 +77,7 @@ class AccountTest {
 
     @Test
     fun `the user DTO carries the deletion dates, and an unreadable date still shows a pending deletion`() {
-        val dto = UserDto(7, "Asha", "a@example.com", null, "2026-10-21T10:00:00Z", "2026-10-28T10:00:00Z")
+        val dto = UserDto(7, "Asha", "••••••3210", null, "2026-10-21T10:00:00Z", "2026-10-28T10:00:00Z")
         assertEquals(Instant.parse("2026-10-28T10:00:00Z"), dto.toDomain().deletionDueAt)
         assertTrue(dto.copy(deletionDueAt = "garbage").toDomain().deletionPending)
         assertFalse(dto.copy(deletionRequestedAt = null, deletionDueAt = null).toDomain().deletionPending)

@@ -23,7 +23,7 @@ import retrofit2.Response
  */
 class SessionEnderTest {
 
-    private val user = AuthUser(7, "Asha", "asha@example.com")
+    private val user = AuthUser(7, "Asha", "••••••3210")
 
     @Test
     fun `a 401 for the saved token clears it and reports the server's reason`() = runTest {

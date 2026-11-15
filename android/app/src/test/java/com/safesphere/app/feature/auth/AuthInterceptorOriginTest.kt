@@ -23,7 +23,7 @@ import org.junit.Test
 class AuthInterceptorOriginTest {
 
     private val backend = "https://api.example.invalid/".toHttpUrl()
-    private val user = AuthUser(7, "A", "a@example.com")
+    private val user = AuthUser(7, "A", "••••••3210")
 
     private class FakeChain(private val request: Request) : Interceptor.Chain {
         var proceeded: Request? = null

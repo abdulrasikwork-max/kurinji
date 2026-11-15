@@ -22,8 +22,8 @@ class NavigationRulesTest {
         assertEquals(listOf("discoverFragment", "navShare", "youFragment"), ids)
 
         val graph = File("src/main/res/navigation/nav_graph.xml").readText(Charsets.UTF_8)
-        // Phase 17B: sign-up no longer signs in; the code screen does (then Discover, or the profile first).
-        for (action in listOf("action_splash_to_start", "action_login_to_start", "action_phone_verify_to_start",
+        // Phase N2: only the code screen signs in (then Discover, or the profile first; a new number: name and age).
+        for (action in listOf("action_splash_to_start", "action_phone_verify_to_start",
                 "action_profile_setup_to_start")) {
             val block = graph.substringAfter("android:id=\"@+id/$action\"").substringBefore("/>")
             assertTrue("$action must open Discover", block.contains("app:destination=\"@id/discoverFragment\""))

@@ -29,8 +29,9 @@ private val Context.sessionDataStore: DataStore<Preferences> by preferencesDataS
 )
 
 /**
- * Keeps the JWT and basic profile data (id, name, email; since Phase 10A also a pending deletion's dates) so the user
- * stays signed in after the app closes. The password is never stored.
+ * Keeps the JWT and basic profile data (id, name, since N2 the masked number; since Phase 10A also a pending deletion's
+ * dates) so the user stays signed in after the app closes. Phase N2: there is no password and no e-mail; the e-mail a
+ * session from before N2 kept is removed at its next write, and such a session stays readable without a number.
  *
  * RULE (Phase 17J, decision J-8): **no token or refresh secret is EVER written to disk in plain text.** Both are sealed
  * (AES-GCM with a non-exportable Android Keystore key, alias [AndroidKeystoreKeyWrapper.SESSION_ALIAS]) or not stored.
@@ -176,7 +177,9 @@ class DataStoreSessionStorage internal constructor(
         preferences.remove(KEY_LEGACY_PLAIN_TOKEN)
         preferences[KEY_USER_ID] = session.user.id
         preferences[KEY_USER_NAME] = session.user.name
-        preferences[KEY_USER_EMAIL] = session.user.email
+        preferences.remove(KEY_LEGACY_USER_EMAIL) // N2: no e-mail is kept any more
+        val hint = session.user.phoneHint
+        if (hint != null) preferences[KEY_USER_PHONE_HINT] = hint else preferences.remove(KEY_USER_PHONE_HINT)
         preferences.putOrRemove(KEY_DELETION_REQUESTED, session.user.deletionRequestedAt)
         preferences.putOrRemove(KEY_DELETION_DUE, session.user.deletionDueAt)
         // An empty token is the "could not be opened / signed-in-later" state: the stored (unreadable) secrets are left
@@ -243,11 +246,11 @@ class DataStoreSessionStorage internal constructor(
     private fun read(preferences: Preferences): AuthSession? {
         val id = preferences[KEY_USER_ID]
         val name = preferences[KEY_USER_NAME]
-        val email = preferences[KEY_USER_EMAIL]
-        // Only a complete person record counts as a session (a token is not needed to keep the person signed in).
-        if (id == null || name == null || email == null) return null
+        // Only a complete person record counts as a session (a token is not needed to keep the person signed in). The
+        // masked number is optional: a session saved before N2 has none, and it must stay signed in (an SOS may run).
+        if (id == null || name == null) return null
         val user = AuthUser(
-            id, name, email,
+            id, name, preferences[KEY_USER_PHONE_HINT],
             deletionRequestedAt = preferences[KEY_DELETION_REQUESTED]?.let(Instant::ofEpochMilli),
             deletionDueAt = preferences[KEY_DELETION_DUE]?.let(Instant::ofEpochMilli)
         )
@@ -319,7 +322,9 @@ class DataStoreSessionStorage internal constructor(
         val KEY_TOKEN_MEMORY_GEN = stringPreferencesKey("token_memory_gen")
         val KEY_USER_ID = longPreferencesKey("user_id")
         val KEY_USER_NAME = stringPreferencesKey("user_name")
-        val KEY_USER_EMAIL = stringPreferencesKey("user_email")
+        /** Written before N2 only; removed at the next write. */
+        val KEY_LEGACY_USER_EMAIL = stringPreferencesKey("user_email")
+        val KEY_USER_PHONE_HINT = stringPreferencesKey("user_phone_hint")
         val KEY_DELETION_REQUESTED = longPreferencesKey("deletion_requested_at")
         val KEY_DELETION_DUE = longPreferencesKey("deletion_due_at")
         val KEY_REFRESH_SEALED = stringPreferencesKey("refresh_secret_sealed")

@@ -74,8 +74,8 @@ class MoreFragment : ViewBindingFragment<FragmentMoreBinding>(FragmentMoreBindin
         }
 
         collectWhenStarted(account.uiState) { state ->
-            binding.accountLine.text = listOfNotNull(state.displayName, state.email).joinToString(" · ")
-            binding.accountLine.isVisible = state.displayName != null || state.email != null
+            binding.accountLine.text = listOfNotNull(state.displayName, state.phoneHint).joinToString(" · ")
+            binding.accountLine.isVisible = state.displayName != null || state.phoneHint != null
         }
         collectWhenStarted(account.canModerate) { binding.moderationSection.isVisible = it }
         collectWhenStarted(account.isLoggedOut) { loggedOut ->

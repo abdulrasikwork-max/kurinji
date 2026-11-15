@@ -15,131 +15,88 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
+/** Phase N2: the number screen, the only way in (sign-in and sign-up look the same here). */
 class LoginViewModelTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repository = FakeAuthRepository()
-    private val viewModel = LoginViewModel(repository)
+    private val pending = PendingVerification()
+    private val viewModel = LoginViewModel(repository, pendingVerification = pending)
 
     @Test
-    fun `empty form shows required errors and never calls the server`() = runTest {
-        viewModel.onLoginClicked(email = "", password = "")
+    fun `an empty number is required and the server is never asked`() = runTest {
+        viewModel.onSendCodeClicked("  ")
         advanceUntilIdle()
 
-        val state = viewModel.uiState.value
-        assertEquals(FieldError.REQUIRED, state.emailError)
-        assertEquals(FieldError.REQUIRED, state.passwordError)
-        assertFalse(state.isLoading)
-        assertEquals(0, repository.loginCalls)
-    }
-
-    @Test
-    fun `invalid email is reported locally`() = runTest {
-        viewModel.onLoginClicked(email = "not-an-email", password = "secret")
-        advanceUntilIdle()
-
-        assertEquals(FieldError.INVALID_EMAIL, viewModel.uiState.value.emailError)
-        assertEquals(0, repository.loginCalls)
-    }
-
-    @Test
-    fun `valid form shows loading, then navigates home on success`() = runTest {
-        viewModel.onLoginClicked(email = " user@example.com ", password = "anything")
-        assertTrue(viewModel.uiState.value.isLoading)
-
-        advanceUntilIdle()
-
-        assertTrue(viewModel.uiState.value.navigateToHome)
+        assertEquals(FieldError.REQUIRED, viewModel.uiState.value.phoneError)
         assertFalse(viewModel.uiState.value.isLoading)
-        assertEquals("user@example.com", repository.lastLoginEmail)
-    }
-
-    @Test
-    fun `17B - an unverified phone does not sign in but opens the code screen with a fresh verification`() = runTest {
-        val pending = PendingVerification()
-        val vm = LoginViewModel(repository, pendingVerification = pending)
-        repository.loginResult = FakeAuthRepository.failure(AuthError.PHONE_NOT_VERIFIED)
-        vm.onLoginClicked(email = " asha@example.com ", password = "right-password")
-        advanceUntilIdle()
-
-        val state = vm.uiState.value
-        assertTrue(state.navigateToVerification)
-        assertFalse(state.navigateToHome)
-        assertNull(state.authError)
-        assertEquals(1, repository.startCalls)
-        assertEquals("right-password", repository.lastStartPassword)
-        assertEquals(FakeAuthRepository.CHALLENGE, pending.challenge.value)
-        assertNull(repository.currentUserNow()) // still signed out until the code
-        assertFalse(state.toString().contains("right-password"))
-
-        vm.onNavigationHandled()
-        assertFalse(vm.uiState.value.navigateToVerification)
-    }
-
-    @Test
-    fun `17B - if the verification cannot start, its reason is shown`() = runTest {
-        val vm = LoginViewModel(repository, pendingVerification = PendingVerification())
-        repository.loginResult = FakeAuthRepository.failure(AuthError.PHONE_NOT_VERIFIED)
-        repository.startResult = FakeAuthRepository.failure(AuthError.OTP_WAIT, "Too many codes asked for.")
-        vm.onLoginClicked(email = "asha@example.com", password = "right-password")
-        advanceUntilIdle()
-
-        assertEquals(AuthError.OTP_WAIT, vm.uiState.value.authError)
-        assertEquals("Too many codes asked for.", vm.uiState.value.authMessage)
-        assertFalse(vm.uiState.value.navigateToVerification)
-    }
-
-    @Test
-    fun `other errors never start a verification`() = runTest {
-        repository.loginResult = FakeAuthRepository.failure(AuthError.INVALID_CREDENTIALS)
-        viewModel.onLoginClicked(email = "asha@example.com", password = "wrong")
-        advanceUntilIdle()
-
         assertEquals(0, repository.startCalls)
+    }
+
+    @Test
+    fun `a number that is not an Indian mobile is reported locally`() = runTest {
+        viewModel.onSendCodeClicked("12345")
+        advanceUntilIdle()
+
+        assertEquals(FieldError.INVALID_PHONE, viewModel.uiState.value.phoneError)
+        assertEquals(0, repository.startCalls)
+    }
+
+    @Test
+    fun `a valid number is sent normalised and opens the code screen with the request in memory`() = runTest {
+        viewModel.onSendCodeClicked("098765 43210")
+        assertTrue(viewModel.uiState.value.isLoading)
+        advanceUntilIdle()
+
+        assertEquals("+919876543210", repository.lastStartPhone)
+        assertTrue(viewModel.uiState.value.navigateToVerification)
+        assertEquals(FakeAuthRepository.CHALLENGE, pending.challenge.value)
+        assertNull(repository.currentUserNow()) // a code request signs nobody in
+    }
+
+    @Test
+    fun `a number the server refuses is shown at the number field`() = runTest {
+        repository.startResult = FakeAuthRepository.failure(AuthError.PHONE_INVALID)
+        viewModel.onSendCodeClicked("9876543210")
+        advanceUntilIdle()
+
+        assertEquals(FieldError.INVALID_PHONE, viewModel.uiState.value.phoneError)
+        assertNull(viewModel.uiState.value.authError)
         assertFalse(viewModel.uiState.value.navigateToVerification)
     }
 
     @Test
-    fun `wrong credentials surface as an error and do not navigate`() = runTest {
-        repository.loginResult = FakeAuthRepository.failure(AuthError.INVALID_CREDENTIALS)
-
-        viewModel.onLoginClicked(email = "user@example.com", password = "wrong")
+    fun `too many codes keeps the server's words, and the network failure its own`() = runTest {
+        repository.startResult = FakeAuthRepository.failure(AuthError.OTP_WAIT, "You can ask for a new code in 40 seconds.")
+        viewModel.onSendCodeClicked("9876543210")
         advanceUntilIdle()
+        assertEquals(AuthError.OTP_WAIT, viewModel.uiState.value.authError)
+        assertEquals("You can ask for a new code in 40 seconds.", viewModel.uiState.value.authMessage)
 
-        val state = viewModel.uiState.value
-        assertEquals(AuthError.INVALID_CREDENTIALS, state.authError)
-        assertFalse(state.navigateToHome)
-        assertFalse(state.isLoading)
-    }
-
-    @Test
-    fun `network failure surfaces as NO_CONNECTION`() = runTest {
-        repository.loginResult = FakeAuthRepository.failure(AuthError.NO_CONNECTION)
-
-        viewModel.onLoginClicked(email = "user@example.com", password = "anything")
+        repository.startResult = FakeAuthRepository.failure(AuthError.NO_CONNECTION)
+        viewModel.onSendCodeClicked("9876543210")
         advanceUntilIdle()
-
         assertEquals(AuthError.NO_CONNECTION, viewModel.uiState.value.authError)
+        assertNull(pending.challenge.value)
     }
 
     @Test
     fun `a second tap while loading does not send a second request`() = runTest {
-        viewModel.onLoginClicked(email = "user@example.com", password = "anything")
-        viewModel.onLoginClicked(email = "user@example.com", password = "anything")
+        viewModel.onSendCodeClicked("9876543210")
+        viewModel.onSendCodeClicked("9876543210")
         advanceUntilIdle()
 
-        assertEquals(1, repository.loginCalls)
+        assertEquals(1, repository.startCalls)
     }
 
     @Test
     fun `navigation flag is cleared once handled`() = runTest {
-        viewModel.onLoginClicked(email = "user@example.com", password = "anything")
+        viewModel.onSendCodeClicked("9876543210")
         advanceUntilIdle()
         viewModel.onNavigationHandled()
 
-        assertFalse(viewModel.uiState.value.navigateToHome)
-        assertNull(viewModel.uiState.value.authError)
+        assertFalse(viewModel.uiState.value.navigateToVerification)
     }
 }

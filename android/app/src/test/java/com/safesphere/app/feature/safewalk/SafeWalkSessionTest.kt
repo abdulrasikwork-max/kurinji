@@ -49,7 +49,7 @@ class SafeWalkSessionTest {
     private val connectivity = FakeConnectivityMonitor(online = true)
     private val alerts = FakeSafeWalkAlerts()
     private val store = FakeActiveJourneyStore()
-    private val sessionStorage = FakeSessionStorage(AuthSession("token", AuthUser(USER_ID, "Asha", "asha@example.com")))
+    private val sessionStorage = FakeSessionStorage(AuthSession("token", AuthUser(USER_ID, "Asha", "••••••3210")))
     private lateinit var server: FakeJourneyRepository
 
     private fun TestScope.phoneNow(): Instant = base.plusMillis(testScheduler.currentTime)
@@ -110,7 +110,7 @@ class SafeWalkSessionTest {
         // A new token (refresh or signing in again): the waiting check-in reaches the server.
         server.unauthorized = false
         val checkInsBefore = server.calls.count { it == "checkIn" }
-        sessionStorage.save(AuthSession("new-token", AuthUser(USER_ID, "Asha", "asha@example.com")))
+        sessionStorage.save(AuthSession("new-token", AuthUser(USER_ID, "Asha", "••••••3210")))
         runCurrent()
         assertTrue(server.calls.count { it == "checkIn" } > checkInsBefore)
         assertEquals(0, restarted.state.value.pendingSync)
@@ -119,7 +119,7 @@ class SafeWalkSessionTest {
     @Test
     fun `C1 - another account signing in on this phone ends the previous account's walk on the phone`() = runTest {
         val session = walking()
-        sessionStorage.save(AuthSession("other", AuthUser(USER_ID + 1, "Bina", "bina@example.com")))
+        sessionStorage.save(AuthSession("other", AuthUser(USER_ID + 1, "Bina", "••••••3210")))
         runCurrent()
         assertFalse(session.state.value.isActive)
     }

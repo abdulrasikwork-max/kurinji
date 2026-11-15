@@ -5,8 +5,10 @@ enum class FieldError {
     REQUIRED,
     INVALID_EMAIL,
     NAME_TOO_SHORT,
-    PASSWORD_TOO_SHORT,
-    PASSWORDS_DO_NOT_MATCH,
+    /** Phase N2: a real name longer than 60 characters. */
+    NAME_TOO_LONG,
+    /** Phase N2: digits, emoji or symbols in a real name. */
+    NOT_A_NAME,
     INVALID_PHONE,
     SELECTION_REQUIRED,
     /** Phase 13A: the date of birth is less than 18 years ago. */

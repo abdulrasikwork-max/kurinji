@@ -26,7 +26,6 @@ data class AgeConfirmationDto(val dateOfBirth: String) {
 
 data class ProfileRequestDto(
     val handle: String,
-    val displayName: String,
     val bio: String?,
     val languages: List<String>,
     val interests: List<String>,
@@ -35,7 +34,6 @@ data class ProfileRequestDto(
     companion object {
         fun from(input: ProfileInput) = ProfileRequestDto(
             handle = input.handle.trim(),
-            displayName = input.displayName.trim(),
             bio = input.bio.trim().ifEmpty { null },
             languages = input.languages.map { it.code },
             interests = input.interests.map { it.name },

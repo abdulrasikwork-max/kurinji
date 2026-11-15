@@ -30,7 +30,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class EmptyTokenRestartStateTest {
 
-    private val user = AuthUser(7, "Asha", "asha@example.com")
+    private val user = AuthUser(7, "Asha", "••••••3210")
     private val signInNeeded = AuthSession("", user, refreshToken = null, needsSignIn = true)
 
     @Test

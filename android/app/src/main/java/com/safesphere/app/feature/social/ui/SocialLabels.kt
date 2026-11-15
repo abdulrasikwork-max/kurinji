@@ -38,8 +38,6 @@ object SocialLabels {
     fun of(problem: ProfileInputPolicy.Problem): Int = when (problem) {
         ProfileInputPolicy.Problem.HANDLE_FORMAT -> R.string.social_problem_handle_format
         ProfileInputPolicy.Problem.HANDLE_UNAVAILABLE -> R.string.social_problem_handle_unavailable
-        ProfileInputPolicy.Problem.NAME_REQUIRED -> R.string.social_problem_name_required
-        ProfileInputPolicy.Problem.NAME_TOO_LONG -> R.string.social_problem_name_too_long
         ProfileInputPolicy.Problem.BIO_TOO_LONG -> R.string.social_problem_bio_too_long
         ProfileInputPolicy.Problem.CITY_INVALID -> R.string.social_problem_city
         ProfileInputPolicy.Problem.LINK -> R.string.social_problem_link
