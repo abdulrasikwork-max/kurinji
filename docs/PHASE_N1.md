@@ -214,3 +214,26 @@ any deploy to the pilot (the laptop setup and the live jar stay exactly as they 
   (schema V31 or before) now refuses to start against the development database.
 - **For the pilot later (its own approved step):** V32 deletes data for good; `restore-rehearsal.sh` PASS right before,
   and the evidence folder is removed by hand afterwards.
+
+### C Close (2026-11-15)
+- **Android resources:** the 530 resources lint reported as unused were removed with a script that reads the lint
+  report (517 value entries: 498 strings, 17 plurals, one colour, one dimension; 12 drawables: the bookmark, the
+  Nearby tab icon, the eight daily-state icons, `ic_mark_on_ink`), then 22 comment lines left without a resource.
+  `strings.xml` 1 925 lines became about 1 310; still UTF-8 without a byte-order mark, well-formed (1 115 strings,
+  7 plurals). One style (`TextAppearance.Kurinji.ScreenTitle`) is still reported and was left. `ButterflyDrawable`
+  stays: the onboarding pages draw with it.
+- **Words:** About no longer names Nearby or "Check the way"; the privacy notice lost its Nearby, "Check the way" and
+  weekly-counts paragraphs and the Nearby parts of its deletion and retention paragraphs; the account deletion text
+  and the Rise notice no longer name a saved list. Known and left for N2 / N8 (the notice is rewritten there): it
+  still describes e-mail and password accounts, route and stop checks, and has a paragraph about Rise.
+- **Tests updated on purpose** (they pinned removed strings): `ContrastTest` (`opening_soft`), `KurinjiTextsTest`
+  (reaction, Saved, "Been here", "Want to go"), `Phase17FGuardsTest` (two Nearby strings), `Phase15IntegrationFixesTest`
+  ("saved list"), `SocialTextsTest` (the author's butterfly count).
+- **Documents:** `API.md` (a "Removed in N1" block at the top and a note on the appendix; the per-phase sections stay
+  as history), `.claude/rules/*.md` (an N1 notice at the top of each; `database.md` has the V32 row and "next V33"),
+  `CLAUDE.md` (status row, packages, navigation, permissions, guard tests, V32, next migration V33),
+  `DECISIONS.md` N-17 to N-20, `STATUS.md`, `HANDOFF.md`.
+- **Final results (all on the final tree):** Android **766 run, 0 failures, 0 errors, 0 skipped**; `assembleDebug` OK;
+  lint **0 errors, 91 warnings** (622 before unit C; 1 unused resource left). Backend **496 run, 0 failures, 0 errors,
+  2 skipped** (clean build, run in B3; no backend source changed after it except one comment in V32, and the jar
+  built after that change applied V32 and started). Python **38 run, OK**.

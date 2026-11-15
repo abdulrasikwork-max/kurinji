@@ -104,7 +104,7 @@ class ContrastTest {
             // IRL opening screen (always ink): the line and the lime words, the white headline, the soft words, and the
             // ink words on the lime button.
             "brand_blush" to "splash_background", "brand_cream" to "splash_background",
-            "opening_soft" to "splash_background", "brand_cherry" to "brand_blush"
+            "brand_cherry" to "brand_blush"
         )
         // Control edges: outlines on the page and cards; an action (ink by day) must stand out from the page; a chosen
         // lime pill gets an ink edge (lime alone is 1.2:1 on white).

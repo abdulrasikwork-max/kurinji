@@ -4,6 +4,13 @@ paths:
 ---
 # Android architecture (moved verbatim from CLAUDE.md §5 on 2026-11-03)
 
+> **N1 (2026-11-15, `docs/PHASE_N1.md`): read with care.** Removed from the app: `feature/community` (Nearby),
+> `feature/intelligence`, `feature/evidence` (vault, SOS audio, `core/crypto/EvidenceCipher`, `RecoveryKeyCrypto`,
+> `ScreenLockGate`), Explore, "Been here" + ratings, presence, disclosure, Save / Saved, the butterfly reaction, today's
+> state. The bar is Home · Share · You. Permissions gone: `RECORD_AUDIO`, `FOREGROUND_SERVICE_MICROPHONE`,
+> `USE_BIOMETRIC`. New: `core/retired/VaultRetirement`. Paragraphs below that describe the removed parts are history
+> (code: git tag `pre-n1`). The code wins.
+
 Loaded when working on files under `android/`. Safety features: `android-safety.md`; social features:
 `android-social.md`. The short version stays in `CLAUDE.md` §5.
 

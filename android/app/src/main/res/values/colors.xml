@@ -78,7 +78,6 @@
     <!-- The bottom of the launcher icon: cherry fading darker. -->
     <color name="brand_cherry_deep">#2A0302</color>
     <!-- Soft words on the opening screen (always cherry). -->
-    <color name="opening_soft">#D9B9A6</color>
     <!-- The SOS shortcut keeps its emergency look (black disc, red ring). -->
     <color name="launcher_red">#D0102A</color>
     <color name="launcher_sos">#121212</color>

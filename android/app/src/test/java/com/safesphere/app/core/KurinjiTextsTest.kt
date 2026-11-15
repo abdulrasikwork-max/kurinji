@@ -66,11 +66,6 @@ class KurinjiTextsTest {
         assertEquals("IRL, in real life. Out there. Together.", strings["opening_brand_spoken"])
         assertEquals("Let\\'s go →", strings["opening_cta"])
         assertEquals("You\\'re all caught up.", strings["discover_edition_end"])
-        // Phase 17E (D-3): the butterfly is a reaction; Save keeps a post; "I went" leads to sharing.
-        assertEquals("Inspired", strings["reaction_label"])
-        assertTrue(strings.getValue("saved_empty_message").startsWith("Tap Save"))
-        assertEquals("Been here", strings["went_label"])
-        assertEquals("Want to go", strings["nav_cocoon"])
         assertEquals("Tip", strings["card_ticket_label"])
         assertEquals("Comments", strings["social_perspectives_title"])
         assertEquals("Going there?", strings["going_there"])

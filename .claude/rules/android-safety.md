@@ -20,6 +20,12 @@ paths:
 ---
 # Android safety features (moved verbatim from CLAUDE.md §5 on 2026-11-03)
 
+> **N1 (2026-11-15, `docs/PHASE_N1.md`): read with care.** Nearby signals, trust, the signal half of moderation, safety
+> intelligence ("Check the way"), the Evidence Vault and audio in an SOS are REMOVED from the app. Kept: SOS (also
+> without internet), Safety Circle, Safe Walk (route / stop checks stay until N6), circle alerts, the one tracking
+> service (type `location` only). `EmergencyContext` carries no evidence counts. Paragraphs below about the removed
+> parts are history (code: git tag `pre-n1`).
+
 SOS (Phase 3 + 11), emergency location (4A), Safe Walk (4B), movement checks (4C), Safety Circle SMS (4D), Evidence
 Vault (5), Nearby place signals (6), trust UI + community moderation (7), safety intelligence (8). Invariants are in
 `CLAUDE.md` §5 and §11.

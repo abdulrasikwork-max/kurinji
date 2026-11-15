@@ -7,6 +7,11 @@ paths:
 ---
 # Moderation service and the automatic text check (Phase 13E)
 
+> **N1 (2026-11-15):** the optional Explore understanding (17G-3: `understand.py`, `/v1/understand`,
+> `data/explore-vocabulary-v1.tsv`, its test and smoke tool) is REMOVED. No Python file opens a network connection or
+> names a provider; the allowed imports no longer include `urllib` / `ssl` (`ModelPlacesTest`). The 17G-3 paragraph at
+> the end is history. Python tests: 38 run, OK (2026-11-15).
+
 Rules: AI produces evidence → the Java `DecisionPolicy` decides → only humans restrict people (D2). The Python service
 uses the standard library only, is internal, and never logs text. The phone has byte-identical twins (normaliser,
 hashed lexicon, rules) in `core/textcheck`; shared vectors in `moderation-service/data/vectors/`. `restricted/` is

@@ -6,7 +6,7 @@ paths:
 ---
 # Database migrations (moved verbatim from CLAUDE.md §7 on 2026-11-03)
 
-The key rules of every applied migration. Conventions (next file **V32**) stay in `CLAUDE.md` §7. Never edit an applied
+The key rules of every applied migration. Conventions (next file **V33**) stay in `CLAUDE.md` §7. Never edit an applied
 migration; verify each new one on real MySQL (backup, CHECK dry run on a scratch copy, apply).
 
 | Migration | Table | Key rules |
@@ -68,5 +68,7 @@ migration; verify each new one on real MySQL (backup, CHECK dry run on a scratch
 
 | V31 | `place_visits.at_place`, `posts.disclosed` | Phase 18A-2 (P18-4, P18-5): two `TINYINT(1) NOT NULL DEFAULT 0` columns, each with a CHECK `IN (0, 1)` (non-FK columns); existing rows become 0; no new table (the eraser already covers both tables). `at_place` = "Been here" was tapped in the place's cell or a cell around it: one private bit, the cell is never stored, served to nobody. `disclosed` = the author said the visit was paid or free: shown as a label, turned on only (in code), and that author's rating for the place is left out of `PlaceVisitRepository.raters`. Backup first; dry run on scratch copies 6 accepted + 6 refused; applied on MySQL 8.0.46, the DEVELOPMENT database (2026-11-14). NOT applied on the pilot |
 
-Conventions: never edit an applied migration; next file is **V32**; snake_case; `DATETIME(6)` stored in UTC; constraint
+| V32 | DROPS (N1, `docs/PHASE_N1.md`) | Removes only: `moderation_cases`, `signal_flags`, `signal_contributions`, `contributor_standing`, `place_signals`, `area_patterns`, `evaluation_counters` (V12–V15); `evidence_custody_events`, `evidence_recovery_failures`, `evidence_recovery_envelopes`, `evidence_items` (V9–V11); `butterflies`, `saved_posts`, `daily_states`, `post_facets`, `place_visits` (V22, V28–V31); `posts.disclosed` (its CHECK dropped by name first) and `moderation_actions.signal_category`; deletes the Phase 7 audit rows (`QUARANTINE`, `DISMISS`, `REMOVE`, `RESTRICT`, and `APPEAL_*` without a `target_kind`; their appeals cascade). Children before parents. 30 tables remain. Irreversible. Backup first (outside the repo); pre-check of foreign keys; dry run on scratch copies (37 audit rows → 7, 2 appeals → 0, 16 posts kept); applied on MySQL 8.0.46, the DEVELOPMENT database (2026-11-15). NOT applied on the pilot. The rows above for V9–V15, V22 (butterflies), V28 (saved_posts, daily_states), V29–V31 describe tables that no longer exist |
+
+Conventions: never edit an applied migration; next file is **V33**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci.

@@ -2,7 +2,6 @@
 <resources>
     <!-- Brand -->
     <string name="app_name">IRL</string>
-    <!-- Phase 10A identity: "Safety that expands your world" (docs/PHASE10_DESIGN.md §2) -->
 
     <!-- Badges: Available = works today, Preview = shows the design only, Coming soon = not built yet -->
     <string name="badge_available">Available</string>
@@ -15,8 +14,6 @@
 
     <!-- Navigation titles -->
     <string name="nav_safety">Safety</string>
-    <!-- Phase 10A: "Nearby", not "Community": it shows places, not people (there is no community feed) -->
-    <string name="nav_community">Nearby</string>
     <string name="title_register">Create account</string>
     <string name="title_forgot_password">Reset password</string>
     <string name="title_settings">Settings</string>
@@ -144,8 +141,6 @@
     <string name="feature_safe_walk_title">Safe Walk</string>
     <string name="feature_safety_circle_title">Safety Circle</string>
     <string name="feature_safety_circle_description">People you choose to keep in the loop</string>
-    <string name="feature_evidence_vault_title">Evidence Vault</string>
-    <string name="feature_evidence_vault_description">Your encrypted evidence and recovery passphrase</string>
     <string name="feature_emergency_history_title">Emergency History</string>
     <string name="feature_emergency_history_description">A record of your emergency sessions</string>
     <string name="feature_safety_settings_title">Settings</string>
@@ -177,255 +172,13 @@
     <string name="safety_center_subtitle">Your tools for going out prepared, and for when something goes wrong.</string>
     <string name="safety_center_notice">IRL never contacts emergency services: in an emergency, call 112 or your local emergency number. Your Safety Circle is texted from your phone only if you switch on automatic SMS. During SOS and Safe Walk your location is saved to your own records, and nobody else can look you up.</string>
 
-    <!-- Community Safety (the "Nearby" tab since Phase 10A) -->
-    <string name="community_title">Nearby</string>
-    <string name="community_subtitle">Safe places to head for around you, and what people noticed about places.</string>
-    <string name="community_privacy_notice">Anonymous and approximate. Nobody sees who shared a signal. Your exact location never leaves your phone: a report is placed in a block of about 150 m, shown only to about 1 km until someone else confirms it, appears after a short random delay and fades on its own.</string>
-    <string name="community_not_verified">Signals are shared by people and are not verified. In danger, use SOS or call 112.</string>
-    <string name="section_around_you">Around you</string>
-    <string name="section_your_reports">Your reports and answers</string>
-    <string name="empty_reports_title">Nothing shared yet</string>
-    <string name="empty_reports_message">What you report or answer appears here, only for you. You can withdraw it at any time.</string>
-    <string name="community_locating">Finding your area…</string>
-    <string name="community_loading">Looking at your area…</string>
-    <string name="community_permission_title">Location is needed to show your area</string>
-    <string name="community_permission_rationale">IRL turns your location into an area of about 1 km on this phone and asks only for signals there. It is used while this screen is open and is never stored.</string>
-    <string name="community_location_off">Location is switched off. Turn it on to see your area.</string>
-    <string name="community_location_unsupported">Location is not available on this phone.</string>
-    <string name="community_no_fix">Your location could not be found right now. Move outside or wait for a better signal, then try again.</string>
-    <string name="community_brief_empty">Nothing has been reported around you recently.</string>
-    <string name="community_brief">Around you: %1$s.</string>
-    <plurals name="brief_incidents">
-        <item quantity="one">%d recent concern</item>
-        <item quantity="other">%d recent concerns</item>
-    </plurals>
-    <plurals name="brief_conditions">
-        <item quantity="one">%d place to take care</item>
-        <item quantity="other">%d places to take care</item>
-    </plurals>
-    <plurals name="brief_havens">
-        <item quantity="one">%d safe place</item>
-        <item quantity="other">%d safe places</item>
-    </plurals>
-    <string name="community_nearest_haven">Nearest safe place: %1$s.</string>
-    <string name="community_approximate_location">You allowed approximate location only, so distances are rough. Reporting needs precise location.</string>
-    <string name="radar_north">N</string>
-    <string name="signal_number_title">%1$d · %2$s</string>
-    <string name="radar_m">%1$d m</string>
-    <string name="radar_km">%1$d km</string>
-    <string name="radar_legend">▲ concern   ■ take care   ● safe place   (soft circle = placed only to about 1 km). Numbers match the list below.</string>
-    <string name="cd_radar">Safety radar. %1$s Details are in the list below.</string>
-    <string name="cd_area_signal">%1$s. %2$s. %3$s.</string>
-    <string name="group_incident">Concern</string>
-    <string name="group_condition">Take care</string>
-    <string name="group_haven">Safe place</string>
-    <string name="signal_harassment">Harassment happened here</string>
-    <string name="signal_following">Someone was followed here</string>
-    <string name="signal_theft">Theft or snatching here</string>
-    <string name="signal_poor_lighting">Poor lighting</string>
-    <string name="signal_isolated">Isolated stretch</string>
-    <string name="signal_unsafe_crossing">Unsafe crossing</string>
-    <string name="signal_broken_path">Broken or blocked path</string>
-    <string name="signal_well_lit">Well lit and busy</string>
-    <string name="signal_open_late">Open late, with staff</string>
-    <string name="signal_help_point">Help point (security or police booth)</string>
-    <string name="signal_distance">About %1$s away</string>
-    <string name="signal_area_precision">placed only to about 1 km</string>
-    <string name="support_single">Reported once</string>
-    <string name="support_several">Seen by a few people</string>
-    <string name="support_many">Seen by many people</string>
-    <string name="freshness_today">today</string>
-    <string name="freshness_week">this week</string>
-    <string name="freshness_earlier">earlier</string>
-    <string name="signal_disputed">Some people say this has changed.</string>
-    <string name="your_kind_report">You reported this</string>
-    <string name="your_kind_confirm">You said you saw this too</string>
-    <string name="your_kind_no_longer">You said this is no longer true</string>
-    <string name="my_status_pending">appears soon</string>
-    <string name="my_status_live">shown to people nearby</string>
-    <string name="my_status_not_shown">not shown at the moment</string>
-    <string name="my_contribution_line">%1$s · %2$s</string>
-    <string name="action_report_here">Report something here</string>
-    <string name="action_saw_this_too">I saw this too</string>
-    <string name="action_no_longer_true">No longer true</string>
-    <string name="action_withdraw">Withdraw</string>
-    <string name="action_try_again">Try again</string>
-    <string name="action_share_anonymously">Share anonymously</string>
-    <string name="report_choose_title">What is it like here?</string>
-    <string name="report_confirm_message">This is shared without your name, for a block of about 150 m where you are now. Others see it only to about 1 km until someone confirms it. If the same thing was already reported in a block right next to yours, your report is added to it, and your reports then show it as something you saw too. It appears after a short random delay and fades on its own. Describe the place, never a person.</string>
-    <string name="answer_confirm_message">You are saying you saw this here too. Your answer is anonymous and counts once.</string>
-    <string name="answer_no_longer_message">You are saying this is no longer true here (for example the light was repaired). Your answer is anonymous and counts once.</string>
-    <string name="withdraw_title">Withdraw this?</string>
-    <string name="withdraw_message">It will no longer count. If nobody else supports it, the signal is deleted.</string>
-    <plurals name="community_recorded">
-        <item quantity="one">Thank you. It counts within about %d minute.</item>
-        <item quantity="other">Thank you. It counts within about %d minutes.</item>
-    </plurals>
-    <plurals name="community_recorded_hours">
-        <item quantity="one">Thank you. It counts within about %d hour.</item>
-        <item quantity="other">Thank you. It counts within about %d hours.</item>
-    </plurals>
-    <plurals name="community_recorded_days">
-        <item quantity="one">Thank you. It counts within about %d day.</item>
-        <item quantity="other">Thank you. It counts within about %d days.</item>
-    </plurals>
-    <string name="report_sheet_intro">Choose what it is like here. Nothing else is asked: no text, no photo, no names.</string>
-    <string name="community_saved_offline">No connection. Your report is saved on this phone and will be sent when you open this screen online (within 24 hours).</string>
-    <plurals name="community_outbox_sent">
-        <item quantity="one">%d saved report was sent.</item>
-        <item quantity="other">%d saved reports were sent.</item>
-    </plurals>
-    <plurals name="community_pending">
-        <item quantity="one">%d report is waiting for a connection.</item>
-        <item quantity="other">%d reports are waiting for a connection.</item>
-    </plurals>
-    <string name="community_withdrawn">Withdrawn.</string>
-    <string name="community_needs_precise">Reporting needs your precise location, so the report lands in the right block. IRL reads it once, only when you add or answer a report.</string>
-    <!-- Phase 17D: location problems each say what to do -->
-    <string name="community_needs_precise_title">Precise location needed</string>
-    <string name="community_needs_precise_settings">Android did not give IRL precise location. In the app\'s settings, switch on \"Use precise location\", then come back and try again.</string>
-    <string name="community_location_off_report">Location is switched off on this phone. Turn it on to add or answer a report.</string>
-    <string name="community_permission_blocked">Location is blocked for IRL. Allow it in the app\'s settings to see your area and add reports.</string>
-    <string name="community_rough_title">Move outside or wait for a better signal</string>
-    <string name="community_rough_message">Your position is accurate to about %1$d m, and a report needs about 100 m or better, so it lands in the right block. Move outside or wait for a better signal, then try again.</string>
-    <string name="community_rough_message_unknown">Your position is not accurate enough yet to place a report in the right block. Move outside or wait for a better signal, then try again.</string>
-    <string name="community_locating_precise">Looking for a precise position…</string>
-    <string name="community_locating_precise_accuracy">Looking for a precise position. Right now it is accurate to about %1$d m.</string>
-    <string name="community_search_stopped">The search for your position stopped when you left this screen. Tap again to continue.</string>
-    <string name="community_updated">Updated %1$s</string>
-    <string name="community_stale">This view is from %1$s. Refresh to see where you are now.</string>
-    <string name="community_rough_position">Your position is only accurate to about %1$d m right now, so distances are rough.</string>
-    <string name="community_rough_position_unknown">Your position is rough right now, so distances are rough.</string>
-    <!-- Phase 7: confidence, flags, paused contributions, appeals (trust is never shown as a score) -->
-    <string name="confidence_low">Not yet confirmed</string>
-    <string name="confidence_moderate">Confirmed by people nearby</string>
-    <string name="confidence_high">Strongly confirmed</string>
-    <string name="action_why_confidence">How sure is this?</string>
-    <string name="action_flag">Report a problem</string>
-    <string name="why_title">How sure is this?</string>
-    <string name="why_reason_single">One person has reported this so far.</string>
-    <string name="why_reason_confirmed">Independent people nearby said the same.</string>
-    <string name="why_reason_established">Some of them have a good record of reports that others confirmed.</string>
-    <string name="why_reason_linked">Some support came from accounts that keep acting together, so it was counted once.</string>
-    <string name="why_reason_disputed">Someone said this has changed.</string>
-    <string name="why_footer">IRL counts independent people, not accounts, and never shows who they are. Signals are not verified. In danger, use SOS or call 112.</string>
-    <string name="flag_choose_title">What is wrong with it?</string>
-    <string name="flag_reason_false">It is not true</string>
-    <string name="flag_reason_targets">It is aimed at a person, home or business</string>
-    <string name="flag_reason_spam">It looks like spam or fake reports</string>
-    <string name="flag_confirm_title">Flag this for review?</string>
-    <string name="flag_confirm_message">Moderators will look at it. Nobody else sees your flag, and moderators do not see who you are. If the place has simply changed, use No longer true instead.</string>
-    <string name="action_flag_confirm">Flag</string>
-    <string name="community_flagged">Thank you. Moderators will look at it.</string>
-    <string name="your_flag">You flagged this for review</string>
-    <string name="my_status_under_review">being reviewed by moderators</string>
-    <string name="community_paused">A moderator has paused your community reports until %1$s (%2$s). You can still see signals, and SOS, Safe Walk and your Safety Circle work as usual.</string>
-    <string name="community_paused_short">Your community reports are paused for now. SOS and every other safety feature work as usual.</string>
-    <string name="community_appeal_open">You asked for a review. A different moderator will look at it.</string>
-    <string name="community_appeal_upheld">A different moderator reviewed it, and the pause stays.</string>
-    <string name="action_ask_review">Ask for a review</string>
-    <string name="community_appeal_sent">Review requested. A different moderator will decide.</string>
-    <string name="paused_reason_false">reports that were not true</string>
-    <string name="paused_reason_targets">reports aimed at a person or home</string>
-    <string name="paused_reason_spam">spam or coordinated reports</string>
-    <string name="paused_reason_other">a moderator\'s decision</string>
-
     <!-- Phase 7: moderator screens (people appear only as case pseudonyms; no names, e-mails or ids) -->
     <string name="title_moderation">Moderation</string>
-    <string name="title_moderation_case">Review case</string>
     <string name="profile_moderation_title">Moderation</string>
     <string name="profile_moderation_description">Review flagged signals and appeals</string>
     <string name="moderation_intro">Cases about places, posts, comments and people\'s behaviour. Everyone in a case appears only under a name valid for that case. Every decision is recorded.</string>
     <string name="moderation_not_allowed">This account cannot moderate. If you were a moderator, an administrator has changed your role.</string>
-    <string name="section_open_cases">Open cases</string>
-    <string name="section_open_appeals">Appeals</string>
-    <string name="moderation_no_cases">No open cases.</string>
-    <string name="moderation_no_appeals">No open appeals.</string>
-    <string name="case_origin_flags">Flagged by people nearby</string>
-    <string name="case_origin_rereported">Removed signal reported again</string>
-    <string name="case_origin_coordination">Backed by accounts that act together</string>
-    <string name="case_line">%1$s · %2$s · opened %3$s</string>
-    <plurals name="case_flags">
-        <item quantity="one">%d flag</item>
-        <item quantity="other">%d flags</item>
-    </plurals>
-    <string name="case_you_took_part">You took part in this signal. Another moderator must review it.</string>
-    <string name="case_hidden">Hidden for review</string>
-    <string name="case_removed">Removed</string>
-    <string name="case_visible">Visible to people nearby</string>
-    <string name="case_closed">This case is closed (%1$s).</string>
-    <string name="case_outcome_dismissed">dismissed</string>
-    <string name="case_outcome_removed">removed</string>
-    <string name="case_place">Block %1$s (area %2$s)</string>
-    <string name="case_counts">Independent people backing it: %1$d. Saying it has changed: %2$d.</string>
-    <string name="case_flag_counts">Flags: %1$s</string>
-    <string name="section_participants">People in this case</string>
-    <string name="participant_line">%1$s · %2$s · %3$s</string>
-    <string name="participant_not_counting">not counting</string>
-    <string name="participant_group">acts with group %1$s</string>
-    <string name="participant_ref">Person %1$s</string>
-    <string name="cd_pause_participant">Pause %1$s</string>
-    <string name="role_report">Reported it</string>
-    <string name="role_confirm">Confirmed it</string>
-    <string name="role_no_longer">Said it has changed</string>
-    <string name="role_flag">Flagged: %1$s</string>
-    <string name="tier_restricted">paused</string>
-    <string name="tier_limited">limited record</string>
-    <string name="tier_standard">standard</string>
-    <string name="tier_trusted">good record</string>
-    <string name="age_new">new account</string>
-    <string name="age_recent">under 30 days</string>
-    <string name="age_established">over 30 days</string>
-    <string name="action_restrict">Pause</string>
-    <string name="action_quarantine">Hide for review</string>
-    <string name="action_keep_signal">Keep it</string>
-    <string name="action_remove_signal">Remove</string>
-    <string name="moderation_choose_reason">Why?</string>
-    <string name="moderation_choose_days">For how long?</string>
-    <plurals name="moderation_days">
-        <item quantity="one">%d day</item>
-        <item quantity="other">%d days</item>
-    </plurals>
-    <string name="moderation_confirm_restrict">This person will not be able to report, confirm or flag for %1$s. They can still see signals and use SOS and every safety feature. They can ask another moderator to review it.</string>
-    <string name="moderation_confirm_remove">The signal is hidden and its reports are deleted. A report aimed at someone or spam counts against its reporters.</string>
-    <string name="moderation_confirm_dismiss">The signal stays visible and these flags are closed.</string>
-    <string name="moderation_confirm_quarantine">The signal is hidden from everyone until this case is decided.</string>
     <string name="action_record">Record</string>
-    <string name="moderation_decided">Decision recorded.</string>
-    <string name="reason_false">Not true</string>
-    <string name="reason_targets">Aimed at a person, home or business</string>
-    <string name="reason_spam">Spam or coordinated</string>
-    <string name="reason_duplicate">Duplicate</string>
-    <string name="reason_no_violation">Nothing wrong</string>
-    <string name="reason_needs_review">Needs a closer look</string>
-    <string name="appeal_line">%1$s · paused until %2$s</string>
-    <string name="appeal_details">%1$s · current record: %2$s · strikes: %3$d</string>
-    <string name="appeal_own_decision">You made this decision, so another moderator must review it.</string>
-    <string name="action_uphold">Keep the pause</string>
-    <string name="action_overturn">Lift the pause</string>
-    <string name="appeal_confirm_overturn">The pause ends now and its strike is removed. The decision is recorded with your account.</string>
-    <string name="appeal_confirm_uphold">The pause stays until its end date. The decision is recorded with your account.</string>
-    <string name="appeal_decided_upheld">The pause stays.</string>
-    <string name="appeal_decided_overturned">The pause was lifted.</string>
-    <string name="moderation_signal_reasons">Why the system rates it so: %1$s</string>
-    <!-- Phase 9C: the coordination pattern behind a case (moderators only). Bands, never counts; never an accusation. -->
-    <string name="coordination_heading">Pattern behind this signal:</string>
-    <string name="coordination_linked_group">All of its support comes from accounts that keep backing the same things, so they count as one person.</string>
-    <string name="coordination_support_core">The people backing it keep backing each other\'s reports in several parts of town, and nobody else backs those places.</string>
-    <string name="coordination_exclusive_pair">Two accounts keep backing the same places across town, and nobody else backs those places.</string>
-    <string name="coordination_size_two">Group: 2 accounts.</string>
-    <string name="coordination_size_small">Group: 3 to 5 accounts.</string>
-    <string name="coordination_size_large">Group: 6 or more accounts.</string>
-    <string name="coordination_places_few">Places only this group backs: 2 to 4.</string>
-    <string name="coordination_places_several">Places only this group backs: 5 to 9.</string>
-    <string name="coordination_places_many">Places only this group backs: 10 or more.</string>
-    <string name="coordination_guidance">Backing each other is not proof that a report is false: friends, a household or a hostel can look like this. Look at the place and the reasons.</string>
-    <string name="coordination_gone">The pattern that opened this case is no longer present.</string>
-    <string name="coordination_confirm_dismiss">The signal stays visible. The people backing it now will count as separate people for this place. Their other places are not affected.</string>
-    <string name="coordination_group_members">Others in this group</string>
-    <string name="coordination_member_role">In the same group, not behind this place</string>
-    <string name="coordination_pause_group">Pause everyone in this group</string>
-    <string name="coordination_confirm_pause_group">Every account in this group will not be able to report, confirm or flag for %1$s. People who only flagged this place are not included. They can all still see signals and use SOS and every safety feature, and each of them can ask another moderator to review it. Backing each other is not proof on its own.</string>
 
     <!-- Safety Profile -->
     <string name="profile_account_title">Account and security</string>
@@ -446,7 +199,6 @@
     <string name="settings_section_application">Application</string>
     <string name="settings_account">Account and security</string>
     <string name="settings_safety_circle">Safety Circle and automatic SMS</string>
-    <string name="settings_evidence_vault">Evidence Vault and recovery passphrase</string>
     <string name="settings_emergency_history">Emergency History</string>
     <string name="settings_app_permissions">App permissions (phone settings)</string>
     <string name="settings_notifications">Notifications (phone settings)</string>
@@ -467,7 +219,7 @@
     <string name="account_password_same">Choose a password different from your current one.</string>
     <string name="account_password_required">Enter your password.</string>
     <string name="account_section_delete">Delete account</string>
-    <string name="account_delete_explainer">Your account is deleted 7 days after you ask, not at once. Until then everything keeps working, SOS included, and you can cancel with your password. Asking is not possible during an emergency or within 24 hours after one. Everything your account holds on the server is deleted, including your profile, posts, photos and comments, your connections, your saved list, your emergencies and walks, your Safety Circle and your Nearby reports; once it is gone it cannot be restored.</string>
+    <string name="account_delete_explainer">Your account is deleted 7 days after you ask, not at once. Until then everything keeps working, SOS included, and you can cancel with your password. Asking is not possible during an emergency or within 24 hours after one. Everything your account holds on the server is deleted, including your profile, posts, photos and comments, your connections, your emergencies and walks and your Safety Circle; once it is gone it cannot be restored.</string>
     <string name="account_delete_button">Delete my account…</string>
     <string name="account_delete_confirm_title">Delete your account?</string>
     <string name="account_delete_confirm_message">Enter your password. Nothing is deleted for 7 days; you can cancel until then.</string>
@@ -487,7 +239,7 @@
     <!-- Information pages -->
     <string name="about_body">IRL: safety that expands your world. A privacy-focused safety app designed with women at the centre, built in phases as a final-year B.Tech project. Safe enough to live. Free enough to grow.
 
-This build has real accounts (with password change and account deletion), a Safety Circle, a manual SOS session, Safe Walk with check-ins and movement checks, Nearby (anonymous place signals) and "Check the way". Nobody can use IRL to track another person. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. IRL never contacts emergency services and never records sound, photos or video during an SOS.
+This build has real accounts (with password change and account deletion), a Safety Circle, a manual SOS session, Safe Walk with check-ins and movement checks. Nobody can use IRL to track another person. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. IRL never contacts emergency services and never records sound, photos or video during an SOS.
 
 The order of posts on Home uses what a post contains and the interests you chose; \"Talking now\" uses how recently someone commented. It never uses how many people read or commented.</string>
     <string name="about_version_format">Version %1$s</string>
@@ -508,18 +260,11 @@ Stop and route checks (if switched on): the destination text you type is looked 
 
 Safety Circle SMS (only if you switch on automatic SMS, or when you tap Text yourself): your phone sends an SMS to your enabled contacts with your name, the time, what happened and a map link to your last location. To work without internet, your enabled contacts\' names and numbers are kept on this phone (deleted when you log out). The server records only that a message was sent, to which contact and its status; never the number or the text. Tapping Call 112 opens your phone\'s dialer; IRL records that it was opened, not whether you called.
 
-
-Nearby (only when you open it): your phone turns one location fix into an area code of about 1 km to look at your area, and of about 150 m to report or answer. Your coordinates never leave the phone. A report says only the kind of place problem (or a safe place) and that block; it has no text, photo, name or time, and nobody is shown who shared it. It starts to count after a random delay, shows only to about 1 km until a second person confirms it, and is deleted at the end of its lifetime. You can see and withdraw your own reports in Nearby. Privately, the server keeps a few counters about how your reports turned out (never places or times); they halve every 90 days and are never shown, not even to you. If you flag a signal, a moderator sees only codes and a pseudonym valid for that one case. Moderation decisions are logged with reason codes for 365 days.
-
-Check the way (Safe Walk set-up): your phone asks for area summaries of a few regions of about 5 km; the server never receives your route or destination, and nothing is stored.
-
-Counts: once a week the server counts, system-wide, how the Nearby rules worked (no person, place or signal). Only an administrator can read them.
-
 Rise: everything you write or choose in Rise (goals, steps, how you expected and how it went, dates) stays on this phone in a file encrypted with a key held by your phone\'s secure hardware, separately for each account. None of it is sent to the IRL server or to anyone. Rise has no reminders or notifications. Signing out keeps it; Delete all Rise data, deleting your account, or uninstalling the app removes it.
 
-Account deletion: you need your password; it is refused during an emergency and for 24 hours after one, and it waits 7 days (cancel with your password; signing in does not cancel it). Then the server deletes your account and everything it holds: emergencies and their locations, walks, Safety Circle and Nearby contributions. If you ever acted as a moderator, your account row stays as an anonymous, switched-off record so that the moderation log keeps who decided what; your name, email and safety data are still deleted. After the deletion, this phone removes the settings it kept for the account the next time it learns of it, or when you tap the button on the login screen.
+Account deletion: you need your password; it is refused during an emergency and for 24 hours after one, and it waits 7 days (cancel with your password; signing in does not cancel it). Then the server deletes your account and everything it holds: emergencies and their locations, walks and Safety Circle. If you ever acted as a moderator, your account row stays as an anonymous, switched-off record so that the moderation log keeps who decided what; your name, email and safety data are still deleted. After the deletion, this phone removes the settings it kept for the account the next time it learns of it, or when you tap the button on the login screen.
 
-Retention in short: emergency locations and walks stay until you delete them or your account; walk destinations and last locations are deleted when a walk ends normally; Nearby signals expire on their own; moderation log 365 days; weekly counts 104 weeks.
+Retention in short: emergency locations and walks stay until you delete them or your account; walk destinations and last locations are deleted when a walk ends normally; moderation log 365 days.
 
 A complete privacy policy will be written and reviewed before any public release.</string>
 
@@ -855,225 +600,8 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="tracking_notification_offline">No connection. Your location will be saved when you are back online.</string>
     <string name="tracking_notification_location_off">Location is turned off on this phone.</string>
 
-    <!-- ===== Phase 5: Emergency Evidence Vault ===== -->
-    <string name="recording_notification_title">Recording audio evidence</string>
-    <string name="recording_notification_text">IRL is recording audio. Each part is encrypted on this phone. Open the app to stop.</string>
-
-    <string name="section_evidence">Evidence</string>
-    <string name="section_evidence_items">Evidence items</string>
-    <string name="title_evidence_vault">Evidence Vault</string>
-    <string name="evidence_card_intro">Record audio, a photo or a video as evidence. It is encrypted on this phone right away and uploaded to your private vault. Recording only happens when you choose it (here, or in advance in SOS options), with a notification and Android\'s microphone indicator.</string>
-    <string name="evidence_card_recording">Audio is being recorded. Each 30-second part is encrypted and saved as soon as it ends.</string>
-    <plurals name="evidence_recording_status">
-        <item quantity="one">Recording %1$s · %2$d part saved</item>
-        <item quantity="other">Recording %1$s · %2$d parts saved</item>
-    </plurals>
-    <string name="evidence_summary_none">No evidence for this emergency yet.</string>
-    <string name="evidence_summary">On this phone (encrypted): %1$d · Verified in your vault: %2$d · Waiting to upload: %3$d</string>
-    <string name="evidence_summary_uploading">Uploading now.</string>
-    <string name="action_record_audio">Record audio</string>
-    <string name="action_stop_recording">Stop recording</string>
-    <string name="action_take_photo">Photo</string>
-    <string name="action_record_video">Video</string>
-    <string name="action_open_evidence_vault">Open Evidence Vault</string>
-    <string name="evidence_recording_started">Recording started. Tap Stop recording to end it.</string>
-    <string name="evidence_photo_sealed">Photo encrypted and saved. Some camera apps also keep their own copy in the Gallery: check there if that matters to you.</string>
-    <string name="evidence_video_sealed">Video encrypted and saved. Some camera apps also keep their own copy in the Gallery: check there if that matters to you.</string>
-    <string name="evidence_camera_unavailable">No camera app is available on this phone.</string>
-    <string name="evidence_microphone_denied">IRL needs microphone access to record audio evidence. Nothing was recorded.</string>
-    <string name="evidence_microphone_blocked">Microphone access is turned off for IRL. Allow it in Settings to record audio evidence.</string>
-    <string name="evidence_refused_signed_out">Sign in to record evidence.</string>
-    <string name="evidence_refused_no_emergency">Evidence can only be recorded during an active emergency.</string>
-    <string name="evidence_hint_keep_open">Keep IRL open: Android did not allow recording to continue with the screen off.</string>
-    <string name="evidence_hint_start_failed">The microphone could not be started (another app may be using it). Nothing was recorded.</string>
-    <string name="evidence_hint_max_duration">Recording stopped after 60 minutes. Tap Record audio to continue.</string>
-    <string name="evidence_hint_storage_low">The phone is almost out of storage, so recording stopped. Saved parts are kept.</string>
-    <string name="evidence_hint_microphone_lost">Recording stopped: the microphone became unavailable. Saved parts are kept.</string>
-    <string name="evidence_hint_save_failed">Recording stopped: the phone could not save the audio. Saved parts are kept.</string>
-    <string name="evidence_hint_offline">No connection. Evidence is safe on this phone (encrypted) and will upload when you are back online.</string>
-    <string name="evidence_hint_no_escrow">This server has no operator recovery key: unless you set up a recovery passphrase in the Evidence Vault, uploaded evidence can only be opened on this phone.</string>
-
-    <string name="vault_intro">Only you can see this. Evidence is encrypted on your phone; the server stores it but cannot open it. \"Verified\" means the server checked that every byte arrived unchanged.</string>
-    <string name="vault_privacy_note">Anyone who can unlock this phone and open IRL can view the evidence here. Screenshots are blocked on this screen, and the evidence is decrypted only while you view it.</string>
-    <string name="vault_empty">No evidence yet.</string>
-    <string name="action_refresh">Refresh</string>
     <string name="action_more">More</string>
     <string name="action_close">Close</string>
-    <string name="action_play_pause">Play / pause</string>
-    <string name="action_open_evidence">Open</string>
-    <string name="action_verify_evidence">Check integrity</string>
-    <string name="action_remove_from_phone">Remove from this phone</string>
-    <string name="action_download_evidence">Bring back to this phone</string>
-    <string name="action_delete_evidence">Delete everywhere</string>
-    <string name="cd_open_evidence">Open %1$s</string>
-    <string name="cd_evidence_photo">Evidence photo</string>
-    <string name="cd_evidence_video">Evidence video</string>
-    <string name="evidence_row_title">%1$s · %2$s</string>
-    <string name="evidence_row_recoverable">recoverable if this phone is lost</string>
-    <string name="evidence_kind_audio">Audio</string>
-    <string name="evidence_kind_photo">Photo</string>
-    <string name="evidence_kind_video">Video</string>
-    <string name="evidence_kind_unknown">Evidence</string>
-    <string name="evidence_status_on_phone">Encrypted on this phone · not uploaded yet</string>
-    <string name="evidence_status_uploading">Uploading · %1$d%%</string>
-    <string name="evidence_status_verified">Verified in your vault · also on this phone</string>
-    <string name="evidence_status_only_in_vault">Verified in your vault · removed from this phone</string>
-    <string name="evidence_status_refused">Kept on this phone · the server did not accept it</string>
-    <string name="evidence_status_deleted">Deleted everywhere</string>
-    <string name="evidence_status_other_phone">In your vault · recorded on another phone, cannot be opened here</string>
-    <plurals name="vault_custody_intact">
-        <item quantity="one">Chain of custody intact · %1$d recorded step · checked %2$s</item>
-        <item quantity="other">Chain of custody intact · %1$d recorded steps · checked %2$s</item>
-    </plurals>
-    <string name="vault_custody_broken">Warning: the chain of custody does not verify. The record of what happened to this evidence may have been changed.</string>
-    <string name="vault_custody_unavailable">The chain of custody could not be checked (no connection).</string>
-    <string name="vault_verify_failed">This file is damaged: it no longer matches its fingerprint.</string>
-    <string name="vault_open_failed">This evidence could not be opened.</string>
-    <string name="vault_key_unavailable">The key for this item is not available on this phone.</string>
-    <string name="vault_action_done">Done.</string>
-    <string name="vault_action_not_possible">This is not possible for this item right now.</string>
-    <string name="vault_remove_title">Remove from this phone?</string>
-    <string name="vault_remove_message">The verified copy stays in your vault and can be brought back to this phone later.</string>
-    <string name="vault_delete_title">Delete everywhere?</string>
-    <string name="vault_delete_message">This permanently deletes the evidence from your vault and this phone, including the recovery copy of its key. A record that it existed and was deleted stays in the chain of custody. Enter your password to confirm. Not possible while the emergency is active or in the 24 hours after it ended. Wrong passwords are recorded, and several in a row lock deleting for a while.</string>
-    <string name="vault_locked_title">Your Evidence Vault is locked</string>
-    <string name="vault_locked_message">Confirm it is you with this phone\'s screen lock (PIN, pattern, password or fingerprint) to see your evidence. Recording and uploading evidence do not need this.</string>
-    <string name="action_unlock_vault">Unlock vault</string>
-    <string name="vault_unlock_title">Open your Evidence Vault</string>
-    <string name="vault_unlock_subtitle">Confirm with your screen lock</string>
-    <string name="vault_no_screen_lock">This phone has no screen lock, so the vault cannot be locked: anyone holding this phone can open it. Set a screen lock (PIN, pattern or password) to protect your evidence.</string>
-    <string name="action_set_screen_lock">Set a screen lock</string>
-    <string name="action_retry_upload">Try uploading again</string>
-    <string name="evidence_status_damaged_in_vault">Vault copy failed its check · not on this phone</string>
-    <string name="vault_copy_damaged_kept">Not removed: the vault copy failed its check just now. Your copy on this phone was kept and is being uploaded again.</string>
-    <string name="vault_integrity_title">Integrity check</string>
-    <string name="vault_integrity_phone_ok">On this phone: intact. The file matches the fingerprint recorded when it was saved.</string>
-    <string name="vault_integrity_phone_damaged">On this phone: DAMAGED. The file no longer matches its fingerprint.</string>
-    <string name="vault_integrity_vault_ok">In your vault: intact. The server re-checked every byte just now.</string>
-    <string name="vault_integrity_vault_damaged_repairing">In your vault: the stored copy failed the check. It is being uploaded again from this phone.</string>
-    <string name="vault_integrity_vault_damaged">In your vault: the stored copy failed the check, and this phone has no intact copy to repair it.</string>
-    <string name="vault_integrity_vault_not_uploaded">In your vault: not verified yet (still waiting or uploading).</string>
-    <string name="vault_integrity_vault_unavailable">In your vault: could not be checked right now (no connection).</string>
-    <string name="vault_custody_anchor_first">This phone now remembers this record, so it will notice if it is ever rewritten.</string>
-    <string name="vault_custody_anchor_match">Unchanged since this phone first checked it (%1$s).</string>
-    <string name="vault_custody_anchor_changed">Warning: this record has changed since this phone checked it (%1$s). Entries this phone saw are missing or different.</string>
-    <string name="vault_audio_length">Length %1$s</string>
-    <string name="detail_no_evidence">No evidence was saved to the vault for this emergency.</string>
-    <plurals name="detail_evidence">
-        <item quantity="one">%1$d evidence item in the vault (%2$d verified).</item>
-        <item quantity="other">%1$d evidence items in the vault (%2$d verified).</item>
-    </plurals>
-
-    <!-- Restore on a new phone (recovery passphrase, docs/PHASE5.md §11) -->
-    <string name="section_recovery">Restore on a new phone</string>
-    <string name="recovery_status_off">Off. If this phone is lost, your vault evidence can only be opened here (or by the IRL operator\'s offline recovery key, if this server has one). Set up a recovery passphrase to open it yourself on a new phone.</string>
-    <string name="recovery_status_on">On since %1$s. Vault items you can restore on a new phone with your passphrase: %2$d of %3$d.</string>
-    <string name="recovery_status_on_elsewhere">A recovery passphrase is set up for your account, but this phone does not have your recovery key yet. Enter your passphrase to restore your vault evidence here.</string>
-    <string name="recovery_status_unavailable">Could not check your recovery passphrase (no connection).</string>
-    <string name="recovery_last_fetched">Your recovery data was last fetched from the server on %1$s. If that was not you, change your passphrase and your account password.</string>
-    <string name="action_recovery_set_up">Set up a recovery passphrase</string>
-    <string name="action_recovery_restore">Restore my evidence here</string>
-    <string name="action_recovery_change">Change passphrase</string>
-    <string name="action_recovery_forgot">Forgot your passphrase?</string>
-    <string name="action_recovery_use_suggestion">Use this</string>
-    <string name="action_recovery_another_suggestion">Another one</string>
-    <string name="recovery_suggestion_label">Suggested (five random words, very hard to guess):</string>
-    <string name="label_recovery_current">Current recovery passphrase</string>
-    <string name="label_recovery_passphrase">Recovery passphrase</string>
-    <string name="label_recovery_confirm">Repeat the recovery passphrase</string>
-    <string name="recovery_set_up_title">Set up a recovery passphrase</string>
-    <string name="recovery_set_up_message">With this passphrase you can open your vault evidence on a new phone. It never leaves this phone: IRL cannot see it and cannot reset it. If you forget it and lose this phone, your evidence cannot be opened this way. Keep it somewhere only you can reach. It must be different from your account password. Your account password confirms the change.</string>
-    <string name="recovery_change_title">Change your recovery passphrase</string>
-    <string name="recovery_change_message">Enter your current passphrase, then the new one. Your account password confirms the change. Evidence stays the same; only the passphrase that unlocks it changes.</string>
-    <string name="recovery_forgot_title">Set a new passphrase</string>
-    <string name="recovery_forgot_message">This phone still holds your recovery key, so you can choose a new passphrase without the old one. Your account password confirms the change. The old passphrase stops working.</string>
-    <string name="recovery_restore_title">Restore your evidence</string>
-    <string name="recovery_restore_message">Enter your recovery passphrase and your account password. Your evidence keys are opened on this phone; the evidence itself is downloaded only when you bring an item back to this phone.</string>
-    <string name="recovery_done">Your recovery passphrase is saved. Earlier vault items are being protected in the background.</string>
-    <string name="recovery_changed">Your recovery passphrase was changed.</string>
-    <plurals name="recovery_restored">
-        <item quantity="one">%1$d item restored. Tap \"Bring back to this phone\" to download and open it.</item>
-        <item quantity="other">%1$d items restored. Tap \"Bring back to this phone\" to download and open them.</item>
-    </plurals>
-    <plurals name="recovery_unreadable">
-        <item quantity="one">%1$d item could not be opened with your recovery key.</item>
-        <item quantity="other">%1$d items could not be opened with your recovery key.</item>
-    </plurals>
-    <string name="recovery_wrong_passphrase">That passphrase does not open your recovery key. Check it and try again.</string>
-    <string name="recovery_not_set_up">No recovery passphrase is set up for this account.</string>
-    <string name="recovery_already_set_up">A recovery passphrase was already set up (perhaps on another phone). Restore with it instead.</string>
-    <string name="recovery_no_key_on_phone">This phone does not hold your recovery key, so the passphrase cannot be replaced from here. Use a phone where it was set up or restored.</string>
-    <string name="recovery_local_failure">This phone\'s secure key storage did not respond. Nothing was changed.</string>
-    <string name="recovery_problem_too_short">Use at least 15 characters. Several random words are easiest to remember.</string>
-    <string name="recovery_problem_personal">Do not use your name or email address in the passphrase.</string>
-    <string name="recovery_problem_same_as_password">The passphrase must be different from your account password (the server sees that password when you log in).</string>
-    <string name="recovery_problem_common">This passphrase is too common or too repetitive to protect your evidence.</string>
-    <string name="recovery_problem_mismatch">The two passphrases are not the same.</string>
-    <string name="recovery_password_required">Enter your account password.</string>
-
-    <!-- Phase 8: Safety Intelligence ("area picture"). Never says a place is safe; the app cannot know that. -->
-    <string name="outlook_no_information">No community information here yet. That does not mean it is safe or unsafe.</string>
-    <string name="outlook_little_information">Little community information here.</string>
-    <string name="outlook_no_confirmed_concerns">No confirmed concerns have been reported here recently.</string>
-    <string name="outlook_take_care">Take care: people nearby have confirmed concerns.</string>
-    <string name="outlook_take_extra_care">Take extra care: recent confirmed concerns nearby.</string>
-    <string name="picture_information">How much is known here: %1$s</string>
-    <string name="information_none">nothing yet</string>
-    <string name="information_little">little</string>
-    <string name="information_some">some</string>
-    <string name="information_more">a fair amount</string>
-    <string name="picture_confirmed">Confirmed: %1$s</string>
-    <string name="picture_reason_incident_today">Something happened today that people nearby confirmed.</string>
-    <string name="picture_reason_incident_week">Something happened this week that people nearby confirmed.</string>
-    <string name="picture_reason_condition">People nearby confirmed conditions of these places.</string>
-    <string name="picture_reason_may_have_changed">Some of these reports are older. The place may have changed.</string>
-    <string name="picture_reason_conflicting">People disagree about some of these places.</string>
-    <string name="picture_reason_recurring">Concerns were confirmed here repeatedly in recent months.</string>
-    <string name="picture_reason_unconfirmed">There are also reports nobody has confirmed yet.</string>
-    <string name="picture_reason_safe_places">Places to go for help are known nearby.</string>
-    <string name="picture_reason_little_information">Few people have shared anything about this area.</string>
-    <string name="picture_where_here">Strongest concern: in your area.</string>
-    <string name="picture_where">Strongest concern: %1$s, about %2$s away.</string>
-    <string name="picture_night_first">After dark, lighting and isolated stretches are listed first.</string>
-    <string name="picture_footer">Based on community reports only. It cannot tell you that a place is safe. In danger, use SOS or call 112.</string>
-    <string name="cd_picture">Area picture. %1$s</string>
-    <string name="radar_legend_cells">Hatched = nothing known · dotted = little known · amber outline = confirmed concerns</string>
-    <string name="radar_legend_two_lines" translatable="false">%1$s\n%2$s</string>
-    <string name="compass_n">north</string>
-    <string name="compass_ne">north-east</string>
-    <string name="compass_e">east</string>
-    <string name="compass_se">south-east</string>
-    <string name="compass_s">south</string>
-    <string name="compass_sw">south-west</string>
-    <string name="compass_w">west</string>
-    <string name="compass_nw">north-west</string>
-
-    <!-- Phase 8D: "Check the way" on the Safe Walk set-up screen. Never says the way is safe. -->
-    <string name="action_check_the_way">Check the way</string>
-    <string name="way_intro">See what people have shared about places around the way. IRL is asked only about the wider area (about 5 km), never your route. The place you type is looked up with your phone\'s map service, as when you start a walk.</string>
-    <string name="way_checking">Checking the way…</string>
-    <string name="way_needs_destination">Type where you are going first.</string>
-    <string name="way_not_found">That place could not be found, so the way cannot be checked.</string>
-    <string name="way_unavailable">The map service could not be reached, so the way cannot be checked.</string>
-    <string name="way_no_permission">Your location is needed to check the way.</string>
-    <string name="way_no_fix">Your location could not be found just now. Try again in the open.</string>
-    <string name="way_too_long">This walk is too long to check here.</string>
-    <string name="way_incomplete">The way could not be checked completely here, so nothing is shown. Open Community to see what is around you.</string>
-    <string name="way_found">Checked towards: %1$s</string>
-    <string name="way_concerns">Confirmed along the way: %1$s</string>
-    <string name="way_no_concerns">No confirmed concerns have been reported along the way recently.</string>
-    <string name="way_incident_today">Something that happened today was confirmed by people near the way.</string>
-    <string name="way_coverage_mostly_unknown">Little is known about most of the way.</string>
-    <string name="way_coverage_partly_known">Little is known about parts of the way.</string>
-    <string name="way_coverage_mostly_known">People have shared something about most of the way.</string>
-    <string name="way_unconfirmed">There are also reports nobody has confirmed yet.</string>
-    <string name="way_recurring">Concerns were confirmed repeatedly near the way in recent months.</string>
-    <string name="way_conflicting">People disagree about some places near the way.</string>
-    <plurals name="way_havens">
-        <item quantity="one">A place to go for help is known near the way.</item>
-        <item quantity="other">Places to go for help are known near the way.</item>
-    </plurals>
-    <string name="way_footer">Checked around a straight line, not your exact route. It cannot tell you that the way is safe, and it does not change your walk or its check-ins.</string>
 
     <!-- ==== Phase 13A: profiles and connections (docs/PHASE13A_PLAN.md). SocialTextsTest scans every social_* text:
          no counts of people, no follower/like wording, no claim that anyone is safe. ==== -->
@@ -1376,14 +904,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_private_remove">Remove %1$s</string>
     <!-- Phase 13C: the butterfly, the Cocoon and Discover. No counts except the author's own private line; no ranking words. -->
     <string name="title_discover">Discover</string>
-    <string name="title_cocoon">Want to go</string>
     <string name="title_post_collection">Posts</string>
-    <string name="butterfly_saved_announcement">Saved to Want to go. Only you can see it.</string>
-    <string name="butterfly_author_fewer">Fewer than 3 people gave this a butterfly so far. Only you can see this line.</string>
-    <string name="butterfly_author_count">%1$d people gave this a butterfly. Only you can see this line.</string>
-    <string name="cocoon_saved_this_week">Saved this week</string>
-    <string name="cocoon_saved_this_month">Saved this month</string>
-    <string name="cocoon_saved_earlier">Saved earlier</string>
     <string name="discover_section_city">New in %1$s</string>
     <string name="discover_section_theme">This week\'s theme</string>
     <string name="discover_edition_end">You\'re all caught up.</string>
@@ -1438,9 +959,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="review_upheld">Reviewed by another moderator: the decision stays.</string>
     <string name="review_overturned">Reviewed by another moderator: the decision was undone.</string>
     <string name="approve_first_switch">Approve comments from people I\'m not connected with first</string>
-    <string name="compose_disclosed_switch">I was paid, or got this free</string>
-    <string name="compose_disclosed_note">Readers will see \"Paid or gifted visit\" on this post, and your rating for this place will not count towards its average. This cannot be switched off after sharing.</string>
-    <string name="post_disclosed_label">Paid or gifted visit</string>
     <string name="approve_first_line">The author approves comments from people they are not connected with first.</string>
     <string name="perspective_awaiting_yours">Waiting for your approval</string>
     <string name="perspective_awaiting_author">Waiting for the author\'s approval</string>
@@ -1567,12 +1085,10 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="content_case_check_quoted">, quoted or reported speech</string>
     <string name="content_case_check_guidance">The automatic check is evidence, not a verdict: it reads words, not their context.</string>
 
-    <!-- ===== Phase 13F: Kurinji UI (docs/PHASE13F_PLAN.md). KurinjiTextsTest: no emoji, no slang or hype. ===== -->
     <!-- IRL (2026-11-03): the brand line, shown in capitals (textAllCaps) so TalkBack reads words, not letters. -->
     <string name="motto">Out there. Together.</string>
     <string name="nav_discover">Home</string>
     <string name="nav_share">Share</string>
-    <string name="nav_cocoon">Want to go</string>
     <string name="nav_you">You</string>
     <string name="cd_feature_row_plain">%1$s. %2$s.</string>
 
@@ -1594,8 +1110,6 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- You → Safety -->
     <string name="safety_hub_section_tools">Tools</string>
     <string name="safety_hub_walk_description">Check-ins while you travel, a look at the way before you go, and checks for unusual stops</string>
-    <string name="safety_hub_nearby_title">Nearby heads-ups</string>
-    <string name="safety_hub_nearby_description">Anonymous notes about places near you, confirmed by people nearby</string>
 
     <!-- Discover (F14) -->
     <string name="discover_masthead_no_city">Choose a city</string>
@@ -1608,18 +1122,11 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="going_there_description">Going there? Ways to save it, tell someone, and set off with support if you want it</string>
     <string name="going_place_line">%1$s. Use what helps; none of it is needed.</string>
     <string name="going_no_place_line">The post does not show a place. Use what helps; none of it is needed.</string>
-    <string name="going_save">Save it</string>
-    <string name="going_saved">Saved</string>
     <string name="going_tell">Let someone know</string>
     <string name="going_walk">Walk with check-ins</string>
-    <string name="going_way">Check the way</string>
     <string name="going_footer">Let someone know opens your own messages with a note you can change. It has no location and no link, and IRL sends and keeps nothing. Safe Walk opens with the place filled in; nothing starts until you press it.</string>
     <string name="going_heads_up">I\'m heading to %1$s. I\'ll message you when I\'m back.</string>
     <string name="going_heads_up_no_place">I\'m heading out to try something new. I\'ll message you when I\'m back.</string>
-
-    <!-- Share (F17) -->
-
-    <!-- Cocoon (F16) -->
 
     <!-- Cards (F13) -->
     <string name="card_ticket_label">Tip</string>
@@ -1657,13 +1164,11 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="safety_hub_tile_added">SOS is in your Quick Settings.</string>
     <string name="safety_hub_tile_not_added">SOS was not added. You can add it from the Quick Settings edit screen.</string>
 
-    <!-- Rise retired (D9) -->
     <!-- N1: the Evidence Vault is retired; what it kept on this phone is deleted once, with this notice -->
     <string name="vault_retired_title">The Evidence Vault has been retired</string>
     <string name="vault_retired_message">The recordings, photos and videos it kept on this phone were deleted. IRL no longer records sound, photos or video during an SOS. SOS, Safe Walk and your Safety Circle work as before.</string>
     <string name="rise_retired_title">Rise has been retired</string>
-    <string name="rise_retired_message">Its notes on this phone were deleted. Nothing from Rise was ever on a server. Your saved list and \"Only me\" posts are the place for plans you keep to yourself.</string>
-    <!-- ===== Phase 16: UX reset (docs/PHASE16.md) ===== -->
+    <string name="rise_retired_message">Its notes on this phone were deleted. Nothing from Rise was ever on a server. \"Only me\" posts are the place for plans you keep to yourself.</string>
     <!-- ===== IRL opening screen (2026-11-03, docs/DESIGN_SYSTEM.md "Opening"). Shown in capitals via textAllCaps. ===== -->
     <string name="opening_brand_spoken">IRL, in real life. Out there. Together.</string>
     <string name="opening_line_world">Your world.</string>
@@ -1720,32 +1225,11 @@ A complete privacy policy will be written and reviewed before any public release
         <item quantity="other">%d comments. Opens the comments</item>
     </plurals>
 
-    <!-- ===== Phase 17E: social redesign (docs/PHASE17E.md) ===== -->
     <!-- D-3: the butterfly is a reaction; Save is a private bookmark. -->
-    <string name="reaction_label">Inspired</string>
-    <string name="reaction_give_description">Give a butterfly: this inspires you. The author never learns who.</string>
-    <string name="reaction_given_description">You gave this a butterfly. Tap to take it back.</string>
-    <string name="reaction_given_short">You gave a butterfly</string>
-    <string name="save_label">Save</string>
-    <string name="saved_label">Saved</string>
-    <string name="save_description">Save it to come back to. Only you can see what you save.</string>
-    <string name="save_remove_description">Saved. Tap to take it out of Want to go.</string>
-    <string name="save_announcement">Saved to Want to go. Only you can see it.</string>
     <string name="feed_media_count">1 / %1$d</string>
     <string name="feed_media_count_spoken">%1$d photos or videos inside</string>
-    <!-- "I went" (plan §4): from reading to sharing your own experience. -->
-    <string name="went_label">Been here</string>
-    <string name="went_description">Been here: mark this place, say how it was, or share your own experience of it</string>
     <!-- IRL-R14 (2026-11-12): a visit and its rating belong to an exact place. Where a post names none, the button says what it does. -->
     <string name="went_share_description">Share yours: write your own experience.</string>
-    <string name="saved_share_description">Share yours: write your own experience of this</string>
-    <!-- Saved -->
-    <string name="saved_intro">Only you can see what you save. Nobody is told.</string>
-    <string name="saved_empty_title">No plans yet. Bold.</string>
-    <string name="saved_empty_message">Tap Save on any post you want to come back to: places to try, questions you want answered.</string>
-    <string name="saved_empty_action">Go to Home</string>
-    <string name="saved_remove">Remove</string>
-    <string name="saved_remove_description">Remove from Want to go: %1$s</string>
     <!-- D-5: cities -->
     <string name="city_picker_title">Choose a city</string>
     <string name="city_picker_hint">Search cities</string>
@@ -1755,22 +1239,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="city_other">Another city</string>
     <string name="city_other_note">A city that is not on the list</string>
     <string name="profile_city_choose">Choose your city</string>
-    <!-- D-7: today's state (connections only, ends at midnight) -->
-    <string name="daily_state_set">Set today\'s state</string>
-    <string name="daily_state_sheet_title">How is today?</string>
-    <string name="daily_state_sheet_note">Only your connections see it, on your profile. It ends at midnight and is never kept. Nobody is notified.</string>
-    <string name="daily_state_clear">Clear today\'s state</string>
-    <string name="daily_state_line">Today: %1$s</string>
-    <string name="daily_state_own_note">Seen by your connections until midnight</string>
-    <string name="daily_state_curious">Curious</string>
-    <string name="daily_state_planning">Planning something</string>
-    <string name="daily_state_inspired">Inspired</string>
-    <string name="daily_state_learning">Learning something new</string>
-    <string name="daily_state_celebrating">Celebrating</string>
-    <string name="daily_state_slow_day">Taking it slow</string>
-    <string name="daily_state_busy_day">A busy day</string>
-    <string name="daily_state_quiet_day">A quiet day</string>
-    <string name="daily_state_saved">Today\'s state is set. Your connections see it until midnight.</string>
     <!-- Profile photo -->
     <string name="profile_photo_change">Change photo</string>
     <string name="profile_photo_add">Add a photo</string>
@@ -1780,30 +1248,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="profile_photo_failed">The photo could not be added. Check your connection and try again.</string>
     <string name="profile_photo_unreadable">This photo could not be read. Try another one.</string>
     <string name="profile_photo_description">Your profile photo</string>
-    <!-- You -->
-    <!-- Place page -->
-    <string name="place_share_yours">Been here</string>
-    <string name="place_share_yours_description">Been here: mark that you have been to %1$s and say how it was</string>
-    <!-- Phase 17G-2 (U5): "I went" is a private record; an optional 1 to 5; a place shows ONE average only from people who went -->
-    <string name="place_went_state">You\'ve been here · rate it</string>
-    <string name="place_went_rated">You\'ve been here · %1$s out of 5</string>
     <!-- Real-device sprint C7: once the visit exists the spoken label must say the state the text shows, not the first-visit prompt -->
-    <string name="place_went_description_state">You have been to %1$s. You have not rated it. Open to rate it, share your experience, or take it back.</string>
-    <string name="place_went_description_rated">You have been to %1$s and rated it %2$s out of 5. Open to change it, share your experience, or take it back.</string>
-    <string name="place_rating_line">%1$s out of 5 · from people who went</string>
-    <string name="place_rating_description">Rated %1$s out of 5 by people who went</string>
-    <string name="went_sheet_title">How was it?</string>
-    <string name="went_sheet_note">Optional. Your rating is private to you. A place shows an average only once enough people who went have rated it.</string>
-    <string name="went_presence_note">If location is already allowed for IRL, your phone checks whether you are near this place. Only if you are, it tells IRL so. Nobody else sees it.</string>
-    <string name="went_rate_description">Rate %1$s out of 5</string>
-    <string name="went_rate_chosen">%1$s out of 5, your rating</string>
-    <string name="went_status_none">You\'ve been here. You have not rated it.</string>
-    <string name="went_status_rated">Your rating: %1$s out of 5</string>
-    <string name="went_rate_number">%1$s</string>
-    <string name="went_clear">Take back my rating</string>
-    <string name="went_share">Share your experience</string>
-    <string name="went_not">I haven\'t been here</string>
-    <string name="went_done">Done</string>
     <string name="place_page_note">Experiences shared with everyone, newest first.</string>
 
     <!-- Phase 17F: SOS options (shake, audio), the shake countdown notification -->
@@ -1815,17 +1260,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="sos_options_shake_no_sensor">This phone has no motion sensor, so shaking cannot be used.</string>
     <string name="sos_options_shake_no_notifications">Notifications are off, so shaking works only while IRL is open. During a Safe Walk with the screen off there would be no way to cancel the countdown.</string>
     <string name="sos_options_shake_notifications_action">Allow notifications</string>
-    <string name="sos_options_audio_title">Record audio in an SOS</string>
-    <string name="sos_options_audio_body">When an SOS is on, IRL starts recording sound by itself, so you do not have to find a button. It is encrypted on the phone, appears in your Evidence Vault, and shows a notification while it records. You can stop it any time. Nothing is recorded outside an SOS.</string>
-    <string name="sos_options_audio_no_permission">The microphone is not allowed for IRL, so nothing will be recorded until you allow it.</string>
-    <string name="sos_options_audio_denied">Without the microphone, IRL cannot record. Audio in an SOS is off; you can still tap Record during an SOS if you allow it then.</string>
     <string name="sos_options_voice_notice">Starting an SOS by voice is not available. A phone cannot reliably keep listening in the background, and it would mean a microphone that is always on. The SOS button, the Quick Settings tile, the launcher shortcut and (if you turn it on) shaking are the ways to start one.</string>
-    <string name="action_allow_microphone">Allow microphone</string>
-    <string name="audio_question_title">Record audio in an SOS?</string>
-    <string name="audio_question_message">If you ever start an SOS, IRL can start recording sound on your phone by itself, so you do not have to find a button. It is encrypted on the phone before anything is sent, appears in your Evidence Vault, and shows a notification while it records. You can stop it any time. Nothing is recorded outside an SOS, and you can change this later in SOS options.\n\nIf you choose Yes, Android asks to allow the microphone now.</string>
-    <string name="audio_question_yes">Yes, record</string>
-    <string name="audio_question_no">No</string>
-    <string name="evidence_recording_started_auto">Recording started because you chose that in SOS options. Tap Stop recording to end it.</string>
     <string name="action_cancel_sos">Cancel</string>
     <string name="shake_countdown_title">SOS starts in %1$d s</string>
     <string name="shake_countdown_text">You shook the phone. If this was not meant, tap Cancel now.</string>
@@ -1853,46 +1288,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="notification_channel_sos_countdown_name">SOS countdown</string>
     <string name="notification_channel_sos_countdown_description">The 5-second countdown after shaking the phone during a Safe Walk, with a Cancel button</string>
 
-    <!-- Phase 17G-1: Explore (deterministic, on-phone understanding) and the experience tags -->
-    <string name="explore_entry">Explore</string>
-    <string name="explore_title">Explore</string>
-    <string name="explore_hint">What are you in the mood for?</string>
-    <string name="explore_helper">For example: a quiet cafe to study in the evening. Your words stay on this phone. Only the choices below are searched.</string>
-    <!-- Phase 17G-3: the optional smart understanding (off by default; the provider is not named in the app) -->
-    <string name="explore_helper_smart">For example: a quiet cafe to study in the evening. Smart understanding is on, so your words are sent when you search. Only the choices below are searched.</string>
-    <string name="explore_smart_title">Smart understanding (Preview)</string>
-    <string name="explore_smart_summary">Off unless you turn it on. When on, the words you type are sent to IRL\'s server and then to an external AI service, which turns them into the choices below. Searching works without it.</string>
-    <string name="explore_smart_dialog_title">Use smart understanding?</string>
-    <string name="explore_smart_dialog_message">When this is on, the words you type in Explore are sent to IRL\'s server and then to an external AI service, which turns them into the choices below.\n\nOnly the words are sent: no places, no location and no account details. IRL does not save them. The AI service has its own rules for what it receives.\n\nSearching still works without it, and you can turn it off at any time.</string>
-    <string name="explore_smart_dialog_on">Turn on</string>
-    <string name="explore_smart_dialog_cancel">Not now</string>
-    <string name="explore_understood_smart">Understood with smart understanding. You can change the choices.</string>
-    <string name="explore_understood_standard">Standard understanding was used.</string>
-    <string name="explore_city_label">City: %1$s</string>
-    <string name="explore_city_pick">Choose a city</string>
-    <string name="explore_section_categories">Kind of place (up to 2)</string>
-    <string name="explore_section_facets">Good for (up to 4)</string>
-    <string name="explore_section_daypart">Time of day</string>
-    <string name="explore_searching_for">Searching for: %1$s</string>
-    <string name="explore_nothing_asked">Type what you are looking for, or choose from the lists below.</string>
-    <string name="explore_unused">We did not use: %1$s</string>
-    <string name="explore_search">Search</string>
-    <string name="explore_clear">Clear</string>
-    <string name="explore_loading">Looking…</string>
-    <!-- "Matches 3 of the 4 things you asked for": counts only what the person asked for, never people or posts. -->
-    <plurals name="explore_match_of">
-        <item quantity="one">Matches %1$d of the %2$d thing you asked for</item>
-        <item quantity="other">Matches %1$d of the %2$d things you asked for</item>
-    </plurals>
-    <string name="explore_hit_good_for">Good for: %1$s</string>
-    <string name="explore_results_header">Places found</string>
-    <string name="explore_end">That is all we found. Try fewer choices or another city.</string>
-    <string name="explore_empty_title">Nothing fits. Yet.</string>
-    <string name="explore_empty_message">Try fewer choices or another city. A place appears here once people share experiences about it with everyone.</string>
-    <string name="explore_footer">Explore searches experiences that people shared with everyone, and lists places by how well they match what you asked for. It does not count people or reactions.</string>
-    <string name="social_facets_title">Good for (optional)</string>
-    <string name="social_facets_note">Choose up to 4. People who search Explore can find this place by these.</string>
-    <string name="post_facets_line">Good for: %1$s</string>
     <!-- IRL redesign (R1, R2): the short composer and the draft guard. -->
     <string name="compose_add_media">Add photos or a video</string>
     <string name="compose_add_more">Add more</string>
@@ -1907,6 +1302,5 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- IRL redesign (R4): You as a profile; the rest one tap away. -->
     <string name="title_more">Settings and more</string>
     <string name="you_more_description">Private places, community, account, log out</string>
-    <string name="you_saved_description">Posts you kept to come back to. Only you see this list.</string>
     <string name="you_safety_description">SOS, Safe Walk and your trusted people</string>
 </resources>

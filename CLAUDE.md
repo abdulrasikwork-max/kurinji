@@ -80,7 +80,7 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | 13A–13F, 16, 17E, IRL redesign | Profiles, connections, posts, discovery, moderation v2, text check, navigation | Profiles, connections, blocks, moderation, text check, photo pipeline KEPT; posts / places / feed / comments stay until N4/N5 replace them |
 | 17G-1/2/3, 18A-1/2 | Explore, AI understanding, "I went" + ratings, rating trust, presence, disclosure | **Removed in N1** (18A-2 was never verified on a device); 18A-3, 18B, 17I cancelled |
 | **N0** | Record the new direction (docs, this file) | done 2026-11-15 (documents only) |
-| **N1** | Strip: remove the retired features on both sides, migration V32 | approved 2026-11-15; see `docs/PHASE_N1.md` |
+| **N1** | Strip: remove the retired features on both sides, migration V32 | implemented, compiled, tested 2026-11-15 (Android 766+, backend 496, Python 38; V32 applied on the DEVELOPMENT MySQL only); results per unit in `docs/PHASE_N1.md`; manual check: see there |
 | N2 | Phone-only sign-in, real name, no password | planned |
 | N3 | Community, membership, verification, bans, admin screens | planned |
 | N4 | Moments, capture-only Create, the wall, daily question | planned |
@@ -89,7 +89,8 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | N7 | Firebase push | planned |
 | N8 | Pilot launch at MIET (backups, SMS provider, policy texts, seeding, moderators) | planned |
 
-Next migration **V32** (N1). Each phase or sub-phase needs its own plan and the owner's approval first.
+Next migration **V33**. Each phase or sub-phase needs its own plan and the owner's approval first. The pilot still
+runs the old jar on schema V30 (its move to V32 deletes data: its own approved step).
 
 **Never implement early:** other communities / the community request system, multiple memberships, video, iPhone,
 Tamil UI, companies, sub-communities, ads, any new AI feature.
@@ -171,16 +172,15 @@ cd android
   `play-services-location`. minSdk 26, compile/target 36 (Play, 17K). **No Compose. No Hilt** unless explicitly approved. No new
   dependency without the user's approval.
 - **Packages:** feature-first `feature/<name>/{domain,data,ui}`; shared code in `core/`, `navigation/`. Features: splash,
-  onboarding, auth, safety (You → Safety hub + session status), community (Nearby), profile (You), settings,
-  safetycircle, emergency (+ `entry`: SOS shortcut/tile), safewalk, circlealert, evidence, moderation, intelligence,
-  account, social, going (navigation bridge only). `feature/map`, `feature/home` and `feature/rise` no longer exist.
-  No screen shows "Coming soon".
-- **Navigation:** Home · Explore · ✚ Share (action → composer) · You; start = Home (`discoverFragment`); Saved and "Settings and more" (`moreFragment`) under You. Bar on tabs + reading screens
-  (post, place/category page, person profile); task/safety screens have toolbar + back. Safety banners (SOS, walk,
-  deletion, sign in to sync) on every tab and reading screen via `MainActivity` + `SessionStatusViewModel`, never on the
-  SOS screen. Nearby (`communityFragment`) is under You → Safety.
-- **Isolation:** social and safety never import each other; `feature/going` imports neither (`GoingThereTest`);
-  intelligence stays out of SOS, tracking, Safe Walk, circle alerts and evidence (`IntelligenceIsolationTest`).
+  onboarding, auth, safety (You → Safety hub + session status), profile (You), settings, safetycircle, emergency
+  (+ `entry`: SOS shortcut/tile), safewalk, circlealert, moderation (content queue only), account, social, going
+  (navigation bridge only). Removed in N1: `feature/community`, `evidence`, `intelligence` (`core/retired` holds the
+  one-time clean-ups). No screen shows "Coming soon".
+- **Navigation (since N1):** Home · ✚ Share (action → composer) · You; start = Home (`discoverFragment`); "Settings and
+  more" (`moreFragment`) under You. Bar on tabs + reading screens (post, place/category page, person profile);
+  task/safety screens have toolbar + back. Safety banners (SOS, walk, deletion, sign in to sync) on every tab and
+  reading screen via `MainActivity` + `SessionStatusViewModel`, never on the SOS screen.
+- **Isolation:** social and safety never import each other; `feature/going` imports neither (`GoingThereTest`).
 - **DI:** manual `AppContainer` (composition root) via `Fragment.appContainer`; each ViewModel has `factory(container)`.
 - **Networking:** exactly **one** Retrofit instance; all APIs are created from it in `AppContainer`. `AuthInterceptor`
   adds the Bearer token only to the backend origin (17J), never to `/api/auth/*`. **No HTTP logging interceptor** (passwords).
@@ -192,22 +192,22 @@ cd android
   works); `credentials_changed` / `account_deleted` / `account_unavailable` → sign-out. Session changes use the atomic
   `SessionStorage.update`. The 24 h access token is Keystore-sealed, never plain text (17J, J-8); `allowBackup=false`.
 - **One holder per concern, in application scope** (`SosRecorder`, `EmergencyLocationSharing`, `SafeWalkSession`,
-  `CircleAlertCoordinator`, `EvidenceVault`, …); screens and the ONE `SafetyTrackingService` read the same holder.
+  `CircleAlertCoordinator`, …); screens and the ONE `SafetyTrackingService` read the same holder.
   Detection and decision logic are **pure, unit-tested policies** (`CheckInPolicy`, `MovementPolicy`, `BatteryPolicy`,
-  `CircleAlertPolicy`, `CommunityPolicy`, …). Every SOS starts on the phone (Phase 11).
+  `CircleAlertPolicy`, …). Every SOS starts on the phone (Phase 11).
 - **Location (17D):** one permission path (`LocationAsk` + pure `LocationNeeds`); screens other than the SOS screen must
   not register their own location launcher or read a stream (`Phase17DLocationTest`); a rough position never places
   anything (≤ 100 m for reports and places); screens stop location searches in `onStop`.
 - **Nothing about other people is stored on the phone (Q3):** one Coil `ImageLoader` on the shared OkHttp client, memory
   cache only; videos stream with the sign-in header, play only after a tap; social data is never persisted (the person's OWN Home city is, per account: IRL-R6).
 - **Wording is guarded by tests** (keep them green; extend them for new strings): `HonestyTextsTest`, `KurinjiTextsTest`,
-  `SocialTextsTest`, `ModerationV2Test`, `AiModerationTest`, `CommunityTextsTest`, `ContrastTest`,
-  `EmergencyTreatmentTest`, `ResourceEncodingTest`, `Phase17FGuardsTest`.
-- **Permissions today:** `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `POST_NOTIFICATIONS`,
-  `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `ACCESS_NETWORK_STATE`, `SEND_SMS` (asked only on opt-in; Play
-  "physical safety" declaration needed for release), `RECORD_AUDIO` + `FOREGROUND_SERVICE_MICROPHONE` (asked on the
-  Record tap during an ACTIVE SOS, or since 17F when the person turns on audio in SOS options), `USE_BIOMETRIC`. Photo/video via the Photo Picker and camera-app intents — **never
-  declare `CAMERA`**. Telephony/microphone/camera features not required. `dataExtractionRules` exclude all data.
+  `SocialTextsTest`, `ModerationV2Test`, `AiModerationTest`, `ContrastTest`, `EmergencyTreatmentTest`,
+  `ResourceEncodingTest`, `Phase17FGuardsTest`.
+- **Permissions today (since N1):** `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`,
+  `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `ACCESS_NETWORK_STATE`, `SEND_SMS` (asked
+  only on opt-in; leaves in N6). `RECORD_AUDIO` left with the vault and comes back in N4 for voice moments, asked in
+  context. Photo/video via the Photo Picker and camera-app intents — **never declare `CAMERA`**.
+  Telephony/microphone/camera features not required. `dataExtractionRules` exclude all data.
 - **Tests:** JUnit4 + kotlinx-coroutines-test, `MainDispatcherRule`, fakes in `src/test/.../testing/`. Background holders
   need `runCurrent()`/`advanceTimeBy()`, NOT `advanceUntilIdle()` (it ignores `backgroundScope`); real-recorder tests use
   `sosRecorderForTest` + `settle()`.
@@ -218,9 +218,11 @@ cd android
 
 - **Stack:** Java 17, Spring Boot **3.5.16** (OSS support ended 30 Jun 2026 — upgrading to 4.x is a separate, planned step),
   Spring Web, Data JPA, Security (OAuth2 resource server for JWT), Bean Validation, Flyway, MySQL 8.
-- **Packages:** `auth` (+ `auth/phone`), `user`, `account`, `safetycontact`, `emergency`, `emergencycontext`,
-  `escalation`, `journey`, `evidence`, `community`, `moderation` (+ `moderation.assessment`), `intelligence`,
-  `evaluation`, `social`, `security`, `config`, `common` (each `controller/service/repository/entity/dto`).
+- **Packages (since N1):** `auth` (+ `auth/phone`), `user`, `account`, `safetycontact`, `emergency`,
+  `emergencycontext`, `escalation`, `journey`, `circlealert`, `moderation` (+ `moderation.assessment`), `social`,
+  `security`, `config`, `common` (+ `common/geo` `GeoCell`, `common/independence`) (each
+  `controller/service/repository/entity/dto`). Removed in N1: `evidence`, `community`, `intelligence`, `evaluation`,
+  `explore`.
 - **Conventions:**
   - Thin controllers; rules in services; DTOs are Java records; entities are never serialized.
   - Caller identity **only** from the JWT: `CurrentUser.id(jwt)` (`sub` claim). No `userId` in any request DTO.
@@ -235,9 +237,8 @@ cd android
     whole attempt (Phase 14).
   - Time is UTC everywhere; inject `Clock`; no `LocalDateTime.now()` without `ZoneOffset.UTC`/`Clock` (`TimeConventionsTest`).
 - **One visibility definition per area:** social `Visibility` (every read path, tested with author / connection /
-  stranger / blocked), community `SignalVisibility`. **Isolation tests are invariants:** `SocialIsolationTest`,
-  `IntelligenceIsolationTest`, `EvaluationIsolationTest`, `CoordinationIsolationTest`, `ModelPlacesTest`;
-  `AccountEraserCoverageTest` (the eraser must cover every `REFERENCES users`). `SocialMediaCleanupJob` is the ONLY
+  stranger / blocked). **Isolation tests are invariants:** `SocialIsolationTest`, `ModelPlacesTest` (two outbound
+  clients: moderation service, SMS; nothing names an AI provider); `AccountEraserCoverageTest` (the eraser must cover every `REFERENCES users`). `SocialMediaCleanupJob` is the ONLY
   `@Scheduled` in `social`.
 - **Auth/JWT:** HS256, secret from env (≥ 32 chars), issuer `https://safesphere.example`, `sub` = user id, 24 h, claims
   `sid`, `auth_time`, `cca`. Device sessions with rotating refresh secrets (V19); `security/ActiveAccountCheck` refuses
@@ -255,7 +256,7 @@ cd android
 
 ## 7. Database (MySQL `safesphere`, Flyway) — per-migration rules in `.claude/rules/database.md`
 
-Conventions: never edit an applied migration; next file is **V32**; snake_case; `DATETIME(6)` stored in UTC; constraint
+Conventions: never edit an applied migration; next file is **V33**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci. "One active /
 one primary / one open" via a generated marker column + unique index. MySQL forbids CHECKs on cascading-FK columns
 (enforce those rules in code); write NULL cases out with `COALESCE` (a NULL makes `IN` UNKNOWN, which a CHECK lets pass);
@@ -273,6 +274,7 @@ closed lists use binary collation.
 | V29 | `post_facets` (Explore tags on experiences, 13 closed codes, ≤ 4 per post in code) |
 | V30 | `place_visits` ("I went" + optional rating 1–5 on the same row, private to its owner) |
 | V31 | `place_visits.at_place`, `posts.disclosed` (18A-2) |
+| **V32** | **N1: DROPS** the V9–V11 evidence tables, `place_signals`, `signal_contributions`, `signal_flags`, `contributor_standing`, `moderation_cases`, `area_patterns`, `evaluation_counters`, `butterflies`, `saved_posts`, `daily_states`, `post_facets`, `place_visits`, `posts.disclosed`, `moderation_actions.signal_category` (30 tables remain) |
 
 ---
 

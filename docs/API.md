@@ -6,6 +6,32 @@ Base URL (local development): `http://localhost:8080`
 All requests and responses are JSON (`Content-Type: application/json`).
 The examples use made-up values only. Never put real credentials in documentation.
 
+> ## Removed in N1 (2026-11-15, `PHASE_N1.md`): read this first
+> The sections of this file are kept per phase, as history. **The endpoints and fields below no longer exist in the
+> code** (branch `irl-next`; they answer 404). The pilot server still runs the old jar and still has them.
+>
+> | Gone | Was described under |
+> |---|---|
+> | `POST /api/emergencies/{id}/evidence`, every `/api/evidence/**` route (vault key, upload, seal, download, verify, delete, custody, recovery) | Phase 5 |
+> | every `/api/community/**` route (reports, area, contributions, mine, flags, standing, appeals) | Phases 6, 7 |
+> | `/api/moderation/cases/**`, `/api/moderation/appeals/**` (Nearby signal cases); `GET /api/admin/evaluation` | Phases 7, 9 |
+> | every `/api/intelligence/**` route; the `intelligence` part of the area answer | Phase 8 |
+> | `PUT`/`DELETE /api/posts/{id}/reaction`, `PUT`/`DELETE /api/posts/{id}/save`, `GET /api/saved` | Phases 13C, 17E |
+> | `PUT`/`DELETE /api/profiles/me/daily-state` | Phase 17E |
+> | `POST /api/explore/search`, `POST /api/explore/understand`, `GET /api/explore/understanding` | Phases 17G-1, 17G-3 |
+> | `PUT`/`DELETE /api/places/{id}/went`, `PUT`/`DELETE /api/places/{id}/rating` | Phases 17G-2, 18A |
+>
+> **Fields gone from answers that stay:** the owner's Emergency Context Packet has no `evidence`; a post has no
+> `youReacted`, `saved`, `butterflies`, `facets`, `disclosed` (and create / edit ignore `facets` and `disclosed`); the
+> place page (`GET /api/places/{id}/posts`) has no `rating` and no `yourVisit`; both profile answers have no
+> `dailyState`; an audit-log entry (`GET /api/admin/moderation-log`) has `targetKind` (POST, COMMENT, PERSON, PLACE or
+> null) in place of `category`.
+>
+> **Still there:** `GET /api/moderation/access`, `PUT /api/admin/roles`, `GET /api/admin/moderation-log`, every
+> `/api/moderation/content-*` route, reports, the automatic text check, and everything of auth, account, Safety Circle,
+> SOS, Safe Walk, circle alerts, profiles, connections, blocks, places, posts, media, perspectives and Discover.
+> The Python service: `POST /v1/assess` and `GET /v1/health` (without `understanding`); `/v1/understand` is gone.
+
 ## Error format (every endpoint)
 
 ```json
@@ -1286,6 +1312,8 @@ too (`clientRef`, `startedAt`): the phone keeps the trigger with the record and 
   `127.0.0.1` (`SERVER_ADDRESS`), so the monitor must call it through the HTTPS proxy.
 
 # Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
+
+> **N1 (2026-11-15):** the lines of Phases 5 to 9, 17G and 18A in this index are history; what was removed is listed at the top of this file.
 
 A compact list of every phase's endpoints and config keys; the sections above have the details. Keep it in step.
 

@@ -8,6 +8,13 @@ paths:
 ---
 # Android social features (moved verbatim from CLAUDE.md §5 on 2026-11-03)
 
+> **N1 (2026-11-15, `docs/PHASE_N1.md`): read with care.** Removed: Explore (tab, on-phone understanding, smart
+> understanding), "Good for" tags, "Been here" + the rating sheet + the presence check, the place average, the
+> disclosure switch and label, the butterfly and Save, Saved, today's state. `Post` has no `youReacted`, `saved`,
+> `butterflies`, `disclosed`, `facets`; `PlacePage` no `rating` / `yourVisit`. `feature/moderation` = the content
+> queue only. Posts, places, feed and perspectives stay until N4 / N5. Paragraphs below about the removed parts are
+> history (code: git tag `pre-n1`).
+
 Profiles and connections (13A), experiences (13B), discovery (13C), moderation v2 (13D), the on-phone text check
 (13E), media (17C), social redesign (17E), IRL redesign (2026-11-11).
 

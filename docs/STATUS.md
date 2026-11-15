@@ -157,5 +157,5 @@ of the product as built to 18A-2; it stays as history. Phases 5 to 9, 17G and 18
 | Phase | Scope | Status |
 |---|---|---|
 | N0 | Direction record: `IRL_DIRECTION.md`, `CLAUDE.md` sections 1 and 2 (old copy: `history/CLAUDE_2026-11-15.md`), decisions N-1 to N-16 | done 2026-11-15 (documents only; no code, no test run) |
-| N1 | Strip the retired features on both sides, migration V32 (`PHASE_N1.md`) | approved 2026-11-15; results per unit in `PHASE_N1.md` |
+| N1 | Strip the retired features on both sides, migration V32 (`PHASE_N1.md`) | **implemented, compiled, tested 2026-11-15** (units A1 to A3, B1 to B4, C; one local commit each on `irl-next`): Android 766 run / 0 failures, lint 0 errors / 91 warnings; backend 496 run / 0 failures / 2 skipped; Python 38; V32 backed up, dry-run and applied on the DEVELOPMENT MySQL 8.0.46 (46 tables became 30). Manual check: see the end of `PHASE_N1.md`. The pilot is untouched (old jar, schema V30) |
 | N2 to N8 | Phone-only sign-in; community and verification; moments; responses; safety trim; push; pilot launch | planned |

@@ -26,8 +26,8 @@ class Phase17FGuardsTest {
     private val newStrings = listOf(
         "sos_options_subtitle", "sos_options_shake_body", "sos_options_shake_no_sensor", "sos_options_shake_no_notifications",
         "sos_options_voice_notice", "shake_countdown_text", "shake_started_text",
-        "walk_line_caption", "walk_line_cd", "walk_line_cd_inside", "walk_line_cd_outside", "location_last_known",
-        "report_sheet_intro", "radar_legend"
+        "walk_line_caption", "walk_line_cd", "walk_line_cd_inside", "walk_line_cd_outside",
+        "location_last_known"
     )
 
     @Test

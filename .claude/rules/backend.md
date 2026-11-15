@@ -4,6 +4,16 @@ paths:
 ---
 # Backend architecture (moved verbatim from CLAUDE.md §6 on 2026-11-03)
 
+> **N1 (2026-11-15, `docs/PHASE_N1.md`): read with care.** Packages `evidence`, `community`, `intelligence`,
+> `evaluation`, `explore` are REMOVED, with `ExploreService` / `ExplorePolicy` / `ExploreFacets` / `PostFacet`,
+> `PlaceVisit*`, `RatingPolicy`, `PlaceRatings`, `PostMarkService`, `Butterfly*`, `SavedPost*`, `DailyState*`,
+> `ModerationCase`, `CoordinationCheck`, `OutcomeRecorder` and their properties classes. `GeoCell` is now in
+> `common/geo`, `Independence` in `common/independence`. `ModerationService` = access, `requireModerator`, role
+> changes, audit log and its retention (called from `ContentModerationService.maintain()`); `ModerationController` =
+> `GET /api/moderation/access`. `AccountDeletionJob` no longer sweeps an evidence folder. Outbound HTTP clients: two
+> (`ModerationServiceClient`, `Fast2SmsOtpSender`). The test helper `CommunityClient` is `ApiTestClient`. Paragraphs
+> below about the removed parts are history (code: git tag `pre-n1`). Schema: V32, next V33.
+
 Loaded when working on files under `backend/`. Conventions and invariants also stay in `CLAUDE.md` §6; migrations in
 `database.md`; endpoints in `docs/API.md`.
 
