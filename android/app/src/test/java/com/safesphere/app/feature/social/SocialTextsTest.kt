@@ -103,13 +103,9 @@ class SocialTextsTest {
         val LAYOUTS = listOf("fragment_profile_setup.xml", "fragment_connections.xml", "fragment_person_profile.xml",
             "fragment_blocked_muted.xml", "item_person_row.xml", "fragment_compose.xml", "fragment_place_picker.xml",
             "fragment_post.xml", "fragment_my_posts.xml", "fragment_private_places.xml", "item_photo.xml",
-            "fragment_discover.xml", "fragment_saved.xml", "fragment_post_collection.xml",
+            "fragment_discover.xml", "fragment_post_collection.xml",
             // Phase 17E
-            "item_experience_card.xml", "item_saved.xml", "sheet_city_picker.xml", "sheet_daily_state.xml", "fragment_you.xml",
-            // Phase 17G-1: Explore
-            "fragment_explore.xml", "item_explore_hit.xml",
-            // Phase 17G-2 (U5): "I went" and the guarded rating
-            "sheet_went.xml", "item_rating_choice.xml",
+            "item_experience_card.xml", "sheet_city_picker.xml", "fragment_you.xml",
             // Phase 13D
             "fragment_my_reports.xml", "fragment_guidelines.xml")
         /** Phase 13C (C2): the only text with a number of people: the author's own private line. */

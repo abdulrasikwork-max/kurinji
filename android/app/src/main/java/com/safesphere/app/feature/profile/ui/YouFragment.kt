@@ -21,7 +21,6 @@ import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentYouBinding
 import com.safesphere.app.feature.social.domain.DecisionAction
 import com.safesphere.app.feature.social.domain.PauseLevel
-import com.safesphere.app.feature.social.ui.DailyStates
 import com.safesphere.app.feature.social.ui.JournalUiState
 import com.safesphere.app.feature.social.ui.JournalViewModel
 import com.safesphere.app.feature.social.ui.MarksFit
@@ -65,9 +64,6 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
             FeatureItem(R.drawable.ic_nav_discover, R.string.social_your_experiences, R.string.you_experiences_description) {
                 nav.navigate(R.id.myPostsFragment)
             },
-            FeatureItem(R.drawable.ic_bookmark, R.string.nav_cocoon, R.string.you_saved_description) {
-                nav.navigate(R.id.cocoonFragment)
-            },
             FeatureItem(R.drawable.ic_group, R.string.title_connections, R.string.you_connections_description) {
                 nav.navigate(R.id.connectionsFragment)
             },
@@ -79,12 +75,8 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
             }
         ))
 
-        // Phase 17E: the profile photo (picked without any permission; made square on the phone) and today's state.
+        // Phase 17E: the profile photo (picked without any permission; made square on the phone).
         binding.photoBlock.setOnClickListener { photoMenu() }
-        binding.dailyStateRow.setOnClickListener {
-            val me = journal.uiState.value.profile ?: return@setOnClickListener
-            DailyStates.pick(this, me.dailyState) { journal.onDailyState(it) }
-        }
 
         collectWhenStarted(journal.uiState, ::renderJournal)
         collectWhenStarted(reports.uiState, ::renderStanding)
@@ -120,20 +112,6 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
                 journal.onPhotoNoticeShown()
             }
             else -> Unit
-        }
-        // D-7: today's state (connections see it until midnight).
-        binding.dailyStateRow.isVisible = me != null
-        val today = me?.dailyState
-        binding.dailyStateChip.text = today?.let { getString(R.string.daily_state_line, getString(DailyStates.label(it))) }
-            ?: getString(R.string.daily_state_set)
-        binding.dailyStateChip.setCompoundDrawablesRelativeWithIntrinsicBounds(
-            today?.let(DailyStates::icon) ?: R.drawable.ic_add, 0, 0, 0)
-        binding.dailyStateRow.isEnabled = !state.stateBusy
-        binding.dailyStateRow.contentDescription = listOf(binding.dailyStateChip.text, getString(R.string.daily_state_own_note))
-            .joinToString(". ")
-        if (state.stateSaved) {
-            journal.onStateSavedShown()
-            binding.dailyStateRow.announceForAccessibility(getString(R.string.daily_state_saved))
         }
         binding.youHandle.isVisible = me != null
         binding.youHandle.text = me?.let {

@@ -79,18 +79,10 @@ data class Post(
     val canComment: Boolean,
     /** Own posts only: when others can see it (the delay of an exact-place post). */
     val visibleFrom: Instant?,
-    /** Phase 17E (D-3): the viewer put their OWN butterfly (a reaction) on it; never anyone else's. */
-    val youReacted: Boolean = false,
-    /** Phase 17E (D-3): the viewer saved it (their own private bookmark). */
-    val saved: Boolean = false,
-    /** Only on the author's own Experiences shared with others: how many people reacted, from 3 (C2). */
-    val butterflies: ButterflyTally? = null,
     /** Phase 13C: EXACT only, the place's id (opens its place page). */
     val placeId: String? = null,
     /** Phase 13D (Q6): perspectives from people not connected with the author wait for the author's approval. */
     val approveFirst: Boolean = false,
-    /** Phase 18A-2: the author said the visit was paid for or free of charge; every reader sees the label. */
-    val disclosed: Boolean = false,
     /** Phase 13D: own posts only, what a moderator (or a collapse while reviewing) did to it; null = nothing. */
     val ownModeration: OwnModeration? = null,
     /** Phase 13D: other people's posts only: shown behind a tap, and why (never who). */
@@ -98,9 +90,7 @@ data class Post(
     /** Phase 13E: the automatic check found strong language (a viewer may collapse it on their own phone). */
     val strongLanguage: Boolean = false,
     /** Phase 16 (U1): how many comments THIS viewer can read on the post (the server counts its own visible list). */
-    val commentCount: Int = 0,
-    /** Phase 17G-1: the Explore tags the author chose ("Good for..."), codes of the closed list, in the list's order. */
-    val facets: List<String> = emptyList()
+    val commentCount: Int = 0
 )
 
 data class PostPage(val items: List<Post>, val nextCursor: String?)
@@ -145,11 +135,7 @@ data class PostDraft(
     val commentPolicy: CommentPolicy,
     val mediaIds: List<String>,
     /** Phase 13D (Q6): only with "Everyone can add perspectives". */
-    val approveFirst: Boolean = false,
-    /** Phase 17G-1: Explore tags ("Good for..."), an Experience only, at most [ExploreFacets.MAX_PER_POST]. */
-    val facets: List<String> = emptyList(),
-    /** Phase 18A-2: "I was paid, or got this free" (an Experience only). */
-    val disclosed: Boolean = false
+    val approveFirst: Boolean = false
 )
 
 /** A photo uploaded (sanitised) and ready to attach; Phase 17C: also a video's answer (its poster comes after). */

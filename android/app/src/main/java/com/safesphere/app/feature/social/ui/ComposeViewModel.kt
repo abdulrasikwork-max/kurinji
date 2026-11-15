@@ -21,7 +21,6 @@ import com.safesphere.app.feature.social.domain.ComposerIssue
 import com.safesphere.app.feature.social.domain.ComposerPolicy
 import com.safesphere.app.feature.social.domain.Daypart
 import com.safesphere.app.feature.social.domain.ExperienceRepository
-import com.safesphere.app.feature.social.domain.ExploreFacets
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.MediaKind
 import com.safesphere.app.feature.social.domain.Place
@@ -94,15 +93,11 @@ data class ComposeUiState(
     val city: City? = null,
     val month: YearMonth? = null,
     val daypart: Daypart? = null,
-    /** Phase 17G-1: Explore tags ("Good for..."), an Experience only, at most four, codes in the list's order. */
-    val facets: List<String> = emptyList(),
     /** Never preselected on the first post (D14); afterwards the last choice. */
     val audience: Audience? = null,
     val commentPolicy: CommentPolicy = CommentPolicy.EVERYONE,
     /** Phase 13D (Q6): approve perspectives from people the author is not connected with first. */
     val approveFirst: Boolean = false,
-    /** Phase 18A-2: "I was paid, or got this free" (an Experience only; off for a question). */
-    val disclosed: Boolean = false,
     val media: List<ComposeMedia> = emptyList(),
     /** One-shot (Phase 17C): some picked items were not added. */
     val notice: ComposeNotice? = null,
@@ -196,15 +191,6 @@ class ComposeViewModel(
     fun onMonth(month: YearMonth) = change { it.copy(month = month) }
     fun onDaypart(daypart: Daypart?) = change { it.copy(daypart = daypart) }
 
-    /** Phase 17G-1: add or take off one tag; a fifth is not added (the chips are disabled at four). */
-    fun onToggleFacet(code: String) = change { s ->
-        when {
-            !ExploreFacets.isValid(code) -> s
-            code in s.facets -> s.copy(facets = s.facets - code)
-            s.facets.size >= ExploreFacets.MAX_PER_POST -> s
-            else -> s.copy(facets = ExploreFacets.cleaned(s.facets + code))
-        }
-    }
     fun onAudience(audience: Audience) = change { it.copy(audience = audience) }
     fun onCommentPolicy(policy: CommentPolicy) = change { it.copy(commentPolicy = policy) }
     fun onCity(city: City) {
@@ -212,7 +198,6 @@ class ComposeViewModel(
         change { it.copy(city = city) }
     }
     fun onApproveFirst(on: Boolean) = change { it.copy(approveFirst = on) }
-    fun onDisclosed(on: Boolean) = change { it.copy(disclosed = on) }
 
     fun onPrecision(precision: Precision) = change {
         if (precision in it.allowedPrecisions) it.copy(precision = precision) else it
@@ -442,9 +427,7 @@ class ComposeViewModel(
         audience = state.audience,
         commentPolicy = ComposerPolicy.effectiveCommentPolicy(state.audience, state.commentPolicy),
         mediaIds = state.media.filter { it.ready }.mapNotNull { it.mediaId },
-        approveFirst = state.approveFirst && state.canApproveFirst,
-        facets = if (state.type == PostType.EXPERIENCE) state.facets else emptyList(),
-        disclosed = state.type == PostType.EXPERIENCE && state.disclosed
+        approveFirst = state.approveFirst && state.canApproveFirst
     )
 
     private fun issuesOf(state: ComposeUiState) =

@@ -5,7 +5,6 @@ import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.feature.social.data.remote.DiscoverApi
 import com.safesphere.app.feature.social.domain.City
-import com.safesphere.app.feature.social.domain.SavedPage
 import com.safesphere.app.feature.social.domain.DiscoverPage
 import com.safesphere.app.feature.social.domain.DiscoverRepository
 import com.safesphere.app.feature.social.domain.Edition
@@ -13,29 +12,15 @@ import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.Place
 import com.safesphere.app.feature.social.domain.PlacePage
 import com.safesphere.app.feature.social.domain.PostPage
-import com.safesphere.app.feature.social.domain.Visit
-import com.safesphere.app.feature.social.data.remote.RatingRequestDto
-import com.safesphere.app.feature.social.data.remote.WentRequestDto
 
 /**
- * Phase 13C: Discover on the backend; Phase 17E: reactions and Saved. All error handling is in [ApiCallHandler]; nothing is
+ * Phase 13C: Discover on the backend. All error handling is in [ApiCallHandler]; nothing is
  * cached. An answer the app cannot read (a DTO that fails closed to null) is treated as "not found".
  */
 class RemoteDiscoverRepository(
     private val api: DiscoverApi,
     private val handler: ApiCallHandler
 ) : DiscoverRepository {
-
-    override suspend fun react(postId: String): ApiResult<Unit> = handler.execute { api.react(postId); Unit }
-
-    override suspend fun unreact(postId: String): ApiResult<Unit> = handler.execute { api.unreact(postId) }
-
-    override suspend fun save(postId: String): ApiResult<Unit> = handler.execute { api.save(postId); Unit }
-
-    override suspend fun unsave(postId: String): ApiResult<Unit> = handler.execute { api.unsave(postId) }
-
-    override suspend fun saved(cursor: String?): ApiResult<SavedPage> =
-        handler.execute { api.saved(cursor).toDomain() }
 
     override suspend fun edition(city: City): ApiResult<Edition> =
         orNotFound(handler.execute { api.edition(city.code).toDomain() })
@@ -48,20 +33,6 @@ class RemoteDiscoverRepository(
 
     override suspend fun placePage(placeId: String, cursor: String?): ApiResult<PlacePage> =
         orNotFound(handler.execute { api.placePage(placeId, cursor).toDomain() })
-
-    override suspend fun went(placeId: String): ApiResult<Visit> = handler.execute { api.went(placeId).toDomain() }
-
-    override suspend fun wentAt(placeId: String, cell: String): ApiResult<Visit> =
-        handler.execute { api.wentAt(placeId, WentRequestDto(cell)).toDomain() }
-
-    override suspend fun notWent(placeId: String): ApiResult<Unit> = handler.execute { api.notWent(placeId) }
-
-    override suspend fun rate(placeId: String, rating: Int): ApiResult<Visit> {
-        if (!Visit.isValid(rating)) return ApiResult.Failure(ApiError.VALIDATION) // never sent
-        return handler.execute { api.rate(placeId, RatingRequestDto(rating)).toDomain() }
-    }
-
-    override suspend fun clearRating(placeId: String): ApiResult<Visit> = handler.execute { api.clearRating(placeId).toDomain() }
 
     override suspend fun searchPlaces(query: String, city: City?): ApiResult<List<Place>> =
         handler.execute { api.searchPlaces(query.trim(), city?.code).mapNotNull { it.toDomain() } }

@@ -22,8 +22,6 @@ import com.safesphere.app.feature.social.domain.Post
 /** What the Discover feed's buttons do (the fragment navigates; the ViewModel saves). */
 interface FeedActions {
     fun openPost(post: Post, toComments: Boolean)
-    fun react(post: Post)
-    fun save(post: Post)
     fun nearMe()
     fun category(interest: Interest)
     fun share()
@@ -100,8 +98,6 @@ class DiscoverFeedAdapter(
                 CardBinder.bind((holder as Bound<ItemExperienceCardBinding>).binding, CardRow(card,
                     onOpen = { actions.openPost(post, toComments = false) },
                     // R3: no "Why?" on feed cards (a question nobody asked on every post); the order is explained in About.
-                    onReact = { actions.react(post) },
-                    onSave = { actions.save(post) },
                     onComments = { actions.openPost(post, toComments = true) },
                     onAuthor = card.authorId?.takeUnless { card.own }?.let { id -> { actions.openPerson(id) } }), images)
             }

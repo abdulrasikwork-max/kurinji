@@ -42,8 +42,6 @@ class Phase15IntegrationFixesTest {
         assertTrue(post.contains("binding.scroll.smoothScrollTo(0, 0)")) // Phase 16: the notice is at the top of the scroll
         assertTrue(post.contains("binding.errorNotice.announceForAccessibility(message)"))
         assertTrue(post.contains("ComposeFragment.ARG_PLACE_ID to placeId"))
-        val saved = File("src/main/java/com/safesphere/app/feature/social/ui/SavedFragment.kt").readText(Charsets.UTF_8)
-        assertTrue(saved.contains("ComposeFragment.ARG_PLACE_ID to post.placeId.takeIf { post.precision == Precision.EXACT }"))
     }
 
     /**

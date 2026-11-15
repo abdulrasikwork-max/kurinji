@@ -92,3 +92,27 @@ any deploy to the pilot (the laptop setup and the live jar stay exactly as they 
 - Result: **872 run, 0 failures, 0 errors, 0 skipped** (971 before); `assembleDebug` OK; lint **0 errors, 512 warnings**
   (365 before: more resources without a user, removed in unit C). Not seen on a screen; the SOS screen and the tracking
   service's type changed, so the real SOS and Safe Walk of the manual check at the end matter.
+
+### A3 Android: social add-ons (2026-11-15)
+- Removed: Explore (tab, screen, view model, phone-side word understanding, the two bundled word files, the optional
+  smart understanding and its stored account id), the "Good for" tags in the composer and on the post page, "Been
+  here" with the rating sheet and the quiet presence check (`PlaceVisits`, `WentSheet`, `PresenceCell`), the place
+  page's average, the disclosure switch and its label, the butterfly and Save on every card and on the post page
+  (`PostMarks`, `ButterflyFlight`), the author's butterfly line, Saved (screen, view model, the row of You, the Save row
+  of the "Going there?" sheet), today's state (You, the person profile, the sheet). 7 layouts.
+- Bar: Home, Share, You (`NavigationRules.tabDestinations` = Home and You; Saved is no longer a reading screen).
+- Kept: the post page's and the place page's button now always says "Share yours" and opens the composer with the
+  place filled in; "Going there?" (tell someone, walk with check-ins); comments and their count; `MarksFit` (the comment
+  mark, You's head, the opening); `ButterflyDrawable` is now unused code (unit C).
+- Data layer: `DiscoverRepository` / `DiscoverApi` lost react, save, saved, went, rate; `SocialRepository` lost the
+  daily state calls; `Post` lost `youReacted`, `saved`, `butterflies`, `disclosed`, `facets`; `PlacePage` lost `rating`
+  and `yourVisit`. A server that still sends those fields is fine (ignored). `PostViewModel` and `PostListViewModel` no
+  longer take the Discover repository; `PostViewModel` and `PostCollectionViewModel` no longer take a location provider.
+- Texts: onboarding page two ("Share it, ask about it"), About (the sentences on "Been here" and paid visits removed),
+  the place page button. Unused strings stay until unit C.
+- Tests: `Phase17GExploreTest`, `Phase17G2VisitsTest`, `Phase17G3SmartUnderstandingTest`, `Phase17HWentLabelTest`,
+  `Phase18A2TrustTest` and `FakeExploreRepository` deleted; the mark, Saved and daily state cases cut from `DiscoverTest`,
+  `Phase17ETest`, `ExperienceCardTest`, `IrlRedesignTest`; `NavigationRulesTest`, `SocialTextsTest`, `HonestyTextsTest`,
+  `Phase15IntegrationFixesTest` updated; `IrlRedesignTest` gained a guard that no social code names the removed calls.
+- Result: **766 run, 0 failures, 0 errors, 0 skipped** (872 before); `assembleDebug` OK; lint **0 errors, 622 warnings**
+  (512 before; unused resources, unit C). Not seen on a screen.

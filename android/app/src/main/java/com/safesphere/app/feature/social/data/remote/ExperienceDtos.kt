@@ -1,7 +1,6 @@
 package com.safesphere.app.feature.social.data.remote
 
 import com.safesphere.app.feature.social.domain.Audience
-import com.safesphere.app.feature.social.domain.ButterflyTally
 import com.safesphere.app.feature.social.domain.Cities
 import com.safesphere.app.feature.social.domain.Collapsed
 import com.safesphere.app.feature.social.domain.ModerationReason
@@ -11,7 +10,6 @@ import com.safesphere.app.feature.social.domain.OwnModeration
 import com.safesphere.app.feature.social.domain.CommentKind
 import com.safesphere.app.feature.social.domain.CommentPolicy
 import com.safesphere.app.feature.social.domain.Daypart
-import com.safesphere.app.feature.social.domain.ExploreFacets
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.ComposerPolicy
 import com.safesphere.app.feature.social.domain.MediaKind
@@ -78,11 +76,7 @@ data class PostRequestDto(
     val audience: String,
     val commentPolicy: String,
     val mediaIds: List<String>,
-    val approveFirst: Boolean = false,
-    /** Phase 17G-1: Explore tags; null (not sent) for an Ask or when none were chosen. */
-    val facets: List<String>? = null,
-    /** Phase 18A-2: true when the author said the visit was paid or free; null (not sent) otherwise and always for an Ask. */
-    val disclosed: Boolean? = null
+    val approveFirst: Boolean = false
 ) {
     companion object {
         /** Only for a draft that passed ComposerPolicy (precision and audience chosen). */
@@ -105,11 +99,7 @@ data class PostRequestDto(
                 commentPolicy = policy.name,
                 mediaIds = draft.mediaIds,
                 // Phase 13D (Q6): the server refuses it with any other comment setting; never sent then.
-                approveFirst = draft.approveFirst && policy == CommentPolicy.EVERYONE,
-                // Phase 17G-1: tags belong to Experiences only; the server refuses them on an Ask.
-                facets = if (experience) ExploreFacets.cleaned(draft.facets).take(ExploreFacets.MAX_PER_POST)
-                    .ifEmpty { null } else null,
-                disclosed = if (experience && draft.disclosed) true else null
+                approveFirst = draft.approveFirst && policy == CommentPolicy.EVERYONE
             )
         }
     }
@@ -164,19 +154,12 @@ data class PostDto(
     val commentPolicy: String? = null,
     val canComment: Boolean? = null,
     val visibleFrom: String? = null,
-    val youReacted: Boolean? = null,
-    val saved: Boolean? = null,
-    val butterflies: ButterflyTallyDto? = null,
     val approveFirst: Boolean? = null,
     val moderation: ModerationViewDto? = null,
     val collapsed: String? = null,
     val strongLanguage: Boolean? = null,
     /** Phase 16 (U1): comments this viewer can read; a missing or negative number counts as none. */
-    val commentCount: Int? = null,
-    /** Phase 17G-1: Explore tags; missing (an older answer) = none, an unknown code is dropped. */
-    val facets: List<String>? = null,
-    /** Phase 18A-2: missing (an older server) = not disclosed. */
-    val disclosed: Boolean? = null
+    val commentCount: Int? = null
 ) {
     fun toDomain(): Post? {
         val author = author?.let { a ->
@@ -210,18 +193,12 @@ data class PostDto(
             commentPolicy = enumOrNull<CommentPolicy>(commentPolicy) ?: CommentPolicy.NOBODY,
             canComment = canComment == true,
             visibleFrom = visibleFrom?.let { runCatching { Instant.parse(it) }.getOrNull() },
-            youReacted = youReacted == true && own != true,
-            saved = saved == true && own != true,
-            // Phase 13C: only the author's own posts carry a tally; anything else, or an inconsistent one, is dropped.
-            butterflies = if (own == true) butterflies?.toDomain()?.takeIf { it.isConsistent } else null,
             placeId = if (precision == Precision.EXACT.name) place?.publicId else null,
             approveFirst = approveFirst == true,
             ownModeration = if (own == true) moderation?.toDomain() else null,
             collapsed = if (own == true) null else collapsedOf(collapsed),
             strongLanguage = strongLanguage == true,
-            commentCount = (commentCount ?: 0).coerceAtLeast(0),
-            facets = ExploreFacets.cleaned(facets),
-            disclosed = disclosed == true
+            commentCount = (commentCount ?: 0).coerceAtLeast(0)
         )
     }
 
@@ -264,11 +241,6 @@ data class SpanDto(val start: Int? = null, val end: Int? = null) {
 /** Phase 13D: an unknown collapse value is read as UNDER_REVIEW (still behind a tap, never shown open by mistake). */
 internal fun collapsedOf(value: String?): Collapsed? =
     if (value == null) null else enumOrNull<Collapsed>(value) ?: Collapsed.UNDER_REVIEW
-
-/** Phase 13C: the author's private tally (C2). */
-data class ButterflyTallyDto(val count: Int? = null, val fewerThanThree: Boolean? = null) {
-    fun toDomain() = ButterflyTally(count, fewerThanThree != false)
-}
 
 data class PostPageDto(val items: List<PostDto>? = null, val nextCursor: String? = null) {
     fun toDomain() = PostPage(items.orEmpty().mapNotNull { it.toDomain() }, nextCursor)

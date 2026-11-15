@@ -16,7 +16,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.location.LocationAccess
-import com.safesphere.app.core.ui.Haptics
 import com.safesphere.app.core.ui.LocationAsk
 import com.safesphere.app.core.ui.LocationSettings
 import com.safesphere.app.core.ui.ViewBindingFragment
@@ -31,8 +30,8 @@ import com.safesphere.app.feature.social.domain.Post
 
 /**
  * Phase 13C, rebuilt in Phase 16 (docs/PHASE16.md): Discover, the first tab, as one social feed ([DiscoverFeed]):
- * open it and there is something to look at, react to (save with the butterfly, open the comments) and explore (Near
- * me, categories, places). It loads more while scrolling and then ends ("You're all caught up", U3). Search finds
+ * open it and there is something to look at, open the comments of, and look around in (Near me, categories,
+ * places). It loads more while scrolling and then ends ("You're all caught up", U3). Search finds
  * places by name and categories by their words, never people.
  */
 class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDiscoverBinding::inflate), FeedActions,
@@ -163,15 +162,6 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
         binding.errorNotice.isVisible = failure != null
         binding.retryButton.isVisible = failure != null
         if (failure != null) binding.errorNotice.setMessage(failure.toMessage(requireContext()))
-        if (state.savedNow != null) {
-            viewModel.onSavedShown()
-            binding.feed.announceForAccessibility(getString(R.string.butterfly_saved_announcement))
-            Haptics.confirm(binding.feed)
-        }
-        state.markFailure?.let {
-            viewModel.onMarkFailureShown()
-            android.widget.Toast.makeText(requireContext(), it.toMessage(requireContext()), android.widget.Toast.LENGTH_SHORT).show()
-        }
         if (state.sessionExpired) {
             viewModel.onSessionExpiredHandled()
             showSessionExpiredDialog()
@@ -244,10 +234,6 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
 
     override fun openPost(post: Post, toComments: Boolean) = findNavController().navigate(R.id.postFragment,
         bundleOf(PostViewModel.ARG_POST_ID to post.publicId, PostViewModel.ARG_TO_COMMENTS to toComments))
-
-    override fun react(post: Post) = viewModel.onReact(post)
-
-    override fun save(post: Post) = viewModel.onSave(post)
 
     override fun nearMe() {
         nearOpen = true

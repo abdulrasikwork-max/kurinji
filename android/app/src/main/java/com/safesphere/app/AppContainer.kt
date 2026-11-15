@@ -223,22 +223,10 @@ class AppContainer(context: Context) {
     /** IRL redesign (R1): "my own posts changed" (memory only), so the feed reads again when it is shown next. */
     val feedFreshness = com.safesphere.app.feature.social.domain.FeedFreshness()
 
-    // ---- Phase 13C: butterflies, the Cocoon and Discover (nothing stored on the phone) ---------------------
+    // ---- Phase 13C: Discover (nothing stored on the phone) ---------------------------------------------------
 
     val discoverRepository: DiscoverRepository by lazy {
         RemoteDiscoverRepository(retrofit.create(DiscoverApi::class.java), apiCallHandler)
-    }
-
-    // ---- Phase 17G-1: Explore (a structured query to the backend; nothing stored on the phone) ------------------
-
-    val exploreRepository: com.safesphere.app.feature.social.domain.ExploreRepository by lazy {
-        com.safesphere.app.feature.social.data.RemoteExploreRepository(
-            retrofit.create(com.safesphere.app.feature.social.data.remote.ExploreApi::class.java), apiCallHandler)
-    }
-
-    /** Phase 17G-3: whether THIS account agreed to the optional smart understanding (off by default; per account). */
-    val smartUnderstanding: com.safesphere.app.feature.social.domain.SmartUnderstandingChoice by lazy {
-        com.safesphere.app.feature.social.domain.SmartUnderstandingChoice(viewerPreferences) { currentSession.value?.user?.id }
     }
 
     // ---- Phase 13D: reports, own standing and appeals; moderators' content queue (nothing stored) ---------------

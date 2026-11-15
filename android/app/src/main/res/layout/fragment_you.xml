@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- IRL redesign (R4): You is a profile, not a settings page. The profile head on the ink panel (photo in a lime ring,
-     name, handle and city, bio, interests, today's state; no counts, ever), then a short list: your posts, Saved, your
+     name, handle and city, bio, interests; no counts, ever), then a short list: your posts, your
      people, Safety (one quiet row that opens the existing Safety screens, unchanged) and "Settings and more"
      (fragment_more.xml: private places, reading, community, account, log out). -->
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -132,41 +132,6 @@
                     android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
                     android:textColor="?attr/colorOnPanelVariant"
                     android:visibility="gone" />
-
-                <!-- Phase 17E (D-7): today's state, for connections only, until midnight. -->
-                <LinearLayout
-                    android:id="@+id/dailyStateRow"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="start"
-                    android:minHeight="@dimen/min_touch_target"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/dailyStateChip"
-                        style="@style/Widget.Kurinji.Tag"
-                        android:drawablePadding="6dp"
-                        android:gravity="center_vertical"
-                        android:importantForAccessibility="no"
-                        android:paddingTop="6dp"
-                        android:paddingBottom="6dp"
-                        android:text="@string/daily_state_set"
-                        app:drawableTint="?attr/colorOnLime" />
-
-                    <TextView
-                        android:id="@+id/dailyStateNote"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:importantForAccessibility="no"
-                        android:text="@string/daily_state_own_note"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
-                        android:textColor="?attr/colorOnPanelVariant" />
-                </LinearLayout>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/editProfileButton"

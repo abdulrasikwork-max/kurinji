@@ -216,21 +216,6 @@
                         android:text="@string/review_ask"
                         android:visibility="gone" />
 
-                    <!-- Phase 18A-2: the author said the visit was paid for or free. Words, not colour. -->
-                    <TextView
-                        android:id="@+id/disclosedLine"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:drawablePadding="@dimen/space_sm"
-                        android:gravity="center_vertical"
-                        android:text="@string/post_disclosed_label"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:visibility="gone"
-                        app:drawableStartCompat="@drawable/ic_info"
-                        app:drawableTint="?attr/colorOnSurfaceVariant" />
-
                     <!-- Their words: every word of the post. -->
                     <TextView
                         android:id="@+id/body"
@@ -294,50 +279,14 @@
                         android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
                         android:visibility="gone" />
 
-                    <TextView
-                        android:id="@+id/authorTallyLine"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_sm"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-                        android:visibility="gone" />
-
-                    <!-- Phase 17E (D-3): the marks (the butterfly = a reaction; Save = a private bookmark), then from reading
-                         to going: "I went" (share your own experience of this place) and "Going there?". -->
-                    <LinearLayout
-                        android:id="@+id/marksBlock"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_md"
-                        android:orientation="vertical"
-                        android:visibility="gone">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/reactButton"
-                                style="@style/Widget.Kurinji.Button.Mark"
-                                android:text="@string/reaction_label"
-                                android:visibility="gone" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/saveButton"
-                                style="@style/Widget.Kurinji.Button.Mark"
-                                android:layout_marginStart="@dimen/space_xs"
-                                android:text="@string/save_label"
-                                app:icon="@drawable/ic_bookmark" />
-                        </LinearLayout>
-
+                    <!-- From reading to going, on someone else's experience: "Share yours" and "Going there?". -->
                         <LinearLayout
                             android:id="@+id/goingRow"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/space_md"
-                            android:orientation="horizontal">
+                            android:orientation="horizontal"
+                            android:visibility="gone">
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/wentButton"
@@ -345,9 +294,9 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:contentDescription="@string/went_description"
+                                android:contentDescription="@string/went_share_description"
                                 android:minHeight="@dimen/button_height"
-                                android:text="@string/went_label"
+                                android:text="@string/feed_share_yours"
                                 app:icon="@drawable/ic_flag" />
 
                             <com.google.android.material.button.MaterialButton
@@ -362,7 +311,6 @@
                                 android:text="@string/going_there"
                                 app:icon="@drawable/ic_route" />
                         </LinearLayout>
-                    </LinearLayout>
 
                     <!-- Comments -->
                     <TextView

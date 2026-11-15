@@ -6,7 +6,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
-import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.safesphere.app.feature.social.domain.ViewerPreferences
@@ -17,7 +16,7 @@ import kotlinx.coroutines.flow.map
 
 private val Context.viewerDataStore: DataStore<Preferences> by preferencesDataStore(name = "viewer_preferences")
 
-/** Phase 13E: a switch about the viewer ("Collapse strong language"); 17G-3: which account agreed to smart understanding. */
+/** Phase 13E: a switch about the viewer ("Collapse strong language"); the Home city. */
 class DataStoreViewerPreferences(context: Context) : ViewerPreferences {
 
     private val dataStore = context.applicationContext.viewerDataStore
@@ -30,14 +29,6 @@ class DataStoreViewerPreferences(context: Context) : ViewerPreferences {
         dataStore.edit { it[KEY_STRONG_LANGUAGE] = on }
     }
 
-    override val smartUnderstandingAccount: Flow<Long?> = dataStore.data
-        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
-        .map { it[KEY_SMART_ACCOUNT] }
-
-    override suspend fun setSmartUnderstandingAccount(userId: Long?) {
-        dataStore.edit { if (userId == null) it.remove(KEY_SMART_ACCOUNT) else it[KEY_SMART_ACCOUNT] = userId }
-    }
-
     override val homeCity: Flow<String?> = dataStore.data
         .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
         .map { it[KEY_HOME_CITY] }
@@ -48,7 +39,6 @@ class DataStoreViewerPreferences(context: Context) : ViewerPreferences {
 
     private companion object {
         val KEY_HOME_CITY = stringPreferencesKey("home_city")
-        val KEY_SMART_ACCOUNT = longPreferencesKey("smart_understanding_account")
         val KEY_STRONG_LANGUAGE = booleanPreferencesKey("collapse_strong_language")
     }
 }

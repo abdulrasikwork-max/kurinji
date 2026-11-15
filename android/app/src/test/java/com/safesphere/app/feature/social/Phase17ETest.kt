@@ -9,7 +9,6 @@ import com.safesphere.app.feature.social.data.remote.PersonRefDto
 import com.safesphere.app.feature.social.data.remote.PostDto
 import com.safesphere.app.feature.social.data.remote.photoKey
 import com.safesphere.app.feature.social.domain.Cities
-import com.safesphere.app.feature.social.domain.DailyState
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.PlacePage
 import com.safesphere.app.feature.social.domain.PostType
@@ -147,51 +146,6 @@ class Phase17ETest {
         assertNull(vm.uiState.value.profile!!.photo)
     }
 
-    // ---- Today's state (D-7) -------------------------------------------------------------------------------------
-
-    @Test
-    fun `today's state is set, changed and cleared, one change at a time`() = runTest {
-        val social = FakeSocialRepository()
-        val vm = JournalViewModel(social, FakeMediaSource())
-        vm.load()
-        advanceUntilIdle()
-        vm.onDailyState(DailyState.CURIOUS)
-        vm.onDailyState(DailyState.BUSY_DAY) // while the first is on its way: ignored
-        advanceUntilIdle()
-        assertEquals(DailyState.CURIOUS, vm.uiState.value.profile!!.dailyState)
-        assertTrue(vm.uiState.value.stateSaved)
-        vm.onStateSavedShown()
-        vm.onDailyState(null)
-        advanceUntilIdle()
-        assertNull(vm.uiState.value.profile!!.dailyState)
-        assertFalse(vm.uiState.value.stateSaved)
-        assertEquals(listOf(DailyState.CURIOUS, null), social.dailyStates)
-    }
-
-    @Test
-    fun `someone else's state is read only from a connection, and an unknown state is dropped`() {
-        fun dto(relationship: String, state: String?) = PersonProfileDto("p", "bala", "Bala", relationship = relationship,
-            dailyState = state).toDomain()
-        assertEquals(DailyState.QUIET_DAY, dto(Relationship.CONNECTED.name, "QUIET_DAY").dailyState)
-        assertNull(dto(Relationship.NONE.name, "QUIET_DAY").dailyState)
-        assertNull(dto(Relationship.REQUESTED.name, "QUIET_DAY").dailyState)
-        assertNull(dto(Relationship.CONNECTED.name, "TRAVELLING").dailyState)
-    }
-
-    @Test
-    fun `no daily state word says where someone is or that they are free right now`() {
-        val strings = File("src/main/res/values/strings.xml").readText(Charsets.UTF_8)
-        val names = DailyState.entries.map { "daily_state_" + it.name.lowercase() }
-        val forbidden = listOf("home", "away", "travel", "out of town", "free now", "available", "online", "here", "nearby")
-        for (name in names) {
-            val text = Regex("<string name=\"$name\">(.*?)</string>").find(strings)?.groupValues?.get(1)
-            assertTrue("$name is missing", text != null)
-            forbidden.forEach { assertFalse("$name says \"$it\"", text!!.lowercase().contains(it)) }
-        }
-        val note = Regex("<string name=\"daily_state_sheet_note\">(.*?)</string>").find(strings)!!.groupValues[1]
-        assertTrue(note.contains("connections") && note.contains("midnight") && note.contains("Nobody is notified"))
-    }
-
     // ---- "I went" (plan §4) -------------------------------------------------------------------------------------
 
     @Test
@@ -220,30 +174,6 @@ class Phase17ETest {
         advanceUntilIdle()
         assertNull(other.uiState.value.place)
         assertNull(other.uiState.value.failure)
-    }
-
-    // ---- Marks on every list (D-3) -------------------------------------------------------------------------------
-
-    @Test
-    fun `a place page reacts and saves from its cards, and puts a refused mark back`() = runTest {
-        val discover = FakeDiscoverRepository()
-        val place = FakeExperienceRepository.place(id = "pl-1")
-        discover.placePages = mapOf(null to PlacePage(place, listOf(FakeExperienceRepository.post(id = "a")), null))
-        val vm = PostCollectionViewModel(discover)
-        vm.show(PostCollection.OfPlace("pl-1"))
-        advanceUntilIdle()
-        val post = vm.uiState.value.items.single()
-        vm.marks.react(post)
-        vm.marks.react(post) // the first is still on its way
-        advanceUntilIdle()
-        assertTrue(vm.uiState.value.items.single().youReacted)
-        assertEquals(listOf("react:a"), discover.markCalls)
-
-        discover.markResult = ApiResult.Failure(ApiError.SERVER)
-        vm.marks.save(vm.uiState.value.items.single())
-        advanceUntilIdle()
-        assertFalse(vm.uiState.value.items.single().saved)
-        assertEquals(ApiError.SERVER, vm.uiState.value.failure!!.error)
     }
 
     @Test

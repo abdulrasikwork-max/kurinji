@@ -360,7 +360,7 @@ class ExperienceViewModelsTest {
     fun `post - kinds fit the post, replies carry the parent, hide and helped reach the server`() = runTest {
         repository.postResult = ApiResult.Success(FakeExperienceRepository.post(type = PostType.ASK))
         repository.perspectives = listOf(FakeExperienceRepository.perspective("a1", CommentKind.ANSWER))
-        val vm = PostViewModel(repository, discover, "post-1")
+        val vm = PostViewModel(repository, "post-1")
         advanceUntilIdle()
         assertEquals(listOf(CommentKind.ANSWER, CommentKind.QUESTION), vm.uiState.value.kinds)
         assertFalse(vm.uiState.value.canSend)
@@ -385,11 +385,11 @@ class ExperienceViewModelsTest {
     @Test
     fun `post - not visible is not found, and a closed post takes no perspective`() = runTest {
         repository.postResult = ApiResult.Failure(ApiError.NOT_FOUND)
-        val gone = PostViewModel(repository, discover, "post-1")
+        val gone = PostViewModel(repository, "post-1")
         advanceUntilIdle()
         assertTrue(gone.uiState.value.notFound)
         repository.postResult = ApiResult.Success(FakeExperienceRepository.post(canComment = false))
-        val closed = PostViewModel(repository, discover, "post-1")
+        val closed = PostViewModel(repository, "post-1")
         advanceUntilIdle()
         closed.onKind(CommentKind.QUESTION)
         closed.onText("Hello?")
@@ -399,7 +399,7 @@ class ExperienceViewModelsTest {
     @Test
     fun `post - the author deletes the post and the screen closes`() = runTest {
         repository.postResult = ApiResult.Success(FakeExperienceRepository.post(own = true))
-        val vm = PostViewModel(repository, discover, "post-1")
+        val vm = PostViewModel(repository, "post-1")
         advanceUntilIdle()
         vm.onDeletePostConfirmed()
         advanceUntilIdle()
@@ -415,7 +415,7 @@ class ExperienceViewModelsTest {
             null to PostPage(listOf(FakeExperienceRepository.post("a")), "a"),
             "a" to PostPage(listOf(FakeExperienceRepository.post("b")), null)
         )
-        val vm = PostListViewModel(repository, com.safesphere.app.testing.FakeDiscoverRepository())
+        val vm = PostListViewModel(repository)
         vm.showProfile("profile-1")
         advanceUntilIdle()
         assertEquals(listOf("a"), vm.uiState.value.items.map { it.publicId })
@@ -431,7 +431,7 @@ class ExperienceViewModelsTest {
     @Test
     fun `lists - a profile the viewer may not see shows an empty list, not an error`() = runTest {
         repository.pages = emptyMap()
-        val vm = PostListViewModel(repository, com.safesphere.app.testing.FakeDiscoverRepository())
+        val vm = PostListViewModel(repository)
         vm.showProfile("hidden")
         advanceUntilIdle()
         assertTrue(vm.uiState.value.loaded)

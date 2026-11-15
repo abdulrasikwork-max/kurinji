@@ -97,23 +97,6 @@ class IrlRedesignTest {
         assertEquals("old feed", 3, discover.connectionCursors.size)
     }
 
-    @Test
-    fun `a mark that did not go through is said once and never becomes a feed failure`() = runTest {
-        val post = FakeExperienceRepository.post(id = "s1")
-        discover.connectionPages = mapOf(null to DiscoverPage(listOf(DiscoverItem(post, emptyList())), null))
-        val vm = DiscoverViewModel(discover, social, experiences, FakeLocationProvider())
-        vm.start()
-        advanceUntilIdle()
-        discover.markResult = ApiResult.Failure(ApiError.NO_CONNECTION)
-        vm.onReact(post)
-        advanceUntilIdle()
-        assertFalse("put back", vm.uiState.value.connections.single().post.youReacted)
-        assertEquals(ApiError.NO_CONNECTION, vm.uiState.value.markFailure!!.error)
-        assertNull("the feed itself did not fail", vm.uiState.value.failure)
-        vm.onMarkFailureShown()
-        assertNull(vm.uiState.value.markFailure)
-    }
-
     // ---- R2: the short composer --------------------------------------------------------------------------------
 
     @Test
@@ -175,7 +158,7 @@ class IrlRedesignTest {
     @Test
     fun `a comment gets its kind from its words, never from a chooser`() = runTest {
         experiences.postResult = ApiResult.Success(FakeExperienceRepository.post(type = PostType.EXPERIENCE))
-        val vm = PostViewModel(experiences, discover, "post-1")
+        val vm = PostViewModel(experiences, "post-1")
         advanceUntilIdle()
         vm.onText("Looks great!")
         vm.onSend()
@@ -187,7 +170,7 @@ class IrlRedesignTest {
         assertEquals(CommentKind.QUESTION, experiences.sentPerspectives.last().first)
 
         experiences.postResult = ApiResult.Success(FakeExperienceRepository.post(type = PostType.ASK))
-        val ask = PostViewModel(experiences, discover, "post-1")
+        val ask = PostViewModel(experiences, "post-1")
         advanceUntilIdle()
         ask.onText("Take the 21G bus.")
         ask.onSend()
@@ -207,10 +190,10 @@ class IrlRedesignTest {
     // ---- R3, R4: the bar and the You tab -----------------------------------------------------------------------
 
     @Test
-    fun `Explore is a tab, Saved is a reading screen under You, and re-tapping a tab reaches its screen`() {
-        assertTrue(R.id.exploreFragment in NavigationRules.tabDestinations)
-        assertFalse(R.id.cocoonFragment in NavigationRules.tabDestinations)
-        assertTrue(R.id.cocoonFragment in NavigationRules.bottomBarDestinations)
+    fun `Home and You are the tabs, Explore and Saved are gone, and re-tapping a tab reaches its screen`() {
+        assertEquals(setOf(R.id.discoverFragment, R.id.youFragment), NavigationRules.tabDestinations)
+        val graph = File("src/main/res/navigation/nav_graph.xml").readText(Charsets.UTF_8)
+        assertFalse(graph.contains("exploreFragment") || graph.contains("cocoonFragment"))
         assertFalse("Settings and more is a task screen", R.id.moreFragment in NavigationRules.bottomBarDestinations)
         val rules = File("src/main/java/com/safesphere/app/navigation/NavigationRules.kt").readText(Charsets.UTF_8)
         assertTrue(rules.contains("setOnItemReselectedListener { onReselect() }"))
@@ -225,7 +208,7 @@ class IrlRedesignTest {
             assertFalse("$gone belongs to Settings and more", you.contains(gone))
         }
         val youCode = File("src/main/java/com/safesphere/app/feature/profile/ui/YouFragment.kt").readText(Charsets.UTF_8)
-        for (door in listOf("R.id.myPostsFragment", "R.id.cocoonFragment", "R.id.connectionsFragment", "R.id.safetyFragment",
+        for (door in listOf("R.id.myPostsFragment", "R.id.connectionsFragment", "R.id.safetyFragment",
                 "R.id.moreFragment")) assertTrue(door, youCode.contains(door))
         val more = File("src/main/java/com/safesphere/app/feature/profile/ui/MoreFragment.kt").readText(Charsets.UTF_8)
         for (row in listOf("R.id.privatePlacesFragment", "R.id.guidelinesFragment", "R.id.myReportsFragment",
@@ -242,7 +225,7 @@ class IrlRedesignTest {
         assertTrue(layout.indexOf("bodyInput") < layout.indexOf("audienceGroup"))
         val details = layout.substringAfter("android:id=\"@+id/detailsBlock\"")
         assertTrue("closed until asked for", details.substringBefore(">").contains("android:visibility=\"gone\""))
-        for (optional in listOf("tipInput", "monthSpinner", "daypartGroup", "facetGroup", "categoryGroup", "commentGroup")) {
+        for (optional in listOf("tipInput", "monthSpinner", "daypartGroup", "categoryGroup", "commentGroup")) {
             assertTrue("$optional is a detail", details.contains(optional))
         }
         val screen = File("src/main/java/com/safesphere/app/feature/social/ui/ComposeFragment.kt").readText(Charsets.UTF_8)
@@ -255,8 +238,6 @@ class IrlRedesignTest {
         val city = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
         override val collapseStrongLanguage = kotlinx.coroutines.flow.MutableStateFlow(false)
         override suspend fun setCollapseStrongLanguage(on: Boolean) = Unit
-        override val smartUnderstandingAccount = kotlinx.coroutines.flow.MutableStateFlow<Long?>(null)
-        override suspend fun setSmartUnderstandingAccount(userId: Long?) = Unit
         override val homeCity = city
         override suspend fun setHomeCity(value: String?) {
             city.value = value
@@ -333,14 +314,10 @@ class IrlRedesignTest {
     }
 
     @Test
-    fun `a mark or a comment made on the post page makes Home read again`() = runTest {
+    fun `a comment made on the post page makes Home read again`() = runTest {
         val freshness = FeedFreshness()
-        val vm = PostViewModel(experiences, discover, "post-1", freshness)
+        val vm = PostViewModel(experiences, "post-1", freshness)
         advanceUntilIdle()
-        val before = freshness.version
-        vm.onReact()
-        advanceUntilIdle()
-        assertTrue("the butterfly", freshness.version > before)
         val afterMark = freshness.version
         vm.onText("Is the parking open that early?")
         vm.onSend()
@@ -351,26 +328,29 @@ class IrlRedesignTest {
     @Test
     fun `a question shows no I went or Going there, and the bar leaves when the keyboard opens`() {
         val post = File("src/main/java/com/safesphere/app/feature/social/ui/PostFragment.kt").readText(Charsets.UTF_8)
-        assertTrue(post.contains("binding.goingRow.isVisible = post.type == com.safesphere.app.feature.social.domain.PostType.EXPERIENCE"))
+        assertTrue(post.contains("binding.goingRow.isVisible = !post.own && post.type == com.safesphere.app.feature.social.domain.PostType.EXPERIENCE"))
         val activity = File("src/main/java/com/safesphere/app/MainActivity.kt").readText(Charsets.UTF_8)
         assertEquals("both places that show the bar ask the keyboard", 2,
             activity.split("binding.bottomNavigation.isVisible = barWanted && !keyboardOpen").size - 1)
     }
 
-    // ---- R14: "I went" only where a visit can be marked (the owner's tap on a city-level post, 2026-11-12) ----------
+    // ---- N1: visits and ratings are gone; the button only ever opens the composer -----------------------------------
 
     @Test
-    fun `the button says I went only on an exact place, and Share yours where it opens the composer`() {
+    fun `the button says Share yours and opens the composer, and no visit or rating code is left`() {
         val post = File("src/main/java/com/safesphere/app/feature/social/ui/PostFragment.kt").readText(Charsets.UTF_8)
-        assertTrue(post.contains("val marksVisit = post.precision == Precision.EXACT && post.placeId != null"))
-        assertTrue(post.contains("if (marksVisit) R.string.went_label else R.string.feed_share_yours"))
-        assertTrue(post.contains("if (marksVisit) R.string.went_description else R.string.went_share_description"))
-        // Saved's button always opens the composer, so it never says "I went".
-        val saved = File("src/main/res/layout/item_saved.xml").readText(Charsets.UTF_8)
-        assertFalse(saved.contains("@string/went_label"))
-        assertTrue(saved.contains("@string/feed_share_yours"))
+        assertTrue(post.contains("binding.wentButton.setText(R.string.feed_share_yours)"))
+        assertTrue(post.contains("binding.wentButton.setOnClickListener { composeFor(post) }"))
+        val ui = File("src/main/java/com/safesphere/app/feature/social")
+        for (gone in listOf("ui/WentSheet.kt", "ui/PlaceVisits.kt", "ui/PresenceCell.kt", "ui/PostMarks.kt", "ui/SavedFragment.kt",
+                "ui/ExploreFragment.kt", "ui/DailyStates.kt", "domain/ExploreFacets.kt", "domain/SmartUnderstandingChoice.kt")) {
+            assertFalse(gone, File(ui, gone).exists())
+        }
+        val sources = ui.walkTopDown().filter { it.isFile && it.extension == "kt" }.joinToString(" ") { it.readText(Charsets.UTF_8) }
+        for (word in listOf("api/saved", "/reaction", "/went", "/rating", "daily-state", "api/explore", "disclosed", "facets")) {
+            assertFalse("social code still names $word", sources.contains(word))
+        }
         val strings = File("src/main/res/values/strings.xml").readText(Charsets.UTF_8)
-        assertTrue(strings.contains("<string name=\"went_share_description\">Share yours: write your own experience. " +
-            "This post names no exact place, so there is no visit to mark or rate.</string>"))
+        assertTrue(strings.contains("<string name=\"went_share_description\">Share yours: write your own experience.</string>"))
     }
 }

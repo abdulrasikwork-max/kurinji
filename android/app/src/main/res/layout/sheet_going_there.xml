@@ -26,12 +26,6 @@
         android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
     <TextView
-        android:id="@+id/cocoonRow"
-        style="@style/Widget.Kurinji.SheetRow"
-        android:text="@string/going_save"
-        app:drawableStartCompat="@drawable/ic_bookmark" />
-
-    <TextView
         android:id="@+id/tellRow"
         style="@style/Widget.Kurinji.SheetRow"
         android:text="@string/going_tell"

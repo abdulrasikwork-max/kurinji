@@ -40,9 +40,7 @@ data class OwnProfile(
     /** Set while the handle cannot change yet (once per 30 days). */
     val handleChangeAvailableAt: Instant?,
     /** Phase 17E: the profile photo's key (null = none). */
-    val photo: String? = null,
-    /** Phase 17E (D-7): today's state, null when none. */
-    val dailyState: DailyState? = null
+    val photo: String? = null
 )
 
 data class PersonProfile(
@@ -55,9 +53,7 @@ data class PersonProfile(
     val city: String?,
     val relationship: Relationship,
     /** Phase 17E: the profile photo's key (null = none). */
-    val photo: String? = null,
-    /** Phase 17E (D-7): only when connected (the server sends nothing otherwise). */
-    val dailyState: DailyState? = null
+    val photo: String? = null
 )
 
 /** A person in a list (connections, requests, blocks, mutes) or the author of a post. Phase 17E: [photo] key or null. */
@@ -67,12 +63,6 @@ data class PersonSummary(
     val displayName: String,
     val photo: String? = null
 )
-
-/**
- * Phase 17E (D-7): today's state, a closed list of moods and intents (never a place or presence). Seen by the person
- * and their connections only; it ends at midnight IST. Unknown codes from a newer server are dropped.
- */
-enum class DailyState { CURIOUS, PLANNING, INSPIRED, LEARNING, CELEBRATING, SLOW_DAY, BUSY_DAY, QUIET_DAY }
 
 data class RequestItem(val requestId: String, val person: PersonSummary)
 

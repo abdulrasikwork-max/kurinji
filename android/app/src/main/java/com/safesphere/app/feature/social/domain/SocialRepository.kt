@@ -24,11 +24,6 @@ interface SocialRepository {
 
     suspend fun removeProfilePhoto(): ApiResult<Unit>
 
-    /** Phase 17E (D-7): today's state; answers the state the server now has. */
-    suspend fun setDailyState(state: DailyState): ApiResult<DailyState>
-
-    suspend fun clearDailyState(): ApiResult<Unit>
-
     suspend fun findByHandle(handle: String): ApiResult<PersonProfile>
 
     suspend fun profile(publicId: String): ApiResult<PersonProfile>

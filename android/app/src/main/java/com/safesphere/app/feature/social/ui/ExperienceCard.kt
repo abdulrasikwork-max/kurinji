@@ -22,7 +22,7 @@ sealed interface StampPlace {
 
 /**
  * Phase 16, redesigned in 17E: what one feed card shows, decided without Android so it can be tested. The photo first
- * (with its category), then who shared it, their own words (the "thought"), where, and the marks. A collapsed post shows its collapsed
+ * (with its category), then who shared it, their own words (the "thought"), where, and the comment mark. A collapsed post shows its collapsed
  * line only: no words, photo or tip (13E-D2 kept). [commentCount] is the one public number (U1).
  */
 data class ExperienceCard(
@@ -36,8 +36,6 @@ data class ExperienceCard(
     val photo: MediaRef?,
     /** Why it is collapsed, for the line shown instead of the words; null = not collapsed. */
     val collapse: CardCollapse?,
-    /** Phase 18A-2: the author said the visit was paid for or free of charge. */
-    val disclosed: Boolean = false,
     val place: StampPlace,
     val month: YearMonth?,
     val daypart: Daypart?,
@@ -50,13 +48,6 @@ data class ExperienceCard(
     val own: Boolean,
     /** Own posts only: who can see it. */
     val audience: Audience?,
-    /** Phase 17E (D-3): the viewer's OWN marks (never anyone else's): their butterfly and their save. */
-    val reacted: Boolean,
-    val saved: Boolean,
-    /** The butterfly goes on someone else's Experience only (not a Question, not your own post). */
-    val canReact: Boolean,
-    /** Anything of someone else's can be saved (Experiences and Questions). */
-    val canSave: Boolean,
     /** How many photos and videos are inside (the card shows the first). */
     val mediaCount: Int = 0,
     val commentCount: Int,
@@ -88,7 +79,6 @@ object ExperienceCards {
             hasTip = collapse == null && !post.tip.isNullOrBlank(),
             photo = if (collapse != null) null else post.media.firstOrNull(),
             collapse = collapse,
-            disclosed = post.disclosed,
             place = placeOf(post),
             month = post.experiencedMonth,
             daypart = post.daypart,
@@ -99,10 +89,6 @@ object ExperienceCards {
             authorPhoto = post.author?.photo,
             own = post.own,
             audience = if (post.own) post.audience else null,
-            reacted = post.youReacted && !post.own,
-            saved = post.saved && !post.own,
-            canReact = post.type == PostType.EXPERIENCE && !post.own,
-            canSave = !post.own,
             mediaCount = if (collapse != null) 0 else post.media.size,
             commentCount = post.commentCount.coerceAtLeast(0),
             reasons = reasons

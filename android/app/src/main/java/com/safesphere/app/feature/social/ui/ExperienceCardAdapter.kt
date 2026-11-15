@@ -1,7 +1,6 @@
 package com.safesphere.app.feature.social.ui
 
 import android.content.Context
-import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.view.isVisible
@@ -11,29 +10,22 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.ImageLoader
 import coil.dispose
 import coil.load
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
-import com.google.android.material.color.MaterialColors
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.ui.components.AvatarView
-import com.safesphere.app.core.ui.components.ButterflyDrawable
 import com.safesphere.app.databinding.ItemExperienceCardBinding
 import com.safesphere.app.feature.social.data.VideoRules
 import com.safesphere.app.feature.social.domain.Cities
 import java.util.Locale
 
 /**
- * One post in a list and what its marks do. [onReact] gives (or takes back) the butterfly and [onSave] saves (or
- * un-saves) it, right from the list; null where a list cannot (the mark is then hidden). [onComments] opens the post at
- * its comments.
+ * One post in a list. [onComments] opens the post at its comments.
  */
 data class CardRow(
     val card: ExperienceCard,
     val onOpen: () -> Unit,
-    val onReact: (() -> Unit)? = null,
-    val onSave: (() -> Unit)? = null,
     val onComments: (() -> Unit)? = null,
     /** IRL redesign (R5): a tap on the author's photo or name opens their profile (null = it opens the post). */
     val onAuthor: (() -> Unit)? = null
@@ -67,9 +59,7 @@ class ExperienceCardAdapter(private val images: CardImages) : ListAdapter<CardRo
 
     private object Diff : DiffUtil.ItemCallback<CardRow>() {
         override fun areItemsTheSame(old: CardRow, new: CardRow) = old.card.id == new.card.id
-        override fun areContentsTheSame(old: CardRow, new: CardRow) = old.card == new.card &&
-            (old.onSave == null) == (new.onSave == null) &&
-            (old.onReact == null) == (new.onReact == null)
+        override fun areContentsTheSame(old: CardRow, new: CardRow) = old.card == new.card
     }
 }
 
@@ -112,7 +102,6 @@ object CardBinder {
         b.quote.text = card.thought.orEmpty()
         b.collapsedLine.isVisible = card.collapse != null
         b.collapsedLine.text = card.collapse?.let { context.getString(CardTexts.collapsedLine(it)) }.orEmpty()
-        b.disclosedLine.isVisible = card.disclosed
         contextChips(b.contextChips, card, context)
 
         b.content.setOnClickListener { row.onOpen() }
@@ -123,8 +112,6 @@ object CardBinder {
         }
         b.content.contentDescription = CardTexts.spoken(context, card)
 
-        bindReaction(b.reactButton, card.reacted, card.canReact && row.onReact != null, row.onReact)
-        bindSave(b.saveButton, card.saved, card.canSave && row.onSave != null, row.onSave)
         val config = context.resources.configuration
         val fit = MarksFit.mode(config.screenWidthDp, config.fontScale)
         b.commentButton.text = when {
@@ -137,57 +124,10 @@ object CardBinder {
         fitMarks(b, fit)
     }
 
-    /** Phase 17E ([MarksFit]): on a narrow screen or with large text the marks lose their words, never their place. */
+    /** Phase 17E ([MarksFit]): the comment mark keeps a gap only while it has words or a number. */
     private fun fitMarks(b: ItemExperienceCardBinding, fit: MarksFit.Mode) {
-        val icons = fit == MarksFit.Mode.ICONS
         val gap = (6 * b.root.resources.displayMetrics.density).toInt()
-        if (icons) {
-            b.reactButton.text = ""
-            b.saveButton.text = ""
-        }
-        for (button in listOf(b.reactButton, b.commentButton, b.saveButton)) {
-            button.iconPadding = if (button.text.isNullOrEmpty()) 0 else gap
-        }
-    }
-
-    /**
-     * The butterfly (a reaction): an outline butterfly, or a lime pill with the given butterfly. The pill and the
-     * drawing change together, and the spoken words say the state (never colour alone).
-     */
-    fun bindReaction(button: MaterialButton, reacted: Boolean, visible: Boolean, onReact: (() -> Unit)?) {
-        val context = button.context
-        button.isVisible = visible
-        if (!visible) return
-        button.icon = if (reacted) ButterflyDrawable.reacted(context, 24) else ButterflyDrawable.outline(context, 24)
-        button.text = context.getString(R.string.reaction_label)
-        fill(button, reacted, tintIcon = false)
-        button.contentDescription = context.getString(if (reacted) R.string.reaction_given_description
-            else R.string.reaction_give_description)
-        button.setOnClickListener { onReact?.invoke() }
-    }
-
-    /** Save: an outline bookmark ("Save"), or a filled one on a lime pill ("Saved"). */
-    fun bindSave(button: MaterialButton, saved: Boolean, visible: Boolean, onSave: (() -> Unit)?) {
-        val context = button.context
-        button.isVisible = visible
-        if (!visible) return
-        button.setIconResource(if (saved) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark)
-        button.text = context.getString(if (saved) R.string.saved_label else R.string.save_label)
-        fill(button, saved, tintIcon = true)
-        button.contentDescription = context.getString(if (saved) R.string.save_remove_description
-            else R.string.save_description)
-        button.setOnClickListener { onSave?.invoke() }
-    }
-
-    /** A given mark fills with lime (ink words and icon on it, both themes); otherwise transparent with ink. */
-    private fun fill(button: MaterialButton, on: Boolean, tintIcon: Boolean) {
-        val ink = MaterialColors.getColor(button, if (on) R.attr.colorOnLime
-            else com.google.android.material.R.attr.colorOnSurface)
-        button.backgroundTintList = ColorStateList.valueOf(if (on) MaterialColors.getColor(button, R.attr.colorLime)
-            else android.graphics.Color.TRANSPARENT)
-        button.setTextColor(ink)
-        // The butterfly is drawn in its own colours; a vector icon takes the ink.
-        button.iconTint = if (tintIcon) ColorStateList.valueOf(ink) else null
+        b.commentButton.iconPadding = if (b.commentButton.text.isNullOrEmpty()) 0 else gap
     }
 
     private fun contextChips(group: ChipGroup, card: ExperienceCard, context: Context) {
@@ -260,22 +200,19 @@ object CardTexts {
         context.getString(R.string.feed_comment_first) else
         context.resources.getQuantityString(R.plurals.feed_comments_open, count, count)
 
-    /** One sentence for TalkBack: who, what kind, their words (or why collapsed), where, when, tip, own marks. */
+    /** One sentence for TalkBack: who, what kind, their words (or why collapsed), where, when, tip. */
     fun spoken(context: Context, card: ExperienceCard): String = listOfNotNull(
         card.authorName,
         if (card.isAsk) context.getString(R.string.feed_question_badge) else null,
         meta(context, card),
         card.thought ?: card.collapse?.let { context.getString(collapsedLine(it)) },
-        if (card.disclosed) context.getString(R.string.post_disclosed_label) else null,
         card.photo?.takeIf { it.isVideo }?.durationMs?.let {
             context.getString(R.string.feed_video_spoken, VideoRules.durationLabel(it.toLong()))
         },
         if (card.mediaCount > 1) context.getString(R.string.feed_media_count_spoken, card.mediaCount) else null,
         placeChip(context, card),
         whenLine(context, card),
-        if (card.hasTip) context.getString(R.string.feed_tip_chip) else null,
-        if (card.reacted) context.getString(R.string.reaction_given_short) else null,
-        if (card.saved) context.getString(R.string.saved_label) else null
+        if (card.hasTip) context.getString(R.string.feed_tip_chip) else null
     ).map { it.trim().trimEnd('.') }.filter { it.isNotEmpty() }.joinToString(". ") // one full stop between parts
 }
 

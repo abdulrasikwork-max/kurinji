@@ -44,9 +44,9 @@
     <!-- Onboarding (Phase 10A: rewritten; it said nothing was available yet). Only what this build really does;
          OnboardingTextsTest forbids "not available", "future", "later" and safety promises. -->
     <string name="onboarding_connected_title">See it first-hand</string>
-    <string name="onboarding_connected_body">Real experiences from real people: places, food, walks and things to try. Scroll, react, ask, then go and see for yourself.</string>
-    <string name="onboarding_aware_title">A butterfly says it inspired you</string>
-    <string name="onboarding_aware_body">Its author only learns how many, and never who. Save anything you want to try: Want to go is a list only you can see. Been there? Tap Been here and tell people how it was.</string>
+    <string name="onboarding_connected_body">Real experiences from real people: places, food, walks and things to try. Scroll, ask, then go and see for yourself.</string>
+    <string name="onboarding_aware_title">Share it, ask about it</string>
+    <string name="onboarding_aware_body">Share what you tried and ask what you want to know. People answer in the comments, under their own name.</string>
     <string name="onboarding_safe_title">Yours to control</string>
     <string name="onboarding_safe_body">No followers, no messages from strangers. You choose who sees each post and how exactly its place is shown. Nobody can use IRL to track you. SOS and your trusted people are in You, under Safety; set them up any time.</string>
 
@@ -489,9 +489,7 @@
 
 This build has real accounts (with password change and account deletion), a Safety Circle, a manual SOS session, Safe Walk with check-ins and movement checks, Nearby (anonymous place signals) and "Check the way". Nobody can use IRL to track another person. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. IRL never contacts emergency services and never records sound, photos or video during an SOS.
 
-The order of posts on Home uses what a post contains and the interests you chose; \"Talking now\" uses how recently someone commented. It never uses how many people saved, read or commented.
-
-When you tap \"Been here\" and location is already allowed for IRL, your phone checks whether you are near that place and, only if you are, tells IRL so. IRL never asks for location for this, keeps only a yes or no, and shows it to nobody. A post marked \"Paid or gifted visit\" means its author said they were paid or got it free; their rating does not count towards the average of that place.</string>
+The order of posts on Home uses what a post contains and the interests you chose; \"Talking now\" uses how recently someone commented. It never uses how many people read or commented.</string>
     <string name="about_version_format">Version %1$s</string>
     <string name="terms_body">IRL is a student prototype, not a released product, and there are no final terms of use yet. It is not an emergency service: it never contacts the police, an ambulance or anyone else for you, and an SMS that was sent is not proof that it was delivered or read. In an emergency, call 112 or your local emergency number. Do not rely on IRL as your only way to get help. Terms of use will be written and reviewed before any public release.</string>
     <string name="privacy_policy_body">Privacy notice for this prototype build. It describes what this build actually does. It is written by the project team, is not legal advice and is not a final privacy policy.
@@ -1739,7 +1737,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="went_label">Been here</string>
     <string name="went_description">Been here: mark this place, say how it was, or share your own experience of it</string>
     <!-- IRL-R14 (2026-11-12): a visit and its rating belong to an exact place. Where a post names none, the button says what it does. -->
-    <string name="went_share_description">Share yours: write your own experience. This post names no exact place, so there is no visit to mark or rate.</string>
+    <string name="went_share_description">Share yours: write your own experience.</string>
     <string name="saved_share_description">Share yours: write your own experience of this</string>
     <!-- Saved -->
     <string name="saved_intro">Only you can see what you save. Nobody is told.</string>

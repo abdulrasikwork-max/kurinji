@@ -14,18 +14,15 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.safesphere.app.R
 
 /**
- * Which screens show which parts of the shared app chrome (toolbar, bottom bar, safety banners). Phase 13F:
- * Discover · Share · Cocoon · You (docs/PHASE13F_PLAN.md F5, F6).
+ * Which screens show which parts of the shared app chrome (toolbar, bottom bar, safety banners). N1: Home · Share · You.
  */
 object NavigationRules {
 
     /**
-     * The three tabs (IRL redesign R3: Home, Explore, You). Share sits between them in the bar but is an action
-     * ([SHARE_ITEM]), never a tab. Saved (id cocoonFragment) is a reading screen reached from You.
+     * The two tabs (N1: Home, You). Share sits between them in the bar but is an action ([SHARE_ITEM]), never a tab.
      */
     val tabDestinations = setOf(
         R.id.discoverFragment,
-        R.id.exploreFragment,
         R.id.youFragment
     )
 
@@ -36,14 +33,12 @@ object NavigationRules {
     val START = R.id.discoverFragment
 
     /**
-     * Reading screens keep the bottom bar, so "Want to go" can fly into the Cocoon tab and the person is one tap from
-     * any tab. Task screens (composer, place picker, safety flows, settings) keep only the toolbar and back arrow.
+     * Reading screens keep the bottom bar, so the person is one tap from any tab. Task screens (composer, place picker, safety flows, settings) keep only the toolbar and back arrow.
      */
     val readingDestinations = setOf(
         R.id.postFragment,
         R.id.postCollectionFragment,
-        R.id.personProfileFragment,
-        R.id.cocoonFragment
+        R.id.personProfileFragment
     )
 
     val bottomBarDestinations = tabDestinations + readingDestinations

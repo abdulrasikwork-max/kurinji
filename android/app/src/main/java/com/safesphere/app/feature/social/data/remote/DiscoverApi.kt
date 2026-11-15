@@ -1,8 +1,6 @@
 package com.safesphere.app.feature.social.data.remote
 
 import com.safesphere.app.feature.social.domain.Cities
-import com.safesphere.app.feature.social.domain.SavedItem
-import com.safesphere.app.feature.social.domain.SavedPage
 import com.safesphere.app.feature.social.domain.DiscoverItem
 import com.safesphere.app.feature.social.domain.DiscoverPage
 import com.safesphere.app.feature.social.domain.DiscoverReason
@@ -11,8 +9,6 @@ import com.safesphere.app.feature.social.domain.EditionSection
 import com.safesphere.app.feature.social.domain.EditionSectionKind
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.PlacePage
-import com.safesphere.app.feature.social.domain.PlaceRating
-import com.safesphere.app.feature.social.domain.Visit
 import com.safesphere.app.feature.social.domain.TimeBand
 import java.time.LocalDate
 import retrofit2.http.Body
@@ -22,24 +18,8 @@ import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-/** Phase 13C: Discover; Phase 17E: reactions and Saved. From the ONE Retrofit instance (the JWT is attached). */
+/** Phase 13C: Discover. From the ONE Retrofit instance (the JWT is attached). */
 interface DiscoverApi {
-
-    // Phase 17E (D-3): idempotent on the server (PUT twice = one row; DELETE of nothing = 204).
-    @PUT("api/posts/{id}/reaction")
-    suspend fun react(@Path("id") postId: String): MarkResponseDto
-
-    @DELETE("api/posts/{id}/reaction")
-    suspend fun unreact(@Path("id") postId: String)
-
-    @PUT("api/posts/{id}/save")
-    suspend fun save(@Path("id") postId: String): MarkResponseDto
-
-    @DELETE("api/posts/{id}/save")
-    suspend fun unsave(@Path("id") postId: String)
-
-    @GET("api/saved")
-    suspend fun saved(@Query("cursor") cursor: String?): SavedPageDto
 
     @GET("api/discover/edition")
     suspend fun edition(@Query("city") city: String): EditionDto
@@ -54,44 +34,12 @@ interface DiscoverApi {
     @GET("api/places/{id}/posts")
     suspend fun placePage(@Path("id") placeId: String, @Query("cursor") cursor: String?): PlacePageDto
 
-    // Phase 17G-2 (U5): "I went" and the person's own rating (idempotent on the server).
-    @PUT("api/places/{id}/went")
-    suspend fun went(@Path("id") placeId: String): VisitDto
-
-    /** Phase 18A-2: the same call with the cell the phone is in, sent only when the phone itself found it is at the place. */
-    @PUT("api/places/{id}/went")
-    suspend fun wentAt(@Path("id") placeId: String, @Body body: WentRequestDto): VisitDto
-
-    @DELETE("api/places/{id}/went")
-    suspend fun notWent(@Path("id") placeId: String)
-
-    @PUT("api/places/{id}/rating")
-    suspend fun rate(@Path("id") placeId: String, @Body body: RatingRequestDto): VisitDto
-
-    @DELETE("api/places/{id}/rating")
-    suspend fun clearRating(@Path("id") placeId: String): VisitDto
-
     @GET("api/places/search")
     suspend fun searchPlaces(@Query("q") query: String, @Query("city") city: String?): List<PlaceDto>
 }
 
 // These classes mirror the JSON (docs/API.md "Phase 13C"). They FAIL CLOSED like the 13B ones: an unknown state, kind or
 // band is never guessed into something more certain; an item missing what it needs is dropped; unknown reasons vanish.
-
-data class MarkResponseDto(val marked: Boolean? = null)
-
-data class SavedItemDto(val post: PostDto? = null, val savedPeriod: String? = null) {
-    fun toDomain(): SavedItem? {
-        return SavedItem(
-            post = post?.toDomain() ?: return null,
-            savedPeriod = enumOrNull<TimeBand>(savedPeriod) ?: TimeBand.EARLIER
-        )
-    }
-}
-
-data class SavedPageDto(val items: List<SavedItemDto>? = null, val nextCursor: String? = null) {
-    fun toDomain() = SavedPage(items.orEmpty().mapNotNull { it.toDomain() }, nextCursor)
-}
 
 data class DiscoverItemDto(val post: PostDto? = null, val reasons: List<String>? = null) {
     fun toDomain(): DiscoverItem? {
@@ -132,32 +80,17 @@ data class DiscoverPageDto(val items: List<DiscoverItemDto>? = null, val nextCur
     fun toDomain() = DiscoverPage(items.orEmpty().mapNotNull { it.toDomain() }, nextCursor)
 }
 
-/** Phase 17G-1/17G-2: [rating] is read as text and fails closed (unreadable = none); [yourVisit] is the caller's own. */
 data class PlacePageDto(
     val place: PlaceDto? = null,
     val items: List<PostDto>? = null,
-    val nextCursor: String? = null,
-    val rating: String? = null,
-    val yourVisit: VisitDto? = null
+    val nextCursor: String? = null
 ) {
     fun toDomain(): PlacePage? {
         return PlacePage(
             place = place?.toDomain() ?: return null,
             items = items.orEmpty().mapNotNull { it.toDomain() },
-            nextCursor = nextCursor,
-            rating = PlaceRating.clean(rating),
-            yourVisit = yourVisit?.toDomain()
+            nextCursor = nextCursor
         )
     }
 }
 
-/** The caller's own visit. A rating outside 1..5 is not believed (it becomes "not rated"). */
-data class VisitDto(val rating: Int? = null) {
-    fun toDomain() = Visit(rating?.takeIf(Visit::isValid))
-}
-
-/** Phase 18A-2: body of PUT places/{id}/went: a 7-character cell, never a coordinate. */
-data class WentRequestDto(val cell: String)
-
-/** Body of PUT places/{id}/rating. */
-data class RatingRequestDto(val rating: Int)

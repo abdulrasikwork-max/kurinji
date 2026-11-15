@@ -86,20 +86,6 @@
                     android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
                     android:textColor="?attr/colorOnPanelVariant" />
 
-                <!-- Phase 17G-2 (U5): the one public average, only from enough people who went; a drawn star AND the words. -->
-                <TextView
-                    android:id="@+id/ratingLine"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_sm"
-                    android:drawablePadding="6dp"
-                    android:gravity="center_vertical"
-                    android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-                    android:textColor="?attr/colorOnPanel"
-                    android:visibility="gone"
-                    app:drawableStartCompat="@drawable/ic_star"
-                    app:drawableTint="?attr/colorOnPanel" />
-
                 <!-- Phase 13F (F9) + 17E ("I went"): from reading to going, and to sharing (place pages only). -->
                 <LinearLayout
                     android:id="@+id/placeActions"
@@ -114,7 +100,7 @@
                         style="@style/Widget.Kurinji.Button.Tonal"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/place_share_yours"
+                        android:text="@string/feed_share_yours"
                         android:textColor="?attr/colorOnLime"
                         app:backgroundTint="?attr/colorLime"
                         app:icon="@drawable/ic_flag"

@@ -207,27 +207,6 @@
                 android:layout_height="wrap_content"
                 app:singleSelection="true" />
 
-            <!-- Phase 17G-1: optional Explore tags, an Experience only (hidden for a question). -->
-            <TextView
-                android:id="@+id/facetsTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:text="@string/social_facets_title"
-                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/facetGroup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <TextView
-                android:id="@+id/facetsNote"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/social_facets_note"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
-
             <TextView
                 style="@style/SocialSectionTitle"
                 android:text="@string/social_category_title" />
@@ -259,22 +238,6 @@
                 android:layout_height="wrap_content"
                 android:minHeight="@dimen/min_touch_target"
                 android:text="@string/approve_first_switch"
-                android:visibility="gone" />
-
-            <!-- Phase 18A-2 (A5): an Experience only. Said up front: the label, the rating, and that it stays. -->
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/disclosedSwitch"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="@dimen/min_touch_target"
-                android:text="@string/compose_disclosed_switch" />
-
-            <TextView
-                android:id="@+id/disclosedNote"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/compose_disclosed_note"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
                 android:visibility="gone" />
 
             <TextView

@@ -187,7 +187,7 @@ class ModerationV2Test {
         val waiting = FakeExperienceRepository.perspective("w").copy(awaitingApproval = true, canApprove = true)
         val plain = FakeExperienceRepository.perspective("p")
         experiences.perspectives = listOf(waiting, plain)
-        val vm = PostViewModel(experiences, FakeDiscoverRepository(), "post-1")
+        val vm = PostViewModel(experiences, "post-1")
         advanceUntilIdle()
         assertTrue(vm.uiState.value.showCollapsed)
         vm.onReveal()
@@ -204,7 +204,7 @@ class ModerationV2Test {
         val experiences = FakeExperienceRepository()
         experiences.postResult = ApiResult.Success(FakeExperienceRepository.post(own = true)
             .copy(ownModeration = OwnModeration(ModerationState.COLLAPSED, null, null)))
-        val vm = PostViewModel(experiences, FakeDiscoverRepository(), "post-1")
+        val vm = PostViewModel(experiences, "post-1")
         advanceUntilIdle()
         assertFalse(vm.uiState.value.showCollapsed)
     }

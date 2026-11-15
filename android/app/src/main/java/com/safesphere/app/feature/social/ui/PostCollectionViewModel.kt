@@ -9,12 +9,10 @@ import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
 import com.safesphere.app.feature.social.domain.City
-import com.safesphere.app.core.location.LocationProvider
 import com.safesphere.app.feature.social.domain.DiscoverRepository
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.Place
 import com.safesphere.app.feature.social.domain.Post
-import com.safesphere.app.feature.social.domain.Visit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,73 +35,21 @@ data class PostCollectionUiState(
     val loaded: Boolean = false,
     val notFound: Boolean = false,
     val failure: ApiResult.Failure? = null,
-    val sessionExpired: Boolean = false,
-    /** Phase 17G-2 (U5): the place's one public rating as text ("4.3"), or null. Orders nothing. */
-    val rating: String? = null,
-    /** Phase 17G-2: the person's OWN visit (and rating) at this place, or null. */
-    val visit: Visit? = null,
-    /** Phase 17G-2: a visit call is running. */
-    val visitBusy: Boolean = false,
-    /** Phase 17G-2, one-shot: "I went" was just confirmed; the screen asks "How was it?". */
-    val visitSheet: Boolean = false
+    val sessionExpired: Boolean = false
 )
 
 /**
  * Phase 13C (C10, C11): a place page (its exact-place Everyone experiences and Asks) or a category page. Newest first,
- * 20 at a time, more only on "Show more". No rankings, no counts. (17G-2, U5: the place page may carry one guarded average rating.)
+ * 20 at a time, more only on "Show more". No rankings, no counts.
  */
 class PostCollectionViewModel(
-    private val repository: DiscoverRepository,
-    /** Phase 18A-2: for the quiet "at the place" check after "Been here"; null = never looked up. */
-    private val locationProvider: LocationProvider? = null
+    private val repository: DiscoverRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PostCollectionUiState())
     val uiState: StateFlow<PostCollectionUiState> = _uiState.asStateFlow()
 
     private var nextCursor: String? = null
-
-    /** Phase 17E: the butterfly and Save from the list. */
-    val marks = PostMarks(repository, viewModelScope, { id, f ->
-        _uiState.update { s -> s.copy(items = s.items.map { if (it.publicId == id) f(it) else it }) }
-    }) { failure -> _uiState.update { it.copy(failure = failure, sessionExpired = failure.isSessionExpired()) } }
-
-    /** Phase 17G-2 (U5): "I went" and the person's own rating for the place this page is about. */
-    private val visits = PlaceVisits(repository, viewModelScope,
-        onVisit = { v -> _uiState.update { it.copy(visit = v) } },
-        onWent = { _uiState.update { it.copy(visitSheet = true) } },
-        onBusy = { b -> _uiState.update { it.copy(visitBusy = b) } },
-        onFailure = { failure -> _uiState.update { it.copy(failure = failure, sessionExpired = failure.isSessionExpired()) } },
-        cellIfAt = locationProvider?.let { provider -> { _ -> PresenceCell.ifAt(provider) { _uiState.value.place?.cell } } })
-
-    /** The screen went out of view: location is only looked up while it is open (17D). */
-    fun onScreenHidden() = visits.stopLooking()
-
-    private fun placeId(): String? = _uiState.value.place?.publicId
-
-    /** The "I went here" button: mark, then the screen asks how it was (and offers the composer). */
-    fun onWent() {
-        placeId()?.let { visits.went(it) }
-    }
-
-    /** Opens the same sheet again for a place already marked (to rate, change or share). */
-    fun onOpenVisitSheet() {
-        if (_uiState.value.visit != null) _uiState.update { it.copy(visitSheet = true) }
-    }
-
-    fun onRate(rating: Int) {
-        placeId()?.let { visits.rate(it, rating) }
-    }
-
-    fun onClearRating() {
-        placeId()?.let { visits.clearRating(it) }
-    }
-
-    fun onNotWent() {
-        placeId()?.let { visits.notWent(it) }
-    }
-
-    fun onVisitSheetHandled() = _uiState.update { it.copy(visitSheet = false) }
 
     fun show(collection: PostCollection) {
         if (_uiState.value.collection == collection && _uiState.value.loaded) return
@@ -131,7 +77,7 @@ class PostCollectionViewModel(
             val result = when (collection) {
                 is PostCollection.OfPlace -> when (val r = repository.placePage(collection.placeId, nextCursor)) {
                     is ApiResult.Success -> {
-                        _uiState.update { it.copy(place = r.data.place, rating = r.data.rating, visit = r.data.yourVisit) }
+                        _uiState.update { it.copy(place = r.data.place) }
                         ApiResult.Success(r.data.items to r.data.nextCursor)
                     }
                     is ApiResult.Failure -> r
@@ -163,7 +109,7 @@ class PostCollectionViewModel(
         const val ARG_CITY = "city"
 
         fun factory(container: AppContainer) = viewModelFactory {
-            initializer { PostCollectionViewModel(container.discoverRepository, container.screenLocationProvider) }
+            initializer { PostCollectionViewModel(container.discoverRepository) }
         }
     }
 }

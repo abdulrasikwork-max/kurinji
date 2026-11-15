@@ -16,8 +16,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.network.ApiResult
-import com.safesphere.app.core.ui.ButterflyFlight
-import com.safesphere.app.core.ui.Haptics
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.showSessionExpiredDialog
@@ -26,7 +24,6 @@ import com.safesphere.app.feature.social.data.VideoRules
 import com.safesphere.app.databinding.FragmentPostBinding
 import com.safesphere.app.feature.going.GoingThere
 import com.safesphere.app.feature.social.domain.CommentKind
-import com.safesphere.app.feature.social.domain.ExploreFacets
 import com.safesphere.app.feature.social.domain.ModerationState
 import com.safesphere.app.feature.social.domain.OwnModeration
 import com.safesphere.app.feature.social.domain.Perspective
@@ -68,19 +65,12 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.cancelReplyButton.setOnClickListener { viewModel.onCancelReply() }
         binding.showCollapsedButton.setOnClickListener { viewModel.onReveal() }
         binding.moreButton.setOnClickListener { showMoreMenu() }
-        wentSheet = WentSheet(this, onRate = viewModel::onRate, onClearRating = viewModel::onClearRating,
-            onNotWent = viewModel::onNotWent, onShare = { viewModel.uiState.value.post?.let { composeFor(it) } })
         collectWhenStarted(viewModel.uiState, ::render)
         collectWhenStarted(reports.uiState, ::renderReports)
         collectWhenStarted(appContainer.viewerPreferences.collapseStrongLanguage, viewModel::onStrongLanguageFilter)
     }
 
     /** Phase 13D: confirmations of the report and review flows, and their failures. */
-    override fun onStop() {
-        super.onStop()
-        viewModel.onScreenHidden() // 18A-2: the quiet "at the place" check runs only while this screen is open
-    }
-
     private fun renderReports(state: ReportUiState) {
         state.message?.let {
             Toast.makeText(requireContext(), when (it) {
@@ -140,18 +130,8 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         if (line != null) binding.reviewLine.setText(line)
     }
 
-    /** Phase 17G-2 (U5): "How was it?" after "I went" (the person's own visit only). */
-    private var wentSheet: WentSheet? = null
-
     private fun render(state: PostUiState) {
         binding.progress.isVisible = state.isLoading || state.isBusy
-        wentSheet?.setBusy(state.visitBusy)
-        if (state.visitSheet) {
-            viewModel.onVisitSheetHandled()
-            wentSheet?.show(state.visit)
-        } else if (wentSheet?.isShowing == true) {
-            wentSheet?.update(state.visit)
-        }
         binding.notFound.isVisible = state.notFound
         val post = state.post
         binding.contentBlock.isVisible = post != null && !state.notFound
@@ -212,7 +192,6 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.collapsedNotice.setMessage(getString(ModerationLabels.collapsedLine(post.collapsed)))
         binding.body.isVisible = !hide
         binding.body.text = post.body.trim()
-        binding.disclosedLine.isVisible = post.disclosed // 18A-2: shown even while the words are collapsed
         photoAdapter.submitList(if (hide) emptyList() else
             post.media.map { media ->
                 PhotoCell(media.mediaId, appContainer.experienceRepository.photoUrl(media.mediaId), null, null,
@@ -241,37 +220,14 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
         binding.ownLine.text = ownLines.joinToString("\n")
         binding.ownLine.isVisible = ownLines.isNotEmpty()
 
-        // Phase 17E (D-3): the butterfly (Experiences) and Save on someone else's post; the author's private line on
-        // their own. Then from reading to going: "I went" and "Going there?".
-        binding.marksBlock.isVisible = !post.own
-        CardBinder.bindReaction(binding.reactButton, post.youReacted, state.canReact) { viewModel.onReact() }
-        CardBinder.bindSave(binding.saveButton, post.saved, state.canSave) { viewModel.onSave() }
-        // R7 (A23, second account): a question names nowhere to go, so "I went" and "Going there?" belong to experiences.
-        binding.goingRow.isVisible = post.type == com.safesphere.app.feature.social.domain.PostType.EXPERIENCE
-        // IRL-R14: a visit and its rating belong to an exact place. Only there the button says "I went" (it marks, then asks
-        // "How was it?"); on any other experience it opens the composer, so it says "Share yours".
-        val marksVisit = post.precision == Precision.EXACT && post.placeId != null
-        binding.wentButton.setText(if (marksVisit) R.string.went_label else R.string.feed_share_yours)
-        binding.wentButton.contentDescription =
-            getString(if (marksVisit) R.string.went_description else R.string.went_share_description)
-        binding.wentButton.setOnClickListener { iWent(post) }
-        // Phase 13F (F9): the sheet only navigates; its "Save" is this screen's own Save.
+        // From reading to going, on someone else's experiences only (R7: a question names nowhere to go): "Share yours" opens the
+        // composer with this post's place filled in, "Going there?" opens the bridge sheet.
+        binding.goingRow.isVisible = !post.own && post.type == com.safesphere.app.feature.social.domain.PostType.EXPERIENCE
+        binding.wentButton.setText(R.string.feed_share_yours)
+        binding.wentButton.contentDescription = getString(R.string.went_share_description)
+        binding.wentButton.setOnClickListener { composeFor(post) }
         binding.goingButton.setOnClickListener {
-            GoingThere.show(this, GoingThere.Target(CardTexts.goingLabel(card)),
-                GoingThere.CocoonChoice(saved = post.saved) { viewModel.onSave() })
-        }
-        val tally = post.butterflies
-        binding.authorTallyLine.isVisible = post.own && tally != null
-        binding.authorTallyLine.text = when {
-            tally == null -> ""
-            tally.fewerThanThree -> getString(R.string.butterfly_author_fewer)
-            else -> getString(R.string.butterfly_author_count, tally.count ?: 0)
-        }
-        if (state.savedNow) {
-            viewModel.onSavedShown()
-            Haptics.confirm(binding.saveButton)
-            binding.saveButton.announceForAccessibility(getString(R.string.save_announcement))
-            ButterflyFlight.fly(binding.saveButton, requireActivity().findViewById(R.id.youFragment)) { }
+            GoingThere.show(this, GoingThere.Target(CardTexts.goingLabel(card)))
         }
 
         // Comments: the title carries the number the viewer can read (U1), the same as the list below it.
@@ -323,13 +279,6 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
                 text = line
                 setChipIconResource(R.drawable.ic_schedule)
                 isChipIconVisible = true
-            })
-        }
-        // Phase 17G-1: the author's "Good for..." tags, read-only (nothing counts or ranks them).
-        val tags = post.facets.mapNotNull { ExploreFacets.find(it)?.english }
-        if (tags.isNotEmpty()) {
-            group.addView(Chip(requireContext(), null, R.attr.contextChipStyle).apply {
-                text = getString(R.string.post_facets_line, tags.joinToString(" · "))
             })
         }
         group.isVisible = group.childCount > 0
@@ -436,14 +385,6 @@ class PostFragment : ViewBindingFragment<FragmentPostBinding>(FragmentPostBindin
                 reports.report(ReportTarget.COMMENT, p.publicId, reason, note)
             }
         })
-    }
-
-    /**
-     * Phase 17E/17G-2 ("I went"): when the post names an exact place, "I went" marks the person's private visit and asks how it was
-     * (the sheet then offers the composer); otherwise there is no place to mark and the composer opens as before.
-     */
-    private fun iWent(post: Post) {
-        if (!viewModel.onWent()) composeFor(post)
     }
 
     /** The composer, with this post's place filled in when it named an exact place (and its category). Nothing is posted by itself. */

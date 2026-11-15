@@ -48,12 +48,6 @@ data class DiscoverUiState(
     val nearby: List<Place>? = null,
     val nearbyBusy: Boolean = false,
     val nearNotice: NearNotice? = null,
-    /** Phase 17E: marks in flight ("react:<id>", "save:<id>"), so a double tap sends nothing twice. */
-    val marking: Set<String> = emptySet(),
-    /** One-shot: a save was confirmed by the server (the screen says "Saved" once and the butterfly flies). */
-    val savedNow: String? = null,
-    /** IRL redesign (R1), one-shot: a butterfly or Save could not be sent. Said in a short message; the feed stays. */
-    val markFailure: ApiResult.Failure? = null,
     val failure: ApiResult.Failure? = null,
     val sessionExpired: Boolean = false
 )
@@ -148,8 +142,6 @@ class DiscoverViewModel(
         if (freshness.version != seenVersion || nowMs() - loadedAtMs > STALE_MS) refresh()
     }
 
-    fun onMarkFailureShown() = _uiState.update { it.copy(markFailure = null) }
-
     private fun stamp() {
         loadedAtMs = nowMs()
         seenVersion = freshness.version
@@ -160,44 +152,6 @@ class DiscoverViewModel(
         val state = _uiState.value
         if (state.connectionsHasMore && !state.connectionsLoading && state.failure == null) loadConnections()
     }
-
-    /**
-     * Phase 17E (D-3): the butterfly (a reaction) on a feed card, given or taken back. Shown at once everywhere the post
-     * appears; put back if the server says no (the server is idempotent, so a lost answer is harmless).
-     */
-    fun onReact(post: Post) = mark("react:" + post.publicId, post.publicId, { it.copy(youReacted = !post.youReacted) },
-        { it.copy(youReacted = post.youReacted) }) {
-        if (post.youReacted) repository.unreact(post.publicId) else repository.react(post.publicId)
-    }
-
-    /** Phase 17E (D-3): Save (a private bookmark) from a feed card, or take it out of Saved again. */
-    fun onSave(post: Post) = mark("save:" + post.publicId, post.publicId, { it.copy(saved = !post.saved) },
-        { it.copy(saved = post.saved) }, confirmed = { if (!post.saved) _uiState.update { s -> s.copy(savedNow = post.publicId) } }) {
-        if (post.saved) repository.unsave(post.publicId) else repository.save(post.publicId)
-    }
-
-    private fun mark(key: String, postId: String, apply: (Post) -> Post, undo: (Post) -> Post,
-                     confirmed: () -> Unit = {}, call: suspend () -> ApiResult<Unit>) {
-        if (key in _uiState.value.marking) return
-        _uiState.update { it.withPost(postId, apply).copy(marking = it.marking + key) }
-        viewModelScope.launch {
-            when (val result = call()) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(marking = it.marking - key) }
-                    confirmed()
-                }
-                is ApiResult.Failure -> {
-                    // R1: one mark that did not go through is said once; it must not make the whole feed look broken.
-                    _uiState.update {
-                        it.withPost(postId, undo).copy(marking = it.marking - key, markFailure = result,
-                            sessionExpired = it.sessionExpired || result.isSessionExpired())
-                    }
-                }
-            }
-        }
-    }
-
-    fun onSavedShown() = _uiState.update { it.copy(savedNow = null) }
 
     /** Phase 16: places around the person's ~1 km area from ONE fix. */
     fun onNearMe() {
@@ -309,13 +263,4 @@ class DiscoverViewModel(
             }
         }
     }
-}
-
-/** The same post everywhere in the feed shows the viewer's new marks. */
-internal fun DiscoverUiState.withPost(postId: String, change: (Post) -> Post): DiscoverUiState {
-    fun DiscoverItem.mark() = if (post.publicId == postId) copy(post = change(post)) else this
-    return copy(
-        edition = edition?.let { e -> e.copy(sections = e.sections.map { s -> s.copy(items = s.items.map { it.mark() }) }) },
-        connections = connections.map { it.mark() }
-    )
 }

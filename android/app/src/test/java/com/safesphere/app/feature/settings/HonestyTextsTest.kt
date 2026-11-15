@@ -32,7 +32,7 @@ class HonestyTextsTest {
         // Phase 13F (F19): the brand identity (IRL since 2026-11-03), no safety pitch; the SOS honesty line lives in the Safety hub now
         // (SafetyHubTextsTest), and onboarding says where the safety tools are.
         assertTrue(all.contains("see it first-hand"))
-        assertTrue("saved items are private", all.contains("a list only you can see"))
+        assertFalse("N1: no Save and no butterfly", all.contains("save") || all.contains("butterfly") || all.contains("been here"))
         assertTrue("no-tracking promise", all.contains("nobody can use irl to track you"))
         assertTrue("where the safety tools live", all.contains("sos and your trusted people are in you"))
         for (pitch in listOf("emergency", "danger", "protect", "stay safe")) assertFalse("safety pitch: $pitch", pitch in all)

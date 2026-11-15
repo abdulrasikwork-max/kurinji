@@ -2,7 +2,6 @@ package com.safesphere.app.feature.social.data.remote
 
 import com.safesphere.app.feature.social.domain.ConnectResult
 import com.safesphere.app.feature.social.domain.ConnectStatus
-import com.safesphere.app.feature.social.domain.DailyState
 import com.safesphere.app.feature.social.domain.InviteItem
 import com.safesphere.app.feature.social.domain.Interest
 import com.safesphere.app.feature.social.domain.Language
@@ -54,8 +53,7 @@ data class OwnProfileDto(
     val interests: List<String>? = null,
     val city: String? = null,
     val handleChangeAvailableAt: String? = null,
-    val photo: String? = null,
-    val dailyState: String? = null
+    val photo: String? = null
 ) {
     fun toDomain() = OwnProfile(
         publicId = publicId,
@@ -66,8 +64,7 @@ data class OwnProfileDto(
         interests = interests.orEmpty().mapNotNull(Interest::fromCode),
         city = city,
         handleChangeAvailableAt = handleChangeAvailableAt?.let { runCatching { Instant.parse(it) }.getOrNull() },
-        photo = photoKey(photo),
-        dailyState = DailyState.entries.firstOrNull { it.name == dailyState }
+        photo = photoKey(photo)
     )
 }
 
@@ -80,8 +77,7 @@ data class PersonProfileDto(
     val interests: List<String>? = null,
     val city: String? = null,
     val relationship: String? = null,
-    val photo: String? = null,
-    val dailyState: String? = null
+    val photo: String? = null
 ) {
     fun toDomain() = PersonProfile(
         publicId = publicId,
@@ -92,10 +88,7 @@ data class PersonProfileDto(
         interests = interests.orEmpty().mapNotNull(Interest::fromCode),
         city = city,
         relationship = Relationship.entries.firstOrNull { it.name == relationship } ?: Relationship.NONE,
-        photo = photoKey(photo),
-        // D-7: only a connection may see it; anything sent to someone else is ignored (fail closed).
-        dailyState = if (relationship == Relationship.CONNECTED.name) DailyState.entries.firstOrNull { it.name == dailyState }
-            else null
+        photo = photoKey(photo)
     )
 }
 
@@ -134,9 +127,6 @@ data class InviteItemDto(val id: String, val expiresAt: String) {
 data class RedeemDto(val code: String) {
     override fun toString() = "RedeemDto(<hidden>)"
 }
-
-/** Phase 17E: body of PUT /api/profiles/me/daily-state. */
-data class DailyStateRequestDto(val state: String)
 
 /** Phase 17E: a photo key is a lower-case UUID; anything else is no photo (never put into a URL). */
 fun photoKey(raw: String?): String? = raw?.takeIf { PHOTO_KEY.matches(it) }

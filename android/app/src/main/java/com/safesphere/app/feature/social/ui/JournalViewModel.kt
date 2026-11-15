@@ -9,7 +9,6 @@ import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
 import com.safesphere.app.feature.social.data.MediaPick
 import com.safesphere.app.feature.social.data.MediaSource
-import com.safesphere.app.feature.social.domain.DailyState
 import com.safesphere.app.feature.social.domain.OwnProfile
 import com.safesphere.app.feature.social.domain.SocialRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,18 +26,13 @@ data class JournalUiState(
     /** Null after loading = no profile yet (or the age is not confirmed yet): You offers "Make your profile". */
     val profile: OwnProfile? = null,
     val photo: PhotoStatus = PhotoStatus.IDLE,
-    /** Phase 17E (D-7): a change of today's state is on its way. */
-    val stateBusy: Boolean = false,
-    /** One-shot: today's state was set (the screen says who sees it, once). */
-    val stateSaved: Boolean = false,
     val failure: ApiResult.Failure? = null,
     val sessionExpired: Boolean = false
 )
 
 /**
  * Phase 13F: the head of the You tab (name, handle, city, bio, interests; never a count). Phase 17E: the profile photo
- * (picked, made square on the phone, uploaded; removable) and today's state (D-7: connections only, ends at midnight
- * IST, nobody notified). Loads the person's own profile each time You opens; nothing is stored on the phone.
+ * (picked, made square on the phone, uploaded; removable). Loads the person's own profile each time You opens; nothing is stored on the phone.
  */
 class JournalViewModel(
     private val repository: SocialRepository,
@@ -97,27 +91,6 @@ class JournalViewModel(
         }
     }
 
-    /** Phase 17E (D-7): sets today's state ([state] = null clears it). */
-    fun onDailyState(state: DailyState?) {
-        if (_uiState.value.stateBusy || _uiState.value.profile == null) return
-        _uiState.update { it.copy(stateBusy = true, failure = null) }
-        viewModelScope.launch {
-            val result = if (state == null) repository.clearDailyState().map { null }
-                else repository.setDailyState(state).map { it }
-            when (result) {
-                is ApiResult.Success -> _uiState.update {
-                    it.copy(stateBusy = false, stateSaved = state != null,
-                        profile = it.profile?.copy(dailyState = result.data))
-                }
-                is ApiResult.Failure -> {
-                    _uiState.update { it.copy(stateBusy = false) }
-                    fail(result)
-                }
-            }
-        }
-    }
-
-    fun onStateSavedShown() = _uiState.update { it.copy(stateSaved = false) }
     fun onPhotoNoticeShown() = _uiState.update {
         if (it.photo == PhotoStatus.FAILED || it.photo == PhotoStatus.UNREADABLE) it.copy(photo = PhotoStatus.IDLE) else it
     }
@@ -133,9 +106,4 @@ class JournalViewModel(
             initializer { JournalViewModel(container.socialRepository, container.mediaSource) }
         }
     }
-}
-
-private inline fun <T, R> ApiResult<T>.map(transform: (T) -> R): ApiResult<R> = when (this) {
-    is ApiResult.Success -> ApiResult.Success(transform(data))
-    is ApiResult.Failure -> this
 }

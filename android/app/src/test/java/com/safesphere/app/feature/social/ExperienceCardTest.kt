@@ -37,7 +37,7 @@ class ExperienceCardTest {
         tip = "Go before 7.", category = null, precision = precision, placeName = "Elliot's Beach", areaCell = areaCell,
         city = Cities.find("CHENNAI"), experiencedMonth = null, daypart = null, postedPeriod = TimeBand.THIS_WEEK, edited = false,
         media = listOf(MediaRef("m1", 1600, 1200)), audience = if (own) Audience.CONNECTIONS else null,
-        commentPolicy = CommentPolicy.EVERYONE, canComment = true, visibleFrom = null, saved = true,
+        commentPolicy = CommentPolicy.EVERYONE, canComment = true, visibleFrom = null,
         collapsed = collapsed, strongLanguage = strong, commentCount = comments
     )
 
@@ -87,16 +87,7 @@ class ExperienceCardTest {
     }
 
     @Test
-    fun `the butterfly goes on someone else's Experience, Save on anything of someone else's, never your own`() {
-        assertTrue(ExperienceCards.of(post()).canReact)
-        assertTrue(ExperienceCards.of(post()).canSave)
-        assertFalse(ExperienceCards.of(post(own = true)).canReact)
-        assertFalse(ExperienceCards.of(post(own = true)).canSave)
-        assertFalse(ExperienceCards.of(post(type = PostType.ASK)).canReact)
-        assertTrue(ExperienceCards.of(post(type = PostType.ASK)).canSave)
-        // The viewer's own marks only; a server that sent marks on the viewer's own post is ignored.
-        assertTrue(ExperienceCards.of(post()).saved)
-        assertFalse(ExperienceCards.of(post(own = true)).saved)
+    fun `the comment count on a card is never negative`() {
         assertEquals(4, ExperienceCards.of(post(comments = 4)).commentCount)
         assertEquals(0, ExperienceCards.of(post(comments = -3)).commentCount)
     }

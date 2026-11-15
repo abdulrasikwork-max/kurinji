@@ -1,8 +1,6 @@
 package com.safesphere.app.feature.social.data
 
-import com.safesphere.app.feature.social.data.remote.DailyStateRequestDto
 import com.safesphere.app.feature.social.data.remote.photoKey
-import com.safesphere.app.feature.social.domain.DailyState
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import com.safesphere.app.core.network.ApiCallHandler
@@ -55,15 +53,6 @@ class RemoteSocialRepository(
     }
 
     override suspend fun removeProfilePhoto(): ApiResult<Unit> = handler.execute { api.removePhoto() }
-
-    override suspend fun setDailyState(state: DailyState): ApiResult<DailyState> = when (val result = handler.execute {
-        api.setDailyState(DailyStateRequestDto(state.name))["dailyState"]
-    }) {
-        is ApiResult.Success -> ApiResult.Success(DailyState.entries.firstOrNull { it.name == result.data } ?: state)
-        is ApiResult.Failure -> result
-    }
-
-    override suspend fun clearDailyState(): ApiResult<Unit> = handler.execute { api.clearDailyState() }
 
     override suspend fun findByHandle(handle: String): ApiResult<PersonProfile> =
         handler.execute { api.byHandle(HandlePolicy.normalize(handle)).toDomain() }

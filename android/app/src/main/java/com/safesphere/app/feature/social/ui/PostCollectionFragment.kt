@@ -28,9 +28,6 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
     private lateinit var adapter: ExperienceCardAdapter
     private var collapseStrongLanguage = false
 
-    /** Phase 17G-2 (U5): "How was it?" after "I went" (the person's own visit only). */
-    private var wentSheet: WentSheet? = null
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         adapter = ExperienceCardAdapter(cardImages())
@@ -42,13 +39,6 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
             }
         }
         binding.showMoreButton.setOnClickListener { viewModel.onShowMore() }
-        wentSheet = WentSheet(this, onRate = viewModel::onRate, onClearRating = viewModel::onClearRating,
-            onNotWent = viewModel::onNotWent, onShare = {
-                viewModel.uiState.value.place?.let { place ->
-                    findNavController().navigate(R.id.composeFragment, bundleOf(
-                        ComposeFragment.ARG_PLACE_ID to place.publicId, ComposeFragment.ARG_CATEGORY to place.category.name))
-                }
-            })
         collectWhenStarted(viewModel.uiState, ::render)
         val args = arguments
         val placeId = args?.getString(PostCollectionViewModel.ARG_PLACE_ID)
@@ -58,11 +48,6 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
             placeId != null -> viewModel.show(PostCollection.OfPlace(placeId))
             category != null -> viewModel.show(PostCollection.OfCategory(category, city))
         }
-    }
-
-    override fun onStop() {
-        super.onStop()
-        viewModel.onScreenHidden() // 18A-2: the quiet "at the place" check runs only while this screen is open
     }
 
     private fun render(state: PostCollectionUiState) {
@@ -76,31 +61,14 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
                 binding.placeActions.isVisible = place != null
                 binding.goingButton.setOnClickListener {
                     if (place != null) GoingThere.show(this, GoingThere.Target(listOfNotNull(place.name,
-                        place.city?.name).joinToString(", ")), cocoon = null)
+                        place.city?.name).joinToString(", ")))
                 }
-                // Phase 17G-2 (U5): "I went here" marks a private record, then asks how it was (and offers the composer).
-                val visit = state.visit
-                // The spoken label follows the state the text shows (found with TalkBack on the A23: it kept the first-visit prompt).
-                binding.wentButton.contentDescription = place?.let {
-                    when {
-                        visit == null -> getString(R.string.place_share_yours_description, it.name)
-                        visit.rating == null -> getString(R.string.place_went_description_state, it.name)
-                        else -> getString(R.string.place_went_description_rated, it.name, visit.rating.toString())
-                    }
-                }
-                binding.wentButton.text = when {
-                    visit == null -> getString(R.string.place_share_yours)
-                    visit.rating == null -> getString(R.string.place_went_state)
-                    else -> getString(R.string.place_went_rated, visit.rating.toString())
-                }
-                binding.wentButton.isEnabled = !state.visitBusy
-                binding.wentButton.setOnClickListener { if (visit == null) viewModel.onWent() else viewModel.onOpenVisitSheet() }
-                // The one public average: words and a drawn star, never a count, never ordering anything.
-                val rating = state.rating
-                binding.ratingLine.isVisible = rating != null
-                if (rating != null) {
-                    binding.ratingLine.text = getString(R.string.place_rating_line, rating)
-                    binding.ratingLine.contentDescription = getString(R.string.place_rating_description, rating)
+                // "Share yours" opens the composer with this place filled in.
+                binding.wentButton.text = getString(R.string.feed_share_yours)
+                binding.wentButton.contentDescription = getString(R.string.went_share_description)
+                binding.wentButton.setOnClickListener {
+                    if (place != null) findNavController().navigate(R.id.composeFragment, bundleOf(
+                        ComposeFragment.ARG_PLACE_ID to place.publicId, ComposeFragment.ARG_CATEGORY to place.category.name))
                 }
                 binding.detailLine.text = if (place == null) "" else listOfNotNull(place.city?.name,
                     getString(R.string.place_page_note)).joinToString(" · ")
@@ -109,24 +77,16 @@ class PostCollectionFragment : ViewBindingFragment<FragmentPostCollectionBinding
                 binding.heading.text = getString(SocialLabels.of(c.category))
                 binding.kindTag.isVisible = false
                 binding.placeActions.isVisible = false
-                binding.ratingLine.isVisible = false
                 binding.detailLine.text = c.city?.let { getString(R.string.collection_category_city_line, it.name) }
                     ?: getString(R.string.collection_category_line)
             }
             null -> Unit
         }
         binding.progress.isVisible = state.isLoading
-        wentSheet?.setBusy(state.visitBusy)
-        if (state.visitSheet) {
-            viewModel.onVisitSheetHandled()
-            wentSheet?.show(state.visit)
-        } else if (wentSheet?.isShowing == true) {
-            wentSheet?.update(state.visit)
-        }
         adapter.submitList(state.items.map { post ->
             CardRow(ExperienceCards.of(post, collapseStrongLanguage = collapseStrongLanguage), onOpen = {
                 findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to post.publicId))
-            }, onReact = { viewModel.marks.react(post) }, onSave = { viewModel.marks.save(post) }, onComments = {
+            }, onComments = {
                 findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to post.publicId,
                     PostViewModel.ARG_TO_COMMENTS to true))
             }, onAuthor = post.author?.publicId?.takeUnless { post.own }?.let { id -> {

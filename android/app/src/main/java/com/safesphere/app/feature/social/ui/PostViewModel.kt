@@ -10,13 +10,11 @@ import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
 import com.safesphere.app.feature.social.domain.CommentKind
-import com.safesphere.app.feature.social.domain.DiscoverRepository
 import com.safesphere.app.feature.social.domain.ExperienceRepository
 import com.safesphere.app.feature.social.domain.Perspective
 import com.safesphere.app.feature.social.domain.Post
 import com.safesphere.app.feature.social.domain.PostType
 import com.safesphere.app.feature.social.domain.Precision
-import com.safesphere.app.feature.social.domain.Visit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,10 +34,6 @@ data class PostUiState(
     val isBusy: Boolean = false,
     /** One-shot: the post was deleted; the screen closes. */
     val closed: Boolean = false,
-    /** Phase 17E: marks in flight ("react", "save"), so a double tap sends nothing twice. */
-    val marking: Set<String> = emptySet(),
-    /** Phase 17E, one-shot: a save was confirmed (the butterfly flies to Saved, TalkBack hears "Saved"). */
-    val savedNow: Boolean = false,
     val failure: ApiResult.Failure? = null,
     val sessionExpired: Boolean = false,
     /** Phase 13D: the viewer tapped "Show it" on a collapsed post (kept only on this screen). */
@@ -47,12 +41,7 @@ data class PostUiState(
     /** Phase 13D: the collapsed perspectives the viewer chose to show. */
     val revealedPerspectives: Set<String> = emptySet(),
     /** Phase 13E (E20): the viewer chose "Collapse strong language" (their own setting, on this phone). */
-    val strongLanguageFilter: Boolean = false,
-    /** Phase 17G-2 (U5): the person's OWN visit (and rating) at this post's place, once they marked "I went". */
-    val visit: Visit? = null,
-    val visitBusy: Boolean = false,
-    /** Phase 17G-2, one-shot: "I went" was just confirmed; the screen asks "How was it?". */
-    val visitSheet: Boolean = false
+    val strongLanguageFilter: Boolean = false
 ) {
     /**
      * Phase 13D: someone else's post that stays behind a tap until the viewer chooses to see it. 13E: also when it has
@@ -73,14 +62,6 @@ data class PostUiState(
 
     val canSend: Boolean
         get() = !isBusy && post?.canComment == true && text.isNotBlank() && (replyTo != null || kind != null)
-
-    /** Phase 17E (D-3): the butterfly goes on someone else's Experience only. */
-    val canReact: Boolean
-        get() = post?.let { it.type == PostType.EXPERIENCE && !it.own } == true
-
-    /** Phase 17E (D-3): anything of someone else's can be saved. */
-    val canSave: Boolean
-        get() = post?.let { !it.own } == true
 }
 
 /**
@@ -90,12 +71,9 @@ data class PostUiState(
  */
 class PostViewModel(
     private val repository: ExperienceRepository,
-    private val discover: DiscoverRepository,
     private val postId: String,
     private val freshness: com.safesphere.app.feature.social.domain.FeedFreshness =
-        com.safesphere.app.feature.social.domain.FeedFreshness(),
-    /** Phase 18A-2: for the quiet "at the place" check after "Been here"; null = never looked up. */
-    private val locationProvider: com.safesphere.app.core.location.LocationProvider? = null
+        com.safesphere.app.feature.social.domain.FeedFreshness()
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PostUiState())
@@ -196,90 +174,6 @@ class PostViewModel(
         }
     }
 
-    /**
-     * Phase 17E (D-3): the butterfly (a reaction) given or taken back. Shown at once, put back if the server says no
-     * (idempotent on the server, so a double tap or a lost answer is harmless).
-     */
-    fun onReact() {
-        val post = _uiState.value.post ?: return
-        if (!_uiState.value.canReact || "react" in _uiState.value.marking) return
-        toggle("react", { it.copy(youReacted = !post.youReacted) }, { it.copy(youReacted = post.youReacted) }) {
-            if (post.youReacted) discover.unreact(postId) else discover.react(postId)
-        }
-    }
-
-    /** Phase 17E (D-3): Save (a private bookmark), or take it out of Saved again. */
-    fun onSave() {
-        val post = _uiState.value.post ?: return
-        if (!_uiState.value.canSave || "save" in _uiState.value.marking) return
-        toggle("save", { it.copy(saved = !post.saved) }, { it.copy(saved = post.saved) },
-            confirmed = { if (!post.saved) _uiState.update { it.copy(savedNow = true) } }) {
-            if (post.saved) discover.unsave(postId) else discover.save(postId)
-        }
-    }
-
-    fun onSavedShown() = _uiState.update { it.copy(savedNow = false) }
-
-    /** Phase 17G-2 (U5): "I went" and the person's own rating for the place this post names (only an EXACT place). */
-    private val visits = PlaceVisits(discover, viewModelScope,
-        onVisit = { v -> _uiState.update { it.copy(visit = v) } },
-        onWent = { _uiState.update { it.copy(visitSheet = true) } },
-        onBusy = { b -> _uiState.update { it.copy(visitBusy = b) } },
-        onFailure = { failure -> fail(failure) },
-        cellIfAt = locationProvider?.let { provider ->
-            { placeId -> PresenceCell.ifAt(provider) { (repository.place(placeId) as? ApiResult.Success)?.data?.cell } }
-        })
-
-    /** The screen went out of view: location is only looked up while it is open (17D). */
-    fun onScreenHidden() = visits.stopLooking()
-
-    /** The place a visit can be marked for: the post's own, when it names an exact place; otherwise none. */
-    private fun visitPlaceId(): String? = _uiState.value.post?.let { if (it.precision == Precision.EXACT) it.placeId else null }
-
-    /**
-     * "I went". Returns true when a visit is being marked (the screen then waits for the "How was it?" sheet); false when the post
-     * names no exact place, so there is nothing to mark and the screen goes straight to the composer, as before 17G-2.
-     */
-    fun onWent(): Boolean {
-        val placeId = visitPlaceId() ?: return false
-        visits.went(placeId)
-        return true
-    }
-
-    fun onRate(rating: Int) {
-        visitPlaceId()?.let { visits.rate(it, rating) }
-    }
-
-    fun onClearRating() {
-        visitPlaceId()?.let { visits.clearRating(it) }
-    }
-
-    fun onNotWent() {
-        visitPlaceId()?.let { visits.notWent(it) }
-    }
-
-    fun onVisitSheetHandled() = _uiState.update { it.copy(visitSheet = false) }
-
-    private fun toggle(key: String, apply: (Post) -> Post, undo: (Post) -> Post, confirmed: () -> Unit = {},
-                       call: suspend () -> ApiResult<Unit>) {
-        _uiState.update { it.copy(post = it.post?.let(apply), marking = it.marking + key, failure = null) }
-        viewModelScope.launch {
-            when (val result = call()) {
-                is ApiResult.Success -> {
-                    _uiState.update { it.copy(marking = it.marking - key) }
-                    freshness.changed() // R7: Home shows the same mark when the person goes back
-                    confirmed()
-                }
-                is ApiResult.Failure -> {
-                    _uiState.update { it.copy(post = it.post?.let(undo), marking = it.marking - key) }
-                    if (result.error == ApiError.NOT_FOUND) {
-                        _uiState.update { it.copy(post = null, notFound = true) }
-                    } else fail(result)
-                }
-            }
-        }
-    }
-
     fun onClosedHandled() = _uiState.update { it.copy(closed = false) }
     fun onSessionExpiredHandled() = _uiState.update { it.copy(sessionExpired = false) }
 
@@ -319,9 +213,8 @@ class PostViewModel(
 
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
-                PostViewModel(container.experienceRepository, container.discoverRepository,
-                    createSavedStateHandle().get<String>(ARG_POST_ID).orEmpty(), container.feedFreshness,
-                    container.screenLocationProvider)
+                PostViewModel(container.experienceRepository,
+                    createSavedStateHandle().get<String>(ARG_POST_ID).orEmpty(), container.feedFreshness)
             }
         }
     }

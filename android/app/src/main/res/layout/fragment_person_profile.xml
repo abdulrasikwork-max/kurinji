@@ -117,18 +117,6 @@
                         android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
                         android:textColor="?attr/colorLime" />
 
-                    <!-- Phase 17E (D-7): today's state, only when the viewer is a connection. -->
-                    <TextView
-                        android:id="@+id/dailyState"
-                        style="@style/Widget.Kurinji.Tag"
-                        android:layout_marginTop="@dimen/space_sm"
-                        android:drawablePadding="6dp"
-                        android:gravity="center_vertical"
-                        android:paddingTop="6dp"
-                        android:paddingBottom="6dp"
-                        android:visibility="gone"
-                        app:drawableTint="?attr/colorOnLime" />
-
                     <TextView
                         android:id="@+id/bio"
                         android:layout_width="match_parent"
