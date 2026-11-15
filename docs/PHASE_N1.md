@@ -189,3 +189,28 @@ any deploy to the pilot (the laptop setup and the live jar stay exactly as they 
   incremental run showed 1 error (`PostPolicyTest`: a compiled inner class missing from `target`, a stale build, gone
   after `mvn clean`). Python service: **38 run, OK**. No database touched.
 - Not changed on purpose: `deploy/env/*.example` still mention `EXPLORE_UNDERSTANDING_MODE` (pilot files, see B2).
+
+### B4 Migration V32 (2026-11-15, DEVELOPMENT MySQL 8.0.46 only; the pilot is NOT migrated)
+- **Backup first:** `C:\Users\ABDUL RAFIQ\Desktop\SafeSphere-Phase3\db-backups\safesphere-dev-before-v32-20261115.sql`
+  (`mysqldump --single-transaction`, 46 tables, 440 088 bytes; outside the repository; plain, same disk).
+- **Pre-check (read-only):** all 16 tables to drop were present; the only foreign keys pointing at them come from
+  tables dropped earlier in the file (cases / flags / contributions before `place_signals`, the custody ledger before
+  `evidence_items`); no index and no other CHECK names `signal_category` or `disclosed`.
+- **Dry run on scratch copies** (`zz_v32_*`, dropped afterwards, table count back to 46): the two audit-log deletes
+  on a copy of `moderation_actions` with a copy of `moderation_appeals` cascading from it: 37 rows became 7 (3 role
+  grants, 3 role removals, 1 `PERSON_REMOVE_PHOTO`), 2 appeals became 0; `DROP COLUMN signal_category` accepted; on a
+  copy of `posts` with its 16 rows: `DROP CHECK` then `DROP COLUMN disclosed` accepted, 16 rows kept, 27 columns
+  became 26. **Found:** MySQL also accepts dropping the column without dropping its one-column CHECK first (it removes
+  the CHECK itself); the file keeps the explicit `DROP CHECK` and its comment was corrected before the apply.
+- **Applied** by starting the new jar once: Flyway "Successfully validated 32 migrations", "Successfully applied 1
+  migration to schema `safesphere`, now at version v32", then "Started SafeSphereBackendApplication". Afterwards: 30
+  tables, `moderation_actions` 7 rows, `moderation_appeals` 0, `posts` 16, no `disclosed` / `signal_category` column.
+- **Entities against the migrated schema:** every `@Column` / `@JoinColumn` name of the 27 entity tables (193
+  columns) exists in MySQL. (`ddl-auto=validate` cannot be used for this: it stops at `circle_alerts.client_ref`,
+  CHAR in the schema and VARCHAR for Hibernate, an old and harmless difference.)
+- **Real-MySQL test:** `MySqlTimestampStorageTest` with `SAFESPHERE_MYSQL_TESTS=true`: 2 run, 0 failures (the
+  credentials must be exported from `backend/.env` first; without them it fails with "Access denied").
+- **Not done:** no API walk against the migrated database (the emulator check of unit C does that). An older jar
+  (schema V31 or before) now refuses to start against the development database.
+- **For the pilot later (its own approved step):** V32 deletes data for good; `restore-rehearsal.sh` PASS right before,
+  and the evidence folder is removed by hand afterwards.

@@ -45,6 +45,7 @@ DROP TABLE daily_states;
 DROP TABLE post_facets;
 DROP TABLE place_visits;
 
--- The CHECK goes first: MySQL refuses to drop a column that a CHECK still names.
+-- The CHECK is dropped by name first, so nothing depends on MySQL removing a one-column CHECK together with its
+-- column (it does: seen in the dry run of 2026-11-15).
 ALTER TABLE posts DROP CHECK ck_posts_disclosed;
 ALTER TABLE posts DROP COLUMN disclosed;
