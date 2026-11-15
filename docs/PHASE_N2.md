@@ -115,3 +115,29 @@ Changing the phone number (N3), the college ID check and the name lock (N3), ban
   (SOS ended elsewhere with a code), `DeviceSessionApiIntegrationTest` (sign-out-others, deletion), role changes by
   number, profile name = real name; `TestAccounts.confirmation(...)`; the transitional e-mail / password helper gone.
 - Result: backend **494 run, 0 failures, 0 errors, 2 skipped** (clean build).
+
+### B3 Migration V33 (2026-11-15, DEVELOPMENT MySQL 8.0.46 only; the pilot is NOT migrated)
+- **Backup first:** `C:\Users\ABDUL RAFIQ\Desktop\SafeSphere-Phase3\db-backups\safesphere-dev-before-v33-20261115.sql`
+  (`mysqldump --single-transaction`, 30 tables, 232 860 bytes; outside the repository; plain, same disk).
+- **Pre-check (read-only):** schema at V32, 30 tables; exactly the CHECKs and indexes V33 drops exist
+  (`ck_users_erased_email`, `ck_users_email_verified_after_created`, `ck_profiles_display_name`,
+  `idx_users_email_verified_created`, `uk_users_email`); no other CHECK names a dropped column; no foreign key points
+  at `phone_challenges` or `email_verification_tokens`; session reasons in use: `SIGNED_OUT` and none. Data: 204
+  accounts (31 with a verified number), 24 profiles, 68 sessions, 1 phone challenge, 0 e-mail tokens.
+- **Dry run on scratch copies** (`zz_v33_*`, dropped afterwards, table count back to 30): the users, profiles and
+  sessions statements on copies with all their rows (204 / 24 / 68 kept; users 17 → 14 columns, profiles 15 → 14);
+  every existing user row satisfies the remaining CHECKs; the new session reason accepted, a bogus one refused.
+  `phone_codes` copy: 3 rows accepted (sign-in with code, confirmation with account, sign-up ticket) and 12 refused
+  (duplicate number + purpose, unknown and lower-case purpose, a non-Indian number, an upper-case hash, a code without
+  expiry or send time, a ticket on a confirmation row or next to a code, 21 attempts, expiry before creation, an
+  unknown account); deleting an account removes its confirmation rows (cascade).
+- **Applied** by starting the new jar once (its V33 compared byte for byte with the source): "Successfully validated
+  33 migrations", "now at version v33", "Started". Afterwards 29 tables, `phone_codes` empty, `users` without
+  `email` / `email_verified_at` / `password_hash`, `profiles` without `display_name`, data counts unchanged.
+- **Entities against the migrated schema:** all 198 explicitly named entity columns exist in MySQL.
+- **API on real MySQL (curl):** start → code from the development code file → `SIGN_UP_NEEDED` → sign-up 201 → `/me`
+  (name, masked number, age confirmed) → a wrong confirmation code 409 → sign-out-others 200 → the old token 401, the
+  new one 200 → a Tamil name change 200 (stored exactly, 11 characters) → `/api/auth/login` 401. Two development test
+  accounts ("Mysql Check") were made on the way.
+- **Real-MySQL test:** `MySqlTimestampStorageTest` with `SAFESPHERE_MYSQL_TESTS=true`: 2 run, 0 failures.
+- An older jar (V32 or before) now refuses to start against the development database. The pilot stays on V30.
