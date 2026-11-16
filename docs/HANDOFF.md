@@ -1,4 +1,30 @@
-# CHECKPOINT 2026-11-15 (fifth session, stopped at the owner's request: 5-hour limit): N2 IN PROGRESS. B1, B2, B3, A1 done and committed; A2 STARTED, UNCOMMITTED, NOT COMPILED; C not started. Nothing pushed, nothing deployed.
+# CHECKPOINT 2026-11-16 (sixth session): N2 is COMPLETE. A2 and C done; manually verified on the `irl_api33` emulator (no real phone). Nothing pushed, nothing deployed. Next: the plan for N3, which needs the owner's approval before any code.
+
+**Standing instructions, unchanged:** the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30).
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). `main` = `origin/main` = tag `pre-n1` = `fd669b9`, untouched.
+- N2 commits, oldest first: `7cdc64d` B1 · `6ddcb05` B2 · `88aa5a1` B3 · `e1bf39b` A1 · `b1e6990` checkpoint · `0301f1c` A2 · `b7eb32c` C (docs) · then one commit with the emulator walk and this checkpoint (`git log -1`). `git status` clean afterwards.
+- `android/local.properties` is the owner's copy (pilot address); changed for one build only and restored byte for byte.
+
+## What this session did
+- **A2** (`0301f1c`): compiled the uncommitted work (one fix: `View.AUTOFILL_HINT_SMS_OTP` does not exist; the literal `"smsOTPCode"` is used), restored the deletion explainer's list of what is deleted (lost in the draft), rewrote `AccountTest` / `SessionContinuityTest` / `FakeEmergencyRepository` for codes, a new guard in `HonestyTextsTest` (no password or e-mail sign-in text, no password field), stale "password change" comments updated. Android 766 / 0 failures; `assembleDebug` OK; lint 0 errors, 89 warnings.
+- **C**: `API.md`, `DECISIONS.md` N-21 to N-26, `.claude/rules/*`, `CLAUDE.md` (next migration V34), `STATUS.md`, `README.md` (`b7eb32c`); backend 494 / 0 failures / 2 skipped (clean build); the emulator walk (table in `PHASE_N2.md`, "C close").
+- Development database: new test account 399 ("Meera Test", made-up number ending 2222, 4 ended SOS records); account 396 renamed "Nila Check". Backend and emulator stopped.
+
+## Observed, not changed (details in `PHASE_N2.md`)
+1. Tile / shortcut while IRL sits on the idle SOS screen: the screen comes forward without the countdown (Phase 13F `NavigationRules.opensSosFrom`). Note for N6, with the older note about the first-SOS countdown behind the permission dialogs.
+2. "About you": a corrected name keeps its error until the next tap (cosmetic).
+3. "About you" helper says "in Account" where the screen is "Account and security" (wording).
+
+## The exact first step for the next session
+Present the **plan for N3** (community, membership, verification by college ID, bans by roll number + phone, admin screens, the real-name lock of N-24, the number re-link of N-25; `IRL_DIRECTION.md`) and wait for the owner's approval. Do not start N3 code before that.
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, the pilot's own move to the new jar and schema (V32 + V33 delete data there: its own approved step with a fresh `restore-rehearsal.sh` PASS first).
+
+---
+
+# CHECKPOINT 2026-11-15 (fifth session; superseded by the checkpoint above: A2 and C are done): N2 IN PROGRESS. B1, B2, B3, A1 done and committed; A2 STARTED, UNCOMMITTED, NOT COMPILED; C not started. Nothing pushed, nothing deployed.
 
 **This is the newest checkpoint. Read `docs/PHASE_N2.md` (the approved plan, the owner's 5 decisions, and "As built" per unit) first. Standing instructions, unchanged: the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N2 plan is APPROVED (owner, 2026-11-15) with all five recommended decisions; continue it, do not re-plan.**
 

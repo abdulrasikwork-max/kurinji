@@ -81,7 +81,7 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | 17G-1/2/3, 18A-1/2 | Explore, AI understanding, "I went" + ratings, rating trust, presence, disclosure | **Removed in N1** (18A-2 was never verified on a device); 18A-3, 18B, 17I cancelled |
 | **N0** | Record the new direction (docs, this file) | done 2026-11-15 (documents only) |
 | **N1** | Strip: remove the retired features on both sides, migration V32 | implemented, compiled, tested 2026-11-15 (Android 766, backend 496, Python 38; V32 applied on the DEVELOPMENT MySQL only); results per unit in `docs/PHASE_N1.md`; manually verified on the emulator 2026-11-15 (SOS, Safe Walk, tile, shortcut, post; no real phone; one wording fix) |
-| **N2** | Phone-only sign-in, real name, no password, migration V33 | implemented, compiled, tested 2026-11-16 (Android 766, backend 494; V33 applied on the DEVELOPMENT MySQL only); decisions N-21 to N-26; results per unit in `docs/PHASE_N2.md`; emulator walk: see there |
+| **N2** | Phone-only sign-in, real name, no password, migration V33 | implemented, compiled, tested 2026-11-16 (Android 766, backend 494; V33 applied on the DEVELOPMENT MySQL only); decisions N-21 to N-26; results per unit in `docs/PHASE_N2.md`; manually verified on the emulator 2026-11-16 (no real phone) |
 | N3 | Community, membership, verification, bans, admin screens | planned |
 | N4 | Moments, capture-only Create, the wall, daily question | planned |
 | N5 | Same / Say more / I'm in, private replies, plan threads, Replies tab | planned |

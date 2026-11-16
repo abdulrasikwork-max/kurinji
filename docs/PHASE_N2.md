@@ -1,6 +1,6 @@
 # Phase N2: phone-only sign-in, real name, no password
 
-Status: **approved by the owner on 2026-11-15; in progress** (results per unit under "As built"). Direction:
+Status: **approved by the owner on 2026-11-15; complete 2026-11-16** (implemented, compiled, tested, manually verified on the emulator; no real phone; results per unit under "As built"). Direction:
 `IRL_DIRECTION.md` §2.5 and decisions N-3, N-5, N-7. New decisions of this phase: `DECISIONS.md` N-21 to N-26.
 
 ## What was there before N2
@@ -200,3 +200,53 @@ Changing the phone number (N3), the college ID check and the name lock (N3), ban
   optional e-mail and the social nudge are allowed) and no source has a password field.
 - Result: Android **766 run, 0 failures, 0 errors, 0 skipped**; `assembleDebug` OK; lint **0 errors, 89 warnings**
   (91 before; none in the A2 files). Not seen on a screen yet (unit C).
+
+### C close: documents, full runs, manual emulator walk (2026-11-16)
+- Documents: `API.md` ("Changed in N2" box, "Phase N2" section, appendix row), `DECISIONS.md` N-21 to N-26,
+  `.claude/rules` (backend and android N2 notes, database V33 row, next V34), `CLAUDE.md` (status row, next V34, auth
+  wording in sections 5, 6, 7, 9, 13; 38 087 characters), `STATUS.md`, `README.md` (commit `b7eb32c`).
+- Full runs: backend **494 run, 0 failures, 0 errors, 2 skipped** (clean build; one stale surefire report of the
+  removed `PhoneVerificationApiIntegrationTest` from 2026-11-15 was in `target/` and was deleted, it was not part of
+  this run); Android **766 run, 0 failures**, `assembleDebug` OK, lint **0 errors, 89 warnings**. Python not touched.
+- **Manual walk on the `irl_api33` emulator (API 33), development backend jar built from HEAD on the DEVELOPMENT MySQL
+  (V33, "Successfully validated 33 migrations"), codes from the development code file, a `10.0.2.2` debug build
+  (`local.properties` changed for one build and restored at once, compared byte for byte). Made-up numbers only. No
+  real phone (the A23 was attached by USB and was not touched; every command named the emulator).**
+
+| Check | Result |
+|---|---|
+| Upgrade over the N1 build with its saved N1 session (e-mail, no number) | still signed in, Home; "Settings and more" shows the name and `+91 ••••••1111` |
+| Account and security | sections Your name / Your other phones / Delete account; no password field |
+| Name with a digit ("Asha 2") | refused on the phone: "Use letters only (spaces and . ' - are fine)"; nothing sent |
+| Valid name ("Nila Check") | saved; the server row shows it |
+| Sign out all other phones: wrong code | nothing changed on the server (one session, no credentials stamp) |
+| … right code (a second sign-in made with curl first) | the curl session ended `OTHERS_SIGNED_OUT`, its token 401 `credentials_changed`; the emulator stayed signed in |
+| Asking for a code while one is still alive | the same code is re-used with a new challenge, not texted again (17B rule, as designed) |
+| Deletion on the N1 test account (its last SOS ended 12 h before) | refused: 409 "Your account can be deleted 24 hours after your last emergency ended." (seen with curl; the toast is not readable on a FLAG_SECURE screen) |
+| Log out → new number `…2222` → code | "About you" |
+| "About you": name "Meera 7" + date of birth 2010 | both refused on the phone ("Use letters only…", "You must be 18 or older to use this app"); no account made |
+| "About you": "Meera Test" + 2000 | account 399, number verified, age confirmed → profile form without a name field → Home |
+| Log out → same number → code | straight to Home (no "About you") |
+| Delete account (code) | banner "will be deleted on Nov 23, 2026 (asked on Nov 16, 2026)"; server dates set |
+| Cancel deletion (code) | banner gone; server dates cleared |
+| SOS started on another sign-in (curl), opened on the emulator | the screen shows the active SOS; "I'm safe" → "Started on another phone" with the code dialog |
+| … Cancel / Send a new code / wrong code | SOS stays ACTIVE / the dialog opens again / "That code is not right, or it has ended. Ask for a new code." on the screen, not asked again |
+| … right code | "Marked as safe", ended-elsewhere text; server: RESOLVED, `endedElsewhere: true` |
+| SOS started on this phone, "False alarm" | ended with no code (no code texted), `endedElsewhere: false` |
+| SOS countdown → CANCEL | idle again, nothing recorded |
+| Quick Settings tile, shortcut (long-press the icon → "Start SOS (5 s to cancel)") | each opened the running countdown; CANCEL at 3 → nothing recorded |
+| Backend log | only the two expected start-up notices; no error; no code or password logged |
+
+- Development database afterwards: new test account 399 ("Meera Test", made-up number ending 2222) with 4 SOS
+  records (117 ended elsewhere; 118, 119, 120 false alarms: 119 and 120 started because the countdown ran out while
+  the screen was being read); the N1 test account 396 renamed "Nila Check" with one more ended session. Backend and
+  emulator stopped.
+- **Observed, not changed (no N2 regression):**
+  1. The tile or shortcut opens the SOS screen WITHOUT the countdown when IRL was left on the idle SOS screen
+     (`MainActivity.onNewIntent` starts it only from screens where `NavigationRules.opensSosFrom` is true; Phase 13F
+     logic). One more tap ("Start SOS") is needed then. A note for N6.
+  2. On "About you" a name error stays visible after the name is corrected until the next "Create account" tap (the
+     date error clears on change). Cosmetic.
+  3. "About you" says "You can correct it later in Account" while the screen is called "Account and security".
+- Not seen: the toasts on the Account screen (FLAG_SECURE blocks screenshots; the outcomes were checked on the server),
+  dark mode, large text, TalkBack, a real phone.
