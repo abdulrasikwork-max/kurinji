@@ -1,4 +1,27 @@
-# CHECKPOINT 2026-11-16 (eighth session): N3 is COMPLETE. B4, A1, A2 and C done; manually verified on the `irl_api33` emulator (no real phone). Nothing pushed, nothing deployed. Next: the plan for N4, which needs the owner's approval before any code.
+# CHECKPOINT 2026-11-16 (ninth session): N4 decisions LOCKED — implementation NOT started. N3 is complete. Nothing pushed, nothing deployed.
+
+**Standing instructions, unchanged:** the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). **Do not start N4-B1 until the owner says so.**
+
+## What this checkpoint is
+Documents only. The owner approved the N4 plan on 2026-11-16 with changes; everything is recorded in `docs/PHASE_N4.md` and `DECISIONS.md` N-42 to N-58. No application code, migration or test was changed. Next migration file is still **V35** (written in N4-B1).
+
+## Locked (summary; details in `PHASE_N4.md` §2–§6)
+- D1–D13 approved: two phases (N4 moments, N5 responses); camera app + FileProvider, no CAMERA, no gallery; moment = `SAY` / `WHOS_IN`, text ≤ 500 + at most one photo; audience MIET / My people; 24 h from first visibility, purge 7 days after expiry unless a case is open; keep ≤ 6; admin daily question per India-time day; Who's in? time within 24 h + `where` ≤ 60 plain text; profile without city / languages / interests, programme + year shown; "This is about me" in N4; screenshot block scope; no editing.
+- **Voice DEFERRED from N4; video not in N4** (N-44).
+- **No learned AI model**; the rule-based Python text check stays (N-55).
+- **New-member period 7 days from `memberships.verified_at`** (N-56); held new-member photos never auto-released or auto-deleted, independent of Python (N-57).
+- Never reintroduce the retired concepts listed in N-58.
+- Still open: M4 tiered queue priority (confirm before B3), M5 moderator coverage (N8), refuse-to-start without the text check (N8), N5 D14–D19.
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed); N3 complete at `eb474ec`; then ONE documents-only commit with this checkpoint (`git log -1`). `git status` clean afterwards.
+
+## The exact first step for the next session
+When the owner says to start: read `docs/PHASE_N4.md`, then implement **N4-B1** (V35 + moment core + Today + lifecycle + keep + timing + daily question + limits + purge), one local commit, then B2, B3, B4, A1, A2, A3, C in that order.
+
+---
+
+# CHECKPOINT 2026-11-16 (eighth session; superseded by the checkpoint above: N4 decisions locked): N3 is COMPLETE. B4, A1, A2 and C done; manually verified on the `irl_api33` emulator (no real phone). Nothing pushed, nothing deployed. Next: the plan for N4, which needs the owner's approval before any code.
 
 **Standing instructions, unchanged:** the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). Results per unit: `docs/PHASE_N3.md` "As built" (B1–B4, A1, A2, C close with the walk table).
 

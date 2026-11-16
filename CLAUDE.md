@@ -42,7 +42,7 @@ quiet supporting layer, never the identity.
   an uploaded photo (an admin approves). Kept: name, department, graduation year, the roll number only in keyed
   (unreadable) form; the image is deleted at the decision. Bans attach to roll number + phone number. 18+ only. The owner
   and the project teammates are the root admins.
-- **Moments:** text, one photo or up to 30 s of voice, **made now inside the app (no gallery)**, 24 h life (a few can be
+- **Moments:** text, one photo or up to 30 s of voice (voice DEFERRED from N4, N-44), **made now inside the app (no gallery)**, 24 h life (a few can be
   kept on the profile). Two kinds: **Say** and **Who's in?** (optional time and a plain-text "where", never a place
   record). Audience: the community, or "my people" (mutual connections).
 - **Responses:** **Same** (the author sees who; others see "a few / many", never a number) · **Say more** · **I'm in**
@@ -83,7 +83,7 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | **N1** | Strip: remove the retired features on both sides, migration V32 | implemented, compiled, tested 2026-11-15 (Android 766, backend 496, Python 38; V32 applied on the DEVELOPMENT MySQL only); results per unit in `docs/PHASE_N1.md`; manually verified on the emulator 2026-11-15 (SOS, Safe Walk, tile, shortcut, post; no real phone; one wording fix) |
 | **N2** | Phone-only sign-in, real name, no password, migration V33 | implemented, compiled, tested 2026-11-16 (Android 766, backend 494; V33 applied on the DEVELOPMENT MySQL only); decisions N-21 to N-26; results per unit in `docs/PHASE_N2.md`; manually verified on the emulator 2026-11-16 (no real phone) |
 | **N3** | Community, membership, verification, bans, admin screens, migration V34 | implemented, compiled, tested 2026-11-16 (Android 795, backend 532; V34 applied on the DEVELOPMENT MySQL only); decisions N-27 to N-41; results per unit in `docs/PHASE_N3.md`; manually verified on the emulator 2026-11-16 (no real phone) |
-| N4 | Moments, capture-only Create, the wall, daily question | planned |
+| **N4** | Moments, capture-only Create, Today, keep, daily question | **decisions LOCKED 2026-11-16, implementation NOT started** (`docs/PHASE_N4.md`, N-42 to N-58): voice deferred, no video, no learned AI model, new-member period 7 days from `memberships.verified_at` |
 | N5 | Same / Say more / I'm in, private replies, plan threads, Replies tab | planned |
 | N6 | Safety trim (route checks out, SMS-app fallback only, Safety Circle offer on plans) | planned |
 | N7 | Firebase push | planned |
