@@ -134,7 +134,8 @@ public class ReportService {
         TargetKind kind = parse(TargetKind.class, request.targetKind(), "Choose what to report");
         if (kind == TargetKind.PLACE) throw new InvalidRequestException("Choose what to report");
         ModerationReason reason = parse(ModerationReason.class, request.reason(), "Choose a reason");
-        if (reason == ModerationReason.NEEDS_REVIEW || reason == ModerationReason.AWAITING_CHECK) {
+        if (reason == ModerationReason.NEEDS_REVIEW || reason == ModerationReason.AWAITING_CHECK
+                || reason == ModerationReason.NEW_MEMBER_PHOTO) {
             throw new InvalidRequestException("Choose a reason");
         }
         if (reason == ModerationReason.IMPERSONATION && kind != TargetKind.PERSON) {

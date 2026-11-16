@@ -19,17 +19,20 @@ public class MomentLimits {
     static final String TOO_MANY_MOMENTS = "You have shared a lot today. Please try again tomorrow.";
     static final String TOO_MANY_AS_NEW_MEMBER =
             "New members can share 3 moments a day in their first week. Please try again tomorrow.";
+    static final String TOO_MANY_PHOTOS = "You have added many photos today. Please try again tomorrow.";
     static final String TOO_MANY_READS = "You have opened Today many times this hour. Please try again later.";
 
     private final AttemptLimiter moments;
     private final AttemptLimiter newMemberMoments;
     private final AttemptLimiter todayReads;
+    private final AttemptLimiter photos;
 
     public MomentLimits(MomentProperties properties, SocialProperties social, Clock clock) {
         int keys = social.maxTrackedKeys();
         this.moments = new AttemptLimiter(properties.perDay(), Duration.ofDays(1), keys, clock);
         this.newMemberMoments = new AttemptLimiter(properties.newMemberPerDay(), Duration.ofDays(1), keys, clock);
         this.todayReads = new AttemptLimiter(properties.todayReadsPerHour(), Duration.ofHours(1), keys, clock);
+        this.photos = new AttemptLimiter(properties.photosPerDay(), Duration.ofDays(1), keys, clock);
     }
 
     /**
@@ -41,6 +44,11 @@ public class MomentLimits {
         if (moments.isBlocked(key)) throw new TooManyAttemptsException(TOO_MANY_MOMENTS);
         if (newMember && !newMemberMoments.tryAcquire(key)) throw new TooManyAttemptsException(TOO_MANY_AS_NEW_MEMBER);
         moments.record(key);
+    }
+
+    /** One more photo upload by [userId] (20 a day: bounds the disk one account can fill before the clean-up). */
+    public void photo(long userId) {
+        if (!photos.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_PHOTOS);
     }
 
     public void readToday(long userId) {

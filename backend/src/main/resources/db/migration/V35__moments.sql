@@ -93,7 +93,7 @@ CREATE TABLE moments (
     CONSTRAINT ck_moments_moderation CHECK (moderation IN ('NONE', 'COLLAPSED', 'HELD', 'REMOVED')),
     CONSTRAINT ck_moments_moderation_reason CHECK (moderation_reason IS NULL OR moderation_reason IN ('HARASSMENT',
         'SEXUAL_HARASSMENT', 'HATE', 'THREAT', 'DOXXING', 'SPAM', 'NUDITY_OR_VIOLENCE', 'IMPERSONATION', 'OTHER',
-        'NEEDS_REVIEW', 'AWAITING_CHECK')),
+        'NEEDS_REVIEW', 'AWAITING_CHECK', 'NEW_MEMBER_PHOTO')),
     CONSTRAINT ck_moments_moderation_decision CHECK (moderation_decision IS NULL OR
         REGEXP_LIKE(moderation_decision, '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', 'c')),
     CONSTRAINT ck_moments_moderation_source CHECK (moderation_source IS NULL

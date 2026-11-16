@@ -1,6 +1,6 @@
 # Phase N4: Moments and Today
 
-Status: **decisions LOCKED by the owner on 2026-11-16; unit B1 DONE on 2026-11-16 (implemented, compiled, tested;
+Status: **decisions LOCKED by the owner on 2026-11-16; units B1 and B2 DONE on 2026-11-16 (implemented, compiled, tested;
 "As built" at the end); B2, B3, B4, A1, A2, A3, C NOT started.** The plan below was presented on
 2026-11-16 and approved with the owner's changes (voice deferred, new-member period 7 days, no learned model). Units B1,
 B2, B3, B4, A1, A2, A3, C; one local commit each; never pushed, never deployed. Each unit starts only when the owner says
@@ -254,3 +254,29 @@ of the old social code (B3); V35 on MySQL (B4); everything on the phone (A1 to A
 candidate reading is bounded (5 batches of 40 per page); a viewer who can see fewer than 21 of 200 consecutive
 candidates gets a shorter page and a cursor to carry on. A cursor names a moment the viewer was shown; if it is deleted
 before the next page is asked for, the app gets 400 "Invalid cursor" and reloads.
+
+### B2 (2026-11-16): the photo of a moment, the new-member photo hold — backend only
+
+Status: **implemented, compiled, tested** (backend **593 run, 0 failures, 0 errors, 2 skipped**: 584 + 9 new,
+`MomentPhotoApiTest`). V35 still applied nowhere (one list in it grew: `NEW_MEMBER_PHOTO`). Not manually verified.
+
+- **Upload:** `POST /api/moments/media` (body = the image, `image/jpeg` or `image/png`, at most 5 MB; anything else 415)
+  → `{mediaId, width, height}`. `MomentMediaService` decodes and re-encodes with `ImageSanitizer` before anything is
+  stored (no EXIF, no position); the uploaded bytes never reach the disk. 20 uploads a day (`app.moments.photos-per-day`,
+  in memory; a refused upload does not count). A posting pause refuses it (403). `DELETE /api/moments/media/{mediaId}`
+  removes the caller's own upload that no moment uses (204; anything else 404).
+- **Attach:** `POST /api/moments` takes `mediaId`: the caller's own, unattached upload (locked until the commit, so two
+  moments never share one); anything else is 400 "That photo is no longer available. Please take it again." The text is
+  optional next to a photo (N-45). The answer carries `photo {width, height}` and nothing else about it.
+- **Serving:** `GET /api/moments/{id}/media` by the MOMENT's id, through the one visibility rule (`requireVisible`):
+  exactly who may see the moment gets its photo, `image/jpeg`, `private, no-store`, `nosniff`. A photo has no address of
+  its own; an unattached upload cannot be fetched by anyone (the phone shows its own copy).
+- **New-member photo hold (N-56, N-57):** pure `MomentPolicy.holdsPhoto(newMember, audience, photo)` = new member AND
+  photo AND audience `COMMUNITY`. Such a moment is saved WITHOUT `publish` (no `visible_at`, status `WAITING`) in state
+  `HELD` / `SYSTEM` / reason `NEW_MEMBER_PHOTO` (new code in `ModerationReason` and in V35's `ck_moments_moderation_reason`;
+  never a report reason). The rule is social's own: it does not call the Python service or any listener. Nothing releases
+  it or deletes it automatically (test: 30 days later, after the clean-up job, it still waits and its file exists); the
+  author can always delete it. My people photos, words alone and established members are not held; the boundary is
+  exactly `verified_at + 7 days` (test: one minute before and at the instant). The moderator's case for it is opened in B3.
+- **Not tightened:** the server accepts up to 4096 px a side (the phone sends at most 3072 px), so V35's
+  `ck_moment_media_size` stays as written.

@@ -5,7 +5,15 @@ import com.safesphere.backend.social.dto.MomentDtos.MineResponse;
 import com.safesphere.backend.social.dto.MomentDtos.MomentRequest;
 import com.safesphere.backend.social.dto.MomentDtos.MomentResponse;
 import com.safesphere.backend.social.dto.MomentDtos.TodayResponse;
+import com.safesphere.backend.social.service.MomentMediaService;
+import com.safesphere.backend.social.service.MomentMediaService.Uploaded;
 import com.safesphere.backend.social.service.MomentService;
+import jakarta.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,9 +36,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class MomentController {
 
     private final MomentService moments;
+    private final MomentMediaService media;
 
-    public MomentController(MomentService moments) {
+    public MomentController(MomentService moments, MomentMediaService media) {
         this.moments = moments;
+        this.media = media;
     }
 
     @PostMapping("/api/moments")
@@ -60,6 +70,32 @@ public class MomentController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@AuthenticationPrincipal Jwt jwt, @PathVariable String id) {
         moments.delete(CurrentUser.id(jwt), id);
+    }
+
+    /**
+     * N4-B2: the photo of a moment. The body of the upload is the image itself (image/jpeg or image/png, at most 5 MB);
+     * what is stored and served is always the server's own re-encoded JPEG, never cached in between.
+     */
+    @PostMapping(path = "/api/moments/media", consumes = {MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE})
+    @ResponseStatus(HttpStatus.CREATED)
+    public Uploaded upload(@AuthenticationPrincipal Jwt jwt, HttpServletRequest request) throws IOException {
+        return media.upload(CurrentUser.id(jwt), request.getInputStream(), request.getContentLengthLong());
+    }
+
+    @DeleteMapping("/api/moments/media/{mediaId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUpload(@AuthenticationPrincipal Jwt jwt, @PathVariable String mediaId) {
+        media.deleteUnattached(CurrentUser.id(jwt), mediaId);
+    }
+
+    @GetMapping("/api/moments/{id}/media")
+    public ResponseEntity<byte[]> photo(@AuthenticationPrincipal Jwt jwt, @PathVariable String id) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .cacheControl(CacheControl.noStore().cachePrivate())
+                .header("X-Content-Type-Options", "nosniff")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                .body(media.photoOf(CurrentUser.id(jwt), id));
     }
 
     @PutMapping("/api/moments/{id}/kept")

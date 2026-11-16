@@ -86,6 +86,14 @@ public final class MomentPolicy {
         return verifiedAt.plus(NEW_MEMBER_PERIOD);
     }
 
+    /**
+     * N-56, N-57: a new member's photo shared with all of MIET is held for a person to look at before anyone else sees
+     * it. Not for My people (they already know each other), not for an established member, not for words alone.
+     */
+    public static boolean holdsPhoto(boolean newMember, Audience audience, boolean photo) {
+        return newMember && photo && audience == Audience.COMMUNITY;
+    }
+
     /** N-47: an ended, un-kept moment may be purged once its end is MORE than 7 days in the past. */
     public static boolean purgeDue(LocalDateTime expiresAt, LocalDateTime now) {
         return expiresAt != null && expiresAt.plus(PURGE_AFTER).isBefore(now);

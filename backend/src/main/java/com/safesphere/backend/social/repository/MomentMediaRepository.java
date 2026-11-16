@@ -20,5 +20,10 @@ public interface MomentMediaRepository extends JpaRepository<MomentMedia, Long> 
     @Query("SELECT m FROM MomentMedia m WHERE m.momentId IS NULL AND m.createdAt < :before")
     List<MomentMedia> findUnattachedBefore(@Param("before") LocalDateTime before);
 
+    /** Locked, so an attach, a removal and the clean-up of the same upload never cross. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT m FROM MomentMedia m WHERE m.publicId = :publicId")
+    List<MomentMedia> findForAttach(@Param("publicId") String publicId);
+
     List<MomentMedia> findByStorageKeyIn(Collection<String> storageKeys);
 }

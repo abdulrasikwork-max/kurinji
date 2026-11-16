@@ -10,18 +10,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param perDay            moments an established member may share per day (PHASE_N4 §3: 10)
  * @param newMemberPerDay   moments a new member may share per day during their first 7 days (N-56: 3)
  * @param todayReadsPerHour Today pages a person may load per hour (stops scraping the wall)
+ * @param photosPerDay      photos a person may upload per day (PHASE_N4 §3: 20)
  * @param questionsAhead    how many days ahead an admin may schedule a daily question
  */
 @ConfigurationProperties(prefix = "app.moments")
 public record MomentProperties(Integer perDay, Integer newMemberPerDay, Integer todayReadsPerHour,
-                               Integer questionsAhead) {
+                               Integer questionsAhead, Integer photosPerDay) {
 
     public MomentProperties {
         if (perDay == null) perDay = 10;
         if (newMemberPerDay == null) newMemberPerDay = 3;
         if (todayReadsPerHour == null) todayReadsPerHour = 600;
         if (questionsAhead == null) questionsAhead = 60;
-        if (perDay < 1 || newMemberPerDay < 1 || todayReadsPerHour < 1 || questionsAhead < 1 || questionsAhead > 366) {
+        if (photosPerDay == null) photosPerDay = 20;
+        if (perDay < 1 || newMemberPerDay < 1 || todayReadsPerHour < 1 || questionsAhead < 1 || questionsAhead > 366
+                || photosPerDay < 1) {
             throw new IllegalStateException("app.moments.* values are invalid");
         }
     }

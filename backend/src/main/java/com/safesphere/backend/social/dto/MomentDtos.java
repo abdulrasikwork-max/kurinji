@@ -26,6 +26,7 @@ public final class MomentDtos {
             @Size(max = 4000, message = "A moment has at most 500 characters") String text,
             @Size(max = 40, message = "Choose a time within the next 24 hours") String planAt,
             @Size(max = 400, message = "Where has at most 60 characters") String planWhere,
+            @Size(max = 40, message = "That photo is not available") String mediaId,
             @Size(max = 40, message = "That question is not available") String questionId) {
     }
 
@@ -34,6 +35,13 @@ public final class MomentDtos {
      * [profileId], [handle] and [photo] are null for an author who has not made one.
      */
     public record MomentAuthor(String profileId, String handle, String name, String photo) {
+    }
+
+    /**
+     * The photo of a moment: its size in pixels, so the app can lay the card out before the picture arrives. The picture
+     * itself is GET /api/moments/{id}/media (the moment's id; a photo has no address of its own).
+     */
+    public record Photo(int width, int height) {
     }
 
     /** The plan of a Who's in?: [at] exactly as the author set it (may be null), [where] in the author's words. */
@@ -59,7 +67,7 @@ public final class MomentDtos {
      * author gets them (null for everyone else).
      */
     public record MomentResponse(String id, String kind, String audience, MomentAuthor author, boolean mine,
-                                 String text, Plan plan, QuestionRef question, When when, String status, boolean kept,
+                                 String text, Photo photo, Plan plan, QuestionRef question, When when, String status, boolean kept,
                                  Instant createdAt, Instant visibleAt, Instant expiresAt) {
     }
 

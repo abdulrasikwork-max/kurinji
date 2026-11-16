@@ -126,7 +126,7 @@ class MomentApiIntegrationTest {
         JsonNode seen = moments.json(moments.get_(chitra, id).andExpect(status().isOk()));
         List<String> names = new ArrayList<>();
         seen.fieldNames().forEachRemaining(names::add);
-        assertThat(names).containsExactlyInAnyOrder("id", "kind", "audience", "author", "mine", "text", "plan",
+        assertThat(names).containsExactlyInAnyOrder("id", "kind", "audience", "author", "mine", "text", "photo", "plan",
                 "question", "when", "status", "kept", "createdAt", "visibleAt", "expiresAt");
         List<String> author = new ArrayList<>();
         seen.get("author").fieldNames().forEachRemaining(author::add);

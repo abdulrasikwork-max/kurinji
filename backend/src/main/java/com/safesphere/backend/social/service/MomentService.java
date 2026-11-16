@@ -7,6 +7,7 @@ import com.safesphere.backend.social.dto.MomentDtos.MineResponse;
 import com.safesphere.backend.social.dto.MomentDtos.MomentAuthor;
 import com.safesphere.backend.social.dto.MomentDtos.MomentRequest;
 import com.safesphere.backend.social.dto.MomentDtos.MomentResponse;
+import com.safesphere.backend.social.dto.MomentDtos.Photo;
 import com.safesphere.backend.social.dto.MomentDtos.Plan;
 import com.safesphere.backend.social.dto.MomentDtos.QuestionRef;
 import com.safesphere.backend.social.dto.MomentDtos.TodayResponse;
@@ -16,6 +17,7 @@ import com.safesphere.backend.social.entity.Moment;
 import com.safesphere.backend.social.entity.MomentEnums.Audience;
 import com.safesphere.backend.social.entity.MomentEnums.Kind;
 import com.safesphere.backend.social.entity.MomentMedia;
+import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
 import com.safesphere.backend.social.entity.PostEnums.ModerationState;
 import com.safesphere.backend.social.entity.Profile;
 import com.safesphere.backend.social.media.MediaStorage;
@@ -63,6 +65,7 @@ public class MomentService {
 
     static final String NOT_FOUND = "Moment not found";
     static final String QUESTION_NOT_TODAY = "That question is no longer today's question";
+    static final String PHOTO_NOT_AVAILABLE = "That photo is no longer available. Please take it again.";
     static final String KEEP_ONLY_LIVE = "Only a moment that is live on Today can be kept";
     static final String KEEP_FULL = "You can keep 6 moments. Un-keep one first.";
     static final int PAGE_SIZE = 20;
@@ -114,7 +117,7 @@ public class MomentService {
         String text = MomentPolicy.cleanText(request.text());
         LocalDateTime planAt = planAt(request.planAt());
         String planWhere = MomentPolicy.cleanLine(request.planWhere());
-        MomentPolicy.check(new MomentPolicy.Draft(kind, audience, text, false, planAt, planWhere), now)
+        MomentPolicy.check(new MomentPolicy.Draft(kind, audience, text, !blank(request.mediaId()), planAt, planWhere), now)
                 .ifPresent(reason -> {
                     throw new InvalidRequestException(reason);
                 });
@@ -124,14 +127,27 @@ public class MomentService {
         }
         DailyQuestion question = todaysQuestion(request.questionId(), member.communityId(), now);
 
+        // The upload is locked until the commit, so two moments can never take the same photo.
+        MomentMedia photo = blank(request.mediaId()) ? null : ownUnattached(userId, request.mediaId().trim());
+
         // Last, so a refused request never uses up the day's allowance.
         limits.share(userId, newMember);
 
         Moment moment = new Moment(userId, member.communityId(), kind, audience, text, now);
         moment.plan(planAt, planWhere);
         if (question != null) moment.answer(question.getId());
-        moment.publish(now, MomentPolicy.LIFE);
+        if (MomentPolicy.holdsPhoto(newMember, audience, photo != null)) {
+            // N-56, N-57: a new member's photo for all of MIET waits for a person. This rule is social's own: it needs
+            // no other service to be running, and nothing here or in any job ever releases or deletes such a moment.
+            moment.moderateBySystem(ModerationState.HELD, ModerationReason.NEW_MEMBER_PHOTO, null);
+        } else {
+            moment.publish(now, MomentPolicy.LIFE);
+        }
         moments.saveAndFlush(moment);
+        if (photo != null) {
+            photo.attach(moment.getId());
+            mediaRows.saveAndFlush(photo);
+        }
         return respond(userId, List.of(moment), now).get(0);
     }
 
@@ -281,6 +297,9 @@ public class MomentService {
         Map<Long, DailyQuestion> questionOf = questionIds.isEmpty() ? Map.of() : questions.findByIdIn(questionIds)
                 .stream().collect(Collectors.toMap(DailyQuestion::getId, Function.identity()));
 
+        Map<Long, MomentMedia> photoOf = mediaRows.findByMomentIdIn(list.stream().map(Moment::getId).toList()).stream()
+                .collect(Collectors.toMap(MomentMedia::getMomentId, Function.identity()));
+
         List<MomentResponse> out = new ArrayList<>(list.size());
         for (Moment m : list) {
             boolean mine = m.getAuthorId() == viewerId;
@@ -297,9 +316,11 @@ public class MomentService {
                 MomentTimes.Rough rough = MomentTimes.rough(m.getVisibleAt(), now);
                 when = new When(rough.day().name(), rough.part() == null ? null : rough.part().name());
             }
+            MomentMedia media = photoOf.get(m.getId());
+            Photo photo = media == null ? null : new Photo(media.getWidth(), media.getHeight());
             String status = m.getVisibleAt() == null ? "WAITING" : m.hasEnded(now) ? "ENDED" : "LIVE";
             out.add(new MomentResponse(m.getPublicId(), m.getKind().name(), m.getAudience().name(), author, mine,
-                    m.getBody(), plan, question == null ? null : ref(question), when, status, m.isKept(),
+                    m.getBody(), photo, plan, question == null ? null : ref(question), when, status, m.isKept(),
                     mine ? m.getCreatedAt().toInstant(ZoneOffset.UTC) : null,
                     mine && m.getVisibleAt() != null ? m.getVisibleAt().toInstant(ZoneOffset.UTC) : null,
                     mine && m.getExpiresAt() != null ? m.getExpiresAt().toInstant(ZoneOffset.UTC) : null));
@@ -308,6 +329,16 @@ public class MomentService {
     }
 
     // ---- helpers ----
+
+    /** The caller's own upload that no moment uses yet, locked; anything else is refused without saying why. */
+    private MomentMedia ownUnattached(long userId, String mediaId) {
+        List<MomentMedia> found = mediaRows.findForAttach(mediaId);
+        MomentMedia media = found.isEmpty() ? null : found.get(0);
+        if (media == null || media.getOwnerId() != userId || media.getMomentId() != null) {
+            throw new InvalidRequestException(PHOTO_NOT_AVAILABLE);
+        }
+        return media;
+    }
 
     private Moment requireOwn(long userId, String publicId) {
         Moment moment = blank(publicId) ? null : moments.findByPublicId(publicId).orElse(null);

@@ -96,6 +96,31 @@ public final class MomentClient {
         return send(delete("/api/moments/{id}/kept", id), who.token(), null);
     }
 
+    /** N4-B2: uploads [bytes] as a moment photo. */
+    public ResultActions upload(Person who, byte[] bytes, String contentType) throws Exception {
+        return mockMvc.perform(post("/api/moments/media").header(HttpHeaders.AUTHORIZATION, bearer(who.token()))
+                .contentType(contentType).content(bytes));
+    }
+
+    public String uploadPhoto(Person who, byte[] jpeg) throws Exception {
+        return json(upload(who, jpeg, "image/jpeg").andExpect(status().isCreated())).get("mediaId").asText();
+    }
+
+    public ResultActions deleteUpload(Person who, String mediaId) throws Exception {
+        return send(delete("/api/moments/media/{id}", mediaId), who.token(), null);
+    }
+
+    public ResultActions photo(Person who, String momentId) throws Exception {
+        return send(get("/api/moments/{id}/media", momentId), who.token(), null);
+    }
+
+    /** A moment body with a photo. */
+    public static Map<String, Object> withPhoto(String kind, String audience, String text, String mediaId) {
+        Map<String, Object> body = body(kind, audience, text);
+        body.put("mediaId", mediaId);
+        return body;
+    }
+
     public ResultActions questions(Person admin) throws Exception {
         return send(get("/api/admin/questions"), admin.token(), null);
     }

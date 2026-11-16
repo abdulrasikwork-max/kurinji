@@ -47,7 +47,9 @@ public final class PostEnums {
      */
     public enum ModerationReason {
         HARASSMENT, SEXUAL_HARASSMENT, HATE, THREAT, DOXXING, SPAM, NUDITY_OR_VIOLENCE, IMPERSONATION, OTHER,
-        NEEDS_REVIEW, AWAITING_CHECK
+        NEEDS_REVIEW, AWAITING_CHECK,
+        /** Phase N4 (V35, N-57): a new member's photo for the whole community waits for a moderator. Moments only. */
+        NEW_MEMBER_PHOTO
     }
 
     /**
