@@ -9,7 +9,7 @@ enum class ApiError {
     NO_CONNECTION,
     SERVER,
     UNKNOWN,
-    /** 429: too many failed attempts (e.g. wrong evidence-deletion passwords); try again later. */
+    /** 429: too many failed attempts (e.g. wrong confirmation codes); try again later. */
     TOO_MANY_ATTEMPTS,
     /** 403 (Phase 7): signed in but not allowed, e.g. community contributions paused by a moderator. */
     FORBIDDEN

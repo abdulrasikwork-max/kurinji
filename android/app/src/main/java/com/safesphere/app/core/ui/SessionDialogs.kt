@@ -9,11 +9,11 @@ import com.safesphere.app.core.network.SessionEndReason
 
 /**
  * The Phase 2 "Session expired" behaviour, shared by every screen that calls the backend. Phase 10A: the words follow
- * the server's reason (password changed, account deleted).
+ * the server's reason (other phones signed out, account deleted).
  *
  * Phase 11 C1: an expired token that could not be refreshed, or this phone's sign-in ended on the server, is NOT a
  * sign-out: nothing was deleted and SOS keeps working. Then the dialog says "Sign in to sync" and can be closed
- * ("Later"); the person is not pushed to Login in the middle of whatever they were doing. Only a changed password, a
+ * ("Later"); the person is not pushed to Login in the middle of whatever they were doing. Only "Sign out all other phones" from elsewhere, a
  * deleted or a disabled account (the session was cleared) keep the old forced dialog that returns to Login.
  */
 fun Fragment.showSessionExpiredDialog() {

@@ -112,6 +112,42 @@ class HonestyTextsTest {
         assertEquals(R.string.error_session_expired, sessionEndTexts(SessionEndReason.EXPIRED).second)
     }
 
+    /**
+     * N2 (N-21): the only way in is a mobile number and a texted code. No visible text may offer or ask for a password
+     * or an e-mail sign-in; the words may appear only to say there is none. Kept: the optional e-mail of a Safety
+     * Circle contact and the social nudge about sharing someone else's e-mail. No screen has a password field.
+     */
+    @Test
+    fun `no text offers a password or an e-mail sign-in, and no screen has a password field`() {
+        val strings = allStrings()
+        val sayNone = setOf("login_subtitle", "about_body", "privacy_policy_body")
+        for ((name, text) in strings) {
+            val lower = text.lowercase()
+            if ("password" in lower) {
+                assertTrue("$name mentions a password: $text", name in sayNone && "no password" in lower)
+                assertEquals("$name: \"password\" only in \"no password\"", Regex("password").findAll(lower).count(),
+                    Regex("no password").findAll(lower).count())
+            }
+            if ("e-mail" in lower || "email" in lower) {
+                val allowed = name in setOf("label_email_optional", "error_invalid_email", "nudge_contact_message") ||
+                    (name in sayNone && "no e-mail" in lower)
+                assertTrue("$name mentions an e-mail: $text", allowed)
+            }
+        }
+        for (name in sayNone) assertTrue("$name says there is no password", "no password" in strings.getValue(name).lowercase())
+
+        val main = File("src/main")
+        val sources = main.walkTopDown().filter { it.isFile && (it.extension == "xml" || it.extension == "kt") }.toList()
+        assertTrue(sources.size > 100)
+        for (file in sources) {
+            val text = file.readText(Charsets.UTF_8)
+            for (field in listOf("textPassword", "TYPE_TEXT_VARIATION_PASSWORD", "END_ICON_PASSWORD_TOGGLE",
+                    "R.string.label_password", "@string/label_password")) {
+                assertFalse("${file.path} has a password field ($field)", field in text)
+            }
+        }
+    }
+
     private fun allStrings(): Map<String, String> {
         val xml = File("src/main/res/values/strings.xml").readText(Charsets.UTF_8)
         return STRING.findAll(xml).associate { it.groupValues[1] to it.groupValues[2] }

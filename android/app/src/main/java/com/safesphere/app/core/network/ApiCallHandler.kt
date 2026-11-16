@@ -15,7 +15,7 @@ import retrofit2.HttpException
  * A 401 goes to [SessionEnder]. Phase 11 C1: an EXPIRED token is refreshed with the stored refresh secret and the call
  * is sent ONCE more with the new token (never twice: a second 401 means "sign in to sync", so no loop is possible).
  * If the server cannot be reached for the refresh, the call counts as offline (NO_CONNECTION). Only revocations
- * (password changed, account deleted / disabled) still sign the phone out (Phase 10A); a refused refresh keeps the
+ * (other phones signed out from elsewhere, account deleted / disabled) still sign the phone out (Phase 10A); a refused refresh keeps the
  * session and all local safety data and reports UNAUTHORIZED ("sign in to sync").
  */
 class ApiCallHandler(private val sessionEnder: SessionEnder, private val ageGate: AgeGate? = null) {

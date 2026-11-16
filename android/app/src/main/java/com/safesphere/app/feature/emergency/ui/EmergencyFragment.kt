@@ -19,6 +19,7 @@ import com.safesphere.app.core.device.BackgroundLimits
 import com.safesphere.app.core.tracking.TrackingServiceStarter
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
+import com.safesphere.app.core.ui.showCodeConfirmDialog
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentEmergencyBinding
@@ -187,42 +188,23 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         binding.activeErrorNotice.isVisible = failure != null
         if (failure != null) binding.activeErrorNotice.setMessage(failure.toMessage(requireContext()))
 
-        if (state.passwordNeededFor != null && endPasswordDialog == null) askPasswordToEnd()
+        val request = state.codeRequest
+        if (state.codeNeededFor != null && request != null && endCodeDialog == null) askCodeToEnd(request)
     }
 
-    private var endPasswordDialog: androidx.appcompat.app.AlertDialog? = null
+    private var endCodeDialog: androidx.appcompat.app.AlertDialog? = null
 
-    /** Phase 10A.4: this SOS was started on another phone; ending it here needs the account password. */
-    private fun askPasswordToEnd() {
-        val context = requireContext()
-        val field = com.google.android.material.textfield.TextInputEditText(context).apply {
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-        }
-        val layout = com.google.android.material.textfield.TextInputLayout(context).apply {
-            hint = getString(R.string.label_password)
-            endIconMode = com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
-            addView(field)
-            val padding = resources.getDimensionPixelSize(R.dimen.space_lg)
-            setPadding(padding, 0, padding, 0)
-        }
-        endPasswordDialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
-            .setTitle(R.string.emergency_end_elsewhere_title)
-            .setMessage(R.string.emergency_end_elsewhere_message)
-            .setView(layout)
-            .setNegativeButton(R.string.action_cancel) { _, _ -> viewModel.onEndPasswordDismissed() }
-            .setPositiveButton(R.string.emergency_end_elsewhere_action) { _, _ ->
-                val password = field.text?.toString().orEmpty()
-                field.setText("")
-                if (password.isEmpty()) viewModel.onEndPasswordDismissed() else viewModel.onEndWithPassword(password)
-            }
-            .setOnCancelListener { viewModel.onEndPasswordDismissed() }
-            .setOnDismissListener { endPasswordDialog = null }
-            .create()
-            .also {
-                it.window?.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE,
-                    android.view.WindowManager.LayoutParams.FLAG_SECURE)
-                it.show()
-            }
+    /**
+     * Phase 10A.4 (N2): this SOS was started on another phone; ending it here needs a fresh code texted to the
+     * account's number (the shared FLAG_SECURE code dialog).
+     */
+    private fun askCodeToEnd(request: com.safesphere.app.core.confirm.CodeRequest) {
+        endCodeDialog = showCodeConfirmDialog(R.string.emergency_end_elsewhere_title,
+            R.string.emergency_end_elsewhere_message, R.string.emergency_end_elsewhere_action, request,
+            onConfirm = viewModel::onEndWithCode,
+            onResend = viewModel::onEndCodeResend,
+            onDismiss = viewModel::onEndCodeDismissed,
+            onClosed = { endCodeDialog = null })
     }
 
     /** Phase 4D: who has been told what, honestly, and "Text" per contact (the person sends it from the SMS app). */
@@ -256,14 +238,14 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         }
     }
 
-    /** Phase 11 C1: the server needs the password again ("sign in to sync"); the SOS works on this phone regardless. */
+    /** Phase 11 C1: the server needs a new sign-in ("sign in to sync"); the SOS works on this phone regardless. */
     private fun signInNeeded(): Boolean = appContainer.currentSession.value?.needsSignIn == true
 
     private fun renderEnded(state: EmergencyUiState.Ended) {
         val resolved = state.event.status == EmergencyStatus.RESOLVED
         binding.endedTitle.setText(if (resolved) R.string.emergency_ended_resolved_title else R.string.emergency_ended_cancelled_title)
         binding.endedMessage.setText(when {
-            // Phase 10A.4: ended from another phone (with the account password); this phone did not say "I'm safe".
+            // Phase 10A.4: ended from another phone (with a fresh code, N2); this phone did not say "I'm safe".
             state.event.endedElsewhere -> R.string.emergency_ended_elsewhere_message
             // Phase 11: ended on this phone while offline; the server is told when it can be reached.
             // Phase 11 C1: or while the server needs a sign-in again; then it is told once the person signs in.

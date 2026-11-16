@@ -1,57 +1,63 @@
 package com.safesphere.app.feature.account.ui
 
 import android.os.Bundle
-import android.text.InputType
 import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
+import com.safesphere.app.core.ui.showCodeConfirmDialog
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentAccountBinding
 import com.safesphere.app.feature.account.domain.DeletionNotice
-import com.safesphere.app.feature.account.domain.PasswordProblem
 
 /**
- * Account and security (Phase 10A). Changing the password ends every other session; deleting the account waits
- * 7 days (the banner shows the date; cancelling needs the password). The window is FLAG_SECURE while it is open
- * (password fields, and the deletion state is nobody else's business).
+ * Account (Phase 10A, reworked in N2). The real name can be corrected (N-24). Signing out the other phones (N-26),
+ * deleting the account (it waits 7 days; the banner shows the date) and cancelling that are confirmed with a fresh code
+ * texted to the account's own number (N-7: no password any more). The window is FLAG_SECURE while it is open (codes,
+ * and the deletion state is nobody else's business).
  */
 class AccountFragment : ViewBindingFragment<FragmentAccountBinding>(FragmentAccountBinding::inflate) {
 
     private val viewModel by viewModels<AccountViewModel> { AccountViewModel.factory(appContainer) }
+    private var codeDialog: AlertDialog? = null
+    private var nameFilled = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.changePasswordButton.setOnClickListener {
-            val current = binding.currentPasswordInput.text?.toString().orEmpty()
-            val new = binding.newPasswordInput.text?.toString().orEmpty()
-            val confirm = binding.confirmPasswordInput.text?.toString().orEmpty()
-            viewModel.onChangePassword(current, new, confirm)
+        nameFilled = savedInstanceState != null
+        binding.saveNameButton.setOnClickListener {
+            binding.nameLayout.error = null
+            viewModel.onSaveName(binding.nameInput.text?.toString().orEmpty())
         }
-        binding.deleteAccountButton.setOnClickListener {
-            askPassword(R.string.account_delete_confirm_title, R.string.account_delete_confirm_message,
-                R.string.account_delete_confirm_action) { viewModel.onRequestDeletion(it) }
-        }
-        binding.cancelDeletionButton.setOnClickListener {
-            askPassword(R.string.account_cancel_deletion, R.string.account_cancel_deletion_message,
-                R.string.account_cancel_deletion) { viewModel.onCancelDeletion(it) }
-        }
+        binding.signOutOthersButton.setOnClickListener { viewModel.onAskCode(ConfirmedAction.SIGN_OUT_OTHERS) }
+        binding.deleteAccountButton.setOnClickListener { viewModel.onAskCode(ConfirmedAction.DELETE) }
+        binding.cancelDeletionButton.setOnClickListener { viewModel.onAskCode(ConfirmedAction.CANCEL_DELETION) }
 
+        collectWhenStarted(viewModel.name) { name ->
+            // Filled once from the account; the person's own typing is never overwritten.
+            if (!nameFilled && name != null) {
+                binding.nameInput.setText(name)
+                nameFilled = true
+            }
+        }
         collectWhenStarted(viewModel.deletion, ::renderDeletion)
         collectWhenStarted(viewModel.busy) { busy ->
             binding.progress.isVisible = busy
-            binding.changePasswordButton.isEnabled = !busy
-            binding.deleteAccountButton.isEnabled = !busy
-            binding.cancelDeletionButton.isEnabled = !busy
+            listOf(binding.saveNameButton, binding.signOutOthersButton, binding.deleteAccountButton,
+                binding.cancelDeletionButton).forEach { it.isEnabled = !busy }
+        }
+        collectWhenStarted(viewModel.codeNeeded) { needed ->
+            if (needed != null) {
+                viewModel.onCodeDialogShown()
+                askCode(needed)
+            }
         }
         collectWhenStarted(viewModel.message) { message ->
             if (message != null) {
@@ -77,6 +83,12 @@ class AccountFragment : ViewBindingFragment<FragmentAccountBinding>(FragmentAcco
         super.onPause()
     }
 
+    override fun onDestroyView() {
+        codeDialog?.dismiss()
+        codeDialog = null
+        super.onDestroyView()
+    }
+
     private fun renderDeletion(notice: DeletionNotice?) {
         binding.deletionNotice.isVisible = notice != null
         binding.cancelDeletionButton.isVisible = notice != null
@@ -88,66 +100,32 @@ class AccountFragment : ViewBindingFragment<FragmentAccountBinding>(FragmentAcco
         }
     }
 
+    private fun askCode(needed: CodeNeeded) {
+        val (title, message, action) = when (needed.action) {
+            ConfirmedAction.DELETE -> Triple(R.string.account_delete_confirm_title,
+                R.string.account_delete_confirm_message, R.string.account_delete_confirm_action)
+            ConfirmedAction.CANCEL_DELETION -> Triple(R.string.account_cancel_deletion,
+                R.string.account_cancel_deletion_message, R.string.account_cancel_deletion)
+            ConfirmedAction.SIGN_OUT_OTHERS -> Triple(R.string.account_sign_out_others,
+                R.string.account_sign_out_others_message, R.string.account_sign_out_others_action)
+        }
+        codeDialog?.dismiss()
+        codeDialog = showCodeConfirmDialog(title, message, action, needed.request,
+            onConfirm = { viewModel.onConfirm(needed.action, it) },
+            onResend = { viewModel.onAskCode(needed.action) },
+            onDismiss = {})
+    }
+
     private fun show(message: AccountMessage) {
         when (message) {
-            AccountMessage.PasswordChanged -> {
-                clearPasswordFields()
-                toast(getString(R.string.account_password_changed))
-            }
+            AccountMessage.NameSaved -> toast(getString(R.string.account_name_saved))
+            is AccountMessage.NameInvalid -> binding.nameLayout.error = message.error.toMessage(requireContext())
+            AccountMessage.OthersSignedOut -> toast(getString(R.string.account_others_signed_out))
             is AccountMessage.DeletionScheduled -> toast(getString(R.string.account_deletion_requested,
                 AccountTexts.date(message.dueAt)))
             AccountMessage.DeletionCancelled -> toast(getString(R.string.account_deletion_cancelled))
-            AccountMessage.PasswordRequired -> toast(getString(R.string.account_password_required))
-            is AccountMessage.Invalid -> showProblem(message.problem)
             is AccountMessage.Failed -> toast(message.failure.toMessage(requireContext()))
         }
-    }
-
-    private fun showProblem(problem: PasswordProblem) {
-        binding.currentPasswordLayout.error = null
-        binding.newPasswordLayout.error = null
-        binding.confirmPasswordLayout.error = null
-        when (problem) {
-            PasswordProblem.CURRENT_MISSING -> binding.currentPasswordLayout.error = getString(R.string.error_field_required)
-            PasswordProblem.TOO_SHORT -> binding.newPasswordLayout.error =
-                getString(R.string.error_password_too_short, com.safesphere.app.feature.account.domain.AccountPolicy.MIN_PASSWORD_LENGTH)
-            PasswordProblem.TOO_LONG -> binding.newPasswordLayout.error = getString(R.string.account_password_too_long)
-            PasswordProblem.MISMATCH -> binding.confirmPasswordLayout.error = getString(R.string.error_passwords_do_not_match)
-            PasswordProblem.SAME_AS_CURRENT -> binding.newPasswordLayout.error = getString(R.string.account_password_same)
-        }
-    }
-
-    private fun clearPasswordFields() {
-        listOf(binding.currentPasswordInput, binding.newPasswordInput, binding.confirmPasswordInput).forEach { it.setText("") }
-        listOf(binding.currentPasswordLayout, binding.newPasswordLayout, binding.confirmPasswordLayout).forEach { it.error = null }
-    }
-
-    /** A password prompt over an explanation; the typed password goes to [onConfirm] and the field is cleared. */
-    private fun askPassword(titleRes: Int, messageRes: Int, actionRes: Int, onConfirm: (String) -> Unit) {
-        val context = requireContext()
-        val field = TextInputEditText(context).apply {
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-        }
-        val layout = TextInputLayout(context).apply {
-            hint = getString(R.string.label_password)
-            endIconMode = TextInputLayout.END_ICON_PASSWORD_TOGGLE
-            addView(field)
-            val padding = resources.getDimensionPixelSize(R.dimen.space_lg)
-            setPadding(padding, 0, padding, 0)
-        }
-        val dialog = MaterialAlertDialogBuilder(context)
-            .setTitle(titleRes)
-            .setMessage(messageRes)
-            .setView(layout)
-            .setNegativeButton(R.string.action_cancel, null)
-            .setPositiveButton(actionRes) { _, _ ->
-                val password = field.text?.toString().orEmpty()
-                field.setText("")
-                onConfirm(password)
-            }
-            .create()
-        dialog.window?.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
-        dialog.show()
     }
 
     private fun toast(text: String) {

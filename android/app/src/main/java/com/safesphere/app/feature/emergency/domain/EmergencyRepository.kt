@@ -1,5 +1,6 @@
 package com.safesphere.app.feature.emergency.domain
 
+import com.safesphere.app.core.confirm.Confirmation
 import com.safesphere.app.core.network.ApiResult
 import java.time.Instant
 
@@ -18,12 +19,12 @@ interface EmergencyRepository {
     suspend fun getHistory(): ApiResult<List<EmergencyEvent>>
 
     /**
-     * "False alarm". Phase 10A.4: the phone that started the SOS sends no [password]; from another sign-in the server
-     * answers FORBIDDEN until the account password is sent. Phase 11: [endedAt] = when it was ended on a phone that
+     * "False alarm". Phase 10A.4 (N2): the phone that started the SOS sends no [confirmation]; from another sign-in the
+     * server answers FORBIDDEN until a fresh texted code is sent. Phase 11: [endedAt] = when it was ended on a phone that
      * was offline at that moment (null = now).
      */
-    suspend fun cancel(id: Long, password: String? = null, endedAt: Instant? = null): ApiResult<EmergencyEvent>
+    suspend fun cancel(id: Long, confirmation: Confirmation? = null, endedAt: Instant? = null): ApiResult<EmergencyEvent>
 
     /** "I'm safe" (same rules as [cancel]). */
-    suspend fun resolve(id: Long, password: String? = null, endedAt: Instant? = null): ApiResult<EmergencyEvent>
+    suspend fun resolve(id: Long, confirmation: Confirmation? = null, endedAt: Instant? = null): ApiResult<EmergencyEvent>
 }

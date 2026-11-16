@@ -44,10 +44,12 @@ sealed interface EmergencyUiState {
         val failure: ApiResult.Failure? = null,
         val restoredOffline: Boolean = false,
         /**
-         * Phase 10A.4: this SOS was started on another phone, so ending it here needs the account password; the screen
-         * asks for it and then calls [EmergencyViewModel.onEndWithPassword]. Null = nothing to ask.
+         * Phase 10A.4 (N2): this SOS was started on another phone, so ending it here needs a fresh code texted to the
+         * account's number; [codeRequest] is that code on its way. The screen shows the code dialog and then calls
+         * [EmergencyViewModel.onEndWithCode]. Null = nothing to ask.
          */
-        val passwordNeededFor: EndAction? = null,
+        val codeNeededFor: EndAction? = null,
+        val codeRequest: com.safesphere.app.core.confirm.CodeRequest? = null,
         /** Phase 11: the phone's reference for an SOS it started (matches the server's answer when it comes). */
         val clientRef: String? = null,
         /** Phase 11: the server refused to record this SOS (it keeps running on this phone). */

@@ -64,7 +64,7 @@ class SessionStatusViewModelTest {
         advanceUntilIdle()
         assertFalse(calm.sessionExpired.value)
 
-        // Signed out (password changed elsewhere, account deleted): the dialog, as before.
+        // Signed out (other phones signed out elsewhere, account deleted): the dialog, as before.
         val gone = FakeAuthRepository(null).apply { refreshResult = FakeAuthRepository.failure(AuthError.UNAUTHORIZED) }
         val viewModel = viewModel(gone)
         advanceUntilIdle()

@@ -37,10 +37,10 @@ data class EmergencyEventDto(
 }
 
 /**
- * Phase 10A.4: body of resolve / cancel. Null [password] is left out of the JSON (Gson skips nulls): the phone that
- * started the SOS needs none; another sign-in must send the account password. Phase 11: [endedAt] when it was ended
+ * Phase 10A.4 (N2: a fresh code instead of the password): body of resolve / cancel. Null fields are left out of the
+ * JSON (Gson skips nulls): the phone that started the SOS sends none; another sign-in must send [challenge] and [code]. Phase 11: [endedAt] when it was ended
  * on this phone while offline.
  */
-data class EndEmergencyRequestDto(val password: String? = null, val endedAt: String? = null) {
+data class EndEmergencyRequestDto(val challenge: String? = null, val code: String? = null, val endedAt: String? = null) {
     override fun toString() = "EndEmergencyRequestDto(<hidden>)"
 }

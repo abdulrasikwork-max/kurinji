@@ -14,7 +14,7 @@ interface SessionStorage {
 
     /**
      * Phase 10A: clears the session only while its token is still [token] and returns the session that was cleared
-     * (null = nothing cleared). A 401 for an OLD token (one replaced by a password change or a new sign-in while the
+     * (null = nothing cleared). A 401 for an OLD token (one replaced by signing out the other phones or a new sign-in while the
      * request was on its way) must never sign out the newer session. A null [token] clears unconditionally.
      * Implementations should make the check and the clear one atomic step; this default is for simple fakes.
      */

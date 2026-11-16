@@ -167,3 +167,36 @@ Changing the phone number (N3), the college ID check and the name lock (N3), ban
   navigation, form-validator and social tests adjusted; the e-mail literals in test users became masked numbers.
 - Result: Android **760 run, 0 failures, 0 errors, 0 skipped**; `assembleDebug` OK; lint **0 errors, 91 warnings**.
   Not seen on a screen yet (unit C).
+
+### A2 Android: codes instead of the password (2026-11-16)
+- New, shared by the account and the SOS screens without either importing the other: `core/confirm/ConfirmationCodes`
+  (`request()` = `POST /api/users/me/confirmation`), `CodeRequest` (challenge in memory only, masked number, sent or
+  not), `Confirmation` (exactly 6 digits or nothing is sent; `toString` hides both), `NoConfirmationCodes`; and
+  `core/ui/CodeConfirmDialog` (`showCodeConfirmDialog`: FLAG_SECURE, "We texted a code to +91 ••••••3210",
+  confirm / "Send a new code" / cancel; the typed code is passed on once and the field cleared).
+- Account and security: the password section is gone; new "Your name" (the real name, `RealNamePolicy` on the phone
+  first, `PUT /api/users/me/name`, the session shows it at once; N-24) and "Your other phones" ("Sign out all other
+  phones", N-26: the new token is saved inside `SessionEnder.swapping`, so the old token's 401 is not a sign-out; this
+  phone keeps its refresh secret unless the answer brings one). Deletion and its cancel: first a code is texted
+  (`AccountViewModel.onAskCode` → `codeNeeded`), then the typed code goes with the action (`onConfirm`).
+  `AccountPolicy`'s password checks and `PasswordProblem` are gone.
+- SOS ended on a phone that did not start it: a 403 now texts a code (`EmergencyViewModel.askForCode`, the account
+  repository as `ConfirmationCodes`) and the screen shows the same dialog (`codeNeededFor` + `codeRequest` replace
+  `passwordNeededFor`); `onEndWithCode`, `onEndCodeDismissed` (the SOS stays active), `onEndCodeResend`. A wrong code is
+  shown and never asked again by itself; a code that cannot be sent is shown and the SOS stays active.
+  `EndEmergencyRequestDto` = `{challenge, code, endedAt}` (nulls left out: the starting phone sends none).
+- Texts: every password word left the visible strings (session-ended, "sign in to sync", deletion, SOS elsewhere,
+  About, the privacy notice); the deletion explainer keeps its list of what is deleted. Comments that still described
+  a password change now describe signing out the other phones.
+- Fixed while compiling: `View.AUTOFILL_HINT_SMS_OTP` does not exist (the hint lives in `androidx.autofill`, not a
+  dependency here); the dialog uses the literal `"smsOTPCode"`, the same as the sign-in code field.
+- Tests: `AccountTest` rewritten (the confirmation rule and its hidden `toString`; asking for a code fails closed
+  without a challenge; sign-out-others saves the new token (R8) and sends the code; a wrong code keeps the session, a
+  401 asks for a sign-in without deleting anything; the name change; deletion and cancel send their codes; the view
+  model texts a code first, then confirms each of the three actions; a code that cannot be sent opens no dialog);
+  `SessionContinuityTest` (SOS ended elsewhere: code asked, dismissed, resent, wrong, right; a code that cannot be
+  texted); `FakeEmergencyRepository` records the `Confirmation`. New guard in `HonestyTextsTest`: no visible text offers
+  a password or an e-mail sign-in (the words appear only as "no password, no e-mail"; the Safety Circle contact's
+  optional e-mail and the social nudge are allowed) and no source has a password field.
+- Result: Android **766 run, 0 failures, 0 errors, 0 skipped**; `assembleDebug` OK; lint **0 errors, 89 warnings**
+  (91 before; none in the A2 files). Not seen on a screen yet (unit C).

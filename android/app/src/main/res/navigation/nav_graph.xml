@@ -225,7 +225,7 @@
             app:nullable="true" />
     </fragment>
 
-    <!-- Phase 10A: Account and security (password change, account deletion) -->
+    <!-- Phase 10A, N2: Account and security (real name, sign out other phones, account deletion; confirmed with texted codes) -->
     <fragment
         android:id="@+id/accountFragment"
         android:name="com.safesphere.app.feature.account.ui.AccountFragment"

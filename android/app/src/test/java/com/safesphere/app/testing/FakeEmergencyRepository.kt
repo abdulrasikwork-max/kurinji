@@ -1,5 +1,6 @@
 package com.safesphere.app.testing
 
+import com.safesphere.app.core.confirm.Confirmation
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.feature.emergency.domain.EmergencyEvent
 import com.safesphere.app.feature.emergency.domain.EmergencyRepository
@@ -46,20 +47,20 @@ class FakeEmergencyRepository : EmergencyRepository {
 
     override suspend fun getHistory(): ApiResult<List<EmergencyEvent>> = historyResult
 
-    /** The password sent with the last cancel/resolve (Phase 10A.4; null = none). */
-    var lastEndPassword: String? = null
+    /** The code sent with the last cancel/resolve (Phase 10A.4, N2: a code instead of the password; null = none). */
+    var lastEndConfirmation: Confirmation? = null
         private set
 
-    override suspend fun cancel(id: Long, password: String?, endedAt: Instant?): ApiResult<EmergencyEvent> {
+    override suspend fun cancel(id: Long, confirmation: Confirmation?, endedAt: Instant?): ApiResult<EmergencyEvent> {
         cancelCalls++
-        lastEndPassword = password
+        lastEndConfirmation = confirmation
         lastEndedAt = endedAt
         return cancelResult
     }
 
-    override suspend fun resolve(id: Long, password: String?, endedAt: Instant?): ApiResult<EmergencyEvent> {
+    override suspend fun resolve(id: Long, confirmation: Confirmation?, endedAt: Instant?): ApiResult<EmergencyEvent> {
         resolveCalls++
-        lastEndPassword = password
+        lastEndConfirmation = confirmation
         lastEndedAt = endedAt
         return resolveResult
     }

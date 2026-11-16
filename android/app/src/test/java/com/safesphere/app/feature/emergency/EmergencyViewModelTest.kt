@@ -437,7 +437,7 @@ class EmergencyViewModelTest {
         settle()
         assertFalse(stillSignedIn.sessionExpired.value)
 
-        // Signed out for real (password changed elsewhere, account deleted): reported as before.
+        // Signed out for real (other phones signed out elsewhere, account deleted): reported as before.
         signedInUserId = null
         val signedOut = viewModel()
         settle()

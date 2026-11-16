@@ -19,7 +19,7 @@ import retrofit2.Response
 
 /**
  * Phase 10A: a 401 ends the session only when the rejected token is still the saved one, and the server's reason
- * (WWW-Authenticate error_description) reaches the app. R8: during a password change the old token's 401 is ignored.
+ * (WWW-Authenticate error_description) reaches the app. R8: while a token swap is on its way (N2: signing out the other phones) the old token's 401 is ignored.
  */
 class SessionEnderTest {
 
@@ -51,7 +51,7 @@ class SessionEnderTest {
     }
 
     @Test
-    fun `while a password change is on its way, the old token's 401 is ignored`() = runTest {
+    fun `while a token swap is on its way, the old token's 401 is ignored`() = runTest {
         val storage = FakeSessionStorage(AuthSession("old-token", user))
         val ender = SessionEnder(storage)
 

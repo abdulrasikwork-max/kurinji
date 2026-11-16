@@ -1,17 +1,22 @@
 package com.safesphere.app.feature.account
 
+import com.safesphere.app.core.confirm.CodeRequest
+import com.safesphere.app.core.confirm.Confirmation
+import com.safesphere.app.core.confirm.ConfirmationCodes
 import com.safesphere.app.core.network.ApiCallHandler
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.SessionEnder
 import com.safesphere.app.feature.account.data.RemoteAccountRepository
 import com.safesphere.app.feature.account.data.remote.AccountApi
-import com.safesphere.app.feature.account.data.remote.ChangePasswordRequestDto
+import com.safesphere.app.feature.account.data.remote.CodeConfirmationDto
 import com.safesphere.app.feature.account.data.remote.DeletionScheduledDto
-import com.safesphere.app.feature.account.data.remote.PasswordConfirmationDto
+import com.safesphere.app.feature.account.data.remote.NameChangeDto
 import com.safesphere.app.feature.account.domain.TokenRenewalPolicy
 import com.safesphere.app.feature.account.session.SessionRenewer
 import com.safesphere.app.feature.auth.data.remote.AuthResponseDto
+import com.safesphere.app.feature.auth.data.remote.PhoneChallengeDto
+import com.safesphere.app.feature.auth.data.remote.UserDto
 import com.safesphere.app.feature.auth.domain.AuthSession
 import com.safesphere.app.feature.auth.domain.AuthUser
 import com.safesphere.app.feature.emergency.domain.EmergencyStatus
@@ -47,7 +52,7 @@ import org.junit.Test
 
 /**
  * Phase 10A.4 "session continuity" on the phone: when the token is renewed (above all during an SOS or Safe Walk), that a
- * renewal never revives a replaced session, and the SOS screen's password prompt when the SOS was started elsewhere.
+ * renewal never revives a replaced session, and the SOS screen's code prompt (N2) when the SOS was started elsewhere.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SessionContinuityTest {
@@ -224,7 +229,7 @@ class SessionContinuityTest {
         assertEquals(ApiResult.Success(Unit), repository.renewToken())
         assertEquals("renewed", storage.savedSession?.token)
 
-        // A sign-out (or a password change) happened while the renewal was on its way: it must win.
+        // A sign-out (or signing out the other phones) happened while the renewal was on its way: it must win.
         val raced = RenewApi {
             storage.clear()
             FakeAuthApi.authResponse("late")
@@ -237,41 +242,81 @@ class SessionContinuityTest {
     // ---- the SOS screen: started on another phone ------------------------------------------------------------
 
     @Test
-    fun `ending an SOS started elsewhere asks for the password, then sends it once`() = runTest {
+    fun `ending an SOS started elsewhere texts a code, asks for it, then sends it once`() = runTest {
         val emergencies = FakeEmergencyRepository().apply {
             historyResult = ApiResult.Success(listOf(event(id = 5)))
             resolveResult = ApiResult.Failure(ApiError.FORBIDDEN, "This SOS was started on another phone.")
         }
-        val viewModel = viewModel(emergencies, FakeLocationSharingController())
+        val codes = FakeConfirmationCodes()
+        val viewModel = viewModel(emergencies, FakeLocationSharingController(), codes)
         advanceUntilIdle()
 
         viewModel.onImSafeClicked()
         settle()
         val asking = viewModel.uiState.value as EmergencyUiState.Active
-        assertEquals(EndAction.RESOLVE, asking.passwordNeededFor)
+        assertEquals(EndAction.RESOLVE, asking.codeNeededFor)
+        assertEquals(codes.answer.let { (it as ApiResult.Success).data }, asking.codeRequest)
+        assertFalse(asking.isEnding)
         assertNull(asking.failure)
-        assertNull(emergencies.lastEndPassword)
+        assertNull(emergencies.lastEndConfirmation)
+        assertEquals(1, codes.requests)
 
-        viewModel.onEndPasswordDismissed()
-        assertNull((viewModel.uiState.value as EmergencyUiState.Active).passwordNeededFor) // the SOS stays active
+        viewModel.onEndCodeDismissed()
+        val dismissed = viewModel.uiState.value as EmergencyUiState.Active // the SOS stays active
+        assertNull(dismissed.codeNeededFor)
+        assertNull(dismissed.codeRequest)
 
         viewModel.onImSafeClicked()
         settle()
-        // A wrong password: shown as a failure, NOT asked again in a loop.
-        emergencies.resolveResult = ApiResult.Failure(ApiError.CONFLICT, "Password is incorrect")
-        viewModel.onEndWithPassword("wrong")
+        assertEquals(2, codes.requests)
+        // "Send a new code": the same question again, for the same action.
+        viewModel.onEndCodeResend()
+        settle()
+        assertEquals(3, codes.requests)
+        assertEquals(EndAction.RESOLVE, (viewModel.uiState.value as EmergencyUiState.Active).codeNeededFor)
+
+        // A wrong code: shown as a failure, NOT asked again in a loop.
+        emergencies.resolveResult = ApiResult.Failure(ApiError.CONFLICT, "That code is not right.")
+        val wrongCode = Confirmation("challenge", "000000")
+        viewModel.onEndWithCode(wrongCode)
         settle()
         val wrong = viewModel.uiState.value as EmergencyUiState.Active
-        assertEquals("wrong", emergencies.lastEndPassword)
+        assertEquals(wrongCode, emergencies.lastEndConfirmation)
         assertEquals(ApiError.CONFLICT, wrong.failure?.error)
-        assertNull(wrong.passwordNeededFor)
+        assertNull(wrong.codeNeededFor)
+        assertEquals(3, codes.requests)
 
-        emergencies.resolveResult = ApiResult.Success(event(id = 5, status = EmergencyStatus.RESOLVED).copy(endedElsewhere = true))
+        emergencies.resolveResult = ApiResult.Failure(ApiError.FORBIDDEN, "This SOS was started on another phone.")
         viewModel.onImSafeClicked()
         settle()
-        viewModel.onEndWithPassword("right")
+        assertEquals(EndAction.RESOLVE, (viewModel.uiState.value as EmergencyUiState.Active).codeNeededFor)
+        emergencies.resolveResult = ApiResult.Success(event(id = 5, status = EmergencyStatus.RESOLVED).copy(endedElsewhere = true))
+        val rightCode = Confirmation("challenge", "123456")
+        viewModel.onEndWithCode(rightCode)
         settle()
+        assertEquals(rightCode, emergencies.lastEndConfirmation)
         assertTrue((viewModel.uiState.value as EmergencyUiState.Ended).event.endedElsewhere)
+    }
+
+    @Test
+    fun `a code that cannot be texted leaves the SOS active and says so`() = runTest {
+        val emergencies = FakeEmergencyRepository().apply {
+            historyResult = ApiResult.Success(listOf(event(id = 5)))
+            cancelResult = ApiResult.Failure(ApiError.FORBIDDEN, "This SOS was started on another phone.")
+        }
+        val codes = FakeConfirmationCodes().apply {
+            answer = ApiResult.Failure(ApiError.TOO_MANY_ATTEMPTS, "Please wait a minute before asking again.")
+        }
+        val viewModel = viewModel(emergencies, FakeLocationSharingController(), codes)
+        advanceUntilIdle()
+
+        viewModel.onFalseAlarmClicked()
+        settle()
+        val state = viewModel.uiState.value as EmergencyUiState.Active
+        assertEquals(ApiError.TOO_MANY_ATTEMPTS, state.failure?.error)
+        assertNull(state.codeNeededFor)
+        assertFalse(state.isEnding)
+        assertEquals(1, emergencies.cancelCalls)
     }
 
     @Test
@@ -295,14 +340,19 @@ class SessionContinuityTest {
     // ---- helpers ------------------------------------------------------------------------------------------------
 
     /** Phase 11: with the real SosRecorder (background work): every step below is followed by settle(). */
-    private fun TestScope.viewModel(emergencies: FakeEmergencyRepository, sharing: FakeLocationSharingController) =
+    private fun TestScope.viewModel(
+        emergencies: FakeEmergencyRepository,
+        sharing: FakeLocationSharingController,
+        codes: ConfirmationCodes = FakeConfirmationCodes()
+    ) =
         EmergencyViewModel(
             emergencyRepository = emergencies,
             safetyCircleRepository = FakeSafetyCircleRepository(emptyList()),
             locationSharing = sharing,
             sos = sosRecorderForTest(emergencies, FakeActiveEmergencyStore(), rebinders = listOf(sharing)),
             currentUserId = { 7L },
-            trackingServiceRunning = MutableStateFlow(false)
+            trackingServiceRunning = MutableStateFlow(false),
+            confirmationCodes = codes
         ).also { settle() }
 
     /** An unsigned token with only the claims the phone reads (the phone never verifies signatures). */
@@ -322,9 +372,21 @@ class SessionContinuityTest {
     }
 
     private class RenewApi(val outcome: suspend () -> AuthResponseDto) : AccountApi {
-        override suspend fun changePassword(body: ChangePasswordRequestDto): AuthResponseDto = error("unused")
-        override suspend fun requestDeletion(body: PasswordConfirmationDto): DeletionScheduledDto = error("unused")
-        override suspend fun cancelDeletion(body: PasswordConfirmationDto) = Unit
+        override suspend fun requestConfirmation(): PhoneChallengeDto = error("unused")
+        override suspend fun signOutOtherPhones(body: CodeConfirmationDto): AuthResponseDto = error("unused")
+        override suspend fun changeName(body: NameChangeDto): UserDto = error("unused")
+        override suspend fun requestDeletion(body: CodeConfirmationDto): DeletionScheduledDto = error("unused")
+        override suspend fun cancelDeletion(body: CodeConfirmationDto) = Unit
         override suspend fun renewToken(): AuthResponseDto = outcome()
+    }
+
+    /** N2: the account's "text me a code" (counted; the answer is configurable). */
+    private class FakeConfirmationCodes : ConfirmationCodes {
+        var requests = 0
+        var answer: ApiResult<CodeRequest> = ApiResult.Success(CodeRequest("challenge", "••••••3210", true, 60))
+        override suspend fun request(): ApiResult<CodeRequest> {
+            requests++
+            return answer
+        }
     }
 }

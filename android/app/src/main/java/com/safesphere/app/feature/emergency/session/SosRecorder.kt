@@ -242,9 +242,9 @@ class SosRecorder(
         // The server has it; the person ended it while the server could not be told.
         val end = work.ended ?: return dropUnsent(work)
         val result = if (end.resolved) {
-            repository.resolve(work.emergencyId, password = null, endedAt = end.at)
+            repository.resolve(work.emergencyId, confirmation = null, endedAt = end.at)
         } else {
-            repository.cancel(work.emergencyId, password = null, endedAt = end.at)
+            repository.cancel(work.emergencyId, confirmation = null, endedAt = end.at)
         }
         return when (result) {
             is ApiResult.Success -> {
@@ -254,7 +254,7 @@ class SosRecorder(
             is ApiResult.Failure -> when (result.error) {
                 ApiError.UNAUTHORIZED -> Step.WAIT
                 in RETRYABLE -> Step.RETRY
-                // Already ended, gone, or started on another phone (needs the password there): nothing more to say.
+                // Already ended, gone, or started on another phone (needs a fresh code there): nothing more to say.
                 else -> dropUnsent(work)
             }
         }

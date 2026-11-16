@@ -1,5 +1,6 @@
 package com.safesphere.app.feature.emergency.data
 
+import com.safesphere.app.core.confirm.Confirmation
 import com.safesphere.app.core.network.ApiCallHandler
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.feature.emergency.data.remote.CreateEmergencyRequestDto
@@ -36,9 +37,9 @@ class RemoteEmergencyRepository(
     override suspend fun getHistory(): ApiResult<List<EmergencyEvent>> =
         handler.execute { api.getHistory().map { it.toDomain() } }
 
-    override suspend fun cancel(id: Long, password: String?, endedAt: Instant?): ApiResult<EmergencyEvent> =
-        handler.execute { api.cancel(id, EndEmergencyRequestDto(password, endedAt?.toString())).toDomain() }
+    override suspend fun cancel(id: Long, confirmation: Confirmation?, endedAt: Instant?): ApiResult<EmergencyEvent> =
+        handler.execute { api.cancel(id, EndEmergencyRequestDto(confirmation?.challenge, confirmation?.code, endedAt?.toString())).toDomain() }
 
-    override suspend fun resolve(id: Long, password: String?, endedAt: Instant?): ApiResult<EmergencyEvent> =
-        handler.execute { api.resolve(id, EndEmergencyRequestDto(password, endedAt?.toString())).toDomain() }
+    override suspend fun resolve(id: Long, confirmation: Confirmation?, endedAt: Instant?): ApiResult<EmergencyEvent> =
+        handler.execute { api.resolve(id, EndEmergencyRequestDto(confirmation?.challenge, confirmation?.code, endedAt?.toString())).toDomain() }
 }

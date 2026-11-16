@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.safesphere.app.AppContainer
+import com.safesphere.app.core.confirm.Confirmation
+import com.safesphere.app.core.confirm.ConfirmationCodes
+import com.safesphere.app.core.confirm.NoConfirmationCodes
 import com.safesphere.app.core.location.LocationPermissionStatus
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
@@ -63,7 +66,9 @@ class EmergencyViewModel(
     /** Phase 17F: the shake gesture while this screen is in front (starts the same cancellable countdown). */
     shakeEvents: kotlinx.coroutines.flow.Flow<Unit> = kotlinx.coroutines.flow.emptyFlow(),
     /** Phase 17F: the phone's clock every few seconds, so a position that stops being new shows its age (null = off, as in tests). */
-    clockTicks: kotlinx.coroutines.flow.Flow<Long?> = kotlinx.coroutines.flow.flowOf(null)
+    clockTicks: kotlinx.coroutines.flow.Flow<Long?> = kotlinx.coroutines.flow.flowOf(null),
+    /** Phase N2: asks for a fresh code (ending an SOS another phone started). The account screen's source in the app. */
+    private val confirmationCodes: ConfirmationCodes = NoConfirmationCodes
 ) : ViewModel() {
 
     /** What the Safety Circle has been told about this emergency (per contact), and whether automatic SMS is on. */
@@ -287,24 +292,46 @@ class EmergencyViewModel(
         showActive(record.toEvent(), clientRef = record.clientRef)
     }
 
-    /** Phase 10A.4: the person typed the account password after "started on another phone". */
-    fun onEndWithPassword(password: String) {
+    /** Phase 10A.4 (N2): the person typed the texted code after "started on another phone". */
+    fun onEndWithCode(confirmation: Confirmation) {
         val current = _uiState.value as? EmergencyUiState.Active ?: return
-        val action = current.passwordNeededFor ?: return
-        if (password.isEmpty()) return
-        endActiveEmergency(resolve = action == EndAction.RESOLVE, password = password)
+        val action = current.codeNeededFor ?: return
+        endActiveEmergency(resolve = action == EndAction.RESOLVE, confirmation = confirmation)
     }
 
-    /** The password prompt was closed without a password: the SOS stays active. */
-    fun onEndPasswordDismissed() {
+    /** The code dialog was closed without a code: the SOS stays active. */
+    fun onEndCodeDismissed() {
         val current = _uiState.value as? EmergencyUiState.Active ?: return
-        _uiState.value = current.copy(passwordNeededFor = null)
+        _uiState.value = current.copy(codeNeededFor = null, codeRequest = null)
     }
 
-    private fun endActiveEmergency(resolve: Boolean, password: String? = null) {
+    /** "Send a new code" in the dialog: the same question again (the server's cooldown applies). */
+    fun onEndCodeResend() {
+        val current = _uiState.value as? EmergencyUiState.Active ?: return
+        val action = current.codeNeededFor ?: return
+        _uiState.value = current.copy(codeRequest = null)
+        askForCode(action)
+    }
+
+    /** N2: texts a fresh code to the account's number; the screen then shows the code dialog. */
+    private fun askForCode(action: EndAction) {
+        viewModelScope.launch {
+            val request = confirmationCodes.request()
+            val now = _uiState.value as? EmergencyUiState.Active ?: return@launch
+            _uiState.value = when (request) {
+                is ApiResult.Success -> now.copy(isEnding = false, codeNeededFor = action, codeRequest = request.data)
+                is ApiResult.Failure -> {
+                    reportIfSessionExpired(request)
+                    now.copy(isEnding = false, failure = request, codeNeededFor = null, codeRequest = null)
+                }
+            }
+        }
+    }
+
+    private fun endActiveEmergency(resolve: Boolean, confirmation: Confirmation? = null) {
         val current = _uiState.value as? EmergencyUiState.Active ?: return
         if (current.isEnding) return
-        _uiState.value = current.copy(isEnding = true, failure = null, passwordNeededFor = null)
+        _uiState.value = current.copy(isEnding = true, failure = null, codeNeededFor = null, codeRequest = null)
 
         viewModelScope.launch {
             // Phase 11: the server does not have this SOS yet: it ends here and is recorded later as ended.
@@ -313,9 +340,9 @@ class EmergencyViewModel(
                 return@launch
             }
             val result = if (resolve) {
-                emergencyRepository.resolve(current.event.id, password)
+                emergencyRepository.resolve(current.event.id, confirmation)
             } else {
-                emergencyRepository.cancel(current.event.id, password)
+                emergencyRepository.cancel(current.event.id, confirmation)
             }
             when {
                 result is ApiResult.Success -> {
@@ -323,30 +350,30 @@ class EmergencyViewModel(
                     circleAlerts?.onEmergencyEnded(current.event.id, resolved = resolve)
                     _uiState.value = EmergencyUiState.Ended(result.data)
                 }
-                // Phase 10A.4: started on another phone: ask for the account password (once per tap).
-                result is ApiResult.Failure && result.error == ApiError.FORBIDDEN && password == null -> {
-                    _uiState.value = current.copy(isEnding = false, passwordNeededFor =
-                        if (resolve) EndAction.RESOLVE else EndAction.CANCEL)
-                }
+                // Phase 10A.4 (N2): started on another phone: a fresh code is texted to the account's number and the
+                // screen asks for it (once per tap). The SOS stays active meanwhile.
+                result is ApiResult.Failure && result.error == ApiError.FORBIDDEN && confirmation == null ->
+                    askForCode(if (resolve) EndAction.RESOLVE else EndAction.CANCEL)
                 // Phase 11: no connection: the person's "I'm safe" still counts on this phone (and for the Safety
-                // Circle); the server is told later with the real time. Not with a password (another phone's SOS).
-                result is ApiResult.Failure && result.error in OFFLINE_ERRORS && password == null ->
+                // Circle); the server is told later with the real time. Not with a code (another phone's SOS).
+                result is ApiResult.Failure && result.error in OFFLINE_ERRORS && confirmation == null ->
                     endOnThisPhone(current, resolve)
                 // Phase 11 C1: "sign in to sync" (still this person's session): the "I'm safe" counts here too and is
-                // recorded once they sign in again (that sign-in takes over this phone's SOS, so no password is asked).
-                result is ApiResult.Failure && result.error == ApiError.UNAUTHORIZED && password == null &&
+                // recorded once they sign in again (that sign-in takes over this phone's SOS, so no code is asked).
+                result is ApiResult.Failure && result.error == ApiError.UNAUTHORIZED && confirmation == null &&
                     currentUserId() != null -> endOnThisPhone(current, resolve)
                 result is ApiResult.Failure -> {
                     reportIfSessionExpired(result)
-                    // Never ask again by itself after a wrong password: the person taps "I'm safe" again.
-                    _uiState.value = current.copy(isEnding = false, failure = result, passwordNeededFor = null)
+                    // Never ask again by itself after a wrong code: the person taps "I'm safe" again.
+                    _uiState.value = current.copy(isEnding = false, failure = result, codeNeededFor = null,
+                        codeRequest = null)
                 }
             }
         }
     }
 
     /**
-     * Phase 10A.4: the SOS may have been ended from another sign-in (with the account password) while this screen was
+     * Phase 10A.4: the SOS may have been ended from another sign-in (with a fresh code) while this screen was
      * away. If so, this phone stops sharing its location and shows that it was ended elsewhere. It does NOT send the
      * Safety Circle the "resolved" message: nobody on this phone said they are OK.
      */
@@ -457,6 +484,7 @@ class EmergencyViewModel(
                     safetyCircleRepository = container.safetyCircleRepository,
                     locationSharing = container.locationSharing,
                     sos = container.sosRecorder,
+                    confirmationCodes = container.accountRepository,
                     currentUserId = { container.authRepository.currentUser.first()?.id },
                     trackingServiceRunning = container.trackingServiceRunning,
                     onEmergencyStarted = container.safeWalk::onEmergencyStarted,

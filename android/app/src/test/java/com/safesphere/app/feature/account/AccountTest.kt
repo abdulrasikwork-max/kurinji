@@ -1,24 +1,29 @@
 package com.safesphere.app.feature.account
 
+import com.safesphere.app.core.confirm.CodeRequest
+import com.safesphere.app.core.confirm.Confirmation
 import com.safesphere.app.core.network.ApiCallHandler
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.SessionEnder
+import com.safesphere.app.core.validation.FieldError
 import com.safesphere.app.feature.account.data.RemoteAccountRepository
 import com.safesphere.app.feature.account.data.remote.AccountApi
-import com.safesphere.app.feature.account.data.remote.ChangePasswordRequestDto
+import com.safesphere.app.feature.account.data.remote.CodeConfirmationDto
 import com.safesphere.app.feature.account.data.remote.DeletionScheduledDto
-import com.safesphere.app.feature.account.data.remote.PasswordConfirmationDto
+import com.safesphere.app.feature.account.data.remote.NameChangeDto
 import com.safesphere.app.feature.account.domain.AccountPolicy
 import com.safesphere.app.feature.account.domain.AccountRepository
 import com.safesphere.app.feature.account.domain.DeletionNotice
-import com.safesphere.app.feature.account.domain.PasswordProblem
 import com.safesphere.app.feature.account.domain.PendingDeletion
 import com.safesphere.app.feature.account.domain.PendingDeletionStore
 import com.safesphere.app.feature.account.session.AccountDataWiper
 import com.safesphere.app.feature.account.ui.AccountMessage
 import com.safesphere.app.feature.account.ui.AccountViewModel
+import com.safesphere.app.feature.account.ui.CodeNeeded
+import com.safesphere.app.feature.account.ui.ConfirmedAction
 import com.safesphere.app.feature.auth.data.remote.AuthResponseDto
+import com.safesphere.app.feature.auth.data.remote.PhoneChallengeDto
 import com.safesphere.app.feature.auth.data.remote.UserDto
 import com.safesphere.app.feature.auth.domain.AuthSession
 import com.safesphere.app.feature.auth.domain.AuthUser
@@ -44,7 +49,10 @@ import org.junit.Test
 import retrofit2.HttpException
 import retrofit2.Response
 
-/** Phase 10A.2 / 10A.3 on the phone: password rules, token swap, deletion state, the local wipe and the Login notice. */
+/**
+ * Phase 10A.2 / 10A.3 on the phone, reworked in N2: confirmation codes instead of the password, the real name,
+ * signing out the other phones (token swap), deletion state, the local wipe and the Login notice.
+ */
 class AccountTest {
 
     @get:Rule
@@ -52,18 +60,24 @@ class AccountTest {
 
     private val user = AuthUser(7, "Asha", "••••••3210")
     private val now = Instant.parse("2026-10-22T10:00:00Z")
+    private val request = CodeRequest("challenge-token", "••••••3210", codeSent = true, resendInSeconds = 60)
+    private val confirmation = Confirmation("challenge-token", "123456")
 
-    // ---- AccountPolicy -----------------------------------------------------------------------------------------
+    // ---- Confirmation (core) -----------------------------------------------------------------------------------
 
     @Test
-    fun `new passwords are checked before anything is sent`() {
-        assertEquals(PasswordProblem.CURRENT_MISSING, AccountPolicy.checkNewPassword("", "longenough", "longenough"))
-        assertEquals(PasswordProblem.TOO_SHORT, AccountPolicy.checkNewPassword("old-password", "short", "short"))
-        val tooLong = "é".repeat(40) // 40 characters but 80 bytes
-        assertEquals(PasswordProblem.TOO_LONG, AccountPolicy.checkNewPassword("old-password", tooLong, tooLong))
-        assertEquals(PasswordProblem.MISMATCH, AccountPolicy.checkNewPassword("old-password", "new-password", "new-passwort"))
-        assertEquals(PasswordProblem.SAME_AS_CURRENT, AccountPolicy.checkNewPassword("same-password", "same-password", "same-password"))
-        assertNull(AccountPolicy.checkNewPassword("old-password", "new-password", "new-password"))
+    fun `a confirmation is exactly six digits, and never prints its secrets`() {
+        assertEquals(confirmation, Confirmation.of(request, "123456"))
+        assertEquals(confirmation, Confirmation.of(request, " 123 456 "))
+        assertNull(Confirmation.of(request, "12345"))
+        assertNull(Confirmation.of(request, "1234567"))
+        assertNull(Confirmation.of(request, ""))
+        assertNull(Confirmation.of(request, null))
+        assertFalse(confirmation.toString().contains("123456"))
+        assertFalse(confirmation.toString().contains("challenge-token"))
+        assertFalse(request.toString().contains("challenge-token"))
+        assertFalse(CodeConfirmationDto("challenge-token", "123456").toString().contains("123456"))
+        assertFalse(NameChangeDto("Asha Devi").toString().contains("Asha"))
     }
 
     @Test
@@ -87,44 +101,80 @@ class AccountTest {
     // ---- RemoteAccountRepository -------------------------------------------------------------------------------
 
     @Test
-    fun `a password change saves the NEW token before returning (R8)`() = runTest {
-        val storage = FakeSessionStorage(AuthSession("old-token", user))
+    fun `asking for a code reads the challenge, and an answer without one fails closed`() = runTest {
         val api = FakeAccountApi()
-        val repository = repository(storage, api)
+        val repository = repository(FakeSessionStorage(AuthSession("t", user)), api)
 
-        val result = repository.changePassword("old-password", "new-password")
+        assertEquals(ApiResult.Success(CodeRequest("challenge-token", "••••••3210", true, 60)), repository.request())
 
-        assertEquals(ApiResult.Success(Unit), result)
-        assertEquals("fresh-token", storage.savedSession?.token)
-        assertEquals("old-password", api.lastChange?.currentPassword)
+        api.challengeAnswer = PhoneChallengeDto(challenge = " ", phoneHint = "••••••3210", codeSent = true)
+        assertEquals(ApiResult.Failure(ApiError.UNKNOWN), repository.request())
+
+        // A missing "codeSent" is "not sent" (the dialog then says so); a negative wait is no wait.
+        api.challengeAnswer = PhoneChallengeDto(challenge = "c2", resendInSeconds = -5)
+        assertEquals(ApiResult.Success(CodeRequest("c2", null, false, 0)), repository.request())
     }
 
     @Test
-    fun `a refused password change keeps the session, and a 401 for it asks for a sign-in without deleting anything`() = runTest {
-        val storage = FakeSessionStorage(AuthSession("old-token", user))
-        val api = FakeAccountApi().apply { changeOutcome = { throw httpError(409, """{"message":"Password is incorrect"}""") } }
+    fun `signing out the other phones saves the NEW token before returning (R8) and sends the code`() = runTest {
+        val storage = FakeSessionStorage(AuthSession("old-token", user, refreshToken = "old-refresh"))
+        val api = FakeAccountApi()
         val repository = repository(storage, api)
 
-        assertEquals(ApiResult.Failure(ApiError.CONFLICT, "Password is incorrect"), repository.changePassword("x", "new-password"))
+        assertEquals(ApiResult.Success(Unit), repository.signOutOtherPhones(confirmation))
+
+        assertEquals("fresh-token", storage.savedSession?.token)
+        // No new refresh secret in the answer: this phone keeps its own.
+        assertEquals("old-refresh", storage.savedSession?.refreshToken)
+        assertEquals(CodeConfirmationDto("challenge-token", "123456"), api.lastConfirmation)
+    }
+
+    @Test
+    fun `a wrong code keeps the session, and a 401 for it asks for a sign-in without deleting anything`() = runTest {
+        val storage = FakeSessionStorage(AuthSession("old-token", user))
+        val api = FakeAccountApi().apply {
+            signOutOthersOutcome = { throw httpError(409, """{"message":"That code is not right."}""") }
+        }
+        val repository = repository(storage, api)
+
+        assertEquals(ApiResult.Failure(ApiError.CONFLICT, "That code is not right."),
+            repository.signOutOtherPhones(confirmation))
         assertEquals("old-token", storage.savedSession?.token)
 
-        api.changeOutcome = { throw httpError(401, "{}") }
-        assertEquals(ApiResult.Failure(ApiError.UNAUTHORIZED), repository.changePassword("x", "new-password"))
+        api.signOutOthersOutcome = { throw httpError(401, "{}") }
+        assertEquals(ApiResult.Failure(ApiError.UNAUTHORIZED), repository.signOutOtherPhones(confirmation))
         // Phase 11 C1: an expired token is not a sign-out; with no refresh secret the phone asks for a sign-in.
         assertEquals("old-token", storage.savedSession?.token)
         assertTrue(storage.savedSession!!.needsSignIn)
     }
 
     @Test
-    fun `requesting and cancelling a deletion update the session at once (the banner)`() = runTest {
-        val storage = FakeSessionStorage(AuthSession("t", user))
-        val repository = repository(storage, FakeAccountApi())
+    fun `a new name is shown at once, and nothing else of the session changes`() = runTest {
+        val storage = FakeSessionStorage(AuthSession("t", user, refreshToken = "r"))
+        val api = FakeAccountApi()
+        val repository = repository(storage, api)
 
-        assertEquals(ApiResult.Success(Instant.parse("2026-10-29T10:00:00Z")), repository.requestDeletion("pw"))
+        assertEquals(ApiResult.Success(Unit), repository.changeName("Asha Devi"))
+        assertEquals(NameChangeDto("Asha Devi"), api.lastName)
+        assertEquals("Asha Devi", storage.savedSession?.user?.name)
+        assertEquals("t", storage.savedSession?.token)
+        assertEquals("r", storage.savedSession?.refreshToken)
+    }
+
+    @Test
+    fun `requesting and cancelling a deletion send the code and update the session at once (the banner)`() = runTest {
+        val storage = FakeSessionStorage(AuthSession("t", user))
+        val api = FakeAccountApi()
+        val repository = repository(storage, api)
+
+        assertEquals(ApiResult.Success(Instant.parse("2026-10-29T10:00:00Z")), repository.requestDeletion(confirmation))
+        assertEquals(CodeConfirmationDto("challenge-token", "123456"), api.lastConfirmation)
         assertEquals(Instant.parse("2026-10-29T10:00:00Z"), storage.savedSession?.user?.deletionDueAt)
         assertEquals(Instant.parse("2026-10-22T10:00:00Z"), storage.savedSession?.user?.deletionRequestedAt)
 
-        assertEquals(ApiResult.Success(Unit), repository.cancelDeletion("pw"))
+        val second = Confirmation("second-challenge", "654321")
+        assertEquals(ApiResult.Success(Unit), repository.cancelDeletion(second))
+        assertEquals(CodeConfirmationDto("second-challenge", "654321"), api.lastConfirmation)
         assertFalse(storage.savedSession!!.user.deletionPending)
         assertEquals("t", storage.savedSession?.token)
     }
@@ -132,22 +182,75 @@ class AccountTest {
     // ---- AccountViewModel --------------------------------------------------------------------------------------
 
     @Test
-    fun `the screen validates first, then reports one outcome`() = runTest {
+    fun `the name is checked on the phone first, then saved once`() = runTest {
         val repository = FakeAccountRepository()
         val viewModel = AccountViewModel(repository, flowOf(user)) { now }
 
-        viewModel.onChangePassword("old-password", "short", "short")
-        assertEquals(AccountMessage.Invalid(PasswordProblem.TOO_SHORT), viewModel.message.value)
+        assertEquals("Asha", viewModel.name.first())
+
+        viewModel.onSaveName("   ")
+        assertEquals(AccountMessage.NameInvalid(FieldError.REQUIRED), viewModel.message.value)
+        viewModel.onSaveName("A")
+        assertEquals(AccountMessage.NameInvalid(FieldError.NAME_TOO_SHORT), viewModel.message.value)
+        viewModel.onSaveName("Asha 2")
+        assertEquals(AccountMessage.NameInvalid(FieldError.NOT_A_NAME), viewModel.message.value)
+        viewModel.onSaveName("A".repeat(61))
+        assertEquals(AccountMessage.NameInvalid(FieldError.NAME_TOO_LONG), viewModel.message.value)
         assertEquals(0, repository.calls)
 
         viewModel.onMessageShown()
-        viewModel.onChangePassword("old-password", "new-password", "new-password")
+        viewModel.onSaveName("  Asha   Devi ")
         advanceUntilIdle()
-        assertEquals(AccountMessage.PasswordChanged, viewModel.message.value)
+        assertEquals(AccountMessage.NameSaved, viewModel.message.value)
+        assertEquals(listOf("Asha Devi"), repository.names)
         assertFalse(viewModel.busy.value)
+    }
 
-        viewModel.onRequestDeletion("")
-        assertEquals(AccountMessage.PasswordRequired, viewModel.message.value)
+    @Test
+    fun `a confirmed action first texts a code, then sends the typed code with that action`() = runTest {
+        val repository = FakeAccountRepository()
+        val viewModel = AccountViewModel(repository, flowOf(user)) { now }
+
+        for ((action, expected) in listOf(
+            ConfirmedAction.SIGN_OUT_OTHERS to AccountMessage.OthersSignedOut,
+            ConfirmedAction.DELETE to AccountMessage.DeletionScheduled(Instant.EPOCH),
+            ConfirmedAction.CANCEL_DELETION to AccountMessage.DeletionCancelled
+        )) {
+            viewModel.onAskCode(action)
+            advanceUntilIdle()
+            assertEquals(CodeNeeded(action, request), viewModel.codeNeeded.value)
+            assertNull("nothing happens before the code", viewModel.message.value)
+
+            viewModel.onCodeDialogShown()
+            assertNull(viewModel.codeNeeded.value)
+            viewModel.onConfirm(action, confirmation)
+            advanceUntilIdle()
+            assertEquals(expected, viewModel.message.value)
+            viewModel.onMessageShown()
+        }
+        assertEquals(3, repository.codeRequests)
+        assertEquals(listOf("signOutOthers", "requestDeletion", "cancelDeletion"), repository.confirmed)
+        assertEquals(List(3) { confirmation }, repository.confirmations)
+    }
+
+    @Test
+    fun `a code that cannot be sent is shown, and no dialog opens`() = runTest {
+        val repository = FakeAccountRepository().apply {
+            requestResult = ApiResult.Failure(ApiError.TOO_MANY_ATTEMPTS, "Please wait a minute before asking again.")
+        }
+        val viewModel = AccountViewModel(repository, flowOf(user)) { now }
+
+        viewModel.onAskCode(ConfirmedAction.DELETE)
+        advanceUntilIdle()
+        assertNull(viewModel.codeNeeded.value)
+        assertEquals(AccountMessage.Failed(ApiResult.Failure(ApiError.TOO_MANY_ATTEMPTS,
+            "Please wait a minute before asking again.")), viewModel.message.value)
+
+        repository.requestResult = ApiResult.Failure(ApiError.UNAUTHORIZED)
+        viewModel.onAskCode(ConfirmedAction.DELETE)
+        advanceUntilIdle()
+        assertTrue(viewModel.sessionExpired.value)
+        assertEquals(0, repository.confirmed.size)
     }
 
     @Test
@@ -157,13 +260,13 @@ class AccountTest {
         }
         val viewModel = AccountViewModel(repository, flowOf(user)) { now }
 
-        viewModel.onRequestDeletion("pw")
+        viewModel.onConfirm(ConfirmedAction.DELETE, confirmation)
         advanceUntilIdle()
         assertEquals(AccountMessage.Failed(ApiResult.Failure(ApiError.CONFLICT,
             "Your account cannot be deleted while an emergency is active.")), viewModel.message.value)
 
         repository.result = ApiResult.Failure(ApiError.UNAUTHORIZED)
-        viewModel.onCancelDeletion("pw")
+        viewModel.onConfirm(ConfirmedAction.CANCEL_DELETION, confirmation)
         advanceUntilIdle()
         assertTrue(viewModel.sessionExpired.value)
     }
@@ -234,46 +337,82 @@ class AccountTest {
     private fun httpError(code: Int, body: String) = HttpException(Response.error<Any>(code, body.toResponseBody(null)))
 
     private class FakeAccountApi : AccountApi {
-        var lastChange: ChangePasswordRequestDto? = null
-        var changeOutcome: () -> AuthResponseDto = { FakeAuthApi.authResponse("fresh-token") }
+        var challengeAnswer = PhoneChallengeDto(challenge = "challenge-token", phoneHint = "••••••3210", codeSent = true,
+            resendInSeconds = 60, codeExpiresInSeconds = 300)
+        var lastConfirmation: CodeConfirmationDto? = null
+        var lastName: NameChangeDto? = null
+        var signOutOthersOutcome: () -> AuthResponseDto = { FakeAuthApi.authResponse("fresh-token") }
 
-        override suspend fun changePassword(body: ChangePasswordRequestDto): AuthResponseDto {
-            lastChange = body
-            return changeOutcome()
+        override suspend fun requestConfirmation(): PhoneChallengeDto = challengeAnswer
+
+        override suspend fun signOutOtherPhones(body: CodeConfirmationDto): AuthResponseDto {
+            lastConfirmation = body
+            return signOutOthersOutcome()
         }
 
-        override suspend fun requestDeletion(body: PasswordConfirmationDto) =
-            DeletionScheduledDto("2026-10-22T10:00:00Z", "2026-10-29T10:00:00Z")
+        override suspend fun changeName(body: NameChangeDto): UserDto {
+            lastName = body
+            return FakeAuthApi.userDto(name = body.name)
+        }
 
-        override suspend fun cancelDeletion(body: PasswordConfirmationDto) = Unit
+        override suspend fun requestDeletion(body: CodeConfirmationDto): DeletionScheduledDto {
+            lastConfirmation = body
+            return DeletionScheduledDto("2026-10-22T10:00:00Z", "2026-10-29T10:00:00Z")
+        }
+
+        override suspend fun cancelDeletion(body: CodeConfirmationDto) {
+            lastConfirmation = body
+        }
 
         var renewOutcome: () -> AuthResponseDto = { FakeAuthApi.authResponse("renewed-token") }
         override suspend fun renewToken(): AuthResponseDto = renewOutcome()
     }
 
-    private class FakeAccountRepository : AccountRepository {
+    private inner class FakeAccountRepository : AccountRepository {
         var calls = 0
+        var codeRequests = 0
         var result: ApiResult<Unit>? = null
+        var requestResult: ApiResult<CodeRequest> = ApiResult.Success(request)
+        val names = mutableListOf<String>()
+        val confirmed = mutableListOf<String>()
+        val confirmations = mutableListOf<Confirmation>()
 
-        override suspend fun changePassword(currentPassword: String, newPassword: String): ApiResult<Unit> {
-            calls++
+        override suspend fun request(): ApiResult<CodeRequest> {
+            codeRequests++
+            return requestResult
+        }
+
+        override suspend fun signOutOtherPhones(confirmation: Confirmation): ApiResult<Unit> {
+            record("signOutOthers", confirmation)
             return result ?: ApiResult.Success(Unit)
         }
 
-        override suspend fun requestDeletion(password: String): ApiResult<Instant> {
+        override suspend fun changeName(name: String): ApiResult<Unit> {
             calls++
+            names += name
+            return result ?: ApiResult.Success(Unit)
+        }
+
+        override suspend fun requestDeletion(confirmation: Confirmation): ApiResult<Instant> {
+            record("requestDeletion", confirmation)
             return when (val r = result) {
                 is ApiResult.Failure -> r
                 else -> ApiResult.Success(Instant.EPOCH)
             }
         }
 
-        override suspend fun cancelDeletion(password: String): ApiResult<Unit> {
-            calls++
+        override suspend fun cancelDeletion(confirmation: Confirmation): ApiResult<Unit> {
+            record("cancelDeletion", confirmation)
             return result ?: ApiResult.Success(Unit)
         }
 
         override suspend fun renewToken(): ApiResult<Unit> = ApiResult.Success(Unit)
+
+        private fun record(what: String, confirmation: Confirmation) {
+            calls++
+            confirmed += what
+            confirmations += confirmation
+        }
     }
 
     private class FakePendingDeletionStore(initial: PendingDeletion?) : PendingDeletionStore {

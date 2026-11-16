@@ -77,7 +77,7 @@ class SessionStatusViewModel(
 
     /**
      * Phase 10A.3: a pending account deletion (null = none). Shown on every screen for the whole grace period, so a
-     * request made by someone else who knows the password, or one the person was forced to make, cannot go unnoticed.
+     * request made by someone else who holds the SIM or a signed-in phone, or one the person was forced to make, cannot go unnoticed.
      */
     val deletion: Flow<DeletionNotice?> = authRepository.currentUser.map { AccountPolicy.deletionNotice(it, Instant.now()) }
 

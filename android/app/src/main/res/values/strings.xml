@@ -47,8 +47,6 @@
     <string name="onboarding_safe_body">No followers, no messages from strangers. You choose who sees each post and how exactly its place is shown. Nobody can use IRL to track you. SOS and your trusted people are in You, under Safety; set them up any time.</string>
 
     <!-- Authentication (UI preview only) -->
-    <string name="label_password">Password</string>
-    <string name="label_confirm_password">Confirm password</string>
     <!-- Phase 13A: 18+ only (decision D6). The date is checked and sent once; it is stored nowhere. -->
     <string name="label_date_of_birth">Date of birth</string>
     <string name="register_date_of_birth_helper">You must be 18 or older. It is only used to check your age and is not stored.</string>
@@ -77,8 +75,6 @@
     <string name="error_field_required">This field is required</string>
     <string name="error_invalid_email">Enter a valid email address</string>
     <string name="error_name_too_short">Enter your name as it is on your college ID</string>
-    <string name="error_password_too_short">Use at least %1$d characters</string>
-    <string name="error_passwords_do_not_match">Passwords do not match</string>
 
     <!-- Problems reported by the server or the network -->
     <string name="error_validation">Please check your details and try again.</string>
@@ -118,15 +114,15 @@
     <string name="error_session_expired">Your session has expired. Please log in again.</string>
     <string name="session_expired_title">Session expired</string>
     <!-- Phase 10A: why this phone was signed out (the server's reason) -->
-    <string name="session_password_changed_title">Password changed</string>
-    <string name="session_password_changed">The password of this account was changed, so this phone was signed out. Log in with the new password. If you did not change it, someone else knows your password: log in and change it again as soon as you can.</string>
+    <string name="session_password_changed_title">Signed out from another phone</string>
+    <string name="session_password_changed">Someone signed in to this account chose \"Sign out all other phones\", so this phone was signed out. Sign in again with a code. If it was not you, someone else has your SIM or a phone that was signed in: sign in and sign out the other phones.</string>
     <string name="session_account_deleted_title">Account deleted</string>
     <string name="session_account_deleted">This account has been deleted. IRL is removing what it kept for it on this phone as well.</string>
     <string name="session_account_unavailable">This account is switched off. Please contact the IRL team.</string>
     <!-- Phase 11 C1: the server needs a sign-in again, but nothing on this phone was deleted and SOS still works. -->
     <string name="session_sign_in_to_sync_title">Sign in to sync</string>
-    <string name="session_sign_in_to_sync">IRL needs your password again to reach your account. Your SOS, your Safety Circle texts and any Safe Walk keep working on this phone, and nothing has been deleted. Sign in when you can so it can save to your account again.</string>
-    <string name="session_sign_in_to_sync_revoked">This phone was signed out of your account on the server. Your SOS and Safety Circle texts keep working on this phone, and nothing has been deleted. Sign in again so IRL can save to your account. If you did not sign out, change your password after signing in.</string>
+    <string name="session_sign_in_to_sync">IRL needs you to sign in again (a new code to your number) to reach your account. Your SOS, your Safety Circle texts and any Safe Walk keep working on this phone, and nothing has been deleted. Sign in when you can so it can save to your account again.</string>
+    <string name="session_sign_in_to_sync_revoked">This phone was signed out of your account on the server. Your SOS and Safety Circle texts keep working on this phone, and nothing has been deleted. Sign in again so IRL can save to your account. If you did not sign out, sign out your other phones in Account and security after signing in.</string>
     <string name="action_sign_in">Sign in</string>
     <string name="action_later">Later</string>
     <string name="home_sign_in_banner">Sign in to sync. SOS works on this phone; your account is not being updated.</string>
@@ -178,7 +174,7 @@
 
     <!-- Safety Profile -->
     <string name="profile_account_title">Account and security</string>
-    <string name="profile_account_description">Change your password or delete your account</string>
+    <string name="profile_account_description">Your name, your other phones, or delete your account</string>
     <string name="profile_privacy_title">Privacy notice</string>
     <string name="profile_privacy_description">What IRL stores and who can see it</string>
     <string name="profile_settings_title">Settings</string>
@@ -204,26 +200,31 @@
 
     <!-- Phase 10A: Account and security -->
     <string name="title_account">Account and security</string>
-    <string name="account_section_password">Change password</string>
-    <string name="account_password_explainer">Changing your password signs out every other phone that uses this account. This phone stays signed in. It is not possible while an SOS or a Safe Walk is running, so nobody can cut a running one off.</string>
-    <string name="label_current_password">Current password</string>
-    <string name="label_new_password">New password</string>
-    <string name="label_confirm_new_password">Confirm new password</string>
-    <string name="account_change_password">Change password</string>
-    <string name="account_password_changed">Password changed. Every other phone was signed out.</string>
-    <string name="account_password_too_long">Use at most 72 bytes (fewer characters if you use accents or other scripts).</string>
-    <string name="account_password_same">Choose a password different from your current one.</string>
-    <string name="account_password_required">Enter your password.</string>
+    <!-- Phase N2: confirmed with a fresh texted code (N-7); the real name (N-24); other phones (N-26) -->
+    <string name="confirm_code_hint">6-digit code</string>
+    <string name="confirm_code_your_number">your number</string>
+    <string name="confirm_code_sent_to">We texted a code to %1$s. It works for 5 minutes.</string>
+    <string name="confirm_code_not_sent">We could not text a code to %1$s just now. Send a new one.</string>
+    <string name="account_section_name">Your name</string>
+    <string name="account_name_explainer">Your real name, as on your college ID. It is shown on your profile and next to what you share.</string>
+    <string name="account_save_name">Save name</string>
+    <string name="account_name_saved">Name saved.</string>
+    <string name="account_section_phones">Your other phones</string>
+    <string name="account_phones_explainer">Lost a phone, or signed in on someone else\'s? Sign out everywhere except here. You confirm with a code texted to your number. Not possible while an SOS or a Safe Walk is running, so nobody can cut a running one off.</string>
+    <string name="account_sign_out_others">Sign out all other phones</string>
+    <string name="account_sign_out_others_message">Every other phone signed in to your account is signed out. This phone stays signed in.</string>
+    <string name="account_sign_out_others_action">Sign them out</string>
+    <string name="account_others_signed_out">Your other phones are signed out.</string>
     <string name="account_section_delete">Delete account</string>
-    <string name="account_delete_explainer">Your account is deleted 7 days after you ask, not at once. Until then everything keeps working, SOS included, and you can cancel with your password. Asking is not possible during an emergency or within 24 hours after one. Everything your account holds on the server is deleted, including your profile, posts, photos and comments, your connections, your emergencies and walks and your Safety Circle; once it is gone it cannot be restored.</string>
+    <string name="account_delete_explainer">Your account is deleted 7 days after you ask, not at once. Until then everything keeps working, SOS included, and you can cancel with a code texted to your number. Asking is not possible during an emergency or within 24 hours after one. Everything your account holds on the server is deleted, including your profile, posts, photos and comments, your connections, your emergencies and walks and your Safety Circle; once it is gone it cannot be restored.</string>
     <string name="account_delete_button">Delete my account…</string>
     <string name="account_delete_confirm_title">Delete your account?</string>
-    <string name="account_delete_confirm_message">Enter your password. Nothing is deleted for 7 days; you can cancel until then.</string>
+    <string name="account_delete_confirm_message">We text a code to your number to confirm. Nothing is deleted for 7 days; you can cancel until then.</string>
     <string name="account_delete_confirm_action">Ask to delete</string>
     <string name="account_deletion_requested">Your account will be deleted on %1$s. You can cancel until then.</string>
     <string name="account_deletion_cancelled">Deletion cancelled. Your account stays.</string>
     <string name="account_cancel_deletion">Cancel deletion</string>
-    <string name="account_cancel_deletion_message">Enter your password to keep your account.</string>
+    <string name="account_cancel_deletion_message">Enter the code we texted to keep your account.</string>
     <string name="account_deletion_pending">This account will be deleted on %1$s. Until then everything keeps working. If you did not ask for this, cancel it in Account and security.</string>
     <string name="account_deletion_pending_requested">This account will be deleted on %1$s (asked on %2$s). Until then everything keeps working. If you did not ask for this, cancel it in Account and security.</string>
     <string name="account_deletion_pending_soon">This account will be deleted soon (it was waiting until 24 hours after your last emergency). You can still cancel it in Account and security.</string>
@@ -235,7 +236,7 @@
     <!-- Information pages -->
     <string name="about_body">IRL: safety that expands your world. A privacy-focused safety app designed with women at the centre, built in phases as a final-year B.Tech project. Safe enough to live. Free enough to grow.
 
-This build has real accounts (with password change and account deletion), a Safety Circle, a manual SOS session, Safe Walk with check-ins and movement checks. Nobody can use IRL to track another person. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. IRL never contacts emergency services and never records sound, photos or video during an SOS.
+This build has real accounts (sign-in with your mobile number and a texted code; no password, no e-mail), a Safety Circle, a manual SOS session, Safe Walk with check-ins and movement checks. Nobody can use IRL to track another person. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. IRL never contacts emergency services and never records sound, photos or video during an SOS.
 
 The order of posts on Home uses what a post contains and the interests you chose; \"Talking now\" uses how recently someone commented. It never uses how many people read or commented.</string>
     <string name="about_version_format">Version %1$s</string>
@@ -244,7 +245,7 @@ The order of posts on Home uses what a post contains and the interests you chose
 
 Who can see your data: you, and the people who run the IRL server (the project team). Nobody else can look you up, follow you or see where you are: IRL has no family, partner or guardian mode, no location on request and no remote view, by design. IRL has no advertising and no analytics, and does not read your phone\'s contacts or messages.
 
-Account: IRL sends your name, email and password to the IRL server to create and check your account. The server stores your name and email, and only a one-way hash of your password. This device stores your name, email and a sign-in token so you stay signed in (the token is not yet encrypted on the phone; a known limitation). Failed sign-ins are counted in the server\'s memory for 15 minutes only, never stored. Changing your password signs out every other phone. Asking to delete your account starts a 7-day wait; after it, everything your account holds on the server is deleted (see the end of this notice).
+Account: you sign in with your mobile number and a 6-digit code texted to it; there is no password and no e-mail. The server stores your real name, your number and when you confirmed that you are 18 or older (your date of birth is checked once and never stored). Codes are kept on the server only as a one-way hash for a few minutes; wrong codes and requests are counted in the server\'s memory only. This device stores your name, the last 4 digits of your number and a sign-in token, sealed with a key held by your phone\'s secure hardware. Deleting your account, cancelling that, signing out your other phones and ending an SOS from another phone are confirmed with a fresh code texted to your number. Asking to delete your account starts a 7-day wait; after it, everything your account holds on the server is deleted (see the end of this notice).
 
 Location: only while an emergency is active, and only if you allow it, your phone\'s location (with its accuracy and the battery level) is saved to your own emergency record on the IRL server. Only you can see the saved points; the only place your location goes beyond that is a map link in the Safety Circle SMS, and only if you switch on automatic SMS or send it yourself (see below). Points that are waiting to be uploaded are kept in memory, not stored on the phone. Location points are deleted together with the emergency record and your account.
 
@@ -256,9 +257,7 @@ Stop and route checks (if switched on): the destination text you type is looked 
 
 Safety Circle SMS (only if you switch on automatic SMS, or when you tap Text yourself): your phone sends an SMS to your enabled contacts with your name, the time, what happened and a map link to your last location. To work without internet, your enabled contacts\' names and numbers are kept on this phone (deleted when you log out). The server records only that a message was sent, to which contact and its status; never the number or the text. Tapping Call 112 opens your phone\'s dialer; IRL records that it was opened, not whether you called.
 
-Rise: everything you write or choose in Rise (goals, steps, how you expected and how it went, dates) stays on this phone in a file encrypted with a key held by your phone\'s secure hardware, separately for each account. None of it is sent to the IRL server or to anyone. Rise has no reminders or notifications. Signing out keeps it; Delete all Rise data, deleting your account, or uninstalling the app removes it.
-
-Account deletion: you need your password; it is refused during an emergency and for 24 hours after one, and it waits 7 days (cancel with your password; signing in does not cancel it). Then the server deletes your account and everything it holds: emergencies and their locations, walks and Safety Circle. If you ever acted as a moderator, your account row stays as an anonymous, switched-off record so that the moderation log keeps who decided what; your name, email and safety data are still deleted. After the deletion, this phone removes the settings it kept for the account the next time it learns of it, or when you tap the button on the login screen.
+Account deletion: you confirm it with a code texted to your number; it is refused during an emergency and for 24 hours after one, and it waits 7 days (cancel with a code; signing in does not cancel it). Then the server deletes your account and everything it holds: emergencies and their locations, walks and Safety Circle. If you ever acted as a moderator, your account row stays as an anonymous, switched-off record so that the moderation log keeps who decided what; your name, number and safety data are still deleted. After the deletion, this phone removes the settings it kept for the account the next time it learns of it, or when you tap the button on the login screen.
 
 Retention in short: emergency locations and walks stay until you delete them or your account; walk destinations and last locations are deleted when a walk ends normally; moderation log 365 days.
 
@@ -342,11 +341,11 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="emergency_ended_resolved_message">Your emergency session has ended and was saved to your history.</string>
     <string name="emergency_ended_cancelled_title">Emergency cancelled</string>
     <string name="emergency_ended_cancelled_message">The session was marked as a false alarm and saved to your history.</string>
-    <!-- Phase 10A.4: only the phone that started an SOS ends it without the account password -->
+    <!-- Phase 10A.4 (N2): only the phone that started an SOS ends it without a fresh texted code -->
     <string name="emergency_end_elsewhere_title">Started on another phone</string>
-    <string name="emergency_end_elsewhere_message">This SOS was started on another phone. To end it here, enter your account password. The other phone will show that it was ended from here.</string>
+    <string name="emergency_end_elsewhere_message">This SOS was started on another phone. To end it here, enter the code we texted to your number. The other phone will show that it was ended from here.</string>
     <string name="emergency_end_elsewhere_action">End the SOS</string>
-    <string name="emergency_ended_elsewhere_message">This SOS was ended on a different phone than the one that started it, with the account password. It is saved to your history. If that was not you, someone else knows your password: change it in Account and security.</string>
+    <string name="emergency_ended_elsewhere_message">This SOS was ended on a different phone than the one that started it, with a code texted to your number. It is saved to your history. If that was not you, someone else has your SIM or a signed-in phone: sign out your other phones in Account and security.</string>
     <string name="emergency_failed_title">Could not start the SOS</string>
     <string name="emergency_failed_body">If you are in danger, call 112 or your local emergency number now.</string>
     <string name="emergency_started_at">Started: %1$s</string>

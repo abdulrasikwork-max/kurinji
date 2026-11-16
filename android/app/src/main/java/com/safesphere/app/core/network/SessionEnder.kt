@@ -13,7 +13,7 @@ import retrofit2.Response
 enum class SessionEndReason {
     /** Expired, missing or not accepted for an unstated reason (the Phase 2 meaning of a 401). */
     EXPIRED,
-    /** The password was changed (on this or another phone): every older session ends. */
+    /** credentials_changed: the account's credentials stamp moved (N2: "Sign out all other phones" on another phone): every older session ends. */
     CREDENTIALS_CHANGED,
     /** The account was deleted after its grace period: this phone removes the account's data. */
     ACCOUNT_DELETED,
@@ -34,9 +34,9 @@ enum class UnauthorizedOutcome {
     OFFLINE,
     /** "Sign in to sync": the session and every bit of local safety data stay; server sync waits for a sign-in. */
     SIGN_IN_NEEDED,
-    /** Signed out (password changed elsewhere, account deleted or disabled): the Phase 10A rules apply. */
+    /** Signed out (other phones signed out from elsewhere, account deleted or disabled): the Phase 10A rules apply. */
     SIGNED_OUT,
-    /** The 401 was for an old token (a newer session exists) or arrived during a password change: nothing to do. */
+    /** The 401 was for an old token (a newer session exists) or arrived during a token swap: nothing to do. */
     IGNORED
 }
 
@@ -52,7 +52,7 @@ enum class UnauthorizedOutcome {
  *    before (Phase 10A), and a deleted account's data is removed from the phone.
  *
  * Unchanged from Phase 10A: only the token that is still saved is ever acted on (a late 401 for an old token never
- * touches a newer session), and while a password change swaps tokens ([swapping]) the old token's 401 is ignored.
+ * touches a newer session), and while signing out the other phones swaps tokens ([swapping]) the old token's 401 is ignored.
  */
 class SessionEnder(
     private val storage: SessionStorage,
@@ -70,7 +70,7 @@ class SessionEnder(
     @Volatile
     private var replacing: String? = null
 
-    /** Runs [block] (a password change) while 401s for [oldToken] are not taken as a sign-out. */
+    /** Runs [block] (N2: signing out the other phones) while 401s for [oldToken] are not taken as a sign-out. */
     suspend fun <T> swapping(oldToken: String, block: suspend () -> T): T {
         replacing = oldToken
         try {

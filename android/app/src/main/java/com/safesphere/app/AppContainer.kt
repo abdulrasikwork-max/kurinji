@@ -143,7 +143,7 @@ class AppContainer(context: Context) {
     // Phase 17J: the one origin that may receive the sign-in token (AuthInterceptor, videoHeaders).
     private val backendHttpUrl: HttpUrl by lazy { backendBaseUrl().toHttpUrl() }
 
-    // No logging interceptor on purpose: request bodies contain passwords, so they must never be logged.
+    // No logging interceptor on purpose: request bodies contain sign-in codes, tickets and refresh secrets, so they must never be logged.
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
@@ -174,7 +174,7 @@ class AppContainer(context: Context) {
     /**
      * Phase 10A: the ONE place that decides what a 401 means (only if the rejected token is still the saved one).
      * Phase 11 C1: an expired token is refreshed; a refused refresh is "sign in to sync" (nothing deleted); only a
-     * changed password, a deleted or a disabled account signs the phone out.
+     * "Sign out all other phones" from another phone (N2), a deleted or a disabled account signs the phone out.
      */
     val sessionEnder: SessionEnder by lazy { SessionEnder(sessionStorage, sessionRefresher) }
 
@@ -522,7 +522,7 @@ class AppContainer(context: Context) {
         circleAlerts // start watching walks and emergencies right away (e.g. after a restart into a walk)
         sosRecorder // record an SOS that started or ended offline as soon as the server can be reached
         shakeSos // Phase 17F: starts listening for the shake gesture if (and only if) the person switched it on
-        // On a real sign-out (the person's own, a changed password, a deleted or disabled account) forget the active
+        // On a real sign-out (the person's own, the other phones signed out from elsewhere, a deleted or disabled account) forget the active
         // emergency / walk records kept on this phone. Phase 11 C1: an expired token is NOT a sign-out (the session stays,
         // marked "sign in to sync" if the refresh is refused), so this never runs for it.
         applicationScope.launch {
