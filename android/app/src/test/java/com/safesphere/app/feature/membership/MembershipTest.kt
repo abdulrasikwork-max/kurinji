@@ -265,10 +265,17 @@ class MembershipTest {
         val membership = FakeMembershipRepository()
         membership.statusResult = ApiResult.Success(FakeMembershipRepository.status(MembershipState.MEMBER, nameLocked = true))
         val account = NameOnlyAccountRepository()
-        val viewModel = AccountViewModel(account, flowOf(AuthUser(1, "Nila Check")), membership = membership)
+        var refreshed = 0
+        val viewModel = AccountViewModel(account, flowOf(AuthUser(1, "Nila Check")), membership = membership,
+            refreshUser = { refreshed++ })
         viewModel.refreshNameLock()
         advanceUntilIdle()
         assertTrue(viewModel.nameLocked.value)
+        assertEquals("the account is read again, so a corrected name shows", 1, refreshed)
+        var seen = 0
+        MembershipViewModel(membership, FakeIdPhotoSource(), refreshUser = { seen++ }).load(withProgrammes = false)
+        advanceUntilIdle()
+        assertEquals(1, seen)
         viewModel.onSaveName("Nila Changed")
         advanceUntilIdle()
         assertTrue("never sent", account.names.isEmpty())

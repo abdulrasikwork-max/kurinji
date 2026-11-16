@@ -1406,7 +1406,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="staff_code_label">Code (8 letters and digits)</string>
     <string name="staff_code_problem">Type the 8 letters and digits as shown, for example ABCD-2345</string>
     <string name="staff_lookup">Look it up</string>
-    <string name="staff_phone_hint">Number ending %1$s</string>
+    <string name="staff_phone_hint">Mobile +91 %1$s</string>
     <string name="staff_in_person">In person</string>
     <string name="staff_by_photo">By a photo of the ID card</string>
     <string name="staff_photo_description">The student\'s ID card photo</string>
@@ -1467,6 +1467,8 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="staff_log_was">was “%1$s”</string>
     <string name="staff_log_by">by %1$s</string>
     <string name="staff_log_automatic">automatic</string>
+    <string name="staff_reason_graduated">after the final year</string>
+    <string name="staff_reason_removed">ended by an admin</string>
     <string name="staff_log_verified">Verified</string>
     <string name="staff_log_refused">Refused</string>
     <string name="staff_log_name_corrected">Name corrected</string>

@@ -26,6 +26,23 @@ paths:
 > `phoneHint`; role changes by number; `Profile.displayName` reads `users.name` (`@Formula`, N-23). Text below about
 > passwords, e-mail, `isActivated` and `PhoneVerificationService` is history. Schema: V33, next V34.
 
+> **N3 (2026-11-16, `docs/PHASE_N3.md`, V34): the verified MIET community.** New package `community` (entities
+> `Community`, `Membership`, `VerificationRequest`, `NumberRelink`, `Ban`, `CommunityAction`, `CommunityEnums`;
+> `CommunityKeys` (one `COMMUNITY_SECRET`, four HMAC sub-keys: roll, phone, code, photo/AES-256-GCM), pure
+> `CommunityRules`, `IdPhotoStore`, `MembershipLookup` (THE active-membership answer), `VerificationService`,
+> `DecisionService`, `CommunityAdminService`, `BanService`, `RelinkService`, `CommunityUpkeepJob` (the only
+> `@Scheduled` in `community`, hourly, first run 3 min after start); controllers `CommunityController`
+> `/api/community/**`, `VerifierController` `/api/verifier/**` (`RoleAuthorization.verifier()` = ADMIN or an active
+> verifier), `CommunityAdminController` `/api/admin/community/**`); `config/CommunityProperties` (`app.community.*`,
+> `ProductionGuard.communityProblems`). Social knows membership only through its port `social/service/MembershipGate`:
+> `SocialAccess.requireMember` = active account + 18+ + active membership (403 `MEMBERSHIP_NEEDED`), `requireAccount` /
+> `requireCanEditOwnProfile` for the own draft and the own standing; `Visibility.Facts.sameCommunity`.
+> `AccountService.changeName` → 409 `NAME_LOCKED` after the ID check; `AccountService.moveToNumber` (N-25).
+> `AccountEraser` covers V34 (deciders keep a tombstone). Isolation: `CommunityIsolationTest` (safety and community never
+> import each other; social never imports community). Tests: `TestAccounts.registerVerifiedAndLogin` also seeds an active
+> MIET membership; `registerUnverified`, `seedMembership`, `rollFor`, `support/CommunityClient`; MIET comes from
+> `src/test/resources/data.sql`. Decisions N-27 to N-41.
+
 Loaded when working on files under `backend/`. Conventions and invariants also stay in `CLAUDE.md` §6; migrations in
 `database.md`; endpoints in `docs/API.md`.
 

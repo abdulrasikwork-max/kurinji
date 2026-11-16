@@ -82,7 +82,7 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | **N0** | Record the new direction (docs, this file) | done 2026-11-15 (documents only) |
 | **N1** | Strip: remove the retired features on both sides, migration V32 | implemented, compiled, tested 2026-11-15 (Android 766, backend 496, Python 38; V32 applied on the DEVELOPMENT MySQL only); results per unit in `docs/PHASE_N1.md`; manually verified on the emulator 2026-11-15 (SOS, Safe Walk, tile, shortcut, post; no real phone; one wording fix) |
 | **N2** | Phone-only sign-in, real name, no password, migration V33 | implemented, compiled, tested 2026-11-16 (Android 766, backend 494; V33 applied on the DEVELOPMENT MySQL only); decisions N-21 to N-26; results per unit in `docs/PHASE_N2.md`; manually verified on the emulator 2026-11-16 (no real phone) |
-| N3 | Community, membership, verification, bans, admin screens | **in progress** (resumed 2026-11-16): backend B1–B3 implemented, compiled, tested (backend 532 / 0 failures); B4: V34 applied on the DEVELOPMENT MySQL only (2026-11-16); A1, A2, C next; latest at the top of `docs/HANDOFF.md` |
+| **N3** | Community, membership, verification, bans, admin screens, migration V34 | implemented, compiled, tested 2026-11-16 (Android 795, backend 532; V34 applied on the DEVELOPMENT MySQL only); decisions N-27 to N-41; results per unit in `docs/PHASE_N3.md`; manually verified on the emulator 2026-11-16 (no real phone) |
 | N4 | Moments, capture-only Create, the wall, daily question | planned |
 | N5 | Same / Say more / I'm in, private replies, plan threads, Replies tab | planned |
 | N6 | Safety trim (route checks out, SMS-app fallback only, Safety Circle offer on plans) | planned |
@@ -173,7 +173,8 @@ cd android
   dependency without the user's approval.
 - **Packages:** feature-first `feature/<name>/{domain,data,ui}`; shared code in `core/`, `navigation/`. Features: splash,
   onboarding, auth, safety (You → Safety hub + session status), profile (You), settings, safetycircle, emergency
-  (+ `entry`: SOS shortcut/tile), safewalk, circlealert, moderation (content queue only), account, social, going
+  (+ `entry`: SOS shortcut/tile), safewalk, circlealert, moderation (content queue only), account, social, membership
+  (N3: Get verified, re-link, staff screens), going
   (navigation bridge only). Removed in N1: `feature/community`, `evidence`, `intelligence` (`core/retired` holds the
   one-time clean-ups). No screen shows "Coming soon".
 - **Navigation (since N1):** Home · ✚ Share (action → composer) · You; start = Home (`discoverFragment`); "Settings and
@@ -220,8 +221,9 @@ cd android
   Spring Web, Data JPA, Security (OAuth2 resource server for JWT), Bean Validation, Flyway, MySQL 8.
 - **Packages (since N1):** `auth` (+ `auth/phone`), `user`, `account`, `safetycontact`, `emergency`,
   `emergencycontext`, `escalation`, `journey`, `circlealert`, `moderation` (+ `moderation.assessment`), `social`,
-  `security`, `config`, `common` (+ `common/geo` `GeoCell`, `common/independence`) (each
-  `controller/service/repository/entity/dto`). Removed in N1: `evidence`, `community`, `intelligence`, `evaluation`,
+  `security`, `config`, `community` (N3: membership, verification, bans, re-link), `common` (+ `common/geo` `GeoCell`,
+  `common/independence`) (each
+  `controller/service/repository/entity/dto`). Removed in N1: `evidence`, `community` (Nearby; N3 reuses the name), `intelligence`, `evaluation`,
   `explore`.
 - **Conventions:**
   - Thin controllers; rules in services; DTOs are Java records; entities are never serialized.
@@ -276,12 +278,14 @@ closed lists use binary collation.
 | V31 | `place_visits.at_place`, `posts.disclosed` (18A-2) |
 | **V32** | **N1: DROPS** the V9–V11 evidence tables, `place_signals`, `signal_contributions`, `signal_flags`, `contributor_standing`, `moderation_cases`, `area_patterns`, `evaluation_counters`, `butterflies`, `saved_posts`, `daily_states`, `post_facets`, `place_visits`, `posts.disclosed`, `moderation_actions.signal_category` (30 tables remain) |
 | **V33** | **N2:** `phone_codes` (SIGN_IN / CONFIRM, sign-up ticket) replaces `phone_challenges`; DROPS `email_verification_tokens`, `users.email` / `email_verified_at` / `password_hash`, `profiles.display_name`; session reason `OTHERS_SIGNED_OUT` |
+| **V34** | **N3:** `communities` (MIET seeded), `memberships`, `verification_requests`, `number_relinks`, `bans`, `community_actions` (roll and phone numbers only as HMACs); `users.name_checked_at`; nothing dropped |
 
 ---
 
 ## 8. API — every endpoint in `docs/API.md` (per-phase index in its appendix)
 
 - One error JSON shape (§6); a foreign or invisible record answers **404**; refused writes by a paused person **403**;
+  N3: every community route needs an active MIET membership (403 `MEMBERSHIP_NEEDED`; own profile draft, account and safety never);
   limits **429** (our message shown).
 - Every authenticated endpoint can answer 401 with `WWW-Authenticate: Bearer error="invalid_token",
   error_description="credentials_changed|account_deleted|account_unavailable|session_revoked"`.
@@ -327,6 +331,9 @@ closed lists use binary collation.
   notice, no refused edit/delete, no "keep" in their standing); reports only collapse (visibly, at 3 independent
   counting reports); hold, removal and pauses are human decisions with a reason, audited and appealable to another
   moderator (never the decider or a reporting moderator); no shadow bans: every state is shown to its author.
+- **Community membership (N3, built; `PHASE_N3.md`, N-27 to N-41):** roll and phone numbers only as HMACs (`COMMUNITY_SECRET`,
+  backed up apart from the database); the ID photo encrypted, admins only, deleted at the decision; nobody verifies
+  themselves; a ban never touches sign-in or safety; every decision logged and shown to the person.
 - **E-mail ownership (V25, superseded by 17B; e-mail and password gone in N2):** history in `docs/EMAIL_VERIFICATION.md`. A future
   password reset must use its own token table and refuse unverified accounts.
 

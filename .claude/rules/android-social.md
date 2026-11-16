@@ -15,6 +15,19 @@ paths:
 > queue only. Posts, places, feed and perspectives stay until N4 / N5. Paragraphs below about the removed parts are
 > history (code: git tag `pre-n1`).
 
+> **N3 (2026-11-16, `docs/PHASE_N3.md`): read with care.** New `feature/membership` (NOT `feature/community`, which
+> was Nearby): applicant side (`MembershipFragment` "Get verified": ONE way, in person with an 8-character code held in
+> the view model only, or an ID photo via the camera app into `cache/id-photo/` through the ONE FileProvider
+> `${applicationId}.idphoto` (no `CAMERA` permission; file deleted right after preparing; `IdPhotoFiles.sweep`);
+> `RelinkFragment` "I'm moving from another number" from "About you", a signed-out destination) and staff side
+> (`ui/staff`: `DecideFragment`, `StaffListFragment` by mode, `StaffActionsFragment`; rows under "Community staff" in
+> Settings and more, shown from `/api/community/me` staff flags). All of them FLAG_SECURE. You shows a membership card;
+> Home, the composer, Connections and a person's profile show "Get verified" on 403 `MEMBERSHIP_NEEDED`
+> (`core/network` `needsMembership()`, navigation only: social never imports membership). Account reads the name lock
+> and re-reads the account so a corrected name shows (N-40). `membership` wears the social palette. Guards:
+> `MembershipTest`, `MembershipTextsTest`, `StaffTest`; `Phase17FGuardsTest` allows exactly the ID-photo provider;
+> `SocialTextsTest` exempts the membership words from its "verified" rule.
+
 Profiles and connections (13A), experiences (13B), discovery (13C), moderation v2 (13D), the on-phone text check
 (13E), media (17C), social redesign (17E), IRL redesign (2026-11-11).
 

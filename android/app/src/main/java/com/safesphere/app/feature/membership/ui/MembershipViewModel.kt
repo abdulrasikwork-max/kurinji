@@ -57,7 +57,9 @@ data class MembershipUiState(
  */
 class MembershipViewModel(
     private val repository: MembershipRepository,
-    private val photos: IdPhotoSource
+    private val photos: IdPhotoSource,
+    /** Reads the account again (GET /api/users/me): a name a verifier corrected then shows everywhere at once. */
+    private val refreshUser: suspend () -> Unit = {}
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MembershipUiState())
@@ -76,7 +78,10 @@ class MembershipViewModel(
                 if (list is ApiResult.Success) _uiState.update { it.copy(programmes = list.data) }
             }
             when (val result = repository.status()) {
-                is ApiResult.Success -> show(result.data, freshCode = null)
+                is ApiResult.Success -> {
+                    show(result.data, freshCode = null)
+                    if (result.data.nameLocked) refreshUser()
+                }
                 is ApiResult.Failure -> fail(result)
             }
             _uiState.update { it.copy(loading = false) }
@@ -212,7 +217,10 @@ class MembershipViewModel(
 
     companion object {
         fun factory(container: AppContainer) = viewModelFactory {
-            initializer { MembershipViewModel(container.membershipRepository, container.idPhotoSource) }
+            initializer {
+                MembershipViewModel(container.membershipRepository, container.idPhotoSource,
+                    refreshUser = { container.authRepository.refreshProfile() })
+            }
         }
     }
 }

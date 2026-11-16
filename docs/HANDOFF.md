@@ -1,4 +1,39 @@
-# CHECKPOINT 2026-11-16 (seventh session): N3 PAUSED by the owner at a clean point. Backend units B1, B2, B3 are DONE (implemented, compiled, tested, committed). B4, A1, A2, C are NOT started. Nothing pushed, nothing deployed. Do NOT redo B1–B3.
+# CHECKPOINT 2026-11-16 (eighth session): N3 is COMPLETE. B4, A1, A2 and C done; manually verified on the `irl_api33` emulator (no real phone). Nothing pushed, nothing deployed. Next: the plan for N4, which needs the owner's approval before any code.
+
+**Standing instructions, unchanged:** the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). Results per unit: `docs/PHASE_N3.md` "As built" (B1–B4, A1, A2, C close with the walk table).
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). `main` = `origin/main` = tag `pre-n1` = `fd669b9`, untouched.
+- N3 commits, oldest first: `e2c63b6` B1 · `ecbc064` B2 · `1014295` B3 · `044d1ed` checkpoint · `6b201df` B4 · `8b77db8` A1 · `0f80996` A2 · then ONE commit "N3-C" with the walk fixes, the documents and this checkpoint (`git log -1`). `git status` clean afterwards.
+- `android/local.properties` is the owner's copy (pilot address): changed for each walk build and restored byte for byte (`cmp`). `backend/.env` not touched (no `COMMUNITY_SECRET` set: the development key WARN is expected).
+
+## Results (real numbers)
+| Unit | Commit | Result |
+|---|---|---|
+| B4 V34 on the DEVELOPMENT MySQL | `6b201df` | backup `db-backups\safesphere-dev-before-v34-20261116.sql`; dry run 84 cases (21 accepted + 63 refused as expected, 1 finding: PAD SPACE, N-41); "now at version v34", 35 tables, 30 new CHECKs, all 55 entity columns; curl walk; `MySqlTimestampStorageTest` 2/2 |
+| A1 Android applicant side | `8b77db8` | Android 786 / 0 failures; lint 0 errors |
+| A2 Android staff side | `0f80996` | Android 795 / 0 failures; lint 0 errors |
+| C documents, full runs, emulator walk | `git log -1` | backend **532 / 0 failures / 2 skipped**; Android **795 / 0 failures**; `assembleDebug` OK; lint **0 errors / 97 warnings**; walk table in `PHASE_N3.md`; one bug found and fixed (N-40: the name after a verifier's correction) |
+Python moderation service: not touched in N3.
+
+## Database
+- **Development MySQL: V34** (35 tables). The pilot: V30 (old jar). Next migration file: **V35**.
+- Development accounts after the walk: 396 "Nila Check" (ENDED: banned then lifted), 397 "Mysql Checked" (MEMBER, moved to +919000066666), 399 "Meera Testa" (GRADUATED by the job, name locked), 400 "Admin Check" (ADMIN by SQL, no membership), 401 "Walk Applicantt" (MEMBER). Made-up numbers only.
+
+## Issues / decisions for the owner's attention (none blocking)
+1. **`COMMUNITY_SECRET`** must be generated and stored apart from the database before any real roll number is stored (N8; N-38). Losing it breaks every ban and the one-account-per-roll-number rule.
+2. **Root admins:** ADMIN is SQL-only; at least two at the start (they verify each other in person; N-36).
+3. **PAD SPACE (N-41):** closed-list CHECKs accept a trailing space in hand-written SQL (true since V20); a future migration may tighten them.
+4. **Observed, not changed** (`PHASE_N3.md` C close): Home's old "Choose a city" block under the gate (N4 replaces Home); the server's gate message tells a banned person "you can get verified from You"; a photo review's toolbar says "Verify someone"; not walked: a verifier who is not an admin, the 7-day request expiry and the stray-photo sweep (backend tests cover them), a real phone.
+
+## The exact first step for the next session
+Present the **plan for N4** (moments, capture-only Create, the wall, the daily question; `IRL_DIRECTION.md`, CLAUDE.md §1) and wait for the owner's approval. Do not start N4 code before that.
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, the pilot's own move to the new jar and schema (V32 + V33 + V34 there: its own approved step with a fresh `restore-rehearsal.sh` PASS first), the N2 observations (tile / shortcut on the idle SOS screen, "About you" error and wording) for N6.
+
+---
+
+# CHECKPOINT 2026-11-16 (seventh session; superseded by the checkpoint above: N3 is complete): N3 PAUSED by the owner at a clean point. Backend units B1, B2, B3 are DONE (implemented, compiled, tested, committed). B4, A1, A2, C are NOT started. Nothing pushed, nothing deployed. Do NOT redo B1–B3.
 
 **Standing instructions, unchanged:** the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). **The N3 plan is APPROVED (owner, 2026-11-16) with the owner's corrections; continue it, do not re-plan.** The approved plan, the owner's 10 decisions and the detailed design are in `docs/PHASE_N3.md` (read it first); what each unit built is under "As built" there.
 

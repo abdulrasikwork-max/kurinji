@@ -41,8 +41,9 @@ class AccountFragment : ViewBindingFragment<FragmentAccountBinding>(FragmentAcco
         binding.cancelDeletionButton.setOnClickListener { viewModel.onAskCode(ConfirmedAction.CANCEL_DELETION) }
 
         collectWhenStarted(viewModel.name) { name ->
-            // Filled once from the account; the person's own typing is never overwritten.
-            if (!nameFilled && name != null) {
+            // Filled once from the account; the person's own typing is never overwritten. N3: a locked name cannot be
+            // typed, so it always shows the account's name (a verifier's correction arrives after the first fill).
+            if ((!nameFilled || viewModel.nameLocked.value) && name != null && binding.nameInput.text?.toString() != name) {
                 binding.nameInput.setText(name)
                 nameFilled = true
             }

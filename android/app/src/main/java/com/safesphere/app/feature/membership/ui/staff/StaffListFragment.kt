@@ -157,7 +157,7 @@ class StaffListFragment : ViewBindingFragment<FragmentStaffListBinding>(Fragment
             Mode.LOG -> state.log.mapIndexed { i, line ->
                 val action = StaffLabels.action(line.action)?.let(::getString) ?: line.action
                 StaffRow("$i", listOfNotNull(action, line.subject).joinToString(" · "),
-                    listOfNotNull(line.reason, line.detail?.let { getString(R.string.staff_log_was, it) },
+                    listOfNotNull(line.reason?.let { StaffLabels.reason(it)?.let(::getString) ?: it }, line.detail?.let { getString(R.string.staff_log_was, it) },
                         line.actor?.let { getString(R.string.staff_log_by, it) } ?: getString(R.string.staff_log_automatic),
                         line.at?.let(::date)).joinToString(" · "))
             }

@@ -51,6 +51,8 @@ class AccountViewModel(
     currentUser: Flow<AuthUser?>,
     /** N3: where the name lock (N-24) is read from; null = never locked (tests of the other actions). */
     private val membership: MembershipRepository? = null,
+    /** N3: reads the account again (GET /api/users/me), so a name corrected by a verifier shows here at once. */
+    private val refreshUser: suspend () -> Unit = {},
     private val now: () -> Instant = Instant::now
 ) : ViewModel() {
 
@@ -67,6 +69,8 @@ class AccountViewModel(
         viewModelScope.launch {
             val result = source.status()
             if (result is ApiResult.Success) _nameLocked.value = result.data.nameLocked
+            // After the lock is known, so a corrected (locked) name replaces the one first shown in the field.
+            refreshUser()
         }
     }
 
@@ -168,7 +172,8 @@ class AccountViewModel(
         fun factory(container: AppContainer) = viewModelFactory {
             initializer {
                 AccountViewModel(container.accountRepository, container.authRepository.currentUser,
-                    membership = container.membershipRepository)
+                    membership = container.membershipRepository,
+                    refreshUser = { container.authRepository.refreshProfile() })
             }
         }
     }

@@ -41,6 +41,14 @@ The examples use made-up values only. Never put real credentials in documentatio
 > `POST /api/users/me/sessions/sign-out-others`, `PUT /api/users/me/name`. Details: "Phase N2" before the appendix.
 > The Phase 2, 10A and 17B sections below are history where they mention an e-mail or a password.
 
+> ## Changed in N3 (2026-11-16, `PHASE_N3.md`): the verified MIET community
+> **Changed:** every community read and write now needs an active MIET membership (403 `MEMBERSHIP_NEEDED`); the own
+> profile draft, the own moderation standing and everything of safety and the account do not. `PUT /api/users/me/name`
+> answers 409 `NAME_LOCKED` after the ID check. **New:** `/api/community/me|programmes|verification|verification/code|
+> verification/photo|relink`, `/api/verifier/lookup|requests/{ref}/decision`, `/api/admin/community/photo-requests|
+> requests/{ref}/photo|requests/{ref}/decision|verifiers|members/name|bans|bans/{id}/lift|members/end|relinks|log`.
+> Details: "Phase N3" before the appendix.
+
 ## Error format (every endpoint)
 
 ```json
@@ -1368,13 +1376,84 @@ random digits, 5 minutes, stored only as an HMAC, never logged or returned. Refu
 
 **Name and account**
 - `PUT /api/users/me/name {name}` (N-24) → **200** the `user` object. Same rule as sign-up; 400 otherwise. Locked after
-  the ID check of N3 (not built yet).
+  the ID check of N3: 409 `NAME_LOCKED` (see "Phase N3").
 - `GET /api/users/me` and every `user` object: `{id, name, phoneHint, createdAt, deletionRequestedAt, deletionDueAt,
   ageConfirmed}` (no `email`).
 - `PUT /api/admin/roles {phone, role}` (ADMIN): the account is found by its verified number (any common way of typing
   it); 404 for a number without a verified account.
 - Config: `app.otp.ticket-lifetime` (30m) replaces `app.otp.unverified-retention`; `app.account.code-failures` (5) /
   `code-failure-window` (15m) replace `password-failures` / `password-failure-window`; `app.auth.login-*` removed.
+
+# Phase N3: the verified MIET community (`docs/PHASE_N3.md`, V34)
+
+A person signed in (N2) is NOT yet in the community. The community = `MIET` (seeded by V34; no endpoint creates one).
+Roll numbers arrive only in requests (typed by the applicant, or by a verifier / admin from the ID card); no answer
+carries one; only an HMAC is stored (`COMMUNITY_SECRET`). Codes are 8 characters of `23456789ABCDEFGHJKMNPQRSTUVWXYZ`,
+shown and accepted as `ABCD-2345` (spaces and `-` ignored, lower case accepted).
+
+**The gate**
+- Every community read and write (profiles of others, connections, invites, blocks and mutes, places, posts, media,
+  perspectives, Discover, reports) answers **403** `{code: "MEMBERSHIP_NEEDED", message: "This is for verified MIET
+  members. You can get verified from You."}` without an active membership. Account-level, NOT gated: the caller's own
+  profile and photo (the draft; a suspension still stops changes), the own moderation standing, appeal and review
+  request, and everything of auth, account, Safety Circle, SOS, Safe Walk and circle alerts.
+- `PUT /api/users/me/name` → **409** `{code: "NAME_LOCKED"}` once the name was checked against the ID (N-24).
+
+**The applicant** (signed in)
+- `GET /api/community/me` → `{state: NONE|PENDING|MEMBER|ENDED|BANNED, community: {code, name}, membership:
+  {programme, programmeLabel, graduationYear, method, verifiedAt, endsAt, endedAt, endReason}|null, request: {method,
+  programme, programmeLabel, graduationYear, code|null, codeAlive, codeExpiresInSeconds, photoUploaded,
+  expiresAt}|null, outcome: {kind: REFUSED|ENDED|BANNED, reason, at}|null, nameCorrection: {from, at}|null, nameLocked,
+  staff: {verifier, admin}}`. `endsAt` = the end of 31 July of the graduation year in India (18:30 UTC); access stops
+  at that minute. `outcome` = the latest refusal, end or ban with its reason (no shadow decisions).
+- `GET /api/community/programmes` → `[{code, label, level: UG|PG, firstYear, lastYear}]` (the owner's 14).
+- `POST /api/community/verification {method: IN_PERSON|ID_PHOTO, rollNumber, programme, graduationYear}` → 200 `/me`
+  (PENDING); an in-person answer carries `request.code` ONCE (10 minutes; only its HMAC is stored). 400 bad roll
+  number / programme / year; 409 already a member or a request already open; 429 more than 3 requests a day. A banned
+  number or roll number: refused (the state answers BANNED). The server never tells whether a roll number is taken.
+- `POST /api/community/verification/code` → 200 `/me` with a NEW code (the old one stops). 404 no in-person request.
+- `PUT /api/community/verification/photo` (body `image/jpeg` or `image/png`, ≤ 5 MB) → 200 `/me`; re-encoded
+  (no metadata), encrypted with AES-256-GCM, stored under a random name in `app.community.photo-dir`; replaces an
+  earlier photo. 404 no ID-photo request; 400 not an image / too big.
+- `DELETE /api/community/verification` → 204; the request and its photo are deleted.
+- A request (and its photo) expires after 7 days; the hourly job removes it.
+
+**Verifiers and admins** (`/api/verifier/**`: ADMIN or an active verifier; `/api/admin/community/**`: ADMIN; roles
+read from the database per request; 403 otherwise)
+- `POST /api/verifier/lookup {code}` → 200 `{ref, method, name, phoneHint, programme, programmeLabel,
+  graduationYear, createdAt, photoUploadedAt}` and the request is claimed for the caller for 15 minutes. 404 wrong or
+  expired code; 429 after 10 wrong codes in 15 minutes; 403 the caller's own request ("Nobody can verify themselves").
+- `POST /api/verifier/requests/{ref}/decision {approve, rollNumber?, name?, reason?}` (only the claimer, in person)
+  → 200 `{outcome: VERIFIED|REFUSED, reason}`. Approve needs the roll number typed from the card: a mismatch is **409**
+  (counted; retype or refuse); `name` = the spelling on the ID (logged as NAME_CORRECTED, shown to the person). Refuse
+  needs `reason` ∈ `NAME_MISMATCH, ROLL_MISMATCH, NOT_THE_PERSON, NOT_MIET_ID, UNREADABLE, OTHER`. Automatic refusals:
+  `ALREADY_MEMBER` (the roll number belongs to another account), `BANNED`. 429 after 50 approvals in 24 h per
+  verifier (admins exempt).
+- `GET /api/admin/community/photo-requests` → the ID-photo queue, oldest first (same shape as lookup).
+  `GET /api/admin/community/requests/{ref}/photo` → the decrypted image (`Cache-Control: no-store`, `nosniff`).
+  `POST /api/admin/community/requests/{ref}/decision` → as above (409 when no photo yet). The file is deleted after the
+  decision commits.
+- `GET /api/admin/community/verifiers` → `[{name, phoneHint, programme, graduationYear, since}]`;
+  `PUT /api/admin/community/verifiers {phone, verifier: true|false}` → 204 (409 not an active member; 404 no account).
+- `PUT /api/admin/community/members/name {phone, name}` → 204 (a checked name corrected; logged and shown).
+- `GET /api/admin/community/bans` → `[{id, reason, note, onRollNumber, onPhone, person, bannedBy, createdAt,
+  liftedAt}]` (never a number); `POST /api/admin/community/bans {phone?, rollNumber?, reason, note?}` → 200 the ban
+  (reason ∈ `HARASSMENT, HATE, THREATS, SEXUAL_CONTENT, IMPERSONATION, FALSE_ID, PRIVACY, REPEATED, OTHER`, note ≤ 200;
+  ends every membership it hits as BANNED; never touches the account, sign-in, sessions or safety);
+  `POST /api/admin/community/bans/{id}/lift` → 200 (the membership stays ended until a new verification).
+- `POST /api/admin/community/members/end {phone}` → 204 (REMOVED).
+- N-25 re-link: `POST /api/community/relink {ticket, rollNumber}` (PUBLIC: the new number's sign-up ticket from
+  `phone/verify` is the credential and is used up) → 200 `{code, expiresInSeconds: 3600}`; 409 the number already has
+  an account. `POST /api/admin/community/relinks {code, rollNumber}` (ADMIN, in person with the ID) → 200
+  `{outcome: "RELINKED"}`: the member's account moves to the new number, every sign-in ends; 404 wrong / expired code,
+  409 roll mismatch / no member with it / banned roll number, 403 the admin's own account, 409 during an SOS or Safe Walk.
+- `GET /api/admin/community/log?page=0` → 50 lines a page, newest first: `[{action, method, reason, actor, subject,
+  detail, at}]` (`actor` "IRL" for the upkeep job; `detail` = the earlier spelling of a corrected name).
+- Config `app.community.*`: `secret` (env `COMMUNITY_SECRET`, ≥ 32 characters; required by the `prod` profile; in
+  development an empty one falls back to a key derived from `JWT_SECRET` with a WARN), `photo-dir`
+  (`COMMUNITY_PHOTO_DIR`, `id-photo-store`), `code-lifetime` 10m, `claim-lifetime` 15m, `request-lifetime` 7d,
+  `relink-lifetime` 1h, `requests-per-day` 3, `approvals-per-day` 50, `wrong-codes` 10 / `wrong-code-window` 15m,
+  `job-enabled`, `job-interval` PT1H (first run 3 minutes after start).
 
 # Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
 
@@ -1564,3 +1643,13 @@ A compact list of every phase's endpoints and config keys; the sections above ha
   person who has a disclosed post at a place is not counted in that place's `rating` (their own `yourVisit` is unchanged). The app sends `{cell}` only as a
   second, silent call after the plain one, and only when the phone itself found that it is in the place's cell or a cell around it.
 - Phase D12: `GET /api/health` (public, `{status: UP|DOWN}`, 503 when the database does not answer; `docs/D12_DEPLOYMENT.md`).
+- Phase N3 (V34, `docs/PHASE_N3.md`): the community gate (403 `MEMBERSHIP_NEEDED` on every community route; own profile
+  draft, own standing, account and safety not gated); `PUT /api/users/me/name` 409 `NAME_LOCKED`; applicant
+  `GET /api/community/me`, `GET /api/community/programmes`, `POST|DELETE /api/community/verification`,
+  `POST /api/community/verification/code`, `PUT /api/community/verification/photo`, public `POST /api/community/relink`;
+  verifiers `POST /api/verifier/lookup`, `POST /api/verifier/requests/{ref}/decision`; admins `GET
+  /api/admin/community/photo-requests`, `GET /api/admin/community/requests/{ref}/photo` (no-store), `POST
+  /api/admin/community/requests/{ref}/decision`, `GET|PUT /api/admin/community/verifiers`, `PUT
+  /api/admin/community/members/name`, `GET|POST /api/admin/community/bans`, `POST /api/admin/community/bans/{id}/lift`,
+  `POST /api/admin/community/members/end`, `POST /api/admin/community/relinks`, `GET /api/admin/community/log`. Config
+  `app.community.*` (secret = env `COMMUNITY_SECRET`).

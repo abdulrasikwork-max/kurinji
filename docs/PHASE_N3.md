@@ -1,6 +1,6 @@
 # Phase N3: verified MIET community membership
 
-Status: **approved by the owner on 2026-11-16** (plan + the decisions below). Paused after B3 and resumed the same day; B1–B4 done (B4 = V34 on the development MySQL only); A1, A2, C follow. Units B1, B2, B3, B4, A1, A2, C; one
+Status: **approved by the owner on 2026-11-16** (plan + the decisions below). **Complete 2026-11-16** (implemented, compiled, tested, manually verified on the emulator; no real phone; V34 on the development MySQL only). Units B1, B2, B3, B4, A1, A2, C; one
 local commit each; never pushed, never deployed. Results per unit under "As built". Direction: `IRL_DIRECTION.md`
 §2.5; decisions N-2 to N-6, N-24, N-25; new decisions of this phase: `DECISIONS.md` N-27 onwards.
 
@@ -338,3 +338,57 @@ standing / appeal / review of their own content (no shadow bans, even after a me
 - Result: Android **795 run, 0 failures, 0 errors, 0 skipped**; `assembleDebug` OK; lint **0 errors, 97 warnings**
   (+2: `accessibilityHeading` below API 28, `Overdraw` on the ripple background of a staff row). Not seen on a screen
   yet (unit C).
+
+### C close: documents, full runs, manual emulator walk (2026-11-16)
+- **Documents:** `API.md` ("Changed in N3" note, the "Phase N3" section, the appendix line; the N2 name line now names
+  `NAME_LOCKED`), `DECISIONS.md` N-27 to N-41, `.claude/rules/backend.md`, `android.md`, `android-social.md` (N3 notes),
+  `database.md` (V34 row + the PAD SPACE gotcha, B4), `CLAUDE.md` §2 / §5 / §6 / §7 / §8 / §9, `STATUS.md`,
+  `README.md` (index), this file, `HANDOFF.md`.
+- **Full runs (after the walk fixes):** backend `mvn -o test` **532 run, 0 failures, 0 errors, 2 skipped** (the opt-in
+  real-MySQL class); Android `testDebugUnitTest` **795 run, 0 failures, 0 errors, 0 skipped**; `assembleDebug` OK; lint
+  **0 errors, 97 warnings**. Python moderation service: not touched in N3 (38 OK from N1).
+- **Manual walk on the `irl_api33` emulator (API 33)**, development backend (the B4 jar; the backend code did not
+  change after B3) on the DEVELOPMENT MySQL, the app built against `10.0.2.2:8080` (`local.properties` changed for each
+  walk build and restored byte for byte, compared with `cmp`). Made-up numbers only; no real phone. Staff actions not
+  done on the emulator were done with curl as account 400 ("Admin Check", made ADMIN by SQL in B4: the admin bootstrap).
+  Location and notifications were granted with `pm grant` to skip the (earlier verified) permission dialogs. Membership
+  and staff screens are FLAG_SECURE: `screencap` returns an empty file there, so they were read from the UI tree.
+
+| Step | Result |
+|---|---|
+| 399 "Meera Test", unverified: Home | the server's words "This is for verified MIET members…" + "Get verified" (Home's old "Choose a city" block stays below it until N4) |
+| You | own profile shown (the draft is allowed); card "Not verified yet" + "Get verified" |
+| Get verified, in person (default), E9990202, B.Tech IT (14 programmes listed in order), year list 2027–2030 | code `VE85-NEMS`, "works for 10 more minutes", request open until 23 Nov 2026 |
+| Admin (curl) looks the code up, types a wrong roll number | 409 "The roll number does not match…"; then refuses ROLL_MISMATCH |
+| 399 reopens the screen | amber notice "Your last request was not approved: the roll number did not match the ID card. You can ask again." + the form |
+| Asks again (`e999-0202`); admin approves with the name "Meera Tested" | MEMBER: "Verified member of MIET Engineering College", "B.Tech Information Technology · finishing 2027", "runs until July 31, 2027", "…corrected the spelling of your name (it was "Meera Test")", the lock line; You card "Verified MIET member"; Home without the gate |
+| Account and security | name field disabled, "Save name" hidden, the lock helper; **BUG: it still showed "Meera Test"** (the saved session kept the sign-in name). Fixed (N-40), rebuilt, reinstalled: after an admin's in-session correction to "Meera Testa" (curl), Account and the "Settings and more" line showed "Meera Testa" without a restart |
+| 396 "Nila Check", unverified: sign-in, Home gate, Safety → Safe Walk start + "I've arrived" | journey 57 ACTIVE → COMPLETED on the server |
+| 396 asks by ID photo (B.E. Civil, 2028), "Take the photo" | the phone's camera app (Camera2) opened; IRL has no camera permission; Done → "Your photo is waiting for an IRL admin", "Take it again", request date; the app's `cache/id-photo/` empty; `backend/id-photo-store/` one `.idp` file (69 576 bytes, no JPEG header, no JFIF/Exif) |
+| Emulator signed in as admin 400 (no profile: "Skip for now") | You card "Not verified yet" (admins need not be members); "Settings and more" shows **Community staff**: Verify someone, ID photos to check, Verifiers, Bans, Other admin actions, Community log; for the unverified 399 / 396 the section is absent |
+| ID photos to check → Nila Check | name, "B.E. Civil Engineering · finishing 2028", masked number, "By a photo of the ID card", the photo, the photo check list; roll typed → Approve → "Back to the photos"; 396 MEMBER (ID_PHOTO, decided by 400), request row deleted, **the `.idp` file gone** |
+| Verify someone: "Walk Applicant" (new account by curl, in person, MBA 2027) | a malformed code → field error; `btqc pmm6` typed loosely → found; wrong roll → the server's 409 words; right roll + "Walk Applicantt" → "Approved…"; `/me` MEMBER, nameCorrection from "Walk Applicant", nameLocked |
+| Verifiers | intro "…not listed anywhere else in the app"; a bad number → field error; 9000022222 → row "Meera Testa · ••••••2222 · since …"; Remove (confirmed) → "No verifiers yet." |
+| Bans: no reason → "Choose a reason"; 9000011111, harassment, note "Walk test ban", confirmed | row "harassment · number", note, "By Admin Check on …", "Lift" |
+| Emulator as 396 (banned) | sign-in works; You card "No access to the MIET community" + "Sign-in, SOS, Safe Walk and your Safety Circle keep working."; the membership screen: "You cannot use the MIET community on IRL. Reason: harassment." + the same line, no form; Safe Walk 58 started and completed |
+| "I'm moving from another number": sign out, new number 9000066666 → "About you" → the button → roll `E999 0001` (397's) | code `52KN-BZ67` + "works for one hour…"; screen FLAG_SECURE |
+| Admin: Other admin actions → move, wrong roll then right | 409 "The roll number does not match what the person typed"; then done (fields cleared); 397 now on +919000066666, 0 open sessions, RELINKED logged, the old number free |
+| Bans → Lift (confirmed) | "Lifted on …"; 396 `/me` ENDED, the screen "An IRL admin ended your membership. You can ask to be verified again." + the form |
+| Sign in with 9000066666 | the moved member account (You: "Verified MIET member", B.Tech IT 2027) |
+| 399's `ends_at` set 1 minute into the past (SQL) | at once: `/me` ENDED (GRADUATED), `/api/connections` 403; after a backend restart the upkeep job (3 min after start): "Community upkeep: 0 expired requests, 0 expired moves, 1 graduated, 0 stray photo files", row GRADUATED, ENDED logged without an actor |
+| 396 asks in person again, then "Withdraw the request" (confirmed) | the request row deleted; the form back, the roll field cleared |
+| Community log (admin) | newest first, in words: "Membership ended · Meera Testa — after the final year · by IRL", "Ban lifted — harassment", "Moved to a new number · Mysql Checked", "Banned · Nila Check", verifier lines, "Name corrected … was "Walk Applicant"", "Verified · …" (reason codes shown in words since the walk fix) |
+
+- **Fixed during the walk:** N-40 (the locked name field and the session name follow a correction: `AccountViewModel`
+  reads the lock first, then the account; `MembershipViewModel` re-reads the account when the name is locked; tests
+  extended); the log's reason codes in words (`StaffLabels.reason`, two new strings); the masked number line "Mobile +91
+  ••••••1111".
+- **Observed, not changed:** (1) Home for an unverified, ended or banned person still shows the old "Choose a city"
+  block under the gate notice (Home is replaced in N4). (2) The server's gate message says "You can get verified from
+  You" also to a banned person; the "Get verified" button then leads to the ban explanation (wording, N4 or N8). (3)
+  The toolbar of a photo review says "Verify someone". (4) Not walked: a verifier who is not an admin (only "Verify
+  someone" shown; covered by the backend role tests and the row flags), a request expiring after 7 days and the stray
+  photo sweep (backend tests), a real phone.
+- **Development data after the walk:** 399 "Meera Testa" (membership GRADUATED, name locked), 396 "Nila Check"
+  (ENDED after the lifted ban, no request), 397 "Mysql Checked" (MEMBER, now on +919000066666), 400 "Admin Check"
+  (ADMIN, no membership), 401 "Walk Applicantt" (MEMBER, +919000055555). The backend and the emulator were stopped.

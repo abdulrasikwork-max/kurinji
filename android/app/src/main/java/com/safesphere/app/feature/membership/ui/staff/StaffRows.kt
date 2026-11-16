@@ -68,6 +68,18 @@ object StaffLabels {
         else -> null
     }
 
+    /** A reason code of the log in words (refusals, ends, bans); null for a code the app does not know. */
+    @StringRes
+    fun reason(code: String): Int? = when (code) {
+        "GRADUATED" -> R.string.staff_reason_graduated
+        "REMOVED" -> R.string.staff_reason_removed
+        "NAME_MISMATCH", "ROLL_MISMATCH", "NOT_THE_PERSON", "NOT_MIET_ID", "UNREADABLE", "ALREADY_MEMBER", "BANNED" ->
+            com.safesphere.app.feature.membership.ui.MembershipLabels.refusal(code)
+        "HARASSMENT", "HATE", "THREATS", "SEXUAL_CONTENT", "IMPERSONATION", "FALSE_ID", "PRIVACY", "REPEATED", "OTHER" ->
+            com.safesphere.app.feature.membership.ui.MembershipLabels.ban(code)
+        else -> null
+    }
+
     @StringRes
     fun refusal(reason: com.safesphere.app.feature.membership.domain.RefusalReason): Int = when (reason) {
         com.safesphere.app.feature.membership.domain.RefusalReason.NAME_MISMATCH -> R.string.staff_refuse_name
