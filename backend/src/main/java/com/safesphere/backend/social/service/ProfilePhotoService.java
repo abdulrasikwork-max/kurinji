@@ -59,7 +59,7 @@ public class ProfilePhotoService {
     /** Replaces the caller's photo; answers the new key. A suspension stops it like any other profile change. */
     @Transactional
     public String upload(long userId, InputStream body) {
-        access.requireCanConnect(userId);
+        access.requireCanEditOwnProfile(userId); // Phase N3: part of the own profile draft
         if (profiles.findByUserId(userId).isEmpty()) throw new ResourceNotFoundException(NO_PROFILE);
         limits.media(userId);
         byte[] input = readLimited(body, properties.maxMediaBytes());
@@ -81,7 +81,7 @@ public class ProfilePhotoService {
     /** Removes the caller's photo (the same answer when there was none). */
     @Transactional
     public void remove(long userId) {
-        access.requireMember(userId);
+        access.requireAccount(userId);
         profiles.lockByUserId(userId).ifPresent(profile -> {
             String old = profile.replacePhoto(null, now());
             profiles.saveAndFlush(profile);

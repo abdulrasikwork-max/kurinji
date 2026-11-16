@@ -2,6 +2,7 @@ package com.safesphere.backend.social.service;
 
 import com.safesphere.backend.common.exception.AgeNotConfirmedException;
 import com.safesphere.backend.common.exception.ForbiddenException;
+import com.safesphere.backend.common.exception.MembershipNeededException;
 import com.safesphere.backend.common.exception.UnauthorizedException;
 import com.safesphere.backend.config.SocialProperties;
 import com.safesphere.backend.social.entity.SocialStanding;
@@ -23,6 +24,9 @@ import org.springframework.stereotype.Component;
  * refuses tokens of disabled or erased accounts; checked again here for clarity) and must have declared an adult date
  * of birth (D6). Safety features never ask this: an SOS works for every signed-in account.
  *
+ * Phase N3: and must be an ACTIVE member of a community (MembershipGate): verified for MIET, not graduated, not ended,
+ * not banned. A ban or an end of membership never reaches any safety feature (no safety package asks this class).
+ *
  * Phase 13D: a moderator's pause (SocialStanding) stops exactly the writes it names (M9) and nothing else: reading,
  * blocking, muting, reporting, deleting and narrowing always work, and no safety feature ever asks. New accounts are on
  * probation (M16) for app.social.probation.
@@ -40,22 +44,59 @@ public class SocialAccess {
     private final UserRepository users;
     private final SocialStandingRepository standings;
     private final SocialProperties properties;
+    private final MembershipGate membership;
     private final Clock clock;
 
     public SocialAccess(UserRepository users, SocialStandingRepository standings, SocialProperties properties,
-                        Clock clock) {
+                        MembershipGate membership, Clock clock) {
         this.users = users;
         this.standings = standings;
         this.properties = properties;
+        this.membership = membership;
         this.clock = clock;
     }
 
-    public User requireMember(long userId) {
+    /**
+     * Phase N3: an active, adult account, with or without a community membership. Only for the person's OWN things that
+     * do not show anyone else: their profile draft and photo, and their moderation standing, appeals and review
+     * requests (no shadow decisions, even after a membership ended).
+     */
+    public User requireAccount(long userId) {
         User user = users.findById(userId)
                 .filter(u -> u.isEnabled() && !u.isErased())
                 .orElseThrow(() -> new UnauthorizedException("Account is not available"));
         if (!user.isAgeConfirmed()) throw new AgeNotConfirmedException();
         return user;
+    }
+
+    /**
+     * Phase N3: [requireAccount] + an ACTIVE community membership (verified, not ended, not past 31 July of the
+     * graduation year, not banned). Every community read and write asks this; 403 MEMBERSHIP_NEEDED otherwise.
+     */
+    public User requireMember(long userId) {
+        User user = requireAccount(userId);
+        if (membership.activeCommunityOf(userId).isEmpty()) throw new MembershipNeededException();
+        return user;
+    }
+
+    /** Phase N3: the person's own profile draft and photo (no membership needed); a suspension still stops changes. */
+    public User requireCanEditOwnProfile(long userId) {
+        User user = requireAccount(userId);
+        refuseIf(userId, SocialStanding.Restriction::stopsConnecting, SUSPENDED);
+        return user;
+    }
+
+    /** Phase N3: whether [ownerId] is an active member of [viewerId]'s community (false when the viewer has none). */
+    public boolean sameCommunity(long viewerId, long ownerId) {
+        Optional<Long> community = membership.activeCommunityOf(viewerId);
+        return community.isPresent() && membership.activeMembersOf(community.get(), Set.of(ownerId)).contains(ownerId);
+    }
+
+    /** Phase N3: the ids among [userIds] that are active members of [viewerId]'s community (one query for a list). */
+    public Set<Long> sameCommunityAmong(long viewerId, Collection<Long> userIds) {
+        Optional<Long> community = membership.activeCommunityOf(viewerId);
+        if (community.isEmpty() || userIds.isEmpty()) return Set.of();
+        return membership.activeMembersOf(community.get(), userIds);
     }
 
     /** Phase 13D: a member who may write perspectives now (no pause in force that stops them). */

@@ -166,7 +166,7 @@ public class AssessmentService {
      */
     @Transactional
     public void requestReview(long userId, String targetKind, String targetId) {
-        access.requireMember(userId);
+        access.requireAccount(userId); // Phase N3: the author's own content
         TargetKind kind = "POST".equals(targetKind) ? TargetKind.POST : "COMMENT".equals(targetKind)
                 ? TargetKind.COMMENT : null;
         if (kind == null) throw new InvalidRequestException("Choose a post or a perspective");

@@ -61,13 +61,13 @@ public class ProfileService {
 
     @Transactional(readOnly = true)
     public OwnProfileResponse own(long userId) {
-        access.requireMember(userId);
+        access.requireAccount(userId); // Phase N3: the own profile draft needs no membership
         return toOwn(profiles.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException(NO_PROFILE)));
     }
 
     @Transactional
     public OwnProfileResponse save(long userId, ProfileRequest request) {
-        access.requireCanConnect(userId); // Phase 13D: a suspension also stops profile changes (M9)
+        access.requireCanEditOwnProfile(userId); // 13D: a suspension also stops it (M9); N3: no membership needed
         String handle = HandlePolicy.normalize(request.handle());
         switch (HandlePolicy.check(handle)) {
             case OK -> {

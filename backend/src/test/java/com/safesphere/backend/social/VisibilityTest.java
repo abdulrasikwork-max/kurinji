@@ -15,10 +15,12 @@ import org.junit.jupiter.api.Test;
 /** Phase 13A + 13B: the whole matrix of the one visibility rule for profiles, posts and perspectives. */
 class VisibilityTest {
 
-    private static final Facts SELF = new Facts(true, false, true);
-    private static final Facts OTHER = new Facts(false, false, true);
-    private static final Facts BLOCKED = new Facts(false, true, true);
-    private static final Facts INACTIVE = new Facts(false, false, false);
+    private static final Facts SELF = new Facts(true, false, true, true);
+    private static final Facts OTHER = new Facts(false, false, true, true);
+    private static final Facts BLOCKED = new Facts(false, true, true, true);
+    private static final Facts INACTIVE = new Facts(false, false, false, true);
+    /** Phase N3: an active account outside the viewer's community (not verified, graduated, ended or banned). */
+    private static final Facts OUTSIDE = new Facts(false, false, true, false);
 
     @Test
     void profiles() {
@@ -26,6 +28,13 @@ class VisibilityTest {
         assertThat(Visibility.canSeeProfile(OTHER)).isTrue();
         assertThat(Visibility.canSeeProfile(BLOCKED)).isFalse();
         assertThat(Visibility.canSeeProfile(INACTIVE)).isFalse();
+        assertThat(Visibility.canSeeProfile(OUTSIDE)).isFalse();
+        assertThat(Visibility.canSeeProfile(new Facts(true, false, true, false))).as("oneself, even unverified").isTrue();
+        for (Audience audience : Audience.values()) {
+            assertThat(Visibility.canSeePost(new PostFacts(OUTSIDE, true, audience, true))).isFalse();
+        }
+        assertThat(Visibility.canSeeComment(new CommentFacts(OUTSIDE, true, false, false, ModerationState.NONE)))
+                .isFalse();
     }
 
     @Test

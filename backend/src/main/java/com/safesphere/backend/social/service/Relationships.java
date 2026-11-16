@@ -43,7 +43,7 @@ public class Relationships {
     public Visibility.Facts facts(long viewerId, long ownerId) {
         boolean self = viewerId == ownerId;
         return new Visibility.Facts(self, !self && blocks.existsEitherWay(viewerId, ownerId),
-                self || access.isActive(ownerId));
+                self || access.isActive(ownerId), self || access.sameCommunity(viewerId, ownerId));
     }
 
     public boolean canSeeProfile(long viewerId, long ownerId) {
@@ -87,12 +87,16 @@ public class Relationships {
         return new Viewer(viewerId, blocked, muted, connected);
     }
 
-    /** Phase 13C: the facts about [viewer] and [post] from the gathered sets; [activeAuthors] from SocialAccess. */
-    public static Visibility.PostFacts postFacts(Viewer viewer, Post post, Set<Long> activeAuthors, LocalDateTime now) {
+    /**
+     * Phase 13C: the facts about [viewer] and [post] from the gathered sets; [activeAuthors] and (Phase N3)
+     * [sameCommunityAuthors] from SocialAccess.
+     */
+    public static Visibility.PostFacts postFacts(Viewer viewer, Post post, Set<Long> activeAuthors,
+                                                Set<Long> sameCommunityAuthors, LocalDateTime now) {
         long authorId = post.getAuthorId();
         boolean self = viewer.id() == authorId;
         Visibility.Facts people = new Visibility.Facts(self, !self && viewer.blockedEitherWay().contains(authorId),
-                self || activeAuthors.contains(authorId));
+                self || activeAuthors.contains(authorId), self || sameCommunityAuthors.contains(authorId));
         return new Visibility.PostFacts(people, !self && viewer.connected().contains(authorId), post.getAudience(),
                 !post.getVisibleFrom().isAfter(now), post.getModeration());
     }
@@ -109,10 +113,12 @@ public class Relationships {
 
     private List<Post> filter(Viewer viewer, List<Post> candidates, LocalDateTime now, boolean edition) {
         if (candidates.isEmpty()) return List.of();
-        Set<Long> active = access.activeAmong(candidates.stream().map(Post::getAuthorId).collect(Collectors.toSet()));
+        Set<Long> authors = candidates.stream().map(Post::getAuthorId).collect(Collectors.toSet());
+        Set<Long> active = access.activeAmong(authors);
+        Set<Long> sameCommunity = access.sameCommunityAmong(viewer.id(), authors);
         List<Post> shown = new ArrayList<>();
         for (Post post : candidates) {
-            Visibility.PostFacts facts = postFacts(viewer, post, active, now);
+            Visibility.PostFacts facts = postFacts(viewer, post, active, sameCommunity, now);
             boolean muted = viewer.muted().contains(post.getAuthorId());
             if (edition ? Visibility.showInEdition(facts, muted) : Visibility.showInLists(facts, muted)) shown.add(post);
         }

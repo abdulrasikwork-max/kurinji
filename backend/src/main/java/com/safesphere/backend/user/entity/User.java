@@ -68,6 +68,13 @@ public class User {
     @Column(name = "phone_verified_at")
     private LocalDateTime phoneVerifiedAt;
 
+    /**
+     * Phase N3 (V34, N-24): when a verifier or an admin checked the real name against the college ID. From then on the
+     * person cannot change it (only an admin corrects it, logged); null = never checked. A tombstone keeps none.
+     */
+    @Column(name = "name_checked_at")
+    private LocalDateTime nameCheckedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -199,6 +206,26 @@ public class User {
         this.name = name;
     }
 
+    /** Phase N3 (N-24): the name was checked against the college ID (kept from the first check on). */
+    public void markNameChecked(LocalDateTime now) {
+        LocalDateTime at = now.truncatedTo(ChronoUnit.MICROS);
+        if (createdAt != null && at.isBefore(createdAt)) at = createdAt; // V34 CHECK: never before created_at
+        if (nameCheckedAt == null) this.nameCheckedAt = at;
+    }
+
+    /** Phase N3 (N-24): the person may no longer change their own name. */
+    public boolean isNameLocked() {
+        return nameCheckedAt != null;
+    }
+
+    public LocalDateTime getNameCheckedAt() {
+        return nameCheckedAt;
+    }
+
+    public LocalDateTime getPhoneVerifiedAt() {
+        return phoneVerifiedAt;
+    }
+
     public void requestDeletion(LocalDateTime now, LocalDateTime dueAt) {
         this.deletionRequestedAt = now.truncatedTo(ChronoUnit.MICROS);
         this.deletionDueAt = dueAt.truncatedTo(ChronoUnit.MICROS);
@@ -225,6 +252,7 @@ public class User {
         this.name = "Deleted account";
         this.phoneE164 = null; // Phase 17B (V26 CHECK): a tombstone keeps no number
         this.phoneVerifiedAt = null;
+        this.nameCheckedAt = null; // V34 CHECK: a tombstone keeps no name check
         this.enabled = false;
         this.role = UserRole.USER;
         this.credentialsChangedAt = at;

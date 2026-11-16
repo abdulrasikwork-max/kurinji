@@ -1,5 +1,6 @@
 package com.safesphere.backend.account.service;
 
+import com.safesphere.backend.community.service.IdPhotoStore;
 import com.safesphere.backend.config.AccountProperties;
 import com.safesphere.backend.emergency.entity.EmergencyStatus;
 import com.safesphere.backend.emergency.repository.EmergencyEventRepository;
@@ -54,10 +55,17 @@ public class AccountEraser {
             "content_reports.reporter_id", "content_reports.person_id", "content_cases.person_id",
             "social_strikes.user_id", "social_standing.user_id",
             // Phase N2 (V33): a confirmation code in progress (V25 and V26 code tables were dropped by V33).
-            "phone_codes.user_id");
+            "phone_codes.user_id",
+            // Phase N3 (V34): the person's membership (its roll number becomes free; a ban stays in `bans`), their
+            // verification request and its ID photo file, the community log rows ABOUT them, and a claim they held on
+            // someone else's request (cleared, as the database's ON DELETE SET NULL does).
+            "memberships.user_id", "verification_requests.user_id", "verification_requests.claimed_by",
+            "community_actions.subject_user_id");
 
     /** References that keep the account row (anonymised): the moderation audit trail of decisions this person took. */
-    public static final Set<String> KEPT_REFERENCES = Set.of("moderation_actions.actor_id", "moderation_appeals.decided_by");
+    public static final Set<String> KEPT_REFERENCES = Set.of("moderation_actions.actor_id", "moderation_appeals.decided_by",
+            // Phase N3 (V34): who verified someone, who banned or lifted a ban, who took a community decision.
+            "memberships.verified_by", "bans.banned_by", "bans.lifted_by", "community_actions.actor_id");
 
     private static final String EMERGENCIES = "(SELECT id FROM emergency_events WHERE user_id = ?)";
     private static final String JOURNEYS = "(SELECT id FROM safe_journeys WHERE user_id = ?)";
@@ -110,7 +118,13 @@ public class AccountEraser {
             "DELETE FROM comments WHERE author_id = ?",
             "DELETE FROM post_media WHERE owner_id = ?",
             "DELETE FROM posts WHERE author_id = ?",
-            "DELETE FROM profiles WHERE user_id = ?");
+            "DELETE FROM profiles WHERE user_id = ?",
+            // Phase N3: the request (its photo file went in step 2), claims held on others' requests, the log rows about
+            // the person, the membership.
+            "DELETE FROM verification_requests WHERE user_id = ?",
+            "UPDATE verification_requests SET claimed_by = NULL, claimed_at = NULL WHERE claimed_by = ?",
+            "DELETE FROM community_actions WHERE subject_user_id = ?",
+            "DELETE FROM memberships WHERE user_id = ?");
 
     /** Rows ABOUT the person in the moderation log; deleted with a deleted account (as the V13 cascades do). */
     private static final List<String> MODERATION_ABOUT = List.of(
@@ -127,11 +141,13 @@ public class AccountEraser {
     private final Clock clock;
     private final TransactionTemplate tx;
     private final MediaStorage media;
+    private final IdPhotoStore idPhotos;
 
     public AccountEraser(UserRepository users, EmergencyEventRepository emergencies, JdbcTemplate jdbc,
                          AccountProperties properties, Clock clock,
-                         PlatformTransactionManager transactions, MediaStorage media) {
+                         PlatformTransactionManager transactions, MediaStorage media, IdPhotoStore idPhotos) {
         this.media = media;
+        this.idPhotos = idPhotos;
         this.users = users;
         this.emergencies = emergencies;
         this.jdbc = jdbc;
@@ -152,23 +168,27 @@ public class AccountEraser {
                 return Outcome.FILES_FAILED;
             }
         }
+        for (String key : check.idPhotoKeys()) idPhotos.delete(key); // logs and leaves it to the hourly sweep on failure
         return tx.execute(status -> erase(userId));
     }
 
-    private record Check(Outcome outcome, List<String> mediaKeys) {
+    private record Check(Outcome outcome, List<String> mediaKeys, List<String> idPhotoKeys) {
     }
 
     private Check check(long userId) {
         User user = users.findByIdForUpdate(userId).orElse(null);
         Outcome blocked = blocked(user);
-        if (blocked != null) return new Check(blocked, List.of());
+        if (blocked != null) return new Check(blocked, List.of(), List.of());
         // Phase 13B: every photo the person uploaded (attached to their posts or not); a photo is always its owner's.
         // Phase 17E: and their profile photo (stored the same way, its key on the profile).
         List<String> mediaKeys = new java.util.ArrayList<>(jdbc.queryForList(
                 "SELECT storage_key FROM post_media WHERE owner_id = ?", String.class, userId));
         mediaKeys.addAll(jdbc.queryForList("SELECT photo_key FROM profiles WHERE user_id = ? AND photo_key IS NOT NULL",
                 String.class, userId));
-        return new Check(null, mediaKeys);
+        // Phase N3: an ID photo waiting for an admin.
+        List<String> idPhotos = jdbc.queryForList(
+                "SELECT photo_key FROM verification_requests WHERE user_id = ? AND photo_key IS NOT NULL", String.class, userId);
+        return new Check(null, mediaKeys, idPhotos);
     }
 
     private Outcome erase(long userId) {
@@ -178,8 +198,12 @@ public class AccountEraser {
         for (String statement : OWNED_DATA) run(statement, userId);
         boolean decidedSomething = jdbc.queryForObject(
                 "SELECT (SELECT COUNT(*) FROM moderation_actions WHERE actor_id = ?)"
-                        + " + (SELECT COUNT(*) FROM moderation_appeals WHERE decided_by = ?)",
-                Long.class, userId, userId) > 0;
+                        + " + (SELECT COUNT(*) FROM moderation_appeals WHERE decided_by = ?)"
+                        // Phase N3: community decisions keep their decider (an anonymous tombstone), like moderators.
+                        + " + (SELECT COUNT(*) FROM memberships WHERE verified_by = ?)"
+                        + " + (SELECT COUNT(*) FROM bans WHERE banned_by = ? OR lifted_by = ?)"
+                        + " + (SELECT COUNT(*) FROM community_actions WHERE actor_id = ?)",
+                Long.class, userId, userId, userId, userId, userId, userId) > 0;
         if (decidedSomething) {
             user.erase(now());
             users.saveAndFlush(user);

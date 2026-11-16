@@ -395,7 +395,7 @@ public class ContentModerationService {
     /** The caller's pause (if any) and the decisions about them or their content in the last 90 days (M20). */
     @Transactional(readOnly = true)
     public StandingView standing(long userId) {
-        access.requireMember(userId);
+        access.requireAccount(userId); // Phase N3: shown even after a membership ended (no shadow decisions)
         LocalDateTime now = now();
         List<ModerationAction> decisions = actions.findAboutPersonSince(userId, SHOWN_TO_PERSON,
                 now.minus(STANDING_WINDOW), PageRequest.of(0, 50));
@@ -427,7 +427,7 @@ public class ContentModerationService {
     /** "Please look again": one appeal per decision, by the person it is about, while it still applies. */
     @Transactional
     public AppealAccepted appeal(long userId, String decisionId) {
-        access.requireMember(userId);
+        access.requireAccount(userId);
         LocalDateTime now = now();
         ModerationAction decision = actions.findByPublicId(decisionId)
                 .filter(a -> a.getSubjectUserId() != null && a.getSubjectUserId() == userId)

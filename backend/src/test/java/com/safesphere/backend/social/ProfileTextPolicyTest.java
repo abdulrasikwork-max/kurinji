@@ -57,9 +57,9 @@ class ProfileTextPolicyTest {
 
     @Test
     void visibility_ownerAlways_othersOnlyWhileActiveAndNotBlockedEitherWay() {
-        assertThat(Visibility.canSeeProfile(new Visibility.Facts(true, false, false))).isTrue();
-        assertThat(Visibility.canSeeProfile(new Visibility.Facts(false, false, true))).isTrue();
-        assertThat(Visibility.canSeeProfile(new Visibility.Facts(false, true, true))).isFalse();
-        assertThat(Visibility.canSeeProfile(new Visibility.Facts(false, false, false))).isFalse();
+        assertThat(Visibility.canSeeProfile(new Visibility.Facts(true, false, false, false))).isTrue();
+        assertThat(Visibility.canSeeProfile(new Visibility.Facts(false, false, true, true))).isTrue();
+        assertThat(Visibility.canSeeProfile(new Visibility.Facts(false, true, true, true))).isFalse();
+        assertThat(Visibility.canSeeProfile(new Visibility.Facts(false, false, false, true))).isFalse();
     }
 }

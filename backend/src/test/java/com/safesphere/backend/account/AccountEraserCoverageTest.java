@@ -61,6 +61,7 @@ class AccountEraserCoverageTest {
         assertThat(handled).containsExactlyInAnyOrderElementsOf(found);
         assertThat(AccountEraser.DELETED_REFERENCES).doesNotContainAnyElementsOf(AccountEraser.KEPT_REFERENCES);
         assertThat(List.copyOf(AccountEraser.KEPT_REFERENCES))
-                .containsExactlyInAnyOrder("moderation_actions.actor_id", "moderation_appeals.decided_by");
+                .containsExactlyInAnyOrder("moderation_actions.actor_id", "moderation_appeals.decided_by",
+                        "memberships.verified_by", "bans.banned_by", "bans.lifted_by", "community_actions.actor_id");
     }
 }

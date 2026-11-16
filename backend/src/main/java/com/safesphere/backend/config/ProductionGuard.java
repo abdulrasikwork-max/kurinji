@@ -34,11 +34,12 @@ public class ProductionGuard {
 
     private static final Logger log = LoggerFactory.getLogger(ProductionGuard.class);
 
-    public ProductionGuard(OtpProperties otp, SocialProperties social,
+    public ProductionGuard(OtpProperties otp, SocialProperties social, CommunityProperties community, JwtProperties jwt,
                            @Value("${spring.datasource.url:}") String databaseUrl,
                            @Value("${app.moderation.ai.key:}") String moderationKey) {
         List<String> problems = problems(otp.providerKind().name(), otp.fast2smsApiKey(), otp.secret(), databaseUrl,
                 social.mediaDir());
+        problems.addAll(communityProblems(community.secret(), jwt.secret(), community.photoDir()));
         if (!problems.isEmpty()) {
             throw new IllegalStateException("Refusing to start with the prod profile: " + String.join("; ", problems));
         }
@@ -46,6 +47,23 @@ public class ProductionGuard {
             log.warn("Production: MODERATION_SERVICE_KEY is empty, so posts are published without the automatic check.");
         }
         log.info("Production guard passed");
+    }
+
+    /**
+     * Phase N3: the community secret must be its own (never derived from, or equal to, JWT_SECRET: rotating the token key
+     * must not break bans and roll-number uniqueness) and the ID-photo folder absolute (like the media folder).
+     */
+    public static List<String> communityProblems(String communitySecret, String jwtSecret, Path photoDir) {
+        List<String> out = new ArrayList<>();
+        if (communitySecret == null || communitySecret.isBlank()) {
+            out.add("COMMUNITY_SECRET must be set (32+ random characters, backed up apart from the database)");
+        } else if (communitySecret.equals(jwtSecret)) {
+            out.add("COMMUNITY_SECRET must differ from JWT_SECRET");
+        }
+        if (photoDir == null || !photoDir.isAbsolute()) {
+            out.add("COMMUNITY_PHOTO_DIR must be an absolute path");
+        }
+        return out;
     }
 
     /** What is wrong, in words for the operator; empty = fine. Pure, so it is tested without starting Spring. */

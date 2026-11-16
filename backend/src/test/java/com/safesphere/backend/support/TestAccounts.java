@@ -8,6 +8,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safesphere.backend.auth.phone.PhoneCode;
 import com.safesphere.backend.auth.phone.PhoneCodeRepository;
 import com.safesphere.backend.auth.service.RefreshSecrets;
+import com.safesphere.backend.community.entity.Community;
+import com.safesphere.backend.community.entity.CommunityEnums;
+import com.safesphere.backend.community.entity.Membership;
+import com.safesphere.backend.community.repository.MembershipRepository;
+import com.safesphere.backend.community.service.CommunityKeys;
+import com.safesphere.backend.community.service.CommunityRules;
+import com.safesphere.backend.community.service.MembershipLookup;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -39,9 +46,21 @@ public final class TestAccounts {
         return registerVerifiedAndLogin(mockMvc, objectMapper, "Test User", key).get("accessToken").asText();
     }
 
-    /** Signs up through POST /api/auth/sign-up with a ticket for [key]'s number; returns the answer (tokens + user). */
+    /**
+     * Signs up through POST /api/auth/sign-up with a ticket for [key]'s number; returns the answer (tokens + user).
+     * Phase N3: the account is also made an active MIET member ([seedMembership]), as if a verifier had approved it, so
+     * every test of the community features keeps working; [registerUnverified] makes an account without one.
+     */
     public static JsonNode registerVerifiedAndLogin(MockMvc mockMvc, ObjectMapper objectMapper, String name,
                                                     String key) throws Exception {
+        JsonNode answer = registerUnverified(mockMvc, objectMapper, name, key);
+        seedMembership(mockMvc, answer.get("user").get("id").asLong(), key);
+        return answer;
+    }
+
+    /** Phase N3: signs up like [registerVerifiedAndLogin] but leaves the account WITHOUT a community membership. */
+    public static JsonNode registerUnverified(MockMvc mockMvc, ObjectMapper objectMapper, String name, String key)
+            throws Exception {
         String ticket = seedTicket(mockMvc, e164For(key));
         String body = objectMapper.writeValueAsString(Map.of("ticket", ticket, "name", name,
                 "dateOfBirth", ADULT_BIRTH_DATE));
@@ -127,6 +146,31 @@ public final class TestAccounts {
         row.issueTicket(RefreshSecrets.hash(ticket), now.plusMinutes(30));
         codes.saveAndFlush(row);
         return ticket;
+    }
+
+    /**
+     * Phase N3: an active MIET membership for [userId], stored directly (as a verifier's approval would leave it): roll
+     * number "T" + digits derived from [key] and [userId], verified by the account itself (tests only; the service never allows it),
+     * graduation in 4 years. Returns the plain test roll number.
+     */
+    public static String seedMembership(MockMvc mockMvc, long userId, String key) {
+        ApplicationContext context = context(mockMvc);
+        LocalDateTime now = LocalDateTime.ofInstant(context.getBean(Clock.class).instant(), ZoneOffset.UTC);
+        String roll = rollFor(key + ":" + userId); // some tests delete accounts between runs and re-use a key
+        long miet = context.getBean(MembershipLookup.class).miet().getId();
+        String rollKey = context.getBean(CommunityKeys.class).rollKey(Community.MIET, roll);
+        int year = CommunityRules.firstYear(now) + 3;
+        context.getBean(MembershipRepository.class).saveAndFlush(new Membership(userId, miet, rollKey,
+                CommunityEnums.Programme.BTECH_IT, year, CommunityEnums.Method.IN_PERSON, userId, now,
+                CommunityRules.endsAt(year)));
+        return roll;
+    }
+
+    /** Phase N3: a roll number derived from [key] ("T" + 7 digits), so every test account gets its own. */
+    public static String rollFor(String key) {
+        long n = Math.floorMod(UUID.nameUUIDFromBytes(("roll:" + key.trim().toLowerCase(Locale.ROOT))
+                .getBytes(StandardCharsets.UTF_8)).getMostSignificantBits(), 10_000_000L);
+        return "T" + String.format("%07d", n);
     }
 
     /** A valid Indian mobile number (10 digits) derived from [key], so every test account gets its own. */

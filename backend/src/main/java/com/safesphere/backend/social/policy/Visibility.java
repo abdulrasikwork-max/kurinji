@@ -17,8 +17,11 @@ import java.util.Set;
  */
 public final class Visibility {
 
-    /** What is known about a viewer and the owner of something. */
-    public record Facts(boolean self, boolean blockedEitherWay, boolean ownerActive) {
+    /**
+     * What is known about a viewer and the owner of something. Phase N3: [sameCommunity] = the owner is an active member
+     * of the viewer's community (the viewer's own membership is checked before any read: SocialAccess.requireMember).
+     */
+    public record Facts(boolean self, boolean blockedEitherWay, boolean ownerActive, boolean sameCommunity) {
     }
 
     /**
@@ -48,11 +51,13 @@ public final class Visibility {
 
     /**
      * A profile is visible to its owner; to anyone else only while the owner's account is active (not disabled, not
-     * erased) and neither has blocked the other. Signed-out people never get here (every social endpoint needs a JWT).
+     * erased), the owner is an active member of the viewer's community (Phase N3: nobody outside it, nobody not verified,
+     * graduated or banned) and neither has blocked the other. Signed-out people never get here (every social endpoint
+     * needs a JWT).
      */
     public static boolean canSeeProfile(Facts facts) {
         if (facts.self()) return true;
-        return facts.ownerActive() && !facts.blockedEitherWay();
+        return facts.ownerActive() && facts.sameCommunity() && !facts.blockedEitherWay();
     }
 
     /**

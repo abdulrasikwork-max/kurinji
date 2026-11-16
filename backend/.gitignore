@@ -10,3 +10,6 @@ evidence-store/
 social-media-store/
 vault-keys/
 *.pem
+
+# Phase N3: encrypted ID photos waiting for an admin (app.community.photo-dir)
+id-photo-store/
