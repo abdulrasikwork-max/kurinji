@@ -110,6 +110,52 @@ public final class CommunityDtos {
         }
     }
 
+    // ---- admin: bans, ending a membership, moving to a new number (B3) ---------------------------------------------
+
+    /** POST /api/admin/community/bans: a roll number, a phone number, or both; a reason; an optional short note. */
+    public record BanRequest(String phone, String rollNumber, String reason, String note) {
+        @Override
+        public String toString() {
+            return "BanRequest[reason=" + reason + ", phone=<redacted>, rollNumber=<redacted>]";
+        }
+    }
+
+    /** A ban as admins see it: never the numbers themselves (only their HMACs exist). [person] = a current member it hit. */
+    public record BanView(long id, String reason, String note, boolean onRollNumber, boolean onPhone, String person,
+                          String bannedBy, Instant createdAt, Instant liftedAt) {
+    }
+
+    /** POST /api/admin/community/members/end: an admin ends a membership (for example a wrong verification). */
+    public record EndRequest(String phone) {
+        @Override
+        public String toString() {
+            return "EndRequest[phone=<redacted>]";
+        }
+    }
+
+    /** POST /api/community/relink: the sign-up ticket of the NEW number and the person's roll number. */
+    public record RelinkStart(String ticket, String rollNumber) {
+        @Override
+        public String toString() {
+            return "RelinkStart[ticket=<redacted>, rollNumber=<redacted>]";
+        }
+    }
+
+    public record RelinkCode(String code, long expiresInSeconds) {
+        @Override
+        public String toString() {
+            return "RelinkCode[code=<redacted>, expiresInSeconds=" + expiresInSeconds + "]";
+        }
+    }
+
+    /** POST /api/admin/community/relinks: the code the person shows and the roll number typed from the ID card. */
+    public record RelinkDecision(String code, String rollNumber) {
+        @Override
+        public String toString() {
+            return "RelinkDecision[code=<redacted>, rollNumber=<redacted>]";
+        }
+    }
+
     /** One line of the community log, for admins. [detail] = the earlier spelling of a corrected name. */
     public record LogEntry(String action, String method, String reason, String actor, String subject, String detail,
                            Instant at) {

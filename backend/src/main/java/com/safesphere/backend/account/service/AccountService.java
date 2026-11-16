@@ -99,6 +99,30 @@ public class AccountService {
         return response(user, jwtService.issueToken(user, session, clock.instant()), refreshToken);
     }
 
+    /**
+     * Phase N3 (N-25): an IRL admin, who saw the college ID in person, moves this account to [newPhoneE164] (proved by a
+     * sign-up ticket for that number). Every sign-in ends (a new credentials stamp; every device session revoked), so a
+     * lost or stolen SIM's phone is signed out; the person signs in with the new number. Refused while an SOS or a Safe
+     * Walk runs (revocation must never cut a running safety session) and when another account holds the number.
+     * Joins the caller's transaction.
+     */
+    @Transactional
+    public void moveToNumber(long userId, String newPhoneE164) {
+        User user = locked(userId);
+        if (safetySessionRunning(userId)) {
+            throw new ConflictException("This account has an SOS or a Safe Walk running. Move the number once it ended.");
+        }
+        users.findByPhoneE164AndPhoneVerifiedAtIsNotNull(newPhoneE164).filter(other -> !other.getId().equals(userId))
+                .ifPresent(other -> {
+                    throw new ConflictException("Another IRL account already uses the new number");
+                });
+        LocalDateTime now = now();
+        user.markPhoneVerified(newPhoneE164, now);
+        user.signOutEverywhereElse(now);
+        users.saveAndFlush(user);
+        sessions.othersSignedOut(userId, null);
+    }
+
     /** N2 (N-24): the person corrects their real name. Answers the account as GET /api/users/me does. */
     @Transactional
     public UserResponse changeName(long userId, String rawName) {

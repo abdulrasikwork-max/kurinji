@@ -26,6 +26,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  *   POST /api/auth/phone/start   public; a phone number (Phase N2: the only way in; limited per address and number)
  *   POST /api/auth/phone/verify|resend|change  public; the challenge token is the credential (limited)
  *   POST /api/auth/sign-up     public; the one-use sign-up ticket is the credential (N2; limited per address)
+ *   POST /api/community/relink public; the one-use sign-up ticket of the NEW number is the credential (N3, N-25)
  *   GET  /api/moderation/access  any valid JWT (tells the app whether to show moderation at all)
  *   /api/moderation/**           valid JWT + MODERATOR or ADMIN role read from the database (Phase 7)
  *   /api/admin/**                valid JWT + ADMIN role read from the database (Phase 7)
@@ -58,6 +59,8 @@ public class SecurityConfig {
                         // (verify, resend, change) or the sign-up ticket (sign-up) is the credential.
                         .requestMatchers(HttpMethod.POST, "/api/auth/phone/start", "/api/auth/phone/verify",
                                 "/api/auth/phone/resend", "/api/auth/phone/change", "/api/auth/sign-up").permitAll()
+                        // Phase N3 (N-25): "moving to a new number"; the one-use sign-up ticket of the new number is the credential.
+                        .requestMatchers(HttpMethod.POST, "/api/community/relink").permitAll()
                         .requestMatchers("/error").permitAll()
                         // Phase D12: the uptime monitor and the deploy smoke test; GET only, says only UP or DOWN.
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()

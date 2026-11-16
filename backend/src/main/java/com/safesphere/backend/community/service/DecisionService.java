@@ -13,7 +13,6 @@ import com.safesphere.backend.community.dto.CommunityDtos.RequestDetail;
 import com.safesphere.backend.community.entity.Community;
 import com.safesphere.backend.community.entity.CommunityAction;
 import com.safesphere.backend.community.entity.CommunityEnums.ActionKind;
-import com.safesphere.backend.community.entity.CommunityEnums.EndReason;
 import com.safesphere.backend.community.entity.CommunityEnums.Method;
 import com.safesphere.backend.community.entity.CommunityEnums.RefusalReason;
 import com.safesphere.backend.community.entity.Membership;
@@ -291,12 +290,5 @@ public class DecisionService {
 
     private LocalDateTime now() {
         return LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
-    }
-
-    /** For the admin service: ending a membership is a decision of the same kind (logged the same way). */
-    static void logEnd(CommunityActionRepository actions, Membership m, Long actorId, EndReason reason,
-                       LocalDateTime now) {
-        actions.save(new CommunityAction(m.getCommunityId(), actorId, m.getUserId(), ActionKind.ENDED, null,
-                reason.name(), null, now));
     }
 }

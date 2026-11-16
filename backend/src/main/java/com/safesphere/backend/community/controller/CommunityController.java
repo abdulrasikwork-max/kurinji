@@ -3,7 +3,10 @@ package com.safesphere.backend.community.controller;
 import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.community.dto.CommunityDtos.MeView;
 import com.safesphere.backend.community.dto.CommunityDtos.Programme;
+import com.safesphere.backend.community.dto.CommunityDtos.RelinkCode;
+import com.safesphere.backend.community.dto.CommunityDtos.RelinkStart;
 import com.safesphere.backend.community.dto.CommunityDtos.StartRequest;
+import com.safesphere.backend.community.service.RelinkService;
 import com.safesphere.backend.community.service.VerificationService;
 import com.safesphere.backend.security.CurrentUser;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,7 +28,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Phase N3: the signed-in person's own membership and verification request. Any signed-in, adult account (membership is
- * what these endpoints are for). Caller identity only from the JWT.
+ * what these endpoints are for). Caller identity only from the JWT. The one exception is POST /relink (not signed in;
+ * the sign-up ticket of the new number is the credential).
  */
 @RestController
 @RequestMapping("/api/community")
@@ -35,9 +39,11 @@ public class CommunityController {
     static final int MAX_UPLOAD_BYTES = 5 * 1024 * 1024 + 1;
 
     private final VerificationService verification;
+    private final RelinkService relinks;
 
-    public CommunityController(VerificationService verification) {
+    public CommunityController(VerificationService verification, RelinkService relinks) {
         this.verification = verification;
+        this.relinks = relinks;
     }
 
     @GetMapping("/me")
@@ -69,6 +75,15 @@ public class CommunityController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void withdraw(@AuthenticationPrincipal Jwt jwt) {
         verification.withdraw(CurrentUser.id(jwt));
+    }
+
+    /**
+     * N-25: "I'm moving from another number". Not signed in: the sign-up ticket of the new number (from
+     * /api/auth/phone/verify) is the credential and is used up. The answer is a code to show an IRL admin with the ID.
+     */
+    @PostMapping("/relink")
+    public RelinkCode relink(@RequestBody RelinkStart request) {
+        return relinks.start(request);
     }
 
     /** Reads at most [MAX_UPLOAD_BYTES]; a longer body is refused without reading the rest into memory. */

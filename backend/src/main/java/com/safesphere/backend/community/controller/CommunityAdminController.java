@@ -1,14 +1,20 @@
 package com.safesphere.backend.community.controller;
 
+import com.safesphere.backend.community.dto.CommunityDtos.BanRequest;
+import com.safesphere.backend.community.dto.CommunityDtos.BanView;
 import com.safesphere.backend.community.dto.CommunityDtos.DecisionRequest;
 import com.safesphere.backend.community.dto.CommunityDtos.DecisionResult;
+import com.safesphere.backend.community.dto.CommunityDtos.EndRequest;
 import com.safesphere.backend.community.dto.CommunityDtos.LogEntry;
 import com.safesphere.backend.community.dto.CommunityDtos.NameChange;
+import com.safesphere.backend.community.dto.CommunityDtos.RelinkDecision;
 import com.safesphere.backend.community.dto.CommunityDtos.RequestDetail;
 import com.safesphere.backend.community.dto.CommunityDtos.VerifierChange;
 import com.safesphere.backend.community.dto.CommunityDtos.VerifierView;
+import com.safesphere.backend.community.service.BanService;
 import com.safesphere.backend.community.service.CommunityAdminService;
 import com.safesphere.backend.community.service.DecisionService;
+import com.safesphere.backend.community.service.RelinkService;
 import com.safesphere.backend.security.CurrentUser;
 import java.util.List;
 import org.springframework.http.CacheControl;
@@ -37,10 +43,15 @@ public class CommunityAdminController {
 
     private final DecisionService decisions;
     private final CommunityAdminService admin;
+    private final BanService bans;
+    private final RelinkService relinks;
 
-    public CommunityAdminController(DecisionService decisions, CommunityAdminService admin) {
+    public CommunityAdminController(DecisionService decisions, CommunityAdminService admin, BanService bans,
+                                    RelinkService relinks) {
         this.decisions = decisions;
         this.admin = admin;
+        this.bans = bans;
+        this.relinks = relinks;
     }
 
     @GetMapping("/photo-requests")
@@ -81,6 +92,33 @@ public class CommunityAdminController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void correctName(@AuthenticationPrincipal Jwt jwt, @RequestBody NameChange change) {
         admin.correctName(CurrentUser.id(jwt), change);
+    }
+
+    @GetMapping("/bans")
+    public List<BanView> bans(@AuthenticationPrincipal Jwt jwt) {
+        return bans.bans(CurrentUser.id(jwt));
+    }
+
+    @PostMapping("/bans")
+    public BanView ban(@AuthenticationPrincipal Jwt jwt, @RequestBody BanRequest request) {
+        return bans.ban(CurrentUser.id(jwt), request);
+    }
+
+    @PostMapping("/bans/{id}/lift")
+    public BanView lift(@AuthenticationPrincipal Jwt jwt, @PathVariable long id) {
+        return bans.lift(CurrentUser.id(jwt), id);
+    }
+
+    @PostMapping("/members/end")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void endMembership(@AuthenticationPrincipal Jwt jwt, @RequestBody EndRequest request) {
+        bans.endMembership(CurrentUser.id(jwt), request);
+    }
+
+    /** N-25: move a member's account to the new number whose code the person shows (in person, with the ID). */
+    @PostMapping("/relinks")
+    public DecisionResult relink(@AuthenticationPrincipal Jwt jwt, @RequestBody RelinkDecision request) {
+        return relinks.decide(CurrentUser.id(jwt), request);
     }
 
     @GetMapping("/log")

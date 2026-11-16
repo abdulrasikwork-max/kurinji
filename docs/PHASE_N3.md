@@ -174,3 +174,27 @@ standing / appeal / review of their own content (no shadow bans, even after a me
   ALREADY_MEMBER and BANNED; daily cap with admins exempt; an ended membership re-verified on the same row; ID photo
   admin-only, no-store, deleted at approval and at refusal; admin name correction).
 - Result: backend **525 run, 0 failures, 0 errors, 2 skipped**.
+
+### B3 backend: bans, membership end, re-link, upkeep job (2026-11-16)
+- `BanService`: `POST /api/admin/community/bans {phone?, rollNumber?, reason, note?}` (only HMACs stored; ends the
+  membership of every account it hits as BANNED, removes a verifier flag, deletes an open request + its photo, logs
+  BANNED; an admin cannot ban themselves), `GET .../bans` (never the numbers; the current member hit by the roll number
+  is named), `POST .../bans/{id}/lift` (logged; the person may ask again, the membership stays ended until a new
+  decision), `POST .../members/end {phone}` (REMOVED, logged). A ban never touches the account, its sessions or safety.
+- `RelinkService` (N-25): `POST /api/community/relink {ticket, rollNumber}` (public; the new number's sign-up ticket is
+  the credential and is used up; answers a code alive 1 h), `POST /api/admin/community/relinks {code, rollNumber}` (the
+  roll typed from the ID must match the person's AND a member's; refused for a banned roll and for the admin's own
+  account; wrong tries limited) → `AccountService.moveToNumber` (refused while an SOS or a Safe Walk runs; another
+  account on the number refused; new credentials stamp + every device session revoked) and RELINKED logged.
+- `CommunityUpkeepJob` (the only `@Scheduled` in `community`, hourly, `app.community.job-enabled`): expired requests
+  (+ photos), expired re-link codes, graduates marked GRADUATED at their `ends_at` (verifier flag removed, logged with no
+  actor), stray ID-photo files older than 1 h swept. Counts-only logging.
+- `SecurityConfig`: `POST /api/community/relink` permitted (ticket = credential).
+- Tests: `CommunityBanRelinkApiTest` (7: roll ban ends the membership while the same token, a new sign-in, SOS, Safe
+  Walk and a Safety Circle contact keep working, and the roll cannot be verified again; phone ban refuses asking,
+  deletes the open request + photo, safety works, bad ban input refused, non-admin 403; lift → ENDED → re-verified;
+  the ban survives the account's deletion and the same number can sign up again (safety works) but not be verified;
+  admin end → REMOVED, logged; the upkeep job: graduate + verifier flag, expired request + photo, stray file, each
+  graduate once; re-link: ticket used up, wrong roll 409, non-admin 403, refused during an SOS, moved after it, old
+  token 401, new number signs in to the same member account, roll without member refused).
+- Result: backend **532 run, 0 failures, 0 errors, 2 skipped**.
