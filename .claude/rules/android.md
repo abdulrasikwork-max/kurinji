@@ -11,6 +11,15 @@ paths:
 > `USE_BIOMETRIC`. New: `core/retired/VaultRetirement`. Paragraphs below that describe the removed parts are history
 > (code: git tag `pre-n1`). The code wins.
 
+> **N2 (2026-11-16, `docs/PHASE_N2.md`): read with care.** Sign-in is a mobile number and a texted code only: Login
+> (`loginFragment`) asks for the number, `phoneVerifyFragment` checks the code, a new number goes to "About you"
+> (`registerFragment`: real name + date of birth). No password, no e-mail, no "Forgot password". `AuthUser.phoneHint`
+> replaces `email`. Account and security: real name, "Sign out all other phones", deletion / cancel, each sensitive
+> action confirmed through `core/confirm/ConfirmationCodes` + the shared FLAG_SECURE `core/ui/CodeConfirmDialog`; the
+> SOS screen asks for a code (`codeNeededFor` + `codeRequest`, `onEndWithCode`) where it asked for the password.
+> `SessionEnder.swapping` now wraps signing out the other phones. `HonestyTextsTest` forbids any password or e-mail
+> sign-in text and password fields. Text below about passwords and e-mail is history.
+
 Loaded when working on files under `android/`. Safety features: `android-safety.md`; social features:
 `android-social.md`. The short version stays in `CLAUDE.md` §5.
 

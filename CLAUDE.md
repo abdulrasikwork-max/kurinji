@@ -81,7 +81,7 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | 17G-1/2/3, 18A-1/2 | Explore, AI understanding, "I went" + ratings, rating trust, presence, disclosure | **Removed in N1** (18A-2 was never verified on a device); 18A-3, 18B, 17I cancelled |
 | **N0** | Record the new direction (docs, this file) | done 2026-11-15 (documents only) |
 | **N1** | Strip: remove the retired features on both sides, migration V32 | implemented, compiled, tested 2026-11-15 (Android 766, backend 496, Python 38; V32 applied on the DEVELOPMENT MySQL only); results per unit in `docs/PHASE_N1.md`; manually verified on the emulator 2026-11-15 (SOS, Safe Walk, tile, shortcut, post; no real phone; one wording fix) |
-| N2 | Phone-only sign-in, real name, no password | planned |
+| **N2** | Phone-only sign-in, real name, no password, migration V33 | implemented, compiled, tested 2026-11-16 (Android 766, backend 494; V33 applied on the DEVELOPMENT MySQL only); decisions N-21 to N-26; results per unit in `docs/PHASE_N2.md`; emulator walk: see there |
 | N3 | Community, membership, verification, bans, admin screens | planned |
 | N4 | Moments, capture-only Create, the wall, daily question | planned |
 | N5 | Same / Say more / I'm in, private replies, plan threads, Replies tab | planned |
@@ -89,7 +89,7 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | N7 | Firebase push | planned |
 | N8 | Pilot launch at MIET (backups, SMS provider, policy texts, seeding, moderators) | planned |
 
-Next migration **V33**. Each phase or sub-phase needs its own plan and the owner's approval first. The pilot still
+Next migration **V34**. Each phase or sub-phase needs its own plan and the owner's approval first. The pilot still
 runs the old jar on schema V30 (its move to V32 deletes data: its own approved step).
 
 **Never implement early:** other communities / the community request system, multiple memberships, video, iPhone,
@@ -183,7 +183,7 @@ cd android
 - **Isolation:** social and safety never import each other; `feature/going` imports neither (`GoingThereTest`).
 - **DI:** manual `AppContainer` (composition root) via `Fragment.appContainer`; each ViewModel has `factory(container)`.
 - **Networking:** exactly **one** Retrofit instance; all APIs are created from it in `AppContainer`. `AuthInterceptor`
-  adds the Bearer token only to the backend origin (17J), never to `/api/auth/*`. **No HTTP logging interceptor** (passwords).
+  adds the Bearer token only to the backend origin (17J), never to `/api/auth/*`. **No HTTP logging interceptor** (codes, tokens).
 - **Errors:** repositories use `core/network/ApiCallHandler` → `ApiResult<T>` (`Success` / `Failure(ApiError, message?)`).
   Only our own 409 messages (and our 403/429 messages) reach users; other errors use app strings. A 401 goes through
   `core/network/SessionEnder` (clears the session only if the rejected token is still the saved one).
@@ -227,11 +227,11 @@ cd android
   - Thin controllers; rules in services; DTOs are Java records; entities are never serialized.
   - Caller identity **only** from the JWT: `CurrentUser.id(jwt)` (`sub` claim). No `userId` in any request DTO.
   - Repositories returning owned data always filter by user (`findByIdAndUserId`, …). Another user's record → **404** (same as missing).
-  - Throw `ApiException` subclasses (`InvalidRequestException` 400, `UnauthorizedException`/`InvalidCredentialsException`
+  - Throw `ApiException` subclasses (`InvalidRequestException` 400, `UnauthorizedException`
     401, `ResourceNotFoundException` 404, `ConflictException` 409); `GlobalExceptionHandler` renders one JSON shape:
     `timestamp, status, error, message, path, fieldErrors?, code?`. No stack traces or exception text to clients.
-    Stable `code`s for refusals the app must act on (`AGE_NOT_CONFIRMED`, `PROFILE_NEEDED`, `PHONE_NOT_VERIFIED`).
-  - Wrong passwords on account endpoints answer **409**, not 401 (a 401 means "signed out" on the phone).
+    Stable `code`s for refusals the app must act on (`AGE_NOT_CONFIRMED`, `PROFILE_NEEDED`, `TICKET_INVALID`, `OTP_*`).
+  - Wrong confirmation codes on account endpoints answer **409**, not 401 (a 401 means "signed out" on the phone).
   - `spring.jpa.hibernate.ddl-auto=none`, `open-in-view=false`. **Flyway owns the schema.**
   - Never catch a unique-key error inside a transaction and carry on: write the row in its own transaction or retry the
     whole attempt (Phase 14).
@@ -243,10 +243,10 @@ cd android
 - **Auth/JWT:** HS256, secret from env (≥ 32 chars), issuer `https://safesphere.example`, `sub` = user id, 24 h, claims
   `sid`, `auth_time`, `cca`. Device sessions with rotating refresh secrets (V19); `security/ActiveAccountCheck` refuses
   missing/erased/disabled accounts, changed credentials and ended sessions (401 + RFC 6750 `error_description`). Public:
-  `POST /api/auth/register|login|refresh|sign-out` and `/api/auth/phone/start|verify|resend|change`; everything else
+  `POST /api/auth/phone/start|verify|resend|change`, `/api/auth/sign-up|refresh|sign-out` (N2: no register/login); everything else
   authenticated; `/api/moderation/**` MODERATOR/ADMIN, `/api/admin/**` ADMIN (roles read from the DB per request; ADMIN
-  only via SQL). CSRF off (no cookies); CORS no origins by default; BCrypt (72-byte limit). Login errors generic and
-  timing-equalised. New accounts need a verified phone (17B).
+  only via SQL; role changes name a verified number). CSRF off (no cookies); CORS no origins by default. No password,
+  no BCrypt, no e-mail (N2); a session needs a verified number (N-22). Sensitive actions: a fresh code (`CodeGuard`).
 - **Tests:** `@SpringBootTest` + MockMvc, real JWT flow, H2 in MySQL mode with **Flyway disabled** and Hibernate
   `create-drop` (`src/test/resources/application.properties`). Helper `support/TestAccounts`. Two-user ownership tests
   are the norm. ⚠ H2 does not exercise MySQL-only DDL (generated columns, CHECKs): **verify every new migration on real
@@ -256,7 +256,7 @@ cd android
 
 ## 7. Database (MySQL `safesphere`, Flyway) — per-migration rules in `.claude/rules/database.md`
 
-Conventions: never edit an applied migration; next file is **V33**; snake_case; `DATETIME(6)` stored in UTC; constraint
+Conventions: never edit an applied migration; next file is **V34**; snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci. "One active /
 one primary / one open" via a generated marker column + unique index. MySQL forbids CHECKs on cascading-FK columns
 (enforce those rules in code); write NULL cases out with `COALESCE` (a NULL makes `IN` UNKNOWN, which a CHECK lets pass);
@@ -275,6 +275,7 @@ closed lists use binary collation.
 | V30 | `place_visits` ("I went" + optional rating 1–5 on the same row, private to its owner) |
 | V31 | `place_visits.at_place`, `posts.disclosed` (18A-2) |
 | **V32** | **N1: DROPS** the V9–V11 evidence tables, `place_signals`, `signal_contributions`, `signal_flags`, `contributor_standing`, `moderation_cases`, `area_patterns`, `evaluation_counters`, `butterflies`, `saved_posts`, `daily_states`, `post_facets`, `place_visits`, `posts.disclosed`, `moderation_actions.signal_category` (30 tables remain) |
+| **V33** | **N2:** `phone_codes` (SIGN_IN / CONFIRM, sign-up ticket) replaces `phone_challenges`; DROPS `email_verification_tokens`, `users.email` / `email_verified_at` / `password_hash`, `profiles.display_name`; session reason `OTHERS_SIGNED_OUT` |
 
 ---
 
@@ -319,12 +320,14 @@ closed lists use binary collation.
   5 wrong codes kill a code; cooldown + per-challenge, per-number and per-address limits; the challenge token is
   256-bit, SHA-256 stored; one verified account per number; SMS only after commit, provider refusals undone; provider
   credentials only from the environment; the dev sink writes codes to a local file only (never in production). Accounts
-  from before 17B keep their sessions and verify a number at their next sign-in.
+  from before 17B keep their sessions and verify a number at their next sign-in. **N2 (V33):** the number + code is
+  the ONLY way in (N-21: same answer for every number; a new number gets a one-use 30-min sign-up ticket); deletion,
+  its cancel, "sign out all other phones" and ending an SOS from another sign-in need a fresh code to the own number.
 - **Moderation (Phase 13D, built):** the reported person is never told who reported or that a report exists (no
   notice, no refused edit/delete, no "keep" in their standing); reports only collapse (visibly, at 3 independent
   counting reports); hold, removal and pauses are human decisions with a reason, audited and appealable to another
   moderator (never the decider or a reporting moderator); no shadow bans: every state is shown to its author.
-- **E-mail ownership (V25, superseded by 17B):** the full rule is in `docs/EMAIL_VERIFICATION.md` (appendix). A future
+- **E-mail ownership (V25, superseded by 17B; e-mail and password gone in N2):** history in `docs/EMAIL_VERIFICATION.md`. A future
   password reset must use its own token table and refuse unverified accounts.
 
 ---
@@ -404,16 +407,16 @@ closed lists use binary collation.
 | **Nobody can monitor another person, permanently** (no family/partner/guardian mode, no location on request) | A monitoring feature turns a safety tool into a control tool |
 | Every SOS starts on the phone; the server is told later with a client reference | SMS and GPS work without internet; the button must not depend on a round trip |
 | Expired ≠ revoked: a failed refresh is "sign in to sync" and deletes nothing | Authentication failing must never destroy a running SOS, its ending or the offline Circle copy |
-| Another sign-in ends an ACTIVE SOS only with the password; no automatic "resolved" SMS from another phone | Nobody can silently end someone's SOS; only the person on a phone can say they are OK |
+| Another sign-in ends an ACTIVE SOS only with a fresh texted code (N2; was the password); no automatic "resolved" SMS from another phone | Nobody can silently end someone's SOS; only the person on a phone can say they are OK |
 | Evidence encrypted on the phone (per-item key); server stores ciphertext only; deletion needs the password and is refused during / 24 h after an emergency | A breach reveals no evidence; coerced deletion is blocked |
-| Password change and account deletion refused during an ACTIVE SOS/walk; deletion has a 7-day grace | Revocation must not cut a running safety session; coerced deletion is recoverable |
+| "Sign out all other phones" (N2; was the password change) and account deletion refused during an ACTIVE SOS/walk; deletion has a 7-day grace | Revocation must not cut a running safety session; coerced deletion is recoverable |
 | Community = place signals (cells only, no authors, no text, bands not counts); trust private, never shown | Safety intelligence, not engagement; no accusations of people |
 | Content can be hidden automatically (reversible); people are restricted only by a human, with a reason, audited, appealable to another moderator; no shadow bans | Automatic punishment fails unsafely; moderator abuse is auditable |
 | AI produces evidence → a deterministic policy decides → only humans restrict (D2); an outage publishes; self-harm never stored | An AI mistake must not silence anyone; infrastructure failure must not silence people |
 | Safety intelligence = deterministic rules, no score, "unknown" is never "safe"; no text claims a place or person is safe | Explainable, attack-resistant, honest |
 | OLD social code only (until N4/N5; section 1 replaces it: private replies and plan threads exist, no places): no followers, mutual connections only, no DMs, no presence, no counts except U1; cells and time bands only; private places stay on the phone | Following someone's real-world posts is monitoring; public posts must not reveal routines |
 | OLD social code only (until N4): every list of others' posts is ordered by `visible_from`, never `created_at` | The order must not reveal the time the delay hides |
-| Phone OTP for new accounts (provider-neutral `OtpSender`); e-mail + password stays the sign-in | Sign-ups were stuck without a mail server; codes and limits stay in tested code |
+| Phone OTP (provider-neutral `OtpSender`); since N2 the number + code is the ONLY sign-in, no password, no e-mail (N-21) | Sign-ups were stuck without a mail server; codes and limits stay in tested code |
 | Media: metadata stripped on the phone and again on the server; videos tap to play, never stored on the phone | Location privacy; Q3 (nothing about other people on the phone) |
 | Visible brand IRL; package, applicationId, signing and code names stay SafeSphere | A rebrand must update the installed app in place |
 | Time = UTC everywhere (`docs/TIMESTAMPS.md`) | Shifted timestamps were found and fixed once; `TimestampStorageVerifier` refuses to start on a shift |

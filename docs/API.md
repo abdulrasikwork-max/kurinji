@@ -32,6 +32,15 @@ The examples use made-up values only. Never put real credentials in documentatio
 > SOS, Safe Walk, circle alerts, profiles, connections, blocks, places, posts, media, perspectives and Discover.
 > The Python service: `POST /v1/assess` and `GET /v1/health` (without `understanding`); `/v1/understand` is gone.
 
+> ## Changed in N2 (2026-11-16, `PHASE_N2.md`): phone number + texted code are the only way in
+> **Gone (404):** `POST /api/auth/register`, `POST /api/auth/login` (Phase 2, 17B), `PUT /api/users/me/password`
+> (Phase 10A). **Changed:** `/api/auth/phone/start` and `/phone/verify` (one flow for sign-in and sign-up), deletion,
+> its cancel and ending an SOS from another sign-in take `{challenge, code}` instead of `{password}`, `PUT /api/admin/roles`
+> takes `{phone, role}`, the `user` object has `phoneHint` instead of `email`, a profile's `displayName` is the real
+> name (`PUT /api/profiles/me` ignores a sent name). **New:** `POST /api/auth/sign-up`, `POST /api/users/me/confirmation`,
+> `POST /api/users/me/sessions/sign-out-others`, `PUT /api/users/me/name`. Details: "Phase N2" before the appendix.
+> The Phase 2, 10A and 17B sections below are history where they mention an e-mail or a password.
+
 ## Error format (every endpoint)
 
 ```json
@@ -1311,12 +1320,69 @@ too (`clientRef`, `startedAt`): the phone keeps the trigger with the record and 
   other protected path. For an uptime monitor and `deploy/scripts/smoke-test.sh`. The `prod` profile binds the backend to
   `127.0.0.1` (`SERVER_ADDRESS`), so the monitor must call it through the HTTPS proxy.
 
+# Phase N2: phone-only sign-in, real name, no password (`docs/PHASE_N2.md`, V33)
+
+All `/api/auth/*` endpoints are public (the challenge, ticket or refresh token is the credential) and limited in
+memory. Numbers: an Indian mobile number, any common way of typing it (`9876543210`, `+91 98765 43210`, …). Codes: 6
+random digits, 5 minutes, stored only as an HMAC, never logged or returned. Refusals carry a stable `code` (below).
+
+**Sign in or sign up (one flow, N-21)**
+- `POST /api/auth/phone/start {phone}` → **200** `{challenge, phoneHint: "••••••3210", codeSent, resendInSeconds,
+  codeExpiresInSeconds}`. The SAME answer and a code whether or not the number has an account (nobody can probe which
+  numbers are registered). 400 `PHONE_INVALID`; 429 `OTP_WAIT` (cooldown, per number per day, per address).
+- `POST /api/auth/phone/verify {challenge, code, previousRefreshToken?}` → **200** either
+  `{status: "SIGNED_IN", session: {accessToken, tokenType, expiresInSeconds, user, refreshToken}}` (the number's
+  account; Phase 11 C1 hand-over of this phone's old sign-in and its running SOS kept) or
+  `{status: "SIGN_UP_NEEDED", signUp: {ticket, phoneHint, expiresInSeconds}}` (no account yet; the ticket is 256 bits,
+  SHA-256 stored, one use, 30 minutes, tied to the number). 400 `OTP_INVALID` (tries left in the message),
+  `OTP_EXPIRED`, `CHALLENGE_INVALID`; 429 `OTP_LOCKED` (5 wrong codes); 403 `ACCOUNT_UNAVAILABLE` (the number's account
+  is switched off, or has no verified number: N-22).
+- `POST /api/auth/sign-up {ticket, name, dateOfBirth: "yyyy-MM-dd"}` → **201** the session answer (`accessToken`,
+  `refreshToken`, `user`); the number is verified from the first moment. `name` = the real name (2–60 characters;
+  letters of any script with their marks, spaces, `. ' -`; no digits or emoji; spaces collapsed); `dateOfBirth` is
+  checked for 18+ and never stored (D6). 400 name or age refusals (`You must be 18 or older to use this app`), 400
+  `TICKET_INVALID` (used, ended or unknown ticket: start again), 409 `PHONE_IN_USE` (the number got an account
+  meanwhile), 429 too many new accounts from one address.
+- `POST /api/auth/phone/resend {challenge}`, `POST /api/auth/phone/change {challenge, phone}` (a typo): as in 17B.
+- `refresh`, `sign-out`: unchanged (Phase 11 C1). A session needs a verified number: a refresh of an account without
+  one answers 401 `account_unavailable`.
+
+**Sensitive actions confirmed with a fresh code (N-7)** — replaces the password of Phase 10A
+- `POST /api/users/me/confirmation` (no body) → **200** the same challenge shape as `phone/start`; the code is texted
+  to the account's OWN number (purpose CONFIRM, one use). 429 `OTP_WAIT`.
+- The confirmed actions send `{challenge, code}`. A wrong or used code, or a challenge of another account or of a
+  sign-in, is **409** "That code is not right, or it has ended. Ask for a new code." (never 401: a 401 means "signed
+  out" on the phone); 5 wrong codes in 15 minutes per account, all actions together, = **429**. Every refusal of the
+  action itself is checked BEFORE the code, so a refused action does not use the code up.
+  - `POST /api/users/me/deletion {challenge, code}` → 202 `{deletionRequestedAt, deletionDueAt}` (rules of 10A
+    unchanged: 409 during an SOS and 24 h after one; 7-day grace).
+  - `POST /api/users/me/deletion/cancel {challenge, code}` → 204.
+  - `POST /api/users/me/sessions/sign-out-others {challenge, code}` (N-26) → **200** the session answer with a NEW
+    access token for this phone (same device session); the credentials stamp moves and every other sign-in of the
+    account ends (their next call: 401 `credentials_changed`; their sessions end with reason `OTHERS_SIGNED_OUT`).
+    409 while an SOS or a Safe Walk runs.
+  - `PUT /api/emergencies/{id}/resolve|cancel {challenge?, code?, endedAt?}`: the phone that started the SOS sends no
+    code; another sign-in gets **403** without one and 409 with a wrong one (Phase 10A.4 rules otherwise unchanged).
+- Honest limit: the code goes to the same SIM as sign-in. It protects against a stolen session or a phone left
+  signed in, not against someone who holds the SIM.
+
+**Name and account**
+- `PUT /api/users/me/name {name}` (N-24) → **200** the `user` object. Same rule as sign-up; 400 otherwise. Locked after
+  the ID check of N3 (not built yet).
+- `GET /api/users/me` and every `user` object: `{id, name, phoneHint, createdAt, deletionRequestedAt, deletionDueAt,
+  ageConfirmed}` (no `email`).
+- `PUT /api/admin/roles {phone, role}` (ADMIN): the account is found by its verified number (any common way of typing
+  it); 404 for a number without a verified account.
+- Config: `app.otp.ticket-lifetime` (30m) replaces `app.otp.unverified-retention`; `app.account.code-failures` (5) /
+  `code-failure-window` (15m) replace `password-failures` / `password-failure-window`; `app.auth.login-*` removed.
+
 # Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
 
 > **N1 (2026-11-15):** the lines of Phases 5 to 9, 17G and 18A in this index are history; what was removed is listed at the top of this file.
 
 A compact list of every phase's endpoints and config keys; the sections above have the details. Keep it in step.
 
+- **Phase N2** (V33, `API.md` "Phase N2"): `POST /api/auth/phone/start {phone}` (same answer for every number), `/phone/verify` → `SIGNED_IN` + session | `SIGN_UP_NEEDED` + ticket, `POST /api/auth/sign-up {ticket, name, dateOfBirth}` 201, `POST /api/users/me/confirmation`, `POST /api/users/me/sessions/sign-out-others {challenge, code}`, `PUT /api/users/me/name {name}`; `{challenge, code}` on deletion / cancel / SOS end from another sign-in; `PUT /api/admin/roles {phone, role}`; `user.phoneHint` replaces `email`. Removed: `/api/auth/register`, `/api/auth/login`, `PUT /api/users/me/password`. Config `app.otp.ticket-lifetime`, `app.account.code-failures|code-failure-window`.
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/users/me`
 - Phase 17F (`API.md` "Phase 17F"): `POST /api/emergencies` accepts `triggerType` `SHAKE` (MANUAL default; VOICE and
   DURESS_PIN still 400). No new endpoint, no migration.

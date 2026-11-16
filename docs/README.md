@@ -13,6 +13,7 @@ larger phases also have a design or plan doc written and approved before the wor
 - `PLATFORM_CONSTRAINTS.md` — what Android allows and what it does not (honest limits).
 - `TIMESTAMPS.md` — UTC storage rules and the one-time fix.
 - `IRL_DIRECTION.md` — **the current product direction (2026-11-15)**: verified community, moments, "Who's in?", verification, safety placement, phases N0–N8.
+- `PHASE_N2.md` — plan, the owner's decisions and results of phone-only sign-in (N2).
 - `PHASE_N1.md` — plan and results of the strip phase. `history/CLAUDE_2026-11-15.md` — `CLAUDE.md` as it was before the direction change.
 - `EXPERIENCE_PLATFORM_DESIGN.md` — the PREVIOUS product direction (2026-10-22, superseded on 2026-11-15), decisions D1–D15; appendix = product history.
 - `AUDIT_NEXT.md` — 2026-10-22 audit (safety findings still apply; Part II product direction superseded).

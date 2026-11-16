@@ -14,6 +14,18 @@ paths:
 > (`ModerationServiceClient`, `Fast2SmsOtpSender`). The test helper `CommunityClient` is `ApiTestClient`. Paragraphs
 > below about the removed parts are history (code: git tag `pre-n1`). Schema: V32, next V33.
 
+> **N2 (2026-11-16, `docs/PHASE_N2.md`): read with care.** There is no password and no e-mail. `auth`: `AuthService`
+> = phone start / verify / sign-up / refresh / sign-out (`/register`, `/login` gone); `auth/phone/PhoneCodeService` (V33
+> `phone_codes`, purposes SIGN_IN / CONFIRM; replaces `PhoneVerificationService` and `PhoneChallenge`; the 17B code
+> rules unchanged) + the sign-up ticket (30 min, one use); `user/service/RealNamePolicy`; `AuthThrottle` keeps only new
+> accounts per address. Sessions and refresh need a verified number (N-22). `account`: `CodeGuard` replaces
+> `PasswordGuard` (wrong code 409, 5 per 15 min shared 429; `app.account.code-failures|code-failure-window`), endpoints
+> confirmation / sign-out-others (reason `OTHERS_SIGNED_OUT`, refused during an SOS or walk) / name; deletion, cancel and
+> ending an SOS from another sign-in take `{challenge, code}`. BCrypt, `PasswordEncoder`, `MailProperties`,
+> `EmailVerification*`, `InvalidCredentialsException`, `EmailAlreadyUsedException` are gone; `UserResponse` has
+> `phoneHint`; role changes by number; `Profile.displayName` reads `users.name` (`@Formula`, N-23). Text below about
+> passwords, e-mail, `isActivated` and `PhoneVerificationService` is history. Schema: V33, next V34.
+
 Loaded when working on files under `backend/`. Conventions and invariants also stay in `CLAUDE.md` §6; migrations in
 `database.md`; endpoints in `docs/API.md`.
 
