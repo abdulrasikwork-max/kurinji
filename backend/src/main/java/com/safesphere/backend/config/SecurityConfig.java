@@ -29,6 +29,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  *   GET  /api/moderation/access  any valid JWT (tells the app whether to show moderation at all)
  *   /api/moderation/**           valid JWT + MODERATOR or ADMIN role read from the database (Phase 7)
  *   /api/admin/**                valid JWT + ADMIN role read from the database (Phase 7)
+ *   /api/verifier/**             valid JWT + ADMIN role or an active verifier, read from the database (Phase N3)
  *   everything else              needs a valid JWT ("Authorization: Bearer ...")
  */
 @Configuration
@@ -63,6 +64,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/moderation/access").authenticated()
                         .requestMatchers("/api/moderation/**").access(roles.moderator())
                         .requestMatchers("/api/admin/**").access(roles.admin())
+                        // Phase N3: in-person verification, for active verifiers and admins (read from the database).
+                        .requestMatchers("/api/verifier/**").access(roles.verifier())
                         .anyRequest().authenticated())
                 // Reads "Authorization: Bearer <jwt>", verifies it with the JwtDecoder bean.
                 .oauth2ResourceServer(oauth2 -> oauth2

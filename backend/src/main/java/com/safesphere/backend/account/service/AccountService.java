@@ -6,6 +6,7 @@ import com.safesphere.backend.auth.dto.PhoneVerificationDtos.CodeChallengeRespon
 import com.safesphere.backend.auth.service.DeviceSessionService;
 import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
+import com.safesphere.backend.common.exception.NameLockedException;
 import com.safesphere.backend.common.exception.UnauthorizedException;
 import com.safesphere.backend.config.AccountProperties;
 import com.safesphere.backend.emergency.entity.EmergencyStatus;
@@ -102,6 +103,7 @@ public class AccountService {
     @Transactional
     public UserResponse changeName(long userId, String rawName) {
         User user = locked(userId);
+        if (user.isNameLocked()) throw new NameLockedException(); // Phase N3 (N-24): checked against the college ID
         String name = RealNamePolicy.clean(rawName);
         RealNamePolicy.Result check = RealNamePolicy.check(name);
         if (check != RealNamePolicy.Result.OK) throw new InvalidRequestException(RealNamePolicy.message(check));

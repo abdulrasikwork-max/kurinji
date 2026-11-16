@@ -88,4 +88,30 @@ public final class CommunityDtos {
 
     public record PhotoQueue(List<RequestDetail> requests) {
     }
+
+    // ---- admin: staff, names, log ---------------------------------------------------------------------------------
+
+    /** PUT /api/admin/community/verifiers: appoint (true) or remove (false) the member with this phone number. */
+    public record VerifierChange(String phone, Boolean verifier) {
+        @Override
+        public String toString() {
+            return "VerifierChange[verifier=" + verifier + ", phone=<redacted>]";
+        }
+    }
+
+    public record VerifierView(String name, String phoneHint, String programme, int graduationYear, Instant since) {
+    }
+
+    /** PUT /api/admin/community/members/name: an admin's correction of a checked name (logged, shown to the person). */
+    public record NameChange(String phone, String name) {
+        @Override
+        public String toString() {
+            return "NameChange[phone=<redacted>, name=<redacted>]";
+        }
+    }
+
+    /** One line of the community log, for admins. [detail] = the earlier spelling of a corrected name. */
+    public record LogEntry(String action, String method, String reason, String actor, String subject, String detail,
+                           Instant at) {
+    }
 }

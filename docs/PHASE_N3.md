@@ -151,3 +151,26 @@ standing / appeal / review of their own content (no shadow bans, even after a me
   replaced, member refused, banned number refused and shown, the gate both ways, graduation at the minute),
   `CommunityIsolationTest` (5). `VisibilityTest` gained the outsider case.
 - Result: backend **516 run, 0 failures, 0 errors, 2 skipped**.
+
+### B2 backend: decisions, ID-photo review, name lock, verifiers, log (2026-11-16)
+- `DecisionService`: `lookup` (the code → name, masked number, programme, year; never the roll number; claims the
+  request for the one who typed it; wrong codes 404 like expired ones, then 429 per decider), `decideInPerson` (only the
+  claimer, within `claim-lifetime`), `photoQueue` / `photo` / `decideByPhoto` (admins only). One decision path: approve
+  needs the roll number typed from the card (HMAC must match the applicant's, else 409 and a counted try), a corrected
+  name is checked by `RealNamePolicy`; then automatic refusals `BANNED` (roll or phone) and `ALREADY_MEMBER` (roll held by
+  another account); a verifier's approvals are capped per 24 h (admins exempt); membership created or the person's ended
+  row re-used; `NAME_CORRECTED` logged with the earlier spelling; `users.name_checked_at` set; the request deleted and its
+  photo file deleted after commit. Nobody decides their own request (also at lookup and photo view). A unique-key race
+  on the roll number rolls the whole decision back and answers 409 (Phase 14 rule).
+- `CommunityAdminService`: verifiers list / appoint / remove by phone number (active members only; logged), admin name
+  correction (logged, shown), the log (50 per page, names as they are now). `VerifierController` (`/api/verifier/**`)
+  and `CommunityAdminController` (`/api/admin/community/**`; the photo with `no-store`, `nosniff`, inline).
+- Security: `RoleAuthorization.verifier()` = ADMIN or an active verifier, read from the database per request;
+  `SecurityConfig` maps `/api/verifier/**` to it. `AccountService.changeName` refuses a checked name: 409 `NAME_LOCKED`
+  (`NameLockedException`).
+- Tests: `CommunityDecisionApiTest` (9: approval with a corrected name + lock + log; wrong roll 409 then refusal shown;
+  claim belongs to the typer and ends after 15 min; wrong-code limit; only verifiers/admins, removal effective at once,
+  bootstrap of two root admins verifying each other, nobody verifies themselves, verifiers must be members;
+  ALREADY_MEMBER and BANNED; daily cap with admins exempt; an ended membership re-verified on the same row; ID photo
+  admin-only, no-store, deleted at approval and at refusal; admin name correction).
+- Result: backend **525 run, 0 failures, 0 errors, 2 skipped**.
