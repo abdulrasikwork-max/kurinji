@@ -1,6 +1,6 @@
 # Phase N3: verified MIET community membership
 
-Status: **approved by the owner on 2026-11-16** (plan + the decisions below). Units B1, B2, B3, B4, A1, A2, C; one
+Status: **approved by the owner on 2026-11-16** (plan + the decisions below). **PAUSED 2026-11-16 by the owner after B3** (B1–B3 implemented, compiled, tested, committed; B4, A1, A2, C not started; resume from the top of `HANDOFF.md`). Units B1, B2, B3, B4, A1, A2, C; one
 local commit each; never pushed, never deployed. Results per unit under "As built". Direction: `IRL_DIRECTION.md`
 §2.5; decisions N-2 to N-6, N-24, N-25; new decisions of this phase: `DECISIONS.md` N-27 onwards.
 

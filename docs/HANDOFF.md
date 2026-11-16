@@ -1,4 +1,65 @@
-# CHECKPOINT 2026-11-16 (sixth session): N2 is COMPLETE. A2 and C done; manually verified on the `irl_api33` emulator (no real phone). Nothing pushed, nothing deployed. Next: the plan for N3, which needs the owner's approval before any code.
+# CHECKPOINT 2026-11-16 (seventh session): N3 PAUSED by the owner at a clean point. Backend units B1, B2, B3 are DONE (implemented, compiled, tested, committed). B4, A1, A2, C are NOT started. Nothing pushed, nothing deployed. Do NOT redo B1–B3.
+
+**Standing instructions, unchanged:** the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). **The N3 plan is APPROVED (owner, 2026-11-16) with the owner's corrections; continue it, do not re-plan.** The approved plan, the owner's 10 decisions and the detailed design are in `docs/PHASE_N3.md` (read it first); what each unit built is under "As built" there.
+
+## Owner's N3 decisions (2026-11-16; full list in `PHASE_N3.md`; to be written into `DECISIONS.md` as N-27 onwards in unit C)
+1. Roll number = the college roll number printed on the MIET ID card, like `E1236003`; NO fixed format assumed (not the 12-digit register number); kept only as an HMAC.
+2. Programmes: the owner's fixed list of 14 (8 UG, 6 PG), no seat counts (`CommunityEnums.Programme`).
+3. In person (default, preferred) OR ID photo (fallback, an admin decides): alternatives, the applicant chooses ONE.
+4. Membership ends 31 July of the graduation year (end of the day in India = 18:30 UTC); graduates lose access (no alumni).
+5. A ban removes MIET community access ONLY; never sign-in, SOS, Safe Walk or the Safety Circle.
+6. Unverified people may prepare their own profile draft; no community access.
+7. No list of verifiers in the app.
+8. Verifiers may correct the spelling of the name at approval: logged and shown to the person.
+9. Number re-linking is in N3: admin + in person only.
+10. Nobody approves their own request.
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). `main` = `origin/main` = tag `pre-n1` = `fd669b9`, untouched.
+- N3 commits, oldest first: `e2c63b6` N3-B1 · `ecbc064` N3-B2 · `1014295` N3-B3 · then ONE documents-only commit with this checkpoint (`git log -1`). `git status` clean afterwards.
+- `android/local.properties` and `backend/.env` were NOT touched in this session.
+
+## What is built (backend only; details per unit in `PHASE_N3.md` "As built")
+| Unit | Commit | Content | Result |
+|---|---|---|---|
+| B1 | `e2c63b6` | V34 file; package `community` (entities, repositories, `CommunityKeys`, pure `CommunityRules`, encrypted `IdPhotoStore`, `MembershipLookup`, applicant `VerificationService` + `CommunityController` `/api/community/me, programmes, verification, verification/code, verification/photo`); `config/CommunityProperties` (`app.community.*`), `ProductionGuard.communityProblems`; the social gate through the port `social/service/MembershipGate` (`SocialAccess.requireMember` needs an active membership → 403 `MEMBERSHIP_NEEDED`; `requireAccount` / `requireCanEditOwnProfile` for the own draft and the moderation standing); `Visibility.Facts.sameCommunity`; `User.nameCheckedAt`; `AccountEraser` covers V34 | backend 516 / 0 failures |
+| B2 | `ecbc064` | `DecisionService` (code lookup claims the request for 15 min; the roll typed from the card must match; automatic `BANNED` / `ALREADY_MEMBER`; daily cap per verifier; name correction logged; name lock), `CommunityAdminService` (verifiers by phone, admin name correction, log), `VerifierController` `/api/verifier/**`, `CommunityAdminController` `/api/admin/community/**` (photo queue, photo no-store, decision, verifiers, name, log); `RoleAuthorization.verifier()`; `PUT /api/users/me/name` → 409 `NAME_LOCKED` | backend 525 / 0 failures |
+| B3 | `1014295` | `BanService` (ban / list / lift / end membership), `RelinkService` (`POST /api/community/relink`, public, with the new number's sign-up ticket; `POST /api/admin/community/relinks`) → `AccountService.moveToNumber` (refused during an SOS or walk; every sign-in ends); `CommunityUpkeepJob` (hourly: expiry, graduation, photo sweep) | backend **532 run, 0 failures, 0 errors, 2 skipped** |
+
+New tests: `CommunityRulesTest` 5, `CommunityKeysTest` 4, `CommunityApplicantApiTest` 8, `CommunityDecisionApiTest` 9, `CommunityBanRelinkApiTest` 7, `CommunityIsolationTest` 5 (safety and community never import each other; social never imports community). Test helpers: `TestAccounts.registerVerifiedAndLogin` now ALSO seeds an active MIET membership (all older community tests keep their meaning); `TestAccounts.registerUnverified`, `seedMembership`, `rollFor`; `support/CommunityClient`; the MIET row in tests comes from `backend/src/test/resources/data.sql` (+ `spring.jpa.defer-datasource-initialization=true` in the test properties).
+
+## Build / test status at this checkpoint
+- Backend: `mvn test` **532 run, 0 failures, 0 errors, 2 skipped** (the opt-in real-MySQL class), at `1014295`. Command: `cd backend`, `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:/Users/Public mvn -o test`.
+- Android: NOT touched in N3 yet (last result, N2: 766 / 0 failures, lint 0 errors / 89 warnings). The app does not know `MEMBERSHIP_NEEDED` yet: against an N3 backend, an unverified account's Home and social screens would show a generic error until A1 is done. Do not run an N3 backend for anyone before A1.
+- Python moderation service: not touched.
+- NOT manually verified (no emulator walk yet).
+
+## Database / migration state
+- `backend/src/main/resources/db/migration/V34__community_membership.sql` is WRITTEN and exercised only through the H2 entity tests. **It is applied NOWHERE**: the DEVELOPMENT MySQL is still at **V33** (29 tables); the pilot is at V30. A new migration file after it would be V35 (`CLAUDE.md` updated).
+- V34 adds `users.name_checked_at` + its CHECK, and the tables `communities` (MIET seeded by the migration), `memberships`, `verification_requests`, `number_relinks`, `bans`, `community_actions`. It deletes nothing. The V34 row in `.claude/rules/database.md` is NOT written yet (unit B4).
+- Data impact once applied on development: every existing development account becomes UNVERIFIED (no membership) and loses social access until verified; their old posts become invisible to others. Accounts 396 ("Nila Check") and 399 ("Meera Test") are the test accounts for the emulator walk.
+- New secret `COMMUNITY_SECRET` (32+ characters): not set in `backend/.env`; in development the backend then derives a key from `JWT_SECRET` and logs a WARN (fine for development; the `prod` profile refuses to start without it). New git-ignored folder `backend/id-photo-store/` (encrypted ID photos) is created at start-up.
+
+## Exact next step when the owner returns: unit B4 (V34 on the DEVELOPMENT MySQL)
+1. `git status` (clean) and `git log --oneline -5` (expect the checkpoint commit on top of `1014295`).
+2. Optionally re-run `mvn -o test` in `backend` (expect 532 / 0 failures / 2 skipped).
+3. **B4**, the same way as N2-B3 (`PHASE_N2.md` "B3 Migration V33"): (a) backup the development database with `mysqldump --single-transaction` to `C:\Users\ABDUL RAFIQ\Desktop\SafeSphere-Phase3\db-backups\safesphere-dev-before-v34-<date>.sql` (outside the repo); (b) read-only pre-check (schema at V33, 29 tables, none of the new table names exist); (c) dry run of V34's CHECKs on scratch tables `zz_v34_*` (accepted and refused rows for each CHECK: hex keys, programme list, method list, end pair with `COALESCE`, verifier pair, code/photo pairs per method, a ban needs a key, action/reason lists, detail only for NAME_CORRECTED, `users.name_checked_at` on a copy of `users`), then drop the scratch tables; (d) apply by starting the N3 jar once against the development database ("Successfully applied 1 migration", "now at version v34", "Started"); (e) check every `@Column` of the six new entities exists in MySQL, MIET is seeded, data counts unchanged; (f) curl walk on MySQL (an existing dev account signs in → `/api/community/me` NONE → start IN_PERSON → a second account made ADMIN by SQL looks the code up and approves → MEMBER); (g) `SAFESPHERE_MYSQL_TESTS=true` real-MySQL tests; (h) record "B4" under "As built" in `PHASE_N3.md`, add the V34 row to `.claude/rules/database.md`, commit `N3-B4: V34 applied on the development MySQL`. Stop the backend afterwards.
+4. Then **A1** (Android applicant side): `feature/membership` (domain / data / ui; not `feature/community`, which was Nearby); You → a membership card + "Get verified" (choose ONE way: in person = default, ID photo = fallback); the in-person code screen (FLAG_SECURE, "show a new code", the code kept in the ViewModel only); ID photo through the camera-app intent (`ActivityResultContracts.TakePicture` into a cache file via a new `FileProvider` limited to the cache folder; NO `CAMERA` permission; the Photo Picker only if no camera app), re-encoded by `PhotoPreparer`, local file deleted after upload; status / refusal reason / BANNED / ENDED states; Home, Compose, Connections and the person profile handle 403 `MEMBERSHIP_NEEDED` like `PROFILE_NEEDED`; the Account name field locked when `/api/community/me` says `nameLocked` (409 `NAME_LOCKED` handled); "I'm moving from another number" on the "About you" step (ticket → `/api/community/relink` → code screen); wording guard tests + a new `MembershipTextsTest`.
+5. Then **A2** (staff screens under "Settings and more", shown from `/api/community/me` `staff`): Verify someone (code → details → roll number from the card → approve, with an optional corrected name, or refuse with a reason), ID photos queue + review (FLAG_SECURE, memory only, no-store), Verifiers, Bans (+ lift), End membership, Re-link, Log.
+6. Then **C**: `API.md` + its appendix, `DECISIONS.md` N-27 onwards, `.claude/rules/backend.md`, `database.md`, `android*.md`, `CLAUDE.md` §2/§6/§7/§8/§9, `STATUS.md`, `README.md` index for `PHASE_N3.md`; full runs on both sides; the emulator walk: unverified Home blocked while SOS and Safe Walk work, in-person refusal (wrong roll) then approval with a name correction, name lock, ID photo approval + the file gone from `backend/id-photo-store/`, ban → community gone while SOS and Safe Walk work, lift, re-link, withdrawal, membership expiry through the job, admin bootstrap by SQL.
+
+## Issues / decisions for the owner's attention (none blocking)
+1. **`COMMUNITY_SECRET`**: must be generated and stored apart from the database before any real roll number is stored (pilot, N8). Losing it breaks every ban and the one-account-per-roll-number rule. Development works without it (WARN).
+2. **Honest limit (viva):** roll numbers are short and structured; someone holding BOTH the database and `COMMUNITY_SECRET` could recover them by trying every number; either one alone cannot.
+3. **Root admins:** `ADMIN` is still set only by SQL; at least two admins are needed at the start, because nobody verifies themselves (they verify each other in person; tested).
+4. **Details fixed while building** (inside the approved plan; recorded as decisions in C): the in-person code is 8 characters without 0/O/1/I/L, alive 10 min, renewable; typing the code claims the request for that verifier for 15 min; verifier approvals capped at 50 per 24 h (admins exempt); 3 requests per account per day; requests and their photos expire after 7 days; re-link codes live 1 h; a refused applicant sees the reason; a ban is shown to the person as BANNED with its reason (no shadow bans); after a lift the membership stays ENDED until a new verification; verifiers decide in-person requests only, ID photos are admin-only; the server never tells an applicant whether a roll number is taken or banned (only the person who saw the ID learns it).
+5. Observed, not changed: the old Home endpoint `/api/discover/edition` answers 400 without its parameters (irrelevant to N3; replaced in N4).
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, the pilot's own move to the new jar and schema (V32 + V33 + V34 there: its own approved step with a fresh `restore-rehearsal.sh` PASS first), the N2 observations (tile / shortcut on the idle SOS screen, "About you" error and wording) for N6.
+
+---
+
+# CHECKPOINT 2026-11-16 (sixth session; superseded by the checkpoint above): N2 is COMPLETE. A2 and C done; manually verified on the `irl_api33` emulator (no real phone). Nothing pushed, nothing deployed. Next: the plan for N3, which needs the owner's approval before any code.
 
 **Standing instructions, unchanged:** the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30).
 
