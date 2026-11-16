@@ -100,6 +100,33 @@
         android:label="@string/title_membership"
         tools:layout="@layout/fragment_membership" />
 
+    <!-- Phase N3 (A2): community staff, from "Settings and more" (shown from /api/community/me staff flags; the server
+         checks the role on every call) -->
+    <fragment
+        android:id="@+id/staffDecideFragment"
+        android:name="com.safesphere.app.feature.membership.ui.staff.DecideFragment"
+        android:label="@string/title_staff_decide"
+        tools:layout="@layout/fragment_staff_decide" />
+    <fragment
+        android:id="@+id/staffListFragment"
+        android:name="com.safesphere.app.feature.membership.ui.staff.StaffListFragment"
+        android:label="{title}"
+        tools:layout="@layout/fragment_staff_list">
+        <argument
+            android:name="title"
+            android:defaultValue=""
+            app:argType="string" />
+        <argument
+            android:name="mode"
+            android:defaultValue="LOG"
+            app:argType="string" />
+    </fragment>
+    <fragment
+        android:id="@+id/staffActionsFragment"
+        android:name="com.safesphere.app.feature.membership.ui.staff.StaffActionsFragment"
+        android:label="@string/title_staff_actions"
+        tools:layout="@layout/fragment_staff_actions" />
+
     <!-- Phase 17B / N2: "Enter the code"; the right code signs in, or (a new number) opens the name-and-age screen -->
     <fragment
         android:id="@+id/phoneVerifyFragment"

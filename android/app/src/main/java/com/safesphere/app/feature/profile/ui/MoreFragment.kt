@@ -14,6 +14,8 @@ import com.safesphere.app.core.ui.collectWhenStarted
 import com.safesphere.app.core.ui.components.FeatureItem
 import com.safesphere.app.core.ui.components.FeatureListAdapter
 import com.safesphere.app.databinding.FragmentMoreBinding
+import com.safesphere.app.feature.membership.ui.MembershipViewModel
+import com.safesphere.app.feature.membership.ui.staff.StaffListFragment
 import kotlinx.coroutines.launch
 
 /**
@@ -24,6 +26,7 @@ import kotlinx.coroutines.launch
 class MoreFragment : ViewBindingFragment<FragmentMoreBinding>(FragmentMoreBinding::inflate) {
 
     private val account by viewModels<ProfileViewModel> { ProfileViewModel.factory(appContainer) }
+    private val membership by viewModels<MembershipViewModel> { MembershipViewModel.factory(appContainer) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -78,6 +81,36 @@ class MoreFragment : ViewBindingFragment<FragmentMoreBinding>(FragmentMoreBindin
             binding.accountLine.isVisible = state.displayName != null || state.phoneHint != null
         }
         collectWhenStarted(account.canModerate) { binding.moderationSection.isVisible = it }
+        // N3 (A2): the staff rows each person may use (only convenience: the server checks the role on every call).
+        collectWhenStarted(membership.uiState) { state ->
+            val status = state.status
+            val verifier = status?.verifier == true
+            val admin = status?.admin == true
+            binding.staffSection.isVisible = verifier || admin
+            if (!verifier && !admin) return@collectWhenStarted
+            fun list(mode: StaffListFragment.Mode, title: Int) =
+                nav.navigate(R.id.staffListFragment, StaffListFragment.args(mode, getString(title)))
+            binding.staffList.adapter = FeatureListAdapter(listOfNotNull(
+                FeatureItem(R.drawable.ic_check_circle, R.string.title_staff_decide, R.string.staff_decide_description) {
+                    nav.navigate(R.id.staffDecideFragment)
+                },
+                FeatureItem(R.drawable.ic_camera, R.string.staff_photos_title, R.string.staff_photos_description) {
+                    list(StaffListFragment.Mode.PHOTOS, R.string.staff_photos_title)
+                }.takeIf { admin },
+                FeatureItem(R.drawable.ic_group, R.string.staff_verifiers_title, R.string.staff_verifiers_description) {
+                    list(StaffListFragment.Mode.VERIFIERS, R.string.staff_verifiers_title)
+                }.takeIf { admin },
+                FeatureItem(R.drawable.ic_flag, R.string.staff_bans_title, R.string.staff_bans_description) {
+                    list(StaffListFragment.Mode.BANS, R.string.staff_bans_title)
+                }.takeIf { admin },
+                FeatureItem(R.drawable.ic_tune, R.string.title_staff_actions, R.string.staff_actions_description) {
+                    nav.navigate(R.id.staffActionsFragment)
+                }.takeIf { admin },
+                FeatureItem(R.drawable.ic_history, R.string.staff_log_title, R.string.staff_log_description) {
+                    list(StaffListFragment.Mode.LOG, R.string.staff_log_title)
+                }.takeIf { admin }
+            ))
+        }
         collectWhenStarted(account.isLoggedOut) { loggedOut ->
             if (loggedOut) nav.navigate(R.id.action_global_to_login)
         }
@@ -86,6 +119,7 @@ class MoreFragment : ViewBindingFragment<FragmentMoreBinding>(FragmentMoreBindin
     override fun onStart() {
         super.onStart()
         account.refreshAccess()
+        membership.load(withProgrammes = false)
     }
 
     private fun confirmLogout() {

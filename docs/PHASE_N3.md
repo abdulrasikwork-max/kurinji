@@ -300,3 +300,41 @@ standing / appeal / review of their own content (no shadow bans, even after a me
 - Result: Android **786 run, 0 failures, 0 errors, 0 skipped**; `assembleDebug` OK; lint **0 errors, 95 warnings**
   (89 before; the 6 new are `accessibilityHeading` below API 28, the pattern used on every screen). Not seen on a screen
   yet (unit C).
+
+### A2 Android: the staff side (2026-11-16)
+- Entry: "Settings and more" gains a **Community staff** section, shown only when `/api/community/me` says `staff`
+  (convenience only; the server checks the role on every call). A verifier sees one row, **Verify someone**; an admin
+  also sees **ID photos to check**, **Verifiers**, **Bans**, **Other admin actions** and **Community log**. No list of
+  verifiers exists anywhere else (owner's item 7).
+- `domain/Staff.kt` (`RequestDetail` (name hidden in `toString`), `RefusalReason` = the six a person may choose,
+  `BanReason`, `Decision`, `VerifierRow`, `BanRow`, `LogRow`, `StaffRepository`); `data/remote/StaffApi.kt` (the
+  `/api/verifier/...` and `/api/admin/community/...` endpoints); `RemoteStaffRepository`: codes accepted as `ABCD-2345`
+  or loosely typed and checked against the server's alphabet, roll numbers and mobile numbers normalised on the phone
+  (a bad one is never sent), a ban needs a number or a roll number, the note trimmed and capped at 200; answers fail
+  closed (an unknown outcome is a failure, never an approval; unreadable rows dropped). No answer carries a roll number.
+- **Verify someone / an ID photo** (`staffDecideFragment`, `DecideFragment` + `DecisionViewModel`, FLAG_SECURE): in
+  person the code first (the request is then claimed for this person for 15 minutes by the server), then the name,
+  programme, year, masked number and a check list ("the photo is this person, the name matches, it is a MIET ID card"),
+  the roll number typed from the card, the name as on the card only when spelled differently (sent only if it differs),
+  Approve, or Refuse with one of six reasons; a 409 (wrong roll) keeps the details to retype or refuse; done = the
+  outcome, then "Verify the next person" (nothing about the last person kept). By photo (admins, opened from the
+  queue): the photo is fetched as bytes, decoded into the view with `BitmapFactory.decodeByteArray`, never written,
+  never through Coil, and dropped from memory at the decision and when the screen closes; Approve stays disabled until
+  the photo is shown (Refuse, e.g. "cannot be read", works without it); a request decided or withdrawn meanwhile = 404.
+- **Lists** (`staffListFragment`, `StaffListFragment` by mode, FLAG_SECURE, title from the row): Verifiers (number →
+  "Make a verifier" / "Remove as verifier", confirmed; the list with masked numbers and "since"), Bans (number and/or
+  roll number, reason chosen from the nine, optional note; confirmed; the list with what it is on, the member it hit,
+  who and when, "Lift" confirmed), ID photos (oldest first; a row opens the decision), Community log (50 a page, "Show
+  more", actions in words, "automatic" for the upkeep job, the old spelling of a corrected name).
+- **Other admin actions** (`staffActionsFragment`, FLAG_SECURE, each confirmed): move an account to a new number (the
+  code on the new phone + the roll number from the card, N-25), end a membership (by number), correct a checked name.
+- Strings: `staff_*` (the ban text says sign-in, SOS, Safe Walk and the Safety Circle keep working and the person sees
+  the reason). Guards: `MembershipTextsTest` +1 (staff screens FLAG_SECURE; no file, cache, Coil, MediaStore or
+  DataStore in the decision code; ban and verifier texts; no "safe" claim; no roll number in any staff answer).
+- Tests: new `StaffTest` (8: codes, nothing malformed sent + numbers normalised + note capped, unknown outcome =
+  failure + rows dropped + photo bytes, in person flow with and without a corrected name, 409 keeps the details then a
+  refusal with its reason, by photo the photo held then dropped and a vanished request = 404, admin checks on the phone
+  + ban reloads the list, the log pages until a short page); fake `testing/FakeStaffParts.kt`.
+- Result: Android **795 run, 0 failures, 0 errors, 0 skipped**; `assembleDebug` OK; lint **0 errors, 97 warnings**
+  (+2: `accessibilityHeading` below API 28, `Overdraw` on the ripple background of a staff row). Not seen on a screen
+  yet (unit C).

@@ -317,6 +317,12 @@ class AppContainer(context: Context) {
     }
     val idPhotoSource: com.safesphere.app.feature.membership.data.IdPhotoSource get() = idPhotoFiles
 
+    /** N3 (A2): verifiers and admins; the server checks the role on every call. */
+    val staffRepository: com.safesphere.app.feature.membership.domain.StaffRepository by lazy {
+        com.safesphere.app.feature.membership.data.RemoteStaffRepository(
+            retrofit.create(com.safesphere.app.feature.membership.data.remote.StaffApi::class.java), apiCallHandler)
+    }
+
     // ---- Phase 10A: account security and deletion ------------------------------------------------
 
     private val accountApi: AccountApi by lazy { retrofit.create(AccountApi::class.java) }

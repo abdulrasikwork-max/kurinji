@@ -75,6 +75,27 @@
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
         </LinearLayout>
 
+        <!-- Phase N3 (A2): community staff (verifiers, admins), shown from /api/community/me staff flags only -->
+        <LinearLayout
+            android:id="@+id/staffSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                style="@style/SocialSectionTitle"
+                android:text="@string/staff_section_title" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/staffList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        </LinearLayout>
+
         <TextView
             style="@style/SocialSectionTitle"
             android:text="@string/you_section_account" />

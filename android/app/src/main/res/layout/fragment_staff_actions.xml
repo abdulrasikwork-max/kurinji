@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase N3 (A2): the admin's other actions: move an account to a new number (in person, with the ID), end a
+     membership, correct a checked name. Task screen: toolbar + back. FLAG_SECURE. -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/errorNotice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone"
+            app:noticeText="@string/error_unknown"
+            app:noticeType="warning" />
+
+        <!-- N-25: the code on the person's new phone + the roll number typed from the ID card -->
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/staff_relink_title" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:text="@string/staff_relink_intro"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/relinkCodeLayout"
+            style="@style/Widget.SafeSphere.TextInputLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:hint="@string/staff_code_label">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/relinkCodeInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="textCapCharacters|textNoSuggestions|textVisiblePassword"
+                android:maxLength="12"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/relinkRollLayout"
+            style="@style/Widget.SafeSphere.TextInputLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:hint="@string/staff_roll_from_card">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/relinkRollInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="textCapCharacters|textNoSuggestions|textVisiblePassword"
+                android:maxLength="24"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/relinkButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="@string/staff_relink_button" />
+
+        <!-- End a membership (for example a wrong verification) -->
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/staff_end_title" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:text="@string/staff_end_intro"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/endPhoneLayout"
+            style="@style/Widget.SafeSphere.TextInputLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:hint="@string/staff_phone_label">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/endPhoneInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="phone"
+                android:maxLength="16"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/endButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="@string/staff_end_button" />
+
+        <!-- Correct a checked name (logged and shown to the person) -->
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/staff_name_title" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:text="@string/staff_name_intro"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/namePhoneLayout"
+            style="@style/Widget.SafeSphere.TextInputLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:hint="@string/staff_phone_label">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/namePhoneInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="phone"
+                android:maxLength="16"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/nameLayout"
+            style="@style/Widget.SafeSphere.TextInputLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:hint="@string/staff_name_on_card">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/nameInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:importantForAutofill="no"
+                android:inputType="textPersonName|textCapWords"
+                android:maxLength="60"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/nameButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="@string/staff_name_button" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

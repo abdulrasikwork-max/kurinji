@@ -98,6 +98,32 @@ class MembershipTextsTest {
         }
     }
 
+    @Test
+    fun `staff screens are screen-protected, keep the ID photo in memory only, and say what a ban leaves untouched`() {
+        for (screen in listOf("DecideFragment", "StaffListFragment", "StaffActionsFragment")) {
+            assertTrue(screen, source("feature/membership/ui/staff/$screen.kt").contains("FLAG_SECURE"))
+        }
+        val decide = source("feature/membership/ui/staff/DecideFragment.kt") +
+            source("feature/membership/ui/staff/DecisionViewModel.kt") + source("feature/membership/data/RemoteStaffRepository.kt")
+        for (writer in listOf("FileOutputStream", "openFileOutput", "cacheDir", "filesDir", "imageLoader", "MediaStore", "DataStore")) {
+            assertFalse("the ID photo is never written or cached: $writer", decide.contains(writer))
+        }
+        assertTrue(decide.contains("decodeByteArray"))
+        val bans = strings.getValue("staff_bans_intro")
+        for (part in listOf("Sign-in", "SOS", "Safe Walk", "Safety Circle", "sees the reason")) assertTrue(part, bans.contains(part))
+        assertTrue(strings.getValue("staff_verifiers_intro").contains("not listed anywhere else"))
+        for ((key, text) in strings.filterKeys { it.startsWith("staff_") }) {
+            val rest = text.lowercase().replace("safe walk", "").replace("safety circle", "")
+            assertFalse("$key: $text", Regex("\\bsafe(r|st)?\\b").containsMatchIn(rest))
+        }
+        // The roll number is typed by the person deciding: no answer the app reads carries one.
+        val api = source("feature/membership/data/remote/StaffApi.kt")
+        val answers = Regex("data class (\\w+Dto)\\(([^)]*)\\)").findAll(api)
+            .filter { it.groupValues[1] in setOf("RequestDetailDto", "VerifierDto", "BanDto", "LogDto", "DecisionResultDto") }
+        assertEquals(5, answers.count())
+        assertTrue(answers.none { it.groupValues[2].contains("roll", ignoreCase = true) && !it.groupValues[2].contains("onRollNumber") })
+    }
+
     private fun source(path: String) = File("src/main/java/com/safesphere/app/$path").readText(Charsets.UTF_8)
 
     private companion object {
