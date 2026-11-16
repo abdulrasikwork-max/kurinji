@@ -49,8 +49,12 @@ public class AccountEraser {
             // Phase 13A (V20): the social identity.
             "profiles.user_id", "connections.user_low", "connections.user_high", "connection_invites.owner_id",
             "blocks.blocker_id", "blocks.blocked_id", "mutes.muter_id", "mutes.muted_id",
-            // Phase 13B (V21): experiences, their photos and perspectives. Places record no person (Q12).
-            "posts.author_id", "post_media.owner_id", "comments.author_id",
+            // Phase 13B (V21) posts, post_media and comments are dropped by V35, so their references are no longer
+            // listed here; their DELETE statements below stay until N4-B3 removes the old social code and its tables
+            // from the test database.
+            // Phase N4 (V35): the person's moments, their photos (attached or not), and the daily questions they wrote
+            // as an admin (the question stays; its writer is cleared, as the database's ON DELETE SET NULL does).
+            "moments.author_id", "moment_media.owner_id", "daily_questions.created_by",
             // Phase 13D (V23): reports by or about the person, cases about them, their strikes and pause.
             "content_reports.reporter_id", "content_reports.person_id", "content_cases.person_id",
             "social_strikes.user_id", "social_standing.user_id",
@@ -118,6 +122,12 @@ public class AccountEraser {
             "DELETE FROM comments WHERE author_id = ?",
             "DELETE FROM post_media WHERE owner_id = ?",
             "DELETE FROM posts WHERE author_id = ?",
+            // Phase N4: the person's moment photos (files already deleted in step 2), their moments (live, ended and
+            // kept alike), and their name on the daily questions they wrote.
+            "DELETE FROM moment_media WHERE owner_id = ?"
+                    + " OR moment_id IN (SELECT id FROM moments WHERE author_id = ?)",
+            "DELETE FROM moments WHERE author_id = ?",
+            "UPDATE daily_questions SET created_by = NULL WHERE created_by = ?",
             "DELETE FROM profiles WHERE user_id = ?",
             // Phase N3: the request (its photo file went in step 2), claims held on others' requests, the log rows about
             // the person, the membership.
@@ -185,6 +195,9 @@ public class AccountEraser {
                 "SELECT storage_key FROM post_media WHERE owner_id = ?", String.class, userId));
         mediaKeys.addAll(jdbc.queryForList("SELECT photo_key FROM profiles WHERE user_id = ? AND photo_key IS NOT NULL",
                 String.class, userId));
+        // Phase N4: the photos of their moments, and photos uploaded for a moment that was never shared.
+        mediaKeys.addAll(jdbc.queryForList("SELECT storage_key FROM moment_media WHERE owner_id = ?"
+                + " OR moment_id IN (SELECT id FROM moments WHERE author_id = ?)", String.class, userId, userId));
         // Phase N3: an ID photo waiting for an admin.
         List<String> idPhotos = jdbc.queryForList(
                 "SELECT photo_key FROM verification_requests WHERE user_id = ? AND photo_key IS NOT NULL", String.class, userId);

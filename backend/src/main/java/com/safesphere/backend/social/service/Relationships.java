@@ -5,6 +5,7 @@ import com.safesphere.backend.social.entity.Block;
 import com.safesphere.backend.social.entity.Comment;
 import com.safesphere.backend.social.entity.Connection;
 import com.safesphere.backend.social.entity.ConnectionStatus;
+import com.safesphere.backend.social.entity.Moment;
 import com.safesphere.backend.social.entity.Mute;
 import com.safesphere.backend.social.entity.Post;
 import com.safesphere.backend.social.policy.Visibility;
@@ -123,6 +124,54 @@ public class Relationships {
             if (edition ? Visibility.showInEdition(facts, muted) : Visibility.showInLists(facts, muted)) shown.add(post);
         }
         return shown;
+    }
+
+    // ---- Phase N4: moments ----
+
+    /** The facts the one rule needs about [viewerId] and [moment] at [now] (one moment, opened deliberately). */
+    public Visibility.MomentFacts momentFacts(long viewerId, Moment moment, LocalDateTime now) {
+        long authorId = moment.getAuthorId();
+        boolean self = viewerId == authorId;
+        Visibility.Facts people = facts(viewerId, authorId);
+        if (!self && people.sameCommunity()) {
+            // The author is an active member of the viewer's community; the moment must belong to that community too.
+            boolean sameWall = access.communityOf(viewerId).map(c -> c.equals(moment.getCommunityId())).orElse(false);
+            people = new Visibility.Facts(false, people.blockedEitherWay(), people.ownerActive(), sameWall);
+        }
+        return momentFacts(people, !self && connected(viewerId, authorId), moment, now);
+    }
+
+    public boolean canSeeMoment(long viewerId, Moment moment, LocalDateTime now) {
+        return Visibility.canSeeMoment(momentFacts(viewerId, moment, now));
+    }
+
+    /**
+     * The moments of [candidates] that appear on Today for [viewer], a member of [communityId] (Visibility.showOnToday),
+     * in the order given. The sets are gathered once for the whole list.
+     */
+    public List<Moment> forToday(Viewer viewer, long communityId, List<Moment> candidates, LocalDateTime now) {
+        if (candidates.isEmpty()) return List.of();
+        Set<Long> authors = candidates.stream().map(Moment::getAuthorId).collect(Collectors.toSet());
+        Set<Long> active = access.activeAmong(authors);
+        Set<Long> sameCommunity = access.sameCommunityAmong(viewer.id(), authors);
+        List<Moment> shown = new ArrayList<>();
+        for (Moment moment : candidates) {
+            long authorId = moment.getAuthorId();
+            boolean self = viewer.id() == authorId;
+            Visibility.Facts people = new Visibility.Facts(self, !self && viewer.blockedEitherWay().contains(authorId),
+                    self || active.contains(authorId),
+                    self || (sameCommunity.contains(authorId) && moment.getCommunityId() == communityId));
+            Visibility.MomentFacts facts = momentFacts(people, !self && viewer.connected().contains(authorId), moment,
+                    now);
+            if (Visibility.showOnToday(facts, viewer.muted().contains(authorId))) shown.add(moment);
+        }
+        return shown;
+    }
+
+    private static Visibility.MomentFacts momentFacts(Visibility.Facts people, boolean connected, Moment moment,
+                                                      LocalDateTime now) {
+        return new Visibility.MomentFacts(people, connected, moment.getAudience(), moment.hasStarted(now),
+                moment.isLive(now), moment.isKept(), moment.getModeration());
     }
 
     /**

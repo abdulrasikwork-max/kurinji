@@ -1,0 +1,89 @@
+package com.safesphere.backend.social.dto;
+
+import jakarta.validation.constraints.Size;
+import java.time.Instant;
+import java.util.List;
+
+/**
+ * Phase N4: moment requests and answers. No answer carries a count of anything, a location, or (for anyone but the
+ * author) a timestamp of when a moment was shared: others get [When], a rough time. The one exact time everyone gets is
+ * the time of a Who's in? plan, which the author wrote for them to read (N-50).
+ */
+public final class MomentDtos {
+
+    private MomentDtos() {
+    }
+
+    /**
+     * Body of POST /api/moments. [kind] SAY | WHOS_IN; [audience] COMMUNITY | MY_PEOPLE (no default: N-46); [text] up
+     * to 500 characters; [planAt] (an ISO-8601 instant, within the next 24 hours) and [planWhere] (up to 60
+     * characters) only on a WHOS_IN; [questionId] = today's daily question when this answers it. Sizes here only stop
+     * oversized input; the exact rules are MomentPolicy's.
+     */
+    public record MomentRequest(
+            @Size(max = 12, message = "Choose Say or Who's in?") String kind,
+            @Size(max = 12, message = "Choose who can see this") String audience,
+            @Size(max = 4000, message = "A moment has at most 500 characters") String text,
+            @Size(max = 40, message = "Choose a time within the next 24 hours") String planAt,
+            @Size(max = 400, message = "Where has at most 60 characters") String planWhere,
+            @Size(max = 40, message = "That question is not available") String questionId) {
+    }
+
+    /**
+     * The author of a moment. [name] is the real name of the account (N-23). Sharing needs no profile (N-51), so
+     * [profileId], [handle] and [photo] are null for an author who has not made one.
+     */
+    public record MomentAuthor(String profileId, String handle, String name, String photo) {
+    }
+
+    /** The plan of a Who's in?: [at] exactly as the author set it (may be null), [where] in the author's words. */
+    public record Plan(Instant at, String where) {
+    }
+
+    /** The daily question a moment answers, or the one pinned on Today. */
+    public record QuestionRef(String id, String text) {
+    }
+
+    /**
+     * When a moment was shared, roughly, in India time: [day] TODAY | YESTERDAY | THIS_WEEK | THIS_MONTH | EARLIER;
+     * [part] MORNING | AFTERNOON | EVENING | NIGHT for today and yesterday, else null. Null while nobody else can see
+     * the moment yet.
+     */
+    public record When(String day, String part) {
+    }
+
+    /**
+     * A moment as the viewer may see it. [status]: LIVE (on Today now), ENDED (its 24 hours are over; others reach it
+     * only while it is kept) or WAITING (nobody else can see it yet; only its author ever gets this). [kept] = the
+     * author keeps it on their profile. [createdAt], [visibleAt] and [expiresAt] are the exact times and only the
+     * author gets them (null for everyone else).
+     */
+    public record MomentResponse(String id, String kind, String audience, MomentAuthor author, boolean mine,
+                                 String text, Plan plan, QuestionRef question, When when, String status, boolean kept,
+                                 Instant createdAt, Instant visibleAt, Instant expiresAt) {
+    }
+
+    /**
+     * GET /api/moments/today: [question] = today's daily question (null when there is none), [moments] newest first,
+     * [nextCursor] null on the last page (the wall ends: the app shows its end card).
+     */
+    public record TodayResponse(QuestionRef question, List<MomentResponse> moments, String nextCursor) {
+    }
+
+    /**
+     * GET /api/moments/mine: [current] = the caller's moments that have not ended (waiting or live), newest first;
+     * [kept] = the ones they keep on their profile (at most [keptMax]), most recently kept first.
+     */
+    public record MineResponse(List<MomentResponse> current, List<MomentResponse> kept, int keptMax) {
+    }
+
+    /** Body of POST /api/admin/questions: [day] = the India calendar day (YYYY-MM-DD), [text] up to 140 characters. */
+    public record QuestionRequest(
+            @Size(max = 10, message = "Give the day as YYYY-MM-DD") String day,
+            @Size(max = 1000, message = "A question has at most 140 characters") String text) {
+    }
+
+    /** A daily question as admins see it in their list. */
+    public record QuestionAdminView(String id, String day, String text, Instant createdAt) {
+    }
+}

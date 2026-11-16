@@ -79,6 +79,20 @@ public class SocialAccess {
         return user;
     }
 
+    /**
+     * Phase N4: [requireMember], returning the membership facts moments need (the community and the approval time).
+     * 403 MEMBERSHIP_NEEDED without an active membership.
+     */
+    public MembershipGate.Member requireMembership(long userId) {
+        requireAccount(userId);
+        return membership.activeMember(userId).orElseThrow(MembershipNeededException::new);
+    }
+
+    /** Phase N4: the community of [userId]'s active membership now, if any. */
+    public Optional<Long> communityOf(long userId) {
+        return membership.activeCommunityOf(userId);
+    }
+
     /** Phase N3: the person's own profile draft and photo (no membership needed); a suspension still stops changes. */
     public User requireCanEditOwnProfile(long userId) {
         User user = requireAccount(userId);

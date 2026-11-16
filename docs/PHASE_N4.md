@@ -1,9 +1,11 @@
 # Phase N4: Moments and Today
 
-Status: **decisions LOCKED by the owner on 2026-11-16; implementation NOT started.** The plan below was presented on
+Status: **decisions LOCKED by the owner on 2026-11-16; unit B1 DONE on 2026-11-16 (implemented, compiled, tested;
+"As built" at the end); B2, B3, B4, A1, A2, A3, C NOT started.** The plan below was presented on
 2026-11-16 and approved with the owner's changes (voice deferred, new-member period 7 days, no learned model). Units B1,
 B2, B3, B4, A1, A2, A3, C; one local commit each; never pushed, never deployed. Each unit starts only when the owner says
-so. Direction: `IRL_DIRECTION.md` §2; decisions N-42 to N-58 in `DECISIONS.md`. N5 (responses and plans) is designed
+so. Android UI and UX: the owner gave full creative freedom on 2026-11-16 (simple and clean, not bland; a polished,
+branded product, not a generic Material look); the design is made in A1 / A2. Direction: `IRL_DIRECTION.md` §2; decisions N-42 to N-58 in `DECISIONS.md`. N5 (responses and plans) is designed
 here (§9) and needs its own go-ahead (decisions D14–D19 still open).
 
 ## 1. Product direction (locked)
@@ -147,11 +149,11 @@ thresholds), D15 (Say more), D16 (no explicit decline), D17 (private reply rules
   wording guard (no counts, ranking, location or safety claims; Create never touches the gallery), nothing about other
   people stored on the phone.
 
-## 11. Units (approved order, NOT started)
+## 11. Units (approved order; B1 done, the rest NOT started)
 
 | Unit | Content |
 |---|---|
-| B1 | V35 + moment core + Today + lifecycle + keep + timing + daily question + limits + purge |
+| B1 | **DONE 2026-11-16.** V35 + moment core + Today + lifecycle + keep + timing + daily question + limits + purge |
 | B2 | Photo upload + serving + sanitization + limits + new-member protection (no voice) |
 | B3 | Moderation + "This is about me" + profiles + reports + old social removal + tests |
 | B4 | Development DB backup + migration dry run + V35 applied + API validation |
@@ -162,4 +164,93 @@ thresholds), D15 (Say more), D16 (no explicit decline), D17 (private reply rules
 
 ## As built
 
-Nothing yet: implementation has not started.
+### B1 (2026-11-16): V35, moment core, Today, life, keep, daily question, limits, purge — backend only
+
+Status: **implemented, compiled, tested** (backend **584 run, 0 failures, 0 errors, 2 skipped**: the 532 of N3 + 52 new; clean build, `mvn -o clean test`). **V35 is written and applied NOWHERE.** Not manually
+verified (no server run, no emulator: there is no Android side yet). One local commit, not pushed, not deployed.
+Decisions fixed while building, all inside the locked plan: N-59 to N-68 in `DECISIONS.md`.
+
+**⚠ Do not start the backend against the development MySQL expecting moments to work before B4.**
+`application.properties` holds Flyway at V34 (`spring.flyway.target=34`, N-59), because V35 drops the tables the old
+social code still reads until B3. With that line the jar starts on V34 exactly as before (old social works, the moment
+endpoints cannot work: their tables do not exist). B4 removes the line after the backup and the dry run.
+
+**What exists now**
+
+| Part | Classes |
+|---|---|
+| Schema | `V35__moments.sql`: creates `daily_questions`, `moments`, `moment_media`; retargets `content_reports` / `content_cases` / `content_assessments` to `moment_id` (post and perspective rows deleted; origin `ABOUT_ME` added); `moderation_actions` learns `MOMENT` and keeps its rows; drops `post_revisions`, `comments`, `post_media`, `posts`, `places`, `cities`, `profiles.city / languages / interests` |
+| Entities | `social/entity/Moment`, `MomentMedia` (row only; upload and serving are B2), `DailyQuestion`, `MomentEnums` (`Kind` SAY / WHOS_IN, `Audience` COMMUNITY / MY_PEOPLE) |
+| Pure rules | `social/policy/MomentPolicy` (the locked numbers as constants, the draft check, `isNewMember` / `establishedAt`, cleaning, the link rule, `purgeDue`), `MomentTimes` (rough times in India time, `indiaDay`), `Visibility.canSeeMoment` / `showOnToday` / `todayStates` + `MomentFacts` |
+| Services | `MomentService` (create, today, get, mine, delete, keep, unkeep, `respond`, `requireVisible`), `DailyQuestionService`, `MomentLimits`; `Relationships.momentFacts` / `canSeeMoment` / `forToday`; `SocialAccess.requireMembership` / `communityOf`; port `MembershipGate.activeMember` → `Member(communityId, verifiedAt)` (implemented by `MembershipLookup`; social still never imports community) |
+| Job | `SocialMediaCleanupJob` (still the ONLY `@Scheduled` in social) also purges moments, deletes moment photos never attached after 24 h, and knows moment photo files (so they are never swept as orphans); `Outcome` gained `moments` |
+| Account deletion | `AccountEraser`: `moments.author_id`, `moment_media.owner_id` (files first), `daily_questions.created_by` (cleared); `posts` / `post_media` / `comments` left the reference list (V35 drops them) but their DELETE statements stay until B3 |
+| Config | `config/MomentProperties` (`app.moments.per-day` 10, `new-member-per-day` 3, `today-reads-per-hour` 600, `questions-ahead` 60) |
+| API | `MomentController`, `DailyQuestionAdminController` (`API.md`, "Phase N4") |
+
+**Rules as built** (each has a test)
+
+- **Sharing:** needs an active membership and no posting pause; no profile needed (the author is the account's real
+  name; profile id, handle and photo are null without a profile). Kind and audience are required (no default audience).
+  Text is cleaned (NFC, invisible characters out, at most one empty line) and counted in code points (Tamil and emoji
+  count as people count them; V35's `CHAR_LENGTH` agrees). In B1 a text is always required (photos arrive in B2; the
+  rule "text optional next to a photo" is already in `MomentPolicy` and tested).
+- **Who's in?:** `planAt` is an ISO instant, cut to the minute, after now and at most 24 h ahead; `planWhere` is one
+  line of plain text of at most 60 characters. A Say with either is refused. The plan time is returned exactly to
+  everyone who may see the moment (D9).
+- **Life (N-60):** `visible_at` / `expires_at` are NULL while a moment has never been visible; `Moment.publish` sets
+  them once (`expires_at = visible_at + 24 h`); a later hold does not move them. In B1 every moment is published the
+  instant it is shared (nothing holds one yet: B2 photo hold, B3 text check).
+- **Visibility (one rule):** the author always; anyone else needs the author's profile to be visible (active account,
+  active member of the same community, no block either way), the moment started, a state others may see (not HELD /
+  REMOVED), live OR kept, and the audience (`MY_PEOPLE` = an accepted connection). Not visible = 404.
+- **Today:** live moments of the viewer's community, ordered by `visible_at` then id, newest first, pages of 20, cursor =
+  the id of the last moment shown (N-61); `people=ALL` (default) includes the viewer's own live moments exactly as
+  others get them; `people=MINE` = moments by the viewer's connections only (N-62). A mute hides from Today only. No
+  count, no ranking, no viewer record. Per-person read limit.
+- **Times for others (N-63):** `when {day, part}`; the exact `createdAt` / `visibleAt` / `expiresAt` only for the author.
+- **Keep:** the author only, only while live and visible to others, at most 6 (409 otherwise; the account row is locked
+  so two requests cannot both take the sixth place), un-keep anytime. A kept moment stays readable by id after its 24 h
+  (the profile list is B3) and never returns to Today.
+- **Delete:** the author, always (also under review); no edit endpoint exists (405).
+- **Daily question (N-66):** ADMIN only (path rule + service check) and an active member; one per community per India
+  day; today to 60 days ahead; 3 to 140 characters, one line; no editing; deleting keeps the answers as plain moments.
+  Today pins the question of the India day; a moment may carry `questionId` only for the question pinned right now.
+- **New-member period:** `MomentPolicy.isNewMember(verifiedAt, now)`, computed on every request from the membership
+  (tests: one microsecond before, exactly at, just after `verified_at + 7 days`; an old account with a fresh approval; a
+  new verification restarts it). In B1 it drives the daily limit (3, then 10) and "no links".
+- **Limits (N-65):** in memory; a refused request does not count; a deleted moment still counts; a new member's moment
+  counts against both limits.
+- **Purge (N-64):** hourly, `expires_at` more than 7 days ago AND not kept AND `in_review = false` AND not REMOVED;
+  never a moment that was never visible. Rows first, then the photo file.
+- **Guard:** `MomentBoundariesTest` scans the moment code, the three V35 tables and the answer fields for the "never
+  reintroduce" list (location, presence, viewer / read tracking, counts, ranking, voice, video).
+
+**Tests added (52):** `MomentPolicyTest` 12, `MomentTimesTest` 5, `MomentVisibilityTest` 7, `MomentBoundariesTest` 3,
+`MomentApiIntegrationTest` 17, `DailyQuestionApiTest` 3, `MomentLimitsApiTest` 3 (its own H2 database, the real 3 / 10),
+`MomentPurgeAndDeletionTest` 2. Helper `support/MomentClient`. Test properties lift the moment limits (every test
+account is a new member). `AccountEraserCoverageTest`, `SocialIsolationTest`, `CommunityIsolationTest`,
+`TimeConventionsTest` pass unchanged.
+
+**Not in B1 (by the plan):** photo upload, serving and the new-member photo hold (B2); the text check on moments,
+reports, "This is about me", author notices, `GET /api/profiles/{id}/moments`, programme and year on profiles, removal
+of the old social code (B3); V35 on MySQL (B4); everything on the phone (A1 to A3).
+
+**Open points handed to B2 / B3 (V35 may still change until B4 applies it)**
+
+1. B2: the photo size CHECK in `moment_media` is V21's (≤ 4096 px, ≤ 5 MiB); tighten it if the server limit becomes
+   3072 px. `MomentService.create` passes `photo = false`; B2 adds `mediaId`.
+2. B3: the moderation lists in V35 are V24's plus origin `ABOUT_ME` and target kind `MOMENT`. If "This is about me" or
+   the new-member photo hold need their own reason / rule / action codes, add them to V35 before B4.
+3. B3: `Moment` uses the moderation enums of `PostEnums`; when the old social code goes they move with it.
+4. B3: the test database has no foreign keys: deleting or purging a moment must also remove its reports, cases and
+   assessments in code (MySQL cascades them), and the purge must never take a moment with an open case (`in_review` is
+   the flag the purge reads; the moderation code sets and clears it).
+5. B3: `SocialAccess.POSTING_PAUSED` still says "Connections shows until when" (old wording).
+6. B4: remove `spring.flyway.target=34`; dry-run every new CHECK; confirm the index and foreign key names V35 drops
+   (`uk_content_reports_post`, `fk_content_cases_post`, …) against `SHOW CREATE TABLE` on the development database.
+
+**Honest limits:** the daily limits and the Today read limit are in memory (per instance, reset by a restart). Today's
+candidate reading is bounded (5 batches of 40 per page); a viewer who can see fewer than 21 of 200 consecutive
+candidates gets a shorter page and a cursor to carry on. A cursor names a moment the viewer was shown; if it is deleted
+before the next page is asked for, the app gets 400 "Invalid cursor" and reloads.

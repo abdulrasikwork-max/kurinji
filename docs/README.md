@@ -13,7 +13,7 @@ larger phases also have a design or plan doc written and approved before the wor
 - `PLATFORM_CONSTRAINTS.md` — what Android allows and what it does not (honest limits).
 - `TIMESTAMPS.md` — UTC storage rules and the one-time fix.
 - `IRL_DIRECTION.md` — **the current product direction (2026-11-15)**: verified community, moments, "Who's in?", verification, safety placement, phases N0–N8.
-- `PHASE_N4.md` — the locked N4 decisions and plan (moments, Today, Create, keep, daily question; voice deferred; 7-day new-member period); implementation not started.
+- `PHASE_N4.md` — the locked N4 decisions and plan (moments, Today, Create, keep, daily question; voice deferred; 7-day new-member period) and what each unit built ("As built"): B1 done (backend moment core, V35 written but not applied), B2 to C not started.
 - `PHASE_N3.md` — plan, the owner's 10 decisions and results of the verified MIET community (N3: membership, verification, bans, re-link, staff screens, V34).
 - `PHASE_N2.md` — plan, the owner's decisions and results of phone-only sign-in (N2).
 - `PHASE_N1.md` — plan and results of the strip phase. `history/CLAUDE_2026-11-15.md` — `CLAUDE.md` as it was before the direction change.

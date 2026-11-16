@@ -43,6 +43,23 @@ paths:
 > MIET membership; `registerUnverified`, `seedMembership`, `rollFor`, `support/CommunityClient`; MIET comes from
 > `src/test/resources/data.sql`. Decisions N-27 to N-41.
 
+> **N4-B1 (2026-11-16, `docs/PHASE_N4.md` "As built", V35 written but NOT applied: `spring.flyway.target=34` until B4):
+> moments live in `social` next to the OLD posts code, which stays until B3.** Entities `Moment` (life: `publish` sets
+> `visibleAt` / `expiresAt` once; `isLive`, `hasEnded`, `keep`; the posts' moderation columns, enums still in
+> `PostEnums`), `MomentMedia` (row only until B2), `DailyQuestion`, `MomentEnums`; pure `policy/MomentPolicy` (the locked
+> numbers as constants, `check`, `isNewMember`, cleaning, links, `purgeDue`), `policy/MomentTimes` (rough India-time
+> times), `Visibility.canSeeMoment` / `showOnToday` / `todayStates`; `MomentService` (create, today, get, mine, delete,
+> keep / unkeep; `respond`, `requireVisible` for later units), `DailyQuestionService`, `MomentLimits` (in memory);
+> `Relationships.momentFacts` / `forToday`; `SocialAccess.requireMembership` / `communityOf`; the port
+> `MembershipGate.activeMember` → `Member(communityId, verifiedAt)`; `MomentController` `/api/moments/**`,
+> `DailyQuestionAdminController` `/api/admin/questions`; `config/MomentProperties` (`app.moments.*`).
+> `SocialMediaCleanupJob` (still the ONLY `@Scheduled` in social) also purges moments (N-64) and knows moment photo
+> files. `AccountEraser` covers `moments`, `moment_media`, `daily_questions.created_by`. Tests: `Moment*Test`,
+> `DailyQuestionApiTest`, helper `support/MomentClient`; MIET is ONE wall shared by every test class on the shared H2
+> database, so Today assertions are about the moments a test made (use `people=MINE` for exact lists);
+> `MomentLimitsApiTest` has its own database; test properties lift `app.moments.*` (every test account is a new member).
+> `MomentBoundariesTest` guards the "never reintroduce" list (N-58). Decisions N-59 to N-68.
+
 Loaded when working on files under `backend/`. Conventions and invariants also stay in `CLAUDE.md` §6; migrations in
 `database.md`; endpoints in `docs/API.md`.
 

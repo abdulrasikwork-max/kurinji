@@ -14,6 +14,16 @@ public interface MembershipGate {
     /** The community of [userId]'s ACTIVE membership now (not ended, not past the graduation end), if any. */
     Optional<Long> activeCommunityOf(long userId);
 
+    /**
+     * Phase N4: what moments need to know about an active membership: the community, and the exact moment it was
+     * approved (memberships.verified_at), from which the 7-day new-member period is computed live (N-56).
+     */
+    record Member(long communityId, java.time.LocalDateTime verifiedAt) {
+    }
+
+    /** Phase N4: [userId]'s ACTIVE membership now, if any. */
+    Optional<Member> activeMember(long userId);
+
     /** The ids among [userIds] with an active membership of [communityId] now (one query for a list). */
     Set<Long> activeMembersOf(long communityId, Collection<Long> userIds);
 }

@@ -1455,12 +1455,73 @@ read from the database per request; 403 otherwise)
   `relink-lifetime` 1h, `requests-per-day` 3, `approvals-per-day` 50, `wrong-codes` 10 / `wrong-code-window` 15m,
   `job-enabled`, `job-interval` PT1H (first run 3 minutes after start).
 
+# Phase N4: moments and Today (`docs/PHASE_N4.md`, V35) — unit B1 only
+
+**Status: built and tested in N4-B1 (backend). V35 is applied nowhere yet (Flyway is held at V34 until N4-B4), so these
+routes do not work against a MySQL database before B4.** Photos (`mediaId`, `POST /api/moments/media`,
+`GET /api/moments/{id}/media`) arrive in B2; reports of moments, `POST /api/moments/{id}/about-me`,
+`GET /api/profiles/{id}/moments` and the removal of `/api/posts`, `/api/places`, `/api/discover` and the post-media
+routes in B3. Until then the old routes above are still served.
+
+Every route needs an active MIET membership (403 `MEMBERSHIP_NEEDED`). A moment the caller may not see answers **404**
+(as if it did not exist). No answer has a count, a location, a viewer list or a ranking. Times: only the author gets
+`createdAt` / `visibleAt` / `expiresAt`; everyone else gets `when` (rough, India time).
+
+**The moment object**
+```
+{ id, kind: SAY|WHOS_IN, audience: COMMUNITY|MY_PEOPLE,
+  author: { profileId|null, handle|null, name, photo|null },      // name = the account's real name; no profile needed
+  mine: bool, text,
+  plan: null | { at: instant|null, where: string|null },          // WHOS_IN only; `at` is exact, for everyone
+  question: null | { id, text },                                  // the daily question it answers
+  when: null | { day: TODAY|YESTERDAY|THIS_WEEK|THIS_MONTH|EARLIER, part: MORNING|AFTERNOON|EVENING|NIGHT|null },
+  status: LIVE|ENDED|WAITING,                                     // WAITING: only its author ever gets one
+  kept: bool,
+  createdAt, visibleAt, expiresAt }                               // instants for the author; null for everyone else
+```
+`when.part` is set for TODAY and YESTERDAY only (morning 05:00-11:59, afternoon 12:00-16:59, evening 17:00-20:59, night
+21:00-04:59, India time), counted from when others could first see the moment. `when` is null while it is WAITING.
+
+**Members**
+- `POST /api/moments {kind, audience, text, planAt?, planWhere?, questionId?}` → **201** the moment (live at once in B1).
+  `kind` and `audience` are required (no default audience). `text`: 1 to 500 characters after cleaning. `planAt` (ISO
+  instant, kept to the minute, after now and at most 24 h ahead) and `planWhere` (one line, ≤ 60 characters) only on
+  `WHOS_IN`. `questionId` must be the question pinned on Today right now. **400** with our message for each rule
+  ("Choose who can see this", "A moment has at most 500 characters", "Choose a time within the next 24 hours", "Only a
+  Who's in? has a time and a place", "That question is no longer today's question", and for a new member with a link:
+  "New members can share links after their first week. Please remove the link."). **403** while a moderator's pause
+  stops posting. **429** over the daily limit (3 in the first 7 days after approval, then 10; our message shown).
+- `GET /api/moments/today?people=ALL|MINE&cursor=` → `{question: {id, text}|null, moments: [moment], nextCursor|null}`.
+  Live moments the caller may see, newest first (by first visibility), 20 per page; `nextCursor` null = the wall ends.
+  `ALL` (default): the community's moments, the caller's connections' "my people" moments and the caller's own live
+  ones. `MINE`: moments by the caller's connections only. Muted people's moments are left out here (only here).
+  `question` = today's daily question (India day), on every page. 400 unknown `people` or cursor; 429 per-hour limit.
+- `GET /api/moments/mine` → `{current: [moment], kept: [moment], keptMax: 6}`: the caller's moments that have not ended
+  (WAITING or LIVE, whatever their moderation state), newest first, and the ones they keep.
+- `GET /api/moments/{id}` → the moment; 404 not visible (ended and not kept, wrong audience, blocked, held, …).
+- `DELETE /api/moments/{id}` → **204** (own; always allowed). There is no edit route (N-54).
+- `PUT /api/moments/{id}/kept` → **200** the moment with `kept: true` (own; idempotent). **409** "Only a moment that is
+  live on Today can be kept" / "You can keep 6 moments. Un-keep one first."
+- `DELETE /api/moments/{id}/kept` → **204** (own; any time).
+
+**Admins** (`/api/admin/**` = ADMIN from the database; the admin must also be an active member: 403 `MEMBERSHIP_NEEDED`)
+- `GET /api/admin/questions` → `[{id, day, text, createdAt}]` from 7 days ago onwards, oldest first.
+- `POST /api/admin/questions {day: "YYYY-MM-DD", text}` → **201**. `day` = an India calendar day, today to 60 days
+  ahead; `text` 3 to 140 characters, one line. **409** "That day already has a question. Delete it first to write
+  another." 400 otherwise.
+- `DELETE /api/admin/questions/{id}` → **204**; its answers stay as plain moments. 404 unknown.
+
+**Config:** `app.moments.per-day` (10), `new-member-per-day` (3), `today-reads-per-hour` (600), `questions-ahead` (60).
+The product rules (24 h, purge after 7 days, 6 kept, the 7-day new-member period, 500 / 60 characters) are constants.
+`spring.flyway.target=34` holds V35 back until N4-B4.
+
 # Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
 
 > **N1 (2026-11-15):** the lines of Phases 5 to 9, 17G and 18A in this index are history; what was removed is listed at the top of this file.
 
 A compact list of every phase's endpoints and config keys; the sections above have the details. Keep it in step.
 
+- **Phase N4-B1** (V35 written, applied nowhere until B4; `API.md` "Phase N4"): `POST /api/moments {kind, audience, text, planAt?, planWhere?, questionId?}` 201, `GET /api/moments/today?people=ALL|MINE&cursor=` → `{question, moments, nextCursor}`, `GET /api/moments/mine` → `{current, kept, keptMax}`, `GET|DELETE /api/moments/{id}`, `PUT|DELETE /api/moments/{id}/kept` (409 at 6 or when not live), admins `GET|POST /api/admin/questions`, `DELETE /api/admin/questions/{id}`. Not yet: photos (B2), reports / about-me / profile moments / removal of the old post, place and discover routes (B3). Config `app.moments.*`, `spring.flyway.target=34` (until B4).
 - **Phase N2** (V33, `API.md` "Phase N2"): `POST /api/auth/phone/start {phone}` (same answer for every number), `/phone/verify` → `SIGNED_IN` + session | `SIGN_UP_NEEDED` + ticket, `POST /api/auth/sign-up {ticket, name, dateOfBirth}` 201, `POST /api/users/me/confirmation`, `POST /api/users/me/sessions/sign-out-others {challenge, code}`, `PUT /api/users/me/name {name}`; `{challenge, code}` on deletion / cancel / SOS end from another sign-in; `PUT /api/admin/roles {phone, role}`; `user.phoneHint` replaces `email`. Removed: `/api/auth/register`, `/api/auth/login`, `PUT /api/users/me/password`. Config `app.otp.ticket-lifetime`, `app.account.code-failures|code-failure-window`.
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/users/me`
 - Phase 17F (`API.md` "Phase 17F"): `POST /api/emergencies` accepts `triggerType` `SHAKE` (MANUAL default; VOICE and

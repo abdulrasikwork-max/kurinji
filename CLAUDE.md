@@ -83,13 +83,13 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | **N1** | Strip: remove the retired features on both sides, migration V32 | implemented, compiled, tested 2026-11-15 (Android 766, backend 496, Python 38; V32 applied on the DEVELOPMENT MySQL only); results per unit in `docs/PHASE_N1.md`; manually verified on the emulator 2026-11-15 (SOS, Safe Walk, tile, shortcut, post; no real phone; one wording fix) |
 | **N2** | Phone-only sign-in, real name, no password, migration V33 | implemented, compiled, tested 2026-11-16 (Android 766, backend 494; V33 applied on the DEVELOPMENT MySQL only); decisions N-21 to N-26; results per unit in `docs/PHASE_N2.md`; manually verified on the emulator 2026-11-16 (no real phone) |
 | **N3** | Community, membership, verification, bans, admin screens, migration V34 | implemented, compiled, tested 2026-11-16 (Android 795, backend 532; V34 applied on the DEVELOPMENT MySQL only); decisions N-27 to N-41; results per unit in `docs/PHASE_N3.md`; manually verified on the emulator 2026-11-16 (no real phone) |
-| **N4** | Moments, capture-only Create, Today, keep, daily question | **decisions LOCKED 2026-11-16, implementation NOT started** (`docs/PHASE_N4.md`, N-42 to N-58): voice deferred, no video, no learned AI model, new-member period 7 days from `memberships.verified_at` |
+| **N4** | Moments, capture-only Create, Today, keep, daily question | decisions LOCKED 2026-11-16; **B1 (backend: moment core, Today, keep, daily question) implemented, compiled, tested 2026-11-16** (backend 584; V35 written, applied NOWHERE, Flyway held at V34); B2 to C NOT started (`docs/PHASE_N4.md`, N-42 to N-68): voice deferred, no video, no learned AI model, new-member period 7 days from `memberships.verified_at` |
 | N5 | Same / Say more / I'm in, private replies, plan threads, Replies tab | planned |
 | N6 | Safety trim (route checks out, SMS-app fallback only, Safety Circle offer on plans) | planned |
 | N7 | Firebase push | planned |
 | N8 | Pilot launch at MIET (backups, SMS provider, policy texts, seeding, moderators) | planned |
 
-Next migration file **V35** (V34 is N3's: applied on the DEVELOPMENT MySQL only, 2026-11-16). Each phase or sub-phase needs its own plan and the owner's approval first. The pilot still
+Next migration file **V36** (V35 = N4: written in B1, applied NOWHERE until N4-B4; V34 on the DEVELOPMENT MySQL only). Each phase or sub-phase needs its own plan and the owner's approval first. The pilot still
 runs the old jar on schema V30 (its move to V32 deletes data: its own approved step).
 
 **Never implement early:** other communities / the community request system, multiple memberships, video, iPhone,
@@ -258,7 +258,7 @@ cd android
 
 ## 7. Database (MySQL `safesphere`, Flyway) — per-migration rules in `.claude/rules/database.md`
 
-Conventions: never edit an applied migration; next file is **V35** (V34 = N3, applied on the development MySQL only); snake_case; `DATETIME(6)` stored in UTC; constraint
+Conventions: never edit an applied migration; next file is **V36** (V35 = N4 moments: written, applied nowhere until N4-B4); snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci. "One active /
 one primary / one open" via a generated marker column + unique index. MySQL forbids CHECKs on cascading-FK columns
 (enforce those rules in code); write NULL cases out with `COALESCE` (a NULL makes `IN` UNKNOWN, which a CHECK lets pass);

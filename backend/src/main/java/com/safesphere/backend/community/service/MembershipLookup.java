@@ -54,6 +54,11 @@ public class MembershipLookup implements MembershipGate {
     }
 
     @Override
+    public Optional<Member> activeMember(long userId) {
+        return active(userId).map(m -> new Member(m.getCommunityId(), m.getVerifiedAt()));
+    }
+
+    @Override
     public Set<Long> activeMembersOf(long communityId, Collection<Long> userIds) {
         if (userIds.isEmpty()) return Set.of();
         return new HashSet<>(memberships.activeAmong(communityId, userIds, now()));

@@ -1,4 +1,42 @@
-# CHECKPOINT 2026-11-16 (ninth session): N4 decisions LOCKED — implementation NOT started. N3 is complete. Nothing pushed, nothing deployed.
+# CHECKPOINT 2026-11-16 (tenth session): N4-B1 is DONE (backend moment core: implemented, compiled, tested). B2, B3, B4, A1, A2, A3, C NOT started. Nothing pushed, nothing deployed.
+
+**Standing instructions, unchanged:** the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N4 plan and decisions are LOCKED (`docs/PHASE_N4.md`); continue them, do not re-plan. **Android UI / UX: the owner gave full creative freedom on 2026-11-16** ("simple and clean, but not bland or over-simplified; a real, polished, branded product; not a generic Material look, no unnecessary decoration"); the design decisions are made in A1 / A2, on the existing IRL brand (`docs/DESIGN_SYSTEM.md`).
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). Started from `6897aaa`; then ONE commit "N4-B1" (`git log -1`). `git status` clean afterwards.
+- `android/` and `moderation-service/` not touched. `android/local.properties` and `backend/.env` not touched.
+
+## What B1 built (details, rules and tests: `PHASE_N4.md` "As built"; decisions N-59 to N-68)
+- `V35__moments.sql` (the whole N4 schema change), **applied NOWHERE**. `application.properties` holds Flyway at V34 (`spring.flyway.target=34`) until B4, because V35 drops the tables the old social code still reads until B3.
+- Moments in `social`: `Moment`, `MomentMedia` (row only), `DailyQuestion`, `MomentEnums`; pure `MomentPolicy`, `MomentTimes`, `Visibility.canSeeMoment` / `showOnToday`; `MomentService`, `DailyQuestionService`, `MomentLimits`; `MomentController`, `DailyQuestionAdminController`; the purge inside `SocialMediaCleanupJob`; `AccountEraser` coverage; the port `MembershipGate.activeMember`.
+- Endpoints (`API.md` "Phase N4"): `POST /api/moments`, `GET /api/moments/today`, `GET /api/moments/mine`, `GET|DELETE /api/moments/{id}`, `PUT|DELETE /api/moments/{id}/kept`, `GET|POST /api/admin/questions`, `DELETE /api/admin/questions/{id}`.
+- The old social code (posts, places, perspectives, Discover, video) is untouched and still served; B3 removes it.
+
+## Build / test status
+- Backend: `mvn -o clean test` **584 run, 0 failures, 0 errors, 2 skipped** (532 of N3 + 52 new). Command: `cd backend`, `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:/Users/Public mvn -o clean test`.
+- A mutation check was run by hand on two rules (the new-member boundary, "ended and not kept is gone"): both were caught by the tests; the code was restored.
+- Android: not touched (last result, N3: 795 / 0 failures). Python: not touched.
+- **Not manually verified**: no server was started (the moment tables exist only in the H2 test database), no emulator walk (no Android side yet).
+
+## Database
+- Development MySQL: still **V34** (35 tables), untouched in this session. The pilot: V30. Next NEW migration file: **V36**; V35 exists and waits for B4.
+- **Do not remove `spring.flyway.target=34` before B4's backup and dry run.** With it, the backend starts on V34 as before (old social works; the moment routes cannot work: no tables).
+- **The hold itself was NOT exercised:** no server was started against MySQL in B1 (the tests run without Flyway). Before the next start of this code against the development MySQL, take the usual `mysqldump` backup first, and expect the log line "Schema ... is up to date" at version 34 with V35 not applied.
+
+## Issues / decisions for the owner's attention (none blocking)
+1. **Decisions I fixed while building, inside the locked plan (N-59 to N-68).** The ones worth a look: N-60 (the 24 hours start only the first time others can see a moment; a later hold does not extend them), N-62 (your own wall shows your live moments exactly as others get them; "My people" shows other people only), N-63 (the hours of morning / afternoon / evening / night; a viewer is told a moment's audience), N-64 (moderator-removed moments are not purged until N8 decides their retention), N-66 (daily question 3 to 140 characters, up to 60 days ahead, the admin must be a member).
+2. **An admin without a membership cannot write a daily question** (403 `MEMBERSHIP_NEEDED`): root admins verify each other first (N-36), then schedule questions.
+3. **Limits are in memory** (3 / 10 a day, Today reads): a restart resets them (same as every other limit; documented).
+4. V35's moderation lists are V24's plus `ABOUT_ME` and `MOMENT`; B2 / B3 may add codes to the file before B4 applies it (`PHASE_N4.md`, "Open points handed to B2 / B3").
+
+## The exact first step for the next session
+When the owner says to continue: **N4-B2** (photo upload + serving + sanitization + limits + the new-member photo hold, no voice): `POST /api/moments/media`, `DELETE` an unattached one, `GET /api/moments/{id}/media` (private, no-store), `mediaId` on `POST /api/moments` (`MomentService.create` passes `photo = false` today), 20 uploads a day, and the hold of a new member's photo shared with all of MIET (its own rule, independent of the Python service; such a moment is saved WITHOUT `publish`, which B1 already supports and tests). Then B3, B4, A1, A2, A3, C in that order, one local commit each.
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, `COMMUNITY_SECRET` before any real roll number, the pilot's own move to the new jar and schema (its own approved step with a fresh `restore-rehearsal.sh` PASS first), the N2 observations for N6.
+
+---
+
+# CHECKPOINT 2026-11-16 (ninth session; superseded by the checkpoint above: N4-B1 is done): N4 decisions LOCKED — implementation NOT started. N3 is complete. Nothing pushed, nothing deployed.
 
 **Standing instructions, unchanged:** the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). **Do not start N4-B1 until the owner says so.**
 
