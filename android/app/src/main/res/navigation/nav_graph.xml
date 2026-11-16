@@ -81,7 +81,24 @@
                 android:defaultValue="true"
                 app:argType="boolean" />
         </action>
+        <!-- N3 (N-25): "I'm moving from another number": an admin moves the existing member account here -->
+        <action
+            android:id="@+id/action_register_to_relink"
+            app:destination="@id/relinkFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/relinkFragment"
+        android:name="com.safesphere.app.feature.membership.ui.RelinkFragment"
+        android:label="@string/relink_title"
+        tools:layout="@layout/fragment_relink" />
+
+    <!-- Phase N3: the MIET community membership ("Get verified"; You, Home and the community screens open it) -->
+    <fragment
+        android:id="@+id/membershipFragment"
+        android:name="com.safesphere.app.feature.membership.ui.MembershipFragment"
+        android:label="@string/title_membership"
+        tools:layout="@layout/fragment_membership" />
 
     <!-- Phase 17B / N2: "Enter the code"; the right code signs in, or (a new number) opens the name-and-age screen -->
     <fragment

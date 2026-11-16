@@ -304,6 +304,19 @@ class AppContainer(context: Context) {
             .build()
     }
 
+    // ---- Phase N3: the MIET community membership (applicant side) -----------------------------------
+
+    val membershipRepository: com.safesphere.app.feature.membership.domain.MembershipRepository by lazy {
+        com.safesphere.app.feature.membership.data.RemoteMembershipRepository(
+            retrofit.create(com.safesphere.app.feature.membership.data.remote.MembershipApi::class.java), apiCallHandler)
+    }
+
+    /** The ID photo's file handling (camera-app target in the cache, re-encoding, deletion). */
+    val idPhotoFiles: com.safesphere.app.feature.membership.data.IdPhotoFiles by lazy {
+        com.safesphere.app.feature.membership.data.IdPhotoFiles(appContext)
+    }
+    val idPhotoSource: com.safesphere.app.feature.membership.data.IdPhotoSource get() = idPhotoFiles
+
     // ---- Phase 10A: account security and deletion ------------------------------------------------
 
     private val accountApi: AccountApi by lazy { retrofit.create(AccountApi::class.java) }

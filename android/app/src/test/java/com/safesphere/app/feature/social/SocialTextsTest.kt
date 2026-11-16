@@ -88,7 +88,10 @@ class SocialTextsTest {
             val pattern = if (file.extension == "xml") LAYOUT_REF else CODE_REF
             pattern.findAll(file.readText(Charsets.UTF_8)).map { it.groupValues[1] }.toList()
         }.toSet()
-        return strings.keys.filter { it.startsWith("social_") }.toSet() + referenced
+        // N3: "verified" here forbids a safety badge on people. The community membership itself is "verified" by
+        // design (IRL_DIRECTION, a verified real-name community); its texts are guarded by MembershipTextsTest.
+        return (strings.keys.filter { it.startsWith("social_") }.toSet() + referenced)
+            .filterNot { name -> MEMBERSHIP.any { name.startsWith(it) } }.toSet()
     }
 
     private companion object {
@@ -105,6 +108,8 @@ class SocialTextsTest {
             "fragment_my_reports.xml", "fragment_guidelines.xml")
         /** Phase 16 (U1, decided by the user 2026-10-26): comment counts, the only public number. */
         val COMMENT_COUNTS = setOf("post_comments_title_count")
+        /** N3: the membership words (MembershipTextsTest guards them; "Get verified" names the membership step). */
+        val MEMBERSHIP = listOf("action_get_verified", "membership_", "you_membership_")
         /** Phase 17E: how many photos or videos are inside one post (not a number of people). */
         val MEDIA_COUNTS = setOf("feed_media_count", "feed_media_count_spoken")
         val LIVE = listOf(Regex("\\blive\\b"), Regex("right now here"), Regex("\\bi'?m here\\b"), Regex("\\bhere now\\b"),

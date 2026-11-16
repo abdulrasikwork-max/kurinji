@@ -47,6 +47,12 @@ class AccountFragment : ViewBindingFragment<FragmentAccountBinding>(FragmentAcco
                 nameFilled = true
             }
         }
+        // N3 (N-24): after the college ID check the name is read-only here; an IRL admin corrects it.
+        collectWhenStarted(viewModel.nameLocked) { locked ->
+            binding.nameLayout.isEnabled = !locked
+            binding.saveNameButton.isVisible = !locked
+            binding.nameLayout.helperText = if (locked) getString(R.string.membership_name_locked) else null
+        }
         collectWhenStarted(viewModel.deletion, ::renderDeletion)
         collectWhenStarted(viewModel.busy) { busy ->
             binding.progress.isVisible = busy
@@ -71,6 +77,11 @@ class AccountFragment : ViewBindingFragment<FragmentAccountBinding>(FragmentAcco
                 showSessionExpiredDialog()
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        viewModel.refreshNameLock()
     }
 
     override fun onResume() {

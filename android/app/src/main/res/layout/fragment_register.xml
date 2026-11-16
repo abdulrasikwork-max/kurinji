@@ -99,5 +99,14 @@
             android:minHeight="@dimen/menu_row_min_height"
             android:text="@string/action_create_account" />
 
+        <!-- Phase N3 (N-25): a verified member with a new SIM keeps their account; an IRL admin moves it in person -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/movingButton"
+            style="@style/Widget.SafeSphere.Button.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/register_moving" />
+
     </LinearLayout>
 </ScrollView>

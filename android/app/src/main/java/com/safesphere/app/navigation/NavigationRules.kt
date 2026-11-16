@@ -63,7 +63,8 @@ object NavigationRules {
         R.id.onboardingFragment,
         R.id.loginFragment,
         R.id.registerFragment,
-        R.id.phoneVerifyFragment // Phase 17B: no session until the code is right
+        R.id.phoneVerifyFragment, // Phase 17B: no session until the code is right
+        R.id.relinkFragment // N3 (N-25): a new number moving to an existing account; no session until it is moved
     )
 
     /**

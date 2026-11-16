@@ -9,6 +9,7 @@ import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.safesphere.app.core.network.needsMembership
 import androidx.navigation.navOptions
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -65,6 +66,7 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.getVerifiedButton.setOnClickListener { findNavController().navigate(R.id.membershipFragment) }
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, closePanel)
         feedAdapter = DiscoverFeedAdapter(cardImages(), this)
         binding.feed.adapter = feedAdapter
@@ -160,7 +162,8 @@ class DiscoverFragment : ViewBindingFragment<FragmentDiscoverBinding>(FragmentDi
 
         val failure = state.failure
         binding.errorNotice.isVisible = failure != null
-        binding.retryButton.isVisible = failure != null
+        binding.retryButton.isVisible = failure != null && !failure.needsMembership()
+        binding.getVerifiedButton.isVisible = failure.needsMembership()
         if (failure != null) binding.errorNotice.setMessage(failure.toMessage(requireContext()))
         if (state.sessionExpired) {
             viewModel.onSessionExpiredHandled()

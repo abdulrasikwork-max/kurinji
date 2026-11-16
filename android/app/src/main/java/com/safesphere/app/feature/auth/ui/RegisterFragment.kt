@@ -40,6 +40,9 @@ class RegisterFragment :
             }
         }
 
+        // N3 (N-25): the ticket stays in memory and is used by the re-link screen instead of a new account.
+        binding.movingButton.setOnClickListener { findNavController().navigate(R.id.action_register_to_relink) }
+
         collectWhenStarted(viewModel.uiState, ::render)
     }
 
@@ -57,6 +60,8 @@ class RegisterFragment :
 
         binding.progress.isVisible = state.isLoading
         binding.registerButton.isEnabled = !state.isLoading
+        binding.movingButton.isVisible = !state.lost
+        binding.movingButton.isEnabled = !state.isLoading
         binding.fullNameLayout.isEnabled = !state.lost
         binding.dateOfBirthLayout.isEnabled = !state.lost
         binding.registerButton.setText(if (state.lost) R.string.action_enter_number_again else R.string.action_create_account)

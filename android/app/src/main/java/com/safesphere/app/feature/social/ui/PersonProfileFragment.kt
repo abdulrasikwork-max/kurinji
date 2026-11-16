@@ -7,6 +7,7 @@ import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.safesphere.app.core.network.needsMembership
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
@@ -37,6 +38,7 @@ class PersonProfileFragment :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.getVerifiedButton.setOnClickListener { findNavController().navigate(R.id.membershipFragment) }
         postAdapter = ExperienceCardAdapter(cardImages())
         collectWhenStarted(appContainer.viewerPreferences.collapseStrongLanguage) { on ->
             if (on != collapseStrongLanguage) {
@@ -95,6 +97,7 @@ class PersonProfileFragment :
 
         val failure = state.failure
         binding.errorNotice.isVisible = failure != null
+        binding.getVerifiedButton.isVisible = failure.needsMembership()
         if (failure != null) binding.errorNotice.setMessage(failure.toMessage(requireContext()))
 
         state.message?.let {

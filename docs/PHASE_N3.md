@@ -248,3 +248,55 @@ standing / appeal / review of their own content (no shadow bans, even after a me
 - Development data now: account 397 is a MIET member (BTECH_IT 2027, name "Mysql Checked"); account 400 "Admin Check"
   is ADMIN; accounts 396 "Nila Check" and 399 "Meera Test" stay unverified for the emulator walk (unit C). An older
   jar (V33 or before) now refuses to start against the development database. The pilot stays on V30.
+
+### A1 Android: the applicant side (2026-11-16)
+- New package `feature/membership` (not `feature/community`, which was Nearby): `domain` (`MembershipState` NONE /
+  PENDING / MEMBER / ENDED / BANNED, `VerificationMethod`, `Programme`, `CommunityStatus`, `OpenRequest` (code hidden in
+  `toString`), `Outcome`, `NameCorrection`, `RelinkCode`, `MembershipRepository`; pure `RollNumberPolicy` = the server's
+  normalising with the server's test cases, `ShortCode`), `data` (`MembershipApi` = `/api/community/me|programmes|
+  verification|verification/code|verification/photo|relink`; `RemoteMembershipRepository`, DTOs fail closed: an unknown
+  state reads NONE, an unknown method drops the request, a malformed code is not shown, staff flags default false; a roll
+  number that fails the phone's check is never sent; `IdPhotoFiles`), `ui` (`MembershipViewModel` + `MembershipFragment`,
+  `RelinkViewModel` + `RelinkFragment`, `MembershipLabels`, pure `MembershipDates`).
+- **Membership screen** (`membershipFragment`, task screen, FLAG_SECURE): NONE / ENDED = the form: ONE way, in person
+  preselected ("recommended") or a photo of the ID card; roll number (no autofill, no suggestions), programme and year
+  chosen from lists (years of the chosen programme only), a line on how the roll number is kept. PENDING in person = the
+  code large (spoken letter by letter), "This code works for N more minutes", "Show a new code"; the code lives only in
+  the view model and is dropped once the server says it ran out. PENDING by photo = "Take the photo" / "Take it again",
+  what happens to the photo; the request's end date; "Withdraw the request" (confirmed). MEMBER = community, programme,
+  year, "runs until 31 July YYYY" (the India date, whatever the phone's zone), the name correction ("it was …") and the
+  name-lock line. Refusals, ends and bans are told with their reason; a ban adds "Sign-in, SOS, Safe Walk and your Safety
+  Circle keep working". Moderation-style amber notices only.
+- **ID photo:** `ActivityResultContracts.TakePicture` into `cache/id-photo/<uuid>.jpg` through a NEW `FileProvider`
+  (`${applicationId}.idphoto`, not exported, `res/xml/id_photo_paths.xml` = that one cache folder); NO `CAMERA`
+  permission. `PhotoPreparer.prepare` re-encodes (upright, ≤ 3072 px, no metadata); the file is deleted in a `finally`
+  right after preparing (sent or not), on a cancelled camera, and by `sweep()` when the screen opens with no camera in
+  progress (a process death while the camera was open). Only when no camera app exists is the Photo Picker offered (then
+  the app writes nothing). Upload = `PUT /api/community/verification/photo` (JPEG).
+- **You:** a membership card under the profile head (Not verified yet / Waiting for verification / Verified MIET member
+  + programme and year / Membership ended / No access to the MIET community + the safety line) with "Get verified" or
+  "Open". Only the person's own state.
+- **403 `MEMBERSHIP_NEEDED`:** `core/network` `MEMBERSHIP_NEEDED` + `Failure.needsMembership()`; Home, the composer,
+  Connections and a person's profile show the server's words plus a "Get verified" button (Home hides "Try again" then).
+  The social code only navigates to `R.id.membershipFragment`; no social or safety file imports `feature.membership`.
+- **Name lock (N-24):** `AccountViewModel` reads `nameLocked` from `/api/community/me` at each start (new optional
+  `membership` parameter); locked = the name field disabled, "Save name" hidden, the helper says an IRL admin corrects it;
+  a 409 `NAME_LOCKED` also locks it.
+- **Re-link (N-25):** "I'm moving from another number" on "About you" → `relinkFragment` (signed out, FLAG_SECURE,
+  added to `NavigationRules.signedOutDestinations`): the roll number → `POST /api/community/relink` with the sign-up
+  ticket held in `PendingVerification` (used up; cleared on success, on 400 = ticket ended, and on 409) → the code (1 h)
+  + "sign in with this number when the admin has moved your account" → "Sign in" goes to the number screen.
+- Palette: `membership` joined the social palette list (`SocialPalette.socialFeatures`).
+- Guards changed (inside the approved plan, to be recorded in C): `Phase17FGuardsTest` "no file provider is left" →
+  exactly ONE provider, the ID-photo one, not exported; `SocialTextsTest` keeps forbidding "verified" on social texts
+  except the membership words (`action_get_verified`, `membership_*`, `you_membership_*`), which `MembershipTextsTest`
+  guards instead (no "safe" claim outside "Safe Walk" / "Safety Circle", no "trusted member", "guarantee", "background
+  check", "police", "aadhaar", "report").
+- Tests: new `MembershipTest` (14: roll rules with the server's cases, short codes, the 31 July date, the gate code only
+  on a 403, DTOs fail closed, the form never sends a bad roll, the code shown once / kept while alive / dropped / renewed,
+  the ID photo prepared + sent + its file deleted also when unreadable, unsent or cancelled, withdraw, re-link with and
+  without a ticket, the name lock from `/me` and from a 409) and `MembershipTextsTest` (6); fakes in
+  `testing/FakeMembershipParts.kt`.
+- Result: Android **786 run, 0 failures, 0 errors, 0 skipped**; `assembleDebug` OK; lint **0 errors, 95 warnings**
+  (89 before; the 6 new are `accessibilityHeading` below API 28, the pattern used on every screen). Not seen on a screen
+  yet (unit C).

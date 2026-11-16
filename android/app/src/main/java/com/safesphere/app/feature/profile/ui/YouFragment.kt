@@ -19,6 +19,9 @@ import com.safesphere.app.core.ui.components.FeatureListAdapter
 import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentYouBinding
+import com.safesphere.app.feature.membership.domain.MembershipState
+import com.safesphere.app.feature.membership.ui.MembershipUiState
+import com.safesphere.app.feature.membership.ui.MembershipViewModel
 import com.safesphere.app.feature.social.domain.DecisionAction
 import com.safesphere.app.feature.social.domain.PauseLevel
 import com.safesphere.app.feature.social.ui.JournalUiState
@@ -45,6 +48,7 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
 
     private val journal by viewModels<JournalViewModel> { JournalViewModel.factory(appContainer) }
     private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
+    private val membership by viewModels<MembershipViewModel> { MembershipViewModel.factory(appContainer) }
 
     /** Phase 17E: the system photo picker (no storage permission; only the chosen photo is shared with the app). */
     private val pickPhoto = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -78,8 +82,11 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
         // Phase 17E: the profile photo (picked without any permission; made square on the phone).
         binding.photoBlock.setOnClickListener { photoMenu() }
 
+        binding.membershipButton.setOnClickListener { nav.navigate(R.id.membershipFragment) }
+
         collectWhenStarted(journal.uiState, ::renderJournal)
         collectWhenStarted(reports.uiState, ::renderStanding)
+        collectWhenStarted(membership.uiState, ::renderMembership)
 
         if (savedInstanceState == null) Motion.revealInSequence(listOf(binding.headerBlock))
     }
@@ -88,6 +95,33 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
         super.onStart()
         journal.load()
         reports.loadStanding()
+        membership.load(withProgrammes = false)
+    }
+
+    /** Phase N3: the person's own membership, one card; the button opens the membership screen. */
+    private fun renderMembership(state: MembershipUiState) {
+        val status = state.status
+        binding.membershipCard.isVisible = status != null
+        if (status == null) return
+        val info = status.membership
+        binding.membershipTitle.setText(when (status.state) {
+            MembershipState.NONE -> R.string.you_membership_none
+            MembershipState.PENDING -> R.string.you_membership_pending
+            MembershipState.MEMBER -> R.string.you_membership_member
+            MembershipState.ENDED -> R.string.you_membership_ended
+            MembershipState.BANNED -> R.string.you_membership_banned
+        })
+        binding.membershipDetail.text = when (status.state) {
+            MembershipState.MEMBER -> if (info != null) getString(R.string.membership_member_detail, info.programmeLabel,
+                info.graduationYear) else status.communityName.orEmpty()
+            MembershipState.PENDING -> getString(R.string.you_membership_pending_detail)
+            MembershipState.BANNED -> getString(R.string.membership_safety_unchanged)
+            else -> getString(R.string.you_membership_none_detail)
+        }
+        binding.membershipButton.setText(when (status.state) {
+            MembershipState.NONE, MembershipState.ENDED -> R.string.action_get_verified
+            else -> R.string.you_membership_open
+        })
     }
 
     private fun renderJournal(state: JournalUiState) {

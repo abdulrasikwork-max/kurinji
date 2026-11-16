@@ -98,6 +98,17 @@
         app:noticeText="@string/error_unknown"
         app:noticeType="warning" />
 
+    <!-- Phase N3: 403 MEMBERSHIP_NEEDED: the community is for verified MIET members -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/getVerifiedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/screen_padding"
+        android:layout_marginEnd="@dimen/screen_padding"
+        android:layout_marginTop="@dimen/space_sm"
+        android:text="@string/action_get_verified"
+        android:visibility="gone" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/retryButton"
         style="@style/Widget.SafeSphere.Button.Text"

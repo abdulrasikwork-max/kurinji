@@ -15,6 +15,7 @@ import com.safesphere.app.feature.account.domain.AccountRepository
 import com.safesphere.app.feature.account.domain.DeletionNotice
 import com.safesphere.app.feature.auth.domain.AuthUser
 import com.safesphere.app.feature.auth.domain.RealNamePolicy
+import com.safesphere.app.feature.membership.domain.MembershipRepository
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,8 +49,26 @@ data class CodeNeeded(val action: ConfirmedAction, val request: CodeRequest)
 class AccountViewModel(
     private val repository: AccountRepository,
     currentUser: Flow<AuthUser?>,
+    /** N3: where the name lock (N-24) is read from; null = never locked (tests of the other actions). */
+    private val membership: MembershipRepository? = null,
     private val now: () -> Instant = Instant::now
 ) : ViewModel() {
+
+    private val _nameLocked = MutableStateFlow(false)
+
+    /**
+     * N3 (N-24): the name was checked against the college ID: the field is read-only and an admin corrects it. Read
+     * from `GET /api/community/me` each time the screen starts; a 409 NAME_LOCKED also turns it on.
+     */
+    val nameLocked: StateFlow<Boolean> = _nameLocked.asStateFlow()
+
+    fun refreshNameLock() {
+        val source = membership ?: return
+        viewModelScope.launch {
+            val result = source.status()
+            if (result is ApiResult.Success) _nameLocked.value = result.data.nameLocked
+        }
+    }
 
     /** The pending deletion banner (null = none). */
     val deletion: Flow<DeletionNotice?> = currentUser.map { AccountPolicy.deletionNotice(it, now()) }
@@ -77,6 +96,7 @@ class AccountViewModel(
             RealNamePolicy.Result.TOO_LONG -> FieldError.NAME_TOO_LONG
             RealNamePolicy.Result.NOT_A_NAME -> FieldError.NOT_A_NAME
         }
+        if (_nameLocked.value) return
         if (problem != null) {
             _message.value = AccountMessage.NameInvalid(problem)
             return
@@ -133,14 +153,23 @@ class AccountViewModel(
             when {
                 result is ApiResult.Success -> _message.value = success(result.data)
                 result.isSessionExpired() -> _sessionExpired.value = true
-                result is ApiResult.Failure -> _message.value = AccountMessage.Failed(result)
+                result is ApiResult.Failure -> {
+                    if (result.code == NAME_LOCKED) _nameLocked.value = true
+                    _message.value = AccountMessage.Failed(result)
+                }
             }
         }
     }
 
     companion object {
+        /** The server's 409 code (backend `NameLockedException`). */
+        const val NAME_LOCKED = "NAME_LOCKED"
+
         fun factory(container: AppContainer) = viewModelFactory {
-            initializer { AccountViewModel(container.accountRepository, container.authRepository.currentUser) }
+            initializer {
+                AccountViewModel(container.accountRepository, container.authRepository.currentUser,
+                    membership = container.membershipRepository)
+            }
         }
     }
 }

@@ -176,6 +176,45 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Phase N3: the person's MIET membership (not verified / waiting / verified / ended / no access); opens the
+             membership screen. Only the person's own state; nobody else's. -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/membershipCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/space_md">
+
+                <TextView
+                    android:id="@+id/membershipTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:accessibilityHeading="true"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/membershipDetail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/membershipButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_md"
+                    android:text="@string/action_get_verified" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <com.safesphere.app.core.ui.components.NoticeView
             android:id="@+id/errorNotice"
             android:layout_width="match_parent"

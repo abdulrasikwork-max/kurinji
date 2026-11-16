@@ -108,6 +108,18 @@
             android:name=".core.sms.SmsResultReceiver"
             android:exported="false" />
 
+        <!-- Phase N3: the camera app writes the ID photo into cache/id-photo/ (the only path offered, xml/id_photo_paths).
+             Not exported; access is granted per photo by the TakePicture intent. No CAMERA permission is declared. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.idphoto"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/id_photo_paths" />
+        </provider>
+
     </application>
 
 </manifest>

@@ -114,7 +114,12 @@ class Phase17FGuardsTest {
         val receiver = Regex("<receiver\\s+android:name=\"\\.feature\\.emergency\\.trigger\\.ShakeCountdownCancelReceiver\"\\s+android:exported=\"false\"")
         assertTrue("the Cancel receiver is not exported", receiver.containsMatchIn(manifest))
         assertTrue("the one service has the location type only", manifest.contains("android:foregroundServiceType=\"location\""))
-        assertFalse("no file provider is left", manifest.contains("<provider"))
+        // N3 (A1): ONE file provider, for the ID photo the camera app writes into the cache (no CAMERA permission);
+        // not exported, one cache folder (MembershipTextsTest checks its paths).
+        val providers = Regex("<provider\\s+android:name=\"([^\"]+)\"\\s+android:authorities=\"([^\"]+)\"\\s+android:exported=\"false\"")
+            .findAll(manifest).map { it.groupValues[1] to it.groupValues[2] }.toList()
+        assertEquals("only the ID-photo provider", listOf("androidx.core.content.FileProvider" to "\${applicationId}.idphoto"), providers)
+        assertEquals(1, Regex("<provider").findAll(manifest).count())
     }
 
     @Test

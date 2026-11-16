@@ -13,6 +13,7 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.safesphere.app.core.network.needsMembership
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
 import com.safesphere.app.core.ui.ViewBindingFragment
@@ -80,6 +81,7 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.getVerifiedButton.setOnClickListener { findNavController().navigate(R.id.membershipFragment) }
         photoAdapter = PhotoAdapter(appContainer.imageLoader)
         binding.photoList.adapter = photoAdapter
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, confirmLeave)
@@ -241,6 +243,7 @@ class ComposeFragment : ViewBindingFragment<FragmentComposeBinding>(FragmentComp
 
         val failure = state.failure
         binding.errorNotice.isVisible = failure != null
+        binding.getVerifiedButton.isVisible = failure.needsMembership()
         if (failure != null) binding.errorNotice.setMessage(failure.toMessage(requireContext()))
         // Phase 17A: the server needs a profile before the first post; the way there, right under the refusal.
         binding.makeProfileButton.isVisible = failure?.code == PROFILE_NEEDED

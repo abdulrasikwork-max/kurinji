@@ -34,6 +34,15 @@ sealed interface ApiResult<out T> {
     ) : ApiResult<Nothing>
 }
 
+/**
+ * Phase N3: the server's 403 `MEMBERSHIP_NEEDED` (backend `MembershipNeededException`): the community is for verified
+ * MIET members only; the screen offers "Get verified" (safety, account and the own profile draft never answer it).
+ */
+const val MEMBERSHIP_NEEDED = "MEMBERSHIP_NEEDED"
+
+fun ApiResult.Failure?.needsMembership(): Boolean =
+    this != null && error == ApiError.FORBIDDEN && code == MEMBERSHIP_NEEDED
+
 /** True when the server rejected the saved token, so the person has to log in again. */
 fun ApiResult<*>.isSessionExpired(): Boolean =
     this is ApiResult.Failure && error == ApiError.UNAUTHORIZED

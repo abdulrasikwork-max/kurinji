@@ -50,6 +50,15 @@
             app:noticeText="@string/error_unknown"
             app:noticeType="warning" />
 
+        <!-- Phase N3: 403 MEMBERSHIP_NEEDED: the community is for verified MIET members -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/getVerifiedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:text="@string/action_get_verified"
+            android:visibility="gone" />
+
         <!-- Unknown handle, or someone the viewer may not see: the same screen, on purpose. -->
         <com.safesphere.app.core.ui.components.EmptyStateView
             android:id="@+id/notFound"

@@ -13,6 +13,7 @@ import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.safesphere.app.core.network.needsMembership
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
@@ -44,6 +45,7 @@ class ConnectionsFragment : ViewBindingFragment<FragmentConnectionsBinding>(Frag
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.getVerifiedButton.setOnClickListener { findNavController().navigate(R.id.membershipFragment) }
         binding.incomingList.adapter = incomingAdapter
         binding.outgoingList.adapter = outgoingAdapter
         binding.connectionList.adapter = connectionAdapter
@@ -88,6 +90,7 @@ class ConnectionsFragment : ViewBindingFragment<FragmentConnectionsBinding>(Frag
 
         val failure = state.failure
         binding.errorNotice.isVisible = failure != null
+        binding.getVerifiedButton.isVisible = failure.needsMembership()
         if (failure != null) binding.errorNotice.setMessage(failure.toMessage(requireContext()))
 
         state.newInvite?.let {
