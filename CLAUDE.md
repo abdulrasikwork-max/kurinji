@@ -82,14 +82,14 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | **N0** | Record the new direction (docs, this file) | done 2026-11-15 (documents only) |
 | **N1** | Strip: remove the retired features on both sides, migration V32 | implemented, compiled, tested 2026-11-15 (Android 766, backend 496, Python 38; V32 applied on the DEVELOPMENT MySQL only); results per unit in `docs/PHASE_N1.md`; manually verified on the emulator 2026-11-15 (SOS, Safe Walk, tile, shortcut, post; no real phone; one wording fix) |
 | **N2** | Phone-only sign-in, real name, no password, migration V33 | implemented, compiled, tested 2026-11-16 (Android 766, backend 494; V33 applied on the DEVELOPMENT MySQL only); decisions N-21 to N-26; results per unit in `docs/PHASE_N2.md`; manually verified on the emulator 2026-11-16 (no real phone) |
-| N3 | Community, membership, verification, bans, admin screens | **in progress, PAUSED 2026-11-16**: backend B1–B3 implemented, compiled, tested (backend 532 / 0 failures; V34 written, applied NOWHERE); B4, A1, A2, C not started; resume from the top of `docs/HANDOFF.md` |
+| N3 | Community, membership, verification, bans, admin screens | **in progress** (resumed 2026-11-16): backend B1–B3 implemented, compiled, tested (backend 532 / 0 failures); B4: V34 applied on the DEVELOPMENT MySQL only (2026-11-16); A1, A2, C next; latest at the top of `docs/HANDOFF.md` |
 | N4 | Moments, capture-only Create, the wall, daily question | planned |
 | N5 | Same / Say more / I'm in, private replies, plan threads, Replies tab | planned |
 | N6 | Safety trim (route checks out, SMS-app fallback only, Safety Circle offer on plans) | planned |
 | N7 | Firebase push | planned |
 | N8 | Pilot launch at MIET (backups, SMS provider, policy texts, seeding, moderators) | planned |
 
-Next migration file **V35** (V34 is N3's: written and tested on H2, NOT applied anywhere yet). Each phase or sub-phase needs its own plan and the owner's approval first. The pilot still
+Next migration file **V35** (V34 is N3's: applied on the DEVELOPMENT MySQL only, 2026-11-16). Each phase or sub-phase needs its own plan and the owner's approval first. The pilot still
 runs the old jar on schema V30 (its move to V32 deletes data: its own approved step).
 
 **Never implement early:** other communities / the community request system, multiple memberships, video, iPhone,
@@ -256,7 +256,7 @@ cd android
 
 ## 7. Database (MySQL `safesphere`, Flyway) — per-migration rules in `.claude/rules/database.md`
 
-Conventions: never edit an applied migration; next file is **V35** (V34 = N3, written, not applied yet); snake_case; `DATETIME(6)` stored in UTC; constraint
+Conventions: never edit an applied migration; next file is **V35** (V34 = N3, applied on the development MySQL only); snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci. "One active /
 one primary / one open" via a generated marker column + unique index. MySQL forbids CHECKs on cascading-FK columns
 (enforce those rules in code); write NULL cases out with `COALESCE` (a NULL makes `IN` UNKNOWN, which a CHECK lets pass);

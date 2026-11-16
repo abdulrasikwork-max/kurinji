@@ -1,6 +1,6 @@
 # Phase N3: verified MIET community membership
 
-Status: **approved by the owner on 2026-11-16** (plan + the decisions below). **PAUSED 2026-11-16 by the owner after B3** (B1–B3 implemented, compiled, tested, committed; B4, A1, A2, C not started; resume from the top of `HANDOFF.md`). Units B1, B2, B3, B4, A1, A2, C; one
+Status: **approved by the owner on 2026-11-16** (plan + the decisions below). Paused after B3 and resumed the same day; B1–B4 done (B4 = V34 on the development MySQL only); A1, A2, C follow. Units B1, B2, B3, B4, A1, A2, C; one
 local commit each; never pushed, never deployed. Results per unit under "As built". Direction: `IRL_DIRECTION.md`
 §2.5; decisions N-2 to N-6, N-24, N-25; new decisions of this phase: `DECISIONS.md` N-27 onwards.
 
@@ -198,3 +198,53 @@ standing / appeal / review of their own content (no shadow bans, even after a me
   graduate once; re-link: ticket used up, wrong roll 409, non-admin 403, refused during an SOS, moved after it, old
   token 401, new number signs in to the same member account, roll without member refused).
 - Result: backend **532 run, 0 failures, 0 errors, 2 skipped**.
+
+### B4 Migration V34 (2026-11-16, DEVELOPMENT MySQL 8.0.46 only; the pilot is NOT migrated)
+- **Backup first:** `C:\Users\ABDUL RAFIQ\Desktop\SafeSphere-Phase3\db-backups\safesphere-dev-before-v34-20261116.sql`
+  (`mysqldump --single-transaction`, 29 tables, 208 905 bytes; outside the repository; plain, same disk).
+- **Pre-check (read-only):** Flyway at V33, 29 tables; none of the six new tables and no `users.name_checked_at`
+  exist. Data: 207 accounts, 25 profiles, 12 posts, 75 sessions, 73 SOS records, 5 Safety Circle contacts.
+- **Dry run on scratch copies** (`zz_v34_*` = V34's DDL with renamed tables and constraint names, plus a full copy of
+  `users` with the V34 `ALTER`s; all dropped afterwards, table count back to 29): **84 cases, 21 accepted and 63 refused
+  as expected, 1 unexpected** (below). Accepted: a name check after creation, an erased account without one, a second
+  community, memberships running / ended (GRADUATED) / with a verifier flag, requests in person with a code and by photo
+  with and without the file, a re-link, bans on a roll / a phone / both (one lifted), log rows (VERIFIED,
+  NAME_CORRECTED with its old spelling, REFUSED, ENDED without an actor, BANNED). Refused, each by the intended
+  constraint: a name check before creation or on an erased account; a duplicate or lower-case or digit community
+  code, a blank name; a second membership per account, a roll key held by another account, an upper-case / short roll
+  key, an unknown or lower-case programme, an unknown method, year 1999, `ends_at = verified_at`, `updated_at` before
+  `verified_at`, `ended_at` without a reason and the reverse, reason `EXPIRED`, an end before verification, a verifier
+  flag without its date and the reverse, on an ended membership, value 2; requests: a second per account, upper-case or
+  duplicate public id, method `PHONE`, year 2101, no lifetime, a code hash without expiry and the reverse, a code on an
+  ID_PHOTO request, an upper-case and a duplicate code hash, a photo on an IN_PERSON request, a photo name without its
+  time, a path-shaped photo name, a non-hex roll key; re-links: duplicate number or code, a 5-series and a US number,
+  non-hex code / upper-case roll key, no lifetime; bans without any key, with a plain roll number or phone number as the
+  key, reason `SPAM` / lower case, a blank or 201-character note, a lift before the ban; log: NAME_CORRECTED without
+  detail, detail on VERIFIED, unknown / lower-case action, method `EMAIL`, reason `SPAM`, an unknown actor; deleting an
+  account that decided something (no cascade: `AccountEraser` tombstones it). Cascades: deleting a claimer set
+  `claimed_by` to NULL; deleting a member removed their membership, request and the log rows about them.
+- **The unexpected case:** `programme = 'MBA '` (trailing space) was ACCEPTED. Cause: `utf8mb4_bin` is a PAD SPACE
+  collation, so `'MBA ' IN ('MBA', ...)` is true. The same holds for every closed list since V20; only hand-written SQL
+  can produce it (the backend writes enum names; Hibernate would fail loudly reading it). Not changed; recorded as a
+  gotcha in `.claude/rules/database.md` and for the owner in `HANDOFF.md`.
+- **Applied** by starting the N3 jar once (its V34 compared byte for byte with the source): "Successfully validated 34
+  migrations", "Migrating schema to version 34 - community membership", "now at version v34", "Started" (one harmless
+  MySQL warning: integer display width of `TINYINT(1)`). The development-key WARN for `COMMUNITY_SECRET` appeared, as
+  expected. Afterwards 35 tables, the 30 new CHECKs present, MIET seeded, data counts unchanged (207 / 25 / 12 / 75 /
+  73 / 5), no membership, no name checked.
+- **Entities against the migrated schema:** all 55 columns of the six community entities (42 named + 13 implicit) and
+  `users.name_checked_at` exist in MySQL.
+- **API on real MySQL (curl):** existing account 397 ("Mysql Check") signs in → `/api/community/me` NONE, 14
+  programmes, `/api/connections` 403 `MEMBERSHIP_NEEDED`, `/api/safety-contacts` 200 → IN_PERSON request with
+  `E 999-0001` → PENDING (row: lower-case hex roll key and code hash, no readable roll number) → a new account 400
+  ("Admin Check", made-up number ending 3333) made ADMIN by SQL → a wrong code 404, the applicant on the verifier route
+  403 → lookup 200 (name, masked number) → a wrong roll typed 409 → approval with `e9990001` and the corrected name
+  "Mysql Checked" 200 VERIFIED → `/me` MEMBER, `nameLocked` true, corrected from "Mysql Check" → `/api/connections`
+  200 → `PUT /api/users/me/name` 409 `NAME_LOCKED` → the admin log shows VERIFIED + NAME_CORRECTED; `ends_at`
+  2027-07-31 18:30 UTC; the request row deleted. (A first run of the script read the community's `"code":"MIET"` as the
+  request code: its lookup answered 404, nothing was decided, and the still-unlocked name of 397 was changed by its
+  name step; restored by SQL before the second run.)
+- **Real-MySQL test:** `MySqlTimestampStorageTest` with `SAFESPHERE_MYSQL_TESTS=true`: 2 run, 0 failures.
+- Development data now: account 397 is a MIET member (BTECH_IT 2027, name "Mysql Checked"); account 400 "Admin Check"
+  is ADMIN; accounts 396 "Nila Check" and 399 "Meera Test" stay unverified for the emulator walk (unit C). An older
+  jar (V33 or before) now refuses to start against the development database. The pilot stays on V30.
