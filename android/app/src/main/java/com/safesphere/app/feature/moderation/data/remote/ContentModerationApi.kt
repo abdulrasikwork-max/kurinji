@@ -4,9 +4,8 @@ import com.safesphere.app.feature.moderation.domain.CaseAuthor
 import com.safesphere.app.feature.moderation.domain.CaseCheck
 import com.safesphere.app.feature.moderation.domain.CaseContent
 import com.safesphere.app.feature.moderation.domain.CaseDecisionEntry
-import com.safesphere.app.feature.moderation.domain.CaseMedia
+import com.safesphere.app.feature.moderation.domain.CasePhoto
 import com.safesphere.app.feature.moderation.domain.ContentParticipant
-import com.safesphere.app.feature.moderation.domain.CaseRevision
 import com.safesphere.app.feature.moderation.domain.CaseRole
 import com.safesphere.app.feature.moderation.domain.CheckFinding
 import com.safesphere.app.feature.moderation.domain.ContentAction
@@ -68,7 +67,8 @@ data class ContentCaseSummaryDto(
     val priority: Int? = null,
     val youTookPart: Boolean? = null,
     val openedBy: String? = null,
-    val contentSource: String? = null
+    val contentSource: String? = null,
+    val waitingHours: Int? = null
 ) {
     fun toDomain(): ContentCaseSummary? {
         val reasonCounts = buildMap {
@@ -90,8 +90,10 @@ data class ContentCaseSummaryDto(
             independent = independent ?: 0,
             contentState = contentState,
             youTookPart = youTookPart != false,
-            openedBy = openedBy?.takeIf { it in setOf("REPORTS", "SYSTEM", "AUTHOR_REQUEST") } ?: "REPORTS",
-            contentSource = contentSource?.takeIf { it in setOf("REPORTS", "SYSTEM", "MODERATOR") }
+            openedBy = openedBy?.takeIf { it in OPENED_BY } ?: "REPORTS",
+            contentSource = contentSource?.takeIf { it in setOf("REPORTS", "SYSTEM", "MODERATOR") },
+            topReasonCode = topReason?.takeIf { it in REASON_CODES },
+            waitingHours = (waitingHours ?: 0).coerceAtLeast(0)
         )
     }
 }
@@ -129,57 +131,55 @@ data class EvidenceViewDto(val category: String? = null, val severity: Int? = nu
 
 private val CHECK_CATEGORIES = setOf("PROFANITY", "HARASSMENT", "SEXUAL_HARASSMENT", "HATE", "THREAT", "DOXXING", "SPAM")
 
+/** N4: the case origins the app knows. */
+private val OPENED_BY = setOf("REPORTS", "SYSTEM", "AUTHOR_REQUEST", "ABOUT_ME")
+
+/** N4: reason codes a case may carry (the decision reasons and the three that are not). */
+private val REASON_CODES = ContentDecisionReason.entries.map { it.name }.toSet() + setOf("ABOUT_ME", "NEW_MEMBER_PHOTO", "AWAITING_CHECK")
+
 data class PersonInfoDto(
     val displayName: String? = null,
     /** Phase 17E */
     val hasPhoto: Boolean? = null,
     val handle: String? = null,
     val bio: String? = null,
-    val city: String? = null,
-    val interests: List<String>? = null
+    val programme: String? = null,
+    val graduationYear: Int? = null
 )
 
-/** Phase 17C: [kind] PHOTO | VIDEO (absent = a photo); an unknown kind or a video without a length is left out. */
-data class MediaViewDto(val mediaId: String? = null, val width: Int? = null, val height: Int? = null,
-                        val kind: String? = null, val durationMs: Int? = null) {
-    fun toDomain(): CaseMedia? {
-        val id = mediaId ?: return null
-        return when (kind) {
-            null, "PHOTO" -> CaseMedia(id, width ?: 0, height ?: 0)
-            "VIDEO" -> durationMs?.takeIf { it > 0 }?.let { CaseMedia(id, width ?: 0, height ?: 0, true, it) }
-            else -> null
-        }
-    }
-}
+data class CasePhotoDto(val width: Int? = null, val height: Int? = null)
 
+/** N4: a moment case's content; an unknown kind or audience reads as none (shown as nothing, never guessed). */
 data class ContentViewDto(
-    val postType: String? = null,
-    val commentKind: String? = null,
-    val body: String? = null,
-    val tip: String? = null,
-    val category: String? = null,
-    val precision: String? = null,
-    val placeName: String? = null,
-    val areaCell: String? = null,
-    val city: String? = null,
+    val kind: String? = null,
     val audience: String? = null,
-    val experiencedMonth: String? = null,
-    val daypart: String? = null,
-    val media: List<MediaViewDto>? = null,
-    val contextBody: String? = null,
+    val body: String? = null,
+    val planAt: String? = null,
+    val planWhere: String? = null,
+    val question: String? = null,
+    val photo: CasePhotoDto? = null,
     val person: PersonInfoDto? = null
 ) {
     fun toDomain() = CaseContent(
-        postType, commentKind, body, tip, category, precision, placeName, areaCell, city, audience, experiencedMonth,
-        daypart, media.orEmpty().mapNotNull { it.toDomain() },
-
-        contextBody,
-        person?.let { p -> PersonInfo(p.displayName.orEmpty(), p.handle.orEmpty(), p.bio, p.city, p.interests.orEmpty(),
-            p.hasPhoto == true) }
+        kind = kind?.takeIf { it in setOf("SAY", "WHOS_IN") },
+        audience = audience?.takeIf { it in setOf("COMMUNITY", "MY_PEOPLE") },
+        body = body,
+        planAt = planAt?.let { runCatching { Instant.parse(it) }.getOrNull() },
+        planWhere = planWhere?.takeIf { it.isNotBlank() },
+        question = question?.takeIf { it.isNotBlank() },
+        photo = photo?.let { p ->
+            val w = p.width ?: 0
+            val h = p.height ?: 0
+            if (w > 0 && h > 0) CasePhoto(w, h) else null
+        },
+        person = person?.let { p ->
+            PersonInfo(p.displayName.orEmpty(), p.handle.orEmpty(), p.bio, p.programme?.takeIf { PROGRAMME.matches(it) },
+                p.graduationYear?.takeIf { it in 1990..2100 }, p.hasPhoto == true)
+        }
     )
 }
 
-data class RevisionViewDto(val body: String? = null, val tip: String? = null, val replacedOn: String? = null)
+private val PROGRAMME = Regex("^[A-Z0-9_]{1,40}$")
 
 data class ContentParticipantDto(
     val ref: String? = null,
@@ -198,7 +198,8 @@ data class ContentParticipantDto(
             note = note,
             counting = counting == true,
             accountAge = accountAge,
-            linkGroup = linkGroup
+            linkGroup = linkGroup,
+            aboutMe = reason == "ABOUT_ME"
         )
     }
 
@@ -210,7 +211,8 @@ data class AuthorViewDto(
     val strikePoints: Double? = null,
     val suggestedStep: String? = null,
     val restriction: String? = null,
-    val restrictedUntil: String? = null
+    val restrictedUntil: String? = null,
+    val newMemberUntil: String? = null
 ) {
     fun toDomain(): CaseAuthor? = if (ref == null) null else CaseAuthor(
         ref = ref,
@@ -223,7 +225,8 @@ data class AuthorViewDto(
             else -> null
         },
         restriction = restriction,
-        restrictedUntil = restrictedUntil?.let { runCatching { Instant.parse(it) }.getOrNull() }
+        restrictedUntil = restrictedUntil?.let { runCatching { Instant.parse(it) }.getOrNull() },
+        newMemberUntil = newMemberUntil?.let { runCatching { Instant.parse(it) }.getOrNull() }
     )
 
     override fun toString() = "AuthorViewDto(ref=<hidden>, suggestedStep=$suggestedStep)"
@@ -235,7 +238,6 @@ data class CaseDecisionDto(val action: String? = null, val reason: String? = nul
 data class ContentCaseDetailDto(
     val summary: ContentCaseSummaryDto? = null,
     val content: ContentViewDto? = null,
-    val revisions: List<RevisionViewDto>? = null,
     val participants: List<ContentParticipantDto>? = null,
     val author: AuthorViewDto? = null,
     val possibleActions: List<String>? = null,
@@ -245,7 +247,6 @@ data class ContentCaseDetailDto(
     fun toDomain(): ContentCaseDetail? = summary?.toDomain()?.let { s -> ContentCaseDetail(
         summary = s,
         content = (content ?: ContentViewDto()).toDomain(),
-        revisions = revisions.orEmpty().mapNotNull { r -> r.body?.let { CaseRevision(it, r.tip, dateOf(r.replacedOn)) } },
         participants = participants.orEmpty().mapNotNull { it.toDomain() },
         author = author?.toDomain(),
         possibleActions = possibleActions.orEmpty().mapNotNull { codeOf<ContentAction>(it) },

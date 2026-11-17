@@ -32,3 +32,21 @@ object ContentModerationPolicy {
     fun needsConfirmation(action: ContentAction): Boolean =
         action != ContentAction.CONTENT_KEEP && action != ContentAction.PERSON_KEEP
 }
+
+/** N4-A3 (pure, tested): how a moment case reads for a moderator. */
+object MomentCaseText {
+
+    /** The text the automatic check read (the server's `MomentShared.words`): the words, then the "where". */
+    fun checkedText(content: CaseContent): String = when {
+        content.body == null -> content.planWhere.orEmpty()
+        content.planWhere == null -> content.body
+        else -> content.body + "\n" + content.planWhere
+    }
+
+    /**
+     * The headline reason as a code: the decision reason when it is one, else the server's own code (ABOUT_ME,
+     * NEW_MEMBER_PHOTO, AWAITING_CHECK), else ABOUT_ME for a case "This is about me" opened; null = unknown.
+     */
+    fun headlineReason(summary: ContentCaseSummary): String? =
+        summary.topReason?.name ?: summary.topReasonCode ?: if (summary.openedBy == "ABOUT_ME") "ABOUT_ME" else null
+}

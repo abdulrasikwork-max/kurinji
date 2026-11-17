@@ -778,16 +778,14 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="content_state_held">Hidden while reviewed</string>
     <string name="content_state_removed">Removed</string>
     <string name="content_case_audience">Shared with: %1$s</string>
-    <string name="content_case_context">On the post: %1$s</string>
     <string name="content_case_person">%1$s (@%2$s)</string>
-    <string name="content_case_earlier_text">Before an edit during this review: %1$s</string>
-    <string name="content_case_photos">Photos and videos are hidden until you choose to see them.</string>
-    <string name="content_case_show_photo">Show photo %1$s</string>
+    <string name="content_case_photos">Photos are hidden until you choose to see them.</string>
 
     <string name="content_case_participant">Person %1$s · %2$s</string>
     <string name="content_role_author">wrote it</string>
     <string name="content_role_subject">reported person</string>
     <string name="content_role_reporter">reported: %1$s</string>
+    <string name="content_role_about_me">said this moment is about them</string>
     <string name="content_case_counting">counts</string>
     <string name="content_case_not_counting">does not count now (new account, paused, or already decided)</string>
     <string name="content_case_linked">acts together with group %1$s</string>
@@ -1316,4 +1314,40 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="create_support_close">Close</string>
     <string name="create_members_only">You can share with MIET once a member has seen your college ID.</string>
     <string name="today_question_answer">Answer</string>
+    <!-- N4 (A3): reporting a moment, "This is about me" -->
+    <string name="moment_report">Report this moment</string>
+    <string name="moment_about_me">This is about me</string>
+    <string name="moment_about_me_title">Is this moment about you?</string>
+    <string name="moment_about_me_message">If this is about you and you do not want it here, it is hidden from everyone at once and a moderator looks at it. The person who shared it is not told that you asked, or who you are.</string>
+    <string name="moment_about_me_confirm">Hide it and ask a moderator</string>
+    <string name="moment_about_me_sent">It is hidden now. A moderator will look at it. Nobody is told that you asked.</string>
+    <!-- N4 (A3): admins schedule the daily question -->
+    <string name="title_questions_admin">Daily questions</string>
+    <string name="questions_admin_row_description">Write and schedule the question pinned on Today</string>
+    <string name="questions_admin_intro">One question a day, pinned at the top of Today for all of MIET. Answers are ordinary moments; nothing is counted. A question cannot be edited: delete it and write it again.</string>
+    <string name="questions_admin_choose_day">Choose a day</string>
+    <string name="questions_admin_day_taken">That day already has a question. Delete it first to write another.</string>
+    <string name="questions_admin_text_label">The question</string>
+    <string name="questions_admin_text_help">3 to 140 characters, on one line.</string>
+    <string name="questions_admin_schedule">Schedule</string>
+    <string name="questions_admin_scheduled">Scheduled.</string>
+    <string name="questions_admin_list_title">Scheduled</string>
+    <string name="questions_admin_empty">No question scheduled yet.</string>
+    <string name="questions_admin_today">Today, %1$s</string>
+    <string name="questions_admin_tomorrow">Tomorrow, %1$s</string>
+    <string name="questions_admin_delete">Delete</string>
+    <string name="questions_admin_delete_cd">Delete the question %1$s</string>
+    <string name="questions_admin_delete_title">Delete this question?</string>
+    <string name="questions_admin_delete_message">It leaves Today. The answers people shared stay as ordinary moments.</string>
+    <string name="questions_admin_not_allowed">Only IRL admins can schedule the daily question.</string>
+    <string name="questions_admin_members_only">Daily questions open once your own membership is active.</string>
+    <!-- N4 (A3): moderators on moment cases -->
+    <string name="content_reason_about_me">Someone says this is about them</string>
+    <string name="content_reason_new_member_photo">A new member\'s photo for all of MIET</string>
+    <string name="content_case_opened_by_about_me">Opened by “This is about me”: the moment is hidden while you look. Keep it to show it again.</string>
+    <string name="content_case_waiting">Waiting: %1$s h</string>
+    <string name="content_case_plan">Plan: %1$s</string>
+    <string name="content_case_show_moment_photo">Show the photo</string>
+    <string name="content_case_moment_photo">The moment\'s photo</string>
+    <string name="content_case_new_member_until">New member until %1$s</string>
 </resources>

@@ -45,6 +45,15 @@ object ContentModerationTexts {
         ContentDecisionReason.OTHER -> R.string.report_reason_other
     }
 
+    /** N4: a reason code as moderators read it, including the three that are no decision reason. */
+    @StringRes
+    fun reasonCode(code: String?): Int = when (code) {
+        "ABOUT_ME" -> R.string.content_reason_about_me
+        "NEW_MEMBER_PHOTO" -> R.string.content_reason_new_member_photo
+        "AWAITING_CHECK" -> R.string.moderation_reason_awaiting_check
+        else -> of(ContentDecisionReason.entries.firstOrNull { it.name == code })
+    }
+
     @StringRes
     fun state(code: String?): Int = when (code) {
         "COLLAPSED" -> R.string.content_state_collapsed

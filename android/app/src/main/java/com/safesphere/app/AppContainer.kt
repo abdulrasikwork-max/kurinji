@@ -232,6 +232,12 @@ class AppContainer(context: Context) {
             is ApiResult.Failure -> status
         }
 
+    /** A3: admins schedule the daily question (the server checks the role on every call). */
+    val questionAdminRepository: com.safesphere.app.feature.moments.domain.QuestionAdminRepository by lazy {
+        com.safesphere.app.feature.moments.data.RemoteQuestionAdminRepository(
+            retrofit.create(com.safesphere.app.feature.moments.data.QuestionAdminApi::class.java), apiCallHandler)
+    }
+
     // ---- Phase 13D: reports, own standing and appeals; moderators' content queue (nothing stored) ---------------
 
     val reportRepository: ReportRepository by lazy {

@@ -18,6 +18,12 @@ import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentMomentBinding
 import com.safesphere.app.feature.moments.domain.Moment
 import com.safesphere.app.feature.moments.domain.MomentStatus
+import com.safesphere.app.feature.social.domain.ReportTarget
+import com.safesphere.app.feature.social.ui.ModerationLabels
+import com.safesphere.app.feature.social.ui.ReportDialogs
+import com.safesphere.app.feature.social.ui.ReportMessage
+import com.safesphere.app.feature.social.ui.ReportUiState
+import com.safesphere.app.feature.social.ui.ReportViewModel
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -26,10 +32,13 @@ import java.util.Locale
 /**
  * Phase N4: a moment on its own page (a reading screen: the bottom bar stays). The author sees when it leaves Today
  * and can keep, un-keep or delete it; everyone else can open the author's profile. Screenshots are blocked (D12).
+ * A3: others can report it or say "This is about me" (hidden at once, a moderator looks); the author can ask a
+ * moderator to look at what a rule did, or ask for a review of a moderator's decision. Nobody learns who asked.
  */
 class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMomentBinding::inflate) {
 
     private val viewModel by viewModels<MomentViewModel> { MomentViewModel.factory(appContainer) }
+    private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -40,6 +49,11 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
         }
         binding.deleteButton.setOnClickListener { confirmDelete() }
         binding.momentCard.content.setOnClickListener { viewModel.onUncover() }
+        binding.reportButton.setOnClickListener { report() }
+        binding.aboutMeButton.setOnClickListener { confirmAboutMe() }
+        binding.checkReviewButton.setOnClickListener { viewModel.uiState.value.moment?.let { reports.askCheckReview(ReportTarget.MOMENT, it.id) } }
+        binding.appealButton.setOnClickListener { viewModel.uiState.value.moment?.notice?.decisionId?.let(reports::appeal) }
+        collectWhenStarted(reports.uiState, ::renderReports)
         collectWhenStarted(viewModel.uiState, ::render)
         viewModel.load(requireArguments().getString(ARG_ID).orEmpty())
     }
@@ -53,6 +67,73 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
         super.onPause()
         secure(false)
     }
+
+    private fun report() {
+        val moment = viewModel.uiState.value.moment ?: return
+        ReportDialogs.show(this, ReportTarget.MOMENT) { reason, note -> reports.report(ReportTarget.MOMENT, moment.id, reason, note) }
+    }
+
+    /** D11: said once, plainly, before it hides someone's moment: what happens, and that nobody is told who asked. */
+    private fun confirmAboutMe() {
+        val moment = viewModel.uiState.value.moment ?: return
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.moment_about_me_title)
+            .setMessage(R.string.moment_about_me_message)
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.moment_about_me_confirm) { _, _ -> reports.aboutMe(moment.id) }
+            .show()
+    }
+
+    private fun renderReports(state: ReportUiState) {
+        if (view == null) return
+        binding.reportButton.isEnabled = !state.isBusy
+        binding.aboutMeButton.isEnabled = !state.isBusy
+        when (state.message) {
+            ReportMessage.REPORT_SENT -> toast(R.string.report_sent)
+            ReportMessage.CHECK_REVIEW_ASKED -> toast(R.string.check_review_asked)
+            ReportMessage.REVIEW_ASKED -> toast(R.string.review_asked)
+            ReportMessage.ABOUT_ME_SENT -> {
+                toast(R.string.moment_about_me_sent)
+                // Hidden from everyone but its author now (also from the person who asked): it leaves the wall.
+                viewModel.uiState.value.moment?.let { findNavController().previousBackStackEntry?.savedStateHandle?.set(RESULT_REMOVED, it.id) }
+                reports.onMessageShown()
+                findNavController().popBackStack()
+                return
+            }
+            null -> Unit
+        }
+        if (state.message != null) reports.onMessageShown()
+        state.failure?.let {
+            toast(it.toMessage(requireContext()))
+            reports.onFailureShown()
+        }
+        if (state.sessionExpired) {
+            reports.onSessionExpiredHandled()
+            showSessionExpiredDialog()
+        }
+        viewModel.uiState.value.moment?.let { if (it.mine) renderReview(it, state) }
+    }
+
+    /** The author's ways to ask a person to look (no shadow states: the notice already says what happened). */
+    private fun renderReview(moment: Moment, reportState: ReportUiState) {
+        val notice = moment.notice
+        val asked = moment.id in reportState.checkReviewAsked
+        binding.checkReviewButton.isVisible = notice != null && notice.reviewable && !asked
+        val decision = reportState.standing?.decisionFor(notice?.decisionId)
+        binding.appealButton.isVisible = decision?.canAppeal == true
+        val line = decision?.let { ModerationLabels.appealLine(it.appeal) }
+        binding.reviewLine.isVisible = line != null || asked
+        binding.reviewLine.text = when {
+            line != null -> getString(line)
+            asked -> getString(R.string.check_review_asked)
+            else -> ""
+        }
+        binding.checkReviewButton.isEnabled = !reportState.isBusy
+        binding.appealButton.isEnabled = !reportState.isBusy
+    }
+
+    private fun toast(text: Int) = Toast.makeText(requireContext(), text, Toast.LENGTH_LONG).show()
+    private fun toast(text: String) = Toast.makeText(requireContext(), text, Toast.LENGTH_LONG).show()
 
     private fun confirmDelete() {
         MaterialAlertDialogBuilder(requireContext())
@@ -77,10 +158,18 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
         binding.momentCard.root.isVisible = moment != null
         binding.ownBlock.isVisible = moment != null && moment.mine
         binding.authorButton.isVisible = false
+        binding.othersBlock.isVisible = moment != null && !moment.mine
         if (moment != null) {
             MomentCardBinder.bind(binding.momentCard, moment, state.open, momentImages())
             binding.momentCard.content.isClickable = MomentCardBinder.covered(moment, state.open)
-            if (moment.mine) renderOwn(state, moment) else renderAuthor(moment)
+            if (moment.mine) {
+                renderOwn(state, moment)
+                renderReview(moment, reports.uiState.value)
+                // The decision behind a moderator's notice, to know whether a review can be asked (read once).
+                if (moment.notice?.decisionId != null && reports.uiState.value.standing == null) reports.loadStanding()
+            } else {
+                renderAuthor(moment)
+            }
         }
 
         val failure = state.failure

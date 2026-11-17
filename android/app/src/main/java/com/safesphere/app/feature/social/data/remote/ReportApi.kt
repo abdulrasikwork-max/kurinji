@@ -32,6 +32,10 @@ interface ReportApi {
     @POST("api/social-standing/decisions/{id}/appeal")
     suspend fun appeal(@Path("id") decisionId: String): ReportReceivedDto
 
+    /** N4 (D11): "This is about me": the moment is hidden at once and a moderator looks; 202 {status: RECEIVED}. */
+    @POST("api/moments/{id}/about-me")
+    suspend fun aboutMe(@Path("id") momentId: String): ReportReceivedDto
+
     /** N4: "Ask for a review" of one's own moment that a rule collapsed or held. */
     @POST("api/content-checks/review")
     suspend fun reviewCheck(@Body body: ReviewRequestDto): ReportReceivedDto

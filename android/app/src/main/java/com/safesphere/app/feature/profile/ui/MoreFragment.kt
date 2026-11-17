@@ -86,6 +86,10 @@ class MoreFragment : ViewBindingFragment<FragmentMoreBinding>(FragmentMoreBindin
                 FeatureItem(R.drawable.ic_flag, R.string.staff_bans_title, R.string.staff_bans_description) {
                     list(StaffListFragment.Mode.BANS, R.string.staff_bans_title)
                 }.takeIf { admin },
+                // N4 (A3): the daily question pinned on Today.
+                FeatureItem(R.drawable.ic_check_circle, R.string.title_questions_admin, R.string.questions_admin_row_description) {
+                    nav.navigate(R.id.questionsAdminFragment)
+                }.takeIf { admin },
                 FeatureItem(R.drawable.ic_tune, R.string.title_staff_actions, R.string.staff_actions_description) {
                     nav.navigate(R.id.staffActionsFragment)
                 }.takeIf { admin },

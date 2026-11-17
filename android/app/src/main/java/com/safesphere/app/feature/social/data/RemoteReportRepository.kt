@@ -34,4 +34,13 @@ class RemoteReportRepository(private val api: ReportApi, private val handler: Ap
         api.reviewCheck(ReviewRequestDto(target.name, targetId))
         Unit
     }
+
+    override suspend fun aboutMe(momentId: String): ApiResult<Unit> {
+        // Only a moment id ever reaches the URL.
+        val id = com.safesphere.app.feature.moments.data.remote.uuid(momentId) ?: return ApiResult.Failure(com.safesphere.app.core.network.ApiError.NOT_FOUND)
+        return handler.execute {
+            api.aboutMe(id)
+            Unit
+        }
+    }
 }

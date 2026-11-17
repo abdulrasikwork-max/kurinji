@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** One-shot confirmations of the report and review flows. */
-enum class ReportMessage { REPORT_SENT, REVIEW_ASKED, CHECK_REVIEW_ASKED }
+enum class ReportMessage { REPORT_SENT, REVIEW_ASKED, CHECK_REVIEW_ASKED, ABOUT_ME_SENT }
 
 data class ReportUiState(
     val isBusy: Boolean = false,
@@ -88,6 +88,21 @@ class ReportViewModel(private val repository: ReportRepository) : ViewModel() {
                     it.copy(isBusy = false, message = ReportMessage.CHECK_REVIEW_ASKED,
                         checkReviewAsked = it.checkReviewAsked + targetId)
                 }
+                is ApiResult.Failure -> fail(result)
+            }
+        }
+    }
+
+    /**
+     * N4 (D11): "This is about me" on someone else's moment. [aboutMeDone] = it is hidden now: the screen says so and
+     * closes (the moment is no longer visible to the person who asked either).
+     */
+    fun aboutMe(momentId: String) {
+        if (_uiState.value.isBusy) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isBusy = true, failure = null) }
+            when (val result = repository.aboutMe(momentId)) {
+                is ApiResult.Success -> _uiState.update { it.copy(isBusy = false, message = ReportMessage.ABOUT_ME_SENT) }
                 is ApiResult.Failure -> fail(result)
             }
         }

@@ -144,8 +144,8 @@ class ModerationV2Test {
         ContentCaseSummary("case-1", ContentTarget.MOMENT, true, null, null, top, emptyMap(), 1, 1, "NONE", tookPart)
 
     private fun detail(tookPart: Boolean = false, actions: List<ContentAction> = ContentAction.entries.toList()) =
-        ContentCaseDetail(summary(tookPart), CaseContent(null, null, "Text", null, null, null, null, null, null, null,
-            null, null, emptyList(), null, null), emptyList(), emptyList(), null, actions, emptyList())
+        ContentCaseDetail(summary(tookPart), CaseContent(kind = "SAY", audience = "COMMUNITY", body = "Text"),
+            emptyList(), null, actions, emptyList())
 
     @Test
     fun `decision reasons mirror the server`() {
@@ -189,7 +189,7 @@ class ModerationV2Test {
             decided += appealId to overturn
             return ApiResult.Success(ContentAppeal(appealId, false, null, ContentAction.CONTENT_REMOVE, null, null, null, false))
         }
-        override fun photoUrl(caseId: String, mediaId: String) = "http://test/$caseId/$mediaId"
+        override fun photoUrl(caseId: String) = "http://test/$caseId/media"
         override fun personPhotoUrl(caseId: String) = "http://test/$caseId/person-photo"
     }
 

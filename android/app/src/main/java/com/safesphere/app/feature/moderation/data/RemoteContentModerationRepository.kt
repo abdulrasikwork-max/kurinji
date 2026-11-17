@@ -36,8 +36,8 @@ class RemoteContentModerationRepository(
             ?: error("unreadable appeal")
     }
 
-    override fun photoUrl(caseId: String, mediaId: String): String =
-        baseUrl.trimEnd('/') + "/api/moderation/content-cases/" + caseId + "/media/" + mediaId
+    override fun photoUrl(caseId: String): String =
+        baseUrl.trimEnd('/') + "/api/moderation/content-cases/" + caseId + "/media"
 
 
     override fun personPhotoUrl(caseId: String): String =

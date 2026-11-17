@@ -40,4 +40,13 @@ class FakeReportRepository : ReportRepository {
         checkReviews += target to targetId
         return appealResult
     }
+
+    /** N4 (A3). */
+    val aboutMe = mutableListOf<String>()
+    var aboutMeResult: ApiResult<Unit> = ApiResult.Success(Unit)
+
+    override suspend fun aboutMe(momentId: String): ApiResult<Unit> {
+        aboutMe += momentId
+        return aboutMeResult
+    }
 }

@@ -5,7 +5,7 @@ import java.time.Instant
 import java.time.LocalDate
 
 /**
- * Phase 13D: the moderators' view of reported posts, perspectives and people (docs/PHASE13D_PLAN.md M8-M12). People are
+ * Phase 13D: the moderators' view of reported content and people (docs/PHASE13D_PLAN.md M8-M12; N4-A3: moments). People are
  * case pseudonyms ("Person 3f9a1c…"); the server decides every check again and answers 403 for a case the moderator is
  * part of. Nothing is stored on the phone.
  */
@@ -39,13 +39,20 @@ data class ContentCaseSummary(
     val reasons: Map<ContentDecisionReason, Int>,
     val counting: Int,
     val independent: Int,
-    /** COLLAPSED / HELD / REMOVED / NONE for posts and perspectives; null for a person. */
+    /** COLLAPSED / HELD / REMOVED / NONE for a moment; null for a person. */
     val contentState: String?,
     val youTookPart: Boolean,
-    /** Phase 13E: REPORTS / SYSTEM / AUTHOR_REQUEST (unknown reads as REPORTS: the 13D words). */
+    /** Phase 13E: REPORTS / SYSTEM / AUTHOR_REQUEST; N4: ABOUT_ME (unknown reads as REPORTS: the 13D words). */
     val openedBy: String = "REPORTS",
     /** Phase 13E: who set the content's state (SYSTEM = the automatic check); null while NONE or for a person. */
-    val contentSource: String? = null
+    val contentSource: String? = null,
+    /**
+     * N4: the server's top reason as a code, also the ones that are no decision reason (ABOUT_ME, NEW_MEMBER_PHOTO,
+     * AWAITING_CHECK); null when unknown. [topReason] stays the decision-reason view of it.
+     */
+    val topReasonCode: String? = null,
+    /** N4 (N-69): whole hours the case has waited (shown so the oldest are not forgotten). */
+    val waitingHours: Int = 0
 )
 
 /** Phase 13E: one finding of the automatic check, with the flagged phrase as code points of the case's text. */
@@ -55,33 +62,28 @@ data class CheckFinding(val category: String, val severity: Int, val targeted: B
 /** Phase 13E: what the automatic check found (evidence, not a verdict). */
 data class CaseCheck(val action: String, val rule: String, val findings: List<CheckFinding>, val versions: String)
 
-data class PersonInfo(val displayName: String, val handle: String, val bio: String?, val city: String?,
-                      val interests: List<String>, /** Phase 17E: shown only after a tap. */ val hasPhoto: Boolean = false)
+/** The public profile of a PERSON case (N4: programme and year from the membership; the photo only after a tap). */
+data class PersonInfo(val displayName: String, val handle: String, val bio: String?, val programme: String?,
+                      val graduationYear: Int?, /** Phase 17E: shown only after a tap. */ val hasPhoto: Boolean = false)
 
-/** Phase 17C: [isVideo] items show their poster after a tap and play on another tap ([durationMs] only for a video). */
-data class CaseMedia(val mediaId: String, val width: Int, val height: Int, val isVideo: Boolean = false,
-                     val durationMs: Int? = null)
+/** N4: the size of the moment's photo (the picture: only after a tap, through the case). */
+data class CasePhoto(val width: Int, val height: Int)
 
+/**
+ * N4: what a MOMENT case is about, as written (also a My people one: needed to judge): [kind] SAY / WHOS_IN,
+ * [audience] COMMUNITY / MY_PEOPLE, the words, a Who's in?'s plan, the daily question it answers, its photo. A PERSON
+ * case has only [person].
+ */
 data class CaseContent(
-    val postType: String?,
-    val commentKind: String?,
-    val body: String?,
-    val tip: String?,
-    val category: String?,
-    val precision: String?,
-    val placeName: String?,
-    val areaCell: String?,
-    val city: String?,
-    val audience: String?,
-    val experiencedMonth: String?,
-    val daypart: String?,
-    val media: List<CaseMedia>,
-    /** A perspective's post, at most 500 characters. */
-    val contextBody: String?,
-    val person: PersonInfo?
+    val kind: String? = null,
+    val audience: String? = null,
+    val body: String? = null,
+    val planAt: Instant? = null,
+    val planWhere: String? = null,
+    val question: String? = null,
+    val photo: CasePhoto? = null,
+    val person: PersonInfo? = null
 )
-
-data class CaseRevision(val body: String, val tip: String?, val replacedOn: LocalDate?)
 
 enum class CaseRole { AUTHOR, SUBJECT, REPORTER }
 
@@ -92,7 +94,9 @@ data class ContentParticipant(
     val note: String?,
     val counting: Boolean,
     val accountAge: String?,
-    val linkGroup: String?
+    val linkGroup: String?,
+    /** N4: this person said the moment is about them ("This is about me"). */
+    val aboutMe: Boolean = false
 )
 
 data class CaseAuthor(
@@ -101,7 +105,9 @@ data class CaseAuthor(
     /** WARN / PAUSE_COMMENTS / PAUSE_POSTING / SUSPEND (a suggestion only). */
     val suggestedStep: ContentAction?,
     val restriction: String?,
-    val restrictedUntil: Instant?
+    val restrictedUntil: Instant?,
+    /** N4 (N-56): the end of their 7-day new-member period; null once established. */
+    val newMemberUntil: Instant? = null
 )
 
 data class CaseDecisionEntry(val action: ContentAction, val reason: ContentDecisionReason?, val decidedOn: LocalDate?,
@@ -110,7 +116,6 @@ data class CaseDecisionEntry(val action: ContentAction, val reason: ContentDecis
 data class ContentCaseDetail(
     val summary: ContentCaseSummary,
     val content: CaseContent,
-    val revisions: List<CaseRevision>,
     val participants: List<ContentParticipant>,
     val author: CaseAuthor?,
     val possibleActions: List<ContentAction>,
@@ -144,8 +149,8 @@ interface ContentModerationRepository {
 
     suspend fun decideAppeal(appealId: String, overturn: Boolean): ApiResult<ContentAppeal>
 
-    /** The address of a case photo (loaded only after a tap, D15); for a video, its poster frame. */
-    fun photoUrl(caseId: String, mediaId: String): String
+    /** N4: the address of the case's moment photo (loaded only after a tap, D15). */
+    fun photoUrl(caseId: String): String
 
 
     /** Phase 17E: the profile photo of the person a PERSON case is about. */

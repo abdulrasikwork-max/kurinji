@@ -27,12 +27,13 @@ import com.safesphere.app.feature.moderation.domain.ContentAction
 import com.safesphere.app.feature.moderation.domain.ContentCaseDetail
 import com.safesphere.app.feature.moderation.domain.ContentModerationPolicy
 import com.safesphere.app.feature.moderation.domain.ContentTarget
+import com.safesphere.app.feature.moderation.domain.MomentCaseText
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 /**
- * Phase 13D: one reported post, perspective or person, for a moderator. People appear only as case pseudonyms; a person
+ * Phase 13D: one reported moment (N4) or person, for a moderator. People appear only as case pseudonyms; a person
  * case shows the public profile. Photos stay hidden until the moderator taps (D15). Each decision asks for a reason
  * code and, when it changes what others see or can do, a confirmation. FLAG_SECURE while open.
  */
@@ -87,9 +88,7 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
      */
     private fun checkLines(detail: ContentCaseDetail): List<String> {
         val check = detail.check ?: return emptyList()
-        val content = detail.content
-        val text = if (content.commentKind != null || content.tip == null) content.body.orEmpty()
-        else content.body.orEmpty() + "\n" + content.tip
+        val text = MomentCaseText.checkedText(detail.content)
         return listOf(getString(R.string.content_case_check, check.action.lowercase().replace('_', ' '),
             check.rule.lowercase().replace('_', ' '), check.versions)) +
             check.findings.map { f ->
@@ -103,36 +102,44 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
     private fun show(detail: ContentCaseDetail, state: ContentCaseUiState) {
         val summary = detail.summary
         binding.headline.text = getString(R.string.content_case_row, getString(ContentModerationTexts.of(summary.target)),
-            getString(ContentModerationTexts.of(summary.topReason)))
+            getString(ContentModerationTexts.reasonCode(MomentCaseText.headlineReason(summary))))
+        val content = detail.content
         val facts = buildList {
             when (summary.openedBy) {
                 "SYSTEM" -> add(getString(R.string.content_case_opened_by_system))
                 "AUTHOR_REQUEST" -> add(getString(R.string.content_case_opened_by_author))
+                "ABOUT_ME" -> add(getString(R.string.content_case_opened_by_about_me))
             }
+            if (summary.waitingHours > 0) add(getString(R.string.content_case_waiting, summary.waitingHours.toString()))
             add(getString(R.string.content_case_counts, summary.independent.toString()))
             summary.contentState?.let {
                 add(getString(if (summary.contentSource == "SYSTEM") R.string.content_case_state_system
                     else R.string.content_case_state, getString(ContentModerationTexts.state(it))))
             }
-            detail.content.audience?.let { add(getString(R.string.content_case_audience, it.lowercase())) }
+            content.audience?.let {
+                add(getString(R.string.content_case_audience, getString(
+                    if (it == "MY_PEOPLE") R.string.moment_audience_my_people else R.string.create_audience_all)))
+            }
             if (!summary.open) add(getString(R.string.content_case_closed))
             addAll(checkLines(detail))
         }
         binding.facts.text = facts.joinToString("\n")
 
-        val content = detail.content
         binding.contentText.text = when (summary.target) {
             ContentTarget.PERSON -> content.person?.let { p ->
-                listOfNotNull(getString(R.string.content_case_person, p.displayName, p.handle), p.bio, p.city,
-                    p.interests.takeIf { it.isNotEmpty() }?.joinToString(", ")).joinToString("\n")
+                listOfNotNull(getString(R.string.content_case_person, p.displayName, p.handle),
+                    com.safesphere.app.feature.social.ui.CommunityLine.of(p.programme, p.graduationYear),
+                    p.bio).joinToString("\n")
             }.orEmpty()
-            else -> listOfNotNull(content.body, content.tip?.let { "→ $it" }, content.placeName, content.areaCell,
-                content.city, content.contextBody?.let { getString(R.string.content_case_context, it) },
-                *detail.revisions.map { getString(R.string.content_case_earlier_text, it.body) }.toTypedArray()
+            else -> listOfNotNull(
+                if (content.kind == "WHOS_IN") getString(R.string.moment_kind_whos_in) else null,
+                content.question?.let { getString(R.string.moment_question_line, it) },
+                content.body,
+                planLine(content)
             ).joinToString("\n\n")
         }
 
-        binding.photosNote.isVisible = content.media.isNotEmpty() || content.person?.hasPhoto == true
+        binding.photosNote.isVisible = content.photo != null || content.person?.hasPhoto == true
         binding.photoBlock.removeAllViews()
         // Phase 17E: the profile photo of a person case, only after a tap (like every photo here).
         if (summary.target == ContentTarget.PERSON && content.person?.hasPhoto == true) {
@@ -151,20 +158,20 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
                 })
             }
         }
-        content.media.forEachIndexed { index, media ->
-            val number = (index + 1).toString()
-            if (media.mediaId in state.shownPhotos) {
+        // N4: the moment's one photo, through the case (the server refuses a moderator who took part), after a tap.
+        if (summary.target == ContentTarget.MOMENT && content.photo != null) {
+            if (MOMENT_PHOTO in state.shownPhotos) {
                 val image = ImageView(requireContext()).apply {
                     adjustViewBounds = true
-                    contentDescription = getString(R.string.content_case_show_photo, number)
+                    contentDescription = getString(R.string.content_case_moment_photo)
                     layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT)
                 }
-                image.load(viewModel.photoUrl(media.mediaId), appContainer.imageLoader)
+                image.load(viewModel.photoUrl(), appContainer.imageLoader)
                 binding.photoBlock.addView(image)
             } else {
-                binding.photoBlock.addView(textButton(getString(R.string.content_case_show_photo, number)) {
-                    viewModel.onShowPhoto(media.mediaId)
+                binding.photoBlock.addView(textButton(getString(R.string.content_case_show_moment_photo)) {
+                    viewModel.onShowPhoto(MOMENT_PHOTO)
                 })
             }
         }
@@ -174,7 +181,8 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
             val role = when (p.role) {
                 CaseRole.AUTHOR -> getString(R.string.content_role_author)
                 CaseRole.SUBJECT -> getString(R.string.content_role_subject)
-                CaseRole.REPORTER -> getString(R.string.content_role_reporter, getString(ContentModerationTexts.of(p.reason)))
+                CaseRole.REPORTER -> if (p.aboutMe) getString(R.string.content_role_about_me)
+                    else getString(R.string.content_role_reporter, getString(ContentModerationTexts.of(p.reason)))
             }
             val extras = listOfNotNull(
                 if (p.role == CaseRole.REPORTER) getString(if (p.counting) R.string.content_case_counting
@@ -191,6 +199,10 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
             author?.restrictedUntil?.let {
                 getString(R.string.content_case_paused_until,
                     DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).format(it.atZone(ZoneId.systemDefault())))
+            },
+            author?.newMemberUntil?.let {
+                getString(R.string.content_case_new_member_until,
+                    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).format(it.atZone(ZoneId.systemDefault())))
             }
         ).joinToString("\n")
         binding.authorLine.isVisible = binding.authorLine.text.isNotEmpty()
@@ -204,6 +216,16 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
                 chooseReason(action, detail)
             }.apply { isEnabled = !state.isBusy })
         }
+    }
+
+    /** A Who's in?'s plan as the moderator reads it: the exact time in their zone and the "where" in the author's words. */
+    private fun planLine(content: com.safesphere.app.feature.moderation.domain.CaseContent): String? {
+        if (content.kind != "WHOS_IN") return null
+        val parts = listOfNotNull(
+            content.planAt?.let { com.safesphere.app.feature.moments.ui.MomentCardBinder.planTime(requireContext(), it) },
+            content.planWhere
+        )
+        return if (parts.isEmpty()) null else getString(R.string.content_case_plan, parts.joinToString(" · "))
     }
 
     private fun chooseReason(action: ContentAction, detail: ContentCaseDetail) {
@@ -251,5 +273,8 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
     private companion object {
         /** Phase 17E: the key of the person photo among the "shown after a tap" items. */
         const val PERSON_PHOTO = "person-photo"
+
+        /** N4: the key of the moment photo among the "shown after a tap" items. */
+        const val MOMENT_PHOTO = "moment-photo"
     }
 }

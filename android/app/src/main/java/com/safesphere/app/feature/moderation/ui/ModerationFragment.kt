@@ -55,11 +55,13 @@ class ModerationFragment : ViewBindingFragment<FragmentModerationBinding>(Fragme
                 ?: getString(R.string.moderation_not_allowed))
         }
         contentCaseAdapter.submitList(state.cases.map { c ->
-            val reason = getString(ContentModerationTexts.of(c.topReason))
+            val reason = getString(ContentModerationTexts.reasonCode(com.safesphere.app.feature.moderation.domain.MomentCaseText.headlineReason(c)))
             PersonRow(
                 key = c.caseId,
                 title = getString(R.string.content_case_row, getString(ContentModerationTexts.of(c.target)), reason),
                 subtitle = listOfNotNull(
+                    if (c.openedBy == "ABOUT_ME") getString(R.string.content_case_opened_by_about_me) else null,
+                    if (c.waitingHours > 0) getString(R.string.content_case_waiting, c.waitingHours.toString()) else null,
                     getString(R.string.content_case_counts, c.independent.toString()),
                     c.contentState?.let { getString(R.string.content_case_state, getString(ContentModerationTexts.state(it))) },
                     if (c.youTookPart) getString(R.string.content_case_you_took_part) else null

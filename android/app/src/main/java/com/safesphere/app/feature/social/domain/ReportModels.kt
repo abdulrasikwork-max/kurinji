@@ -105,6 +105,12 @@ interface ReportRepository {
 
     suspend fun appeal(decisionId: String): ApiResult<Unit>
 
+    /**
+     * N4 (D11): "This is about me": hides someone else's moment at once and opens a priority case; uses the daily report
+     * limit (429 with our words). NOT_FOUND when the moment cannot be seen any more.
+     */
+    suspend fun aboutMe(momentId: String): ApiResult<Unit>
+
     /** N4: the author asks a moderator to look at their own moment that a rule collapsed or held. */
     suspend fun askCheckReview(target: ReportTarget, targetId: String): ApiResult<Unit>
 }

@@ -75,7 +75,7 @@ class ContentCaseViewModel(
         }
     }
 
-    fun photoUrl(mediaId: String) = repository.photoUrl(caseId, mediaId)
+    fun photoUrl() = repository.photoUrl(caseId)
     fun personPhotoUrl() = repository.personPhotoUrl(caseId)
     fun onDecidedShown() = _uiState.update { it.copy(decided = false) }
     fun onSessionExpiredHandled() = _uiState.update { it.copy(sessionExpired = false) }
