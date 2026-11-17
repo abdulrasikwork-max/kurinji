@@ -68,7 +68,27 @@ public final class MomentDtos {
      */
     public record MomentResponse(String id, String kind, String audience, MomentAuthor author, boolean mine,
                                  String text, Photo photo, Plan plan, QuestionRef question, When when, String status, boolean kept,
+                                 boolean collapsed, Notice notice, Boolean supportSuggested,
                                  Instant createdAt, Instant visibleAt, Instant expiresAt) {
+
+        /** The author's own answer to sharing it, with one calm support line (never stored). */
+        public MomentResponse withSupport() {
+            return new MomentResponse(id, kind, audience, author, mine, text, photo, plan, question, when, status,
+                    kept, collapsed, notice, Boolean.TRUE, createdAt, visibleAt, expiresAt);
+        }
+    }
+
+    /**
+     * What the author is told about their own moment; nobody else ever gets it. [state] COLLAPSED | HELD | REMOVED;
+     * [reason] a code (NEW_MEMBER_PHOTO, AWAITING_CHECK, NEEDS_REVIEW or a guideline); [by] SYSTEM (a rule) or MODERATOR
+     * (a person); [reviewable] = POST /api/content-checks/review applies; [decisionId] = a moderator's decision,
+     * listed by GET /api/social-standing, where it can be appealed.
+     */
+    public record Notice(String state, String reason, String by, boolean reviewable, String decisionId) {
+    }
+
+    /** GET /api/profiles/{id}/moments: the person's moments the viewer may see: [live] now, and the ones they [kept]. */
+    public record ProfileMoments(List<MomentResponse> live, List<MomentResponse> kept) {
     }
 
     /**

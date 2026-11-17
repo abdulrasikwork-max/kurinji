@@ -13,23 +13,17 @@ import com.safesphere.backend.moderation.assessment.Evidence.Item;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.AssessmentView;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.EvidenceView;
 import com.safesphere.backend.moderation.entity.ContentCase;
-import com.safesphere.backend.moderation.entity.ModerationEnums.ActionType;
 import com.safesphere.backend.moderation.entity.ModerationEnums.CaseOpenedBy;
 import com.safesphere.backend.moderation.entity.ModerationEnums.CaseStatus;
-import com.safesphere.backend.moderation.entity.ModerationEnums.TargetKind;
 import com.safesphere.backend.moderation.repository.ContentCaseRepository;
-import com.safesphere.backend.social.entity.Comment;
-import com.safesphere.backend.social.entity.Post;
-import com.safesphere.backend.social.entity.PostEnums.Audience;
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
-import com.safesphere.backend.social.entity.PostEnums.ModerationSource;
-import com.safesphere.backend.social.entity.PostEnums.ModerationState;
-import com.safesphere.backend.social.event.ContentWritten;
-import com.safesphere.backend.social.repository.CommentRepository;
-import com.safesphere.backend.social.repository.PostMediaRepository;
-import com.safesphere.backend.social.repository.PostRepository;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationSource;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationState;
+import com.safesphere.backend.social.entity.Moment;
+import com.safesphere.backend.social.event.MomentShared;
+import com.safesphere.backend.social.policy.MomentPolicy;
+import com.safesphere.backend.social.repository.MomentRepository;
 import com.safesphere.backend.social.service.SocialAccess;
-import com.safesphere.backend.user.repository.UserRepository;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -37,7 +31,6 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -51,16 +44,21 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Phase 13E: the automatic check of posts and perspectives (docs/PHASE13E_PLAN.md E3-E19, E25, E27).
+ * The automatic check of what people write (Phase 13E, docs/PHASE13E_PLAN.md E3-E19, E25, E27; since Phase N4 of
+ * moments: their text and their "where"). Rules only (N-55): no learned model acts.
  *
- *   - It hears of every write someone else can see (social's ContentWritten, inside the write's transaction), asks the
- *     moderation service for evidence, lets DecisionPolicy decide, stores the assessment (no text) and applies it.
+ *   - It hears of every moment that is shared (social's MomentShared, inside the write's transaction, BEFORE the moment
+ *     is published), asks the moderation service for evidence, lets DecisionPolicy decide, stores the assessment (no
+ *     text) and applies it.
  *   - It moves content only between NONE and SYSTEM states: a collapse by reports and every moderator's state are never
  *     overridden. It never removes anything and never touches a person (no strike, no pause): only humans do that.
  *   - A HOLD opens (or joins) a content case at once, so a moderator looks soon; a COLLAPSE is reviewed when the author
  *     asks. Every human decision about it is in the audit log as in 13D.
- *   - When the service is unavailable, people are not silenced: the content is published and checked later; only a new
- *     account's content waits, at most app.moderation.ai.probation-wait-max.
+ *   - When the service is unavailable, people are not silenced: the moment is published and checked later; only a new
+ *     member's words wait, at most app.moderation.ai.probation-wait-max (2 hours), then publish.
+ *   - A new member's photo for the whole community is held by social itself (N-57) and "This is about me" by a
+ *     person's request (N-52). This class opens the moderator's case for a held photo and NEVER changes either state:
+ *     not when the check passes, not when it gives up, not when the service is down. Only a person releases them.
  *   - Self-harm is never stored: it only sets the support flag of the author's own answer.
  *   - A failure inside the check is logged with its class only and never stops the write.
  */
@@ -70,39 +68,35 @@ public class AssessmentService {
     static final int RETRY_BATCH = 50;
     static final Duration MAX_BACKOFF = Duration.ofMinutes(30);
 
+    /** The "kind" sent to the text service. It knows POST and COMMENT; a moment is checked with the rules of a post. */
+    static final String KIND = "POST";
+
     private static final Logger log = LoggerFactory.getLogger(AssessmentService.class);
 
     private final ModerationServiceClient client;
     private final ContentAssessmentRepository assessments;
-    private final PostRepository posts;
-    private final CommentRepository comments;
-    private final PostMediaRepository mediaRows;
+    private final MomentRepository moments;
     private final ContentCaseRepository cases;
     private final SocialAccess access;
-    private final UserRepository users;
     private final ModerationAiProperties properties;
     private final TransactionTemplate ownTransaction;
     private final Clock clock;
 
     public AssessmentService(ModerationServiceClient client, ContentAssessmentRepository assessments,
-                             PostRepository posts, CommentRepository comments, PostMediaRepository mediaRows,
-                             ContentCaseRepository cases, SocialAccess access, UserRepository users,
+                             MomentRepository moments, ContentCaseRepository cases, SocialAccess access,
                              ModerationAiProperties properties,
                              PlatformTransactionManager transactions, Clock clock) {
         this.client = client;
         this.assessments = assessments;
-        this.posts = posts;
-        this.comments = comments;
-        this.mediaRows = mediaRows;
+        this.moments = moments;
         this.cases = cases;
         this.access = access;
-        this.users = users;
         this.properties = properties;
         this.ownTransaction = new TransactionTemplate(transactions);
         this.clock = clock;
         if (!properties.active()) {
             log.warn("Automatic content check is OFF (app.moderation.ai.enabled with a MODERATION_SERVICE_KEY of 16+ "
-                    + "characters turns it on); posts and perspectives are published unchecked");
+                    + "characters turns it on); the words of moments are published unchecked");
         }
     }
 
@@ -110,25 +104,30 @@ public class AssessmentService {
 
     /** Inside the write's transaction (synchronous): the answer the author gets already shows the result. */
     @EventListener
-    public void onContentWritten(ContentWritten event) {
-        if (!properties.active()) return;
+    public void onMomentShared(MomentShared event) {
         try {
-            Target target = load(event.kind() == ContentWritten.Kind.POST ? TargetKind.POST : TargetKind.COMMENT,
-                    event.contentId());
+            Target target = load(event.momentId());
             if (target == null) return;
-            Optional<Answer> answer = client.assess(event.kind().name(), event.text());
+            LocalDateTime now = now();
+            // N-57: the case for a held photo is opened whether or not the text check is running.
+            if (event.photoHeld()) {
+                openCase(target, CaseOpenedBy.SYSTEM, now);
+                target.save();
+            }
+            if (!properties.active() || event.text() == null) return;
+            Optional<Answer> answer = client.assess(KIND, event.text());
             if (answer.isPresent() && answer.get().selfHarm()) event.suggestSupport();
-            apply(target, answer, event.probation(), event.publicPhotos(), now(), true);
+            apply(target, answer, event.newMember(), now, true);
         } catch (RuntimeException e) {
             log.warn("Automatic content check failed ({}); the content is published unchecked",
                     e.getClass().getSimpleName());
         }
     }
 
-    /** Decides, stores the assessment and applies it to the content. [fresh] = a new write (not a retry). */
-    void apply(Target target, Optional<Answer> answer, boolean probation, boolean publicPhotos, LocalDateTime now,
-               boolean fresh) {
-        Context context = new Context(answer.isPresent(), probation, publicPhotos, properties.modelMode());
+    /** Decides, stores the assessment and applies it to the moment. [fresh] = a new write (not a retry). */
+    void apply(Target target, Optional<Answer> answer, boolean newMember, LocalDateTime now, boolean fresh) {
+        // "Public photos" is always false: the photo hold is social's own rule (N-57), not this policy's.
+        Context context = new Context(answer.isPresent(), newMember, false, properties.modelMode());
         Decision decision = answer.map(a -> DecisionPolicy.decide(a.items(), a.strongLanguage(), a.modelScores(),
                 context)).orElseGet(() -> DecisionPolicy.decide(List.of(), false, Map.of(), context));
 
@@ -142,13 +141,18 @@ public class AssessmentService {
         assessments.save(row);
 
         if (answer.isPresent()) target.strongLanguage(answer.get().strongLanguage());
-        if (target.source() == ModerationSource.REPORTS || target.source() == ModerationSource.MODERATOR) {
-            target.save();  // a human or the reports decided: the check adds only its evidence
+        if (target.source() == ModerationSource.REPORTS || target.source() == ModerationSource.MODERATOR
+                || target.heldForAPerson()) {
+            // A human or the reports decided, or the moment waits for a person (N-57, N-52): the check adds only its
+            // evidence and never changes the state.
+            target.save();
         } else {
             switch (decision.action()) {
-                case PUBLISH -> target.system(ModerationState.NONE, null, null);
-                case PUBLISH_COLLAPSED -> target.system(ModerationState.COLLAPSED, decision.reason(),
-                        spans(acting(decision, answer)));
+                case PUBLISH -> target.release(now, fresh);
+                case PUBLISH_COLLAPSED -> {
+                    target.system(ModerationState.COLLAPSED, decision.reason(), spans(acting(decision, answer)));
+                    if (!fresh) target.publish(now); // a retry found something mild: shown, behind a tap
+                }
                 case HOLD_FOR_REVIEW -> {
                     target.system(ModerationState.HELD, decision.reason(), spans(acting(decision, answer)));
                     if (decision.rule() != Rule.CHECK_PENDING) openCase(target, CaseOpenedBy.SYSTEM, now);
@@ -161,21 +165,14 @@ public class AssessmentService {
     // ---- the author ---------------------------------------------------------------------------------------------------
 
     /**
-     * "Ask for a review" of the caller's OWN post or perspective that the automatic check collapsed or held: opens (or
-     * joins) a case for a moderator. The answer is the same whether a case already existed or not (13D M4).
+     * "Ask for a review" of the caller's OWN moment that a rule collapsed or held: opens (or joins) a case for a
+     * moderator. The answer is the same whether a case already existed or not (13D M4).
      */
     @Transactional
     public void requestReview(long userId, String targetKind, String targetId) {
         access.requireAccount(userId); // Phase N3: the author's own content
-        TargetKind kind = "POST".equals(targetKind) ? TargetKind.POST : "COMMENT".equals(targetKind)
-                ? TargetKind.COMMENT : null;
-        if (kind == null) throw new InvalidRequestException("Choose a post or a perspective");
-        Target target = null;
-        if (targetId != null) {
-            target = kind == TargetKind.POST
-                    ? posts.findByPublicId(targetId).map(Target::new).orElse(null)
-                    : comments.findByPublicId(targetId).map(Target::new).orElse(null);
-        }
+        if (!"MOMENT".equals(targetKind)) throw new InvalidRequestException("Choose a moment");
+        Target target = targetId == null ? null : moments.findByPublicId(targetId).map(Target::new).orElse(null);
         if (target == null || target.authorId() != userId || target.source() != ModerationSource.SYSTEM
                 || target.state() == ModerationState.NONE) {
             throw new ResourceNotFoundException("Nothing to review");
@@ -186,24 +183,21 @@ public class AssessmentService {
 
     // ---- moderators ---------------------------------------------------------------------------------------------------
 
-    /** What the automatic check found about a case's post or perspective (null when it never ran or is gone). */
+    /** What the automatic check found about a case's moment (null when it never ran or is gone). */
     @Transactional(readOnly = true)
     public AssessmentView viewFor(ContentCase c) {
-        Optional<ContentAssessment> row = switch (c.getTargetKind()) {
-            case POST -> assessments.findByPostId(c.getPostId());
-            case COMMENT -> assessments.findByCommentId(c.getCommentId());
-            default -> Optional.empty();
-        };
-        return row.map(AssessmentService::view).orElse(null);
+        if (c.getMomentId() == null) return null;
+        return assessments.findByMomentId(c.getMomentId()).map(AssessmentService::view).orElse(null);
     }
 
-    // ---- the job: retries, the probation wait, retention -------------------------------------------------------------
+    // ---- the job: retries, the new-member wait, retention -------------------------------------------------------------
 
     /** Returns how many assessments changed or were deleted. Each retry runs in its own transaction. */
     public int maintain() {
-        if (!properties.active()) return 0;
+        Integer orphans = ownTransaction.execute(s -> assessments.deleteOrphans());
+        int changed = orphans == null ? 0 : orphans;
+        if (!properties.active()) return changed;
         LocalDateTime now = now();
-        int changed = 0;
         for (Long id : ownTransaction.execute(s -> assessments.dueForRetry(Status.PENDING, now,
                 PageRequest.of(0, RETRY_BATCH)))) {
             Boolean done = ownTransaction.execute(s -> retry(id, now));
@@ -217,32 +211,34 @@ public class AssessmentService {
     private boolean retry(Long id, LocalDateTime now) {
         ContentAssessment row = assessments.findById(id).orElse(null);
         if (row == null || row.getStatus() != Status.PENDING) return false;
-        Target target = load(row.getTargetKind(), row.getTargetKind() == TargetKind.POST ? row.getPostId()
-                : row.getCommentId());
+        Target target = load(row.getMomentId());
         if (target == null) return false;
         if (row.getCreatedAt().plus(properties.retryFor()).isBefore(now)) {
             row.giveUp();
-            releaseIfWaiting(target, row);
+            releaseIfWaiting(target, row, now);
             assessments.save(row);
             return true;
         }
-        boolean probation = users.findById(target.authorId()).map(access::onProbation).orElse(false);
-        Optional<Answer> answer = client.assess(target.kind().name(), target.text());
+        boolean newMember = access.isNewMember(target.authorId(), now);
+        Optional<Answer> answer = client.assess(KIND, target.text());
         if (answer.isPresent()) {
-            apply(target, answer, probation, target.publicPhotos(mediaRows), now, false);
+            apply(target, answer, newMember, now, false);
             return true;
         }
         row.retryLater(row.getAttempts() + 1, now.plus(backoff(row.getAttempts() + 1)));
-        if (row.getCreatedAt().plus(properties.probationWaitMax()).isBefore(now)) releaseIfWaiting(target, row);
+        if (row.getCreatedAt().plus(properties.probationWaitMax()).isBefore(now)) releaseIfWaiting(target, row, now);
         assessments.save(row);
         return false;
     }
 
-    /** A new account's content that waited long enough for an unavailable check is published (E7). */
-    private void releaseIfWaiting(Target target, ContentAssessment row) {
+    /**
+     * A new member's words that waited long enough for an unavailable check are published (E7); their 24 hours start
+     * now. Only AWAITING_CHECK is ever released here: never a photo hold, never "This is about me".
+     */
+    private void releaseIfWaiting(Target target, ContentAssessment row, LocalDateTime now) {
         if (target.source() == ModerationSource.SYSTEM && target.state() == ModerationState.HELD
                 && target.reason() == ModerationReason.AWAITING_CHECK) {
-            target.system(ModerationState.NONE, null, null);
+            target.release(now, false);
             target.save();
         }
         if (row.getAction() == Action.HOLD_FOR_REVIEW && row.getRule() == Rule.CHECK_PENDING) {
@@ -253,14 +249,10 @@ public class AssessmentService {
     // ---- helpers ------------------------------------------------------------------------------------------------------
 
     private void openCase(Target target, CaseOpenedBy origin, LocalDateTime now) {
-        Optional<ContentCase> open = target.kind() == TargetKind.POST
-                ? cases.findByPostIdAndStatus(target.id(), CaseStatus.OPEN)
-                : cases.findByCommentIdAndStatus(target.id(), CaseStatus.OPEN);
-        if (open.isEmpty()) {
-            cases.save((target.kind() == TargetKind.POST ? ContentCase.aboutPost(target.id(), now)
-                    : ContentCase.aboutComment(target.id(), now)).openedBy(origin));
+        if (!cases.existsByMomentIdAndStatus(target.id(), CaseStatus.OPEN)) {
+            cases.save(ContentCase.aboutMoment(target.id(), now).openedBy(origin));
         }
-        if (target.post != null) target.post.setInReview(true); // Q7: edits from now on keep the earlier text
+        target.moment.setInReview(true); // N-47: not purged while a case needs it
     }
 
     /** The findings that made the decision act (the phrases the author is shown); none for a publish. */
@@ -312,90 +304,88 @@ public class AssessmentService {
                 row.getNormaliserVersion(), row.getLexiconVersion(), row.getModelVersion(), row.getPolicyVersion());
     }
 
-    private Target load(TargetKind kind, Long id) {
-        if (id == null) return null;
-        return kind == TargetKind.POST ? posts.findById(id).map(Target::new).orElse(null)
-                : comments.findById(id).map(Target::new).orElse(null);
+    private Target load(Long id) {
+        return id == null ? null : moments.findById(id).map(Target::new).orElse(null);
     }
 
     private LocalDateTime now() {
         return LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS);
     }
 
-    /** A post or a perspective, seen the same way. */
+    /** A moment, as the check sees it. */
     final class Target {
-        final Post post;
-        final Comment comment;
+        final Moment moment;
 
-        Target(Post post) {
-            this.post = post;
-            this.comment = null;
-        }
-
-        Target(Comment comment) {
-            this.post = null;
-            this.comment = comment;
-        }
-
-        TargetKind kind() {
-            return post != null ? TargetKind.POST : TargetKind.COMMENT;
+        Target(Moment moment) {
+            this.moment = moment;
         }
 
         long id() {
-            return post != null ? post.getId() : comment.getId();
+            return moment.getId();
         }
 
         long authorId() {
-            return post != null ? post.getAuthorId() : comment.getAuthorId();
+            return moment.getAuthorId();
         }
 
         String text() {
-            return post != null ? ContentWritten.postText(post.getBody(), post.getTip()) : comment.getBody();
+            return MomentShared.words(moment.getBody(), moment.getPlanWhere());
         }
 
         ModerationSource source() {
-            return post != null ? post.getModerationSource() : comment.getModerationSource();
+            return moment.getModerationSource();
         }
 
         ModerationState state() {
-            return post != null ? post.getModeration() : comment.getModeration();
+            return moment.getModeration();
         }
 
         ModerationReason reason() {
-            return post != null ? post.getModerationReason() : comment.getModerationReason();
+            return moment.getModerationReason();
         }
 
-        boolean publicPhotos(PostMediaRepository media) {
-            return post != null && post.getAudience() == Audience.EVERYONE
-                    && !media.findByPostIdOrderBySortOrderAsc(post.getId()).isEmpty();
+        /** Held until a PERSON decides (N-57, N-52): no automatic rule may change it. */
+        boolean heldForAPerson() {
+            return state() == ModerationState.HELD && (reason() == ModerationReason.NEW_MEMBER_PHOTO
+                    || reason() == ModerationReason.ABOUT_ME);
         }
 
         void system(ModerationState state, ModerationReason reason, String spans) {
-            if (post != null) post.moderateBySystem(state, reason, spans);
-            else comment.moderateBySystem(state, reason, spans);
+            moment.moderateBySystem(state, reason, spans);
+        }
+
+        /**
+         * Nothing found: no state. On a fresh write social publishes the moment itself right after the listener; on a
+         * later run (a retry, the end of the 2-hour wait) its 24 hours start here if it was never visible.
+         */
+        void release(LocalDateTime now, boolean fresh) {
+            moment.moderateBySystem(ModerationState.NONE, null, null);
+            if (!fresh) publish(now);
+        }
+
+        void publish(LocalDateTime now) {
+            moment.publish(now, MomentPolicy.LIFE);
         }
 
         void strongLanguage(boolean value) {
-            if (post != null) post.setStrongLanguage(value);
-            else comment.setStrongLanguage(value);
+            moment.setStrongLanguage(value);
         }
 
         void save() {
-            if (post != null) posts.save(post);
-            else comments.save(comment);
+            moments.save(moment);
         }
 
         Optional<ContentAssessment> assessment() {
-            return post != null ? assessments.findByPostId(post.getId()) : assessments.findByCommentId(comment.getId());
+            return assessments.findByMomentId(moment.getId());
         }
 
         ContentAssessment newAssessment() {
-            return post != null ? ContentAssessment.ofPost(post.getId()) : ContentAssessment.ofComment(comment.getId());
+            return ContentAssessment.ofMoment(moment.getId());
         }
 
         @Override
         public String toString() {
-            return kind().name().toLowerCase(Locale.ROOT) + " " + id();
+            return "moment " + id();
         }
     }
 }

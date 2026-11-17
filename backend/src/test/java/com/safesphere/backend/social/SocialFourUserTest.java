@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.safesphere.backend.support.MomentClient;
 import com.safesphere.backend.support.SocialClient;
 import com.safesphere.backend.support.SocialClient.Person;
 import com.safesphere.backend.support.TestAccounts;
@@ -30,6 +31,7 @@ class SocialFourUserTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private UserRepository users;
+    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     private SocialClient social;
     private Person owner;
@@ -61,28 +63,36 @@ class SocialFourUserTest {
     }
 
     /**
-     * Phase 13D: reports and moderation states from each point of view. Only what one can see can be reported; a held
-     * post is the owner's alone; a collapsed one stays visible to those who could see it; the blocked person learns
-     * nothing either way.
+     * Reports and moderation states from each point of view (13D; moments since N4). Only what one can see can be
+     * reported; a collapsed moment stays visible to those who could see it; the blocked person learns nothing.
      */
     @Test
     void reports_andModerationStates_fromEachPointOfView() throws Exception {
-        String post = social.experience(owner, "CONNECTIONS");
-        social.report(connection, "POST", post, "SPAM", null).andExpect(status().isAccepted());
-        social.report(stranger, "POST", post, "SPAM", null).andExpect(status().isNotFound());
-        social.report(blocked, "POST", post, "SPAM", null).andExpect(status().isNotFound());
+        MomentClient moments = new MomentClient(mockMvc, objectMapper);
+        String forPeople = moments.say(owner, "MY_PEOPLE", "Only for my people");
+        social.report(connection, "MOMENT", forPeople, "SPAM", null).andExpect(status().isAccepted());
+        social.report(stranger, "MOMENT", forPeople, "SPAM", null).andExpect(status().isNotFound());
+        social.report(blocked, "MOMENT", forPeople, "SPAM", null).andExpect(status().isNotFound());
         social.report(blocked, "PERSON", owner.publicId(), "SPAM", null).andExpect(status().isNotFound());
         social.report(owner, "PERSON", blocked.publicId(), "SPAM", null).andExpect(status().isNotFound());
-        social.getPost(owner, post).andExpect(jsonPath("$.moderation").isEmpty()); // one report changes nothing
+        moments.get_(owner, forPeople).andExpect(jsonPath("$.notice").isEmpty()); // one report changes nothing
 
-        String everyone = social.experience(owner, "EVERYONE");
-        for (Person r : new Person[] {connection, stranger, social.person("Third")}) {
-            social.report(r, "POST", everyone, "HARASSMENT", null).andExpect(status().isAccepted());
+        // Reports of established members count at once (a new member's only after their first week).
+        java.time.LocalDateTime longAgo = java.time.LocalDateTime.now(java.time.ZoneOffset.UTC).minusDays(30);
+        Person third = social.person("Third");
+        for (Person r : new Person[] {connection, stranger, third}) {
+            jdbc.update("UPDATE memberships SET verified_at = ?, updated_at = ? WHERE user_id = ?", longAgo, longAgo,
+                    r.id());
         }
-        social.getPost(owner, everyone).andExpect(jsonPath("$.moderation.state").value("COLLAPSED"));
-        social.getPost(connection, everyone).andExpect(jsonPath("$.collapsed").value("UNDER_REVIEW"));
-        social.getPost(stranger, everyone).andExpect(jsonPath("$.collapsed").value("UNDER_REVIEW"));
-        social.getPost(blocked, everyone).andExpect(status().isNotFound());
+        String everyone = moments.say(owner, "COMMUNITY", "For all of MIET");
+        for (Person r : new Person[] {connection, stranger, third}) {
+            social.report(r, "MOMENT", everyone, "HARASSMENT", null).andExpect(status().isAccepted());
+        }
+        moments.get_(owner, everyone).andExpect(jsonPath("$.notice.state").value("COLLAPSED"))
+                .andExpect(jsonPath("$.notice.by").isEmpty());
+        moments.get_(connection, everyone).andExpect(jsonPath("$.collapsed").value(true));
+        moments.get_(stranger, everyone).andExpect(jsonPath("$.collapsed").value(true));
+        moments.get_(blocked, everyone).andExpect(status().isNotFound());
     }
 
     @Test
@@ -132,103 +142,6 @@ class SocialFourUserTest {
     }
 
     // ---- Phase 13B: posts, their lists, photos and perspectives, for each audience ----
-
-    @Test
-    void posts_photosAndPerspectives_fromEachPointOfView() throws Exception {
-        String everyone = postWithPhoto("EVERYONE");
-        String connections = postWithPhoto("CONNECTIONS");
-        String onlyMe = postWithPhoto("ONLY_ME");
-        social.commentId(connection, everyone, "BEEN_HERE", "Went there too.", null);
-        social.commentId(connection, connections, "QUESTION", "Is it open late?", null);
-
-        // [owner, connection, stranger, blocked] for each post.
-        expectPost(everyone, 200, 200, 200, 404);
-        expectPost(connections, 200, 200, 404, 404);
-        expectPost(onlyMe, 200, 404, 404, 404);
-
-        assertThat(social.postIds(social.minePosts(owner, null))).containsExactlyInAnyOrder(everyone, connections, onlyMe);
-        assertThat(social.postIds(social.profilePosts(connection, owner, null))).containsExactlyInAnyOrder(everyone,
-                connections);
-        assertThat(social.postIds(social.profilePosts(stranger, owner, null))).containsExactly(everyone);
-        social.profilePosts(blocked, owner, null).andExpect(status().isNotFound());
-        assertThat(social.postIds(social.minePosts(stranger, null))).isEmpty();      // "mine" is only ever one's own
-
-        // Perspectives: the list and writing follow the post.
-        assertThat(social.json(social.comments(stranger, everyone))).hasSize(1);
-        social.comments(stranger, connections).andExpect(status().isNotFound());
-        social.comments(blocked, everyone).andExpect(status().isNotFound());
-        social.comment(blocked, everyone, "QUESTION", "Hello?", null).andExpect(status().isNotFound());
-        social.comment(stranger, connections, "QUESTION", "Hello?", null).andExpect(status().isNotFound());
-        social.comment(stranger, everyone, "QUESTION", "Hello?", null).andExpect(status().isCreated());
-    }
-
-    @Test
-    void aBlockedPair_neverSeeEachOthersPerspectives_onAThirdPersonsPost() throws Exception {
-        String strangersPost = social.experience(stranger, "EVERYONE");
-        String byOwner = social.commentId(owner, strangersPost, "BEEN_HERE", "Owner was here.", null);
-        String byBlocked = social.commentId(blocked, strangersPost, "BEEN_HERE", "Blocked was here.", null);
-        assertThat(social.ids(social.comments(owner, strangersPost))).contains(byOwner).doesNotContain(byBlocked);
-        assertThat(social.ids(social.comments(blocked, strangersPost))).contains(byBlocked).doesNotContain(byOwner);
-        assertThat(social.ids(social.comments(stranger, strangersPost))).contains(byOwner, byBlocked);
-        social.comment(blocked, strangersPost, "REPLY", "Replying to the owner", byOwner).andExpect(status().isNotFound());
-    }
-
-    private String postWithPhoto(String audience) throws Exception {
-        String mediaId = social.uploadId(owner, com.safesphere.backend.support.TestImages.jpeg(12, 12));
-        java.util.Map<String, Object> body = SocialClient.experienceBody(audience, "NONE");
-        body.put("mediaIds", java.util.List.of(mediaId));
-        return social.json(social.createPost(owner, body).andExpect(status().isCreated())).get("publicId").asText();
-    }
-
-    private void expectPost(String postId, int... statuses) throws Exception {
-        Person[] viewers = {owner, connection, stranger, blocked};
-        String mediaId = social.json(social.getPost(owner, postId)).get("media").get(0).get("mediaId").asText();
-        for (int i = 0; i < viewers.length; i++) {
-            social.getPost(viewers[i], postId).andExpect(status().is(statuses[i]));
-            social.media(viewers[i], mediaId).andExpect(status().is(statuses[i]));
-        }
-    }
-
-    /**
-     * Phase 13C: every new read path from each point of view, plus a fifth person who MUTED the owner: the Edition,
-     * From your connections and category pages. Lists leave out the blocked pair and the
-     * muted author; a deliberate visit by the muter still works.
-     */
-    @Test
-    void discover_fromEachPointOfView() throws Exception {
-        Person muter = social.person("Muter");
-        social.connect(owner, muter);
-        social.mute(muter, owner).andExpect(status().isNoContent());
-        java.util.Map<String, Object> body = SocialClient.experienceBody("EVERYONE", "CITY");
-        body.put("city", "COIMBATORE");
-        body.put("category", "ACTIVITIES_SPORT");
-        String everyone = social.json(social.createPost(owner, body).andExpect(status().isCreated()))
-                .get("publicId").asText();
-        String connectionsOnly = social.experience(owner, "CONNECTIONS");
-
-        // Edition (Everyone posts of the city): connection and stranger yes; blocked and muter no; the owner's own no.
-        assertThat(social.editionIds(social.edition(connection, "COIMBATORE"))).contains(everyone);
-        assertThat(social.editionIds(social.edition(stranger, "COIMBATORE"))).contains(everyone);
-        assertThat(social.editionIds(social.edition(blocked, "COIMBATORE"))).doesNotContain(everyone);
-        assertThat(social.editionIds(social.edition(muter, "COIMBATORE"))).doesNotContain(everyone);
-        assertThat(social.editionIds(social.edition(owner, "COIMBATORE"))).doesNotContain(everyone);
-
-        // From your connections: only the connection (the muter is connected but muted; the blocked pair is not).
-        assertThat(social.discoverIds(social.fromConnections(connection, null))).contains(everyone, connectionsOnly);
-        assertThat(social.discoverIds(social.fromConnections(stranger, null))).isEmpty();
-        assertThat(social.discoverIds(social.fromConnections(blocked, null))).doesNotContain(everyone, connectionsOnly);
-        assertThat(social.discoverIds(social.fromConnections(muter, null))).doesNotContain(everyone, connectionsOnly);
-
-        // Category pages.
-        for (Person viewer : new Person[] {connection, stranger}) {
-            assertThat(social.postIds(social.categoryPage(viewer, "ACTIVITIES_SPORT", "COIMBATORE", null)))
-                    .contains(everyone);
-        }
-        for (Person viewer : new Person[] {blocked, muter}) {
-            assertThat(social.postIds(social.categoryPage(viewer, "ACTIVITIES_SPORT", "COIMBATORE", null)))
-                    .doesNotContain(everyone);
-        }
-    }
 
     private org.springframework.test.web.servlet.ResultActions byId(Person viewer, Person target) throws Exception {
         return mockMvc.perform(get("/api/profiles/{id}", target.publicId())

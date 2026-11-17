@@ -9,8 +9,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safesphere.backend.social.entity.Moment;
 import com.safesphere.backend.social.entity.MomentEnums.Audience;
 import com.safesphere.backend.social.entity.MomentEnums.Kind;
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
-import com.safesphere.backend.social.entity.PostEnums.ModerationState;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationState;
 import com.safesphere.backend.social.policy.MomentPolicy;
 import com.safesphere.backend.social.repository.MomentRepository;
 import com.safesphere.backend.support.MomentClient;
@@ -127,7 +127,11 @@ class MomentApiIntegrationTest {
         List<String> names = new ArrayList<>();
         seen.fieldNames().forEachRemaining(names::add);
         assertThat(names).containsExactlyInAnyOrder("id", "kind", "audience", "author", "mine", "text", "photo", "plan",
-                "question", "when", "status", "kept", "createdAt", "visibleAt", "expiresAt");
+                "question", "when", "status", "kept", "collapsed", "notice", "supportSuggested", "createdAt",
+                "visibleAt", "expiresAt");
+        // Nobody but the author is told anything about a moment's moderation, and support is never repeated.
+        assertThat(seen.get("notice").isNull()).isTrue();
+        assertThat(seen.get("supportSuggested").isNull()).isTrue();
         List<String> author = new ArrayList<>();
         seen.get("author").fieldNames().forEachRemaining(author::add);
         assertThat(author).containsExactlyInAnyOrder("profileId", "handle", "name", "photo");

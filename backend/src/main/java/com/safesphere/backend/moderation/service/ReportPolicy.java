@@ -1,7 +1,7 @@
 package com.safesphere.backend.moderation.service;
 
 import com.safesphere.backend.common.independence.Independence;
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -54,7 +54,7 @@ public final class ReportPolicy {
     /** How serious a reason is: 3 for harm to a person's safety, 2 for abuse, 1 for nuisance. Also a strike's weight. */
     public static int severity(ModerationReason reason) {
         return switch (reason) {
-            case THREAT, SEXUAL_HARASSMENT, HATE, DOXXING -> 3;
+            case THREAT, SEXUAL_HARASSMENT, HATE, DOXXING, ABOUT_ME -> 3;
             case HARASSMENT, NUDITY_OR_VIOLENCE, IMPERSONATION -> 2;
             case SPAM, OTHER, NEEDS_REVIEW, AWAITING_CHECK, NEW_MEMBER_PHOTO -> 1;
         };

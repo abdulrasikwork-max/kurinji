@@ -4,7 +4,6 @@ import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.ForbiddenException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.common.exception.ResourceNotFoundException;
-import com.safesphere.backend.common.geo.GeoCell;
 import com.safesphere.backend.common.independence.Independence;
 import com.safesphere.backend.config.ModerationProperties;
 import com.safesphere.backend.moderation.assessment.AssessmentService;
@@ -16,12 +15,10 @@ import com.safesphere.backend.moderation.dto.ContentModerationDtos.CaseDetail;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.CaseSummary;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.ContentView;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.DecisionView;
-import com.safesphere.backend.moderation.dto.ContentModerationDtos.MediaView;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.Participant;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.PersonView;
-import com.safesphere.backend.moderation.dto.ContentModerationDtos.PlaceView;
+import com.safesphere.backend.moderation.dto.ContentModerationDtos.PhotoView;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.RestrictionView;
-import com.safesphere.backend.moderation.dto.ContentModerationDtos.RevisionView;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.StandingView;
 import com.safesphere.backend.moderation.dto.ModerationDtos.AccountAge;
 import com.safesphere.backend.moderation.entity.ContentCase;
@@ -40,25 +37,21 @@ import com.safesphere.backend.moderation.repository.ContentReportRepository;
 import com.safesphere.backend.moderation.repository.ModerationActionRepository;
 import com.safesphere.backend.moderation.repository.ModerationAppealRepository;
 import com.safesphere.backend.moderation.repository.SocialStrikeRepository;
-import com.safesphere.backend.social.entity.Comment;
-import com.safesphere.backend.social.entity.Place;
-import com.safesphere.backend.social.entity.Post;
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
-import com.safesphere.backend.social.entity.PostEnums.ModerationSource;
-import com.safesphere.backend.social.entity.PostEnums.ModerationState;
-import com.safesphere.backend.social.entity.PostEnums.Precision;
-import com.safesphere.backend.social.entity.PostMedia;
+import com.safesphere.backend.social.entity.DailyQuestion;
+import com.safesphere.backend.social.entity.Moment;
+import com.safesphere.backend.social.entity.MomentMedia;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationSource;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationState;
 import com.safesphere.backend.social.entity.Profile;
 import com.safesphere.backend.social.entity.SocialStanding;
 import com.safesphere.backend.social.entity.SocialStanding.Restriction;
 import com.safesphere.backend.social.media.MediaStorage;
-import com.safesphere.backend.social.policy.ProfileLists;
-import com.safesphere.backend.social.policy.TimeBands;
-import com.safesphere.backend.social.repository.CommentRepository;
-import com.safesphere.backend.social.repository.PlaceRepository;
-import com.safesphere.backend.social.repository.PostMediaRepository;
-import com.safesphere.backend.social.repository.PostRepository;
-import com.safesphere.backend.social.repository.PostRevisionRepository;
+import com.safesphere.backend.social.policy.MomentPolicy;
+import com.safesphere.backend.social.repository.DailyQuestionRepository;
+import com.safesphere.backend.social.repository.MomentMediaRepository;
+import com.safesphere.backend.social.repository.MomentRepository;
+import com.safesphere.backend.social.service.MembershipGate;
 import com.safesphere.backend.social.repository.ProfileRepository;
 import com.safesphere.backend.social.repository.SocialStandingRepository;
 import com.safesphere.backend.social.service.SocialAccess;
@@ -78,7 +71,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -87,7 +79,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Phase 13D: moderation of posts, perspectives and people (docs/PHASE13D_PLAN.md M1, M7-M12, M17-M20). The Phase 7
+ * Moderation of moments (Phase N4; posts and perspectives before) and of people. Phase 13D: (docs/PHASE13D_PLAN.md M1, M7-M12, M17-M20). The Phase 7
  * principles, kept:
  *   - content can be hidden automatically only reversibly (ReportService: a collapse); HOLD and REMOVE are a human's;
  *   - PEOPLE are restricted only by a human, with a reason code, in the append-only audit log, appealable to ANOTHER
@@ -131,12 +123,10 @@ public class ContentModerationService {
     private final SocialStrikeRepository strikes;
     private final ModerationActionRepository actions;
     private final ModerationAppealRepository appeals;
-    private final PostRepository posts;
-    private final CommentRepository comments;
-    private final PostRevisionRepository revisions;
-    private final PostMediaRepository mediaRows;
+    private final MomentRepository moments;
+    private final MomentMediaRepository mediaRows;
+    private final DailyQuestionRepository questions;
     private final MediaStorage mediaStorage;
-    private final PlaceRepository places;
     private final ProfileRepository profiles;
     private final SocialStandingRepository standings;
     private final SocialAccess access;
@@ -150,9 +140,9 @@ public class ContentModerationService {
     public ContentModerationService(ModerationService moderation, ReportService reportService,
                                     ContentCaseRepository cases, ContentReportRepository reports,
                                     SocialStrikeRepository strikes, ModerationActionRepository actions,
-                                    ModerationAppealRepository appeals, PostRepository posts,
-                                    CommentRepository comments, PostRevisionRepository revisions,
-                                    PostMediaRepository mediaRows, MediaStorage mediaStorage, PlaceRepository places,
+                                    ModerationAppealRepository appeals, MomentRepository moments,
+                                    MomentMediaRepository mediaRows, DailyQuestionRepository questions,
+                                    MediaStorage mediaStorage,
                                     ProfileRepository profiles, SocialStandingRepository standings,
                                     SocialAccess access, UserRepository users, CaseRefs refs,
                                     ModerationProperties properties, AssessmentService assessmentService,
@@ -167,12 +157,10 @@ public class ContentModerationService {
         this.strikes = strikes;
         this.actions = actions;
         this.appeals = appeals;
-        this.posts = posts;
-        this.comments = comments;
-        this.revisions = revisions;
+        this.moments = moments;
         this.mediaRows = mediaRows;
+        this.questions = questions;
         this.mediaStorage = mediaStorage;
-        this.places = places;
         this.profiles = profiles;
         this.standings = standings;
         this.access = access;
@@ -238,6 +226,7 @@ public class ContentModerationService {
         switch (action) {
             case CONTENT_KEEP -> {
                 setContentState(l, ModerationState.NONE, null, null);
+                release(l.moment, now); // N-47: a moment held from the start begins its 24 hours here
                 close(l, ContentOutcome.NO_VIOLATION, now);
             }
             case CONTENT_HOLD -> setContentState(l, ModerationState.HELD, why, decision);
@@ -273,42 +262,20 @@ public class ContentModerationService {
         return photos.photoOf(l.subjectId);
     }
 
-    /**
-     * A photo (or a video's poster frame) of the post a case is about (moderators only; the app shows it only after a
-     * tap, D15).
-     */
+    /** The photo of the moment a case is about (moderators only; the app shows it only after a tap, D15). */
     @Transactional(readOnly = true)
-    public byte[] media(long moderatorId, String caseId, String mediaId) {
-        PostMedia media = caseMedia(moderatorId, caseId, mediaId);
+    public byte[] media(long moderatorId, String caseId) {
+        moderation.requireModerator(moderatorId);
+        Loaded l = requireCase(cases.findByPublicId(caseId).orElse(null));
+        if (l.tookPart(moderatorId)) throw tookPart();
+        List<MomentMedia> media = l.moment == null ? List.of() : mediaRows.findByMomentIdIn(List.of(l.moment.getId()));
+        if (media.isEmpty()) throw new ResourceNotFoundException("Photo not found");
         try {
-            return mediaStorage.read(media.getStorageKey());
+            return mediaStorage.read(media.get(0).getStorageKey());
         } catch (UncheckedIOException e) {
             throw new ResourceNotFoundException("Photo not found");
         }
     }
-
-    /** Phase 17C: a video of the post a case is about, as a file (played only after a tap, like photos). */
-    @Transactional(readOnly = true)
-    public java.nio.file.Path mediaVideo(long moderatorId, String caseId, String mediaId) {
-        PostMedia media = caseMedia(moderatorId, caseId, mediaId);
-        if (!media.isVideo() || !mediaStorage.hasVideo(media.getStorageKey())) {
-            throw new ResourceNotFoundException("Photo not found");
-        }
-        return mediaStorage.videoFile(media.getStorageKey());
-    }
-
-    private PostMedia caseMedia(long moderatorId, String caseId, String mediaId) {
-        moderation.requireModerator(moderatorId);
-        Loaded l = requireCase(cases.findByPublicId(caseId).orElse(null));
-        if (l.tookPart(moderatorId)) throw tookPart();
-        PostMedia media = mediaId == null ? null : mediaRows.findByPublicId(mediaId).orElse(null);
-        if (media == null || l.post == null || l.c.getTargetKind() != TargetKind.POST
-                || !l.post.getId().equals(media.getPostId())) {
-            throw new ResourceNotFoundException("Photo not found");
-        }
-        return media;
-    }
-
 
     // ---- Moderators: appeals about social decisions ------------------------------------------------------------------
 
@@ -343,51 +310,12 @@ public class ContentModerationService {
         }
         if (reportedIt(decision, moderatorId)) throw tookPart();
         appeal.decide(outcome, moderatorId, now);
-        if (outcome == AppealStatus.OVERTURNED) overturn(decision);
+        if (outcome == AppealStatus.OVERTURNED) overturn(decision, now);
         actions.saveAndFlush(ModerationAction.socialAppeal(moderatorId,
                 outcome == AppealStatus.OVERTURNED ? ActionType.APPEAL_OVERTURNED : ActionType.APPEAL_UPHELD,
                 decision.getCaseRef(), decision.getTargetKind(), appeal.getUserId(), now));
         appeals.saveAndFlush(appeal);
         return appealView(appeal, decision, moderatorId);
-    }
-
-    // ---- Moderators: duplicate places (M17) --------------------------------------------------------------------------
-
-    @Transactional(readOnly = true)
-    public List<PlaceView> places(long moderatorId, String area) {
-        moderation.requireModerator(moderatorId);
-        String cell = area == null ? "" : area.trim().toLowerCase(Locale.ROOT);
-        if (!GeoCell.isValid(cell, GeoCell.AREA_PRECISION)) throw new InvalidRequestException("Invalid area");
-        List<Place> found = places.findByAreaCellOrderByNameAsc(cell, PageRequest.of(0, 200));
-        Map<Long, String> publicIds = found.stream().collect(Collectors.toMap(Place::getId, Place::getPublicId));
-        List<PlaceView> out = new ArrayList<>();
-        for (Place p : found) {
-            String into = p.getMergedInto() == null ? null : publicIds.getOrDefault(p.getMergedInto(),
-                    places.findById(p.getMergedInto()).map(Place::getPublicId).orElse(null));
-            out.add(new PlaceView(p.getPublicId(), p.getName(), p.getCategory(), p.getCell(), into));
-        }
-        return out;
-    }
-
-    /** Merges duplicate [placeId] into [intoId]: same area only; its posts move; it stays as a pointer (one hop). */
-    @Transactional
-    public void merge(long moderatorId, String placeId, String intoId) {
-        moderation.requireModerator(moderatorId);
-        Place from = places.findByPublicId(placeId).orElseThrow(() -> new ResourceNotFoundException("Place not found"));
-        Place into = places.findByPublicId(intoId).orElseThrow(() -> new ResourceNotFoundException("Place not found"));
-        if (from.getId().equals(into.getId())) throw new InvalidRequestException("Choose two different places");
-        if (!from.getAreaCell().equals(into.getAreaCell())) {
-            throw new InvalidRequestException("Only places in the same area can be merged");
-        }
-        if (from.getMergedInto() != null || into.getMergedInto() != null) {
-            throw new ConflictException("One of these places is already merged");
-        }
-        LocalDateTime now = now();
-        posts.movePlace(from.getId(), into.getId());
-        from.mergeInto(into.getId());
-        places.saveAndFlush(from);
-        actions.saveAndFlush(ModerationAction.social(moderatorId, ActionType.PLACE_MERGED, ActionReason.DUPLICATE,
-                null, TargetKind.PLACE, null, null, now));
     }
 
     // ---- The person concerned ---------------------------------------------------------------------------------------
@@ -418,7 +346,7 @@ public class ContentModerationService {
             AppealStatus appeal = appealed.get(d.getId());
             out.add(new DecisionView(d.getPublicId(), d.getAction().name(), d.getReason().name(),
                     d.getTargetKind() == null ? null : d.getTargetKind().name(), targetIdOf(d),
-                    TimeBands.band(d.getOccurredAt(), now).name(), appeal == null ? "NONE" : appeal.name(),
+                    Periods.of(d.getOccurredAt(), now), appeal == null ? "NONE" : appeal.name(),
                     appeal == null && canAppeal(d, now)));
         }
         return new StandingView(restriction, out);
@@ -474,63 +402,47 @@ public class ContentModerationService {
     /** Everything about one case, loaded once per request; null when its target is gone. */
     private final class Loaded {
         final ContentCase c;
-        final Post post;           // the post (POST) or the perspective's post (COMMENT)
-        final Comment comment;
+        final Moment moment;       // null for a PERSON case
         final Long subjectId;      // the author or the person concerned
         final List<ContentReport> caseReports;
 
-        Loaded(ContentCase c, Post post, Comment comment, Long subjectId, List<ContentReport> caseReports) {
+        Loaded(ContentCase c, Moment moment, Long subjectId, List<ContentReport> caseReports) {
             this.c = c;
-            this.post = post;
-            this.comment = comment;
+            this.moment = moment;
             this.subjectId = subjectId;
             this.caseReports = caseReports;
         }
 
-        /**
-         * The person concerned, a reporter, and (Phase 14) for a perspective the author of the post it was written on:
-         * they could hide it themselves and are a party to it, so they must not decide about its writer.
-         */
+        /** The person concerned (the author) or a reporter (also of "This is about me"): another moderator decides. */
         boolean tookPart(long userId) {
-            if (c.getTargetKind() == TargetKind.COMMENT && post.getAuthorId() == userId) return true;
             return subjectId == userId || caseReports.stream().anyMatch(r -> r.getReporterId() == userId);
         }
 
         ModerationState contentState() {
-            if (c.getTargetKind() == TargetKind.POST) return post.getModeration();
-            if (c.getTargetKind() == TargetKind.COMMENT) return comment.getModeration();
-            return null;
+            return moment == null ? null : moment.getModeration();
         }
 
-        /** Phase 13E: the content's own moderation reason (null for a person or while NONE; never AWAITING_CHECK). */
+        /** The moment's own moderation reason (null for a person or while NONE; never AWAITING_CHECK). */
         ModerationReason contentReason() {
-            ModerationReason reason = c.getTargetKind() == TargetKind.POST ? post.getModerationReason()
-                    : c.getTargetKind() == TargetKind.COMMENT ? comment.getModerationReason() : null;
+            ModerationReason reason = moment == null ? null : moment.getModerationReason();
             return reason == ModerationReason.AWAITING_CHECK ? null : reason;
         }
 
-        /** Phase 13E: who set the content's state (null for a person, or while NONE). */
+        /** Who set the moment's state (null for a person, or while NONE). */
         ModerationSource contentSource() {
-            if (c.getTargetKind() == TargetKind.POST) return post.getModerationSource();
-            if (c.getTargetKind() == TargetKind.COMMENT) return comment.getModerationSource();
-            return null;
+            return moment == null ? null : moment.getModerationSource();
         }
     }
 
     private Loaded load(ContentCase c) {
         List<ContentReport> list = reports.findByCaseIdOrderByCreatedAtAscIdAsc(c.getId());
         switch (c.getTargetKind()) {
-            case POST -> {
-                Post post = posts.findById(c.getPostId()).orElse(null);
-                return post == null ? null : new Loaded(c, post, null, post.getAuthorId(), list);
-            }
-            case COMMENT -> {
-                Comment comment = comments.findById(c.getCommentId()).orElse(null);
-                Post post = comment == null ? null : posts.findById(comment.getPostId()).orElse(null);
-                return post == null ? null : new Loaded(c, post, comment, comment.getAuthorId(), list);
+            case MOMENT -> {
+                Moment moment = moments.findById(c.getMomentId()).orElse(null);
+                return moment == null ? null : new Loaded(c, moment, moment.getAuthorId(), list);
             }
             case PERSON -> {
-                return users.existsById(c.getPersonId()) ? new Loaded(c, null, null, c.getPersonId(), list) : null;
+                return users.existsById(c.getPersonId()) ? new Loaded(c, null, c.getPersonId(), list) : null;
             }
             default -> {
                 return null;
@@ -559,9 +471,13 @@ public class ContentModerationService {
         return new CaseSummary(l.c.getPublicId(), l.c.getTargetKind().name(), l.c.getStatus().name(),
                 l.c.getOutcome() == null ? null : l.c.getOutcome().name(), l.c.getOpenedAt().toLocalDate(),
                 top == null ? null : top.name(), reasons, tally.counting(),
-                tally.independent(), state == null ? null : state.name(), ReportPolicy.priority(tally),
+                tally.independent(), state == null ? null : state.name(),
+                QueuePolicy.priority(new QueuePolicy.Facts(l.c.getOrigin(), state, l.contentSource(),
+                        l.moment == null ? null : l.moment.getModerationReason(), ReportPolicy.priority(tally),
+                        l.c.getOpenedAt()), l.c.isOpen() ? now : l.c.getOpenedAt()),
                 l.tookPart(moderatorId), l.c.getOrigin().name(),
-                l.contentSource() == null ? null : l.contentSource().name());
+                l.contentSource() == null ? null : l.contentSource().name(),
+                QueuePolicy.waitingHours(l.c.getOpenedAt(), l.c.isOpen() ? now : l.c.getClosedAt()));
     }
 
     private CaseDetail detail(Loaded l, long moderatorId, LocalDateTime now) {
@@ -595,58 +511,38 @@ public class ContentModerationService {
         double points = StrikePolicy.points(own, now);
         ModerationReason top = summary.topReason() == null ? null : ModerationReason.valueOf(summary.topReason());
         SocialStanding pause = standings.findById(l.subjectId).filter(s -> s.inForce(now)).orElse(null);
+        LocalDateTime established = access.memberOf(l.subjectId)
+                .map(m -> MomentPolicy.establishedAt(m.verifiedAt())).filter(now::isBefore).orElse(null);
         AuthorView author = new AuthorView(refs.contentRef(caseId, l.subjectId), Math.round(points * 10) / 10.0,
-                StrikePolicy.suggest(points, top).name(), pause == null ? null : pause.getRestriction().name(),
-                pause == null ? null : pause.getRestrictedUntil().toInstant(ZoneOffset.UTC));
-
-        List<RevisionView> history = l.c.getTargetKind() == TargetKind.POST
-                ? revisions.findByPostIdOrderByReplacedAtAscIdAsc(l.post.getId()).stream()
-                        .map(r -> new RevisionView(r.getBody(), r.getTip(), r.getReplacedAt().toLocalDate())).toList()
-                : List.of();
+                StrikePolicy.suggest(points, suggestFor(top)).name(),
+                pause == null ? null : pause.getRestriction().name(),
+                pause == null ? null : pause.getRestrictedUntil().toInstant(ZoneOffset.UTC),
+                established == null ? null : established.toInstant(ZoneOffset.UTC));
         List<CaseDecision> decided = actions.findByCaseRefOrderByOccurredAtAscIdAsc(l.c.getPublicId()).stream()
                 .map(a -> new CaseDecision(a.getAction().name(), a.getReason().name(),
                         a.getOccurredAt().toLocalDate(), a.getActorId() == moderatorId))
                 .toList();
-        return new CaseDetail(summary, content(l), history, participants, author,
+        return new CaseDetail(summary, content(l), participants, author,
                 possibleActions(l).stream().map(Enum::name).toList(), decided, assessmentService.viewFor(l.c));
     }
 
     private ContentView content(Loaded l) {
-        switch (l.c.getTargetKind()) {
-            case POST -> {
-                Post p = l.post;
-                String placeName = null;
-                if (p.getPrecision() == Precision.EXACT && p.getPlaceId() != null) {
-                    placeName = places.findById(p.getPlaceId()).map(Place::getName).orElse(null);
-                }
-                List<MediaView> media = mediaRows.findByPostIdOrderBySortOrderAsc(p.getId()).stream()
-                        .map(m -> new MediaView(m.getPublicId(), m.getWidth(), m.getHeight(), m.getKind().name(),
-                                m.getDurationMs())).toList();
-                return new ContentView(p.getType().name(), null, p.getBody(), p.getTip(), p.getCategory(),
-                        p.getPrecision().name(), placeName,
-                        p.getPrecision() == Precision.AREA ? p.getAreaCell() : null,
-                        p.getCity(), p.getAudience().name(),
-                        p.getExperiencedMonth() == null ? null : p.getExperiencedMonth().toString().substring(0, 7),
-                        p.getDaypart() == null ? null : p.getDaypart().name(), media, null, null);
-            }
-            case COMMENT -> {
-                String context = l.post.getBody();
-                if (context.codePointCount(0, context.length()) > CONTEXT_MAX) {
-                    context = context.substring(0, context.offsetByCodePoints(0, CONTEXT_MAX)) + "…";
-                }
-                return new ContentView(l.post.getType().name(), l.comment.getKind().name(), l.comment.getBody(), null,
-                        null, null, null, null, null, l.post.getAudience().name(), null, null, List.of(), context,
-                        null);
-            }
-            default -> {
-                Profile profile = profiles.findByUserId(l.subjectId).orElse(null);
-                PersonView person = profile == null ? null : new PersonView(profile.getDisplayName(),
-                        profile.getHandle(), profile.getBio(), profile.getCity(),
-                        ProfileLists.decode(profile.getInterests()), profile.getPhotoKey() != null);
-                return new ContentView(null, null, null, null, null, null, null, null, null, null, null, null,
-                        List.of(), null, person);
-            }
+        if (l.moment != null) {
+            Moment m = l.moment;
+            PhotoView photo = mediaRows.findByMomentIdIn(List.of(m.getId())).stream().findFirst()
+                    .map(p -> new PhotoView(p.getWidth(), p.getHeight())).orElse(null);
+            String question = m.getQuestionId() == null ? null
+                    : questions.findById(m.getQuestionId()).map(DailyQuestion::getBody).orElse(null);
+            return new ContentView(m.getKind().name(), m.getAudience().name(), m.getBody(),
+                    m.getPlanAt() == null ? null : m.getPlanAt().toInstant(ZoneOffset.UTC), m.getPlanWhere(), question,
+                    photo, null);
         }
+        Profile profile = profiles.findByUserId(l.subjectId).orElse(null);
+        MembershipGate.Member member = access.memberOf(l.subjectId).orElse(null);
+        PersonView person = profile == null ? null : new PersonView(profile.getDisplayName(), profile.getHandle(),
+                profile.getBio(), member == null ? null : member.programme(),
+                member == null ? null : member.graduationYear(), profile.getPhotoKey() != null);
+        return new ContentView(null, null, null, null, null, null, null, person);
     }
 
     /** What a moderator may do on this case now (the app shows only these; the server checks again). */
@@ -705,25 +601,32 @@ public class ContentModerationService {
     }
 
     private void setContentState(Loaded l, ModerationState state, ModerationReason reason, String decision) {
-        if (l.c.getTargetKind() == TargetKind.POST) {
-            l.post.moderate(state, reason, decision);
-            posts.save(l.post);
-        } else if (l.c.getTargetKind() == TargetKind.COMMENT) {
-            l.comment.moderate(state, reason, decision);
-            comments.save(l.comment);
-        }
+        if (l.moment == null) return;
+        l.moment.moderate(state, reason, decision);
+        moments.save(l.moment);
     }
 
-    /** Closes a case: its reports are resolved; a post leaves review and its kept earlier texts are deleted (Q7). */
+    /** A moment nobody holds any more starts its 24 hours if it was never visible (N-47). Otherwise nothing. */
+    private void release(Moment moment, LocalDateTime now) {
+        if (moment == null) return;
+        moment.publish(now, MomentPolicy.LIFE);
+        moments.save(moment);
+    }
+
+    /** Closes a case: its reports are resolved and its moment is no longer kept from the purge (N-47). */
     private void close(Loaded l, ContentOutcome outcome, LocalDateTime now) {
         l.c.close(outcome, now);
         for (ContentReport r : l.caseReports) r.resolve();
         reports.saveAll(l.caseReports);
-        if (l.c.getTargetKind() == TargetKind.POST) {
-            l.post.setInReview(false);
-            posts.save(l.post);
-            revisions.deleteByPost(l.post.getId());
+        if (l.moment != null) {
+            l.moment.setInReview(false);
+            moments.save(l.moment);
         }
+    }
+
+    /** The reason a suggestion is based on: the codes that only mean "a person must look" suggest nothing. */
+    private static ModerationReason suggestFor(ModerationReason top) {
+        return top != null && top.reportable() ? top : null;
     }
 
     /** A pause never shortens a stronger or longer one already in force (the Phase 7 rule). */
@@ -740,21 +643,16 @@ public class ContentModerationService {
     }
 
     /** An overturned decision: its content comes back, its pause ends (if still the one in force), its strike goes. */
-    private void overturn(ModerationAction decision) {
+    private void overturn(ModerationAction decision, LocalDateTime now) {
         String id = decision.getPublicId();
         switch (decision.getAction()) {
             case CONTENT_COLLAPSE, CONTENT_REMOVE -> {
                 ContentCase c = cases.findByPublicId(decision.getCaseRef()).orElse(null);
-                if (c != null && c.getPostId() != null) {
-                    posts.findById(c.getPostId()).filter(p -> id.equals(p.getModerationDecision())).ifPresent(p -> {
-                        p.moderate(ModerationState.NONE, null, null);
-                        posts.save(p);
-                    });
-                } else if (c != null && c.getCommentId() != null) {
-                    comments.findById(c.getCommentId()).filter(m -> id.equals(m.getModerationDecision()))
+                if (c != null && c.getMomentId() != null) {
+                    moments.findById(c.getMomentId()).filter(m -> id.equals(m.getModerationDecision()))
                             .ifPresent(m -> {
                                 m.moderate(ModerationState.NONE, null, null);
-                                comments.save(m);
+                                release(m, now);
                             });
                 }
             }
@@ -766,21 +664,14 @@ public class ContentModerationService {
     }
 
     /**
-     * A moderator who reported what a decision is about takes no part in its appeal either (conflict of interest); nor,
-     * since Phase 14, the author of the post a perspective case was about (Loaded.tookPart).
+     * A moderator who reported what a decision is about takes no part in its appeal either (conflict of interest).
      */
     private boolean reportedIt(ModerationAction decision, long moderatorId) {
         if (decision.getCaseRef() == null) return false;
         return cases.findByPublicId(decision.getCaseRef())
                 .map(c -> reports.findByCaseIdOrderByCreatedAtAscIdAsc(c.getId()).stream()
-                        .anyMatch(r -> r.getReporterId() == moderatorId) || postAuthorOfComment(c, moderatorId))
+                        .anyMatch(r -> r.getReporterId() == moderatorId))
                 .orElse(false);
-    }
-
-    private boolean postAuthorOfComment(ContentCase c, long userId) {
-        if (c.getTargetKind() != TargetKind.COMMENT || c.getCommentId() == null) return false;
-        return comments.findById(c.getCommentId()).flatMap(comment -> posts.findById(comment.getPostId()))
-                .map(post -> post.getAuthorId() == userId).orElse(false);
     }
 
     /** Whether the person may still ask for a review of [d] (no appeal yet is checked by the caller). */
@@ -789,11 +680,7 @@ public class ContentModerationService {
         if (d.getAction() == ActionType.CONTENT_COLLAPSE || d.getAction() == ActionType.CONTENT_REMOVE) {
             ContentCase c = cases.findByPublicId(d.getCaseRef()).orElse(null);
             if (c == null) return false;
-            if (c.getPostId() != null) {
-                return posts.findById(c.getPostId()).map(p -> d.getPublicId().equals(p.getModerationDecision()))
-                        .orElse(false);
-            }
-            return c.getCommentId() != null && comments.findById(c.getCommentId())
+            return c.getMomentId() != null && moments.findById(c.getMomentId())
                     .map(m -> d.getPublicId().equals(m.getModerationDecision())).orElse(false);
         }
         return standings.findById(d.getSubjectUserId())
@@ -805,9 +692,8 @@ public class ContentModerationService {
         if (d.getCaseRef() == null) return null;
         ContentCase c = cases.findByPublicId(d.getCaseRef()).orElse(null);
         if (c == null) return null;
-        if (c.getPostId() != null) return posts.findById(c.getPostId()).map(Post::getPublicId).orElse(null);
-        if (c.getCommentId() != null) return comments.findById(c.getCommentId()).map(Comment::getPublicId).orElse(null);
-        return null;
+        return c.getMomentId() == null ? null
+                : moments.findById(c.getMomentId()).map(Moment::getPublicId).orElse(null);
     }
 
     private AppealView appealView(ModerationAppeal appeal, ModerationAction decision, long moderatorId) {

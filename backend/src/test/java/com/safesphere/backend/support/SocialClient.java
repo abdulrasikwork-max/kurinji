@@ -153,152 +153,7 @@ public final class SocialClient {
         accept(b, incomingFrom(b, a)).andExpect(status().isOk());
     }
 
-    // ---- Phase 13B: places, posts, photos, perspectives ----
-
-    public ResultActions createPlace(Person who, String name, String category, String cell) throws Exception {
-        return perform(who.token(), post("/api/places"), Map.of("name", name, "category", category, "cell", cell));
-    }
-
-    /** A new place's public id. */
-    public String place(Person who, String name, String cell) throws Exception {
-        return json(createPlace(who, name, "FOOD_CAFES", cell).andExpect(status().isOk())).get("publicId").asText();
-    }
-
-    public ResultActions nearbyPlaces(Person who, String area) throws Exception {
-        return perform(who.token(), get("/api/places/nearby").param("area", area), null);
-    }
-
-    public ResultActions createPost(Person who, Map<String, ?> body) throws Exception {
-        return perform(who.token(), post("/api/posts"), body);
-    }
-
-    /** A simple Experience with no place; returns its public id. */
-    public String experience(Person who, String audience) throws Exception {
-        return json(createPost(who, experienceBody(audience, "NONE")).andExpect(status().isCreated()))
-                .get("publicId").asText();
-    }
-
-    /** A valid Experience request (precision NONE unless changed); callers copy and adjust it. */
-    public static Map<String, Object> experienceBody(String audience, String precision) {
-        Map<String, Object> body = new java.util.HashMap<>();
-        body.put("type", "EXPERIENCE");
-        body.put("body", "Went early in the morning; the light on the water was lovely.");
-        body.put("tip", "Go before 7, it gets crowded.");
-        body.put("category", "NATURE_OUTDOORS");
-        body.put("precision", precision);
-        body.put("experiencedMonth", java.time.YearMonth.now(java.time.ZoneOffset.UTC).toString());
-        body.put("daypart", "MORNING");
-        body.put("audience", audience);
-        body.put("commentPolicy", "ONLY_ME".equals(audience) ? "NOBODY" : "EVERYONE");
-        return body;
-    }
-
-    public ResultActions getPost(Person who, String postId) throws Exception {
-        return perform(who.token(), get("/api/posts/{id}", postId), null);
-    }
-
-    public ResultActions editPost(Person who, String postId, Map<String, ?> body) throws Exception {
-        return perform(who.token(), put("/api/posts/{id}", postId), body);
-    }
-
-    public ResultActions deletePost(Person who, String postId) throws Exception {
-        return perform(who.token(), delete("/api/posts/{id}", postId), null);
-    }
-
-    public ResultActions minePosts(Person who, String cursor) throws Exception {
-        var builder = get("/api/posts/mine");
-        if (cursor != null) builder.param("cursor", cursor);
-        return perform(who.token(), builder, null);
-    }
-
-    public ResultActions profilePosts(Person viewer, Person owner, String cursor) throws Exception {
-        var builder = get("/api/profiles/{id}/posts", owner.publicId());
-        if (cursor != null) builder.param("cursor", cursor);
-        return perform(viewer.token(), builder, null);
-    }
-
-    /** The post ids of a list page ({items, nextCursor}). */
-    public List<String> postIds(ResultActions page) throws Exception {
-        List<String> ids = new ArrayList<>();
-        for (JsonNode item : json(page.andExpect(status().isOk())).get("items")) ids.add(item.get("publicId").asText());
-        return ids;
-    }
-
-    public ResultActions comments(Person who, String postId) throws Exception {
-        return perform(who.token(), get("/api/posts/{id}/comments", postId), null);
-    }
-
-    public ResultActions comment(Person who, String postId, String kind, String body, String parentId) throws Exception {
-        Map<String, Object> request = new java.util.HashMap<>();
-        request.put("kind", kind);
-        request.put("body", body);
-        if (parentId != null) request.put("parentId", parentId);
-        return perform(who.token(), post("/api/posts/{id}/comments", postId), request);
-    }
-
-    public String commentId(Person who, String postId, String kind, String body, String parentId) throws Exception {
-        return json(comment(who, postId, kind, body, parentId).andExpect(status().isCreated())).get("publicId").asText();
-    }
-
-    public ResultActions commentAction(Person who, String commentId, String action) throws Exception {
-        return perform(who.token(), post("/api/comments/{id}/" + action, commentId), null);
-    }
-
-    public ResultActions deleteComment(Person who, String commentId) throws Exception {
-        return perform(who.token(), delete("/api/comments/{id}", commentId), null);
-    }
-
-    public ResultActions unmarkHelped(Person who, String commentId) throws Exception {
-        return perform(who.token(), delete("/api/comments/{id}/helped", commentId), null);
-    }
-
-    public ResultActions upload(Person who, byte[] bytes, String contentType) throws Exception {
-        return mockMvc.perform(post("/api/media").header(HttpHeaders.AUTHORIZATION, bearer(who.token()))
-                .contentType(contentType).content(bytes));
-    }
-
-    public String uploadId(Person who, byte[] bytes) throws Exception {
-        return json(upload(who, bytes, "image/jpeg").andExpect(status().isCreated())).get("mediaId").asText();
-    }
-
-    public ResultActions media(Person who, String mediaId) throws Exception {
-        return perform(who.token(), get("/api/media/{id}", mediaId), null);
-    }
-
-    // ---- Phase 17C: videos ----
-
-    public ResultActions uploadVideo(Person who, byte[] mp4) throws Exception {
-        return upload(who, mp4, "video/mp4");
-    }
-
-    public ResultActions poster(Person who, String mediaId, byte[] jpeg) throws Exception {
-        return mockMvc.perform(post("/api/media/{id}/poster", mediaId)
-                .header(HttpHeaders.AUTHORIZATION, bearer(who.token())).contentType("image/jpeg").content(jpeg));
-    }
-
-    /** A video (with the default metadata-laden fixture) and its poster, ready to attach. */
-    public String videoId(Person who) throws Exception {
-        String id = json(uploadVideo(who, TestVideos.video().build()).andExpect(status().isCreated()))
-                .get("mediaId").asText();
-        poster(who, id, TestImages.jpeg(64, 36)).andExpect(status().isOk());
-        return id;
-    }
-
-    public ResultActions video(Person who, String mediaId) throws Exception {
-        return perform(who.token(), get("/api/media/{id}/video", mediaId), null);
-    }
-
-    public ResultActions deleteMedia(Person who, String mediaId) throws Exception {
-        return perform(who.token(), delete("/api/media/{id}", mediaId), null);
-    }
-
-    public ResultActions caseVideo(Person moderator, String caseId, String mediaId) throws Exception {
-        return perform(moderator.token(), get("/api/moderation/content-cases/{id}/media/{m}/video", caseId, mediaId),
-                null);
-    }
-
-
-    // ---- Phase 17E: profile photo; Phase 13C: Discover ----
+    // ---- Phase 17E: profile photo ----
 
     public ResultActions ownProfile(Person who) throws Exception {
         return perform(who.token(), get("/api/profiles/me"), null);
@@ -317,56 +172,6 @@ public final class SocialClient {
         return perform(viewer.token(), get("/api/profiles/{id}/photo/{key}", owner.publicId(), key), null);
     }
 
-
-    public ResultActions edition(Person who, String city) throws Exception {
-        var builder = get("/api/discover/edition");
-        if (city != null) builder.param("city", city);
-        return perform(who.token(), builder, null);
-    }
-
-    /** Every post id in an Edition, all sections together, in order. */
-    public List<String> editionIds(ResultActions edition) throws Exception {
-        List<String> ids = new ArrayList<>();
-        for (JsonNode section : json(edition.andExpect(status().isOk())).get("sections")) {
-            for (JsonNode item : section.get("items")) ids.add(item.get("post").get("publicId").asText());
-        }
-        return ids;
-    }
-
-    public ResultActions fromConnections(Person who, String cursor) throws Exception {
-        var builder = get("/api/discover/connections");
-        if (cursor != null) builder.param("cursor", cursor);
-        return perform(who.token(), builder, null);
-    }
-
-    /** The post ids of a Discover page ({items[{post, reasons}], nextCursor}). */
-    public List<String> discoverIds(ResultActions page) throws Exception {
-        List<String> ids = new ArrayList<>();
-        for (JsonNode item : json(page.andExpect(status().isOk())).get("items")) {
-            ids.add(item.get("post").get("publicId").asText());
-        }
-        return ids;
-    }
-
-    public ResultActions categoryPage(Person who, String category, String city, String cursor) throws Exception {
-        var builder = get("/api/discover/categories/{c}", category);
-        if (city != null) builder.param("city", city);
-        if (cursor != null) builder.param("cursor", cursor);
-        return perform(who.token(), builder, null);
-    }
-
-    public ResultActions placePage(Person who, String placeId, String cursor) throws Exception {
-        var builder = get("/api/places/{id}/posts", placeId);
-        if (cursor != null) builder.param("cursor", cursor);
-        return perform(who.token(), builder, null);
-    }
-
-    public ResultActions searchPlaces(Person who, String q, String city) throws Exception {
-        var builder = get("/api/places/search");
-        if (q != null) builder.param("q", q);
-        if (city != null) builder.param("city", city);
-        return perform(who.token(), builder, null);
-    }
 
     // ---- Phase 13D: reports, standing, moderators ----
 
@@ -413,8 +218,8 @@ public final class SocialClient {
                 Map.of("action", action, "reason", reason));
     }
 
-    public ResultActions caseMedia(Person moderator, String caseId, String mediaId) throws Exception {
-        return perform(moderator.token(), get("/api/moderation/content-cases/{id}/media/{m}", caseId, mediaId), null);
+    public ResultActions caseMedia(Person moderator, String caseId) throws Exception {
+        return perform(moderator.token(), get("/api/moderation/content-cases/{id}/media", caseId), null);
     }
 
     public ResultActions contentAppeals(Person moderator) throws Exception {
@@ -426,12 +231,13 @@ public final class SocialClient {
                 Map.of("decision", decision));
     }
 
-    public ResultActions moderatorPlaces(Person moderator, String area) throws Exception {
-        return perform(moderator.token(), get("/api/moderation/places").param("area", area), null);
+    public ResultActions aboutMe(Person who, String momentId) throws Exception {
+        return perform(who.token(), post("/api/moments/{id}/about-me", momentId), null);
     }
 
-    public ResultActions mergePlace(Person moderator, String placeId, String into) throws Exception {
-        return perform(moderator.token(), post("/api/moderation/places/{id}/merge", placeId), Map.of("into", into));
+    public ResultActions askReview(Person who, String momentId) throws Exception {
+        return perform(who.token(), post("/api/content-checks/review"),
+                Map.of("targetKind", "MOMENT", "targetId", momentId));
     }
 
     /** The public ids in a JSON array answer. */

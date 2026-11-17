@@ -9,28 +9,25 @@ import com.safesphere.backend.moderation.dto.ContentModerationDtos.ReportReceive
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.ReportRequest;
 import com.safesphere.backend.moderation.entity.ContentCase;
 import com.safesphere.backend.moderation.entity.ContentReport;
+import com.safesphere.backend.moderation.entity.ModerationEnums.CaseOpenedBy;
 import com.safesphere.backend.moderation.entity.ModerationEnums.CaseStatus;
 import com.safesphere.backend.moderation.entity.ModerationEnums.TargetKind;
 import com.safesphere.backend.moderation.repository.ContentCaseRepository;
 import com.safesphere.backend.moderation.repository.ContentReportRepository;
 import com.safesphere.backend.security.AttemptLimiter;
-import com.safesphere.backend.social.entity.Comment;
-import com.safesphere.backend.social.entity.Post;
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
-import com.safesphere.backend.social.entity.PostEnums.ModerationState;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationSource;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationState;
+import com.safesphere.backend.social.entity.Moment;
 import com.safesphere.backend.social.entity.Profile;
 import com.safesphere.backend.social.entity.SocialStanding;
-import com.safesphere.backend.social.policy.PostPolicy;
-import com.safesphere.backend.social.policy.TimeBands;
-import com.safesphere.backend.social.repository.CommentRepository;
-import com.safesphere.backend.social.repository.PostRepository;
+import com.safesphere.backend.social.policy.MomentPolicy;
+import com.safesphere.backend.social.repository.MomentRepository;
 import com.safesphere.backend.social.repository.ProfileRepository;
 import com.safesphere.backend.social.repository.SocialStandingRepository;
-import com.safesphere.backend.social.service.CommentService;
-import com.safesphere.backend.social.service.PostService;
+import com.safesphere.backend.social.service.MomentService;
 import com.safesphere.backend.social.service.ProfileService;
 import com.safesphere.backend.social.service.SocialAccess;
-import com.safesphere.backend.user.entity.User;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -44,6 +41,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -56,29 +54,32 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Phase 13D: reports about posts, perspectives and people (EXPERIENCE_PLATFORM_DESIGN.md §8.3, §4.6; plan M3-M6).
+ * Reports about moments and people (Phase 13D: EXPERIENCE_PLATFORM_DESIGN.md §8.3, §4.6, plan M3-M6; Phase N4: moments
+ * instead of posts and perspectives, and "This is about me").
  *
- *   - Only what the reporter can see can be reported; anything else is "not found", like a post that does not exist.
+ *   - Only what the reporter can see can be reported; anything else is "not found", like something that does not exist.
  *   - Reporting the same thing twice gives the same answer and changes nothing (no "already reported" oracle).
- *   - Nothing the reported person can observe changes on a report (M4). Their post or perspective is collapsed only
- *     when [collapseReports] independent counting reports agree (M6, ReportPolicy), and the words they then see never
+ *   - Nothing the reported person can observe changes on a report (M4). Their moment is collapsed only when
+ *     [collapseReports] independent counting reports agree (M6, ReportPolicy), and the words they then see never
  *     mention reports. A person is never affected by reports alone.
  *   - Every report joins the open case about its target (or opens one) for a human to decide.
+ *   - A new member's report reaches the moderators at once but counts toward the automatic collapse only when their
+ *     7 days are over (PHASE_N4 §5).
+ *   - "This is about me" (N-52) is the one report that acts at once: the moment is hidden from everyone but its author
+ *     until a moderator decides. The author is told only that a moderator is looking, never that someone asked.
  */
 @Service
 public class ReportService {
 
-    static final String OWN_CONTENT = "You can't report your own posts, perspectives or profile";
+    static final String OWN_CONTENT = "You can't report your own moments or profile";
     static final String TOO_MANY = "You have sent many reports today. Please try again tomorrow.";
     static final int MY_REPORTS = 50;
 
     private final ContentCaseRepository cases;
     private final ContentReportRepository reports;
-    private final PostRepository posts;
-    private final CommentRepository comments;
+    private final MomentRepository moments;
     private final SocialStandingRepository standings;
-    private final PostService postService;
-    private final CommentService commentService;
+    private final MomentService momentService;
     private final ProfileService profileService;
     private final SocialAccess access;
     private final ModerationProperties properties;
@@ -87,9 +88,9 @@ public class ReportService {
     private final TransactionTemplate inTransaction;
     private final ProfileRepository profiles;
 
-    public ReportService(ContentCaseRepository cases, ContentReportRepository reports, PostRepository posts,
-                         CommentRepository comments, SocialStandingRepository standings, PostService postService,
-                         CommentService commentService, ProfileService profileService, SocialAccess access,
+    public ReportService(ContentCaseRepository cases, ContentReportRepository reports, MomentRepository moments,
+                         SocialStandingRepository standings, MomentService momentService,
+                         ProfileService profileService, SocialAccess access,
                          ModerationProperties properties, Clock clock, PlatformTransactionManager transactions,
                          ProfileRepository profiles) {
         this.inTransaction = new TransactionTemplate(transactions);
@@ -99,11 +100,9 @@ public class ReportService {
         this.profiles = profiles;
         this.cases = cases;
         this.reports = reports;
-        this.posts = posts;
-        this.comments = comments;
+        this.moments = moments;
         this.standings = standings;
-        this.postService = postService;
-        this.commentService = commentService;
+        this.momentService = momentService;
         this.profileService = profileService;
         this.access = access;
         this.properties = properties;
@@ -114,73 +113,84 @@ public class ReportService {
     /**
      * Phase 14: one transaction per attempt. Two reports arriving together (two people opening the same case, or the
      * same person sending twice) deadlocked on MySQL's unique indexes (measured live) or broke a unique key. Each
-     * attempt now first locks the reported row, so reports about one target run one after the other and each sees the
+     * attempt first locks the reported row, so reports about one target run one after the other and each sees the
      * case and reports before it. If a transaction still loses a race it is unusable, so the report is tried again in
      * a new one (at most three attempts), which answers the same 202.
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public ReportReceived report(long reporterId, ReportRequest request) {
-        for (int attempt = 1; ; attempt++) {
-            try {
-                return inTransaction.execute(s -> reportOnce(reporterId, request));
-            } catch (DataIntegrityViolationException | ConcurrencyFailureException raced) {
-                if (attempt == 3) throw raced;
-            }
-        }
-    }
-
-    private ReportReceived reportOnce(long reporterId, ReportRequest request) {
-        User reporter = access.requireMember(reporterId); // a pause never stops reporting
         TargetKind kind = parse(TargetKind.class, request.targetKind(), "Choose what to report");
-        if (kind == TargetKind.PLACE) throw new InvalidRequestException("Choose what to report");
-        ModerationReason reason = parse(ModerationReason.class, request.reason(), "Choose a reason");
-        if (reason == ModerationReason.NEEDS_REVIEW || reason == ModerationReason.AWAITING_CHECK
-                || reason == ModerationReason.NEW_MEMBER_PHOTO) {
-            throw new InvalidRequestException("Choose a reason");
+        if (kind != TargetKind.MOMENT && kind != TargetKind.PERSON) {
+            throw new InvalidRequestException("Choose what to report");
         }
+        ModerationReason reason = parse(ModerationReason.class, request.reason(), "Choose a reason");
+        if (!reason.reportable()) throw new InvalidRequestException("Choose a reason");
         if (reason == ModerationReason.IMPERSONATION && kind != TargetKind.PERSON) {
             throw new InvalidRequestException("Impersonation is reported on the person's profile");
         }
         String note = note(reason, request.note());
+        return retrying(() -> reportOnce(reporterId, kind, request.targetId(), reason, note));
+    }
+
+    /**
+     * N-52 "This is about me": someone a moment is about asks for it to be looked at. The moment is hidden from
+     * everyone but its author at once (unless a moderator has already decided about it), and a priority case is opened
+     * or joined. Counted against the same daily limit as reports; the same 202 whether new or repeated.
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public ReportReceived aboutMe(long reporterId, String momentId) {
+        return retrying(() -> reportOnce(reporterId, TargetKind.MOMENT, momentId, ModerationReason.ABOUT_ME, null));
+    }
+
+    private ReportReceived retrying(java.util.function.Supplier<ReportReceived> attempt) {
+        for (int tries = 1; ; tries++) {
+            try {
+                return inTransaction.execute(s -> attempt.get());
+            } catch (DataIntegrityViolationException | ConcurrencyFailureException raced) {
+                if (tries == 3) throw raced;
+            }
+        }
+    }
+
+    private ReportReceived reportOnce(long reporterId, TargetKind kind, String targetId, ModerationReason reason,
+                                      String note) {
+        access.requireMember(reporterId); // a pause never stops reporting
         LocalDateTime now = now();
 
         // The target, as the reporter may see it (404 otherwise); never one's own.
         ContentCase open;
-        switch (kind) {
-            case POST -> {
-                Post post = postService.requireVisible(reporterId, request.targetId(), now);
-                if (post.getAuthorId() == reporterId) throw new InvalidRequestException(OWN_CONTENT);
-                posts.lockById(post.getId());
-                if (reports.existsByReporterIdAndPostId(reporterId, post.getId())) return received();
-                limit(reporterId);
-                open = openCase(() -> cases.findByPostIdAndStatus(post.getId(), CaseStatus.OPEN),
-                        () -> ContentCase.aboutPost(post.getId(), now));
-                if (!post.isInReview()) {
-                    post.setInReview(true); // Q7: edits from now on keep the earlier text for the moderator
-                    posts.save(post);
-                }
+        if (kind == TargetKind.MOMENT) {
+            // Someone who already reported or asked about this moment gets the same answer again, also when their own
+            // request has hidden it from them meanwhile (no "already reported" oracle, no 404 after a 202).
+            Moment known = targetId == null ? null : moments.findByPublicId(targetId).orElse(null);
+            if (known != null && reports.existsByReporterIdAndMomentId(reporterId, known.getId())) return received();
+            Moment seen = momentService.requireVisible(reporterId, targetId, now);
+            if (seen.getAuthorId() == reporterId) throw new InvalidRequestException(OWN_CONTENT);
+            Moment moment = moments.lockById(seen.getId()).orElseThrow();
+            if (reports.existsByReporterIdAndMomentId(reporterId, moment.getId())) return received();
+            limit(reporterId);
+            boolean aboutMe = reason == ModerationReason.ABOUT_ME;
+            open = cases.findByMomentIdAndStatus(moment.getId(), CaseStatus.OPEN).orElseGet(() -> cases.saveAndFlush(
+                    ContentCase.aboutMoment(moment.getId(), now)
+                            .openedBy(aboutMe ? CaseOpenedBy.ABOUT_ME : CaseOpenedBy.REPORTS)));
+            moment.setInReview(true); // N-47: not purged while a case needs it
+            if (aboutMe && moment.getModerationSource() != ModerationSource.MODERATOR
+                    && moment.getModeration() != ModerationState.HELD) {
+                moment.moderateBySystem(ModerationState.HELD, ModerationReason.ABOUT_ME, null);
             }
-            case COMMENT -> {
-                Comment comment = commentService.requireVisible(reporterId, request.targetId(), now);
-                if (comment.getAuthorId() == reporterId) throw new InvalidRequestException(OWN_CONTENT);
-                comments.lockById(comment.getId());
-                if (reports.existsByReporterIdAndCommentId(reporterId, comment.getId())) return received();
-                limit(reporterId);
-                open = openCase(() -> cases.findByCommentIdAndStatus(comment.getId(), CaseStatus.OPEN),
-                        () -> ContentCase.aboutComment(comment.getId(), now));
-            }
-            default -> {
-                Profile profile = profileService.requireVisible(reporterId, request.targetId());
-                long personId = profile.getUserId();
-                if (personId == reporterId) throw new InvalidRequestException(OWN_CONTENT);
-                profiles.lockById(profile.getId());
-                if (reports.existsByReporterIdAndPersonId(reporterId, personId)) return received();
-                limit(reporterId);
-                open = openCase(() -> cases.findByPersonIdAndStatus(personId, CaseStatus.OPEN),
-                        () -> ContentCase.aboutPerson(personId, now));
-            }
+            moments.save(moment);
+        } else {
+            Profile profile = profileService.requireVisible(reporterId, targetId);
+            long personId = profile.getUserId();
+            if (personId == reporterId) throw new InvalidRequestException(OWN_CONTENT);
+            profiles.lockById(profile.getId());
+            if (reports.existsByReporterIdAndPersonId(reporterId, personId)) return received();
+            limit(reporterId);
+            open = cases.findByPersonIdAndStatus(personId, CaseStatus.OPEN)
+                    .orElseGet(() -> cases.saveAndFlush(ContentCase.aboutPerson(personId, now)));
         }
-        reports.saveAndFlush(new ContentReport(open, reporterId, reason, note, now, access.countsFrom(reporter, now)));
+        reports.saveAndFlush(new ContentReport(open, reporterId, reason, note, now,
+                access.countsFrom(reporterId, now)));
         evaluateCollapse(open, now);
         return received();
     }
@@ -193,7 +203,7 @@ public class ReportService {
         List<ContentReport> own = reports.findByReporterIdOrderByCreatedAtDescIdDesc(reporterId,
                 PageRequest.of(0, MY_REPORTS));
         Map<Long, ContentCase> byId = cases.findByIdIn(own.stream().map(ContentReport::getCaseId).toList()).stream()
-                .collect(Collectors.toMap(ContentCase::getId, c -> c));
+                .collect(Collectors.toMap(ContentCase::getId, Function.identity()));
         List<MyReport> out = new ArrayList<>();
         for (ContentReport r : own) {
             ContentCase c = byId.get(r.getCaseId());
@@ -201,7 +211,7 @@ public class ReportService {
             boolean reviewed = !c.isOpen();
             out.add(new MyReport(r.getPublicId(), c.getTargetKind().name(), r.getReason().name(),
                     reviewed ? "REVIEWED" : "RECEIVED", reviewed ? c.getOutcome().name() : null,
-                    TimeBands.band(r.getCreatedAt(), now).name()));
+                    Periods.of(r.getCreatedAt(), now)));
         }
         return out;
     }
@@ -235,44 +245,22 @@ public class ReportService {
     }
 
     /**
-     * M6: collapses the post or perspective of an open case when enough independent counting reports agree. Called on
-     * each report and by the hourly job (a report of a new account starts counting later). Only from NONE: a moderator's
+     * M6: collapses the moment of an open case when enough independent counting reports agree. Called on each report
+     * and by the hourly job (a new member's report starts counting later). Only from NONE: a moderator's or a rule's
      * state is never overridden. Returns true when it collapsed something.
      */
     @Transactional
     public boolean evaluateCollapse(ContentCase c, LocalDateTime now) {
-        if (!c.isOpen() || c.getTargetKind() == TargetKind.PERSON) return false;
-        if (c.getTargetKind() == TargetKind.POST) {
-            Post post = posts.findById(c.getPostId()).orElse(null);
-            if (post == null || post.getModeration() != ModerationState.NONE) return false;
-            if (!ReportPolicy.collapses(tally(c, now), properties.collapseReports())) return false;
-            post.moderate(ModerationState.COLLAPSED, null, null);
-            posts.save(post);
-            return true;
-        }
-        Comment comment = comments.findById(c.getCommentId()).orElse(null);
-        if (comment == null || comment.getModeration() != ModerationState.NONE) return false;
+        if (!c.isOpen() || c.getTargetKind() != TargetKind.MOMENT) return false;
+        Moment moment = moments.findById(c.getMomentId()).orElse(null);
+        if (moment == null || moment.getModeration() != ModerationState.NONE) return false;
         if (!ReportPolicy.collapses(tally(c, now), properties.collapseReports())) return false;
-        comment.moderate(ModerationState.COLLAPSED, null, null);
-        comments.save(comment);
+        moment.moderate(ModerationState.COLLAPSED, null, null);
+        moments.save(moment);
         return true;
     }
 
     // ---- helpers ----
-
-    private interface Finder {
-        Optional<ContentCase> find();
-    }
-
-    private interface Maker {
-        ContentCase make();
-    }
-
-    /** The open case about a target, or a new one (a concurrent first report gets the other's case). */
-    private ContentCase openCase(Finder finder, Maker maker) {
-        // A simultaneous second case breaks the one-open-case key; report() then tries again (Phase 14).
-        return finder.find().orElseGet(() -> cases.saveAndFlush(maker.make()));
-    }
 
     private void limit(long reporterId) {
         if (!limiter.tryAcquire("user:" + reporterId)) throw new TooManyAttemptsException(TOO_MANY);
@@ -284,13 +272,13 @@ public class ReportService {
 
     /** M3: a note of 1-200 characters exactly for OTHER (cleaned like a profile line), none otherwise. */
     private static String note(ModerationReason reason, String raw) {
-        String note = PostPolicy.cleanLine(raw);
+        String note = MomentPolicy.cleanLine(raw);
         if (reason != ModerationReason.OTHER) {
             if (note != null) throw new InvalidRequestException("A note is only for \"Something else\"");
             return null;
         }
         if (note == null) throw new InvalidRequestException("Say in a few words what is wrong");
-        if (PostPolicy.length(note) > 200) throw new InvalidRequestException("A note has at most 200 characters");
+        if (MomentPolicy.length(note) > 200) throw new InvalidRequestException("A note has at most 200 characters");
         return note;
     }
 

@@ -68,12 +68,13 @@ public final class ContentModerationDtos {
     /**
      * One case in the queue (highest priority first, then oldest). [reasons] counts open reports per reason;
      * [counting] / [independent] as ReportPolicy; [contentState] the post's or perspective's moderation state (null for
-     * a person); [youTookPart] = the caller wrote it, is the person, or reported it (another moderator must decide).
+     * a person); [youTookPart] = the caller wrote it, is the person, or reported it (another moderator must decide). Phase N4
+     * (N-69): [priority] is QueuePolicy.priority (three tiers); [waitingHours] = whole hours since the case opened.
      */
     public record CaseSummary(String caseId, String targetKind, String status, String outcome, LocalDate openedOn,
                               String topReason, Map<String, Integer> reasons, int counting, int independent,
                               String contentState, int priority, boolean youTookPart, String openedBy,
-                              String contentSource) {
+                              String contentSource, int waitingHours) {
     }
 
     /**
@@ -93,29 +94,23 @@ public final class ContentModerationDtos {
                                 @NotNull(message = "Choose what to review") @Size(max = 40) String targetId) {
     }
 
-    /** Phase 17C: [kind] PHOTO | VIDEO, [durationMs] only for a video (whose image is its poster frame). */
-    public record MediaView(String mediaId, int width, int height, String kind, Integer durationMs) {
-    }
-
 
     /** The public profile of a PERSON case (or the author's handle is NOT shown for content cases). */
-    public record PersonView(String displayName, String handle, String bio, String city, List<String> interests,
-                             boolean hasPhoto) {
+    public record PersonView(String displayName, String handle, String bio, String programme,
+                             Integer graduationYear, boolean hasPhoto) {
+    }
+
+    /** The size of a moment photo (the picture itself: GET /api/moderation/content-cases/{id}/media, after a tap). */
+    public record PhotoView(int width, int height) {
     }
 
     /**
-     * What the case is about. POST: the post as written (also Connections-only text: needed to judge). COMMENT: the
-     * perspective, with its post's text as context ([contextBody], at most 500 characters). PERSON: [person].
-     * [placeName] only for EXACT posts, [areaCell] only for AREA posts (as others see it).
+     * What the case is about. MOMENT: the moment as written (also a My people one: needed to judge): [kind] SAY |
+     * WHOS_IN, [audience], [body], the plan of a Who is in ([planAt], [planWhere]), the daily [question] it answers,
+     * [photo]. PERSON: [person], the profile every member can see.
      */
-    public record ContentView(String postType, String commentKind, String body, String tip, String category,
-                              String precision, String placeName, String areaCell, String city, String audience,
-                              String experiencedMonth, String daypart, List<MediaView> media, String contextBody,
-                              PersonView person) {
-    }
-
-    /** The text before an edit made during this case (Q7). A day, not a time. */
-    public record RevisionView(String body, String tip, LocalDate replacedOn) {
+    public record ContentView(String kind, String audience, String body, Instant planAt, String planWhere,
+                              String question, PhotoView photo, PersonView person) {
     }
 
     /** One person in a case, pseudonymous. [role] AUTHOR / SUBJECT / REPORTER; [reason], [note], [counting] reporters. */
@@ -125,17 +120,18 @@ public final class ContentModerationDtos {
 
     /**
      * The author or person concerned: [strikePoints] (decayed, one decimal), [suggestedStep] (StrikePolicy), the pause
-     * in force (if any).
+     * in force (if any). Phase N4 (N-56): [newMemberUntil] = the end of their 7-day new-member period, null once
+     * established.
      */
     public record AuthorView(String ref, double strikePoints, String suggestedStep, String restriction,
-                             Instant restrictedUntil) {
+                             Instant restrictedUntil, Instant newMemberUntil) {
     }
 
     /** One decision already taken on this case (oldest first). */
     public record CaseDecision(String action, String reason, LocalDate decidedOn, boolean byYou) {
     }
 
-    public record CaseDetail(CaseSummary summary, ContentView content, List<RevisionView> revisions,
+    public record CaseDetail(CaseSummary summary, ContentView content,
                              List<Participant> participants, AuthorView author, List<String> possibleActions,
                              List<CaseDecision> decisions, AssessmentView assessment) {
     }
@@ -149,9 +145,4 @@ public final class ContentModerationDtos {
                              String targetKind, String caseId, boolean youDecided) {
     }
 
-    public record MergeRequest(@NotNull(message = "Choose the place to keep") @Size(max = 40) String into) {
-    }
-
-    public record PlaceView(String placeId, String name, String category, String cell, String mergedInto) {
-    }
 }

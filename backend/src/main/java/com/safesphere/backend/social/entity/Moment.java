@@ -2,9 +2,9 @@ package com.safesphere.backend.social.entity;
 
 import com.safesphere.backend.social.entity.MomentEnums.Audience;
 import com.safesphere.backend.social.entity.MomentEnums.Kind;
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
-import com.safesphere.backend.social.entity.PostEnums.ModerationSource;
-import com.safesphere.backend.social.entity.PostEnums.ModerationState;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationSource;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationState;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

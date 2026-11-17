@@ -1,6 +1,6 @@
 package com.safesphere.backend.moderation.entity;
 
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -35,11 +35,8 @@ public class ContentReport {
     @Column(name = "reporter_id", nullable = false, updatable = false)
     private Long reporterId;
 
-    @Column(name = "post_id", updatable = false)
-    private Long postId;
-
-    @Column(name = "comment_id", updatable = false)
-    private Long commentId;
+    @Column(name = "moment_id", updatable = false)
+    private Long momentId;
 
     @Column(name = "person_id", updatable = false)
     private Long personId;
@@ -69,8 +66,7 @@ public class ContentReport {
         this.publicId = UUID.randomUUID().toString();
         this.caseId = target.getId();
         this.reporterId = reporterId;
-        this.postId = target.getPostId();
-        this.commentId = target.getCommentId();
+        this.momentId = target.getMomentId();
         this.personId = target.getPersonId();
         this.reason = reason;
         this.note = note;

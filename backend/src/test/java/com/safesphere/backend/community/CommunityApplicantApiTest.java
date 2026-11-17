@@ -220,7 +220,7 @@ class CommunityApplicantApiTest {
         community.perform(outsider, put("/api/profiles/me"), Map.of("handle", handle)).andExpect(status().isOk());
         community.perform(outsider, get("/api/profiles/me"), null).andExpect(status().isOk());
         // Everything about others answers MEMBERSHIP_NEEDED.
-        for (String path : List.of("/api/discover/edition", "/api/discover/connections", "/api/connections",
+        for (String path : List.of("/api/moments/today", "/api/moments/mine", "/api/connections",
                 "/api/profiles/by-handle/" + handle, "/api/blocks")) {
             community.perform(outsider, get(path), null).andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.code").value("MEMBERSHIP_NEEDED"));

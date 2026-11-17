@@ -53,7 +53,7 @@ public final class ModerationEnums {
 
     /**
      * Reason codes only: no free text in moderation (it would invite personal data and opinions about people). 13D adds
-     * the content codes (the same names as PostEnums.ModerationReason without NEEDS_REVIEW, which already exists).
+     * the content codes (the same names as ContentModeration.ModerationReason without NEEDS_REVIEW, which already exists).
      */
     public enum ActionReason {
         FALSE_INFORMATION, TARGETS_SOMEONE, SPAM_OR_COORDINATED, DUPLICATE, NO_VIOLATION, NEEDS_REVIEW,
@@ -63,11 +63,14 @@ public final class ModerationEnums {
 
     public enum AppealStatus { OPEN, UPHELD, OVERTURNED }
 
-    /** Phase 13D (V23): what a 13D decision or case is about. */
-    public enum TargetKind { POST, COMMENT, PERSON, PLACE }
+    /**
+     * What a decision or case is about. Since Phase N4 (V35) only MOMENT and PERSON are written; POST, COMMENT and PLACE
+     * stay because the audit log keeps its older rows.
+     */
+    public enum TargetKind { POST, COMMENT, PERSON, PLACE, MOMENT }
 
-    /** Phase 13E (V24): what opened a content case. */
-    public enum CaseOpenedBy { REPORTS, SYSTEM, AUTHOR_REQUEST }
+    /** What opened a content case. Phase N4 (N-52): ABOUT_ME = someone said "This is about me". */
+    public enum CaseOpenedBy { REPORTS, SYSTEM, AUTHOR_REQUEST, ABOUT_ME }
 
     /** Phase 13D: the result of a content case, as its reporters see it. */
     public enum ContentOutcome { NO_VIOLATION, ACTION_TAKEN }

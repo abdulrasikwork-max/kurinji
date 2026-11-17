@@ -1,4 +1,49 @@
-# CHECKPOINT 2026-11-16 (tenth session): N4-B1 is DONE (backend moment core: implemented, compiled, tested). B2, B3, B4, A1, A2, A3, C NOT started. Nothing pushed, nothing deployed.
+# CHECKPOINT 2026-11-16 (eleventh session, stopped at the usage limit): N4-B2 is DONE. N4-B3 is PARTIALLY done (code and a first set of tests are in, green; documents and some tests are missing). B4, A1, A2, A3, C NOT started. Nothing pushed, nothing deployed.
+
+**Standing instructions, unchanged:** the product direction is decided and is not reopened; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N4 plan and decisions are LOCKED (`docs/PHASE_N4.md`); continue them, do not re-plan. **Owner, 2026-11-16 (this session): continue the remaining N4 units autonomously without asking between normal units; stop only for a real conflict, a security / privacy problem, a destructive step without its documented backup, or a missing requirement. Android UI / UX: full creative freedom.**
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). Commits of this session, oldest first: `87ce801` N4-B2, then ONE commit "N4 checkpoint before usage limit" (`git log -1`) holding the B3 work so far. `git status` clean afterwards.
+- `android/` and `moderation-service/` not touched. `android/local.properties` and `backend/.env` not touched.
+
+## Completed
+- **B2 (`87ce801`, complete):** moment photo upload / removal / serving, `mediaId` on `POST /api/moments`, 20 uploads a day, the new-member photo hold (`MomentPolicy.holdsPhoto`, reason `NEW_MEMBER_PHOTO`). Details: `PHASE_N4.md` "As built", B2.
+- **B3, the part that is in (this checkpoint commit):** see `PHASE_N4.md` "As built", B3 (partial). In short: the old social code is REMOVED from the backend (posts, perspectives, places, cities, Discover, post media, video; their tests too); moderation points at moments (`moment_id`); reports of moments and people; "This is about me"; the automatic text check listens to `MomentShared`; the moderators' queue has three tiers (`QueuePolicy`); profiles lost city / languages / interests and show programme + graduation year; `GET /api/profiles/{id}/moments`; the author's `notice`.
+
+## Partially implemented: N4-B3 (the CURRENT unit). What is still missing
+1. **Tests not written yet:** the automatic text check on moments with the stub service (clean publishes; an insult collapses; a threat holds and opens a case; an outage publishes for an established member and holds a new member's words for at most 2 hours, then publishes with the 24 hours starting then; a held new-member photo is NEVER released by the check or the job; self-harm sets `supportSuggested` only in the author's own answer; `planWhere` is checked; `POST /api/content-checks/review`). The old `AssessmentIntegrationTest` / `AssessmentProbationIntegrationTest` were deleted with posts; write `moderation/assessment/MomentAssessmentIntegrationTest` on its OWN H2 URL (pattern: `git show 87ce801:backend/src/test/java/com/safesphere/backend/moderation/assessment/AssessmentIntegrationTest.java`). **This path (`AssessmentService.onMomentShared` with the check ON, `maintain`, `releaseIfWaiting`) compiles but has NO test yet: treat it as implemented, compiled, NOT tested.**
+2. **Guards to re-check / extend:** `SocialIsolationTest`, `ModelPlacesTest`, `MomentBoundariesTest` pass, but were not extended for the new classes (`MomentShared`, `QueuePolicy`, `Periods`, the about-me route).
+3. **V35 is NOT yet in step with the code (must be done before B4):** add `ABOUT_ME` to `ck_moments_moderation_reason` (`NEW_MEMBER_PHOTO` is already there); replace V23's `ck_content_reports_reason` so that it also accepts `ABOUT_ME`; check the note CHECK `ck_content_reports_note` still holds; check `content_cases.target_kind` / `content_assessments.target_kind` column widths (`MOMENT` fits VARCHAR(7)) and `content_cases.origin` (`ABOUT_ME` fits 14). H2 does not exercise any of this.
+4. **Documents not updated for B3:** `docs/API.md` (new: `POST /api/moments/media`, `DELETE /api/moments/media/{id}`, `GET /api/moments/{id}/media`, `mediaId`, `photo`, `collapsed`, `notice`, `supportSuggested`, `POST /api/moments/{id}/about-me`, `GET /api/profiles/{id}/moments`, profile fields, `GET /api/moderation/content-cases/{id}/media`, `waitingHours`, `newMemberUntil`; REMOVED: `/api/posts`, `/api/places`, `/api/discover`, `/api/media`, comments, `/api/moderation/places`, the case video route), `docs/DECISIONS.md` (N-69 and following, listed in `PHASE_N4.md` B3), `.claude/rules/backend.md`, `.claude/rules/database.md`, `CLAUDE.md` status line.
+5. **Dead configuration left on purpose, to trim in B3's close:** `SocialProperties` still has the post / place / comment / video / probation settings and `application.properties` still sets them; `SocialLimits.media` is used by the profile photo only.
+6. **Not done at all in B3:** nothing else known. The security / privacy review of B2 + B3 has NOT been written.
+
+## Build / test status
+- Backend: `mvn -o clean test` **456 run, 0 failures, 0 errors, 2 skipped** at this checkpoint (593 after B2; about 190 tests of the removed post / place / Discover / video code were deleted, 21 new: `MomentModerationApiTest` 13, `QueuePolicyTest` 6, plus rewritten parts of `SocialFourUserTest`, `Phase17eSocialApiTest`, `ProfileApiIntegrationTest`, `VisibilityTest`). Command: `cd backend`, `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:/Users/Public mvn -o clean test`.
+- **Use `clean`:** without it Maven said "Nothing to compile" after files were deleted and reported a false success.
+- Android: NOT touched and **NOT compiled against this backend**. The app in `android/` still calls the removed routes (`/api/posts`, `/api/discover`, …): it builds (last result N3: 795 / 0) but its social screens cannot work against this backend until A1 / A2.
+- Python: not touched.
+- **Nothing was manually verified** (no server start, no emulator).
+
+## Database
+- Development MySQL: still **V34** (35 tables), untouched. The pilot: V30. `spring.flyway.target=34` is still in `application.properties`.
+- **⚠ This backend can no longer run against the V34 development database:** the entities now expect `moment_id` and the moment tables, which only V35 creates. Do not start it against MySQL before B4 (backup, dry run, apply V35). Nothing destructive was run in this session.
+- Next NEW migration file: **V36**. V35 is written, applied NOWHERE, and still to be edited (point 3 above) before B4.
+
+## Decisions taken in this session, inside the locked plan (to be written into `DECISIONS.md` as N-69 …; reasons in `PHASE_N4.md` B3)
+- M4 (the tiered queue) was "planned, confirm before B3"; it is BUILT as planned (`QueuePolicy`), because the owner said to continue without asking. Say so if it should be changed.
+- "This is about me" is stored as a report row with reason `ABOUT_ME` (so the person who asked can never decide the case), hides the moment at once unless a moderator already decided, and is shown to the author as `NEEDS_REVIEW`.
+- A new member's report counts toward the automatic collapse from `verified_at + 7 days` (it reaches moderators at once).
+- The enum holder `PostEnums` is now `social/entity/ContentModeration`.
+
+## The exact first step for the next session
+Read `docs/PHASE_N4.md` "As built" B3 (partial). Then **finish N4-B3**: (1) write `MomentAssessmentIntegrationTest`; (2) bring V35 in step with the code (point 3); (3) update `API.md`, `DECISIONS.md` (N-69 …), `.claude/rules/backend.md`, `database.md`, `CLAUDE.md`; (4) write the short security / privacy review; (5) `mvn -o clean test`, commit "N4-B3". Then B4 (backup of the development MySQL and of the media folder, dry run of every CHECK and of the dropped index / key names, remove `spring.flyway.target=34`, apply V35, curl walk, `SAFESPHERE_MYSQL_TESTS=true`), then A1, A2, A3, C.
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, `COMMUNITY_SECRET` before any real roll number, the pilot's own move to the new jar and schema (its own approved step with a fresh `restore-rehearsal.sh` PASS first), the N2 observations for N6.
+
+---
+
+# CHECKPOINT 2026-11-16 (tenth session; superseded by the checkpoint above: B2 done, B3 partial): N4-B1 is DONE (backend moment core: implemented, compiled, tested). B2, B3, B4, A1, A2, A3, C NOT started. Nothing pushed, nothing deployed.
 
 **Standing instructions, unchanged:** the product direction is decided and is not reopened; one local commit per unit; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N4 plan and decisions are LOCKED (`docs/PHASE_N4.md`); continue them, do not re-plan. **Android UI / UX: the owner gave full creative freedom on 2026-11-16** ("simple and clean, but not bland or over-simplified; a real, polished, branded product; not a generic Material look, no unnecessary decoration"); the design decisions are made in A1 / A2, on the existing IRL brand (`docs/DESIGN_SYSTEM.md`).
 

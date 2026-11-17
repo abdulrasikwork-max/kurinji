@@ -50,7 +50,6 @@ class Phase17eSocialApiTest {
     @Autowired private MediaStorage media;
     @Autowired private MutableClock clock;
     @Autowired private SocialMediaCleanupJob cleanup;
-    @Autowired private com.safesphere.backend.social.service.PlaceCityBackfill backfill;
 
     private SocialClient social;
     private Person asha;     // the person
@@ -102,21 +101,23 @@ class Phase17eSocialApiTest {
     @Test
     void photo_isInEveryPersonSummary_andANewUploadGetsANewKey_theOldFileGoes() throws Exception {
         String first = photoKey(social.uploadProfilePhoto(asha, TestImages.jpeg(300, 300)).andExpect(status().isOk()));
-        String post = social.experience(asha, "EVERYONE");
-        social.getPost(chitra, post).andExpect(jsonPath("$.author.photo").value(first));
+        com.safesphere.backend.support.MomentClient moments =
+                new com.safesphere.backend.support.MomentClient(mockMvc, objectMapper);
+        String moment = moments.say(asha, "COMMUNITY", "With my photo");
+        moments.get_(chitra, moment).andExpect(jsonPath("$.author.photo").value(first));
 
         String second = photoKey(social.uploadProfilePhoto(asha, TestImages.png(500, 200)).andExpect(status().isOk()));
         assertThat(second).isNotEqualTo(first);
         assertThat(media.exists(first)).isFalse();
         assertThat(media.exists(second)).isTrue();
         social.profilePhoto(bala, asha, first).andExpect(status().isNotFound());           // old key: gone
-        social.getPost(chitra, post).andExpect(jsonPath("$.author.photo").value(second));
+        moments.get_(chitra, moment).andExpect(jsonPath("$.author.photo").value(second));
 
         social.removeProfilePhoto(asha).andExpect(status().isNoContent());
         social.removeProfilePhoto(asha).andExpect(status().isNoContent());                 // same answer
         assertThat(media.exists(second)).isFalse();
         social.ownProfile(asha).andExpect(jsonPath("$.photo").isEmpty());
-        social.getPost(chitra, post).andExpect(jsonPath("$.author.photo").isEmpty());
+        moments.get_(chitra, moment).andExpect(jsonPath("$.author.photo").isEmpty());
     }
 
     @Test
@@ -134,36 +135,6 @@ class Phase17eSocialApiTest {
         clock.advance(Duration.ofDays(2));          // older than the unattached-upload lifetime
         cleanup.run();
         assertThat(media.exists(key)).isTrue();
-    }
-
-    // ---- Cities (D-5) ----
-
-    @Test
-    void aPlaceInANewCatalogCity_getsItsCity_andCanBeListedThere() throws Exception {
-        String delhi = com.safesphere.backend.common.geo.GeoCell.encode(28.6139, 77.2090, 7);
-        String id = social.place(asha, "India Gate lawns", delhi);
-        social.createPlace(asha, "India Gate lawns", "NATURE_OUTDOORS", delhi).andExpect(jsonPath("$.city").value("DELHI"));
-        assertThat(jdbc.queryForObject("SELECT city FROM places WHERE public_id = ?", String.class, id))
-                .isEqualTo("DELHI");
-        // A place stored before V28 with no city gets one from the start-up backfill, and never loses one.
-        jdbc.update("UPDATE places SET city = NULL WHERE public_id = ?", id);
-        assertThat(backfill.backfill()).isGreaterThanOrEqualTo(1);
-        assertThat(jdbc.queryForObject("SELECT city FROM places WHERE public_id = ?", String.class, id))
-                .isEqualTo("DELHI");
-        social.edition(bala, "delhi").andExpect(status().isOk()).andExpect(jsonPath("$.city").value("DELHI"));
-        social.edition(bala, "OTHER").andExpect(status().isBadRequest());
-        social.edition(bala, "ATLANTIS").andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void aCityPost_takesAnyCatalogCityOrOther_andNothingElse() throws Exception {
-        java.util.Map<String, Object> body = new java.util.HashMap<>(SocialClient.experienceBody("EVERYONE", "CITY"));
-        body.put("city", "MYSURU");
-        social.createPost(asha, body).andExpect(status().isCreated()).andExpect(jsonPath("$.city").value("MYSURU"));
-        body.put("city", "OTHER");
-        social.createPost(asha, body).andExpect(status().isCreated());
-        body.put("city", "ATLANTIS");
-        social.createPost(asha, body).andExpect(status().isBadRequest());
     }
 
     private String photoKey(org.springframework.test.web.servlet.ResultActions answer) throws Exception {

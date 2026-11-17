@@ -47,6 +47,16 @@ public class ReportController {
         return reports.report(CurrentUser.id(jwt), request);
     }
 
+    /**
+     * Phase N4 (N-52) "This is about me": the moment is hidden from everyone but its author at once and a moderator
+     * decides. 202 with the same answer whether new or repeated; counted against the daily report limit.
+     */
+    @PostMapping("/api/moments/{id}/about-me")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ReportReceived aboutMe(@AuthenticationPrincipal Jwt jwt, @PathVariable String id) {
+        return reports.aboutMe(CurrentUser.id(jwt), id);
+    }
+
     @GetMapping("/api/reports/mine")
     public List<MyReport> mine(@AuthenticationPrincipal Jwt jwt) {
         return reports.mine(CurrentUser.id(jwt));

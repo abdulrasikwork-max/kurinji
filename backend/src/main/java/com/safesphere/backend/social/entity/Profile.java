@@ -14,7 +14,7 @@ import java.util.UUID;
 
 /**
  * Phase 13A (V20): the social face of one account. The handle is lower-case ASCII; the display name is the person's
- * choice (the account name stays the real name). Languages and interests are closed code lists stored comma-separated.
+ * choice (the account name stays the real name).
  * Holds no counts of anything.
  */
 @Entity
@@ -59,15 +59,6 @@ public class Profile {
     @Column(length = 160)
     private String bio;
 
-    @Column(length = 40)
-    private String languages;
-
-    @Column(length = 200)
-    private String interests;
-
-    @Column(length = 60)
-    private String city;
-
     /** Phase 17E (V28): the storage key of the profile photo (a new random key per upload); null = no photo. */
     @Column(name = "photo_key", length = 36)
     private String photoKey;
@@ -91,12 +82,9 @@ public class Profile {
         this.updatedAt = at;
     }
 
-    /** Sets the editable fields (already checked by the policies). Null bio/city/lists = none. */
-    public void edit(String bio, String languages, String interests, String city, LocalDateTime now) {
+    /** Sets the editable field (already checked by the policy). Null bio = none. */
+    public void edit(String bio, LocalDateTime now) {
         this.bio = bio;
-        this.languages = languages;
-        this.interests = interests;
-        this.city = city;
         this.updatedAt = now.truncatedTo(ChronoUnit.MICROS);
     }
 
@@ -162,18 +150,6 @@ public class Profile {
 
     public String getBio() {
         return bio;
-    }
-
-    public String getLanguages() {
-        return languages;
-    }
-
-    public String getInterests() {
-        return interests;
-    }
-
-    public String getCity() {
-        return city;
     }
 
     public LocalDateTime getCreatedAt() {

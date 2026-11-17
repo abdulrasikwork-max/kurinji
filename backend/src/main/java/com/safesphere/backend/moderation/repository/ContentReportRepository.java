@@ -16,9 +16,7 @@ public interface ContentReportRepository extends JpaRepository<ContentReport, Lo
 
     List<ContentReport> findByCaseIdIn(Collection<Long> caseIds);
 
-    boolean existsByReporterIdAndPostId(long reporterId, long postId);
-
-    boolean existsByReporterIdAndCommentId(long reporterId, long commentId);
+    boolean existsByReporterIdAndMomentId(long reporterId, long momentId);
 
     boolean existsByReporterIdAndPersonId(long reporterId, long personId);
 
@@ -26,12 +24,12 @@ public interface ContentReportRepository extends JpaRepository<ContentReport, Lo
     List<ContentReport> findByReporterIdOrderByCreatedAtDescIdDesc(long reporterId, Pageable page);
 
     /**
-     * M5 independence: rows (reporterA, reporterB, shared) for pairs among [ids] that reported the same target (post,
-     * perspective or person). Feeds community.service.Independence.fromRows, the Phase 7 rule.
+     * M5 independence: rows (reporterA, reporterB, shared) for pairs among [ids] that reported the same target (moment or
+     * person). Feeds community.service.Independence.fromRows, the Phase 7 rule.
      */
     @Query("select a.reporterId, b.reporterId, count(a) from ContentReport a, ContentReport b"
             + " where a.reporterId in :ids and b.reporterId in :ids and a.reporterId < b.reporterId"
-            + " and (a.postId = b.postId or a.commentId = b.commentId or a.personId = b.personId)"
+            + " and (a.momentId = b.momentId or a.personId = b.personId)"
             + " group by a.reporterId, b.reporterId")
     List<Object[]> sharedTargets(@Param("ids") Collection<Long> ids);
 

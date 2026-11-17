@@ -2,7 +2,7 @@ package com.safesphere.backend.social.entity;
 
 /**
  * Phase N4 (V35): the closed lists of a moment. The V35 CHECKs use the same codes; a code is added by a migration,
- * never by free text. (The moderation state, reason and source are the lists posts used: PostEnums.)
+ * never by free text. (The moderation state, reason and source are the lists posts used: ContentModeration.)
  */
 public final class MomentEnums {
 

@@ -11,7 +11,7 @@ import com.safesphere.backend.social.dto.ProfileDtos.ProfileRequest;
 import com.safesphere.backend.social.dto.Relationship;
 import com.safesphere.backend.social.entity.Profile;
 import com.safesphere.backend.social.policy.HandlePolicy;
-import com.safesphere.backend.social.policy.ProfileLists;
+import com.safesphere.backend.social.policy.MomentPolicy;
 import com.safesphere.backend.social.policy.ProfileTextPolicy;
 import com.safesphere.backend.social.repository.ProfileRepository;
 import jakarta.persistence.EntityManager;
@@ -77,16 +77,6 @@ public class ProfileService {
         }
         String bio = emptyToNull(ProfileTextPolicy.clean(request.bio()));
         requireText(ProfileTextPolicy.checkBio(bio), "Write a bio of at most 160 characters");
-        String city = emptyToNull(ProfileTextPolicy.clean(request.city()));
-        requireText(ProfileTextPolicy.checkCity(city), "Enter a city name of at most 60 letters");
-        String languages;
-        String interests;
-        try {
-            languages = ProfileLists.encodeLanguages(request.languages());
-            interests = ProfileLists.encodeInterests(request.interests());
-        } catch (IllegalArgumentException | NullPointerException e) {
-            throw new InvalidRequestException("Choose languages and interests from the list");
-        }
 
         LocalDateTime now = now();
         Profile profile = profiles.findByUserId(userId).orElse(null);
@@ -101,7 +91,7 @@ public class ProfileService {
             requireAvailable(handle, userId, now);
             profile.changeHandle(handle, now, now.plus(properties.handleReservation()));
         }
-        profile.edit(bio, languages, interests, city, now);
+        profile.edit(bio, now);
         try {
             // saveAndFlush so a race on the unique handle fails here, as a clear 409.
             Profile saved = profiles.saveAndFlush(profile);
@@ -149,9 +139,10 @@ public class ProfileService {
             throw new ResourceNotFoundException(NOT_FOUND);
         }
         Relationship relationship = relationships.relationship(viewerId, profile.getUserId());
+        MembershipGate.Member member = access.memberOf(profile.getUserId()).orElse(null);
         return new PersonProfileResponse(profile.getPublicId(), profile.getHandle(), profile.getDisplayName(),
-                profile.getBio(), ProfileLists.decode(profile.getLanguages()), ProfileLists.decode(profile.getInterests()),
-                profile.getCity(), relationship, profile.getPhotoKey());
+                profile.getBio(), member == null ? null : member.programme(),
+                member == null ? null : member.graduationYear(), relationship, profile.getPhotoKey());
     }
 
     /**
@@ -173,10 +164,15 @@ public class ProfileService {
     private OwnProfileResponse toOwn(Profile profile) {
         LocalDateTime changed = profile.getHandleChangedAt();
         LocalDateTime availableAt = changed == null ? null : changed.plus(properties.handleChangeCooldown());
-        boolean waiting = availableAt != null && now().isBefore(availableAt);
+        LocalDateTime now = now();
+        boolean waiting = availableAt != null && now.isBefore(availableAt);
+        MembershipGate.Member member = access.memberOf(profile.getUserId()).orElse(null);
+        LocalDateTime established = member == null ? null : MomentPolicy.establishedAt(member.verifiedAt());
         return new OwnProfileResponse(profile.getPublicId(), profile.getHandle(), profile.getDisplayName(),
-                profile.getBio(), ProfileLists.decode(profile.getLanguages()), ProfileLists.decode(profile.getInterests()),
-                profile.getCity(), waiting ? availableAt.toInstant(ZoneOffset.UTC) : null, profile.getPhotoKey());
+                profile.getBio(), member == null ? null : member.programme(),
+                member == null ? null : member.graduationYear(),
+                established != null && now.isBefore(established) ? established.toInstant(ZoneOffset.UTC) : null,
+                waiting ? availableAt.toInstant(ZoneOffset.UTC) : null, profile.getPhotoKey());
     }
 
     private static void requireText(ProfileTextPolicy.Result result, String message) {

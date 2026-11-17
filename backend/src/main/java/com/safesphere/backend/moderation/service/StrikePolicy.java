@@ -1,6 +1,6 @@
 package com.safesphere.backend.moderation.service;
 
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;

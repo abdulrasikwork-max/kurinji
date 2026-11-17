@@ -9,7 +9,7 @@ import com.safesphere.backend.moderation.assessment.DecisionPolicy.Decision;
 import com.safesphere.backend.moderation.assessment.DecisionPolicy.Rule;
 import com.safesphere.backend.moderation.assessment.Evidence.Category;
 import com.safesphere.backend.moderation.assessment.Evidence.Item;
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

@@ -1,6 +1,6 @@
 package com.safesphere.backend.social.entity;
 
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

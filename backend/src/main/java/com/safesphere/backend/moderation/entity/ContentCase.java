@@ -17,8 +17,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Phase 13D (V23): one review case about one post, perspective or person; the sibling of the Phase 7 signal case
- * (ModerationCase). At most one OPEN case per target (generated marker + unique keys in MySQL; the service checks
+ * Phase 13D (V23): one review case about one moment (since N4, V35; posts and perspectives before) or one person. At most one OPEN case per target (generated marker + unique keys in MySQL; the service checks
  * first). Deleted with its target. [version] makes a second moderator acting at the same moment fail with 409.
  */
 @Entity
@@ -41,11 +40,8 @@ public class ContentCase {
     @Column(nullable = false, updatable = false, length = 14)
     private CaseOpenedBy origin = CaseOpenedBy.REPORTS;
 
-    @Column(name = "post_id", updatable = false)
-    private Long postId;
-
-    @Column(name = "comment_id", updatable = false)
-    private Long commentId;
+    @Column(name = "moment_id", updatable = false)
+    private Long momentId;
 
     @Column(name = "person_id", updatable = false)
     private Long personId;
@@ -72,25 +68,20 @@ public class ContentCase {
     protected ContentCase() {
     }
 
-    private ContentCase(TargetKind kind, Long postId, Long commentId, Long personId, LocalDateTime now) {
+    private ContentCase(TargetKind kind, Long momentId, Long personId, LocalDateTime now) {
         this.publicId = UUID.randomUUID().toString();
         this.targetKind = kind;
-        this.postId = postId;
-        this.commentId = commentId;
+        this.momentId = momentId;
         this.personId = personId;
         this.openedAt = now;
     }
 
-    public static ContentCase aboutPost(long postId, LocalDateTime now) {
-        return new ContentCase(TargetKind.POST, postId, null, null, now);
-    }
-
-    public static ContentCase aboutComment(long commentId, LocalDateTime now) {
-        return new ContentCase(TargetKind.COMMENT, null, commentId, null, now);
+    public static ContentCase aboutMoment(long momentId, LocalDateTime now) {
+        return new ContentCase(TargetKind.MOMENT, momentId, null, now);
     }
 
     public static ContentCase aboutPerson(long personId, LocalDateTime now) {
-        return new ContentCase(TargetKind.PERSON, null, null, personId, now);
+        return new ContentCase(TargetKind.PERSON, null, personId, now);
     }
 
     /** Phase 13E: a case opened by the automatic check or by the author's request (reports may join it later). */
@@ -125,12 +116,8 @@ public class ContentCase {
         return targetKind;
     }
 
-    public Long getPostId() {
-        return postId;
-    }
-
-    public Long getCommentId() {
-        return commentId;
+    public Long getMomentId() {
+        return momentId;
     }
 
     public Long getPersonId() {

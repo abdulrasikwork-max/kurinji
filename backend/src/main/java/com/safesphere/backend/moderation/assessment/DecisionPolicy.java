@@ -3,7 +3,7 @@ package com.safesphere.backend.moderation.assessment;
 import com.safesphere.backend.config.ModerationAiProperties.ModelMode;
 import com.safesphere.backend.moderation.assessment.Evidence.Category;
 import com.safesphere.backend.moderation.assessment.Evidence.Item;
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;

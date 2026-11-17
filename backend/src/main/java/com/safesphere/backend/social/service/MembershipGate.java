@@ -16,9 +16,10 @@ public interface MembershipGate {
 
     /**
      * Phase N4: what moments need to know about an active membership: the community, and the exact moment it was
-     * approved (memberships.verified_at), from which the 7-day new-member period is computed live (N-56).
+     * approved (memberships.verified_at), from which the 7-day new-member period is computed live (N-56); and the
+     * programme (its code) and graduation year a verifier saw on the ID card, shown on the profile (N-51).
      */
-    record Member(long communityId, java.time.LocalDateTime verifiedAt) {
+    record Member(long communityId, java.time.LocalDateTime verifiedAt, String programme, int graduationYear) {
     }
 
     /** Phase N4: [userId]'s ACTIVE membership now, if any. */

@@ -25,6 +25,11 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
 
     Optional<Moment> findByPublicId(String publicId);
 
+    /** Locks one moment for a report or a decision about it, so two of them run one after the other. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT m FROM Moment m WHERE m.id = :id")
+    Optional<Moment> lockById(@Param("id") long id);
+
     /**
      * Today, everyone: live moments of one community that are for the whole community, or by one of [mine] (the
      * viewer and their connections: only they can be in a MY_PEOPLE audience).
@@ -34,7 +39,7 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
             + " OR m.authorId IN :mine) AND " + BEFORE_CURSOR + NEWEST_FIRST)
     List<Moment> todayPage(@Param("community") long community, @Param("mine") Collection<Long> mine,
                            @Param("hidden") Collection<Long> hidden,
-                           @Param("states") Collection<com.safesphere.backend.social.entity.PostEnums.ModerationState> states,
+                           @Param("states") Collection<com.safesphere.backend.social.entity.ContentModeration.ModerationState> states,
                            @Param("now") LocalDateTime now, @Param("cursorAt") LocalDateTime cursorAt,
                            @Param("cursorId") long cursorId, Pageable page);
 
@@ -42,7 +47,7 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
     @Query("SELECT m FROM Moment m WHERE " + LIVE + " AND m.authorId IN :authors AND " + BEFORE_CURSOR + NEWEST_FIRST)
     List<Moment> todayPageOf(@Param("community") long community, @Param("authors") Collection<Long> authors,
                              @Param("hidden") Collection<Long> hidden,
-                             @Param("states") Collection<com.safesphere.backend.social.entity.PostEnums.ModerationState> states,
+                             @Param("states") Collection<com.safesphere.backend.social.entity.ContentModeration.ModerationState> states,
                              @Param("now") LocalDateTime now, @Param("cursorAt") LocalDateTime cursorAt,
                              @Param("cursorId") long cursorId, Pageable page);
 
@@ -66,7 +71,7 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
      * in this list: content waiting for a human is never deleted automatically (N-57).
      */
     @Query("SELECT m FROM Moment m WHERE m.expiresAt < :endedBefore AND m.keptAt IS NULL AND m.inReview = false"
-            + " AND m.moderation <> com.safesphere.backend.social.entity.PostEnums.ModerationState.REMOVED"
+            + " AND m.moderation <> com.safesphere.backend.social.entity.ContentModeration.ModerationState.REMOVED"
             + " ORDER BY m.expiresAt")
     List<Moment> purgeable(@Param("endedBefore") LocalDateTime endedBefore, Pageable page);
 

@@ -49,9 +49,6 @@ public class AccountEraser {
             // Phase 13A (V20): the social identity.
             "profiles.user_id", "connections.user_low", "connections.user_high", "connection_invites.owner_id",
             "blocks.blocker_id", "blocks.blocked_id", "mutes.muter_id", "mutes.muted_id",
-            // Phase 13B (V21) posts, post_media and comments are dropped by V35, so their references are no longer
-            // listed here; their DELETE statements below stay until N4-B3 removes the old social code and its tables
-            // from the test database.
             // Phase N4 (V35): the person's moments, their photos (attached or not), and the daily questions they wrote
             // as an admin (the question stays; its writer is cleared, as the database's ON DELETE SET NULL does).
             "moments.author_id", "moment_media.owner_id", "daily_questions.created_by",
@@ -92,36 +89,16 @@ public class AccountEraser {
             "DELETE FROM connection_invites WHERE owner_id = ?",
             "DELETE FROM blocks WHERE blocker_id = ? OR blocked_id = ?",
             "DELETE FROM mutes WHERE muter_id = ? OR muted_id = ?",
-            // Phase 13D: the person's reports; every case (and its reports) about the person, their posts, their
-            // perspectives and the perspectives on their posts; earlier texts of their posts; their strikes and pause.
+            // Phase 13D, N4: the person's reports; every case (and its reports) about the person or their moments; the
+            // automatic checks of their moments; their strikes and pause.
             "DELETE FROM content_reports WHERE reporter_id = ?",
             "DELETE FROM content_reports WHERE case_id IN (SELECT id FROM content_cases WHERE person_id = ?"
-                    + " OR post_id IN (SELECT id FROM posts WHERE author_id = ?)"
-                    + " OR comment_id IN (SELECT id FROM comments WHERE author_id = ?"
-                    + " OR post_id IN (SELECT id FROM posts WHERE author_id = ?)"
-                    + " OR parent_id IN (SELECT id FROM comments WHERE author_id = ?)))",
+                    + " OR moment_id IN (SELECT id FROM moments WHERE author_id = ?))",
             "DELETE FROM content_cases WHERE person_id = ?"
-                    + " OR post_id IN (SELECT id FROM posts WHERE author_id = ?)"
-                    + " OR comment_id IN (SELECT id FROM comments WHERE author_id = ?"
-                    + " OR post_id IN (SELECT id FROM posts WHERE author_id = ?)"
-                    + " OR parent_id IN (SELECT id FROM comments WHERE author_id = ?))",
-            "DELETE FROM post_revisions WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)",
-            // Phase 13E: the automatic checks of their posts, their perspectives and the perspectives on their posts.
-            "DELETE FROM content_assessments WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)"
-                    + " OR comment_id IN (SELECT id FROM comments WHERE author_id = ?"
-                    + " OR post_id IN (SELECT id FROM posts WHERE author_id = ?)"
-                    + " OR parent_id IN (SELECT id FROM comments WHERE author_id = ?))",
+                    + " OR moment_id IN (SELECT id FROM moments WHERE author_id = ?)",
+            "DELETE FROM content_assessments WHERE moment_id IN (SELECT id FROM moments WHERE author_id = ?)",
             "DELETE FROM social_strikes WHERE user_id = ?",
             "DELETE FROM social_standing WHERE user_id = ?",
-            // Phase 13B: replies to the person's perspectives, every perspective on their posts, their own
-            // perspectives, their photos (files already deleted in step 2), then their posts. The derived table is
-            // needed because MySQL cannot read the table it deletes from in a plain subquery.
-            "DELETE FROM comments WHERE parent_id IN (SELECT id FROM (SELECT id FROM comments WHERE author_id = ?) AS own)",
-            "DELETE FROM comments WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?) AND parent_id IS NOT NULL",
-            "DELETE FROM comments WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)",
-            "DELETE FROM comments WHERE author_id = ?",
-            "DELETE FROM post_media WHERE owner_id = ?",
-            "DELETE FROM posts WHERE author_id = ?",
             // Phase N4: the person's moment photos (files already deleted in step 2), their moments (live, ended and
             // kept alike), and their name on the daily questions they wrote.
             "DELETE FROM moment_media WHERE owner_id = ?"
@@ -189,11 +166,9 @@ public class AccountEraser {
         User user = users.findByIdForUpdate(userId).orElse(null);
         Outcome blocked = blocked(user);
         if (blocked != null) return new Check(blocked, List.of(), List.of());
-        // Phase 13B: every photo the person uploaded (attached to their posts or not); a photo is always its owner's.
-        // Phase 17E: and their profile photo (stored the same way, its key on the profile).
+        // Phase 17E: their profile photo (its key is on the profile).
         List<String> mediaKeys = new java.util.ArrayList<>(jdbc.queryForList(
-                "SELECT storage_key FROM post_media WHERE owner_id = ?", String.class, userId));
-        mediaKeys.addAll(jdbc.queryForList("SELECT photo_key FROM profiles WHERE user_id = ? AND photo_key IS NOT NULL",
+                "SELECT photo_key FROM profiles WHERE user_id = ? AND photo_key IS NOT NULL",
                 String.class, userId));
         // Phase N4: the photos of their moments, and photos uploaded for a moment that was never shared.
         mediaKeys.addAll(jdbc.queryForList("SELECT storage_key FROM moment_media WHERE owner_id = ?"

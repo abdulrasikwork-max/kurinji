@@ -1,6 +1,6 @@
 # Phase N4: Moments and Today
 
-Status: **decisions LOCKED by the owner on 2026-11-16; units B1 and B2 DONE on 2026-11-16 (implemented, compiled, tested;
+Status: **decisions LOCKED by the owner on 2026-11-16; units B1 and B2 DONE; B3 PARTIAL (see "As built" B3 and the top of `HANDOFF.md`) (implemented, compiled, tested;
 "As built" at the end); B2, B3, B4, A1, A2, A3, C NOT started.** The plan below was presented on
 2026-11-16 and approved with the owner's changes (voice deferred, new-member period 7 days, no learned model). Units B1,
 B2, B3, B4, A1, A2, A3, C; one local commit each; never pushed, never deployed. Each unit starts only when the owner says
@@ -280,3 +280,66 @@ Status: **implemented, compiled, tested** (backend **593 run, 0 failures, 0 erro
   exactly `verified_at + 7 days` (test: one minute before and at the instant). The moderator's case for it is opened in B3.
 - **Not tightened:** the server accepts up to 4096 px a side (the phone sends at most 3072 px), so V35's
   `ck_moment_media_size` stays as written.
+
+### B3 (2026-11-16, PARTIAL: stopped at the usage limit): moderation of moments, "This is about me", profiles, old social removal — backend only
+
+Status: **partly implemented; what is in is compiled and tested** (backend **456 run, 0 failures, 0 errors, 2 skipped**,
+`mvn -o clean test`). **Not finished:** the tests of the automatic text check on moments, V35 in step with the code,
+`API.md` / `DECISIONS.md` / rules files, the security review (list: top of `HANDOFF.md`). Not manually verified. One
+local checkpoint commit, not pushed.
+
+**What is in**
+
+| Part | Classes |
+|---|---|
+| Removed | Controllers `Post`, `Comment`, `Place`, `Discover`, `Media`; services `PostService`, `CommentService`, `PlaceService`, `DiscoverService`, `MediaService`, `PlaceCityBackfill`; entities `Post`, `PostMedia`, `PostRevision`, `Comment`, `Place`, `MediaKind`; policies `PostPolicy`, `PostDelay`, `EditionPolicy`, `PlaceNamePolicy`, `CityCatalog`, `ProfileLists`, `TimeBands`; `Mp4Sanitizer`, `Mp4FastStart`; `event/ContentWritten`; `cities-v1.tsv`; their repositories, DTOs and tests. `Visibility` and `Relationships` keep profiles and moments only |
+| Renamed | `social/entity/PostEnums` → `ContentModeration` (`ModerationState`, `ModerationReason` + `NEW_MEMBER_PHOTO`, `ABOUT_ME`, `reportable()`, `ModerationSource`) |
+| Event | `social/event/MomentShared` (moment id, author, `newMember`, `photoHeld`, the words = body + "where"): published by `MomentService.create` inside the transaction BEFORE the moment is published; a moment a listener holds is saved unpublished (its 24 hours start at release) |
+| Moments | `MomentResponse` + `collapsed` (others), `notice {state, reason, by, reviewable, decisionId}` (the author only), `supportSuggested` (the author's own create answer only); `MomentService.ofProfile` → `GET /api/profiles/{id}/moments` `{live, kept}`; `MomentRepository.lockById` |
+| Profiles (N-51) | `Profile` without city / languages / interests; `ProfileRequest {handle, bio}`; `PersonProfileResponse` + `programme`, `graduationYear`; `OwnProfileResponse` + those and `newMemberUntil`; the port `MembershipGate.Member` carries programme and year; `SocialAccess.memberOf`, `isNewMember`, `countsFrom` (replaces the 72-hour account probation) |
+| Moderation | `ContentCase` / `ContentReport` / `ContentAssessment` use `moment_id`; `TargetKind` + `MOMENT` (POST, COMMENT, PLACE stay for old audit rows); `CaseOpenedBy` + `ABOUT_ME`; `ReportService` (targets MOMENT and PERSON, `aboutMe`), `ContentModerationService` (moment cases, `media(caseId)`, Keep / an overturned appeal publish a never-visible moment, `in_review` set and cleared), `AssessmentService` (listens to `MomentShared`; opens the case for a held photo even with the check off; never changes a `NEW_MEMBER_PHOTO` or `ABOUT_ME` hold), new pure `QueuePolicy`, `Periods` |
+| API | `POST /api/moments/{id}/about-me` (202); `GET /api/moderation/content-cases/{id}/media`; gone: `/api/moderation/places`, the case video route |
+| Other | `AccountEraser` without post statements (cases and checks of the person's moments added); `SocialMediaCleanupJob` without post media (old post files are swept as files without a row); `SocialAccess` pause wording now says "sharing" and "You" |
+
+**Rules as built (each has a test unless marked)**
+
+- **Reports:** only a visible moment or profile; never one's own; the same 202 twice, also after one's own request hid
+  the moment; `IMPERSONATION` only on a person; the codes `NEEDS_REVIEW`, `AWAITING_CHECK`, `NEW_MEMBER_PHOTO`,
+  `ABOUT_ME` cannot be given as a report reason; kinds POST / COMMENT / PLACE are refused. One report changes nothing
+  the author can see. Three independent counting reports collapse (author: `notice {state COLLAPSED}` with no reason and
+  nobody named; others: `collapsed: true`, still on Today).
+- **New member's report:** stored and shown to moderators at once; counts toward the collapse from
+  `verified_at + 7 days` (test: 5 minutes before and after, through `ContentModerationService.maintain`).
+- **"This is about me" (N-52):** `ReportService.aboutMe`: a report row with reason `ABOUT_ME` (so the person who asked
+  is a party and can never decide), the daily report limit applies; the moment becomes `HELD` / `SYSTEM` / `ABOUT_ME` at
+  once unless a moderator already decided or it is already held; the case is opened with origin `ABOUT_ME` (or joined).
+  The author sees `notice {HELD, NEEDS_REVIEW, SYSTEM}`: never the code `ABOUT_ME`, never who. A hold does not move
+  `expires_at` (N-60). Keep brings it back; asking again by the same person changes nothing.
+- **Held photo (N-57):** `AssessmentService.onMomentShared` opens a `SYSTEM` case whether or not the text check is on;
+  Keep publishes it (24 hours from the release); Remove is appealable; an overturned appeal publishes it and deletes
+  the strike. The purge skips a moment while `in_review`.
+- **Queue (M4, built as planned):** `QueuePolicy`: tier 1 = about-me and content a rule HELD for a severe finding;
+  tier 2 = reported content (inside it `ReportPolicy.priority`); tier 3 = new-member photo holds and authors' review
+  requests; more than 12 hours waiting moves a case up one tier, once; `CaseSummary.waitingHours`.
+- **Who may not decide:** the author, a reporter, the person who said "about me" (403 on the case, its actions and its
+  photo); the decider never decides the appeal.
+- **Automatic text check on moments: implemented, compiled, NOT TESTED.** Intended behaviour (PHASE_N4 §6): established
+  members publish when the service is down and are rechecked for 24 h; a new member's words wait (`AWAITING_CHECK`) at
+  most 2 hours, then publish with the 24 hours starting then; a `PUBLISH` on a fresh write leaves publishing to
+  `MomentService`; a retry publishes itself.
+
+**Decisions to record in `DECISIONS.md` (not written yet):** N-69 the three-tier queue (M4) built as planned; N-70
+"This is about me" as a report row with its own reason, hides at once, shown to the author as an ordinary review; N-71
+a new member's report counts from the end of their 7 days; N-72 the author sees a report collapse as "under review"
+without a reason; N-73 a moment is published AFTER the listeners ran, so a held one never had a visible time; N-74 the
+old 72-hour account probation is replaced everywhere by the 7-day new-member period.
+
+**Open points for the end of B3 and for B4**
+
+1. V35: `ABOUT_ME` in `ck_moments_moderation_reason`; `ck_content_reports_reason` replaced to accept `ABOUT_ME`;
+   then the B1 list (dropped index / key names, every CHECK dry-run).
+2. `MomentAssessmentIntegrationTest` (own H2 URL, `StubModerationService`).
+3. `API.md`, `DECISIONS.md`, `.claude/rules/backend.md`, `database.md`, `CLAUDE.md`.
+4. Trim `SocialProperties` / `application.properties` (dead post, place, comment, video, probation settings).
+5. The author's notice carries no flagged phrases yet (posts had `flagged` spans); decide in A3 whether the app needs them.
+6. `KIND` sent to the text service is `"POST"` (the service knows POST and COMMENT only).

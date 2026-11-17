@@ -3,7 +3,7 @@ package com.safesphere.backend.social;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.safesphere.backend.social.entity.MomentEnums.Audience;
-import com.safesphere.backend.social.entity.PostEnums.ModerationState;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationState;
 import com.safesphere.backend.social.policy.Visibility;
 import com.safesphere.backend.social.policy.Visibility.Facts;
 import com.safesphere.backend.social.policy.Visibility.MomentFacts;

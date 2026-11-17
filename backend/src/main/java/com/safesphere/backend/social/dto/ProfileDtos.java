@@ -20,32 +20,31 @@ public final class ProfileDtos {
      */
     public record ProfileRequest(
             @NotNull(message = "Handle is required") @Size(max = 40, message = "Handle is too long") String handle,
-            @Size(max = 1000, message = "Bio is too long") String bio,
-            @Size(max = 6, message = "Choose at most 6 languages") List<String> languages,
-            @Size(max = 10, message = "Choose at most 10 interests") List<String> interests,
-            @Size(max = 200, message = "City is too long") String city) {
+            @Size(max = 1000, message = "Bio is too long") String bio) {
     }
 
     /**
-     * The caller's own profile. [handleChangeAvailableAt] is set while the handle cannot change yet. Phase 17E: [photo] =
-     * the key of the profile photo (null = none; GET /api/profiles/{publicId}/photo/{photo}).
+     * The caller's own profile. [handleChangeAvailableAt] is set while the handle cannot change yet. [photo] = the key of
+     * the profile photo (null = none; GET /api/profiles/{publicId}/photo/{photo}). Phase N4 (N-51): [programme] (its
+     * code) and [graduationYear] from the verified membership, null without an active one; [newMemberUntil] = when the
+     * 7-day new-member period ends (N-56), null once established or without a membership.
      */
     public record OwnProfileResponse(String publicId, String handle, String displayName, String bio,
-                                     List<String> languages, List<String> interests, String city,
+                                     String programme, Integer graduationYear, Instant newMemberUntil,
                                      Instant handleChangeAvailableAt, String photo) {
     }
 
     /**
-     * Someone's profile as the viewer may see it. Phase 17E: [photo] as in OwnProfileResponse.
+     * Someone's profile as the viewer may see it. Phase N4 (N-51): [programme] and [graduationYear] as a verifier saw
+     * them on the ID card. No city, no languages, no interests; never a count of anything.
      */
     public record PersonProfileResponse(String publicId, String handle, String displayName, String bio,
-                                        List<String> languages, List<String> interests, String city,
-                                        Relationship relationship, String photo) {
+                                        String programme, Integer graduationYear, Relationship relationship,
+                                        String photo) {
     }
 
     /**
-     * A person in a list (connections, requests, blocks, mutes) and the author of a post or a perspective. Phase 17E:
-     * [photo] = the profile photo's key or null.
+     * A person in a list (connections, requests, blocks, mutes). [photo] = the profile photo's key or null.
      */
     public record PersonSummary(String publicId, String handle, String displayName, String photo) {
     }

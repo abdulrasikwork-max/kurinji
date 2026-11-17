@@ -107,45 +107,18 @@ class SocialAccountDeletionTest {
         // Rows between other people only.
         social.connect(friend, asker);
         social.block(friend, bystander).andExpect(status().isNoContent());
-        // Phase 13B: a post with a photo by p, a perspective of the friend on it, p's perspective and reply on the
-        // friend's post, an upload never attached; the friend's own perspective on their own post must stay.
-        String photo = social.uploadId(p, TestImages.jpeg(8, 8));
-        social.uploadId(p, TestImages.jpeg(9, 9));
-        social.videoId(p); // Phase 17C: a video (+ poster) never attached: its .mp4 must go too
-        Map<String, Object> body = SocialClient.experienceBody("EVERYONE", "NONE");
-        body.put("mediaIds", java.util.List.of(photo));
-        String ownPost = social.json(social.createPost(p, body).andExpect(status().isCreated())).get("publicId").asText();
-        social.commentId(friend, ownPost, "BEEN_HERE", "Friend on p's post", null);
-        String friendsPost = social.experience(friend, "EVERYONE");
-        String friendsOwn = social.commentId(friend, friendsPost, "QUESTION", "Friend asks on own post", null);
-        String byP = social.commentId(p, friendsPost, "BEEN_HERE", "p on the friend's post", null);
-        social.commentId(friend, friendsPost, "REPLY", "Friend replies to p", byP);
-        social.commentId(p, friendsPost, "REPLY", "p replies to the friend", friendsOwn);
+        // Moments, their photos and the cases about them: MomentPurgeAndDeletionTest and MomentModerationApiTest.
         // Phase 17E: p also has a profile photo.
         social.uploadProfilePhoto(p, com.safesphere.backend.support.TestImages.jpeg(400, 300)).andExpect(status().isOk());
         profilePhotoKey = jdbc.queryForObject("SELECT photo_key FROM profiles WHERE user_id = ?", String.class, p.id());
         assertThat(media.exists(profilePhotoKey)).isTrue();
-        photoKeys = jdbc.queryForList("SELECT storage_key FROM post_media WHERE owner_id = ?", String.class, p.id());
-        assertThat(photoKeys).hasSize(3).allMatch(media::exists);
-        assertThat(photoKeys).anyMatch(media::hasVideo);
-        friendsPostId = friendsPost;
         return friend;
     }
 
-    private java.util.List<String> photoKeys;
     private String profilePhotoKey;
-    private String friendsPostId;
 
     private void assertNothingLeft(long userId) {
-        assertThat(count("SELECT COUNT(*) FROM posts WHERE author_id = ?", userId)).isZero();
-        assertThat(count("SELECT COUNT(*) FROM post_media WHERE owner_id = ?", userId)).isZero();
-        assertThat(count("SELECT COUNT(*) FROM comments WHERE author_id = ?", userId)).isZero();
-        assertThat(photoKeys).noneMatch(media::exists);                       // the files went before the rows
-        assertThat(photoKeys).noneMatch(media::hasVideo);                     // Phase 17C: videos too
-
-        // Only the friend's own perspective is left on the friend's post (the friend's reply to p went with p's).
-        assertThat(count("SELECT COUNT(*) FROM comments c JOIN posts p ON p.id = c.post_id WHERE p.public_id = ?",
-                friendsPostId)).isEqualTo(1);
+        assertThat(count("SELECT COUNT(*) FROM moments WHERE author_id = ?", userId)).isZero();
         assertThat(count("SELECT COUNT(*) FROM profiles WHERE user_id = ?", userId)).isZero();
         assertThat(count("SELECT COUNT(*) FROM connections WHERE user_low = ? OR user_high = ?", userId, userId)).isZero();
         assertThat(count("SELECT COUNT(*) FROM connection_invites WHERE owner_id = ?", userId)).isZero();

@@ -18,29 +18,13 @@ public class SocialLimits {
     static final String TOO_MANY_REQUESTS = "You have sent many connection requests today. Please try again tomorrow.";
     static final String TOO_MANY_INVITES = "You have created many invite codes today. Please try again tomorrow.";
     static final String TOO_MANY_REDEEMS = "Too many invite codes tried. Please try again later.";
-    static final String TOO_MANY_PLACES = "You have added many places today. Please try again tomorrow.";
-    static final String TOO_MANY_PLACE_LOOKUPS = "Too many place look-ups. Please try again later.";
-    static final String TOO_MANY_POSTS = "You have shared a lot today. Please try again tomorrow.";
     static final String TOO_MANY_PHOTOS = "You have added many photos today. Please try again tomorrow.";
-    static final String TOO_MANY_VIDEOS = "You have added many videos today. Please try again tomorrow.";
-    static final String TOO_MANY_COMMENTS = "You have written many perspectives today. Please try again tomorrow.";
-    static final String TOO_MANY_DISCOVER = "You have opened a lot of lists this hour. Please try again later.";
-    static final String TOO_MANY_SEARCHES = "Too many place searches. Please try again later.";
 
     private final AttemptLimiter lookups;
     private final AttemptLimiter requests;
     private final AttemptLimiter invites;
     private final AttemptLimiter redeems;
-    private final AttemptLimiter places;
-    private final AttemptLimiter placeLookups;
-    private final AttemptLimiter posts;
     private final AttemptLimiter media;
-    private final AttemptLimiter videos;
-    private final AttemptLimiter comments;
-    private final AttemptLimiter discover;
-    private final AttemptLimiter searches;
-    private final AttemptLimiter probationPosts;
-    private final AttemptLimiter probationComments;
 
     public SocialLimits(SocialProperties properties, Clock clock) {
         int keys = properties.maxTrackedKeys();
@@ -48,17 +32,7 @@ public class SocialLimits {
         this.requests = new AttemptLimiter(properties.requestsPerDay(), Duration.ofDays(1), keys, clock);
         this.invites = new AttemptLimiter(properties.invitesPerDay(), Duration.ofDays(1), keys, clock);
         this.redeems = new AttemptLimiter(properties.redeemsPerHour(), Duration.ofHours(1), keys, clock);
-        this.places = new AttemptLimiter(properties.placesPerDay(), Duration.ofDays(1), keys, clock);
-        this.placeLookups = new AttemptLimiter(properties.placeLookupsPerHour(), Duration.ofHours(1), keys, clock);
-        this.posts = new AttemptLimiter(properties.postsPerDay(), Duration.ofDays(1), keys, clock);
         this.media = new AttemptLimiter(properties.mediaPerDay(), Duration.ofDays(1), keys, clock);
-        this.videos = new AttemptLimiter(properties.videosPerDay(), Duration.ofDays(1), keys, clock);
-        this.comments = new AttemptLimiter(properties.commentsPerDay(), Duration.ofDays(1), keys, clock);
-        this.discover = new AttemptLimiter(properties.discoverReadsPerHour(), Duration.ofHours(1), keys, clock);
-        this.searches = new AttemptLimiter(properties.placeSearchesPerHour(), Duration.ofHours(1), keys, clock);
-        this.probationPosts = new AttemptLimiter(properties.probationPostsPerDay(), Duration.ofDays(1), keys, clock);
-        this.probationComments = new AttemptLimiter(properties.probationCommentsPerDay(), Duration.ofDays(1), keys,
-                clock);
     }
 
     public void lookup(long userId) {
@@ -77,52 +51,8 @@ public class SocialLimits {
         if (!redeems.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_REDEEMS);
     }
 
-    public void place(long userId) {
-        if (!places.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_PLACES);
-    }
-
-    public void placeLookup(long userId) {
-        if (!placeLookups.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_PLACE_LOOKUPS);
-    }
-
-    public void post(long userId) {
-        if (!posts.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_POSTS);
-    }
-
-    /** Phase 13D (M16): a post by someone on probation also counts against the lower probation limit. */
-    public void post(long userId, boolean probation) {
-        if (probation && !probationPosts.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_POSTS);
-        post(userId);
-    }
-
-    /** Phase 13D (M16): the same for perspectives. */
-    public void comment(long userId, boolean probation) {
-        if (probation && !probationComments.tryAcquire(key(userId))) {
-            throw new TooManyAttemptsException(TOO_MANY_COMMENTS);
-        }
-        comment(userId);
-    }
-
     public void media(long userId) {
         if (!media.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_PHOTOS);
-    }
-
-    /** Phase 17C: a video upload (its own, lower daily limit). */
-    public void video(long userId) {
-        if (!videos.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_VIDEOS);
-    }
-
-
-    public void comment(long userId) {
-        if (!comments.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_COMMENTS);
-    }
-
-    public void discover(long userId) {
-        if (!discover.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_DISCOVER);
-    }
-
-    public void search(long userId) {
-        if (!searches.tryAcquire(key(userId))) throw new TooManyAttemptsException(TOO_MANY_SEARCHES);
     }
 
     private static String key(long userId) {

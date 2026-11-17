@@ -4,8 +4,6 @@ import com.safesphere.backend.moderation.dto.ContentModerationDtos.ActionRequest
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.AppealView;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.CaseDetail;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.CaseSummary;
-import com.safesphere.backend.moderation.dto.ContentModerationDtos.MergeRequest;
-import com.safesphere.backend.moderation.dto.ContentModerationDtos.PlaceView;
 import com.safesphere.backend.moderation.dto.ModerationDtos.AppealDecision;
 import com.safesphere.backend.moderation.entity.ModerationEnums.CaseStatus;
 import com.safesphere.backend.moderation.service.ContentModerationService;
@@ -29,7 +27,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Phase 13D moderator API for posts, perspectives, people and places. Under /api/moderation/**, so SecurityConfig lets
+ * Phase 13D moderator API for moments (since N4) and people. Under /api/moderation/**, so SecurityConfig lets
  * only MODERATOR / ADMIN accounts (read from the database on every request) through; the service checks again.
  */
 @RestController
@@ -59,16 +57,15 @@ public class ContentModerationController {
         return service.act(CurrentUser.id(jwt), id, request.action(), request.reason());
     }
 
-    /** A photo of the case's post: never cached anywhere (private, no-store). */
-    @GetMapping("/content-cases/{id}/media/{mediaId}")
-    public ResponseEntity<byte[]> media(@AuthenticationPrincipal Jwt jwt, @PathVariable String id,
-                                        @PathVariable String mediaId) {
+    /** The photo of the moment a case is about: never cached anywhere (private, no-store). */
+    @GetMapping("/content-cases/{id}/media")
+    public ResponseEntity<byte[]> media(@AuthenticationPrincipal Jwt jwt, @PathVariable String id) {
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_JPEG)
                 .cacheControl(CacheControl.noStore().cachePrivate())
                 .header("X-Content-Type-Options", "nosniff")
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
-                .body(service.media(CurrentUser.id(jwt), id, mediaId));
+                .body(service.media(CurrentUser.id(jwt), id));
     }
 
     /** Phase 17E: the profile photo of the person a PERSON case is about (never cached anywhere). */
@@ -76,15 +73,6 @@ public class ContentModerationController {
     public ResponseEntity<byte[]> personPhoto(@AuthenticationPrincipal Jwt jwt, @PathVariable String id) {
         return com.safesphere.backend.social.controller.ProfileController.image(
                 service.personPhoto(CurrentUser.id(jwt), id));
-    }
-
-    /** Phase 17C: a video of the case's post (the stripped MP4, byte ranges; never cached anywhere). */
-    @GetMapping("/content-cases/{id}/media/{mediaId}/video")
-    public ResponseEntity<org.springframework.core.io.Resource> mediaVideo(@AuthenticationPrincipal Jwt jwt,
-                                                                          @PathVariable String id,
-                                                                          @PathVariable String mediaId) {
-        return com.safesphere.backend.social.controller.MediaController.videoAnswer(
-                service.mediaVideo(CurrentUser.id(jwt), id, mediaId));
     }
 
     @GetMapping("/content-appeals")
@@ -99,15 +87,4 @@ public class ContentModerationController {
         return service.decideAppeal(CurrentUser.id(jwt), id, request.decision());
     }
 
-    @GetMapping("/places")
-    public List<PlaceView> places(@AuthenticationPrincipal Jwt jwt, @RequestParam(name = "area") String area) {
-        return service.places(CurrentUser.id(jwt), area);
-    }
-
-    @PostMapping("/places/{id}/merge")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void merge(@AuthenticationPrincipal Jwt jwt, @PathVariable String id,
-                      @Valid @RequestBody MergeRequest request) {
-        service.merge(CurrentUser.id(jwt), id, request.into());
-    }
 }

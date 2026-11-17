@@ -3,12 +3,10 @@ package com.safesphere.backend.social;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.safesphere.backend.social.policy.ProfileLists;
 import com.safesphere.backend.social.policy.ProfileTextPolicy;
 import com.safesphere.backend.social.policy.ProfileTextPolicy.Result;
 import com.safesphere.backend.social.policy.Visibility;
 import java.text.Normalizer;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /** Phase 13A: cleaning and checking profile text, the closed lists, and the visibility rule for profiles. */
@@ -34,25 +32,6 @@ class ProfileTextPolicyTest {
         assertThat(ProfileTextPolicy.checkBio("x".repeat(161))).isEqualTo(Result.TOO_LONG);
         assertThat(ProfileTextPolicy.checkBio("follow me at https://example.org")).isEqualTo(Result.CONTAINS_LINK);
         assertThat(ProfileTextPolicy.checkBio("see www.example")).isEqualTo(Result.CONTAINS_LINK);
-    }
-
-    @Test
-    void city_isLettersOfAnyScript_withSpacesDotsApostrophesAndHyphens() {
-        assertThat(ProfileTextPolicy.checkCity("Chennai")).isEqualTo(Result.OK);
-        assertThat(ProfileTextPolicy.checkCity("சென்னை")).isEqualTo(Result.OK);
-        assertThat(ProfileTextPolicy.checkCity("St. Thomas Mount")).isEqualTo(Result.OK);
-        assertThat(ProfileTextPolicy.checkCity("Chennai 600001")).isEqualTo(Result.INVALID_CHARACTERS);
-        assertThat(ProfileTextPolicy.checkCity("<script>")).isEqualTo(Result.INVALID_CHARACTERS);
-    }
-
-    @Test
-    void lists_areClosed_orderedAndWithoutDuplicates() {
-        assertThat(ProfileLists.encodeLanguages(List.of("en", "TA", "en"))).isEqualTo("ta,en");
-        assertThat(ProfileLists.encodeInterests(List.of("hidden_gems", "FOOD_CAFES"))).isEqualTo("FOOD_CAFES,HIDDEN_GEMS");
-        assertThat(ProfileLists.encodeLanguages(List.of())).isNull();
-        assertThat(ProfileLists.decode("ta,en")).containsExactly("ta", "en");
-        assertThat(ProfileLists.decode(null)).isEmpty();
-        assertThatThrownBy(() -> ProfileLists.encodeLanguages(List.of("fr"))).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

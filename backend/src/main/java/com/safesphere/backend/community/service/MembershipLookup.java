@@ -55,7 +55,8 @@ public class MembershipLookup implements MembershipGate {
 
     @Override
     public Optional<Member> activeMember(long userId) {
-        return active(userId).map(m -> new Member(m.getCommunityId(), m.getVerifiedAt()));
+        return active(userId).map(m -> new Member(m.getCommunityId(), m.getVerifiedAt(), m.getProgramme().name(),
+                m.getGraduationYear()));
     }
 
     @Override

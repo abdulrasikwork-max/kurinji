@@ -9,7 +9,7 @@ import com.safesphere.backend.moderation.service.ReportPolicy.Vote;
 import com.safesphere.backend.moderation.service.StrikePolicy;
 import com.safesphere.backend.moderation.service.StrikePolicy.Step;
 import com.safesphere.backend.moderation.service.StrikePolicy.Strike;
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;

@@ -14,12 +14,10 @@ import java.util.regex.Pattern;
 public final class ProfileTextPolicy {
 
     public static final int BIO_MAX = 160;
-    public static final int CITY_MAX = 60;
 
     private static final Pattern LINK = Pattern.compile(
             "(?i)(https?://|www\\.|\\b[a-z0-9-]+\\.(com|in|net|org|io|me|app|co|xyz|link|ly|info|biz|site|online|top)\\b)");
     /** Letters (any script, with their combining marks), spaces, dot, apostrophe and hyphen. */
-    private static final Pattern CITY = Pattern.compile("^[\\p{L}\\p{M}][\\p{L}\\p{M} .'-]*$");
 
     public enum Result { OK, EMPTY, TOO_LONG, CONTAINS_LINK, INVALID_CHARACTERS }
 
@@ -48,14 +46,6 @@ public final class ProfileTextPolicy {
         if (cleaned == null || cleaned.isEmpty()) return Result.OK;
         if (length(cleaned) > BIO_MAX) return Result.TOO_LONG;
         if (LINK.matcher(cleaned).find()) return Result.CONTAINS_LINK;
-        return Result.OK;
-    }
-
-    /** An empty city is allowed (stored as none). */
-    public static Result checkCity(String cleaned) {
-        if (cleaned == null || cleaned.isEmpty()) return Result.OK;
-        if (length(cleaned) > CITY_MAX) return Result.TOO_LONG;
-        if (!CITY.matcher(cleaned).matches()) return Result.INVALID_CHARACTERS;
         return Result.OK;
     }
 

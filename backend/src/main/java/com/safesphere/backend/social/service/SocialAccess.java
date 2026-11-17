@@ -6,6 +6,7 @@ import com.safesphere.backend.common.exception.MembershipNeededException;
 import com.safesphere.backend.common.exception.UnauthorizedException;
 import com.safesphere.backend.config.SocialProperties;
 import com.safesphere.backend.social.entity.SocialStanding;
+import com.safesphere.backend.social.policy.MomentPolicy;
 import com.safesphere.backend.social.repository.SocialStandingRepository;
 import com.safesphere.backend.user.entity.User;
 import com.safesphere.backend.user.repository.UserRepository;
@@ -34,12 +35,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class SocialAccess {
 
-    static final String COMMENTS_PAUSED = "A moderator has paused your perspectives for now. "
-            + "Connections shows until when, and you can ask for a review there.";
-    static final String POSTING_PAUSED = "A moderator has paused your posting for now. "
-            + "Connections shows until when, and you can ask for a review there.";
+    static final String POSTING_PAUSED = "A moderator has paused your sharing for now. "
+            + "You shows until when, and you can ask for a review there.";
     static final String SUSPENDED = "A moderator has paused this for your account for now. "
-            + "Connections shows until when, and you can ask for a review there.";
+            + "You shows until when, and you can ask for a review there.";
 
     private final UserRepository users;
     private final SocialStandingRepository standings;
@@ -113,14 +112,7 @@ public class SocialAccess {
         return membership.activeMembersOf(community.get(), userIds);
     }
 
-    /** Phase 13D: a member who may write perspectives now (no pause in force that stops them). */
-    public User requireCanComment(long userId) {
-        User user = requireMember(userId);
-        refuseIf(userId, SocialStanding.Restriction::stopsComments, COMMENTS_PAUSED);
-        return user;
-    }
-
-    /** Phase 13D: a member who may share posts and add places now. */
+    /** Phase 13D: a member who may share moments and photos now. */
     public User requireCanPost(long userId) {
         User user = requireMember(userId);
         refuseIf(userId, SocialStanding.Restriction::stopsPosting, POSTING_PAUSED);
@@ -140,16 +132,27 @@ public class SocialAccess {
         return standings.findById(userId).filter(s -> s.inForce(now));
     }
 
-    /** Phase 13D (M16): an account younger than app.social.probation. */
-    public boolean onProbation(User user) {
-        return user.getCreatedAt() == null || user.getCreatedAt().plus(properties.probation()).isAfter(now());
+    /** Phase N4: the ACTIVE membership of [userId] now, if any (their programme and year for a profile; N-51). */
+    public Optional<MembershipGate.Member> memberOf(long userId) {
+        return membership.activeMember(userId);
     }
 
-    /** Phase 13D (M5): when a report by [user] starts to count (now, or the end of their probation). */
-    public LocalDateTime countsFrom(User user, LocalDateTime now) {
-        if (user.getCreatedAt() == null) return now.plus(properties.probation());
-        LocalDateTime end = user.getCreatedAt().plus(properties.probation());
-        return end.isAfter(now) ? end : now;
+    /**
+     * Phase N4 (N-56): whether [userId] is in the 7-day new-member period at [now]. Someone without an active
+     * membership is not a member at all, so not a new one.
+     */
+    public boolean isNewMember(long userId, LocalDateTime now) {
+        return membership.activeMember(userId).map(m -> MomentPolicy.isNewMember(m.verifiedAt(), now)).orElse(false);
+    }
+
+    /**
+     * Phase N4 (PHASE_N4 §5): when a report by [userId] starts to count toward the automatic collapse: now, or the end
+     * of their new-member period (it reaches the moderators at once either way).
+     */
+    public LocalDateTime countsFrom(long userId, LocalDateTime now) {
+        LocalDateTime established = membership.activeMember(userId)
+                .map(m -> MomentPolicy.establishedAt(m.verifiedAt())).orElse(now);
+        return established.isAfter(now) ? established : now;
     }
 
     /** Phase 13C: the ids among [userIds] whose accounts are active (one query for a list). */

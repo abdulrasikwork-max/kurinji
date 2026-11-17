@@ -17,8 +17,8 @@ import com.safesphere.backend.social.entity.Moment;
 import com.safesphere.backend.social.entity.MomentEnums.Audience;
 import com.safesphere.backend.social.entity.MomentEnums.Kind;
 import com.safesphere.backend.social.entity.MomentMedia;
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
-import com.safesphere.backend.social.entity.PostEnums.ModerationState;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationState;
 import com.safesphere.backend.social.entity.Profile;
 import com.safesphere.backend.social.media.MediaStorage;
 import com.safesphere.backend.social.policy.MomentPolicy;
@@ -46,6 +46,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.safesphere.backend.social.dto.MomentDtos.Notice;
+import com.safesphere.backend.social.dto.MomentDtos.ProfileMoments;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationSource;
+import com.safesphere.backend.social.event.MomentShared;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,11 +94,14 @@ public class MomentService {
     private final SocialAccess access;
     private final MomentLimits limits;
     private final MediaStorage storage;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     public MomentService(MomentRepository moments, MomentMediaRepository mediaRows, DailyQuestionRepository questions,
                          ProfileRepository profiles, UserRepository users, Relationships relationships,
-                         SocialAccess access, MomentLimits limits, MediaStorage storage, Clock clock) {
+                         SocialAccess access, MomentLimits limits, MediaStorage storage,
+                         ApplicationEventPublisher events, Clock clock) {
+        this.events = events;
         this.moments = moments;
         this.mediaRows = mediaRows;
         this.questions = questions;
@@ -136,19 +144,27 @@ public class MomentService {
         Moment moment = new Moment(userId, member.communityId(), kind, audience, text, now);
         moment.plan(planAt, planWhere);
         if (question != null) moment.answer(question.getId());
-        if (MomentPolicy.holdsPhoto(newMember, audience, photo != null)) {
+        boolean photoHeld = MomentPolicy.holdsPhoto(newMember, audience, photo != null);
+        if (photoHeld) {
             // N-56, N-57: a new member's photo for all of MIET waits for a person. This rule is social's own: it needs
             // no other service to be running, and nothing here or in any job ever releases or deletes such a moment.
             moment.moderateBySystem(ModerationState.HELD, ModerationReason.NEW_MEMBER_PHOTO, null);
-        } else {
-            moment.publish(now, MomentPolicy.LIFE);
         }
         moments.saveAndFlush(moment);
         if (photo != null) {
             photo.attach(moment.getId());
             mediaRows.saveAndFlush(photo);
         }
-        return respond(userId, List.of(moment), now).get(0);
+
+        // Whoever listens (the automatic text check) may hold or collapse it before anyone else can see it. A moment
+        // that is not held is published now: its 24 hours start. A held one starts them when a person releases it.
+        MomentShared shared = new MomentShared(moment.getId(), userId, newMember, photoHeld,
+                MomentShared.words(text, planWhere));
+        events.publishEvent(shared);
+        if (moment.getModeration() != ModerationState.HELD) moment.publish(now, MomentPolicy.LIFE);
+        moments.saveAndFlush(moment);
+        MomentResponse answer = respond(userId, List.of(moment), now).get(0);
+        return shared.supportSuggested() ? answer.withSupport() : answer;
     }
 
     /** One page of Today for [viewerId]: the pinned question and the live moments they may see, newest first. */
@@ -222,6 +238,47 @@ public class MomentService {
         LocalDateTime now = now();
         return new MineResponse(respond(userId, moments.ownCurrent(userId, now), now),
                 respond(userId, moments.keptBy(userId), now), MomentPolicy.MAX_KEPT);
+    }
+
+    /**
+     * N-51: the moments on someone's profile, as [viewerId] may see them: the ones live now and the ones they keep.
+     * The profile itself must be visible (404 otherwise); each moment still passes the one rule (audience, state).
+     */
+    @Transactional(readOnly = true)
+    public ProfileMoments ofProfile(long viewerId, String profileId) {
+        access.requireMember(viewerId);
+        Profile profile = blank(profileId) ? null : profiles.findByPublicId(profileId.trim()).orElse(null);
+        if (profile == null || !relationships.canSeeProfile(viewerId, profile.getUserId())) {
+            throw new ResourceNotFoundException("No one with that handle");
+        }
+        LocalDateTime now = now();
+        long author = profile.getUserId();
+        List<Moment> live = moments.ownCurrent(author, now).stream()
+                .filter(m -> m.isLive(now) && m.getModeration().visibleToOthers()
+                        && relationships.canSeeMoment(viewerId, m, now)).toList();
+        List<Moment> kept = moments.keptBy(author).stream()
+                .filter(m -> m.getModeration().visibleToOthers() && relationships.canSeeMoment(viewerId, m, now))
+                .toList();
+        return new ProfileMoments(respond(viewerId, live, now), respond(viewerId, kept, now));
+    }
+
+    /**
+     * What the author is told about their own moment (no shadow states). Nothing while it is untouched, and nothing for
+     * a collapse by reports alone: a report changes nothing its subject can observe (13D M4). "This is about me" reads
+     * as an ordinary review (NEEDS_REVIEW): the author never learns that someone asked, or who (N-52).
+     */
+    static Notice notice(Moment m) {
+        ModerationSource source = m.getModerationSource();
+        if (m.getModeration() == ModerationState.NONE || source == null) return null;
+        if (source == ModerationSource.REPORTS) {
+            // Shown to the author as "under review" (no shadow state), with no reason and nobody named.
+            return new Notice(m.getModeration().name(), null, null, false, null);
+        }
+        ModerationReason reason = m.getModerationReason() == ModerationReason.ABOUT_ME
+                ? ModerationReason.NEEDS_REVIEW : m.getModerationReason();
+        boolean system = source == ModerationSource.SYSTEM;
+        return new Notice(m.getModeration().name(), reason == null ? null : reason.name(), source.name(),
+                system && m.getModeration() == ModerationState.COLLAPSED, system ? null : m.getModerationDecision());
     }
 
     /**
@@ -321,6 +378,7 @@ public class MomentService {
             String status = m.getVisibleAt() == null ? "WAITING" : m.hasEnded(now) ? "ENDED" : "LIVE";
             out.add(new MomentResponse(m.getPublicId(), m.getKind().name(), m.getAudience().name(), author, mine,
                     m.getBody(), photo, plan, question == null ? null : ref(question), when, status, m.isKept(),
+                    !mine && m.getModeration() == ModerationState.COLLAPSED, mine ? notice(m) : null, null,
                     mine ? m.getCreatedAt().toInstant(ZoneOffset.UTC) : null,
                     mine && m.getVisibleAt() != null ? m.getVisibleAt().toInstant(ZoneOffset.UTC) : null,
                     mine && m.getExpiresAt() != null ? m.getExpiresAt().toInstant(ZoneOffset.UTC) : null));

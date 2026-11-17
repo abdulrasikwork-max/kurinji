@@ -98,6 +98,12 @@ public class MomentController {
                 .body(media.photoOf(CurrentUser.id(jwt), id));
     }
 
+    @GetMapping("/api/profiles/{profileId}/moments")
+    public com.safesphere.backend.social.dto.MomentDtos.ProfileMoments ofProfile(@AuthenticationPrincipal Jwt jwt,
+                                                                               @PathVariable String profileId) {
+        return moments.ofProfile(CurrentUser.id(jwt), profileId);
+    }
+
     @PutMapping("/api/moments/{id}/kept")
     public MomentResponse keep(@AuthenticationPrincipal Jwt jwt, @PathVariable String id) {
         return moments.keep(CurrentUser.id(jwt), id);

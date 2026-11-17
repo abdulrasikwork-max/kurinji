@@ -73,9 +73,13 @@ class ProfileApiIntegrationTest {
         // Phase N2 (N-23): a profile has no name of its own; it shows the account's real name (a sent name is ignored).
         assertThat(body.get("displayName").asText()).isEqualTo("Test User");
         assertThat(body.get("bio").asText()).isEqualTo("Quiet cafés, long walks");
-        assertThat(body.get("city").asText()).isEqualTo("Chennai");
-        assertThat(body.get("languages").toString()).isEqualTo("[\"ta\",\"en\"]");
-        assertThat(body.get("interests").toString()).isEqualTo("[\"FOOD_CAFES\",\"HIDDEN_GEMS\"]");
+        // N-51: no city, languages or interests (sent ones are ignored); programme and year come from the membership.
+        assertThat(body.has("city")).isFalse();
+        assertThat(body.has("languages")).isFalse();
+        assertThat(body.has("interests")).isFalse();
+        assertThat(body.get("programme").asText()).isEqualTo("BTECH_IT");
+        assertThat(body.get("graduationYear").asInt()).isGreaterThan(2025);
+        assertThat(body.get("newMemberUntil").isNull()).isFalse(); // verified a moment ago: 7 days from then
         assertThat(body.get("handleChangeAvailableAt").isNull()).isTrue();
 
         own(asha).andExpect(status().isOk()).andExpect(jsonPath("$.handle").value(handle));
@@ -136,9 +140,6 @@ class ProfileApiIntegrationTest {
         String handle = unique("asha");
         save(asha, profile(handle, "Asha", "visit https://example.org", null, null, null))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value("Links are not allowed in a profile"));
-        save(asha, profile(handle, "Asha", null, List.of("fr"), null, null)).andExpect(status().isBadRequest());
-        save(asha, profile(handle, "Asha", null, null, List.of("PARTIES"), null)).andExpect(status().isBadRequest());
-        save(asha, profile(handle, "Asha", null, null, null, "Chennai 600001")).andExpect(status().isBadRequest());
         save(asha, profile(handle, "ஆஷா தேவி", "கடற்கரை நடை", List.of("ta"), null, "சென்னை"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.bio").value("கடற்கரை நடை"))
                 .andExpect(jsonPath("$.displayName").value("Test User"));
@@ -156,8 +157,9 @@ class ProfileApiIntegrationTest {
 
         JsonNode seen = json(byHandle(bala, handle).andExpect(status().isOk()));
         assertThat(seen.get("relationship").asText()).isEqualTo("NONE");
-        assertThat(fieldNames(seen)).containsExactlyInAnyOrder("publicId", "handle", "displayName", "bio", "languages",
-                "interests", "city", "relationship", "photo"); // 17E; N1: no dailyState
+        assertThat(fieldNames(seen)).containsExactlyInAnyOrder("publicId", "handle", "displayName", "bio", "programme",
+                "graduationYear", "relationship", "photo"); // N-51
+        assertThat(seen.get("programme").asText()).isEqualTo("BTECH_IT");
         byPublicId(bala, publicId).andExpect(status().isOk()).andExpect(jsonPath("$.handle").value(handle));
         byHandle(asha, handle).andExpect(status().isOk()).andExpect(jsonPath("$.relationship").value("SELF"));
         byHandle(bala, "@" + handle.toUpperCase()).andExpect(status().isOk());
@@ -173,8 +175,8 @@ class ProfileApiIntegrationTest {
     void ownProfile_carriesNoCountsOrInternalIds() throws Exception {
         Person asha = person();
         JsonNode body = json(save(asha, profile(unique("asha"), "Asha")).andExpect(status().isOk()));
-        assertThat(fieldNames(body)).containsExactlyInAnyOrder("publicId", "handle", "displayName", "bio", "languages",
-                "interests", "city", "handleChangeAvailableAt", "photo"); // 17E; N1: no dailyState
+        assertThat(fieldNames(body)).containsExactlyInAnyOrder("publicId", "handle", "displayName", "bio", "programme",
+                "graduationYear", "newMemberUntil", "handleChangeAvailableAt", "photo"); // N-51, N-56
     }
 
     @Test

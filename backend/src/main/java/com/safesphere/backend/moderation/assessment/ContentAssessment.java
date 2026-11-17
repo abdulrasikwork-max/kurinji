@@ -3,7 +3,7 @@ package com.safesphere.backend.moderation.assessment;
 import com.safesphere.backend.moderation.assessment.DecisionPolicy.Action;
 import com.safesphere.backend.moderation.assessment.DecisionPolicy.Rule;
 import com.safesphere.backend.moderation.entity.ModerationEnums.TargetKind;
-import com.safesphere.backend.social.entity.PostEnums.ModerationReason;
+import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,11 +38,8 @@ public class ContentAssessment {
     @Column(name = "target_kind", nullable = false, updatable = false, length = 7)
     private TargetKind targetKind;
 
-    @Column(name = "post_id", updatable = false, unique = true)
-    private Long postId;
-
-    @Column(name = "comment_id", updatable = false, unique = true)
-    private Long commentId;
+    @Column(name = "moment_id", nullable = false, updatable = false, unique = true)
+    private Long momentId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 11)
@@ -97,19 +94,14 @@ public class ContentAssessment {
     protected ContentAssessment() {
     }
 
-    private ContentAssessment(TargetKind kind, Long postId, Long commentId) {
+    private ContentAssessment(long momentId) {
         this.publicId = UUID.randomUUID().toString();
-        this.targetKind = kind;
-        this.postId = postId;
-        this.commentId = commentId;
+        this.targetKind = TargetKind.MOMENT;
+        this.momentId = momentId;
     }
 
-    public static ContentAssessment ofPost(long postId) {
-        return new ContentAssessment(TargetKind.POST, postId, null);
-    }
-
-    public static ContentAssessment ofComment(long commentId) {
-        return new ContentAssessment(TargetKind.COMMENT, null, commentId);
+    public static ContentAssessment ofMoment(long momentId) {
+        return new ContentAssessment(momentId);
     }
 
     /** A finished check (the service answered). */
@@ -184,12 +176,8 @@ public class ContentAssessment {
         return targetKind;
     }
 
-    public Long getPostId() {
-        return postId;
-    }
-
-    public Long getCommentId() {
-        return commentId;
+    public Long getMomentId() {
+        return momentId;
     }
 
     public Status getStatus() {
