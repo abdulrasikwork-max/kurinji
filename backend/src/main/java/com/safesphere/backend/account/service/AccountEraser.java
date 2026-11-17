@@ -76,6 +76,11 @@ public class AccountEraser {
     private static final String JOURNEYS = "(SELECT id FROM safe_journeys WHERE user_id = ?)";
 
     /** Owned rows that go in both cases, children before parents. Each statement takes the user id once per "?". */
+    /** Phase N5: the messages that go with a person: theirs, and those of the conversations that go with them. */
+    static final String ERASED_MESSAGES = "SELECT id FROM messages WHERE author_id = ? OR conversation_id IN"
+            + " (SELECT id FROM conversations WHERE replier_id = ? OR moment_id IN (SELECT id FROM moments"
+            + " WHERE author_id = ?))";
+
     private static final List<String> OWNED_DATA = List.of(
             "DELETE FROM circle_alerts WHERE emergency_id IN " + EMERGENCIES + " OR journey_id IN " + JOURNEYS,
             "DELETE FROM escalation_events WHERE emergency_id IN " + EMERGENCIES + " OR journey_id IN " + JOURNEYS,
@@ -101,6 +106,12 @@ public class AccountEraser {
             "DELETE FROM content_cases WHERE person_id = ?"
                     + " OR moment_id IN (SELECT id FROM moments WHERE author_id = ?)",
             "DELETE FROM content_assessments WHERE moment_id IN (SELECT id FROM moments WHERE author_id = ?)",
+            // Phase N5: reports, cases and checks of the messages erased below (theirs, and every message of the
+            // conversations that go with them).
+            "DELETE FROM content_reports WHERE message_id IN (" + ERASED_MESSAGES + ") OR case_id IN"
+                    + " (SELECT id FROM content_cases WHERE message_id IN (" + ERASED_MESSAGES + "))",
+            "DELETE FROM content_cases WHERE message_id IN (" + ERASED_MESSAGES + ")",
+            "DELETE FROM content_assessments WHERE message_id IN (" + ERASED_MESSAGES + ")",
             "DELETE FROM social_strikes WHERE user_id = ?",
             "DELETE FROM social_standing WHERE user_id = ?",
             // Phase N4: the person's moment photos (files already deleted in step 2), their moments (live, ended and

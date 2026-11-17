@@ -111,3 +111,27 @@ Status: **implemented, compiled, tested** (backend 495 / 0 failures / 2 skipped,
 - `ConversationController`: `POST /api/moments/{id}/private-replies`, `GET /api/conversations/{id}`,
   `POST /api/conversations/{id}/messages`, `POST /api/conversations/{id}/end`, `GET|PUT /api/social-settings`.
 - Tests: `ConversationApiTest` (11).
+
+### B3 (2026-11-17): moderation of messages and of the follow-up — backend
+
+Status: **implemented, compiled, tested** (backend 504 / 0 failures / 2 skipped, full clean run). V36 still held.
+
+- `TargetKind.MESSAGE`; `ContentCase.aboutMessage`, `ContentReport.messageId`, `ContentAssessment.ofMessage`
+  (`momentId` nullable); repositories find, clean and keep retention per message (`deleteOrphans` of assessments no
+  longer depends on a moment).
+- `AssessmentService`: one `Target` with `MomentTarget` and `MessageTarget`. `onMessageSent` (kind `COMMENT`):
+  hold = never delivered until a person decides, collapse = behind a tap, self-harm = the writer's support line only;
+  during an outage only a new member's first private reply to a non-connection waits (`AWAITING_CHECK`, released by
+  `maintain` after 2 h). `onMomentMoreAdded`: the moment is checked again with all its words (text, "where",
+  follow-up); a hold hides the moment with its follow-up; an outage keeps any existing state. Review requests accept
+  `MESSAGE` (own message, system state only).
+- `ReportService`: reports about a message the reporter can see (`ConversationService.requireVisibleMessage`),
+  row-locked, one per reporter, opens or joins the message's case, keeps it from the purge; collapse at 3 independent
+  reports as for moments.
+- `ContentModerationService`: message cases (state, Keep / Hold / Collapse / Remove, close, overturn, appeal,
+  standing `targetId` = the conversation). `ContentView.more` (the follow-up) and `ContentView.conversation`
+  (N-97: up to 10 earlier visible messages + the reported one, case pseudonyms; a check-held message alone with
+  `connected` for a private reply).
+- `MessageModerationCleanup` implements social's `ResponseData.MessageCleanup` port; `AccountEraser` removes reports,
+  cases and checks of the messages it erases (`ERASED_MESSAGES`).
+- Tests: `MessageModerationApiTest` (4), `MessageAssessmentIntegrationTest` (5, stub service, own H2).

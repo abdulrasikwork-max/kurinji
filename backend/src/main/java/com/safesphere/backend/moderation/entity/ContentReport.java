@@ -38,6 +38,9 @@ public class ContentReport {
     @Column(name = "moment_id", updatable = false)
     private Long momentId;
 
+    @Column(name = "message_id", updatable = false)
+    private Long messageId;
+
     @Column(name = "person_id", updatable = false)
     private Long personId;
 
@@ -69,6 +72,7 @@ public class ContentReport {
         this.reporterId = reporterId;
         this.momentId = target.getMomentId();
         this.personId = target.getPersonId();
+        this.messageId = target.getMessageId();
         this.reason = reason;
         this.note = note;
         this.createdAt = now.truncatedTo(ChronoUnit.MICROS);
@@ -101,6 +105,10 @@ public class ContentReport {
 
     public Long getCaseId() {
         return caseId;
+    }
+
+    public Long getMessageId() {
+        return messageId;
     }
 
     public Long getReporterId() {

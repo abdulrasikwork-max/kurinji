@@ -19,9 +19,13 @@ import com.safesphere.backend.moderation.repository.ContentCaseRepository;
 import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
 import com.safesphere.backend.social.entity.ContentModeration.ModerationSource;
 import com.safesphere.backend.social.entity.ContentModeration.ModerationState;
+import com.safesphere.backend.social.entity.Message;
 import com.safesphere.backend.social.entity.Moment;
+import com.safesphere.backend.social.event.MessageSent;
+import com.safesphere.backend.social.event.MomentMoreAdded;
 import com.safesphere.backend.social.event.MomentShared;
 import com.safesphere.backend.social.policy.MomentPolicy;
+import com.safesphere.backend.social.repository.MessageRepository;
 import com.safesphere.backend.social.repository.MomentRepository;
 import com.safesphere.backend.social.service.SocialAccess;
 import java.time.Clock;
@@ -71,11 +75,15 @@ public class AssessmentService {
     /** The "kind" sent to the text service. It knows POST and COMMENT; a moment is checked with the rules of a post. */
     static final String KIND = "POST";
 
+    /** Phase N5 (N-96): a message in a plan or a private reply is checked with the rules of a comment. */
+    static final String MESSAGE_KIND = "COMMENT";
+
     private static final Logger log = LoggerFactory.getLogger(AssessmentService.class);
 
     private final ModerationServiceClient client;
     private final ContentAssessmentRepository assessments;
     private final MomentRepository moments;
+    private final MessageRepository messages;
     private final ContentCaseRepository cases;
     private final SocialAccess access;
     private final ModerationAiProperties properties;
@@ -83,12 +91,14 @@ public class AssessmentService {
     private final Clock clock;
 
     public AssessmentService(ModerationServiceClient client, ContentAssessmentRepository assessments,
-                             MomentRepository moments, ContentCaseRepository cases, SocialAccess access,
+                             MomentRepository moments, MessageRepository messages, ContentCaseRepository cases,
+                             SocialAccess access,
                              ModerationAiProperties properties,
                              PlatformTransactionManager transactions, Clock clock) {
         this.client = client;
         this.assessments = assessments;
         this.moments = moments;
+        this.messages = messages;
         this.cases = cases;
         this.access = access;
         this.properties = properties;
@@ -106,12 +116,12 @@ public class AssessmentService {
     @EventListener
     public void onMomentShared(MomentShared event) {
         try {
-            Target target = load(event.momentId());
+            Target target = loadMoment(event.momentId());
             if (target == null) return;
             LocalDateTime now = now();
             // N-57: the case for a held photo is opened whether or not the text check is running.
             if (event.photoHeld()) {
-                openCase(target, CaseOpenedBy.SYSTEM, now);
+                target.openCase(CaseOpenedBy.SYSTEM, now);
                 target.save();
             }
             if (!properties.active() || event.text() == null) return;
@@ -120,6 +130,48 @@ public class AssessmentService {
             apply(target, answer, event.newMember(), now, true);
         } catch (RuntimeException e) {
             log.warn("Automatic content check failed ({}); the content is published unchecked",
+                    e.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * Phase N5 (N-96): every message, inside the write, before anyone else can read it. HOLD = not delivered until a
+     * moderator decides; COLLAPSE = behind a tap. While the check is unavailable only a new member's first private reply
+     * to someone who is not their connection waits (at most 2 hours, then delivered); everything else is delivered and
+     * checked later.
+     */
+    @EventListener
+    public void onMessageSent(MessageSent event) {
+        try {
+            if (!properties.active()) return;
+            Target target = loadMessage(event.messageId());
+            if (target == null) return;
+            Optional<Answer> answer = client.assess(MESSAGE_KIND, event.text());
+            if (answer.isPresent() && answer.get().selfHarm()) event.suggestSupport();
+            apply(target, answer, event.firstContact(), now(), true);
+        } catch (RuntimeException e) {
+            log.warn("Automatic message check failed ({}); the message is delivered unchecked",
+                    e.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * Phase N5 (D15): the author's follow-up is part of the moment's words: the moment is checked again with all of
+     * them, and the result applies to the moment (a hold hides it with its follow-up). While the check is unavailable a
+     * moment that already has a state keeps it; one without is checked later with its new words.
+     */
+    @EventListener
+    public void onMomentMoreAdded(MomentMoreAdded event) {
+        try {
+            if (!properties.active()) return;
+            Target target = loadMoment(event.momentId());
+            if (target == null) return;
+            Optional<Answer> answer = client.assess(KIND, target.text());
+            if (answer.isPresent() && answer.get().selfHarm()) event.suggestSupport();
+            if (answer.isEmpty() && target.state() != ModerationState.NONE) return;
+            apply(target, answer, false, now(), true);
+        } catch (RuntimeException e) {
+            log.warn("Automatic content check failed ({}); the follow-up is published unchecked",
                     e.getClass().getSimpleName());
         }
     }
@@ -155,7 +207,7 @@ public class AssessmentService {
                 }
                 case HOLD_FOR_REVIEW -> {
                     target.system(ModerationState.HELD, decision.reason(), spans(acting(decision, answer)));
-                    if (decision.rule() != Rule.CHECK_PENDING) openCase(target, CaseOpenedBy.SYSTEM, now);
+                    if (decision.rule() != Rule.CHECK_PENDING) target.openCase(CaseOpenedBy.SYSTEM, now);
                 }
             }
             target.save();
@@ -171,23 +223,34 @@ public class AssessmentService {
     @Transactional
     public void requestReview(long userId, String targetKind, String targetId) {
         access.requireAccount(userId); // Phase N3: the author's own content
-        if (!"MOMENT".equals(targetKind)) throw new InvalidRequestException("Choose a moment");
-        Target target = targetId == null ? null : moments.findByPublicId(targetId).map(Target::new).orElse(null);
+        Target target;
+        if ("MOMENT".equals(targetKind)) {
+            target = targetId == null ? null : moments.findByPublicId(targetId).map(MomentTarget::new).orElse(null);
+        } else if ("MESSAGE".equals(targetKind)) { // Phase N5: one's own message
+            target = targetId == null ? null : messages.findByPublicId(targetId).map(MessageTarget::new).orElse(null);
+        } else {
+            throw new InvalidRequestException("Choose a moment or a message");
+        }
         if (target == null || target.authorId() != userId || target.source() != ModerationSource.SYSTEM
                 || target.state() == ModerationState.NONE) {
             throw new ResourceNotFoundException("Nothing to review");
         }
-        openCase(target, CaseOpenedBy.AUTHOR_REQUEST, now());
+        target.openCase(CaseOpenedBy.AUTHOR_REQUEST, now());
         target.save();
     }
 
     // ---- moderators ---------------------------------------------------------------------------------------------------
 
-    /** What the automatic check found about a case's moment (null when it never ran or is gone). */
+    /** What the automatic check found about a case's moment or message (null when it never ran or is gone). */
     @Transactional(readOnly = true)
     public AssessmentView viewFor(ContentCase c) {
-        if (c.getMomentId() == null) return null;
-        return assessments.findByMomentId(c.getMomentId()).map(AssessmentService::view).orElse(null);
+        if (c.getMomentId() != null) {
+            return assessments.findByMomentId(c.getMomentId()).map(AssessmentService::view).orElse(null);
+        }
+        if (c.getMessageId() != null) {
+            return assessments.findByMessageId(c.getMessageId()).map(AssessmentService::view).orElse(null);
+        }
+        return null;
     }
 
     // ---- the job: retries, the new-member wait, retention -------------------------------------------------------------
@@ -211,7 +274,7 @@ public class AssessmentService {
     private boolean retry(Long id, LocalDateTime now) {
         ContentAssessment row = assessments.findById(id).orElse(null);
         if (row == null || row.getStatus() != Status.PENDING) return false;
-        Target target = load(row.getMomentId());
+        Target target = row.getMessageId() != null ? loadMessage(row.getMessageId()) : loadMoment(row.getMomentId());
         if (target == null) return false;
         if (row.getCreatedAt().plus(properties.retryFor()).isBefore(now)) {
             row.giveUp();
@@ -219,8 +282,9 @@ public class AssessmentService {
             assessments.save(row);
             return true;
         }
-        boolean newMember = access.isNewMember(target.authorId(), now);
-        Optional<Answer> answer = client.assess(KIND, target.text());
+        // A retry acts only on an answer; "new member" then only matters for photos, which a message never has.
+        boolean newMember = target.isMoment() && access.isNewMember(target.authorId(), now);
+        Optional<Answer> answer = client.assess(target.kind(), target.text());
         if (answer.isPresent()) {
             apply(target, answer, newMember, now, false);
             return true;
@@ -247,13 +311,6 @@ public class AssessmentService {
     }
 
     // ---- helpers ------------------------------------------------------------------------------------------------------
-
-    private void openCase(Target target, CaseOpenedBy origin, LocalDateTime now) {
-        if (!cases.existsByMomentIdAndStatus(target.id(), CaseStatus.OPEN)) {
-            cases.save(ContentCase.aboutMoment(target.id(), now).openedBy(origin));
-        }
-        target.moment.setInReview(true); // N-47: not purged while a case needs it
-    }
 
     /** The findings that made the decision act (the phrases the author is shown); none for a publish. */
     static List<Item> acting(Decision decision, Optional<Answer> answer) {
@@ -304,44 +361,54 @@ public class AssessmentService {
                 row.getNormaliserVersion(), row.getLexiconVersion(), row.getModelVersion(), row.getPolicyVersion());
     }
 
-    private Target load(Long id) {
-        return id == null ? null : moments.findById(id).map(Target::new).orElse(null);
+    private Target loadMoment(Long id) {
+        return id == null ? null : moments.findById(id).map(MomentTarget::new).orElse(null);
+    }
+
+    private Target loadMessage(Long id) {
+        return id == null ? null : messages.findById(id).map(MessageTarget::new).orElse(null);
     }
 
     private LocalDateTime now() {
         return LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS);
     }
 
-    /** A moment, as the check sees it. */
-    final class Target {
-        final Moment moment;
+    /** What the check acts on: a moment (with its "where" and its follow-up) or, since N5, a message. */
+    abstract class Target {
 
-        Target(Moment moment) {
-            this.moment = moment;
-        }
+        abstract long id();
 
-        long id() {
-            return moment.getId();
-        }
+        abstract long authorId();
 
-        long authorId() {
-            return moment.getAuthorId();
-        }
+        abstract String text();
 
-        String text() {
-            return MomentShared.words(moment.getBody(), moment.getPlanWhere());
-        }
+        /** The "kind" sent to the text service. */
+        abstract String kind();
 
-        ModerationSource source() {
-            return moment.getModerationSource();
-        }
+        abstract ModerationSource source();
 
-        ModerationState state() {
-            return moment.getModeration();
-        }
+        abstract ModerationState state();
 
-        ModerationReason reason() {
-            return moment.getModerationReason();
+        abstract ModerationReason reason();
+
+        abstract void system(ModerationState state, ModerationReason reason, String spans);
+
+        /** The content starts its visible life (a moment's 24 hours); nothing for a message. */
+        abstract void publish(LocalDateTime now);
+
+        abstract void strongLanguage(boolean value);
+
+        abstract void save();
+
+        abstract Optional<ContentAssessment> assessment();
+
+        abstract ContentAssessment newAssessment();
+
+        /** Opens (or joins) the open case about this content; kept from the purge while it is open (N-47). */
+        abstract void openCase(CaseOpenedBy origin, LocalDateTime now);
+
+        boolean isMoment() {
+            return false;
         }
 
         /** Held until a PERSON decides (N-57, N-52): no automatic rule may change it. */
@@ -350,42 +417,114 @@ public class AssessmentService {
                     || reason() == ModerationReason.ABOUT_ME);
         }
 
-        void system(ModerationState state, ModerationReason reason, String spans) {
+        /**
+         * Nothing found: no state. On a fresh write social publishes the content itself right after the listener; on a
+         * later run (a retry, the end of the 2-hour wait) a moment's 24 hours start here if it was never visible.
+         */
+        void release(LocalDateTime now, boolean fresh) {
+            system(ModerationState.NONE, null, null);
+            if (!fresh) publish(now);
+        }
+    }
+
+    /** A moment, as the check sees it: its words, its "where" and (N5) its follow-up. */
+    final class MomentTarget extends Target {
+        final Moment moment;
+
+        MomentTarget(Moment moment) {
+            this.moment = moment;
+        }
+
+        @Override long id() { return moment.getId(); }
+
+        @Override long authorId() { return moment.getAuthorId(); }
+
+        @Override String text() {
+            String words = MomentShared.words(moment.getBody(), moment.getPlanWhere());
+            String more = moment.getMoreText();
+            if (more == null) return words;
+            return words == null ? more : words + "\n" + more;
+        }
+
+        @Override String kind() { return KIND; }
+
+        @Override ModerationSource source() { return moment.getModerationSource(); }
+
+        @Override ModerationState state() { return moment.getModeration(); }
+
+        @Override ModerationReason reason() { return moment.getModerationReason(); }
+
+        @Override void system(ModerationState state, ModerationReason reason, String spans) {
             moment.moderateBySystem(state, reason, spans);
         }
 
-        /**
-         * Nothing found: no state. On a fresh write social publishes the moment itself right after the listener; on a
-         * later run (a retry, the end of the 2-hour wait) its 24 hours start here if it was never visible.
-         */
-        void release(LocalDateTime now, boolean fresh) {
-            moment.moderateBySystem(ModerationState.NONE, null, null);
-            if (!fresh) publish(now);
+        @Override void publish(LocalDateTime now) { moment.publish(now, MomentPolicy.LIFE); }
+
+        @Override void strongLanguage(boolean value) { moment.setStrongLanguage(value); }
+
+        @Override void save() { moments.save(moment); }
+
+        @Override Optional<ContentAssessment> assessment() { return assessments.findByMomentId(moment.getId()); }
+
+        @Override ContentAssessment newAssessment() { return ContentAssessment.ofMoment(moment.getId()); }
+
+        @Override void openCase(CaseOpenedBy origin, LocalDateTime now) {
+            if (!cases.existsByMomentIdAndStatus(id(), CaseStatus.OPEN)) {
+                cases.save(ContentCase.aboutMoment(id(), now).openedBy(origin));
+            }
+            moment.setInReview(true);
         }
 
-        void publish(LocalDateTime now) {
-            moment.publish(now, MomentPolicy.LIFE);
+        @Override boolean isMoment() { return true; }
+
+        @Override public String toString() { return "moment " + id(); }
+    }
+
+    /** Phase N5: a message in a plan or a private reply. It has no life of its own: held = not delivered. */
+    final class MessageTarget extends Target {
+        final Message message;
+
+        MessageTarget(Message message) {
+            this.message = message;
         }
 
-        void strongLanguage(boolean value) {
-            moment.setStrongLanguage(value);
+        @Override long id() { return message.getId(); }
+
+        @Override long authorId() { return message.getAuthorId(); }
+
+        @Override String text() { return message.getBody(); }
+
+        @Override String kind() { return MESSAGE_KIND; }
+
+        @Override ModerationSource source() { return message.getModerationSource(); }
+
+        @Override ModerationState state() { return message.getModeration(); }
+
+        @Override ModerationReason reason() { return message.getModerationReason(); }
+
+        @Override void system(ModerationState state, ModerationReason reason, String spans) {
+            message.moderateBySystem(state, reason, spans);
         }
 
-        void save() {
-            moments.save(moment);
+        @Override void publish(LocalDateTime now) {
         }
 
-        Optional<ContentAssessment> assessment() {
-            return assessments.findByMomentId(moment.getId());
+        @Override void strongLanguage(boolean value) {
         }
 
-        ContentAssessment newAssessment() {
-            return ContentAssessment.ofMoment(moment.getId());
+        @Override void save() { messages.save(message); }
+
+        @Override Optional<ContentAssessment> assessment() { return assessments.findByMessageId(message.getId()); }
+
+        @Override ContentAssessment newAssessment() { return ContentAssessment.ofMessage(message.getId()); }
+
+        @Override void openCase(CaseOpenedBy origin, LocalDateTime now) {
+            if (!cases.existsByMessageIdAndStatus(id(), CaseStatus.OPEN)) {
+                cases.save(ContentCase.aboutMessage(id(), now).openedBy(origin));
+            }
+            message.setInReview(true);
         }
 
-        @Override
-        public String toString() {
-            return "moment " + id();
-        }
+        @Override public String toString() { return "message " + id(); }
     }
 }

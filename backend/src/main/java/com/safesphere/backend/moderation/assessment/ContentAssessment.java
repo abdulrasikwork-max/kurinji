@@ -38,8 +38,12 @@ public class ContentAssessment {
     @Column(name = "target_kind", nullable = false, updatable = false, length = 7)
     private TargetKind targetKind;
 
-    @Column(name = "moment_id", nullable = false, updatable = false, unique = true)
+    @Column(name = "moment_id", updatable = false, unique = true)
     private Long momentId;
+
+    /** Phase N5 (V36): a message; exactly one of moment / message is set. */
+    @Column(name = "message_id", updatable = false, unique = true)
+    private Long messageId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 11)
@@ -94,14 +98,19 @@ public class ContentAssessment {
     protected ContentAssessment() {
     }
 
-    private ContentAssessment(long momentId) {
+    private ContentAssessment(TargetKind kind, Long momentId, Long messageId) {
         this.publicId = UUID.randomUUID().toString();
-        this.targetKind = TargetKind.MOMENT;
+        this.targetKind = kind;
         this.momentId = momentId;
+        this.messageId = messageId;
     }
 
     public static ContentAssessment ofMoment(long momentId) {
-        return new ContentAssessment(momentId);
+        return new ContentAssessment(TargetKind.MOMENT, momentId, null);
+    }
+
+    public static ContentAssessment ofMessage(long messageId) {
+        return new ContentAssessment(TargetKind.MESSAGE, null, messageId);
     }
 
     /** A finished check (the service answered). */
@@ -178,6 +187,10 @@ public class ContentAssessment {
 
     public Long getMomentId() {
         return momentId;
+    }
+
+    public Long getMessageId() {
+        return messageId;
     }
 
     public Status getStatus() {

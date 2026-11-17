@@ -17,6 +17,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     Optional<Message> findByPublicId(String publicId);
 
+    /** Locks one message (reports about it run one after the other). */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT m FROM Message m WHERE m.id = :id")
+    Optional<Message> lockById(@Param("id") long id);
+
     /** A conversation's messages in order (oldest first). */
     List<Message> findByConversationIdOrderByCreatedAtAscIdAsc(long conversationId);
 

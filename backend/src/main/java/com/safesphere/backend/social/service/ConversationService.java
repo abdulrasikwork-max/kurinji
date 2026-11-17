@@ -184,6 +184,33 @@ public class ConversationService {
         messages.saveAndFlush(Message.system(conversation.getId(), userId, MessageEvent.ENDED, now));
     }
 
+    /**
+     * Phase N5 (for reports): the words [messageId] as [userId] sees them now: a TEXT message in a conversation they
+     * belong to, written by someone they can see and not hidden from them. Anything else is not found, like a message
+     * that does not exist.
+     */
+    @Transactional(readOnly = true)
+    public Message requireVisibleMessage(long userId, String messageId) {
+        LocalDateTime now = now();
+        Message message = messageId == null ? null : messages.findByPublicId(messageId.trim()).orElse(null);
+        if (message == null || message.getKind() != MessageKind.TEXT) throw messageNotFound();
+        Conversation conversation = conversations.findById(message.getConversationId()).orElse(null);
+        try {
+            requireMember(userId, conversation, now);
+        } catch (ResourceNotFoundException e) {
+            throw messageNotFound();
+        }
+        if (message.getAuthorId() != userId) {
+            if (!message.getModeration().visibleToOthers()) throw messageNotFound();
+            if (people.visible(people.viewer(userId), List.of(message.getAuthorId())).isEmpty()) throw messageNotFound();
+        }
+        return message;
+    }
+
+    private static ResourceNotFoundException messageNotFound() {
+        return new ResourceNotFoundException("Message not found");
+    }
+
     // ---- settings (N-91) ---------------------------------------------------------------------------------------------
 
     @Transactional(readOnly = true)

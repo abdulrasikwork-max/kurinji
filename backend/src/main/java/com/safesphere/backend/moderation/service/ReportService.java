@@ -18,13 +18,16 @@ import com.safesphere.backend.security.AttemptLimiter;
 import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
 import com.safesphere.backend.social.entity.ContentModeration.ModerationSource;
 import com.safesphere.backend.social.entity.ContentModeration.ModerationState;
+import com.safesphere.backend.social.entity.Message;
 import com.safesphere.backend.social.entity.Moment;
 import com.safesphere.backend.social.entity.Profile;
 import com.safesphere.backend.social.entity.SocialStanding;
 import com.safesphere.backend.social.policy.MomentPolicy;
+import com.safesphere.backend.social.repository.MessageRepository;
 import com.safesphere.backend.social.repository.MomentRepository;
 import com.safesphere.backend.social.repository.ProfileRepository;
 import com.safesphere.backend.social.repository.SocialStandingRepository;
+import com.safesphere.backend.social.service.ConversationService;
 import com.safesphere.backend.social.service.MomentService;
 import com.safesphere.backend.social.service.ProfileService;
 import com.safesphere.backend.social.service.SocialAccess;
@@ -72,6 +75,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class ReportService {
 
     static final String OWN_CONTENT = "You can't report your own moments or profile";
+    static final String OWN_MESSAGE = "You can't report your own message";
     static final String TOO_MANY = "You have sent many reports today. Please try again tomorrow.";
     static final int MY_REPORTS = 50;
 
@@ -87,12 +91,17 @@ public class ReportService {
     private final AttemptLimiter limiter;
     private final TransactionTemplate inTransaction;
     private final ProfileRepository profiles;
+    private final MessageRepository messages;
+    private final ConversationService conversations;
 
     public ReportService(ContentCaseRepository cases, ContentReportRepository reports, MomentRepository moments,
                          SocialStandingRepository standings, MomentService momentService,
                          ProfileService profileService, SocialAccess access,
                          ModerationProperties properties, Clock clock, PlatformTransactionManager transactions,
-                         ProfileRepository profiles) {
+                         ProfileRepository profiles,
+                         MessageRepository messages, ConversationService conversations) {
+        this.messages = messages;
+        this.conversations = conversations;
         this.inTransaction = new TransactionTemplate(transactions);
         // Read committed: after waiting for the target's lock, the queries see what the previous report committed
         // (under MySQL's default repeatable read they would still read the snapshot from before the wait).
@@ -120,7 +129,7 @@ public class ReportService {
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public ReportReceived report(long reporterId, ReportRequest request) {
         TargetKind kind = parse(TargetKind.class, request.targetKind(), "Choose what to report");
-        if (kind != TargetKind.MOMENT && kind != TargetKind.PERSON) {
+        if (kind != TargetKind.MOMENT && kind != TargetKind.PERSON && kind != TargetKind.MESSAGE) {
             throw new InvalidRequestException("Choose what to report");
         }
         ModerationReason reason = parse(ModerationReason.class, request.reason(), "Choose a reason");
@@ -190,6 +199,19 @@ public class ReportService {
             moment.setInReview(true); // N-47: not purged while a case needs it
             if (aboutMe) hideForAboutMe(moment);
             moments.save(moment);
+        } else if (kind == TargetKind.MESSAGE) {
+            // Phase N5 (N-97): a message the reporter can see in a plan or a private reply they belong to.
+            Message known = targetId == null ? null : messages.findByPublicId(targetId.trim()).orElse(null);
+            if (known != null && reports.existsByReporterIdAndMessageId(reporterId, known.getId())) return received();
+            Message seen = conversations.requireVisibleMessage(reporterId, targetId);
+            if (seen.getAuthorId() == reporterId) throw new InvalidRequestException(OWN_MESSAGE);
+            Message message = messages.lockById(seen.getId()).orElseThrow();
+            if (reports.existsByReporterIdAndMessageId(reporterId, message.getId())) return received();
+            limit(reporterId);
+            open = cases.findByMessageIdAndStatus(message.getId(), CaseStatus.OPEN).orElseGet(() ->
+                    cases.saveAndFlush(ContentCase.aboutMessage(message.getId(), now)));
+            message.setInReview(true); // not purged while a case needs it
+            messages.save(message);
         } else {
             Profile profile = profileService.requireVisible(reporterId, targetId);
             long personId = profile.getUserId();
@@ -274,7 +296,16 @@ public class ReportService {
      */
     @Transactional
     public boolean evaluateCollapse(ContentCase c, LocalDateTime now) {
-        if (!c.isOpen() || c.getTargetKind() != TargetKind.MOMENT) return false;
+        if (!c.isOpen()) return false;
+        if (c.getTargetKind() == TargetKind.MESSAGE) { // Phase N5: a message in a plan collapses the same way
+            Message message = messages.findById(c.getMessageId()).orElse(null);
+            if (message == null || message.getModeration() != ModerationState.NONE) return false;
+            if (!ReportPolicy.collapses(tally(c, now), properties.collapseReports())) return false;
+            message.moderate(ModerationState.COLLAPSED, null, null);
+            messages.save(message);
+            return true;
+        }
+        if (c.getTargetKind() != TargetKind.MOMENT) return false;
         Moment moment = moments.findById(c.getMomentId()).orElse(null);
         if (moment == null || moment.getModeration() != ModerationState.NONE) return false;
         if (!ReportPolicy.collapses(tally(c, now), properties.collapseReports())) return false;

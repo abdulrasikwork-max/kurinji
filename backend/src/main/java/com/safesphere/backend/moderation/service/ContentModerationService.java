@@ -14,6 +14,8 @@ import com.safesphere.backend.moderation.dto.ContentModerationDtos.CaseDecision;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.CaseDetail;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.CaseSummary;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.ContentView;
+import com.safesphere.backend.moderation.dto.ContentModerationDtos.ContextMessage;
+import com.safesphere.backend.moderation.dto.ContentModerationDtos.ConversationContext;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.DecisionView;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.Participant;
 import com.safesphere.backend.moderation.dto.ContentModerationDtos.PersonView;
@@ -38,6 +40,10 @@ import com.safesphere.backend.moderation.repository.ModerationActionRepository;
 import com.safesphere.backend.moderation.repository.ModerationAppealRepository;
 import com.safesphere.backend.moderation.repository.SocialStrikeRepository;
 import com.safesphere.backend.social.entity.DailyQuestion;
+import com.safesphere.backend.social.entity.Conversation;
+import com.safesphere.backend.social.entity.Message;
+import com.safesphere.backend.social.entity.ResponseEnums.ConversationKind;
+import com.safesphere.backend.social.entity.ResponseEnums.MessageKind;
 import com.safesphere.backend.social.entity.Moment;
 import com.safesphere.backend.social.entity.MomentMedia;
 import com.safesphere.backend.social.entity.ContentModeration.ModerationReason;
@@ -50,10 +56,13 @@ import com.safesphere.backend.social.media.MediaStorage;
 import com.safesphere.backend.social.policy.MomentPolicy;
 import com.safesphere.backend.social.repository.DailyQuestionRepository;
 import com.safesphere.backend.social.repository.MomentMediaRepository;
+import com.safesphere.backend.social.repository.ConversationRepository;
+import com.safesphere.backend.social.repository.MessageRepository;
 import com.safesphere.backend.social.repository.MomentRepository;
 import com.safesphere.backend.social.service.MembershipGate;
 import com.safesphere.backend.social.repository.ProfileRepository;
 import com.safesphere.backend.social.repository.SocialStandingRepository;
+import com.safesphere.backend.social.service.Relationships;
 import com.safesphere.backend.social.service.SocialAccess;
 import com.safesphere.backend.user.entity.User;
 import com.safesphere.backend.user.repository.UserRepository;
@@ -116,6 +125,9 @@ public class ContentModerationService {
     static final Duration STANDING_WINDOW = Duration.ofDays(90);
     static final int CONTEXT_MAX = 500;
 
+    /** Phase N5 (N-97): earlier messages a moderator sees around a reported one. */
+    static final int EARLIER_MESSAGES = 10;
+
     private final ModerationService moderation;
     private final ReportService reportService;
     private final ContentCaseRepository cases;
@@ -135,6 +147,9 @@ public class ContentModerationService {
     private final ModerationProperties properties;
     private final AssessmentService assessmentService;
     private final com.safesphere.backend.social.service.ProfilePhotoService photos;
+    private final MessageRepository messages;
+    private final ConversationRepository conversations;
+    private final Relationships relationships;
     private final Clock clock;
 
     public ContentModerationService(ModerationService moderation, ReportService reportService,
@@ -147,7 +162,12 @@ public class ContentModerationService {
                                     SocialAccess access, UserRepository users, CaseRefs refs,
                                     ModerationProperties properties, AssessmentService assessmentService,
                                     com.safesphere.backend.social.service.ProfilePhotoService photos,
-                                    Clock clock) {
+                                    Clock clock,
+                                    MessageRepository messages, ConversationRepository conversations,
+                                    Relationships relationships) {
+        this.messages = messages;
+        this.conversations = conversations;
+        this.relationships = relationships;
         this.photos = photos;
         this.assessmentService = assessmentService;
         this.moderation = moderation;
@@ -402,13 +422,19 @@ public class ContentModerationService {
     /** Everything about one case, loaded once per request; null when its target is gone. */
     private final class Loaded {
         final ContentCase c;
-        final Moment moment;       // null for a PERSON case
+        final Moment moment;       // null for a PERSON or MESSAGE case
+        final Message message;     // Phase N5: a MESSAGE case only
         final Long subjectId;      // the author or the person concerned
         final List<ContentReport> caseReports;
 
         Loaded(ContentCase c, Moment moment, Long subjectId, List<ContentReport> caseReports) {
+            this(c, moment, null, subjectId, caseReports);
+        }
+
+        Loaded(ContentCase c, Moment moment, Message message, Long subjectId, List<ContentReport> caseReports) {
             this.c = c;
             this.moment = moment;
+            this.message = message;
             this.subjectId = subjectId;
             this.caseReports = caseReports;
         }
@@ -419,18 +445,25 @@ public class ContentModerationService {
         }
 
         ModerationState contentState() {
+            if (message != null) return message.getModeration();
             return moment == null ? null : moment.getModeration();
         }
 
         /** The moment's own moderation reason (null for a person or while NONE; never AWAITING_CHECK). */
         ModerationReason contentReason() {
-            ModerationReason reason = moment == null ? null : moment.getModerationReason();
+            ModerationReason reason = rawReason();
             return reason == ModerationReason.AWAITING_CHECK ? null : reason;
         }
 
         /** Who set the moment's state (null for a person, or while NONE). */
         ModerationSource contentSource() {
+            if (message != null) return message.getModerationSource();
             return moment == null ? null : moment.getModerationSource();
+        }
+
+        ModerationReason rawReason() {
+            if (message != null) return message.getModerationReason();
+            return moment == null ? null : moment.getModerationReason();
         }
     }
 
@@ -443,6 +476,10 @@ public class ContentModerationService {
             }
             case PERSON -> {
                 return users.existsById(c.getPersonId()) ? new Loaded(c, null, c.getPersonId(), list) : null;
+            }
+            case MESSAGE -> {
+                Message message = messages.findById(c.getMessageId()).orElse(null);
+                return message == null ? null : new Loaded(c, null, message, message.getAuthorId(), list);
             }
             default -> {
                 return null;
@@ -473,7 +510,7 @@ public class ContentModerationService {
                 top == null ? null : top.name(), reasons, tally.counting(),
                 tally.independent(), state == null ? null : state.name(),
                 QueuePolicy.priority(new QueuePolicy.Facts(l.c.getOrigin(), state, l.contentSource(),
-                        l.moment == null ? null : l.moment.getModerationReason(), ReportPolicy.priority(tally),
+                        l.rawReason(), ReportPolicy.priority(tally),
                         l.c.getOpenedAt()), l.c.isOpen() ? now : l.c.getOpenedAt()),
                 l.tookPart(moderatorId), l.c.getOrigin().name(),
                 l.contentSource() == null ? null : l.contentSource().name(),
@@ -535,14 +572,48 @@ public class ContentModerationService {
                     : questions.findById(m.getQuestionId()).map(DailyQuestion::getBody).orElse(null);
             return new ContentView(m.getKind().name(), m.getAudience().name(), m.getBody(),
                     m.getPlanAt() == null ? null : m.getPlanAt().toInstant(ZoneOffset.UTC), m.getPlanWhere(), question,
-                    photo, null);
+                    photo, null, m.getMoreText(), null);
         }
+        if (l.message != null) return messageContent(l);
         Profile profile = profiles.findByUserId(l.subjectId).orElse(null);
         MembershipGate.Member member = access.memberOf(l.subjectId).orElse(null);
         PersonView person = profile == null ? null : new PersonView(profile.getDisplayName(), profile.getHandle(),
                 profile.getBio(), member == null ? null : member.programme(),
                 member == null ? null : member.graduationYear(), profile.getPhotoKey() != null);
-        return new ContentView(null, null, null, null, null, null, null, person);
+        return new ContentView(null, null, null, null, null, null, null, person, null, null);
+    }
+
+    /**
+     * Phase N5 (N-97): a reported message with up to 10 earlier messages of its conversation (what the people who
+     * reported it could see: words nobody else was shown are left out), or a message the check held, alone, with
+     * whether the two people of a private reply are connected. Writers appear only as this case's pseudonyms.
+     */
+    private ContentView messageContent(Loaded l) {
+        Message target = l.message;
+        Conversation conversation = conversations.findById(target.getConversationId()).orElse(null);
+        long caseId = l.c.getId();
+        List<ContextMessage> lines = new ArrayList<>();
+        Boolean connected = null;
+        if (!l.caseReports.isEmpty()) {
+            List<Message> earlier = new ArrayList<>(messages.before(target.getConversationId(), target.getCreatedAt(),
+                    target.getId(), PageRequest.of(0, EARLIER_MESSAGES * 3)));
+            java.util.Collections.reverse(earlier);
+            List<Message> shown = earlier.stream().filter(m -> m.getKind() == MessageKind.TEXT)
+                    .filter(m -> m.getModeration().visibleToOthers()).toList();
+            if (shown.size() > EARLIER_MESSAGES) shown = shown.subList(shown.size() - EARLIER_MESSAGES, shown.size());
+            for (Message m : shown) lines.add(new ContextMessage(refs.contentRef(caseId, m.getAuthorId()), m.getBody(), false));
+        } else if (conversation != null && conversation.getKind() == ConversationKind.REPLY) {
+            Moment moment = moments.findById(conversation.getMomentId()).orElse(null);
+            if (moment != null) {
+                long other = target.getAuthorId() == moment.getAuthorId() ? conversation.getReplierId()
+                        : moment.getAuthorId();
+                connected = relationships.connected(target.getAuthorId(), other);
+            }
+        }
+        lines.add(new ContextMessage(refs.contentRef(caseId, target.getAuthorId()), target.getBody(), true));
+        ConversationContext context = new ConversationContext(conversation == null ? null
+                : conversation.getKind().name(), lines, connected);
+        return new ContentView("MESSAGE", null, target.getBody(), null, null, null, null, null, null, context);
     }
 
     /** What a moderator may do on this case now (the app shows only these; the server checks again). */
@@ -601,6 +672,11 @@ public class ContentModerationService {
     }
 
     private void setContentState(Loaded l, ModerationState state, ModerationReason reason, String decision) {
+        if (l.message != null) {
+            l.message.moderate(state, reason, decision);
+            messages.save(l.message);
+            return;
+        }
         if (l.moment == null) return;
         l.moment.moderate(state, reason, decision);
         moments.save(l.moment);
@@ -621,6 +697,10 @@ public class ContentModerationService {
         if (l.moment != null) {
             l.moment.setInReview(false);
             moments.save(l.moment);
+        }
+        if (l.message != null) {
+            l.message.setInReview(false);
+            messages.save(l.message);
         }
     }
 
@@ -655,6 +735,13 @@ public class ContentModerationService {
                                 release(m, now);
                             });
                 }
+                if (c != null && c.getMessageId() != null) {
+                    messages.findById(c.getMessageId()).filter(m -> id.equals(m.getModerationDecision()))
+                            .ifPresent(m -> {
+                                m.moderate(ModerationState.NONE, null, null);
+                                messages.save(m);
+                            });
+                }
             }
             default -> standings.findById(decision.getSubjectUserId())
                     .filter(s -> id.equals(s.getDecision()))
@@ -680,6 +767,10 @@ public class ContentModerationService {
         if (d.getAction() == ActionType.CONTENT_COLLAPSE || d.getAction() == ActionType.CONTENT_REMOVE) {
             ContentCase c = cases.findByPublicId(d.getCaseRef()).orElse(null);
             if (c == null) return false;
+            if (c.getMessageId() != null) {
+                return messages.findById(c.getMessageId())
+                        .map(m -> d.getPublicId().equals(m.getModerationDecision())).orElse(false);
+            }
             return c.getMomentId() != null && moments.findById(c.getMomentId())
                     .map(m -> d.getPublicId().equals(m.getModerationDecision())).orElse(false);
         }
@@ -692,6 +783,10 @@ public class ContentModerationService {
         if (d.getCaseRef() == null) return null;
         ContentCase c = cases.findByPublicId(d.getCaseRef()).orElse(null);
         if (c == null) return null;
+        if (c.getMessageId() != null) { // Phase N5: the conversation the message is in
+            return messages.findById(c.getMessageId()).flatMap(m -> conversations.findById(m.getConversationId()))
+                    .map(Conversation::getPublicId).orElse(null);
+        }
         return c.getMomentId() == null ? null
                 : moments.findById(c.getMomentId()).map(Moment::getPublicId).orElse(null);
     }

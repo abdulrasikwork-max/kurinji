@@ -64,10 +64,10 @@ public final class ModerationEnums {
     public enum AppealStatus { OPEN, UPHELD, OVERTURNED }
 
     /**
-     * What a decision or case is about. Since Phase N4 (V35) only MOMENT and PERSON are written; POST, COMMENT and PLACE
+     * What a decision or case is about. Since Phase N4 (V35) only MOMENT and PERSON are written, and since N5 (V36) MESSAGE; POST, COMMENT and PLACE
      * stay because the audit log keeps its older rows.
      */
-    public enum TargetKind { POST, COMMENT, PERSON, PLACE, MOMENT }
+    public enum TargetKind { POST, COMMENT, PERSON, PLACE, MOMENT, MESSAGE }
 
     /** What opened a content case. Phase N4 (N-52): ABOUT_ME = someone said "This is about me". */
     public enum CaseOpenedBy { REPORTS, SYSTEM, AUTHOR_REQUEST, ABOUT_ME }

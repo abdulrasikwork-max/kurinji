@@ -107,10 +107,25 @@ public final class ContentModerationDtos {
     /**
      * What the case is about. MOMENT: the moment as written (also a My people one: needed to judge): [kind] SAY |
      * WHOS_IN, [audience], [body], the plan of a Who is in ([planAt], [planWhere]), the daily [question] it answers,
-     * [photo]. PERSON: [person], the profile every member can see.
+     * [photo], and (N5) the author's follow-up [more]. PERSON: [person], the profile every member can see. MESSAGE
+     * (N5, N-97): [kind] MESSAGE, [body] the message, [conversation] its context.
      */
     public record ContentView(String kind, String audience, String body, Instant planAt, String planWhere,
-                              String question, PhotoView photo, PersonView person) {
+                              String question, PhotoView photo, PersonView person, String more,
+                              ConversationContext conversation) {
+    }
+
+    /**
+     * Phase N5 (N-97): where a reported or held message was written. [kind] PLAN | REPLY. [messages]: for a reported
+     * message, up to 10 earlier messages of that conversation and the message itself (pseudonyms, oldest first; the
+     * people who reported consented to show it); for a message the check held, the message alone. [connected]: for a
+     * held private reply, whether its two people are connected (otherwise null). Moderators never browse conversations.
+     */
+    public record ConversationContext(String kind, List<ContextMessage> messages, Boolean connected) {
+    }
+
+    /** One line of a [ConversationContext]: [ref] the writer's case pseudonym, [text], [reported] = the case's message. */
+    public record ContextMessage(String ref, String text, boolean reported) {
     }
 
     /** One person in a case, pseudonymous. [role] AUTHOR / SUBJECT / REPORTER; [reason], [note], [counting] reporters. */

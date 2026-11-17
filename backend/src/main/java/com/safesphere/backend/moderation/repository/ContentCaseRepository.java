@@ -28,6 +28,18 @@ public interface ContentCaseRepository extends JpaRepository<ContentCase, Long> 
 
     boolean existsByMomentIdAndStatus(Long momentId, CaseStatus status);
 
+    Optional<ContentCase> findByMessageIdAndStatus(Long messageId, CaseStatus status);
+
+    boolean existsByMessageIdAndStatus(Long messageId, CaseStatus status);
+
+    /** Phase N5: cases about messages that are going (with their moment, their writer or the response purge). */
+    @Modifying
+    @Query("delete from ContentCase c where c.messageId in :messageIds")
+    int deleteByMessageIds(@Param("messageIds") Collection<Long> messageIds);
+
+    @Query("select c.id from ContentCase c where c.messageId in :messageIds")
+    List<Long> idsByMessageIds(@Param("messageIds") Collection<Long> messageIds);
+
     Optional<ContentCase> findByPersonIdAndStatus(Long personId, CaseStatus status);
 
     List<ContentCase> findByStatusOrderByOpenedAtAsc(CaseStatus status, Pageable page);
@@ -39,7 +51,9 @@ public interface ContentCaseRepository extends JpaRepository<ContentCase, Long> 
     @Query("delete from ContentCase c where (c.momentId is not null and not exists "
             + "(select 1 from com.safesphere.backend.social.entity.Moment m where m.id = c.momentId))"
             + " or (c.personId is not null and not exists "
-            + "(select 1 from com.safesphere.backend.user.entity.User u where u.id = c.personId))")
+            + "(select 1 from com.safesphere.backend.user.entity.User u where u.id = c.personId))"
+            + " or (c.messageId is not null and not exists "
+            + "(select 1 from com.safesphere.backend.social.entity.Message g where g.id = c.messageId))")
     int deleteOrphans();
 
     /** Retention: closed cases are kept for a while (appeals, the reporters' list), then deleted with their reports. */

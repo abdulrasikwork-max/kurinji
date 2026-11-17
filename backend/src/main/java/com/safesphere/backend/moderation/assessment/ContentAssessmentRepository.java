@@ -15,10 +15,18 @@ public interface ContentAssessmentRepository extends JpaRepository<ContentAssess
 
     Optional<ContentAssessment> findByMomentId(Long momentId);
 
-    /** Checks whose moment is gone (MySQL cascades; this keeps other databases equally tidy). */
+    Optional<ContentAssessment> findByMessageId(Long messageId);
+
     @Modifying
-    @Query("delete from ContentAssessment a where not exists "
-            + "(select 1 from com.safesphere.backend.social.entity.Moment m where m.id = a.momentId)")
+    @Query("delete from ContentAssessment a where a.messageId in :messageIds")
+    int deleteByMessageIds(@Param("messageIds") java.util.Collection<Long> messageIds);
+
+    /** Checks whose moment or message is gone (MySQL cascades; this keeps other databases equally tidy). */
+    @Modifying
+    @Query("delete from ContentAssessment a where (a.momentId is not null and not exists "
+            + "(select 1 from com.safesphere.backend.social.entity.Moment m where m.id = a.momentId))"
+            + " or (a.messageId is not null and not exists "
+            + "(select 1 from com.safesphere.backend.social.entity.Message g where g.id = a.messageId))")
     int deleteOrphans();
 
     /** Checks to try again now, oldest first. */
@@ -33,9 +41,9 @@ public interface ContentAssessmentRepository extends JpaRepository<ContentAssess
     @Modifying
     @Query("delete from ContentAssessment a where a.status <> :pending and a.createdAt < :cutoff"
             + " and not exists (select c.id from ContentCase c where c.status = com.safesphere.backend.moderation.entity"
-            + ".ModerationEnums.CaseStatus.OPEN and c.momentId = a.momentId)"
+            + ".ModerationEnums.CaseStatus.OPEN and (c.momentId = a.momentId or c.messageId = a.messageId))"
             + " and not exists (select p.id from ModerationAppeal p, ModerationAction x, ContentCase c"
             + " where p.status = com.safesphere.backend.moderation.entity.ModerationEnums.AppealStatus.OPEN"
-            + " and p.actionId = x.id and x.caseRef = c.publicId and c.momentId = a.momentId)")
+            + " and p.actionId = x.id and x.caseRef = c.publicId and (c.momentId = a.momentId or c.messageId = a.messageId))")
     int deleteExpired(@Param("pending") Status pending, @Param("cutoff") LocalDateTime cutoff);
 }

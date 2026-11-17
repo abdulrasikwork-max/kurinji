@@ -43,6 +43,10 @@ public class ContentCase {
     @Column(name = "moment_id", updatable = false)
     private Long momentId;
 
+    /** Phase N5 (V36): a message in a plan or a private reply. */
+    @Column(name = "message_id", updatable = false)
+    private Long messageId;
+
     @Column(name = "person_id", updatable = false)
     private Long personId;
 
@@ -84,6 +88,13 @@ public class ContentCase {
         return new ContentCase(TargetKind.PERSON, null, personId, now);
     }
 
+    /** Phase N5: a case about one message. */
+    public static ContentCase aboutMessage(long messageId, LocalDateTime now) {
+        ContentCase c = new ContentCase(TargetKind.MESSAGE, null, null, now);
+        c.messageId = messageId;
+        return c;
+    }
+
     /** Phase 13E: a case opened by the automatic check or by the author's request (reports may join it later). */
     public ContentCase openedBy(CaseOpenedBy origin) {
         this.origin = origin;
@@ -118,6 +129,10 @@ public class ContentCase {
 
     public Long getMomentId() {
         return momentId;
+    }
+
+    public Long getMessageId() {
+        return messageId;
     }
 
     public Long getPersonId() {

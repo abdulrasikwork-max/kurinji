@@ -23,16 +23,23 @@ public interface ContentReportRepository extends JpaRepository<ContentReport, Lo
 
     boolean existsByReporterIdAndPersonId(long reporterId, long personId);
 
+    /** Phase N5: the reporter's one report about a message (unique: `uk_content_reports_message`). */
+    boolean existsByReporterIdAndMessageId(long reporterId, long messageId);
+
+    @Modifying
+    @Query("delete from ContentReport r where r.messageId in :messageIds")
+    int deleteByMessageIds(@Param("messageIds") Collection<Long> messageIds);
+
     /** The reporter's own list, newest first. */
     List<ContentReport> findByReporterIdOrderByCreatedAtDescIdDesc(long reporterId, Pageable page);
 
     /**
-     * M5 independence: rows (reporterA, reporterB, shared) for pairs among [ids] that reported the same target (moment or
-     * person). Feeds community.service.Independence.fromRows, the Phase 7 rule.
+     * M5 independence: rows (reporterA, reporterB, shared) for pairs among [ids] that reported the same target (moment,
+     * message or person). Feeds community.service.Independence.fromRows, the Phase 7 rule.
      */
     @Query("select a.reporterId, b.reporterId, count(a) from ContentReport a, ContentReport b"
             + " where a.reporterId in :ids and b.reporterId in :ids and a.reporterId < b.reporterId"
-            + " and (a.momentId = b.momentId or a.personId = b.personId)"
+            + " and (a.momentId = b.momentId or a.personId = b.personId or a.messageId = b.messageId)"
             + " group by a.reporterId, b.reporterId")
     List<Object[]> sharedTargets(@Param("ids") Collection<Long> ids);
 
