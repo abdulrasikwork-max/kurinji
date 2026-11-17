@@ -251,3 +251,64 @@ NOT manually verified.** Decision N-102.
 - **Guidelines:** a section "Private replies and plans" (turns, no read state, messages checked before delivery, how
   reporting works and what a moderator reads, nobody told they were turned down).
 - **Tests:** `MessageModerationTest` (5), one This happened test in `CreateTest`.
+
+### C (2026-11-18): tests, lint, security / privacy review, emulator walk, documents — N5 COMPLETE
+
+Status: **N5 COMPLETE: implemented, compiled, tested, manually verified on the emulator (`irl_api33`) against the
+development backend; NOT verified on a physical phone.** Decision N-103.
+
+- **Final runs (after the fixes below, one at a time):** backend `mvn -o clean test` **511 run / 0 failures / 0 errors /
+  2 skipped**; Android `gradlew --offline clean testDebugUnitTest assembleDebug` **804 run / 0 failures**, `assembleDebug`
+  OK; `lintDebug` **0 errors, 98 warnings** (N4: 101; nothing new in N5 code: `accessibilityHeading` on minSdk 26 as
+  everywhere, unused resources of the old screens). The owner ran `lintDebug` first (same 0 / 98); the code changed
+  after it, so it was run again.
+- **Security / privacy review:** done for A1–A3 before C (see HANDOFF); the C fixes add no logging, no storage and no
+  new route. The walk's backend log had no error, no message words and no code (two expected start-up warnings: the
+  dev code file and the development `COMMUNITY_SECRET`). Replies and conversations block screenshots (FLAG_SECURE: the
+  screen capture came back empty).
+- **Walk set-up:** development MySQL (V36) backed up first (`db-backups/safesphere-dev-before-n5c-20261118.sql`); the jar
+  on port 8090 with the dev code file; the Python text check RUNNING on 8091 with a throwaway key (so "checked before
+  delivery" was walked, unlike N4); `android/local.properties` pointed at `10.0.2.2:8090`. The emulator was account 401
+  (a new member); 397 and the admin / moderator 400 were driven over the API, and 400 also on the emulator for the
+  moderator's screen. Afterwards the database was restored from that backup (everything the walk wrote is gone), the
+  walk's two photo files were deleted, `local.properties` was restored byte for byte, and the emulator is signed out.
+
+| Walked (emulator unless marked) | Result |
+|---|---|
+| Same, its band ("You and someone else feel the same" after a second Same), the card's one line after one's own Same, the author's names newest first (API) | OK |
+| Say more, the follow-up (author, API), "said more" in the asker's Replies, Say more gone after the follow-up, no exact time for others | OK |
+| I'm in → "Waiting for … to add you", Take it back, I'm in again; Add opens the plan; Not this time is silent (the asker still sees ASKED; Replies never says declined) | OK |
+| Author tools in the app: People sheet (Want in / In / Not this time, Bring back, Remove with a confirm), Call it off with a confirm; a removed person sees REMOVED and gets 409 on asking again; the plan closes at once | OK |
+| Plan conversation: people line, closes line, "You're in", messages both ways, "… can't make it", an outsider gets 404 | OK |
+| Replies tab: sections, "New", the dot read as "something new" (never a number) | OK after fix 1 |
+| Private replies setting (My people → Anyone at MIET, saved, read back by the server); a reply refused under My people (403), allowed after; turns ("Wait for an answer…", 409 on a second message), one per moment (409), End with a confirm, read-only for both (409) | OK after fix 1 |
+| Report a message by touch and hold → reason list → MESSAGE case; the moderator's queue and case screen in the app (context, pseudonyms, the check's evidence "not a verdict"), Keep; a moderator's hold hides it from the reader and shows the writer HELD (no shadow state) | OK |
+| This happened from a plan after its time: Create in its own mode, camera app, a new member's photo waits for a moderator, the card's "This happened · …" line, once per plan | OK after fixes 2 and 3 |
+| Guidelines "Private replies and plans" | OK |
+
+**Found and fixed (regression tests added):**
+1. **Android (A2): every Replies line about one's OWN moment was dropped.** The server sends one's own moment with
+   `authorName: null`; `MomentRefDto.toDomain` required a name for every moment, so the author never saw who asked in,
+   who said Say more, a private reply waiting for them or their own plan, and could not open a conversation about their
+   own moment. Now the name is required only for someone else's moment (one's own is never taken from the answer), and a
+   line that would have to name someone with no name to show is dropped (`ReplyItemDto`, `NAMELESS` lines: own plan,
+   not in, closed, called off). The test fake had given one's own moments a name, which hid it.
+   `RepliesTest` + 1 (server-shaped own lines).
+2. **Backend (B4): a This happened that waited for a moderator was never announced.** The plan's HAPPENED line is
+   written only when the Say can be seen; a held one (every new member's photo for all of MIET in their first week, so
+   every member at the pilot launch) never got it when a moderator or the check released it, so the plan never said it
+   happened and still offered This happened (a second member would be refused only after taking a photo).
+   `PlanEvents.becameVisible` is now called where a moment becomes visible for the first time outside Create
+   (`ContentModerationService.release`, `AssessmentService` `MomentTarget.publish`); nothing is said while it waits
+   (N-103). `RepliesApiTest` + 1.
+3. **Android (A3): Create's This happened mode showed an empty "Who can see this" heading** (its chooser was hidden,
+   the heading was not). The heading now goes with its chooser.
+
+**Noted, not changed (outside N5 or by design):**
+- Tapping the current tab from a reading screen opened from that tab (for example one's own moment from You) does not
+  go back to the tab's top (older 13F / N4 behaviour: only the tab's own screen handles a re-tap).
+- The You tab still says "Make a profile to share experiences" (an N4-era word), and the privacy notice does not yet
+  describe moments, responses or private replies (policy texts are N8).
+- The moderator queue's heading says "Cases about moments and people's behaviour" (messages are listed there too).
+- While a This happened waits for a moderator, a second member who tries is told "Someone in this plan already shared
+  that it happened" (the server's once-per-plan rule counts the waiting one); accepted.

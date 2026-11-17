@@ -1,3 +1,18 @@
+# CHECKPOINT 2026-11-18 (sixteenth session, end): **N5 IS COMPLETE** (B1–B4, A1–A3, C). Implemented, compiled, tested, manually verified on the emulator against the development backend; NOT verified on a physical phone. Nothing pushed, nothing deployed, pilot untouched.
+
+**Standing instructions, unchanged:** never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). Each new phase (N6 next) needs its own plan and the owner's approval first.
+
+- **Git:** branch `irl-next`. This session: `7510ffc` "N5-C: fixes found in the emulator walk" (code + tests), then "N5-C: documents" (`git log -2`). Working tree clean afterwards.
+- **Final runs (one at a time; the PC runs out of memory with Gradle + emulator together):** backend `mvn -o clean test` **511 / 0 / 0 / 2 skipped**; Android `gradlew --offline clean testDebugUnitTest assembleDebug` **804 / 0**, `assembleDebug` OK; `lintDebug` **0 errors / 98 warnings** (the owner's own run before the fixes: same).
+- **Emulator walk (details and table: `PHASE_N5.md` "C"):** Same / bands / card line, Say more + follow-up, I'm in / Take it back / Add / Not this time / Bring back / Remove / Call it off, the plan conversation (system lines, both ways, outsider 404), Replies + dot, Private replies setting, turns, one per moment, End, report a message → the moderator's MESSAGE case in the app → Keep / hold (writer sees HELD), This happened (held photo → moderator Keep → plan line), guidelines. The Python text check RAN (8091, throwaway key) so delivery checks were real.
+- **Found and fixed (regression tests):** (1) Android A2: Replies dropped every line about one's OWN moment (server sends `authorName: null` for one's own; `MomentRefDto` required a name); (2) backend B4: a This happened that waited for a moderator was never announced in its plan and the button stayed (N-103, `PlanEvents.becameVisible` on first visibility); (3) Android A3: empty "Who can see this" heading in Create's This happened mode.
+- **Noted, not changed:** a tab re-tap from a reading screen opened from that tab does not return to the tab's top (13F / N4 behaviour); You says "share experiences" (N4-era word); the privacy notice does not describe moments / replies yet (N8 policy texts); the moderator queue heading does not mention messages.
+- **Database:** development MySQL restored from `db-backups/safesphere-dev-before-n5c-20261118.sql` after the walk (V36, 38 tables, nothing from the walk left); the walk's two photo files deleted. Next migration **V37**.
+- **Environment left:** `android/local.properties` restored byte for byte (points at the pilot again); emulator stopped and signed out (the walk logged it out of 401 and in as 400; the restore ended those sessions). Backend, Python service and Gradle stopped.
+- **Next step:** N6 (safety trim: route / stop checks out, SMS-app fallback only, Safety Circle offer on plans) needs its own plan and the owner's approval. Do not start without it.
+
+---
+
 # CHECKPOINT 2026-11-18 (fifteenth session, N5 in progress): backend B1–B4 DONE (V36 applied on the DEVELOPMENT MySQL); Android A1, A2, A3 DONE (implemented, compiled, tested; NOT manually verified). Next: C (`docs/PHASE_N5.md` §4). Nothing pushed, nothing deployed, pilot untouched.
 
 **Standing instructions:** the owner approved N5 (D14–D19 locked, N-88 to N-99) and asked to build it autonomously with full creative freedom inside the direction; never push, never deploy; one local commit per coherent step; update this file before a session ends. The pilot stays on the old jar / V30.

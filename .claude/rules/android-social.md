@@ -21,6 +21,8 @@ paths:
 > pure `RepliesLabels`. Moderation: `ReportTarget.MESSAGE`, `ContentTarget.MESSAGE` with `CaseConversation`. FLAG_SECURE
 > on Replies and conversations. Guards: `ResponsesTest`, `RepliesTest`, `MessageModerationTest`, `SocialTextsTest`
 > (scans `replies`), `NavigationRulesTest`. Nothing stored on the phone; no number, no read state anywhere.
+> **N5-C:** `MomentBrief.authorName` is null for one's OWN moment (the server sends none); only someone else's moment
+> needs it, and a Replies line with no name to show is dropped unless it names nobody (`ReplyItemDto.NAMELESS`).
 
 > **N4 (2026-11-17, `docs/PHASE_N4.md` "A1 close", "A2"): read with care.** The old social screens (feed, composer,
 > post, place, private places, cities, video) are GONE. New `feature/moments`: Today (`TodayFragment` / `TodayViewModel`,
