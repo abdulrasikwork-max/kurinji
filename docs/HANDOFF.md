@@ -1,3 +1,11 @@
+# CHECKPOINT 2026-11-18 (sixteenth session, final): **N6 APPROVED / DESIGN LOCKED / IMPLEMENTATION DEFERRED.** Reason: the Claude usage limit was at about 90 %. Documents only; no code, migration or test changed. Nothing pushed, nothing deployed, pilot untouched.
+
+- **Design:** `docs/PHASE_N6.md` (the complete approved design and validation plan). Decisions D20–D25 = `DECISIONS.md` N-104 to N-109: D20 automatic server-side SOS SMS to enabled Safety Circle contacts (Fast2SMS through the provider port, no `SEND_SMS`) with manual SMS as fallback; D21 remove shake SOS; D22 Safe Walk → "On my way" (reminder, no location); D23 revised V37; D24 "Let someone know · On my way" in Plans; D25 the name "On my way". Automatic On my way timeout alerts are DEFERRED.
+- **State:** N5 complete (`7510ffc`, `3b6920c`); backend 511 / 0 / 0 / 2 skipped, Android 804 / 0, lint 0 / 98. Development MySQL at V36 (38 tables). Next migration **V37** (N6).
+- **Resume here (next session):** read `docs/PHASE_N6.md` §5, then start **N6-B1** (backend walk trim). Order B1 → B2 → B3 → A1 → A2 → A3 → C, one local commit each. Run Gradle, Maven and the emulator ONE AT A TIME (memory). Live SMS tests in C need the owner (about Rs 50–100).
+
+---
+
 # CHECKPOINT 2026-11-18 (sixteenth session, end): **N5 IS COMPLETE** (B1–B4, A1–A3, C). Implemented, compiled, tested, manually verified on the emulator against the development backend; NOT verified on a physical phone. Nothing pushed, nothing deployed, pilot untouched.
 
 **Standing instructions, unchanged:** never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). Each new phase (N6 next) needs its own plan and the owner's approval first.
