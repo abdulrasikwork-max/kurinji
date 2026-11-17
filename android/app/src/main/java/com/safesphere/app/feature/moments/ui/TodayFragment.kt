@@ -60,6 +60,15 @@ class TodayFragment : ViewBindingFragment<FragmentTodayBinding>(FragmentTodayBin
         // A moment was deleted on its own page: it leaves the wall at once.
         findNavController().currentBackStackEntry?.savedStateHandle?.getLiveData<String>(MomentFragment.RESULT_REMOVED)
             ?.observe(viewLifecycleOwner) { id -> viewModel.onRemoved(id) }
+        // N5: a moment was answered on its own page: that card is read again.
+        findNavController().currentBackStackEntry?.savedStateHandle?.let { handle ->
+            handle.getLiveData<String>(MomentFragment.RESULT_CHANGED).observe(viewLifecycleOwner) { id ->
+                if (id != null) {
+                    handle.remove<String>(MomentFragment.RESULT_CHANGED)
+                    viewModel.onUpdated(id)
+                }
+            }
+        }
         // A2: a moment was just shared from Create: read the wall again from the top.
         findNavController().currentBackStackEntry?.savedStateHandle?.let { handle ->
             handle.getLiveData<String>(CreateFragment.RESULT_SHARED).observe(viewLifecycleOwner) { id ->

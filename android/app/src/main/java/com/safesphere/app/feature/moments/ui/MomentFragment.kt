@@ -1,8 +1,12 @@
 package com.safesphere.app.feature.moments.ui
 
 import android.os.Bundle
+import android.text.InputFilter
+import android.text.InputType
 import android.text.format.DateFormat
 import android.view.View
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
@@ -18,7 +22,9 @@ import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentMomentBinding
 import com.safesphere.app.feature.moments.domain.Moment
 import com.safesphere.app.feature.moments.domain.MomentStatus
+import com.safesphere.app.feature.moments.domain.PlanPerson
 import com.safesphere.app.feature.social.domain.ReportTarget
+import com.safesphere.app.feature.social.ui.DraftNudgeDialogs
 import com.safesphere.app.feature.social.ui.ModerationLabels
 import com.safesphere.app.feature.social.ui.ReportDialogs
 import com.safesphere.app.feature.social.ui.ReportMessage
@@ -39,6 +45,7 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
 
     private val viewModel by viewModels<MomentViewModel> { MomentViewModel.factory(appContainer) }
     private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
+    private var peopleSheet: MomentPeopleSheet? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -53,6 +60,19 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
         binding.aboutMeButton.setOnClickListener { confirmAboutMe() }
         binding.checkReviewButton.setOnClickListener { viewModel.uiState.value.moment?.let { reports.askCheckReview(ReportTarget.MOMENT, it.id) } }
         binding.appealButton.setOnClickListener { viewModel.uiState.value.moment?.notice?.decisionId?.let(reports::appeal) }
+        // N5: responses
+        binding.sameButton.setOnClickListener { viewModel.onSame() }
+        binding.sayMoreButton.setOnClickListener { viewModel.onSayMore() }
+        binding.inButton.setOnClickListener { viewModel.onAskIn() }
+        binding.withdrawButton.setOnClickListener { viewModel.onWithdraw() }
+        binding.addMoreButton.setOnClickListener { askMore() }
+        binding.callOffButton.setOnClickListener { confirmCallOff() }
+        peopleSheet = MomentPeopleSheet(this, momentImages(), ::onPersonAction) { viewModel.onPeopleClosed() }
+        binding.peopleButton.setOnClickListener {
+            peopleSheet?.show()
+            viewModel.loadPeople()
+            renderPeople(viewModel.uiState.value)
+        }
         collectWhenStarted(reports.uiState, ::renderReports)
         collectWhenStarted(viewModel.uiState, ::render)
         viewModel.load(requireArguments().getString(ARG_ID).orEmpty())
@@ -66,6 +86,105 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
     override fun onPause() {
         super.onPause()
         secure(false)
+    }
+
+    override fun onDestroyView() {
+        peopleSheet?.dismiss()
+        peopleSheet = null
+        super.onDestroyView()
+    }
+
+    // ---- N5: responses ----------------------------------------------------------------------------------------------
+
+    /** D15: the author's one "say more", checked on the phone first (the private nudge), then by the server. */
+    private fun askMore() {
+        val context = requireContext()
+        val input = EditText(context).apply {
+            setHint(R.string.response_more_hint)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            filters = arrayOf(InputFilter.LengthFilter(MORE_MAX))
+            minLines = 2
+        }
+        val padding = context.resources.getDimensionPixelSize(R.dimen.screen_padding)
+        val frame = FrameLayout(context).apply {
+            setPadding(padding, 0, padding, 0)
+            addView(input)
+        }
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.response_more_title)
+            .setMessage(R.string.response_more_message)
+            .setView(frame)
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.response_more_add) { _, _ ->
+                val words = input.text?.toString()?.trim().orEmpty()
+                if (words.isNotEmpty()) DraftNudgeDialogs.beforeSharing(this, words, onlyMe = false) { viewModel.onAddMore(words) }
+            }
+            .show()
+    }
+
+    private fun confirmCallOff() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.response_call_off_title)
+            .setMessage(R.string.response_call_off_message)
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.response_action_call_off) { _, _ -> viewModel.onCallOff() }
+            .show()
+    }
+
+    private fun onPersonAction(action: PersonAction, person: PlanPerson) {
+        val ref = person.ref ?: return
+        when (action) {
+            PersonAction.ADD -> viewModel.onAdd(ref)
+            PersonAction.SET_ASIDE -> viewModel.onSetAside(ref, aside = true)
+            PersonAction.BRING_BACK -> viewModel.onSetAside(ref, aside = false)
+            PersonAction.REMOVE -> viewModel.onRemove(ref)
+        }
+    }
+
+    private fun renderPeople(state: MomentUiState) {
+        val sheet = peopleSheet ?: return
+        val moment = state.moment
+        if (moment == null) {
+            sheet.dismiss()
+            return
+        }
+        sheet.render(state.people, state.peopleLoading, state.busy, author = moment.mine,
+            open = moment.responses.plan?.open == true)
+    }
+
+    private fun renderResponses(state: MomentUiState, moment: Moment) {
+        val actions = state.actions
+        val context = requireContext()
+        val responses = moment.responses
+        val lines = if (moment.mine) ResponseLabels.author(moment) else listOfNotNull(ResponseLabels.same(responses.same)?.let { ResponseWords(it) })
+        val standing = if (moment.mine) null else ResponseLabels.standing(responses.plan, moment.author.name, onCard = false)
+        binding.responseBlock.isVisible = actions.any || lines.isNotEmpty() || standing != null
+
+        binding.signalRow.isVisible = actions.same || actions.sayMore
+        binding.sameButton.isVisible = actions.same
+        bindToggle(binding.sameButton, responses.same?.mine == true)
+        binding.sayMoreButton.isVisible = actions.sayMore
+        bindToggle(binding.sayMoreButton, responses.sayMore)
+        binding.inButton.isVisible = actions.askIn
+        binding.standingLine.isVisible = standing != null
+        binding.standingLine.text = standing?.let { ResponseLabels.text(context, it) }.orEmpty()
+        binding.responseLines.isVisible = lines.isNotEmpty()
+        binding.responseLines.text = lines.joinToString("\n") { ResponseLabels.text(context, it) }
+        binding.withdrawButton.isVisible = actions.withdraw
+        binding.withdrawButton.setText(ResponseLabels.withdrawLabel(responses.plan))
+        binding.addMoreButton.isVisible = actions.addMore
+        binding.peopleButton.isVisible = actions.people
+        binding.callOffButton.isVisible = actions.callOff
+        for (button in listOf(binding.sameButton, binding.sayMoreButton, binding.inButton, binding.withdrawButton,
+                binding.addMoreButton, binding.peopleButton, binding.callOffButton)) {
+            button.isEnabled = !state.busy
+        }
+    }
+
+    /** A given response: checked (spoken as such), a tick, the same word. Never colour alone. */
+    private fun bindToggle(button: com.google.android.material.button.MaterialButton, on: Boolean) {
+        button.isChecked = on
+        button.icon = if (on) androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_check) else null
     }
 
     private fun report() {
@@ -152,16 +271,34 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
             nav.popBackStack()
             return
         }
+        if (state.changed) {
+            // The wall behind reads this moment again (or drops it when it went).
+            requireArguments().getString(ARG_ID)?.let { findNavController().previousBackStackEntry?.savedStateHandle?.set(RESULT_CHANGED, it) }
+            viewModel.onChangedHandled()
+        }
+        if (state.support) {
+            viewModel.onSupportShown()
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.nudge_support_title)
+                .setMessage(R.string.nudge_support_message)
+                .setNeutralButton(R.string.nudge_support_call) { _, _ -> DraftNudgeDialogs.dialHelpline(this) }
+                .setPositiveButton(R.string.nudge_support_back, null)
+                .show()
+        }
         val moment = state.moment
         binding.progress.isVisible = state.loading || state.busy
         binding.goneBlock.isVisible = state.gone
         binding.momentCard.root.isVisible = moment != null
+        binding.responseBlock.isVisible = false
+        renderPeople(state)
         binding.ownBlock.isVisible = moment != null && moment.mine
         binding.authorButton.isVisible = false
         binding.othersBlock.isVisible = moment != null && !moment.mine
         if (moment != null) {
-            MomentCardBinder.bind(binding.momentCard, moment, state.open, momentImages())
+            MomentCardBinder.bind(binding.momentCard, moment, state.open, momentImages(), responseLine = false)
             binding.momentCard.content.isClickable = MomentCardBinder.covered(moment, state.open)
+            // A covered moment is answered only after it was read.
+            if (!MomentCardBinder.covered(moment, state.open)) renderResponses(state, moment)
             if (moment.mine) {
                 renderOwn(state, moment)
                 renderReview(moment, reports.uiState.value)
@@ -223,5 +360,9 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
         const val ARG_ID = "momentId"
         /** Set on the previous screen's saved state when the author deleted the moment. */
         const val RESULT_REMOVED = "moment_removed"
+        /** N5: set on the previous screen's saved state when a response changed the moment (its id). */
+        const val RESULT_CHANGED = "moment_changed"
+        /** D15: the follow-up's limit (the server counts characters the same way and has the last word). */
+        const val MORE_MAX = 500
     }
 }

@@ -167,8 +167,27 @@ development MySQL 8.0.46 only; curl walk on real MySQL.** The pilot is untouched
   plan rows, conversations, messages, message cases and reports. Not manually verified on a phone (Android is next).
 - Tests: `RepliesApiTest` (6); `ResponseBoundariesTest` checks every N5 DTO.
 
-### A1 (started 2026-11-17, NOT finished): Android data layer
+### A1 (2026-11-18): responses on cards and the moment page, author tools, data layer — Android
 
-Status: **implemented and compiled (Android 758 / 0 unchanged); no UI, no N5 Android test yet.** `ResponseModels.kt`,
-`ResponseDtos.kt` (fail-closed), `ResponseApi`, `RemoteResponseRepository`, `AppContainer.responseRepository`,
-`Moment.responses` / `happenedOf`. The rest of A1 is listed at the top of `HANDOFF.md`.
+Status: **implemented, compiled, tested (Android 780 / 0, `gradlew --offline clean testDebugUnitTest assembleDebug`);
+NOT manually verified.** Decision N-100.
+
+- **Data:** `ResponseModels.kt`, `ResponseDtos.kt` (fail-closed: unknown band = no band, unknown or AUTHOR standing for
+  someone else = no plan controls, names only on one's own moment, at most 3, blank dropped; follow-up exact time only for
+  the author), `ResponseApi`, `RemoteResponseRepository` (non-UUID ids never reach a URL), `AppContainer.responseRepository`,
+  `Moment.responses` / `happenedOf`.
+- **Pure policy `ui/ResponseLabels`:** D14 bands (page always, card only after one's own Same), D16 standing (waiting /
+  in / closed / called off / not in any more, never "declined"), the author's name lines (who waits first; one / many verb),
+  `cardLine` (ONE line), `actions` (the response matrix: Same / Say more on someone else's live Say, Say more ends after
+  the follow-up; I'm in only while asks are open; Take it back / I can't make it always while asked (open) or in; Add a
+  little more once, after an ask, while others can see it on Today; People for the author and for someone in; Call it
+  off once others can see it). `PeopleSections` (author: Want in = Not this time + Add while open, In = Remove with a
+  confirm, Not this time = Bring back, Want to hear more, Feel the same; someone in: In only).
+- **UI:** card (`item_moment_card.xml`): "More · rough time" block in the body, "This happened · …" line, one quiet
+  response line, all in the spoken text. Page (`fragment_moment.xml`): Same / Say more checkable buttons (tick + checked
+  state, never colour alone), I'm in, standing line, name lines, Take it back / I can't make it, Add a little more (dialog,
+  500, the on-phone nudge through `DraftNudgeDialogs`, support line if the server suggests it), People bottom sheet
+  (`sheet_moment_people.xml`, `MomentPeopleSheet`), Call it off (confirm). Reply / plan buttons wait for A2.
+  `MomentViewModel(repository, responses)`; Today re-reads only an answered card (`RESULT_CHANGED`, `onUpdated`).
+- **Tests:** `ResponsesTest` (22: parsing, words, matrix, sheet, view model, Today, guards: no digit / "declined" / "seen"
+  in `response_*` words, nothing stored); `MomentUiTest` constructors; `SocialTextsTest` covers the new sheet.

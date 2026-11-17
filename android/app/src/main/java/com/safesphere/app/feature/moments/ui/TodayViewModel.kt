@@ -112,6 +112,22 @@ class TodayViewModel(
     /** A moment was deleted from its page: it leaves the wall at once. */
     fun onRemoved(id: String) = _uiState.update { s -> s.copy(moments = s.moments.filterNot { it.id == id }) }
 
+    /**
+     * N5: someone answered a moment on its page (Same, I'm in, …): only that card is read again. Gone for the reader
+     * = it leaves the wall; any other failure keeps the card as it was (the next refresh corrects it).
+     */
+    fun onUpdated(id: String) {
+        if (_uiState.value.moments.none { it.id == id }) return
+        viewModelScope.launch {
+            when (val result = repository.moment(id)) {
+                is ApiResult.Success -> _uiState.update { s ->
+                    s.copy(moments = s.moments.map { if (it.id == id) result.data else it })
+                }
+                is ApiResult.Failure -> if (result.error == ApiError.NOT_FOUND) onRemoved(id)
+            }
+        }
+    }
+
     fun onSessionExpiredHandled() = _uiState.update { it.copy(sessionExpired = false) }
 
     private fun firstPage(clear: Boolean) {

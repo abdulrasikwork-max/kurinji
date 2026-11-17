@@ -26,6 +26,7 @@ import com.safesphere.app.feature.social.ui.JournalViewModel
 import com.safesphere.app.feature.social.ui.PersonProfileViewModel
 import com.safesphere.app.testing.FakeMediaSource
 import com.safesphere.app.testing.FakeMomentRepository
+import com.safesphere.app.testing.FakeResponseRepository
 import com.safesphere.app.testing.FakeSocialRepository
 import com.safesphere.app.testing.MainDispatcherRule
 import com.safesphere.app.testing.moment
@@ -225,7 +226,7 @@ class MomentUiTest {
     @Test
     fun `a moment that is gone, ended or not for this reader reads the same`() = runTest {
         val repo = FakeMomentRepository()
-        val vm = MomentViewModel(repo)
+        val vm = MomentViewModel(repo, FakeResponseRepository())
         vm.load("m1")
         advanceUntilIdle()
         assertTrue(vm.uiState.value.gone)
@@ -237,7 +238,7 @@ class MomentUiTest {
     fun `keep is offered only on one's own live, visible moment, and a refusal shows the server's words`() = runTest {
         val repo = FakeMomentRepository()
         repo.momentResult = ApiResult.Success(moment("m1", mine = true))
-        val vm = MomentViewModel(repo)
+        val vm = MomentViewModel(repo, FakeResponseRepository())
         vm.load("m1")
         advanceUntilIdle()
         assertTrue(vm.uiState.value.canKeep)
@@ -262,7 +263,7 @@ class MomentUiTest {
         for (other in listOf(moment("x"), moment("w", mine = true, status = MomentStatus.WAITING),
                 moment("e", mine = true, status = MomentStatus.ENDED))) {
             repo.momentResult = ApiResult.Success(other)
-            val page = MomentViewModel(repo)
+            val page = MomentViewModel(repo, FakeResponseRepository())
             page.load(other.id)
             advanceUntilIdle()
             assertFalse(other.id, page.uiState.value.canKeep)
@@ -273,7 +274,7 @@ class MomentUiTest {
     fun `deleting closes the page, also when the moment was already gone`() = runTest {
         val repo = FakeMomentRepository()
         repo.momentResult = ApiResult.Success(moment("m1", mine = true))
-        val vm = MomentViewModel(repo)
+        val vm = MomentViewModel(repo, FakeResponseRepository())
         vm.load("m1")
         advanceUntilIdle()
         repo.deleteResult = ApiResult.Failure(ApiError.NOT_FOUND)
@@ -282,7 +283,7 @@ class MomentUiTest {
         assertTrue(vm.uiState.value.removed)
         assertEquals(listOf("m1"), repo.deleted)
 
-        val failing = MomentViewModel(repo)
+        val failing = MomentViewModel(repo, FakeResponseRepository())
         failing.load("m1")
         advanceUntilIdle()
         repo.deleteResult = ApiResult.Failure(ApiError.NO_CONNECTION)

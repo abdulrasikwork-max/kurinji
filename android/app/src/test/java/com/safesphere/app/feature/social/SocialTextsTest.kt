@@ -111,6 +111,8 @@ class SocialTextsTest {
             // N4: moments
             "fragment_today.xml", "fragment_moment.xml", "item_moment_card.xml", "item_today_question.xml",
             "item_today_message.xml", "item_moment_section.xml", "item_moment_note.xml", "fragment_create.xml",
+            // N5: responses
+            "sheet_moment_people.xml",
             // Phase 13D
             "fragment_my_reports.xml", "fragment_guidelines.xml")
         /** N3: the membership words (MembershipTextsTest guards them; "Get verified" names the membership step). */

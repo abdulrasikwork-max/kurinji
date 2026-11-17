@@ -143,7 +143,11 @@ object MomentCardBinder {
     /** Covered = collapsed for the reader and not yet opened by them. The author always reads their own. */
     fun covered(moment: Moment, open: Boolean): Boolean = moment.collapsed && !moment.mine && !open
 
-    fun bind(b: ItemMomentCardBinding, moment: Moment, open: Boolean, images: MomentImages) {
+    /**
+     * [responseLine] = the one quiet line about responses (off on the moment's own page, which shows them in full under
+     * the card).
+     */
+    fun bind(b: ItemMomentCardBinding, moment: Moment, open: Boolean, images: MomentImages, responseLine: Boolean = true) {
         val context = b.root.context
         val author = moment.author
         val photoUrl = if (author.profileId != null && author.photo != null)
@@ -187,8 +191,32 @@ object MomentCardBinder {
         if (notice != null) b.notice.setMessage(noticeText(context, notice))
         b.keptLine.isVisible = moment.mine && moment.kept
 
-        b.content.contentDescription = spoken(context, moment, covered)
+        // N5 (D15): the author's one follow-up, inside the body (covered with the rest).
+        val more = moment.responses.more
+        b.moreBlock.isVisible = more != null
+        if (more != null) {
+            b.moreLabel.text = moreLabel(context, moment)
+            b.moreText.text = more.text
+        }
+        // N5 (N-92): the plan this Say says happened.
+        val happened = moment.happenedOf
+        b.happenedLine.isVisible = happened != null && !covered
+        if (happened != null) b.happenedLine.text = happenedLine(context, moment)
+        val line = if (responseLine) ResponseLabels.cardLine(moment) else null
+        b.responseLine.isVisible = line != null
+        b.responseLine.text = line?.let { ResponseLabels.text(context, it) }.orEmpty()
+
+        b.content.contentDescription = spoken(context, moment, covered, line)
     }
+
+    /** "More · This afternoon" (a rough time, also for the author: the exact one is on their page only). */
+    fun moreLabel(context: Context, moment: Moment): String =
+        moment.responses.more?.shared?.let { context.getString(R.string.response_more_label, context.getString(MomentLabels.shared(it))) }
+            ?: context.getString(R.string.response_more_label_plain)
+
+    fun happenedLine(context: Context, moment: Moment): String =
+        moment.happenedOf?.text?.let { context.getString(R.string.response_happened_line, it) }
+            ?: context.getString(R.string.response_happened_plain)
 
     /** The author's notice in words: the sentence, with the reason's words where it names one (no marked phrases). */
     fun noticeText(context: Context, notice: com.safesphere.app.feature.moments.domain.MomentNotice): String =
@@ -213,20 +241,23 @@ object MomentCardBinder {
     }
 
     /** One sentence for TalkBack: who, when, what kind, and the words (or that it is covered). */
-    fun spoken(context: Context, moment: Moment, covered: Boolean): String {
+    fun spoken(context: Context, moment: Moment, covered: Boolean, line: ResponseWords? = null): String {
         val parts = ArrayList<String>()
         if (moment.kind == MomentKind.WHOS_IN) parts += context.getString(R.string.moment_kind_whos_in)
         if (covered) {
             parts += context.getString(R.string.moment_cover)
         } else {
+            if (moment.happenedOf != null) parts += happenedLine(context, moment)
             moment.text?.let { parts += it }
             if (moment.photo != null) parts += context.getString(R.string.moment_photo)
             moment.plan?.let { plan ->
                 plan.at?.let { parts += planTime(context, it) }
                 plan.where?.let { parts += it }
             }
+            moment.responses.more?.let { parts += moreLabel(context, moment) + ": " + it.text }
         }
         moment.notice?.let { parts += noticeText(context, it) }
+        line?.let { parts += ResponseLabels.text(context, it) }
         return context.getString(R.string.cd_moment_card, moment.author.name + ", " + meta(context, moment),
             parts.joinToString(". "))
     }

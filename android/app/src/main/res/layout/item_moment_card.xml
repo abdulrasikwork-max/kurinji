@@ -164,7 +164,54 @@
                     android:textAppearance="@style/TextAppearance.SafeSphere.Body"
                     tools:text="Canteen, near the banyan tree" />
             </LinearLayout>
+
+            <!-- N5 (D15): the author's one "say more", under the moment, with a rough time. -->
+            <LinearLayout
+                android:id="@+id/moreBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_quote_rule"
+                android:orientation="vertical"
+                android:paddingStart="28dp"
+                android:paddingTop="10dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="10dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:id="@+id/moreLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.Kurinji.Overline"
+                    android:textColor="?attr/colorAccentText"
+                    tools:text="More · This afternoon" />
+
+                <TextView
+                    android:id="@+id/moreText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="It was the new filter coffee, not the machine." />
+            </LinearLayout>
         </LinearLayout>
+
+        <!-- N5 (N-92): the plan this photo says happened (its words, shortened by the server). -->
+        <TextView
+            android:id="@+id/happenedLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+            android:textColor="?attr/colorAccentText"
+            android:visibility="gone"
+            tools:text="This happened · Canteen at four?"
+            tools:visibility="visible" />
 
         <!-- The author's own moment: its state, in words. -->
         <com.safesphere.app.core.ui.components.NoticeView
@@ -184,5 +231,18 @@
             android:text="@string/moment_kept_line"
             android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
             android:visibility="gone" />
+
+        <!-- N5: one quiet line: the author's names, the reader's own Same, or where the reader stands in a plan. -->
+        <TextView
+            android:id="@+id/responseLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+            android:visibility="gone"
+            tools:text="You and a few others feel the same"
+            tools:visibility="visible" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
