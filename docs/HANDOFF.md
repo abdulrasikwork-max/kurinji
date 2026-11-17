@@ -1,4 +1,41 @@
-# CHECKPOINT 2026-11-16 (eleventh session, stopped at the usage limit): N4-B2 is DONE. N4-B3 is PARTIALLY done (code and a first set of tests are in, green; documents and some tests are missing). B4, A1, A2, A3, C NOT started. Nothing pushed, nothing deployed.
+# CHECKPOINT 2026-11-17 (twelfth session): the N4 BACKEND is DONE (B1, B2, B3, B4). V35 is applied on the DEVELOPMENT MySQL. Android units A1, A2, A3 and the close C are NOT started. Nothing pushed, nothing deployed.
+
+**Standing instructions, unchanged:** the product direction is decided and is not reopened; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N4 plan and decisions are LOCKED (`docs/PHASE_N4.md`); continue them, do not re-plan. **Owner, 2026-11-16 and again 2026-11-17: continue the remaining N4 units autonomously without asking between normal units; stop only for a real conflict, a security / privacy problem, a destructive step without its documented backup, or a missing requirement. Android UI / UX: full creative freedom inside the IRL direction. Never leave the repository without a recovery point: commit each finished unit and update this file before the session can end.**
+
+## What this session found and did
+- **Found:** the eleventh session stopped at the usage limit BEFORE its checkpoint commit. HEAD was `87ce801` (B2); the B3 work (110 files: the old social code removed, moderation on moments, "This is about me", profiles) was in the working tree, partly staged, with `HANDOFF.md` / `PHASE_N4.md` already describing it. Nothing was broken: a clean build ran 456 tests, 0 failures.
+- **Recovered:** committed unchanged as `adf0732` "N4 checkpoint: B3 partial (recovered …)" before any other change.
+- **Completed:** B3 (`d191bc6`) and B4 (the commit after it, `git log`): details in `PHASE_N4.md` "As built", "B3 close", "Security and privacy review of B2 + B3", "B4".
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). Commits, oldest first: `87ce801` B2 · `adf0732` recovered B3 checkpoint · `d191bc6` N4-B3 · then "N4-B4" (`git log -1`). `git status` clean afterwards.
+- `android/` and `moderation-service/` not touched. `android/local.properties` and `backend/.env` not touched (`.env` was read for the database password only).
+
+## Build / test status
+- Backend: `mvn -o clean test` **467 run, 0 failures, 0 errors, 2 skipped**. Command: `cd backend`, `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:/Users/Public mvn -o clean test`. **Use `clean`** (without it Maven reported a false success after files were deleted).
+- Real MySQL: curl walk passed (list in `PHASE_N4.md` B4); `MySqlTimestampStorageTest` 2 / 2.
+- Android: NOT touched and NOT compiled against this backend. The app in `android/` still calls the removed routes (`/api/posts`, `/api/discover`, …): it builds (last result N3: 795 / 0) but its social screens cannot work against this backend until A1 / A2.
+- Python: not touched (38, N1).
+- **Not manually verified on a phone or emulator** (no Android side yet).
+
+## Database
+- Development MySQL: **V35, 32 tables**. Backup before it: `Desktop\SafeSphere-Phase3\db-backups\safesphere-dev-before-v35-20261117.sql` + `db-backups\social-media-store-before-v35-20261117\`. The 12 old posts, 8 places, the city catalog and 1 perspective are gone from the development database (in the backup).
+- `spring.flyway.target=34` is REMOVED from `application.properties`. The pilot: V30, untouched. Next NEW migration file: **V36**.
+- Not exercised on real MySQL yet: the daily question, a moderator's decision / appeal, the automatic text check (no admin or moderator is a member on the development database; the Python service was not started). Unit C does it on the emulator.
+
+## The exact first step for the next session
+**N4-A1 (Android):** read `docs/PHASE_N4.md` §10 and `.claude/rules/android.md` / `android-social.md`, inspect `android/` (navigation graph, `feature/social`, `AppContainer`, the wording guards), then build Today + the moment card and page + You / profiles on the new API + navigation (Today · ✚ · You) + removal of the old social screens (city feed, composer, post, place, private places, cities, Home city, video, experience cards; one-time deletion of the private-places file and key and the saved Home city) + FLAG_SECURE per D12. Then A2 (Create, camera app through the FileProvider, audience, Who's in?, the text-check nudge, upload), A3 (report, "This is about me", author notices, moderator case, admin questions), C (tests, documents, emulator walk on the development backend). One local commit per unit. API to build against: `docs/API.md` "Phase N4".
+
+## For the owner's attention (none blocking)
+1. **"This is about me" can be used to hide someone's moment until a moderator looks** (the locked decision D11 accepts this; bounds: the daily report limit, tier 1 in the queue, Keep restores). How long a hide lasts depends on moderator coverage (M5, N8).
+2. M4 (the three-tier queue) was "to confirm before B3" and is built as planned (N-69). Say so if it should change.
+3. The 5 files of the old posts are still in `backend/social-media-store`; the clean-up job removes them the next time the backend runs for an hour (they are in the backup).
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, `COMMUNITY_SECRET` before any real roll number, the pilot's own move to the new jar and schema (its own approved step with a fresh `restore-rehearsal.sh` PASS first), the N2 observations for N6.
+
+---
+
+# CHECKPOINT 2026-11-16 (eleventh session, stopped at the usage limit; superseded by the checkpoint above: B3 and B4 are done): N4-B2 is DONE. N4-B3 is PARTIALLY done (code and a first set of tests are in, green; documents and some tests are missing). B4, A1, A2, A3, C NOT started. Nothing pushed, nothing deployed.
 
 **Standing instructions, unchanged:** the product direction is decided and is not reopened; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N4 plan and decisions are LOCKED (`docs/PHASE_N4.md`); continue them, do not re-plan. **Owner, 2026-11-16 (this session): continue the remaining N4 units autonomously without asking between normal units; stop only for a real conflict, a security / privacy problem, a destructive step without its documented backup, or a missing requirement. Android UI / UX: full creative freedom.**
 

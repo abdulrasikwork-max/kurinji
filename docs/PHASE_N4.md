@@ -388,3 +388,72 @@ committed as a recovery checkpoint before anything else was changed. Finished af
 | Does anything new touch safety? | No: `SocialIsolationTest`, `CommunityIsolationTest` unchanged and green; a posting pause refuses sharing and uploads only |
 | Does anything reintroduce a retired concept? | No: `MomentBoundariesTest` (source, V35 tables, answer fields, old routes) |
 | Limits | In memory (reset by a restart): documented, unchanged |
+
+### B4 (2026-11-17): V35 on the DEVELOPMENT MySQL 8.0.46 only (the pilot is NOT migrated: old jar, V30)
+
+Status: **applied and checked on the development database; implemented, tested (curl walk on real MySQL; not an
+emulator walk: there is no Android side yet).**
+
+- **Backup first:** `C:\Users\ABDUL RAFIQ\Desktop\SafeSphere-Phase3\db-backups\safesphere-dev-before-v35-20261117.sql`
+  (`mysqldump --single-transaction`, 35 tables, 232 332 bytes; outside the repository; plain, same disk) and the media
+  folder copied to `db-backups\social-media-store-before-v35-20261117` (5 files).
+- **Pre-check (read-only):** Flyway at V34, 35 tables. Every name V35 drops exists exactly once (6 foreign keys, 6
+  unique indexes, 9 CHECKs, 9 columns); no table outside the dropped set has a foreign key into `posts`, `comments`,
+  `post_media`, `post_revisions`, `places` or `cities` except the three moderation tables whose keys V35 drops first.
+  Data: 209 accounts, 25 profiles (23 with a city, languages or interests), 12 posts, 4 post media, 1 perspective, 8
+  places, 86 cities, 0 reports, 0 cases, 2 assessments, 6 audit rows (all role changes), 4 memberships, 89 sessions, 73
+  SOS records, 5 Safety Circle contacts.
+- **Rehearsal on scratch copies** (`zz_v35_*`: the five existing tables V35 alters, created from `SHOW CREATE TABLE`
+  with renamed tables and constraint names and filled with their real rows plus old-style rows (a case and a report
+  about a post and about a perspective, an open and a closed case about a person with two reports, audit rows with kinds
+  POST and PERSON); then V35 itself, sections 1, 2, 3 and 5, rewritten to the scratch names; section 4, the `DROP
+  TABLE`s, cannot be rehearsed and was covered by the pre-check). It ran without an error. Afterwards: the post and
+  perspective cases and reports were gone, both person cases and their two reports stayed, the assessments were empty,
+  all 8 audit rows stayed, 25 profiles without `city` / `languages` / `interests`, the unique and foreign-key indexes
+  on `moment_id` present and none left on `post_id` / `comment_id`.
+- **Dry run of the CHECKs, keys and cascades: 104 cases, 35 accepted and 69 refused, each by the intended constraint,
+  0 findings.** (Two cases of the first run were wrong in the test data, not in the schema: the "upper-case id" had no
+  letter in it. Repeated with real upper-case letters: refused by `ck_daily_questions_public_id` and
+  `ck_moments_public_id`.) Accepted: a question with and without an author, 140 Tamil characters; a Say, My people, a
+  photo-only moment, 500 Tamil characters, a Who's in? with and without time and where and exactly 24 h ahead, a moment
+  never visible, kept, collapsed by reports, held `ABOUT_ME` / `AWAITING_CHECK` / `NEW_MEMBER_PHOTO`, collapsed by the
+  check with spans, removed by a moderator; an attached photo and unattached uploads; a case with origin `ABOUT_ME`, a
+  person case; reports `ABOUT_ME` (no note), `OTHER` with a note, `SPAM`; an assessment of a moment; audit rows on a
+  MOMENT and a PERSON. Refused: a second question on a day, 2 / 141 characters, padding, an unknown community; 501
+  characters, empty or padded text, unknown or lower-case kind and audience, an unknown author, a duplicate id; a plan
+  24 h + 1 s ahead, at or before the creation time, a time or a where on a Say, a where of 61 or 0 characters; visible
+  without an end and the reverse, visible before created, end = visible, kept before or without visibility; every
+  inconsistent moderation state (reports with a reason or HELD, system without a reason / REMOVED / with a decision,
+  moderator without a decision or with spans, a state without a source, NONE with a reason or a source, unknown state,
+  reason, source, malformed spans or decision); a second photo on a moment, 4097 px, 0 px, 5 MiB + 1, a bad hash, a path
+  as the file name; a second open case per moment, kinds POST / COMMENT, unknown origins; the same reporter twice,
+  `ABOUT_ME` with a note, `OTHER` without, reasons `NEEDS_REVIEW` / `NEW_MEMBER_PHOTO` / lower case; an assessment of
+  kind POST, without a moment, a second per moment; `CONTENT_REMOVE` on a PERSON or without a kind,
+  `PERSON_REMOVE_PHOTO` on a MOMENT, kind STORY, a role change with a kind. Cascades: deleting a moment removed its
+  photo row, case, reports and assessment; deleting a question kept its answers. Scratch tables dropped: 35 tables, no
+  `zz` name left.
+- **Applied** by removing `spring.flyway.target=34` and starting the backend once (`mvn -o spring-boot:run`, port 8099):
+  "Successfully validated 35 migrations", "Migrating schema `safesphere` to version "35 - moments"", "now at version
+  v35", "Started". Afterwards **32 tables** (35 + 3 − 6), the 19 CHECKs of the three new tables present, data counts
+  unchanged (209 accounts, 25 profiles, 6 audit rows, 4 memberships, 89 sessions, 73 SOS records, 5 contacts), 0
+  assessments. Every column the changed entities map (`Moment`, `MomentMedia`, `DailyQuestion`, `Profile`,
+  `ContentCase`, `ContentReport`, `ContentAssessment`) exists in MySQL. (Hibernate's own `validate` mode is not usable
+  here: it stops at an old CHAR / VARCHAR difference in `bans.phone_key`, V34, which is harmless.)
+- **API on real MySQL (curl, two existing members, both new members, not connected):** a Say for MIET → 201 LIVE; the
+  other member finds it on Today with `when` and `createdAt: null`; a photo upload → 201 (1153 × 2048), a text file as
+  JPEG → 400; the new member's photo for MIET → `WAITING`, `notice {HELD, NEW_MEMBER_PHOTO, SYSTEM}`, the other member
+  gets 404 for the moment and for its photo, the author gets the photo (`image/jpeg`, `no-store, private`, `nosniff`); a
+  Who's in? for My people with a time and a where → 201, 404 for a member who is not connected; a Say with a time →
+  400; a link as a new member → 400; the 4th moment of the day → 429; keep → 200; no edit route → 405; "This is about
+  me" → 202 twice, the author sees `notice {HELD, NEEDS_REVIEW, SYSTEM}`, the rows are report `ABOUT_ME`, case origin
+  `ABOUT_ME`, moment `HELD / SYSTEM / ABOUT_ME`, `in_review = 1` (the real CHECKs accept what the code writes); a report
+  of one's own moment, reason `ABOUT_ME` through `/api/reports` and kind `POST` → 400; `/api/posts`, `/api/discover`,
+  `/api/places`, `/api/media` → 404; the moderators' queue and the admin questions as a plain member → 403; the Safety
+  Circle list → 200. The three moments were deleted at the end: no moment, photo row, case or report left (the real
+  cascades). `MySqlTimestampStorageTest` 2 / 2 (`SAFESPHERE_MYSQL_TESTS=true`).
+- **Not exercised on real MySQL:** the daily question (no admin account is a member on the development database: root
+  admins verify each other first, N-36), a moderator's decision and an appeal (no moderator is a member there), the
+  automatic text check (the Python service was not started). All three are covered by the H2 tests; the emulator walk in
+  unit C repeats them on MySQL.
+- **Left as it is:** the 5 files of the old posts are still in `backend/social-media-store`; the hourly clean-up job
+  removes them as files without a row the next time the backend runs for an hour (they are in the backup).
