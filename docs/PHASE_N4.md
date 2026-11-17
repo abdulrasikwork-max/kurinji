@@ -1,7 +1,7 @@
 # Phase N4: Moments and Today
 
 Status: **decisions LOCKED by the owner on 2026-11-16; units B1, B2, B3 and B4 DONE (implemented, compiled, tested;
-"As built" at the end); A1 PARTIAL (2026-11-17); A2, A3, C NOT started: see "As built" and the top of `HANDOFF.md`.** The plan below was presented on
+"As built" at the end); A1 DONE (2026-11-17); A2, A3, C NOT started: see "As built" and the top of `HANDOFF.md`.** The plan below was presented on
 2026-11-16 and approved with the owner's changes (voice deferred, new-member period 7 days, no learned model). Units B1,
 B2, B3, B4, A1, A2, A3, C; one local commit each; never pushed, never deployed. Each unit starts only when the owner says
 so. Android UI and UX: the owner gave full creative freedom on 2026-11-16 (simple and clean, not bland; a polished,
@@ -500,3 +500,50 @@ item and the `if (item.itemId == NavigationRules.SHARE_ITEM)` branch (A2 brings 
 
 **Found while stopping:** `Phase17ETest` compared the app's city catalog with the server's file, which B3 deleted; the
 "795 / 0" measured after B3 was a cached Gradle result. The comparison was removed (the app's catalog goes in A1).
+
+### A1 close (2026-11-17, the session after the checkpoint; the model changed mid-session from Fable to Opus, the work continued from the repository)
+
+Status: **implemented, compiled, tested** (Android **709 run, 0 failures**; `assembleDebug` OK). **Not manually verified**
+(no emulator run yet: unit C). Commits `3bcaa49` (navigation, removal, You and profiles) and "N4-A1" (tests and documents).
+
+- **Checkpoint verified first:** `75d0df6` + `bdb6a5a` were clean; an UNCACHED run (`--rerun`) gave 805 run, 0 failures. The
+  "804 / 805, one failing guard" reported to the owner was not reproducible: the one failure of that session was
+  `Phase17ETest`'s comparison with the server's deleted city file, already fixed in `75d0df6` (see "Found while stopping").
+- **Navigation:** the three start actions open `todayFragment`; the bar is Today · You (no placeholder for Create,
+  N-79); `momentFragment` is a reading screen; the Share item, the composer branch and the composer's toolbar-arrow rule
+  in `MainActivity` are gone.
+- **Removed** (code, layouts, 299 unused strings, tests, fakes): `DiscoverFragment` / `ViewModel` / `Feed*`,
+  `Compose*`, `Post*`, `PlacePicker*`, `PrivatePlaces*`, `PostCollection*`, `MyPostsFragment`, `VideoPlayer*`,
+  `Experience*`, `PhotoAdapter`, `CommentAdapter`, `ChoiceChips`, `CityPicker`, `Cities` + `cities-v1.tsv`,
+  `HomeCityChoice`, `FeedFreshness`, `PlaceMemory`, `EncryptedPlacesStore`, `VideoPreparer`, `VideoRules`,
+  `Mp4Scrubber`, `ComposerPolicy`, `PrivatePlacePolicy`, `ViewerPreferences` (N-76), the Discover / Experience APIs and
+  DTOs, `Language` / `Interest`, the moderator's case video. `MediaSource` keeps photos only; `PhotoPreparer` stays
+  (profile photo, ID photo, and A2's moment photo).
+- **One-time clean-up** `core/retired/OldSocialRetirement` (started by `AppContainer`, IO): `files/places/`,
+  `files/datastore/viewer_preferences.preferences_pb`, `cache/video-upload/`, then the retired Keystore alias
+  (`AndroidKeystoreKeyWrapper.forgetRetiredKey`; the session key is separate and untouched).
+- **You:** real name, handle, programme and year (`CommunityLine`, N-77), bio; the membership card; "You are a new
+  member until …" while `newMemberUntil` is set; the own moments (`JournalViewModel` reads `mine()`; a 403
+  `MEMBERSHIP_NEEDED` hides the lists without an error) as `ProfileMomentRows.own` (On Today now · Kept, a line when
+  empty, a kept live moment listed once); rows My people, Safety, Settings and more. Not screenshot-protected (D12).
+- **A person's profile:** programme and year; their moments the viewer may see (`ofProfile`, a failure shows none) as
+  `ProfileMomentRows.of` (only sections with moments); covered moments behind a tap; FLAG_SECURE unless one's own (N-79).
+- **Profile form:** handle and bio only (`ProfileRequestDto` has exactly those two fields).
+- **Reports and moderation on the phone:** `ReportTarget` MOMENT / PERSON (a report about a post or perspective in
+  "Your reports" is not shown with wrong words); `ContentTarget` MOMENT / PERSON; pause wording says "sharing" /
+  "responses"; the guidelines no longer name posts, comments, places or the vault.
+- **Author notices (N-78):** `MomentLabels.notice` + `MomentCardBinder.noticeText`.
+- **Onboarding** now describes the college wall and "Who's in?" (`HonestyTextsTest` guards it).
+- **Tests:** `MomentUiTest` (19): Today first page / next page / end / no double moments, the view switch, a lost cursor
+  restarts from the top, membership, freshness, removal; `TodayWall.rows`; every rough time (and no digit in any of
+  them); a plan across midnight in two zones; a moment's page: gone, keep only when allowed, the server's refusal,
+  un-keep, delete (also when already gone; a failed delete stays); profile rows; You and a person's profile read their
+  moments; the one-time clean-up; source guards (FLAG_SECURE places, nothing stored, no gallery, the old screens and
+  routes gone). Updated guards: `NavigationRulesTest`, `SocialTextsTest` (now scans `feature/moments` and the moment
+  layouts; no `%d` anywhere; retired words), `AiModerationTest` and `ModerationV2Test` (on moments),
+  `MembershipTextsTest` (Today offers Get verified), `KurinjiTextsTest`, `HonestyTextsTest`, `UploadTimeoutTest` (one
+  upload call until A2), `Phase17ETest` (profile photo only). Deleted with their code: `DiscoverTest`,
+  `ExperienceCardTest`, `ExperienceDtosTest`, `ExperiencePolicyTest`, `ExperienceViewModelsTest`, `MediaPhase17CTest`,
+  `MyPostsPageTest`, `PostListLayoutTest`, `UploadTimedOutComposerTest`, `EncryptedPlacesStoreTest`, `IrlRedesignTest`.
+- **Not in A1 (by the plan):** Create (A2), reporting a moment, "This is about me", review requests and the moderator's
+  moment case on the phone (A3; the moderator screens compile against MOMENT but are not walked), the emulator walk (C).

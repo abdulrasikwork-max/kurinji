@@ -1,3 +1,42 @@
+# CHECKPOINT 2026-11-17 (thirteenth session; Fable reached its limit mid-session, Opus continued from the repository): N4-A1 is DONE (Android: implemented, compiled, tested; NOT manually verified). A2, A3, C NOT started. Nothing pushed, nothing deployed.
+
+**Standing instructions, unchanged:** the product direction is decided and is not reopened; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N4 plan and decisions are LOCKED (`docs/PHASE_N4.md`); continue them, do not re-plan. **Owner: continue the remaining N4 units autonomously; stop only for a real conflict, a security / privacy problem, a destructive step without its documented backup, or a missing requirement. Android UI / UX: full creative freedom inside the IRL direction. Commit each coherent step and update this file before a session can end.**
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). This session: `3bcaa49` N4-A1 part 3 (navigation, removal of the old social screens, You and profiles on the moments API), then "N4-A1" (tests + documents; `git log -1`). `git status` clean afterwards.
+- Backend, `moderation-service/`, `android/local.properties`, `backend/.env` not touched.
+
+## What was verified first
+- `75d0df6` / `bdb6a5a` were clean; an uncached Android run gave **805 run, 0 failures**. The "804 / 805, one failing test" relayed to the owner was not reproducible: the only failure of that earlier session (`Phase17ETest` comparing with the server's deleted city file) had already been fixed inside `75d0df6`.
+
+## Completed: N4-A1
+Details: `PHASE_N4.md` "A1 close"; decisions N-76 to N-79. The app opens on Today (Today · You), a moment is a reading screen, the old social screens and everything only they used are removed, their on-phone data is deleted once (`OldSocialRetirement`), You and a person's profile list moments and show programme + year, author notices speak for system or moderator.
+
+## Build / test status
+- Android: `.\gradlew.bat --offline testDebugUnitTest` **709 run, 0 failures, 0 errors**; `assembleDebug` OK. Lint not run.
+- Backend: unchanged since `c2b90f5` (467 / 0 / 0 / 2 skipped); not re-run.
+- Python: untouched (38, N1).
+
+## Database
+- Development MySQL: **V35, 32 tables** (unchanged this session). Pilot: V30. Next NEW migration file: **V36**. No migration is needed for A2 / A3.
+
+## Manual verification
+- **Nothing of N4 has been checked on an emulator or a phone yet.** Unit C does the walk on the development backend.
+
+## Remaining N4 units (in this order)
+1. **A2 Create:** the ✚ item in the bar (an action, like the old Share disc); `CreateFragment` + `CreateViewModel` (opens ready to type, Say / Who's in?, audience MIET / My people with no default the first time and the last choice remembered on this phone, Who's in? time within 24 h + "where" ≤ 60, today's question if answering, the on-phone text nudge `DraftNudgeDialogs`, the new-member line, 500-character count shown as remaining room only for the writer); camera via the camera app into a SECOND FileProvider cache path (no `CAMERA`, button hidden when no camera app, no gallery); `POST /api/moments/media` as soon as the photo is taken, `DELETE` on discard; `POST /api/moments`; Today reads again after sharing; `supportSuggested` shows the support line once.
+2. **A3:** report a moment (`ReportTarget.MOMENT`), "This is about me" (`POST /api/moments/{id}/about-me`), "Ask a moderator to look" on the author's notice (`check_review_ask`), the moderator's case on moments (photo through the case, the about-me origin, tiers / waiting hours), admin daily questions screen.
+3. **C:** documents, the security / privacy review of A1–A3, the emulator walk against the development backend (two members, photo hold, keep, delete, report, about-me, question), `CLAUDE.md` / `STATUS.md` close.
+
+## Risks and warnings
+1. The installed app is usable for reading now (Today, moments, profiles), but cannot share until A2.
+2. "This is about me" can hide someone's moment until a moderator looks (D11; bounds: daily report limit, tier 1, Keep restores).
+3. `CLAUDE.md` is at about 39 950 characters (limit 40 000): move text out before adding any.
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, `COMMUNITY_SECRET` before any real roll number, the pilot's own move to the new jar and schema, the N2 observations for N6.
+
+---
+
 # CHECKPOINT 2026-11-17 (twelfth session, stopped ON PURPOSE before the usage limit): the N4 BACKEND is DONE (B1 to B4, V35 on the DEVELOPMENT MySQL). N4-A1 (Android) is PARTIAL: additive files only, the app still opens on the OLD Home. A2, A3, C NOT started. Nothing pushed, nothing deployed.
 
 **Standing instructions, unchanged:** the product direction is decided and is not reopened; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N4 plan and decisions are LOCKED (`docs/PHASE_N4.md`); continue them, do not re-plan. **Owner, 2026-11-16 and 2026-11-17: continue the remaining N4 units autonomously without asking between normal units; stop only for a real conflict, a security / privacy problem, a destructive step without its documented backup, or a missing requirement. Android UI / UX: full creative freedom inside the IRL direction. Never leave the repository without a recovery point: commit each coherent step and update this file before a session can end.**

@@ -83,7 +83,7 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | **N1** | Strip: remove the retired features on both sides, migration V32 | implemented, compiled, tested 2026-11-15 (Android 766, backend 496, Python 38; V32 applied on the DEVELOPMENT MySQL only); results per unit in `docs/PHASE_N1.md`; manually verified on the emulator 2026-11-15 (SOS, Safe Walk, tile, shortcut, post; no real phone; one wording fix) |
 | **N2** | Phone-only sign-in, real name, no password, migration V33 | implemented, compiled, tested 2026-11-16 (Android 766, backend 494; V33 applied on the DEVELOPMENT MySQL only); decisions N-21 to N-26; results per unit in `docs/PHASE_N2.md`; manually verified on the emulator 2026-11-16 (no real phone) |
 | **N3** | Community, membership, verification, bans, admin screens, migration V34 | implemented, compiled, tested 2026-11-16 (Android 795, backend 532; V34 applied on the DEVELOPMENT MySQL only); decisions N-27 to N-41; results per unit in `docs/PHASE_N3.md`; manually verified on the emulator 2026-11-16 (no real phone) |
-| **N4** | Moments, capture-only Create, Today, keep, daily question | decisions LOCKED 2026-11-16; **backend DONE: B1 (moment core, Today, keep, daily question), B2 (photo, new-member photo hold), B3 (moderation of moments, "This is about me", profiles, old social code REMOVED from the backend), B4 (V35 applied on the DEVELOPMENT MySQL only, 2026-11-17): implemented, compiled, tested** (backend 467; curl walk on real MySQL); Android A1 PARTIAL, A2, A3, C open: top of `docs/HANDOFF.md` (`docs/PHASE_N4.md`, N-42 to N-75): voice deferred, no video, no learned AI model, new-member period 7 days from `memberships.verified_at` |
+| **N4** | Moments, capture-only Create, Today, keep, daily question | decisions LOCKED 2026-11-16; **backend DONE: B1 (moment core, Today, keep, daily question), B2 (photo, new-member photo hold), B3 (moderation of moments, "This is about me", profiles, old social code REMOVED from the backend), B4 (V35 applied on the DEVELOPMENT MySQL only, 2026-11-17): implemented, compiled, tested** (backend 467; curl walk on real MySQL); Android A1 DONE (2026-11-17), A2, A3, C open: top of `docs/HANDOFF.md` (`docs/PHASE_N4.md`, N-42 to N-75): voice deferred, no video, no learned AI model, new-member period 7 days from `memberships.verified_at` |
 | N5 | Same / Say more / I'm in, private replies, plan threads, Replies tab | planned |
 | N6 | Safety trim (route checks out, SMS-app fallback only, Safety Circle offer on plans) | planned |
 | N7 | Firebase push | planned |
@@ -177,8 +177,8 @@ cd android
   (N3: Get verified, re-link, staff screens), going
   (navigation bridge only). Removed in N1: `feature/community`, `evidence`, `intelligence` (`core/retired` holds the
   one-time clean-ups). No screen shows "Coming soon".
-- **Navigation (since N1):** Home · ✚ Share (action → composer) · You; start = Home (`discoverFragment`); "Settings and
-  more" (`moreFragment`) under You. Bar on tabs + reading screens (post, place/category page, person profile);
+- **Navigation (N4):** Today · You (✚ Create joins with A2); start = Today (`todayFragment`); "Settings and
+  more" (`moreFragment`) under You. Bar on tabs + reading screens (a moment, a person's profile);
   task/safety screens have toolbar + back. Safety banners (SOS, walk, deletion, sign in to sync) on every tab and
   reading screen via `MainActivity` + `SessionStatusViewModel`, never on the SOS screen.
 - **Isolation:** social and safety never import each other; `feature/going` imports neither (`GoingThereTest`).
