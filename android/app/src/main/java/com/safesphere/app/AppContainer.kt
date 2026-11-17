@@ -209,6 +209,12 @@ class AppContainer(context: Context) {
             backendBaseUrl())
     }
 
+    /** Phase N5: Same, Say more, the follow-up, I'm in and the author's people. */
+    val responseRepository: com.safesphere.app.feature.moments.domain.ResponseRepository by lazy {
+        com.safesphere.app.feature.moments.data.RemoteResponseRepository(
+            retrofit.create(com.safesphere.app.feature.moments.data.remote.ResponseApi::class.java), apiCallHandler)
+    }
+
     /** A2: the camera app's target for a moment's photo, its preparation and deletion. */
     val momentPhotoFiles: com.safesphere.app.feature.moments.data.MomentPhotoFiles by lazy {
         com.safesphere.app.feature.moments.data.MomentPhotoFiles(appContext)

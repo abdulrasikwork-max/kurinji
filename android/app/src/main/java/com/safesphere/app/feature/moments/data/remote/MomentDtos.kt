@@ -10,6 +10,7 @@ import com.safesphere.app.feature.moments.domain.MomentKind
 import com.safesphere.app.feature.moments.domain.MomentNotice
 import com.safesphere.app.feature.moments.domain.MomentPhoto
 import com.safesphere.app.feature.moments.domain.MomentPlan
+import com.safesphere.app.feature.moments.domain.MomentResponses
 import com.safesphere.app.feature.moments.domain.MomentStatus
 import com.safesphere.app.feature.moments.domain.MyMoments
 import com.safesphere.app.feature.moments.domain.NoticeState
@@ -70,7 +71,9 @@ data class MomentDto(
     val notice: NoticeDto? = null,
     val supportSuggested: Boolean? = null,
     val visibleAt: String? = null,
-    val expiresAt: String? = null
+    val expiresAt: String? = null,
+    val responses: ResponsesDto? = null,
+    val happenedOf: HappenedRefDto? = null
 ) {
     /** Null when this app cannot be sure what it is looking at. */
     fun toDomain(): Moment? {
@@ -102,10 +105,7 @@ data class MomentDto(
                 if (at == null && where == null) null else MomentPlan(at, where)
             } else null,
             question = question?.toDomain(),
-            shared = `when`?.let { w ->
-                RoughDay.entries.firstOrNull { it.name == w.day }
-                    ?.let { day -> RoughTime(day, DayPart.entries.firstOrNull { it.name == w.part }) }
-            },
+            shared = rough(`when`),
             status = status,
             kept = kept == true,
             collapsed = collapsed == true,
@@ -124,7 +124,9 @@ data class MomentDto(
             },
             supportSuggested = supportSuggested == true,
             visibleAt = instant(visibleAt),
-            expiresAt = instant(expiresAt)
+            expiresAt = instant(expiresAt),
+            responses = responses?.toDomain(kind, mine == true) ?: MomentResponses.NONE,
+            happenedOf = happenedOf?.toDomain()
         )
     }
 }

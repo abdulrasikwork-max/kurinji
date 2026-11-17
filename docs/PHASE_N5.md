@@ -166,3 +166,9 @@ development MySQL 8.0.46 only; curl walk on real MySQL.** The pilot is untouched
   dot and "opened", a report about a message, Call it off (closed, line), and deleting both moments left 0 signals,
   plan rows, conversations, messages, message cases and reports. Not manually verified on a phone (Android is next).
 - Tests: `RepliesApiTest` (6); `ResponseBoundariesTest` checks every N5 DTO.
+
+### A1 (started 2026-11-17, NOT finished): Android data layer
+
+Status: **implemented and compiled (Android 758 / 0 unchanged); no UI, no N5 Android test yet.** `ResponseModels.kt`,
+`ResponseDtos.kt` (fail-closed), `ResponseApi`, `RemoteResponseRepository`, `AppContainer.responseRepository`,
+`Moment.responses` / `happenedOf`. The rest of A1 is listed at the top of `HANDOFF.md`.

@@ -85,7 +85,11 @@ data class Moment(
     val supportSuggested: Boolean,
     /** The exact times: the author's own moments only. */
     val visibleAt: Instant?,
-    val expiresAt: Instant?
+    val expiresAt: Instant?,
+    /** N5: Same, Say more, the follow-up, I'm in, private replies (never a number). */
+    val responses: MomentResponses = MomentResponses.NONE,
+    /** N5 (N-92): the plan this Say says happened. */
+    val happenedOf: HappenedRef? = null
 ) {
     /** Others cannot see it right now (waiting from the start, or hidden while someone looks at it). */
     val hiddenFromOthers: Boolean
