@@ -1,3 +1,14 @@
+# CHECKPOINT 2026-11-17 (fourteenth session, N5 in progress): N5 design APPROVED (D14–D19 locked, `docs/PHASE_N5.md`, N-88 to N-99). Done: B1. Next: B2, B3, B4, A1, A2, A3, C (order in `PHASE_N5.md` §4). Nothing pushed, nothing deployed.
+
+**Standing instructions:** the owner approved N5 and asked to build it autonomously (full creative freedom inside the direction and D14–D19); never push, never deploy; one local commit per coherent step; update this file before a session can end. The pilot stays on V30.
+
+- **Git:** branch `irl-next`; this session's N5 commits: `3a4b8ca` (design recorded), `ab24f69` N5-B1 (`git log`).
+- **Database:** V36 is WRITTEN, applied nowhere; `spring.flyway.target=35` holds Flyway until B4 (N-99). Do NOT run the backend against the development MySQL before B4 (the entities name V36 columns).
+- **Tests:** backend full clean run green after B1 (483 + guards; `mvn -o clean test`). Android unchanged since N4 (758).
+- **Next exact step:** B2 = conversations: fill `PlanSpaces` (planId / canReply / replyId) and `PlanEvents` (plan opens at the first Add, system lines, call off closes), `ConversationService` (private replies with the author's setting, strict turns, End, close times; plan messages), `SocialSettings` endpoint, `MessageSent` event, purge of response data (also under kept moments), eraser already covers the tables.
+
+---
+
 # CHECKPOINT 2026-11-17 (fourteenth session, end): **N4 IS COMPLETE** (B1-B4, A1-A3, C). Implemented, compiled, tested, manually verified on the emulator against the development backend; NOT verified on a physical phone. Nothing pushed, nothing deployed.
 
 **Standing instructions, unchanged:** the product direction is decided and is not reopened; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). Each new phase (N5 next) needs its own plan and the owner's approval first: N5's decisions D14-D19 are still open (`PHASE_N4.md` §9).
