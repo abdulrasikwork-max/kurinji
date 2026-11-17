@@ -27,7 +27,7 @@ data class PersonRow(
     val person: com.safesphere.app.feature.social.domain.PersonSummary? = null
 )
 
-class PersonRowAdapter(private val images: CardImages? = null) : ListAdapter<PersonRow, PersonRowAdapter.Holder>(Diff) {
+class PersonRowAdapter(private val images: PersonImages? = null) : ListAdapter<PersonRow, PersonRowAdapter.Holder>(Diff) {
 
     class Holder(val binding: ItemPersonRowBinding) : RecyclerView.ViewHolder(binding.root)
 

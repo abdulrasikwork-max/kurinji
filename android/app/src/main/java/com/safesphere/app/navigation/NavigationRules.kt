@@ -14,30 +14,24 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.safesphere.app.R
 
 /**
- * Which screens show which parts of the shared app chrome (toolbar, bottom bar, safety banners). N1: Home · Share · You.
+ * Which screens show which parts of the shared app chrome (toolbar, bottom bar, safety banners). N4: Today · Create · You.
  */
 object NavigationRules {
 
-    /**
-     * The two tabs (N1: Home, You). Share sits between them in the bar but is an action ([SHARE_ITEM]), never a tab.
-     */
+    /** The two tabs (N4: Today, You). */
     val tabDestinations = setOf(
-        R.id.discoverFragment,
+        R.id.todayFragment,
         R.id.youFragment
     )
 
-    /** The bar item that opens the composer. */
-    val SHARE_ITEM = R.id.navShare
-
     /** Where the app opens once signed in, and where every tab switch pops back to. */
-    val START = R.id.discoverFragment
+    val START = R.id.todayFragment
 
     /**
-     * Reading screens keep the bottom bar, so the person is one tap from any tab. Task screens (composer, place picker, safety flows, settings) keep only the toolbar and back arrow.
+     * Reading screens keep the bottom bar, so the person is one tap from any tab. Task screens (Create, safety flows, settings) keep only the toolbar and back arrow.
      */
     val readingDestinations = setOf(
-        R.id.postFragment,
-        R.id.postCollectionFragment,
+        R.id.momentFragment,
         R.id.personProfileFragment
     )
 
@@ -89,14 +83,7 @@ object NavigationRules {
  * own state. The Share item opens the composer and leaves the selection where it was.
  */
 fun BottomNavigationView.setUpWithTabs(navController: NavController, onReselect: () -> Unit = {}) {
-    // The Share disc keeps its own colours (it is an action, not a tab), so the bar's tint is kept off it.
-    menu.findItem(NavigationRules.SHARE_ITEM)?.let { item -> item.icon = item.icon?.let(::Untinted) }
-
     setOnItemSelectedListener { item ->
-        if (item.itemId == NavigationRules.SHARE_ITEM) {
-            navController.navigate(R.id.composeFragment)
-            return@setOnItemSelectedListener false
-        }
         val options = navOptions {
             launchSingleTop = true
             restoreState = true

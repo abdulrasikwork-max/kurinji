@@ -87,12 +87,15 @@ class MembershipTextsTest {
     @Test
     fun `social and safety code never read membership code, and social offers Get verified by navigation only`() {
         val root = File("src/main/java/com/safesphere/app/feature")
-        for (feature in listOf("social", "safewalk", "emergency", "safetycircle", "circlealert", "safety")) {
+        for (feature in listOf("social", "moments", "safewalk", "emergency", "safetycircle", "circlealert", "safety")) {
             File(root, feature).walkTopDown().filter { it.extension == "kt" }.forEach { file ->
                 assertFalse("${file.name} imports membership", file.readText(Charsets.UTF_8).contains("feature.membership"))
             }
         }
-        for (screen in listOf("DiscoverFragment", "ComposeFragment", "ConnectionsFragment", "PersonProfileFragment")) {
+        // N4: Today (with its view model) replaced Home; Create joins this list with its screen.
+        val today = source("feature/moments/ui/TodayFragment.kt") + source("feature/moments/ui/TodayViewModel.kt")
+        assertTrue("Today", today.contains("needsMembership()") && today.contains("R.id.membershipFragment"))
+        for (screen in listOf("ConnectionsFragment", "PersonProfileFragment")) {
             val code = source("feature/social/ui/$screen.kt")
             assertTrue(screen, code.contains("needsMembership()") && code.contains("R.id.membershipFragment"))
         }

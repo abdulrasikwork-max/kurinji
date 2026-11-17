@@ -127,16 +127,13 @@ class UploadTimeoutTest {
     private fun main(path: String) = File("src/main/java/com/safesphere/app/$path").readText()
 
     @Test
-    fun `only the three upload calls are marked, and they are the photo, poster and profile photo uploads`() {
-        val experience = main("feature/social/data/remote/ExperienceApi.kt")
+    fun `only the photo uploads are marked - the profile photo (a moment's photo joins with Create)`() {
         val social = main("feature/social/data/remote/SocialApi.kt")
         val marker = Regex.escape("@Headers(UploadTimeoutInterceptor.HEADER_LINE)")
-        assertTrue(Regex("""$marker[^\n]*\n\s*@POST\("api/media"\)""").containsMatchIn(experience))
-        assertTrue(Regex("""$marker[^\n]*\n\s*@POST\("api/media/\{id\}/poster"\)""").containsMatchIn(experience))
         assertTrue(Regex("""$marker[^\n]*\n\s*@PUT\("api/profiles/me/photo"\)""").containsMatchIn(social))
         val everywhere = File("src/main/java").walkTopDown().filter { it.extension == "kt" }
             .sumOf { Regex(Regex.escape("@Headers(UploadTimeoutInterceptor.HEADER_LINE)")).findAll(it.readText()).count() }
-        assertEquals("no other call may carry the long timeout", 3, everywhere)
+        assertEquals("no other call may carry the long timeout", UPLOAD_CALLS, everywhere)
     }
 
     @Test
@@ -148,5 +145,10 @@ class UploadTimeoutTest {
         }
         assertTrue(container.contains(".addInterceptor(UploadTimeoutInterceptor())"))
         assertEquals("one Retrofit instance", 1, Regex("""Retrofit\.Builder\(\)""").findAll(container).count())
+    }
+
+    private companion object {
+        /** N4: the profile photo. Raise it only together with a new, real upload call. */
+        const val UPLOAD_CALLS = 1
     }
 }

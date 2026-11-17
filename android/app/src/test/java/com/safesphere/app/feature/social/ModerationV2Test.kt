@@ -17,36 +17,20 @@ import com.safesphere.app.feature.moderation.domain.ContentModerationRepository
 import com.safesphere.app.feature.moderation.domain.ContentTarget
 import com.safesphere.app.feature.moderation.ui.ContentCaseViewModel
 import com.safesphere.app.feature.moderation.ui.ContentQueueViewModel
-import com.safesphere.app.feature.social.data.remote.CommentDto
 import com.safesphere.app.feature.social.data.remote.DecisionDto
-import com.safesphere.app.feature.social.data.remote.ModerationViewDto
 import com.safesphere.app.feature.social.data.remote.MyReportDto
-import com.safesphere.app.feature.social.data.remote.PersonRefDto
-import com.safesphere.app.feature.social.data.remote.PostDto
-import com.safesphere.app.feature.social.data.remote.PostRequestDto
 import com.safesphere.app.feature.social.data.remote.ReportRequestDto
 import com.safesphere.app.feature.social.data.remote.RestrictionDto
 import com.safesphere.app.feature.social.domain.AppealState
-import com.safesphere.app.feature.social.domain.Audience
-import com.safesphere.app.feature.social.domain.Collapsed
-import com.safesphere.app.feature.social.domain.CommentPolicy
 import com.safesphere.app.feature.social.domain.ModerationDecision
 import com.safesphere.app.feature.social.domain.DecisionAction
-import com.safesphere.app.feature.social.domain.ModerationState
-import com.safesphere.app.feature.social.domain.OwnModeration
 import com.safesphere.app.feature.social.domain.PauseLevel
-import com.safesphere.app.feature.social.domain.PostDraft
-import com.safesphere.app.feature.social.domain.PostType
-import com.safesphere.app.feature.social.domain.Precision
 import com.safesphere.app.feature.social.domain.ReportReason
 import com.safesphere.app.feature.social.domain.ReportTarget
 import com.safesphere.app.feature.social.domain.SocialStanding
 import com.safesphere.app.feature.social.domain.TimeBand
-import com.safesphere.app.feature.social.ui.PostViewModel
 import com.safesphere.app.feature.social.ui.ReportMessage
 import com.safesphere.app.feature.social.ui.ReportViewModel
-import com.safesphere.app.testing.FakeDiscoverRepository
-import com.safesphere.app.testing.FakeExperienceRepository
 import com.safesphere.app.testing.FakeReportRepository
 import com.safesphere.app.testing.MainDispatcherRule
 import java.io.File
@@ -61,7 +45,7 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Phase 13D on the phone: reports, the person's own moderation state and reviews, approve-first, and the moderators'
+ * Phase 13D on the phone, on moments since N4: reports, the person's own standing and reviews, and the moderators'
  * content queue. DTOs fail closed; nothing names a reporter; impossible actions are never sent.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -74,48 +58,32 @@ class ModerationV2Test {
 
     @Test
     fun `report reasons fit their target and only Something else takes a note`() {
-        assertFalse(ReportReason.IMPERSONATION in ReportReason.forTarget(ReportTarget.POST))
+        assertFalse(ReportReason.IMPERSONATION in ReportReason.forTarget(ReportTarget.MOMENT))
         assertTrue(ReportReason.IMPERSONATION in ReportReason.forTarget(ReportTarget.PERSON))
-        assertTrue(ReportReason.accepts(ReportTarget.POST, ReportReason.SPAM, null))
-        assertFalse(ReportReason.accepts(ReportTarget.POST, ReportReason.SPAM, "a note"))
-        assertFalse(ReportReason.accepts(ReportTarget.COMMENT, ReportReason.IMPERSONATION, null))
-        assertFalse(ReportReason.accepts(ReportTarget.POST, ReportReason.OTHER, "   "))
-        assertTrue(ReportReason.accepts(ReportTarget.POST, ReportReason.OTHER, "Shares a phone number"))
-        assertFalse(ReportReason.accepts(ReportTarget.POST, ReportReason.OTHER, "x".repeat(201)))
+        assertTrue(ReportReason.accepts(ReportTarget.MOMENT, ReportReason.SPAM, null))
+        assertFalse(ReportReason.accepts(ReportTarget.MOMENT, ReportReason.SPAM, "a note"))
+        assertFalse(ReportReason.accepts(ReportTarget.MOMENT, ReportReason.IMPERSONATION, null))
+        assertFalse(ReportReason.accepts(ReportTarget.MOMENT, ReportReason.OTHER, "   "))
+        assertTrue(ReportReason.accepts(ReportTarget.MOMENT, ReportReason.OTHER, "Shares a phone number"))
+        assertFalse(ReportReason.accepts(ReportTarget.MOMENT, ReportReason.OTHER, "x".repeat(201)))
     }
 
     @Test
     fun `report requests carry no reporter and log no target id`() {
-        val dto = ReportRequestDto("POST", "post-123", "SPAM", null)
-        assertFalse(dto.toString().contains("post-123"))
+        val dto = ReportRequestDto("MOMENT", "moment-123", "SPAM", null)
+        assertFalse(dto.toString().contains("moment-123"))
     }
 
     // ---- DTOs fail closed --------------------------------------------------------------------------------------------
 
     @Test
-    fun `own moderation and collapse are read carefully`() {
-        val ownUnknown = PostDto(publicId = "p", type = "EXPERIENCE", own = true,
-            moderation = ModerationViewDto("SOMETHING_NEW", "NEW_REASON", null)).toDomain()!!
-        assertEquals(ModerationState.HELD, ownUnknown.ownModeration!!.state)
-        assertNull(ownUnknown.ownModeration!!.reason)
-        assertNull(ownUnknown.collapsed)
-
-        val other = PostDto(publicId = "p", type = "EXPERIENCE", own = false, collapsed = "NEW_KIND",
-            moderation = ModerationViewDto("REMOVED", "SPAM", "d")).toDomain()!!
-        assertEquals(Collapsed.UNDER_REVIEW, other.collapsed)
-        assertNull("others never get the author's moderation", other.ownModeration)
-        assertNull(PostDto(publicId = "p", type = "EXPERIENCE").toDomain()!!.collapsed)
-
-        val comment = CommentDto(publicId = "c", kind = "BEEN_HERE", author = PersonRefDto("a", "a", "A"),
-            awaitingApproval = false, canApprove = true).toDomain()!!
-        assertFalse("approve only what is waiting", comment.canApprove)
-    }
-
-    @Test
     fun `reports, pauses and decisions the app cannot describe are not shown with wrong words`() {
-        assertNull(MyReportDto("r", "POST", "SPAM", "SOMETHING", null, "THIS_WEEK").toDomain())
+        assertNull(MyReportDto("r", "MOMENT", "SPAM", "SOMETHING", null, "THIS_WEEK").toDomain())
         assertNull(MyReportDto("r", "PLANET", "SPAM", "RECEIVED", null, "THIS_WEEK").toDomain())
-        val reviewed = MyReportDto("r", "COMMENT", "HATE", "REVIEWED", "ACTION_TAKEN", null).toDomain()!!
+        // N4: a report about a post or a perspective (kinds that no longer exist) is not shown with wrong words.
+        assertNull(MyReportDto("r", "POST", "SPAM", "RECEIVED", null, "THIS_WEEK").toDomain())
+        assertNull(MyReportDto("r", "COMMENT", "SPAM", "RECEIVED", null, "THIS_WEEK").toDomain())
+        val reviewed = MyReportDto("r", "MOMENT", "HATE", "REVIEWED", "ACTION_TAKEN", null).toDomain()!!
         assertTrue(reviewed.reviewed && reviewed.actionTaken == true)
         assertEquals(TimeBand.EARLIER, reviewed.period)
 
@@ -128,28 +96,18 @@ class ModerationV2Test {
         assertTrue(DecisionDto("d", "CONTENT_REMOVE", "SPAM", appeal = "NONE", canAppeal = true).toDomain()!!.canAppeal)
     }
 
-    @Test
-    fun `approve first is sent only with Everyone can add perspectives`() {
-        val draft = PostDraft(PostType.EXPERIENCE, "Lovely.", "", null, null, Precision.NONE, null, null, null,
-            Audience.EVERYONE, CommentPolicy.CONNECTIONS, emptyList(), approveFirst = true)
-        assertFalse(PostRequestDto.from(draft).approveFirst)
-        assertTrue(PostRequestDto.from(draft.copy(commentPolicy = CommentPolicy.EVERYONE)).approveFirst)
-        assertFalse(PostRequestDto.from(draft.copy(commentPolicy = CommentPolicy.EVERYONE, audience = Audience.ONLY_ME))
-            .approveFirst)
-    }
-
     // ---- Reporting and reviews ---------------------------------------------------------------------------------------
 
     @Test
     fun `a report is sent once checked, and says only that a moderator will look`() = runTest {
         val reports = FakeReportRepository()
         val vm = ReportViewModel(reports)
-        vm.report(ReportTarget.POST, "post-1", ReportReason.OTHER, null) // no note: not sent
+        vm.report(ReportTarget.MOMENT, "moment-1", ReportReason.OTHER, null) // no note: not sent
         advanceUntilIdle()
         assertTrue(reports.sent.isEmpty())
-        vm.report(ReportTarget.COMMENT, "c-1", ReportReason.HARASSMENT, null)
+        vm.report(ReportTarget.MOMENT, "c-1", ReportReason.HARASSMENT, null)
         advanceUntilIdle()
-        assertEquals(listOf(FakeReportRepository.Sent(ReportTarget.COMMENT, "c-1", ReportReason.HARASSMENT, null)),
+        assertEquals(listOf(FakeReportRepository.Sent(ReportTarget.MOMENT, "c-1", ReportReason.HARASSMENT, null)),
             reports.sent)
         assertEquals(ReportMessage.REPORT_SENT, vm.uiState.value.message)
 
@@ -180,39 +138,10 @@ class ModerationV2Test {
         assertEquals(AppealState.OPEN, vm.uiState.value.standing!!.decisionFor("d1")!!.appeal)
     }
 
-    @Test
-    fun `collapsed posts stay behind a tap and only waiting perspectives are approved`() = runTest {
-        val experiences = FakeExperienceRepository()
-        experiences.postResult = ApiResult.Success(FakeExperienceRepository.post().copy(collapsed = Collapsed.UNDER_REVIEW))
-        val waiting = FakeExperienceRepository.perspective("w").copy(awaitingApproval = true, canApprove = true)
-        val plain = FakeExperienceRepository.perspective("p")
-        experiences.perspectives = listOf(waiting, plain)
-        val vm = PostViewModel(experiences, "post-1")
-        advanceUntilIdle()
-        assertTrue(vm.uiState.value.showCollapsed)
-        vm.onReveal()
-        assertFalse(vm.uiState.value.showCollapsed)
-        vm.onApprove(plain)
-        advanceUntilIdle()
-        vm.onApprove(waiting)
-        advanceUntilIdle()
-        assertEquals(listOf("w"), experiences.approved)
-    }
-
-    @Test
-    fun `the author's own post is never collapsed for them`() = runTest {
-        val experiences = FakeExperienceRepository()
-        experiences.postResult = ApiResult.Success(FakeExperienceRepository.post(own = true)
-            .copy(ownModeration = OwnModeration(ModerationState.COLLAPSED, null, null)))
-        val vm = PostViewModel(experiences, "post-1")
-        advanceUntilIdle()
-        assertFalse(vm.uiState.value.showCollapsed)
-    }
-
     // ---- Moderators ------------------------------------------------------------------------------------------------
 
     private fun summary(tookPart: Boolean = false, top: ContentDecisionReason? = ContentDecisionReason.HARASSMENT) =
-        ContentCaseSummary("case-1", ContentTarget.POST, true, null, null, top, emptyMap(), 1, 1, "NONE", tookPart)
+        ContentCaseSummary("case-1", ContentTarget.MOMENT, true, null, null, top, emptyMap(), 1, 1, "NONE", tookPart)
 
     private fun detail(tookPart: Boolean = false, actions: List<ContentAction> = ContentAction.entries.toList()) =
         ContentCaseDetail(summary(tookPart), CaseContent(null, null, "Text", null, null, null, null, null, null, null,
@@ -233,9 +162,9 @@ class ModerationV2Test {
 
     @Test
     fun `moderator DTOs fail closed`() {
-        assertTrue(ContentCaseSummaryDto(caseId = "c", targetKind = "POST").toDomain()!!.youTookPart)
+        assertTrue(ContentCaseSummaryDto(caseId = "c", targetKind = "MOMENT").toDomain()!!.youTookPart)
         assertNull(ContentCaseSummaryDto(caseId = "c", targetKind = "PLANET").toDomain())
-        val read = ContentCaseDetailDto(summary = ContentCaseSummaryDto(caseId = "c", targetKind = "POST",
+        val read = ContentCaseDetailDto(summary = ContentCaseSummaryDto(caseId = "c", targetKind = "MOMENT",
             youTookPart = false), possibleActions = listOf("CONTENT_REMOVE", "DELETE_ACCOUNT")).toDomain()!!
         assertEquals(listOf(ContentAction.CONTENT_REMOVE), read.possibleActions)
         assertNull(ContentAppealDto(appealId = "a", action = "SOMETHING").toDomain())
@@ -261,7 +190,6 @@ class ModerationV2Test {
             return ApiResult.Success(ContentAppeal(appealId, false, null, ContentAction.CONTENT_REMOVE, null, null, null, false))
         }
         override fun photoUrl(caseId: String, mediaId: String) = "http://test/$caseId/$mediaId"
-        override fun videoUrl(caseId: String, mediaId: String) = "http://test/$caseId/$mediaId/video"
         override fun personPhotoUrl(caseId: String) = "http://test/$caseId/person-photo"
     }
 
@@ -322,7 +250,7 @@ class ModerationV2Test {
             .findAll(xml).associate { it.groupValues[1] to it.groupValues[2] }
         val authorFacing = strings.filterKeys {
             it.startsWith("own_") || it.startsWith("standing_") || it.startsWith("review_") ||
-                it.startsWith("collapsed_") || it.startsWith("perspective_awaiting")
+                it.startsWith("moment_notice_") || it.startsWith("moment_life_")
         }
         assertTrue("13D author-facing strings not found", authorFacing.size >= 12)
         // "reporting" (what they may still do) is fine; "report(s)" / "reported" (about them) is not.
@@ -337,7 +265,8 @@ class ModerationV2Test {
         // Emulator finding: the moderation screen's intro must not claim cases are never about people any more.
         assertFalse(strings.getValue("moderation_intro").contains("never about people"))
         // Moderation feedback uses the amber notice only (never the emergency red).
-        for (layout in listOf("fragment_post.xml", "fragment_connections.xml", "fragment_content_case.xml")) {
+        for (layout in listOf("fragment_moment.xml", "item_moment_card.xml", "fragment_today.xml", "fragment_you.xml",
+                "fragment_connections.xml", "fragment_content_case.xml")) {
             val text = File("src/main/res/layout/$layout").readText(Charsets.UTF_8)
             assertFalse("$layout uses red", text.contains("emergency_red") || text.contains("colorError"))
         }

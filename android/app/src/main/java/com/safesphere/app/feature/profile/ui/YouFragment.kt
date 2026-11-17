@@ -5,6 +5,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -29,20 +30,24 @@ import com.safesphere.app.feature.social.ui.JournalViewModel
 import com.safesphere.app.feature.social.ui.MarksFit
 import com.safesphere.app.feature.social.ui.ModerationLabels
 import com.safesphere.app.feature.social.ui.PhotoStatus
-import com.safesphere.app.feature.social.ui.cardImages
+import com.safesphere.app.feature.social.ui.CommunityLine
+import com.safesphere.app.feature.social.ui.personImages
+import com.safesphere.app.feature.moments.ui.MomentFragment
+import com.safesphere.app.feature.moments.ui.MomentListAdapter
+import com.safesphere.app.feature.moments.ui.ProfileMomentRows
+import com.safesphere.app.feature.moments.ui.momentImages
 import com.safesphere.app.feature.social.ui.ReportMessage
 import com.safesphere.app.feature.social.ui.ReportUiState
 import com.safesphere.app.feature.social.ui.ReportViewModel
-import com.safesphere.app.feature.social.ui.SocialLabels
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 /**
- * Phase 13F, redesigned in 17E, IRL redesign (R4): the You tab is a profile. The profile head on the ink panel (photo,
- * today's state; no counts), the social standing notice, then a short list: your posts, Saved, your people, Safety (one
- * row that opens the existing Safety screens) and "Settings and more" ([MoreFragment]). It only navigates; neither
- * side's logic lives here.
+ * The You tab is a profile (N4): the head on the panel (photo, real name, handle, programme and year, bio; no counts),
+ * the membership card and the end of the new-member week, the social standing notice, the person's own moments (on
+ * Today now, and kept), then three quiet doors: My people, Safety (the existing Safety screens, unchanged) and
+ * "Settings and more" ([MoreFragment]). It only reads and navigates. Your own page is not screenshot-protected (D12).
  */
 class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::inflate) {
 
@@ -52,9 +57,10 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
 
     /** Phase 17E: the system photo picker (no storage permission; only the chosen photo is shared with the app). */
     private val pickPhoto = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) journal.onPhotoPicked(com.safesphere.app.feature.social.data.UriPick(uri,
-            com.safesphere.app.feature.social.domain.MediaKind.PHOTO))
+        if (uri != null) journal.onPhotoPicked(com.safesphere.app.feature.social.data.UriPick(uri))
     }
+
+    private lateinit var momentAdapter: MomentListAdapter
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -63,11 +69,13 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
         binding.makeProfileButton.setOnClickListener { nav.navigate(R.id.profileSetupFragment) }
         stackHeadForLargeText()
 
-        // R4: what is yours, then two quiet doors: Safety (the existing screens, unchanged) and everything else.
+        momentAdapter = MomentListAdapter(momentImages(), onOpen = { moment ->
+            nav.navigate(R.id.momentFragment, bundleOf(MomentFragment.ARG_ID to moment.id))
+        }, onUncover = {})
+        binding.momentList.adapter = momentAdapter
+
+        // What is yours is above; then three quiet doors.
         binding.journalList.adapter = FeatureListAdapter(listOf(
-            FeatureItem(R.drawable.ic_nav_discover, R.string.social_your_experiences, R.string.you_experiences_description) {
-                nav.navigate(R.id.myPostsFragment)
-            },
             FeatureItem(R.drawable.ic_group, R.string.title_connections, R.string.you_connections_description) {
                 nav.navigate(R.id.connectionsFragment)
             },
@@ -131,7 +139,7 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
         binding.editProfileButton.isVisible = me != null
         binding.youName.text = me?.displayName ?: getString(R.string.nav_you)
         binding.photoBlock.isVisible = me != null
-        cardImages().avatar(binding.youAvatar, me?.displayName, me?.handle, me?.publicId, me?.photo)
+        personImages().avatar(binding.youAvatar, me?.displayName, me?.handle, me?.publicId, me?.photo)
         val photoBusy = state.photo == PhotoStatus.PREPARING || state.photo == PhotoStatus.UPLOADING
         binding.photoProgress.isVisible = photoBusy
         binding.photoBlock.contentDescription = getString(when {
@@ -148,15 +156,20 @@ class YouFragment : ViewBindingFragment<FragmentYouBinding>(FragmentYouBinding::
             else -> Unit
         }
         binding.youHandle.isVisible = me != null
-        binding.youHandle.text = me?.let {
-            if (it.city.isNullOrBlank()) getString(R.string.social_handle_line, it.handle)
-            else getString(R.string.you_handle_city, it.handle, it.city)
-        }.orEmpty()
+        binding.youHandle.text = me?.let { getString(R.string.social_handle_line, it.handle) }.orEmpty()
         binding.youBio.isVisible = !me?.bio.isNullOrBlank()
         binding.youBio.text = me?.bio.orEmpty()
-        val interests = me?.interests.orEmpty().map { getString(SocialLabels.of(it)) }
-        binding.youInterests.isVisible = interests.isNotEmpty()
-        binding.youInterests.text = interests.joinToString(" · ")
+        val community = CommunityLine.of(me?.programme, me?.graduationYear)
+        binding.youCommunity.isVisible = community != null
+        binding.youCommunity.text = community.orEmpty()
+        // N4 (M2): no shadow rules: the person is told when their first week ends.
+        val newUntil = me?.newMemberUntil
+        binding.newMemberLine.isVisible = newUntil != null
+        if (newUntil != null) binding.newMemberLine.text = getString(R.string.you_new_member_until,
+            DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).format(newUntil.atZone(ZoneId.systemDefault())))
+
+        binding.momentList.isVisible = state.momentsLoaded
+        momentAdapter.submitList(if (state.momentsLoaded) ProfileMomentRows.own(state.current, state.kept) else emptyList())
 
         val failure = state.failure
         binding.errorNotice.isVisible = failure != null && !state.hasLoaded

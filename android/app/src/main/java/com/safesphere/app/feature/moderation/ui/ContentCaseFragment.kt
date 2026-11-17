@@ -27,7 +27,6 @@ import com.safesphere.app.feature.moderation.domain.ContentAction
 import com.safesphere.app.feature.moderation.domain.ContentCaseDetail
 import com.safesphere.app.feature.moderation.domain.ContentModerationPolicy
 import com.safesphere.app.feature.moderation.domain.ContentTarget
-import com.safesphere.app.feature.social.ui.VideoPlayerFragment
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -157,22 +156,14 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
             if (media.mediaId in state.shownPhotos) {
                 val image = ImageView(requireContext()).apply {
                     adjustViewBounds = true
-                    contentDescription = getString(
-                        if (media.isVideo) R.string.content_case_show_video else R.string.content_case_show_photo, number)
+                    contentDescription = getString(R.string.content_case_show_photo, number)
                     layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT)
                 }
-                image.load(viewModel.photoUrl(media.mediaId), appContainer.imageLoader) // a video: its poster
+                image.load(viewModel.photoUrl(media.mediaId), appContainer.imageLoader)
                 binding.photoBlock.addView(image)
-                // Phase 17C: a video plays only on a second tap, on the (FLAG_SECURE) player screen.
-                if (media.isVideo) binding.photoBlock.addView(textButton(getString(R.string.content_case_play_video,
-                        number)) {
-                    findNavController().navigate(R.id.videoPlayerFragment, bundleOf(
-                        VideoPlayerFragment.ARG_MEDIA_ID to media.mediaId, VideoPlayerFragment.ARG_CASE_ID to viewModel.caseId))
-                })
             } else {
-                binding.photoBlock.addView(textButton(getString(
-                    if (media.isVideo) R.string.content_case_show_video else R.string.content_case_show_photo, number)) {
+                binding.photoBlock.addView(textButton(getString(R.string.content_case_show_photo, number)) {
                     viewModel.onShowPhoto(media.mediaId)
                 })
             }

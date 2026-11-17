@@ -9,6 +9,8 @@ import com.safesphere.app.AppContainer
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
+import com.safesphere.app.feature.moments.domain.Moment
+import com.safesphere.app.feature.moments.domain.MomentRepository
 import com.safesphere.app.feature.social.domain.PersonProfile
 import com.safesphere.app.feature.social.domain.SocialRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +22,9 @@ import kotlinx.coroutines.launch
 data class PersonProfileUiState(
     val isLoading: Boolean = true,
     val person: PersonProfile? = null,
+    /** N4: this person's moments the viewer may see: on Today now, and the ones they keep. Never a count. */
+    val live: List<Moment> = emptyList(),
+    val kept: List<Moment> = emptyList(),
     /** No one with that handle, or someone the viewer may not see: the same answer, on purpose. */
     val notFound: Boolean = false,
     val isBusy: Boolean = false,
@@ -37,6 +42,7 @@ data class PersonProfileUiState(
  */
 class PersonProfileViewModel(
     private val repository: SocialRepository,
+    private val moments: MomentRepository,
     private val handle: String?,
     private val profileId: String?
 ) : ViewModel() {
@@ -57,8 +63,9 @@ class PersonProfileViewModel(
                 else -> ApiResult.Failure(ApiError.NOT_FOUND)
             }
             when (result) {
-                is ApiResult.Success -> _uiState.update {
-                    it.copy(isLoading = false, person = result.data, notFound = false, failure = null)
+                is ApiResult.Success -> {
+                    _uiState.update { it.copy(isLoading = false, person = result.data, notFound = false, failure = null) }
+                    loadMoments(result.data.publicId)
                 }
                 is ApiResult.Failure -> if (result.error == ApiError.NOT_FOUND) {
                     _uiState.update { it.copy(isLoading = false, person = null, notFound = true) }
@@ -111,11 +118,22 @@ class PersonProfileViewModel(
         }
     }
 
+    /** A deliberate visit shows their moments even when muted (a mute hides from Today only). A failure shows none. */
+    private suspend fun loadMoments(publicId: String) {
+        when (val result = moments.ofProfile(publicId)) {
+            is ApiResult.Success -> _uiState.update { it.copy(live = result.data.live, kept = result.data.kept) }
+            is ApiResult.Failure -> _uiState.update { it.copy(live = emptyList(), kept = emptyList()) }
+        }
+    }
+
     private suspend fun reload(publicId: String) {
         when (val result = repository.profile(publicId)) {
-            is ApiResult.Success -> _uiState.update { it.copy(person = result.data) }
+            is ApiResult.Success -> {
+                _uiState.update { it.copy(person = result.data) }
+                loadMoments(publicId)
+            }
             is ApiResult.Failure -> if (result.error == ApiError.NOT_FOUND) {
-                _uiState.update { it.copy(person = null, notFound = true) }
+                _uiState.update { it.copy(person = null, notFound = true, live = emptyList(), kept = emptyList()) }
             }
         }
     }
@@ -135,6 +153,7 @@ class PersonProfileViewModel(
                 val args = createSavedStateHandle()
                 PersonProfileViewModel(
                     container.socialRepository,
+                    container.momentRepository,
                     args.get<String>(ARG_HANDLE)?.takeIf { it.isNotBlank() },
                     args.get<String>(ARG_PROFILE_ID)?.takeIf { it.isNotBlank() }
                 )

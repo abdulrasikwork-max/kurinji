@@ -11,8 +11,7 @@ object ContentModerationTexts {
 
     @StringRes
     fun of(target: ContentTarget?): Int = when (target) {
-        ContentTarget.POST -> R.string.content_target_post
-        ContentTarget.COMMENT -> R.string.content_target_comment
+        ContentTarget.MOMENT -> R.string.content_target_moment
         ContentTarget.PERSON, null -> R.string.content_target_person
     }
 

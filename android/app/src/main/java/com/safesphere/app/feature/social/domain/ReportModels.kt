@@ -9,8 +9,11 @@ import java.time.Instant
  * content, with the reason, and may ask for a review. Nothing is stored on the phone.
  */
 
-/** What can be reported. */
-enum class ReportTarget { POST, COMMENT, PERSON }
+/** What can be reported (N4: a moment or a person). */
+enum class ReportTarget { MOMENT, PERSON }
+
+/** Roughly when one of the caller's own reports or a decision about them happened (never an exact time). */
+enum class TimeBand { THIS_WEEK, THIS_MONTH, EARLIER }
 
 /** Why: the closed list of the server (§7.3). IMPERSONATION fits people only; OTHER needs a short note. */
 enum class ReportReason {
@@ -40,37 +43,6 @@ enum class ReportReason {
 enum class ModerationReason {
     HARASSMENT, SEXUAL_HARASSMENT, HATE, THREAT, DOXXING, SPAM, NUDITY_OR_VIOLENCE, IMPERSONATION, OTHER, NEEDS_REVIEW,
     AWAITING_CHECK
-}
-
-/** The state of one's OWN post or perspective (NONE is null). */
-enum class ModerationState { COLLAPSED, HELD, REMOVED }
-
-/** Phase 13E: who set it. Unknown reads as MODERATOR (the most careful words, without a flagged phrase). */
-enum class ModerationSource { REPORTS, SYSTEM, MODERATOR }
-
-/**
- * What everyone else learns about a collapsed post or perspective: why it is behind a tap, never who. Phase 13E:
- * BY_SYSTEM = the automatic check thinks it may be hurtful.
- */
-enum class Collapsed { UNDER_REVIEW, BY_MODERATOR, BY_SYSTEM }
-
-/**
- * What happened to the viewer's own content. [reason]/[decisionId] are null for a collapse while it is reviewed.
- * Phase 13E: [source], and for the automatic check the [flagged] phrases (code points of the text as written: the body,
- * a new line and the tip; or the perspective).
- */
-data class OwnModeration(
-    val state: ModerationState,
-    val reason: ModerationReason?,
-    val decisionId: String?,
-    val source: ModerationSource? = null,
-    val flagged: List<IntRange> = emptyList()
-) {
-    /** Phase 13E: set by the automatic check (not by people). */
-    val bySystem: Boolean get() = source == ModerationSource.SYSTEM
-
-    /** Phase 13E: the author may ask a moderator to look at an automatic collapse (a hold is looked at anyway). */
-    val canAskCheckReview: Boolean get() = bySystem && state == ModerationState.COLLAPSED
 }
 
 /** One of the caller's own reports. [actionTaken] only once a moderator reviewed it. */
@@ -116,7 +88,7 @@ data class ModerationDecision(
 )
 
 data class SocialStanding(val pause: SocialPause?, val decisions: List<ModerationDecision>) {
-    /** The decision behind the current state of the caller's post or perspective [targetId], if any. */
+    /** The decision with [decisionId] among the caller's recent ones, if any. */
     fun decisionFor(decisionId: String?): ModerationDecision? =
         decisionId?.let { id -> decisions.firstOrNull { it.decisionId == id } }
 }
@@ -133,6 +105,6 @@ interface ReportRepository {
 
     suspend fun appeal(decisionId: String): ApiResult<Unit>
 
-    /** Phase 13E: a moderator looks at one's own post or perspective [target] that the automatic check collapsed. */
+    /** N4: the author asks a moderator to look at their own moment that a rule collapsed or held. */
     suspend fun askCheckReview(target: ReportTarget, targetId: String): ApiResult<Unit>
 }

@@ -2,36 +2,17 @@ package com.safesphere.app.feature.social
 
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
-import com.safesphere.app.feature.social.data.PlaceMemory
 import com.safesphere.app.feature.social.data.PhotoPreparer
-import com.safesphere.app.feature.social.data.remote.PersonProfileDto
-import com.safesphere.app.feature.social.data.remote.PersonRefDto
-import com.safesphere.app.feature.social.data.remote.PostDto
+import com.safesphere.app.feature.social.data.remote.PersonSummaryDto
 import com.safesphere.app.feature.social.data.remote.photoKey
-import com.safesphere.app.feature.social.domain.Cities
-import com.safesphere.app.feature.social.domain.Interest
-import com.safesphere.app.feature.social.domain.PlacePage
-import com.safesphere.app.feature.social.domain.PostType
-import com.safesphere.app.feature.social.domain.Precision
-import com.safesphere.app.feature.social.domain.Relationship
-import com.safesphere.app.feature.social.ui.ComposeViewModel
 import com.safesphere.app.feature.social.ui.JournalViewModel
 import com.safesphere.app.feature.social.ui.MarksFit
 import com.safesphere.app.feature.social.ui.PhotoStatus
-import com.safesphere.app.feature.social.ui.PostCollection
-import com.safesphere.app.feature.social.ui.PostCollectionViewModel
-import com.safesphere.app.testing.FakeDiscoverRepository
-import com.safesphere.app.testing.FakeExperienceRepository
+import com.safesphere.app.testing.FakeMomentRepository
 import com.safesphere.app.testing.TestPick
 import com.safesphere.app.testing.FakeMediaSource
-import com.safesphere.app.testing.FakePlacesStore
 import com.safesphere.app.testing.FakeSocialRepository
 import com.safesphere.app.testing.MainDispatcherRule
-import java.io.File
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertArrayEquals
@@ -43,47 +24,14 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Phase 17E (docs/PHASE17E.md): the city catalog on the phone (D-5), profile photos, today's state (D-7), "I went"
- * (plan §4) and the marks on every post list (D-3), against in-memory fakes; DTOs fail closed.
+ * Phase 17E (docs/PHASE17E.md), what N4 kept of it: the profile photo (picked, made square on the phone, uploaded,
+ * removable) and the rule that words leave a narrow row before any button. Cities, "I went" and post marks left the
+ * app in N4.
  */
 class Phase17ETest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
-
-    // ---- Cities (D-5) ---------------------------------------------------------------------------------------------
-
-    @Test
-    fun `the bundled city catalog is well formed`() {
-        // N4-B3 removed the server's city catalog (cities are retired, N-58), so there is nothing left to compare
-        // byte for byte; the app's own copy goes with the old social screens in N4-A1.
-        assertTrue(Cities.all.size >= 60)
-        assertEquals("CHENNAI", Cities.all.first().code)
-        assertEquals(Cities.all.size, Cities.all.map { it.code }.toSet().size)
-        assertTrue(Cities.all.none { it.isOther })
-    }
-
-    @Test
-    fun `search runs on the phone - names first, then other names, then states, alphabetical, never by popularity`() {
-        assertEquals(Cities.all, Cities.search("", limit = 1000))
-        assertEquals("MUMBAI", Cities.search("bombay").first().code)          // an other name
-        assertEquals("THIRUVANANTHAPURAM", Cities.search("trivandrum").first().code)
-        val ma = Cities.search("ma").map { it.name }
-        assertEquals(ma.takeWhile { it.lowercase().startsWith("ma") }, ma.takeWhile { it.lowercase().startsWith("ma") }.sorted())
-        assertTrue(ma.first().lowercase().startsWith("ma"))
-        assertTrue(Cities.search("kerala").map { it.code }.containsAll(listOf("KOCHI", "MUNNAR", "ALAPPUZHA")))
-        assertTrue(Cities.search("zzqx").isEmpty())
-        assertTrue(Cities.search("  Chen  ").first().code == "CHENNAI")
-    }
-
-    @Test
-    fun `an area names its city, and a code from the server is found or nothing (never guessed)`() {
-        assertEquals("CHENNAI", Cities.cityOf("tf31fw")?.code)
-        assertNull(Cities.find("ATLANTIS"))
-        assertTrue(Cities.find("OTHER")!!.isOther)
-        assertNull(Cities.listCity("OTHER"))
-        assertEquals("GOA", Cities.listCity("GOA")?.code)
-    }
 
     // ---- Profile photo ---------------------------------------------------------------------------------------------
 
@@ -94,9 +42,7 @@ class Phase17ETest {
         assertNull(photoKey("../../api/admin"))
         assertNull(photoKey(""))
         assertNull(photoKey(null))
-        val author = PostDto(publicId = "p", type = "EXPERIENCE",
-            author = PersonRefDto("a", "asha", "Asha", "not-a-key")).toDomain()!!.author!!
-        assertNull(author.photo)
+        assertNull(PersonSummaryDto("a", "asha", "Asha", "not-a-key").toDomain().photo)
     }
 
     @Test
@@ -110,10 +56,10 @@ class Phase17ETest {
     fun `a picked photo is made square on the phone, uploaded, and shown with its new key`() = runTest {
         val social = FakeSocialRepository()
         val media = FakeMediaSource()
-        val vm = JournalViewModel(social, media)
+        val vm = JournalViewModel(social, media, FakeMomentRepository())
         vm.load()
         advanceUntilIdle()
-        vm.onPhotoPicked(TestPick(com.safesphere.app.feature.social.domain.MediaKind.PHOTO))
+        vm.onPhotoPicked(TestPick())
         advanceUntilIdle()
         assertEquals(PhotoStatus.IDLE, vm.uiState.value.photo)
         assertEquals("0a0a0a0a-0000-4000-8000-000000000001", vm.uiState.value.profile!!.photo)
@@ -128,10 +74,10 @@ class Phase17ETest {
     fun `an unreadable photo is not uploaded, and a failed upload says so and keeps the old photo`() = runTest {
         val social = FakeSocialRepository()
         val media = FakeMediaSource().apply { avatar = null }
-        val vm = JournalViewModel(social, media)
+        val vm = JournalViewModel(social, media, FakeMomentRepository())
         vm.load()
         advanceUntilIdle()
-        vm.onPhotoPicked(TestPick(com.safesphere.app.feature.social.domain.MediaKind.PHOTO))
+        vm.onPhotoPicked(TestPick())
         advanceUntilIdle()
         assertEquals(PhotoStatus.UNREADABLE, vm.uiState.value.photo)
         assertTrue(social.uploadedAvatars.isEmpty())
@@ -139,40 +85,10 @@ class Phase17ETest {
 
         media.avatar = byteArrayOf(1)
         social.uploadPhotoResult = ApiResult.Failure(ApiError.NO_CONNECTION)
-        vm.onPhotoPicked(TestPick(com.safesphere.app.feature.social.domain.MediaKind.PHOTO))
+        vm.onPhotoPicked(TestPick())
         advanceUntilIdle()
         assertEquals(PhotoStatus.FAILED, vm.uiState.value.photo)
         assertNull(vm.uiState.value.profile!!.photo)
-    }
-
-    // ---- "I went" (plan §4) -------------------------------------------------------------------------------------
-
-    @Test
-    fun `I went fills in the post's place once, and a place that cannot be read is simply left out`() = runTest {
-        val repository = FakeExperienceRepository()
-        val place = FakeExperienceRepository.place(id = "pl-1", name = "Marina Beach")
-        repository.placeById = mapOf("pl-1" to place)
-        val memory = PlaceMemory(FakePlacesStore(), { 7L }, Dispatchers.Unconfined)
-        val clock = Clock.fixed(Instant.parse("2026-11-02T10:00:00Z"), ZoneOffset.UTC)
-        val vm = ComposeViewModel(repository, memory, FakeMediaSource(), clock)
-        advanceUntilIdle()
-        vm.prefill("pl-1", Interest.NATURE_OUTDOORS)
-        vm.prefill("pl-1", Interest.FOOD_CAFES) // once only (a rotation must not reset what the person changed)
-        advanceUntilIdle()
-        val state = vm.uiState.value
-        assertEquals(place, state.place)
-        assertEquals(Precision.AREA, state.precision)    // a chosen place starts at its area (design §4.2)
-        assertEquals(PostType.EXPERIENCE, state.type)
-        assertEquals(Interest.NATURE_OUTDOORS, state.category)
-        assertNull("no audience is chosen for the person (D14)", state.audience)
-        assertEquals(listOf("pl-1"), repository.placeReads)
-
-        val other = ComposeViewModel(repository, memory, FakeMediaSource(), clock)
-        advanceUntilIdle()
-        other.prefill("gone", null)
-        advanceUntilIdle()
-        assertNull(other.uiState.value.place)
-        assertNull(other.uiState.value.failure)
     }
 
     @Test

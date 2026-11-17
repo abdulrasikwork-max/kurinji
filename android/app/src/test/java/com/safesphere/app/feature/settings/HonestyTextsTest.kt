@@ -31,7 +31,9 @@ class HonestyTextsTest {
         val all = onboarding.values.joinToString(" ").lowercase()
         // Phase 13F (F19): the brand identity (IRL since 2026-11-03), no safety pitch; the SOS honesty line lives in the Safety hub now
         // (SafetyHubTextsTest), and onboarding says where the safety tools are.
-        assertTrue(all.contains("see it first-hand"))
+        // N4 (IRL_DIRECTION 2026-11-15): the community wall and "Who's in?" replaced the place-first "See it first-hand".
+        assertTrue(all.contains("who\\'s in?"))
+        for (old in listOf("places", "experiences", "comments", "posts")) assertFalse("the old product: $old", old in all)
         assertFalse("N1: no Save and no butterfly", all.contains("save") || all.contains("butterfly") || all.contains("been here"))
         assertTrue("no-tracking promise", all.contains("nobody can use irl to track you"))
         assertTrue("where the safety tools live", all.contains("sos and your trusted people are in you"))

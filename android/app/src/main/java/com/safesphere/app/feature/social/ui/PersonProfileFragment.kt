@@ -19,45 +19,47 @@ import com.safesphere.app.databinding.FragmentPersonProfileBinding
 import com.safesphere.app.feature.social.domain.PersonProfile
 import com.safesphere.app.feature.social.domain.Relationship
 import com.safesphere.app.feature.social.domain.ReportTarget
+import com.safesphere.app.feature.moments.ui.MomentFragment
+import com.safesphere.app.feature.moments.ui.MomentListAdapter
+import com.safesphere.app.feature.moments.ui.ProfileMomentRows
+import com.safesphere.app.feature.moments.ui.momentImages
+import com.safesphere.app.feature.moments.ui.secure
 
 /**
  * Phase 13A: someone's profile. One main button follows the relationship: Connect, Accept (asking back connects),
  * "Request sent", or Edit profile on one's own. Remove connection, mute and block ask nothing of the other person and
- * tell them nothing.
+ * tell them nothing. N4: their moments the viewer may see are listed under the profile, and screenshots are blocked
+ * while someone else's profile is on the screen (D12; never on one's own).
  */
 class PersonProfileFragment :
     ViewBindingFragment<FragmentPersonProfileBinding>(FragmentPersonProfileBinding::inflate) {
 
     private val viewModel by viewModels<PersonProfileViewModel> { PersonProfileViewModel.factory(appContainer) }
 
-    /** Phase 13B: the person's experiences the viewer may see (Q8: a deliberate visit shows them even when muted). */
-    private val posts by viewModels<PostListViewModel> { PostListViewModel.factory(appContainer) }
-    private lateinit var postAdapter: ExperienceCardAdapter
+    private lateinit var momentAdapter: MomentListAdapter
+
+    /** Covered moments the reader chose to read. */
+    private val opened = HashSet<String>()
     private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
-    private var collapseStrongLanguage = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.getVerifiedButton.setOnClickListener { findNavController().navigate(R.id.membershipFragment) }
-        postAdapter = ExperienceCardAdapter(cardImages())
-        collectWhenStarted(appContainer.viewerPreferences.collapseStrongLanguage) { on ->
-            if (on != collapseStrongLanguage) {
-                collapseStrongLanguage = on
-                renderPosts(posts.uiState.value)
-            }
-        }
+        momentAdapter = MomentListAdapter(momentImages(), onOpen = { moment ->
+            findNavController().navigate(R.id.momentFragment, bundleOf(MomentFragment.ARG_ID to moment.id))
+        }, onUncover = { moment ->
+            opened += moment.id
+            render(viewModel.uiState.value)
+        })
         binding.removeButton.setOnClickListener { confirmRemove() }
         binding.muteButton.setOnClickListener { viewModel.onMute() }
         binding.blockButton.setOnClickListener { confirmBlock() }
-        binding.postList.adapter = postAdapter
-        binding.showMoreButton.setOnClickListener { posts.onShowMore() }
-        binding.shareExperienceButton.setOnClickListener { findNavController().navigate(R.id.composeFragment) }
+        binding.momentList.adapter = momentAdapter
         binding.reportPersonButton.setOnClickListener {
             val id = viewModel.uiState.value.person?.publicId ?: return@setOnClickListener
             ReportDialogs.show(this, ReportTarget.PERSON) { reason, note -> reports.report(ReportTarget.PERSON, id, reason, note) }
         }
         collectWhenStarted(viewModel.uiState, ::render)
-        collectWhenStarted(posts.uiState, ::renderPosts)
         collectWhenStarted(reports.uiState) { state ->
             if (state.message == ReportMessage.REPORT_SENT) Toast.makeText(requireContext(), R.string.report_sent,
                 Toast.LENGTH_LONG).show()
@@ -73,27 +75,31 @@ class PersonProfileFragment :
         }
     }
 
-    private fun renderPosts(state: PostListUiState) {
-        postAdapter.submitList(state.items.map { post ->
-            CardRow(ExperienceCards.of(post, collapseStrongLanguage = collapseStrongLanguage), onOpen = {
-                findNavController().navigate(R.id.postFragment, bundleOf(PostViewModel.ARG_POST_ID to post.publicId))
-            })
-        })
-        binding.postsEmpty.isVisible = state.loaded && state.items.isEmpty()
-        binding.showMoreButton.isVisible = state.hasMore
-        binding.showMoreButton.isEnabled = !state.isLoading
-        if (state.sessionExpired) {
-            posts.onSessionExpiredHandled()
-            showSessionExpiredDialog()
-        }
+    override fun onResume() {
+        super.onResume()
+        applySecure()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        secure(false)
+    }
+
+    /** D12: someone else's profile is protected; until the profile is known it counts as someone else's. */
+    private fun applySecure() {
+        if (isResumed) secure(viewModel.uiState.value.person?.relationship != Relationship.SELF)
     }
 
     private fun render(state: PersonProfileUiState) {
+        if (view == null) return
+        applySecure()
         binding.progress.isVisible = state.isLoading || state.isBusy
         binding.notFound.isVisible = state.notFound
         val person = state.person
         binding.contentBlock.isVisible = person != null && !state.notFound
         if (person != null) show(person, state.isBusy)
+        momentAdapter.submitList(if (person == null) emptyList()
+            else ProfileMomentRows.of(state.live, state.kept, opened))
 
         val failure = state.failure
         binding.errorNotice.isVisible = failure != null
@@ -117,22 +123,15 @@ class PersonProfileFragment :
 
     private fun show(person: PersonProfile, busy: Boolean) {
         binding.displayName.text = person.displayName
-        cardImages().avatar(binding.avatar, person.displayName, person.handle, person.publicId, person.photo)
+        personImages().avatar(binding.avatar, person.displayName, person.handle, person.publicId, person.photo)
         binding.handle.text = getString(R.string.social_handle_line, person.handle)
         binding.bio.text = person.bio.orEmpty()
         binding.bio.isVisible = !person.bio.isNullOrBlank()
-        binding.city.text = person.city?.let { getString(R.string.social_city_line, it) }
-        binding.city.isVisible = !person.city.isNullOrBlank()
-        val languages = person.languages.joinToString(", ") { getString(SocialLabels.of(it)) }
-        binding.languages.text = getString(R.string.social_languages_line, languages)
-        binding.languages.isVisible = person.languages.isNotEmpty()
-        val interests = person.interests.joinToString(", ") { getString(SocialLabels.of(it)) }
-        binding.interests.text = getString(R.string.social_interests_line, interests)
-        binding.interests.isVisible = person.interests.isNotEmpty()
+        val community = CommunityLine.of(person.programme, person.graduationYear)
+        binding.community.text = community.orEmpty()
+        binding.community.isVisible = community != null
 
         val self = person.relationship == Relationship.SELF
-        posts.showProfile(person.publicId)
-        binding.shareExperienceButton.isVisible = self
         binding.relationship.text = when (person.relationship) {
             Relationship.SELF -> getString(R.string.social_relationship_self)
             Relationship.REQUESTED -> getString(R.string.social_relationship_requested)

@@ -178,11 +178,15 @@ object MomentCardBinder {
 
         val notice = moment.notice
         b.notice.isVisible = notice != null
-        if (notice != null) b.notice.setMessage(context.getString(MomentLabels.notice(notice)))
+        if (notice != null) b.notice.setMessage(noticeText(context, notice))
         b.keptLine.isVisible = moment.mine && moment.kept
 
         b.content.contentDescription = spoken(context, moment, covered)
     }
+
+    /** The author's notice in words: the sentence, with the reason's words where it names one (no marked phrases). */
+    fun noticeText(context: Context, notice: com.safesphere.app.feature.moments.domain.MomentNotice): String =
+        context.getString(MomentLabels.notice(notice), context.getString(MomentLabels.reason(notice.reason)), "").trim()
 
     /** "This morning · My people"; the author's waiting moment says that others cannot see it yet. */
     fun meta(context: Context, moment: Moment): String {
@@ -216,7 +220,7 @@ object MomentCardBinder {
                 plan.where?.let { parts += it }
             }
         }
-        moment.notice?.let { parts += context.getString(MomentLabels.notice(it)) }
+        moment.notice?.let { parts += noticeText(context, it) }
         return context.getString(R.string.cd_moment_card, moment.author.name + ", " + meta(context, moment),
             parts.joinToString(". "))
     }

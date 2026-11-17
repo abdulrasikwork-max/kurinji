@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- IRL redesign (R4): You is a profile, not a settings page. The profile head on the ink panel (photo in a lime ring,
-     name, handle and city, bio, interests; no counts, ever), then a short list: your posts, your
-     people, Safety (one quiet row that opens the existing Safety screens, unchanged) and "Settings and more"
-     (fragment_more.xml: private places, reading, community, account, log out). -->
+<!-- N4: You is a profile. The head on the panel (photo, real name, handle, programme and year, bio; no counts,
+     ever), the membership card, the person's own moments (on Today now, kept), then My people, Safety (one quiet row
+     that opens the existing Safety screens, unchanged) and "Settings and more" (fragment_more.xml). -->
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -125,7 +124,7 @@
                     android:visibility="gone" />
 
                 <TextView
-                    android:id="@+id/youInterests"
+                    android:id="@+id/youCommunity"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
@@ -251,6 +250,24 @@
             android:layout_height="wrap_content"
             android:text="@string/review_ask"
             android:visibility="gone" />
+
+        <!-- N4 (M2): the end of the new-member week, said plainly to the person it concerns. -->
+        <TextView
+            android:id="@+id/newMemberLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+            android:visibility="gone" />
+
+        <!-- N4: the person's own moments: on Today now, and the ones they keep. -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/momentList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:nestedScrollingEnabled="false"
+            android:visibility="gone"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
 
         <androidx.recyclerview.widget.RecyclerView

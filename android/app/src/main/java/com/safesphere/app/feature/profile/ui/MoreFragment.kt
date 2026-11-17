@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
@@ -16,12 +15,10 @@ import com.safesphere.app.core.ui.components.FeatureListAdapter
 import com.safesphere.app.databinding.FragmentMoreBinding
 import com.safesphere.app.feature.membership.ui.MembershipViewModel
 import com.safesphere.app.feature.membership.ui.staff.StaffListFragment
-import kotlinx.coroutines.launch
 
 /**
- * IRL redesign (R4): "Settings and more", reached from You. The rows that used to fill the lower half of the You tab:
- * private places, the reading choice, community, moderation (moderators only), account and log out. It only navigates;
- * nothing was removed, only moved one tap away so the You tab can be a profile.
+ * "Settings and more", reached from You: community (guidelines, your reports, blocked and muted), moderation and
+ * community staff (only for those who hold the role), account and log out. It only navigates.
  */
 class MoreFragment : ViewBindingFragment<FragmentMoreBinding>(FragmentMoreBinding::inflate) {
 
@@ -31,11 +28,6 @@ class MoreFragment : ViewBindingFragment<FragmentMoreBinding>(FragmentMoreBindin
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val nav = findNavController()
-        binding.privacyList.adapter = FeatureListAdapter(listOf(
-            FeatureItem(R.drawable.ic_lock, R.string.social_private_places, R.string.you_private_places_description) {
-                nav.navigate(R.id.privatePlacesFragment)
-            }
-        ))
         binding.communityList.adapter = FeatureListAdapter(listOf(
             FeatureItem(R.drawable.ic_info, R.string.guidelines_title, R.string.you_guidelines_description) {
                 nav.navigate(R.id.guidelinesFragment)
@@ -66,15 +58,6 @@ class MoreFragment : ViewBindingFragment<FragmentMoreBinding>(FragmentMoreBindin
             }
         ))
         binding.logoutButton.setOnClickListener { confirmLogout() }
-
-        // Phase 13E (E20): the viewer's own choice, on this phone only.
-        val preferences = appContainer.viewerPreferences
-        collectWhenStarted(preferences.collapseStrongLanguage) { on ->
-            if (binding.strongLanguageSwitch.isChecked != on) binding.strongLanguageSwitch.isChecked = on
-        }
-        binding.strongLanguageSwitch.setOnCheckedChangeListener { button, on ->
-            if (button.isPressed) viewLifecycleOwner.lifecycleScope.launch { preferences.setCollapseStrongLanguage(on) }
-        }
 
         collectWhenStarted(account.uiState) { state ->
             binding.accountLine.text = listOfNotNull(state.displayName, state.phoneHint).joinToString(" · ")

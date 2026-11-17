@@ -10,7 +10,7 @@ import java.time.LocalDate
  * part of. Nothing is stored on the phone.
  */
 
-enum class ContentTarget { POST, COMMENT, PERSON }
+enum class ContentTarget { MOMENT, PERSON }
 
 /** The decisions of the server, in the order a moderator reads them. */
 enum class ContentAction {
@@ -147,8 +147,6 @@ interface ContentModerationRepository {
     /** The address of a case photo (loaded only after a tap, D15); for a video, its poster frame. */
     fun photoUrl(caseId: String, mediaId: String): String
 
-    /** Phase 17C: the address of a case video (played only after a tap). */
-    fun videoUrl(caseId: String, mediaId: String): String
 
     /** Phase 17E: the profile photo of the person a PERSON case is about. */
     fun personPhotoUrl(caseId: String): String

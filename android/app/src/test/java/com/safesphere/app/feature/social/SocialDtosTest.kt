@@ -9,8 +9,6 @@ import com.safesphere.app.feature.social.data.remote.PersonSummaryDto
 import com.safesphere.app.feature.social.data.remote.ProfileRequestDto
 import com.safesphere.app.feature.social.data.remote.RedeemDto
 import com.safesphere.app.feature.social.domain.ConnectStatus
-import com.safesphere.app.feature.social.domain.Interest
-import com.safesphere.app.feature.social.domain.Language
 import com.safesphere.app.feature.social.domain.ProfileInput
 import com.safesphere.app.feature.social.domain.Relationship
 import org.junit.Assert.assertEquals
@@ -22,23 +20,25 @@ import org.junit.Test
 class SocialDtosTest {
 
     @Test
-    fun `profile request - trimmed, empty optional fields sent as none, closed codes`() {
-        val dto = ProfileRequestDto.from(
-            ProfileInput(" asha_k ", "  ", setOf(Language.TA, Language.EN), setOf(Interest.HIDDEN_GEMS), " ")
-        )
+    fun `profile request - trimmed, an empty bio sent as none, and nothing but handle and bio (N-51)`() {
+        val dto = ProfileRequestDto.from(ProfileInput(" asha_k ", "  "))
         assertEquals("asha_k", dto.handle)
         assertNull(dto.bio)
-        assertNull(dto.city)
-        assertEquals(setOf("ta", "en"), dto.languages.toSet())
-        assertEquals(listOf("HIDDEN_GEMS"), dto.interests)
+        // City, languages and interests left the profile in N4: the request has exactly two fields.
+        assertEquals(setOf("handle", "bio"), ProfileRequestDto::class.java.declaredFields.map { it.name }
+            .filterNot { it == "Companion" }.toSet())
     }
 
     @Test
     fun `unknown codes from a newer server are dropped or read as the most cautious value`() {
-        val person = PersonProfileDto("id", "bala", "Bala", languages = listOf("ta", "xx"),
-            interests = listOf("CITY_LIFE", "SOMETHING_NEW"), relationship = "BEST_FRIENDS").toDomain()
-        assertEquals(listOf(Language.TA), person.languages)
-        assertEquals(listOf(Interest.CITY_LIFE), person.interests)
+        val person = PersonProfileDto("id", "bala", "Bala", programme = "BTECH_IT", graduationYear = 2027,
+            relationship = "BEST_FRIENDS").toDomain()
+        assertEquals("BTECH_IT", person.programme)
+        assertEquals(2027, person.graduationYear)
+        // A programme that is not a code, or a year that cannot be one, is left out (never shown as free text).
+        val odd = PersonProfileDto("id", "bala", "Bala", programme = "B.Tech <b>IT</b>", graduationYear = 12).toDomain()
+        assertNull(odd.programme)
+        assertNull(odd.graduationYear)
         assertEquals(Relationship.NONE, person.relationship)
 
         val own = OwnProfileDto("id", "asha", "Asha", handleChangeAvailableAt = "not-a-time").toDomain()

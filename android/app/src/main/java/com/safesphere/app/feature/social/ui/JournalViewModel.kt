@@ -7,8 +7,11 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.safesphere.app.AppContainer
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.core.network.isSessionExpired
+import com.safesphere.app.core.network.needsMembership
 import com.safesphere.app.feature.social.data.MediaPick
 import com.safesphere.app.feature.social.data.MediaSource
+import com.safesphere.app.feature.moments.domain.Moment
+import com.safesphere.app.feature.moments.domain.MomentRepository
 import com.safesphere.app.feature.social.domain.OwnProfile
 import com.safesphere.app.feature.social.domain.SocialRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,17 +29,24 @@ data class JournalUiState(
     /** Null after loading = no profile yet (or the age is not confirmed yet): You offers "Make your profile". */
     val profile: OwnProfile? = null,
     val photo: PhotoStatus = PhotoStatus.IDLE,
+    /** N4: the person's own moments that have not ended, and the ones they keep (never a count). */
+    val current: List<Moment> = emptyList(),
+    val kept: List<Moment> = emptyList(),
+    /** False until the moments were read once (a non-member has none: the lists stay hidden). */
+    val momentsLoaded: Boolean = false,
     val failure: ApiResult.Failure? = null,
     val sessionExpired: Boolean = false
 )
 
 /**
- * Phase 13F: the head of the You tab (name, handle, city, bio, interests; never a count). Phase 17E: the profile photo
+ * The head of the You tab (real name, handle, programme and year, bio; never a count) and, since N4, the person's own
+ * live and kept moments. Phase 17E: the profile photo
  * (picked, made square on the phone, uploaded; removable). Loads the person's own profile each time You opens; nothing is stored on the phone.
  */
 class JournalViewModel(
     private val repository: SocialRepository,
-    private val media: MediaSource
+    private val media: MediaSource,
+    private val moments: MomentRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(JournalUiState())
@@ -51,6 +61,22 @@ class JournalViewModel(
                     it.copy(isLoading = false, hasLoaded = true, profile = result.data)
                 }
                 is ApiResult.Failure -> fail(result)
+            }
+        }
+        // The moments are their own request: a person without a membership has a profile draft but no moments (403),
+        // and that is not an error of this screen (the membership card already says what to do).
+        viewModelScope.launch {
+            when (val result = moments.mine()) {
+                is ApiResult.Success -> _uiState.update {
+                    it.copy(current = result.data.current, kept = result.data.kept, momentsLoaded = true)
+                }
+                is ApiResult.Failure -> {
+                    // Not a member (any more): nothing of theirs is on Today. Any other failure keeps what is shown.
+                    if (result.needsMembership()) _uiState.update {
+                        it.copy(current = emptyList(), kept = emptyList(), momentsLoaded = false)
+                    }
+                    if (result.isSessionExpired()) fail(result)
+                }
             }
         }
     }
@@ -103,7 +129,7 @@ class JournalViewModel(
 
     companion object {
         fun factory(container: AppContainer) = viewModelFactory {
-            initializer { JournalViewModel(container.socialRepository, container.mediaSource) }
+            initializer { JournalViewModel(container.socialRepository, container.mediaSource, container.momentRepository) }
         }
     }
 }

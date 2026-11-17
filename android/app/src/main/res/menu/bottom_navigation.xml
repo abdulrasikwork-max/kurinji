@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- N1: Home, Share, You. Tab ids match the destination ids in nav_graph.xml; "share" is an
-     action (it opens the composer and never becomes the selected item). -->
+<!-- N4: Today and You. Tab ids match the destination ids in nav_graph.xml. Create (an action between the two, never a
+     selected item) arrives with the Create screen; Replies arrives in N5. No placeholder items. -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/discoverFragment"
+        android:id="@+id/todayFragment"
         android:icon="@drawable/ic_nav_home"
-        android:title="@string/nav_discover" />
-    <item
-        android:id="@+id/navShare"
-        android:icon="@drawable/ic_nav_share"
-        android:title="@string/nav_share" />
+        android:title="@string/nav_today" />
     <item
         android:id="@+id/youFragment"
         android:icon="@drawable/ic_nav_you"

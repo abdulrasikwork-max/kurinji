@@ -156,10 +156,10 @@ class FakeSocialRepository : SocialRepository {
     }
 
     companion object {
-        val ME = OwnProfile("me-id", "asha_k", "Asha", null, emptyList(), emptyList(), null, null)
+        val ME = OwnProfile("me-id", "asha_k", "Asha", null, "BTECH_IT", 2027, null, null)
         val BALA = PersonSummary("bala-id", "bala_r", "Bala")
 
         fun person(relationship: Relationship) =
-            PersonProfile("bala-id", "bala_r", "Bala", "Hello", emptyList(), emptyList(), "Chennai", relationship)
+            PersonProfile("bala-id", "bala_r", "Bala", "Hello", "BE_CSE", 2026, relationship)
     }
 }

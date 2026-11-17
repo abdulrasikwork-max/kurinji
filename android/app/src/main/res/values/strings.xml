@@ -39,12 +39,12 @@
 
     <!-- Onboarding (Phase 10A: rewritten; it said nothing was available yet). Only what this build really does;
          OnboardingTextsTest forbids "not available", "future", "later" and safety promises. -->
-    <string name="onboarding_connected_title">See it first-hand</string>
-    <string name="onboarding_connected_body">Real experiences from real people: places, food, walks and things to try. Scroll, ask, then go and see for yourself.</string>
-    <string name="onboarding_aware_title">Share it, ask about it</string>
-    <string name="onboarding_aware_body">Share what you tried and ask what you want to know. People answer in the comments, under their own name.</string>
+    <string name="onboarding_connected_title">Say it to your college</string>
+    <string name="onboarding_connected_body">IRL is your college\'s own wall: what is on people\'s minds today, under their real names. It lasts 24 hours, and then it ends.</string>
+    <string name="onboarding_aware_title">Who\'s in?</string>
+    <string name="onboarding_aware_body">Turn a thought into a plan. Ask who\'s in, set a time if you like, and meet in real life.</string>
     <string name="onboarding_safe_title">Yours to control</string>
-    <string name="onboarding_safe_body">No followers, no messages from strangers. You choose who sees each post and how exactly its place is shown. Nobody can use IRL to track you. SOS and your trusted people are in You, under Safety; set them up any time.</string>
+    <string name="onboarding_safe_body">No followers, no counts, no \"last seen\". You choose who sees each moment: your whole college, or only your people. Nobody can use IRL to track you. SOS and your trusted people are in You, under Safety; set them up any time.</string>
 
     <!-- Authentication (UI preview only) -->
     <!-- Phase 13A: 18+ only (decision D6). The date is checked and sent once; it is stored nowhere. -->
@@ -595,8 +595,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="tracking_notification_offline">No connection. Your location will be saved when you are back online.</string>
     <string name="tracking_notification_location_off">Location is turned off on this phone.</string>
 
-    <string name="action_more">More</string>
-    <string name="action_close">Close</string>
 
     <!-- ==== Phase 13A: profiles and connections (docs/PHASE13A_PLAN.md). SocialTextsTest scans every social_* text:
          no counts of people, no follower/like wording, no claim that anyone is safe. ==== -->
@@ -609,7 +607,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_age_body">Profiles and connections are for people aged 18 and over. Your date of birth is only used to check your age and is not stored.</string>
     <string name="social_age_confirm">Confirm</string>
     <string name="social_age_confirmed">Thanks. You\'re all set.</string>
-    <string name="compose_make_profile">Make your profile</string>
     <string name="age_banner">Confirm your age once to see and share experiences. Tap to confirm.</string>
     <string name="cd_age_banner">Confirm your age once to see and share experiences. Double-tap to confirm.</string>
 
@@ -617,16 +614,12 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_handle_helper">3 to 20 lower-case letters, digits, _ or . starting with a letter. People find you by this exact handle.</string>
     <string name="social_handle_wait">You can change your handle again on %1$s.</string>
     <string name="social_bio_label">About you (optional)</string>
-    <string name="social_city_label">City (optional)</string>
-    <string name="social_languages_title">Languages you write in</string>
-    <string name="social_interests_title">What you enjoy experiencing</string>
     <string name="social_profile_privacy">Anyone signed in who knows your exact handle can see your profile. There is no search by name, and no numbers about you are shown to anyone.</string>
     <string name="social_save_profile">Save profile</string>
     <string name="social_profile_saved">Profile saved</string>
     <string name="social_problem_handle_format">Use 3 to 20 lower-case letters, digits, _ or . starting with a letter</string>
     <string name="social_problem_handle_unavailable">That handle is not available</string>
     <string name="social_problem_bio_too_long">Use at most 160 characters</string>
-    <string name="social_problem_city">Use letters only, at most 60</string>
     <string name="social_problem_link">Links are not allowed in a profile</string>
 
     <string name="social_no_profile_title">Make your profile first</string>
@@ -689,9 +682,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_blocked_message">Blocked</string>
     <string name="social_not_found_title">No one with that handle</string>
     <string name="social_not_found_message">Check the handle and try again.</string>
-    <string name="social_languages_line">Writes in: %1$s</string>
-    <string name="social_interests_line">Enjoys: %1$s</string>
-    <string name="social_city_line">City: %1$s</string>
 
     <string name="social_blocked_title">Blocked</string>
     <string name="social_blocked_empty">You have not blocked anyone.</string>
@@ -704,222 +694,24 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="social_unblock_cd">Unblock %1$s</string>
     <string name="social_unmute_cd">Unmute %1$s</string>
 
-    <string name="social_language_ta">Tamil</string>
-    <string name="social_language_en">English</string>
-    <string name="social_language_hi">Hindi</string>
-    <string name="social_language_ml">Malayalam</string>
-    <string name="social_language_te">Telugu</string>
-    <string name="social_language_kn">Kannada</string>
-    <string name="social_interest_food_cafes">Food and cafés</string>
-    <string name="social_interest_nature_outdoors">Nature and outdoors</string>
-    <string name="social_interest_culture_heritage">Culture and heritage</string>
-    <string name="social_interest_music_nightlife">Music and nightlife</string>
-    <string name="social_interest_study_work">Study and work spots</string>
-    <string name="social_interest_day_trips">Day trips and travel</string>
-    <string name="social_interest_activities_sport">Activities and sport</string>
-    <string name="social_interest_hobbies_making">Hobbies and making</string>
-    <string name="social_interest_city_life">City life</string>
-    <string name="social_interest_hidden_gems">Hidden gems</string>
 
     <!-- Phase 13B: experiences (docs/PHASE13B_PLAN.md). No counts, no "live" or "now here" wording. -->
-    <string name="title_compose">Share</string>
-    <string name="title_place_picker">Where was it?</string>
-    <string name="title_post">Post</string>
-    <string name="title_my_posts">Your posts</string>
-    <string name="title_private_places">Private places</string>
 
-    <string name="social_share_experience">Share an experience</string>
-    <string name="social_your_experiences">Your posts</string>
-    <string name="social_private_places">Private places</string>
-    <string name="social_experiences_title">Posts</string>
-    <string name="social_experiences_empty">Nothing shared yet. Give them time.</string>
-    <string name="social_my_posts_empty">Nothing here yet. Go somewhere, then tell us how it was.</string>
-    <string name="social_show_more">Show more</string>
 
-    <string name="social_body_label_experience">What happened out there?</string>
-    <string name="social_body_label_ask">What do you want to know?</string>
-    <string name="social_tip_label">A tip (optional)</string>
-    <string name="social_photos_note">Photos and videos lose their hidden details, such as where and when they were taken, before they leave your phone. One video per post, up to 60 seconds and 50 MB.</string>
-    <string name="social_photo_failed">Not added. Tap to try again</string>
-    <string name="social_media_timed_out">Too slow on this connection. Tap to try again</string>
-    <string name="social_remove_photo">Remove photo</string>
-    <string name="social_remove_video">Remove video</string>
 
-    <string name="social_photo_description">Photo %1$s of %2$s</string>
     <!-- Phase 17C: videos in the composer, on the post page and in feed cards. -->
-    <string name="social_video_description">Video %1$s of %2$s, %3$s long</string>
-    <string name="social_video_play">Play video</string>
-    <string name="social_photo_preparing">Getting it ready…</string>
-    <string name="social_video_preparing">Preparing video…</string>
-    <string name="social_media_uploading">Adding…</string>
-    <string name="social_video_finishing">Almost done…</string>
-    <string name="social_media_too_long">Longer than 60 seconds. Trim it in your gallery, then add it again.</string>
-    <string name="social_media_too_large">Larger than 50 MB. Trim it, or record at a lower quality.</string>
-    <string name="social_media_unsupported">This video\'s format can\'t be shared. Try one recorded with your phone\'s camera.</string>
-    <string name="social_media_unreadable">This file can\'t be read.</string>
-    <string name="social_media_not_accepted">This file can\'t be shared.</string>
-    <string name="social_media_daily_limit">You\'ve added many today. Try again tomorrow.</string>
-    <string name="social_media_one_video">One video per post. The other videos were not added.</string>
-    <string name="social_media_too_many">Up to 6 photos or videos per post. The rest were not added.</string>
-    <string name="feed_video_spoken">Video, %1$s</string>
-    <string name="title_video">Video</string>
-    <string name="video_loading">Loading video…</string>
-    <string name="video_not_found">This video is no longer available.</string>
-    <string name="video_offline">No connection. Try again when the connection is back.</string>
 
-    <string name="video_cannot_play">This video can\'t be played right now.</string>
-    <string name="video_try_again">Try again</string>
 
-    <string name="social_where_city_only">Only the city</string>
-    <string name="social_where_no_place">No place</string>
-    <string name="social_precision_title">How much of the place to show</string>
-    <string name="social_precision_exact">The place</string>
-    <string name="social_precision_area">The area (about 1 km)</string>
-    <string name="social_precision_city">The city</string>
-    <string name="social_precision_none">No place</string>
-    <string name="social_precision_private_notice">This place is near one of your private places, so only the city or no place can be shown.</string>
-    <string name="social_private_unknown_notice">Your private places on this phone could not be read, so only the city or no place can be shown. You can start that list again under Private places.</string>
-    <string name="social_city_title">City</string>
-    <string name="social_delay_notice">Others will see this 1 to 3 hours after you share it, so it never shows where you are right now.</string>
-    <string name="social_when_title">When</string>
-    <string name="social_daypart_title">Time of day (optional)</string>
-    <string name="social_daypart_morning">Morning</string>
-    <string name="social_daypart_afternoon">Afternoon</string>
-    <string name="social_daypart_evening">Evening</string>
-    <string name="social_daypart_night">Night</string>
-    <string name="social_category_title">Category (optional)</string>
-    <string name="social_audience_title">Who can see this?</string>
-    <string name="social_audience_everyone">Everyone</string>
-    <string name="social_audience_everyone_line">Anyone signed in can see this.</string>
-    <string name="social_audience_connections">Connections</string>
-    <string name="social_audience_connections_line">Only the people you have connected with.</string>
-    <string name="social_audience_only_me">Only me</string>
-    <string name="social_audience_only_me_line">A note for yourself.</string>
-    <string name="social_comments_title">Who can comment?</string>
-    <string name="social_comments_everyone">Anyone who can see it</string>
-    <string name="social_comments_connections">Your connections</string>
-    <string name="social_comments_nobody">No one</string>
-    <string name="social_location_summary">Location shown as: %1$s</string>
-    <string name="social_share_with">Share with %1$s</string>
-    <string name="social_share_only_me">Keep it just for me</string>
-    <string name="social_share_choose_audience">Choose who can see this</string>
-    <string name="social_shared">Posted. Phone down, you earned it.</string>
 
-    <string name="social_issue_body_empty">Write what happened.</string>
-    <string name="social_issue_body_too_long">An experience has at most 5000 characters.</string>
-    <string name="social_issue_ask_too_short">Write your question in at least 10 characters.</string>
-    <string name="social_issue_ask_too_long">A question has at most 1000 characters.</string>
-    <string name="social_issue_tip_too_long">A tip has at most 300 characters.</string>
-    <string name="social_issue_no_month">Choose the month it happened.</string>
-    <string name="social_issue_month_future">Choose a month that is not in the future.</string>
-    <string name="social_issue_no_precision">Choose where it was, or No place.</string>
-    <string name="social_issue_no_place">Choose a place.</string>
-    <string name="social_issue_no_city">Choose a city.</string>
-    <string name="social_issue_private_place">This place is near one of your private places.</string>
-    <string name="social_issue_no_audience">Choose who can see this.</string>
-    <string name="social_issue_too_many_photos">Add at most 6 photos.</string>
-    <string name="social_issue_photos_pending">Wait until the photos and video are added.</string>
-    <string name="social_issue_photos_failed">A photo or video could not be added. Tap it to try again, or remove it.</string>
 
-    <string name="social_near_me">Use where I am</string>
-    <string name="social_near_me_note">Your location is read only when you tap this, on this phone, to find the area. Only the area code is sent, never your position.</string>
     <!-- Phase 17D: three ways to choose a place: where I am, search, recent -->
-    <string name="social_search_hint">Search places by name</string>
-    <string name="social_search_title">Search</string>
-    <string name="social_search_none">No place has that name. Try other words, use where you are, or add it from where you are.</string>
-    <string name="social_search_too_many">Too many searches for now. You can still use where you are, or pick a place you used.</string>
-    <string name="social_search_failed">The search did not work just now. You can still use where you are, or pick a place you used.</string>
-    <string name="social_finding_precise">Looking for a precise position, so you can add a place here. Open sky or a window helps.</string>
-    <string name="social_add_place_rough">Your position is not accurate enough to add a place yet. Move outside or wait for a better signal, then try again. Places in the list can still be chosen.</string>
-    <string name="social_places_used">Places you used</string>
-    <string name="social_places_nearby">Near you</string>
-    <string name="social_places_none_nearby">No places have been added near here yet.</string>
-    <string name="social_add_place_title">Add this place</string>
-    <string name="social_add_place_name">Name of the place</string>
-    <string name="social_add_place_note">A place is public: anyone can write about it. Do not add a home, a hostel room or a workplace.</string>
-    <string name="social_add_place_button">Add place</string>
-    <string name="social_add_place_private">You are near one of your private places, so a public place cannot be added here.</string>
-    <string name="social_add_place_needs_precise">Adding a place needs your precise location. You can still choose a place from the list, search, or share only the city.</string>
-    <string name="social_add_place_name_short">A place name has at least 2 characters.</string>
-    <string name="social_location_needed">Allow location to find places near you, or share only the city. IRL checks once, only now.</string>
-    <string name="social_location_unavailable">Could not find your location just now. Try again, or share only the city.</string>
-    <string name="social_place_near_private">Near one of your private places</string>
-    <string name="social_place_row">%1$s, %2$s</string>
 
-    <string name="social_band_this_week">Shared this week</string>
-    <string name="social_band_this_month">Shared this month</string>
-    <string name="social_band_earlier">Shared earlier</string>
-    <string name="social_edited">Edited</string>
-    <string name="social_own_audience_line">Who can see it: %1$s</string>
-    <string name="social_own_delay_line">Others can see it from about %1$s.</string>
-    <string name="social_post_not_found_title">Not available</string>
-    <string name="social_post_not_found_message">This post was removed, or it is not shared with you.</string>
 
-    <string name="social_perspectives_title">Comments</string>
-    <string name="social_perspectives_empty">Quiet in here. Say the obvious thing.</string>
-    <string name="social_perspectives_closed">The author has limited who can comment.</string>
-    <string name="social_kind_been_here">Been here too</string>
-    <string name="social_kind_question">Question</string>
-    <string name="social_kind_reply">Reply</string>
-    <string name="social_kind_answer">Answer</string>
-    <string name="social_write_perspective">Add a comment</string>
-    <string name="social_send">Add</string>
-    <string name="social_reply">Reply</string>
-    <string name="social_replying_to">Replying to %1$s</string>
-    <string name="social_cancel_reply">Cancel reply</string>
-    <string name="social_hidden_by_author">Hidden by the author. Only you and the author see it.</string>
-    <string name="social_hide">Hide</string>
-    <string name="social_unhide">Show again</string>
-    <string name="social_helped">This helped</string>
-    <string name="social_helped_mark">Mark as helpful</string>
-    <string name="social_helped_unmark">Remove \"This helped\"</string>
-    <string name="social_delete_perspective">Delete</string>
-    <string name="social_delete_post">Delete this post</string>
-    <string name="social_delete_post_title">Delete this post?</string>
-    <string name="social_delete_post_message">The post, its photos and its comments are removed. This cannot be undone.</string>
-    <string name="social_post_deleted">Post deleted</string>
 
-    <string name="social_private_intro">Mark home, hostel or work so that your posts never show where they are. They stay on this phone, encrypted, and are never sent. Signing out removes them.</string>
-    <string name="social_private_mark_here">Mark where I am now</string>
-    <string name="social_private_choose_kind">What is this place?</string>
-    <string name="social_private_kind_home">Home</string>
-    <string name="social_private_kind_hostel">Hostel</string>
-    <string name="social_private_kind_work">Work</string>
-    <string name="social_private_kind_other">Another private place</string>
-    <string name="social_private_empty">No private places yet.</string>
-    <string name="social_private_added">Private place added</string>
-    <string name="social_private_not_saved">It could not be saved on this phone.</string>
-    <string name="social_private_needs_precise">Marking a private place needs your precise location, so it covers the right block.</string>
-    <string name="social_private_rough">Your position is not accurate enough yet to mark a private place. Move outside or wait for a better signal, then try again.</string>
-    <string name="social_private_unreadable">Your private places on this phone could not be read. Until you start the list again, every place is treated as private.</string>
-    <string name="social_private_reset">Start the list again</string>
-    <string name="social_private_remove">Remove %1$s</string>
     <!-- Phase 13C: the butterfly, the Cocoon and Discover. No counts except the author's own private line; no ranking words. -->
-    <string name="title_discover">Discover</string>
-    <string name="title_post_collection">Posts</string>
-    <string name="discover_section_city">New in %1$s</string>
-    <string name="discover_section_theme">This week\'s theme</string>
-    <string name="discover_edition_end">You\'re all caught up.</string>
-    <string name="discover_edition_empty">Nothing shared here this week. Someone has to go first.</string>
-    <string name="discover_search_hint">Search a place or a category</string>
-    <string name="discover_search_button">Search</string>
-    <string name="discover_search_clear">Clear</string>
-    <string name="discover_search_no_places">No place with that name. Only places can be searched, not people.</string>
-    <string name="discover_search_places">Places</string>
-    <string name="discover_search_categories">Categories</string>
-    <string name="discover_open_place">Open the place %1$s</string>
-    <string name="discover_open_category">Open the category %1$s</string>
-    <string name="collection_category_line">Posts shared for everyone, newest first.</string>
-    <string name="collection_category_city_line">Posts shared for everyone in %1$s, newest first.</string>
-    <string name="collection_empty">Nothing shared here yet.</string>
-    <string name="collection_not_found">This place is not available.</string>
-    <string name="collection_end">That\'s all for now.</string>
-    <string name="post_open_place_page">See this place</string>
 
     <!-- Phase 13D: moderation v2 for members. Amber, calm, never red; reports are never mentioned to the person
          concerned; reporters are told nobody learns who reported. -->
-    <string name="report_post">Report this post</string>
-    <string name="report_perspective">Report</string>
     <string name="report_person">Report this person</string>
     <string name="report_title">What is wrong with it?</string>
     <string name="report_send">Send</string>
@@ -937,34 +729,22 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="report_reason_other">Something else</string>
     <string name="moderation_reason_needs_review">It needs a closer look</string>
     <string name="moderation_reason_unknown">A guideline</string>
-    <string name="collapsed_under_review">Collapsed while a moderator looks at it.</string>
-    <string name="collapsed_by_moderator">A moderator collapsed this: it may be hurtful.</string>
-    <string name="collapsed_show">Show it</string>
-    <string name="own_collapsed_while_reviewed">Others see this collapsed, behind a tap, while a moderator looks at it. Nothing else changes for now.</string>
     <string name="own_collapsed_by_moderator">A moderator collapsed this for others, behind a tap. Why: %1$s.</string>
     <string name="own_held">Hidden from others while a moderator looks at it. Why: %1$s.</string>
     <string name="own_removed">A moderator removed this for others. Only you can see it. Why: %1$s.</string>
-    <string name="own_perspective_line">Moderator: %1$s</string>
     <string name="review_ask">Think we got it wrong? Ask for a review</string>
     <string name="review_asked">You asked for a review. Another moderator will look at it.</string>
     <string name="review_waiting">A review is waiting for another moderator.</string>
     <string name="review_upheld">Reviewed by another moderator: the decision stays.</string>
     <string name="review_overturned">Reviewed by another moderator: the decision was undone.</string>
-    <string name="approve_first_switch">Approve comments from people I\'m not connected with first</string>
-    <string name="approve_first_line">The author approves comments from people they are not connected with first.</string>
-    <string name="perspective_awaiting_yours">Waiting for your approval</string>
-    <string name="perspective_awaiting_author">Waiting for the author\'s approval</string>
-    <string name="perspective_approve">Approve</string>
-    <string name="standing_comments_paused">A moderator paused your comments until %1$s. Why: %2$s.</string>
-    <string name="standing_posting_paused">A moderator paused your posting and comments until %1$s. Why: %2$s.</string>
-    <string name="standing_suspended">A moderator paused your posting, comments and new connections until %1$s. Why: %2$s.</string>
+    <string name="standing_comments_paused">A moderator paused your responses to other people until %1$s. Why: %2$s.</string>
+    <string name="standing_posting_paused">A moderator paused your sharing until %1$s. Why: %2$s.</string>
+    <string name="standing_suspended">A moderator paused your sharing and new connections until %1$s. Why: %2$s.</string>
     <string name="standing_unaffected">Reading, blocking, muting, reporting and your safety tools are not affected.</string>
     <string name="standing_warning">A moderator reminded you of the community guidelines. Why: %1$s.</string>
     <string name="my_reports_title">Your reports</string>
     <string name="my_reports_intro">Only you can see this list. Nobody is told who reported.</string>
     <string name="my_reports_empty">You haven\'t reported anything.</string>
-    <string name="my_reports_post">A post</string>
-    <string name="my_reports_perspective">A comment</string>
     <string name="my_reports_person">A person</string>
     <string name="my_reports_received">Received: a moderator will look at it</string>
     <string name="my_reports_sent_this_week">Sent this week</string>
@@ -974,20 +754,19 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="my_reports_no_violation">Reviewed: no guideline was broken</string>
     <string name="my_reports_reviewed">Reviewed</string>
     <string name="guidelines_title">Community guidelines</string>
-    <string name="guidelines_motto">Tell it true. Be kind to people, honest about places.</string>
+    <string name="guidelines_motto">Say it true. Be kind to people.</string>
     <string name="guidelines_not_allowed_title">Not allowed here</string>
     <string name="guidelines_not_allowed">• Harassment, insults and bullying\n• Hate, including caste, religion, gender, sexuality, region or language\n• Threats\n• Sexual content involving others without their consent\n• Sharing where someone lives or is, or who they are (doxxing)\n• Posting where someone else is right now\n• Spam and scams\n• Pretending to be someone else</string>
     <string name="guidelines_how_title">How moderation works</string>
-    <string name="guidelines_how">• Anyone can report a post, a comment or a person. Nobody is told who reported.\n• When several people report something on their own, it is shown collapsed, behind a tap, until a moderator from the team looks at it.\n• Only a moderator can hide or remove something, or pause someone, and always with a reason you can see.\n• You can ask for a review of a decision. Another moderator looks at it.\n• Moderation never touches your SOS or your other safety tools: walks with check-ins, the Safety Circle and the Evidence Vault.</string>
-    <string name="guidelines_new_accounts">New accounts can share links after their first three days.</string>
+    <string name="guidelines_how">• Anyone can report a moment or a person. Nobody is told who reported.\n• When several people report something on their own, it is shown collapsed, behind a tap, until a moderator from the team looks at it.\n• Only a moderator can hide or remove something, or pause someone, and always with a reason you can see.\n• You can ask for a review of a decision. Another moderator looks at it.\n• Moderation never touches your SOS or your other safety tools: walks with check-ins and the Safety Circle.</string>
+    <string name="guidelines_new_accounts">New members can share links after their first week. In that week a moderator looks at photos for all of MIET before they appear.</string>
 
     <!-- Phase 13D: moderators (posts, perspectives and people). Case pseudonyms, reason codes, no accusations. -->
     <string name="content_cases_title">Posts, comments and people</string>
     <string name="content_cases_empty">No reports waiting.</string>
     <string name="content_appeals_title">Requests to look again at a decision</string>
     <string name="content_appeals_empty">No review requests waiting.</string>
-    <string name="content_target_post">Post</string>
-    <string name="content_target_comment">Comment</string>
+    <string name="content_target_moment">Moment</string>
     <string name="content_target_person">Person</string>
     <string name="content_case_row">%1$s · %2$s</string>
     <string name="content_case_counts">Reports that count, from different people: %1$s</string>
@@ -1004,8 +783,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="content_case_earlier_text">Before an edit during this review: %1$s</string>
     <string name="content_case_photos">Photos and videos are hidden until you choose to see them.</string>
     <string name="content_case_show_photo">Show photo %1$s</string>
-    <string name="content_case_show_video">Show video %1$s</string>
-    <string name="content_case_play_video">Play video %1$s</string>
 
     <string name="content_case_participant">Person %1$s · %2$s</string>
     <string name="content_role_author">wrote it</string>
@@ -1058,16 +835,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="own_collapsed_by_system">Our system thinks this may be hurtful (%1$s), so others see it collapsed and can tap to read it.%2$s If our system got it wrong, ask a moderator to look.</string>
     <string name="own_held_by_system">Our system thinks this may break the community guidelines (%1$s), so only you can see it until a moderator looks. That usually happens soon.%2$s</string>
     <string name="own_waiting_check">Waiting for a quick automatic check before others can see it. It will be visible in 2 hours at the latest.</string>
-    <string name="own_held_new_photos">Photo posts for everyone from new accounts are looked at by a moderator first. Only you can see this until then.</string>
-    <string name="own_flagged_phrase">" Marked: “%1$s”."</string>
-    <string name="own_perspective_system_line">Our system: %1$s</string>
-    <string name="check_review_ask">Our system got it wrong? Ask a moderator to look</string>
-    <string name="check_review_asked">Thank you. A moderator will look at it.</string>
-    <string name="collapsed_by_system">Collapsed: our system thinks this may be hurtful.</string>
-    <string name="collapsed_strong_language">Collapsed: strong language (your setting).</string>
     <string name="moderation_reason_awaiting_check">Waiting for the automatic check</string>
-    <string name="settings_strong_language_title">Collapse strong language</string>
-    <string name="settings_strong_language_summary">Posts and comments with strong words are shown behind a tap. Only this phone remembers this choice.</string>
     <string name="content_case_opened_by_system">Opened by the automatic check. It never removes anything and never restricts anyone: you decide.</string>
     <string name="content_case_opened_by_author">The author asked for a review of an automatic collapse.</string>
     <string name="content_case_state_system">Shown as: %1$s (by the automatic check)</string>
@@ -1079,20 +847,14 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- IRL (2026-11-03): the brand line, shown in capitals (textAllCaps) so TalkBack reads words, not letters. -->
     <string name="motto">Out there. Together.</string>
-    <string name="nav_discover">Home</string>
-    <string name="nav_share">Share</string>
     <string name="nav_you">You</string>
     <string name="cd_feature_row_plain">%1$s. %2$s.</string>
 
     <!-- You -->
-    <string name="you_handle_city">\@%1$s · %2$s</string>
     <string name="you_no_profile">Make a profile to share experiences and connect with people. Your safety tools work without one.</string>
-    <string name="you_section_reading">Reading</string>
     <string name="you_section_community">Community</string>
     <string name="you_section_account">Account</string>
-    <string name="you_experiences_description">Everything you shared, and who can see each one</string>
     <string name="you_connections_description">Requests, invite codes and the people you are connected with. Only you see this list.</string>
-    <string name="you_private_places_description">Home, hostel or work: kept on this phone, never sent</string>
     <string name="you_guidelines_description">What is and is not allowed, and why</string>
     <string name="you_reports_description">What you reported and what happened to it</string>
     <string name="you_blocked_description">People you blocked or muted. They are not told.</string>
@@ -1104,14 +866,9 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="safety_hub_walk_description">Check-ins while you travel, and checks for unusual stops</string>
 
     <!-- Discover (F14) -->
-    <string name="discover_masthead_no_city">Choose a city</string>
-    <string name="discover_city_description">City: %1$s. Tap to choose another city.</string>
-    <string name="discover_search_open">Search places and categories</string>
-    <string name="discover_search_close">Close search</string>
 
     <!-- Going there? (F9). The sheet's own words are going_*; it lives in feature/going (navigation only). -->
     <string name="going_there">Going there?</string>
-    <string name="going_there_description">Going there? Ways to save it, tell someone, and set off with support if you want it</string>
     <string name="going_place_line">%1$s. Use what helps; none of it is needed.</string>
     <string name="going_no_place_line">The post does not show a place. Use what helps; none of it is needed.</string>
     <string name="going_tell">Let someone know</string>
@@ -1121,7 +878,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="going_heads_up_no_place">I\'m heading out to try something new. I\'ll message you when I\'m back.</string>
 
     <!-- Cards (F13) -->
-    <string name="card_ticket_label">Tip</string>
 
     <!-- Ready check (F12): facts about this phone, never a verdict (ReadyCheckTest). -->
     <string name="ready_title">Before you need it</string>
@@ -1170,43 +926,10 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="opening_cta">Let\'s go →</string>
     <string name="opening_cta_description">Let\'s go: see how IRL works</string>
 
-    <string name="feed_someone">Someone</string>
-    <string name="feed_question_badge">Question</string>
-    <string name="feed_comment">Comment</string>
-    <string name="feed_comment_first">No comments yet. Open to add the first.</string>
-    <string name="feed_tip_chip">Tip inside</string>
-    <string name="feed_area_in_city">Around %1$s</string>
-    <string name="feed_area_unknown">An area of about 1 km</string>
-    <string name="feed_loading">Asking around…</string>
-    <string name="feed_header_talking">Talking now</string>
-    <string name="feed_header_theme">This week: %1$s</string>
-    <string name="feed_header_connections">From people you know</string>
-    <string name="feed_end_message">The rest is outside. Been somewhere lately?</string>
-    <string name="feed_share_yours">Share yours</string>
-    <string name="feed_empty_title">Nobody\'s been anywhere. Unlikely.</string>
-    <string name="feed_connect_title">It\'s better with your people</string>
-    <string name="feed_connect_message">Connect with friends to see what they share. Connections go both ways, and nobody else can see your list.</string>
-    <string name="feed_connect_action">Find people</string>
-    <string name="feed_choose_city_message">Pick a city above to see what people share there.</string>
-    <string name="discover_near_me">Near me</string>
-    <string name="discover_near_title">Places near you</string>
-    <string name="discover_near_note">From one location check, only when you tap. Just your area (about 1 km) is sent, never where exactly you are.</string>
-    <string name="discover_near_empty">Nothing around here yet. You could be the first.</string>
-    <string name="discover_near_permission">Allow location to see places around you. IRL checks once, only now.</string>
-    <string name="discover_near_location_off">Location is switched off on this phone. Turn it on to see places around you.</string>
-    <string name="discover_near_not_found">Could not find your location just now. Try again, or search a place by name.</string>
     <string name="location_action_settings">Open settings</string>
     <string name="location_action_turn_on">Turn on location</string>
     <string name="location_action_retry">Try again</string>
     <string name="location_action_precise">Use precise location</string>
-    <string name="social_location_off">Location is switched off on this phone. Turn it on, or share only the city.</string>
-    <string name="social_location_denied_settings">Location is not allowed for IRL. You can allow it in the app\'s settings, or share only the city.</string>
-    <string name="post_more_actions">More options for this post</string>
-    <string name="post_author_description">%1$s. Opens their profile</string>
-    <string name="post_author_own_description">%1$s. Opens your profile</string>
-    <string name="post_comments_title_count">Comments · %1$d</string>
-    <string name="post_comments_none">No comments.</string>
-    <string name="post_open_place_description">%1$s. Opens the place</string>
 
     <plurals name="feed_comments">
         <item quantity="one">%d comment</item>
@@ -1218,19 +941,8 @@ A complete privacy policy will be written and reviewed before any public release
     </plurals>
 
     <!-- D-3: the butterfly is a reaction; Save is a private bookmark. -->
-    <string name="feed_media_count">1 / %1$d</string>
-    <string name="feed_media_count_spoken">%1$d photos or videos inside</string>
     <!-- IRL-R14 (2026-11-12): a visit and its rating belong to an exact place. Where a post names none, the button says what it does. -->
-    <string name="went_share_description">Share yours: write your own experience.</string>
     <!-- D-5: cities -->
-    <string name="city_picker_title">Choose a city</string>
-    <string name="city_picker_hint">Search cities</string>
-    <string name="city_picker_note">Searched on your phone. What you type is not sent anywhere.</string>
-    <string name="city_picker_empty">No city on our list matches. Try another spelling, or the name of a nearby city.</string>
-    <string name="city_picker_chosen">chosen</string>
-    <string name="city_other">Another city</string>
-    <string name="city_other_note">A city that is not on the list</string>
-    <string name="profile_city_choose">Choose your city</string>
     <!-- Profile photo -->
     <string name="profile_photo_change">Change photo</string>
     <string name="profile_photo_add">Add a photo</string>
@@ -1241,7 +953,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="profile_photo_unreadable">This photo could not be read. Try another one.</string>
     <string name="profile_photo_description">Your profile photo</string>
     <!-- Real-device sprint C7: once the visit exists the spoken label must say the state the text shows, not the first-visit prompt -->
-    <string name="place_page_note">Experiences shared with everyone, newest first.</string>
 
     <!-- Phase 17F: SOS options (shake, audio), the shake countdown notification -->
     <string name="sos_options_title">SOS options</string>
@@ -1281,16 +992,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="notification_channel_sos_countdown_description">The 5-second countdown after shaking the phone during a Safe Walk, with a Cancel button</string>
 
     <!-- IRL redesign (R1, R2): the short composer and the draft guard. -->
-    <string name="compose_add_media">Add photos or a video</string>
-    <string name="compose_add_more">Add more</string>
-    <string name="compose_question_chip">This is a question</string>
-    <string name="compose_place_add">Add a place (optional)</string>
-    <string name="compose_details_show">Add details</string>
-    <string name="compose_details_hide">Hide details</string>
-    <string name="compose_discard_title">Throw this away?</string>
-    <string name="compose_discard_message">Your words and photos will not be kept.</string>
-    <string name="compose_discard_keep">Keep writing</string>
-    <string name="compose_discard_confirm">Discard</string>
     <!-- IRL redesign (R4): You as a profile; the rest one tap away. -->
     <string name="title_more">Settings and more</string>
     <string name="you_more_description">Private places, community, account, log out</string>
@@ -1540,9 +1241,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="moment_cover">Covered while it is being looked at. Tap to read it.</string>
     <string name="moment_notice_held">Only you can see this while a moderator looks at it.</string>
     <string name="moment_notice_new_member_photo">Only you can see this for now. In your first week, a moderator looks at photos for all of MIET before they appear.</string>
-    <string name="moment_notice_awaiting_check">Only you can see this for now. It is being checked and will appear within two hours.</string>
     <string name="moment_notice_collapsed">Others see this behind a tap while it is being looked at.</string>
-    <string name="moment_notice_removed">A moderator took this down. Only you can see it. You can ask for a review under Settings and more.</string>
     <string name="moment_kept_line">Kept on your profile</string>
     <string name="moment_photo">Photo</string>
     <string name="cd_moment_card">%1$s. %2$s</string>
@@ -1560,4 +1259,21 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="moment_life_until">On Today until %1$s</string>
     <string name="moment_life_live">On Today now</string>
     <string name="moment_open_author">%1$s\'s profile</string>
+
+    <!-- Phase N4: a person's moments on You and on a profile -->
+    <string name="you_moments_now">On Today now</string>
+    <string name="you_moments_now_empty">Nothing of yours is on Today right now.</string>
+    <string name="you_moments_kept">Kept</string>
+    <string name="you_moments_kept_empty">Moments leave Today after 24 hours. Open one of yours while it is on Today to keep it here.</string>
+    <string name="you_moments_kept_above">What you keep is still on Today, above.</string>
+    <string name="you_new_member_until">You are a new member until %1$s. Until then a moderator looks at your photos for all of MIET before they appear, and you can share a few moments a day.</string>
+    <string name="profile_moments_now">On Today now</string>
+    <string name="profile_moments_kept">Kept</string>
+    <string name="profile_moments_empty">Nothing to show here right now.</string>
+    <string name="my_reports_moment">A moment</string>
+
+    <!-- N4: the author asks a moderator to look at a moment a rule covered or held -->
+    <string name="check_review_ask">Our system got it wrong? Ask a moderator to look</string>
+    <string name="check_review_asked">Thank you. A moderator will look at it.</string>
+    <string name="moment_notice_removed">A moderator took this down. Only you can see it.</string>
 </resources>

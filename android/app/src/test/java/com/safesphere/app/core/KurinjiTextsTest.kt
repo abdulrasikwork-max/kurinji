@@ -65,9 +65,9 @@ class KurinjiTextsTest {
         assertNull(strings["opening_supporting"])
         assertEquals("IRL, in real life. Out there. Together.", strings["opening_brand_spoken"])
         assertEquals("Let\\'s go →", strings["opening_cta"])
-        assertEquals("You\\'re all caught up.", strings["discover_edition_end"])
-        assertEquals("Tip", strings["card_ticket_label"])
-        assertEquals("Comments", strings["social_perspectives_title"])
+        // N4: the wall ends and says so; the core interaction keeps its name.
+        assertEquals("That\\'s today.", strings["today_end_title"])
+        assertEquals("Who\\'s in?", strings["moment_kind_whos_in"])
         assertEquals("Going there?", strings["going_there"])
     }
 

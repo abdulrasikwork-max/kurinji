@@ -49,8 +49,7 @@ class MyReportsFragment : ViewBindingFragment<FragmentMyReportsBinding>(Fragment
 
     private fun row(report: MyReport): PersonRow {
         val what = getString(when (report.target) {
-            ReportTarget.POST -> R.string.my_reports_post
-            ReportTarget.COMMENT -> R.string.my_reports_perspective
+            ReportTarget.MOMENT -> R.string.my_reports_moment
             ReportTarget.PERSON -> R.string.my_reports_person
         })
         val status = getString(when {

@@ -7,6 +7,8 @@ import com.safesphere.app.feature.moments.domain.MomentNotice
 import com.safesphere.app.feature.moments.domain.NoticeState
 import com.safesphere.app.feature.moments.domain.RoughDay
 import com.safesphere.app.feature.moments.domain.RoughTime
+import com.safesphere.app.feature.social.domain.ReportReason
+import com.safesphere.app.feature.social.ui.ModerationLabels
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -41,17 +43,37 @@ object MomentLabels {
         RoughDay.EARLIER -> R.string.moment_when_earlier
     }
 
-    /** What the author is told. Every state has words; an unknown reason falls back to the plain sentence. */
+    /**
+     * What the author is told about their own moment (no hidden states). The automatic check speaks for itself ("Our
+     * system thinks…"), never as a moderator; a moderator's decision names its reason; a moment someone asked to have
+     * looked at reads as a plain review (the author never learns that someone asked, or who). The sentence takes the
+     * reason's words ([reason]) as its first argument where it names one.
+     */
     @StringRes
-    fun notice(notice: MomentNotice): Int = when (notice.state) {
-        NoticeState.HELD -> when (notice.reason) {
-            "NEW_MEMBER_PHOTO" -> R.string.moment_notice_new_member_photo
-            "AWAITING_CHECK" -> R.string.moment_notice_awaiting_check
-            else -> R.string.moment_notice_held
+    fun notice(notice: MomentNotice): Int {
+        val guideline = ReportReason.entries.any { it.name == notice.reason }
+        return when (notice.state) {
+            NoticeState.HELD -> when {
+                notice.reason == "NEW_MEMBER_PHOTO" -> R.string.moment_notice_new_member_photo
+                notice.reason == "AWAITING_CHECK" -> R.string.own_waiting_check
+                guideline && notice.byPerson == false -> R.string.own_held_by_system
+                guideline && notice.byPerson == true -> R.string.own_held
+                else -> R.string.moment_notice_held
+            }
+            NoticeState.COLLAPSED -> when {
+                guideline && notice.byPerson == false -> R.string.own_collapsed_by_system
+                guideline && notice.byPerson == true -> R.string.own_collapsed_by_moderator
+                else -> R.string.moment_notice_collapsed
+            }
+            NoticeState.REMOVED -> if (guideline) R.string.own_removed else R.string.moment_notice_removed
         }
-        NoticeState.COLLAPSED -> R.string.moment_notice_collapsed
-        NoticeState.REMOVED -> R.string.moment_notice_removed
     }
+
+    /** The words for a notice's reason code (a guideline), or the plain "not said" words. */
+    @StringRes
+    fun reason(code: String?): Int =
+        ReportReason.entries.firstOrNull { it.name == code }?.let { ModerationLabels.of(it) }
+            ?: R.string.moderation_reason_unknown
 
     /** The day of a plan as the reader's phone sees it. */
     enum class PlanDay { TODAY, TOMORROW, OTHER }

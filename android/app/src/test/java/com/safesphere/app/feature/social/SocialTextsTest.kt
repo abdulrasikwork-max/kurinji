@@ -35,11 +35,10 @@ class SocialTextsTest {
         val problems = socialStringNames(strings).filter { name ->
             val text = strings[name].orEmpty()
             // %d placeholders would be counts; the only digits allowed are the fixed rules (18, 3 to 20, 7 days, ...).
-            name !in COMMENT_COUNTS && name !in MEDIA_COUNTS && (text.contains("%d") || text.contains("%1\$d"))
+            text.contains("%d") || text.contains("%1\$d")
         }
+        // N4: no count of anything, anywhere (Same shows "a few / many", never a number: N5).
         assertTrue("counts in: $problems", problems.isEmpty())
-        // Phase 16 (U1): the one public number counts comments the viewer can read, and says so.
-        for (name in COMMENT_COUNTS) assertTrue(name, strings[name].orEmpty().contains("Comments"))
     }
 
     @Test
@@ -58,20 +57,20 @@ class SocialTextsTest {
         }
     }
 
-    /** Phase 13B: no "I'm here now" posting (design §4.3); the delay and the photo clean-up are explained honestly. */
+    /** No "I'm here now" posting, no presence (PHASE_N4 §1): a moment says what is on someone's mind, not where they are. */
     @Test
-    fun `experience texts never invite live posting and explain the delay and the photos honestly`() {
+    fun `moment texts never invite presence posting and never name a place, a distance or who looked`() {
         val strings = allStrings()
         val problems = socialStringNames(strings).filter { name ->
             val text = strings[name].orEmpty().lowercase()
             LIVE.any { it.containsMatchIn(text) }
         }
         assertTrue("live wording in: $problems", problems.isEmpty())
-        assertTrue(strings["social_delay_notice"].orEmpty().contains("1 to 3 hours"))
-        assertTrue(strings["social_photos_note"].orEmpty().contains("where and when"))
-        assertTrue(strings["social_private_intro"].orEmpty().contains("never sent"))
-        assertTrue(strings["social_near_me_note"].orEmpty().contains("never your position"))
-        assertTrue(strings["social_hidden_by_author"].orEmpty().startsWith("Hidden by the author"))
+        val retired = socialStringNames(strings).filter { name ->
+            val text = strings[name].orEmpty().lowercase()
+            RETIRED.any { it.containsMatchIn(text) }
+        }
+        assertTrue("retired ideas in: $retired", retired.isEmpty())
     }
 
     private fun allStrings(): Map<String, String> {
@@ -81,7 +80,9 @@ class SocialTextsTest {
 
     /** Every social_* string, plus every string the social screens' layouts and code refer to. */
     private fun socialStringNames(strings: Map<String, String>): Set<String> {
-        val sources = File("src/main/java/com/safesphere/app/feature/social").walkTopDown().filter { it.extension == "kt" } +
+        val sources = listOf("social", "moments").flatMap { feature ->
+            File("src/main/java/com/safesphere/app/feature/$feature").walkTopDown().filter { it.extension == "kt" }.toList()
+        } +
             LAYOUTS.map { File("src/main/res/layout/$it") }
         val referenced = sources.flatMap { file ->
             assertTrue("missing ${file.path}", file.isFile)
@@ -90,7 +91,7 @@ class SocialTextsTest {
         }.toSet()
         // N3: "verified" here forbids a safety badge on people. The community membership itself is "verified" by
         // design (IRL_DIRECTION, a verified real-name community); its texts are guarded by MembershipTextsTest.
-        return (strings.keys.filter { it.startsWith("social_") }.toSet() + referenced)
+        return (strings.keys.filter { it.startsWith("social_") || it.startsWith("moment_") || it.startsWith("today_") }.toSet() + referenced)
             .filterNot { name -> MEMBERSHIP.any { name.startsWith(it) } }.toSet()
     }
 
@@ -99,19 +100,18 @@ class SocialTextsTest {
         val LAYOUT_REF = Regex("@string/([a-z0-9_]+)")
         val CODE_REF = Regex("R\\.string\\.([a-z0-9_]+)")
         val LAYOUTS = listOf("fragment_profile_setup.xml", "fragment_connections.xml", "fragment_person_profile.xml",
-            "fragment_blocked_muted.xml", "item_person_row.xml", "fragment_compose.xml", "fragment_place_picker.xml",
-            "fragment_post.xml", "fragment_my_posts.xml", "fragment_private_places.xml", "item_photo.xml",
-            "fragment_discover.xml", "fragment_post_collection.xml",
-            // Phase 17E
-            "item_experience_card.xml", "sheet_city_picker.xml", "fragment_you.xml",
+            "fragment_blocked_muted.xml", "item_person_row.xml", "fragment_you.xml", "fragment_more.xml",
+            // N4: moments
+            "fragment_today.xml", "fragment_moment.xml", "item_moment_card.xml", "item_today_question.xml",
+            "item_today_message.xml", "item_moment_section.xml", "item_moment_note.xml",
             // Phase 13D
             "fragment_my_reports.xml", "fragment_guidelines.xml")
-        /** Phase 16 (U1, decided by the user 2026-10-26): comment counts, the only public number. */
-        val COMMENT_COUNTS = setOf("post_comments_title_count")
         /** N3: the membership words (MembershipTextsTest guards them; "Get verified" names the membership step). */
         val MEMBERSHIP = listOf("action_get_verified", "membership_", "you_membership_")
-        /** Phase 17E: how many photos or videos are inside one post (not a number of people). */
-        val MEDIA_COUNTS = setOf("feed_media_count", "feed_media_count_spoken")
+        /** N4 (N-58): ideas that must not come back in words: places, distance, who looked, reactions, the gallery. */
+        val RETIRED = listOf(Regex("\\bnearby\\b"), Regex("\\bnear you\\b"), Regex("\\bkm\\b"), Regex("\\bdistance\\b"),
+            Regex("\\bseen by\\b"), Regex("\\bviewed\\b"), Regex("\\bread receipt"), Regex("\\bupvote"), Regex("\\bgallery\\b"),
+            Regex("\\bvideo\\b"), Regex("\\brating\\b"), Regex("\\bcomments?\\b"))
         val LIVE = listOf(Regex("\\blive\\b"), Regex("right now here"), Regex("\\bi'?m here\\b"), Regex("\\bhere now\\b"),
             Regex("\\bcheck[- ]?in\\b"), Regex("who is here"))
         val FORBIDDEN = listOf(

@@ -10,12 +10,10 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.safesphere.app.R
 import com.safesphere.app.feature.social.domain.AppealState
-import com.safesphere.app.feature.social.domain.Collapsed
 import com.safesphere.app.feature.social.domain.ModerationReason
-import com.safesphere.app.feature.social.domain.ModerationState
-import com.safesphere.app.feature.social.domain.OwnModeration
 import com.safesphere.app.feature.social.domain.ReportReason
 import com.safesphere.app.feature.social.domain.ReportTarget
+import com.safesphere.app.feature.social.domain.TimeBand
 
 /**
  * Phase 13D: the words of moderation for members (design §9.9): calm, amber, never red, never "you are …". Reports are
@@ -46,39 +44,22 @@ object ModerationLabels {
         else -> of(ReportReason.valueOf(reason.name))
     }
 
-    /**
-     * The amber notice on one's own post or perspective: %1$s = the reason, %2$s = the marked phrase line (empty when
-     * none). Phase 13E: the automatic check speaks for itself ("Our system thinks…"), never as a moderator.
-     */
-    @StringRes
-    fun ownNotice(moderation: OwnModeration): Int = when {
-        moderation.bySystem && moderation.state == ModerationState.HELD &&
-            moderation.reason == ModerationReason.AWAITING_CHECK -> R.string.own_waiting_check
-        moderation.bySystem && moderation.state == ModerationState.HELD &&
-            moderation.reason == ModerationReason.NEEDS_REVIEW -> R.string.own_held_new_photos
-        moderation.bySystem && moderation.state == ModerationState.HELD -> R.string.own_held_by_system
-        moderation.bySystem -> R.string.own_collapsed_by_system
-        moderation.state == ModerationState.COLLAPSED -> if (moderation.decisionId == null)
-            R.string.own_collapsed_while_reviewed else R.string.own_collapsed_by_moderator
-        moderation.state == ModerationState.HELD -> R.string.own_held
-        else -> R.string.own_removed
-    }
-
-    /** What others read on a collapsed post or perspective (never who, never why in detail). */
-    @StringRes
-    fun collapsedLine(collapsed: Collapsed?): Int = when (collapsed) {
-        Collapsed.BY_MODERATOR -> R.string.collapsed_by_moderator
-        Collapsed.BY_SYSTEM -> R.string.collapsed_by_system
-        Collapsed.UNDER_REVIEW -> R.string.collapsed_under_review
-        null -> R.string.collapsed_strong_language
-    }
-
     @StringRes
     fun appealLine(state: AppealState): Int? = when (state) {
         AppealState.NONE -> null
         AppealState.OPEN -> R.string.review_waiting
         AppealState.UPHELD -> R.string.review_upheld
         AppealState.OVERTURNED -> R.string.review_overturned
+    }
+}
+
+/** When one of the viewer's own reports was sent: a rough period, never a time. */
+object TimeBandTexts {
+    @StringRes
+    fun sent(band: TimeBand): Int = when (band) {
+        TimeBand.THIS_WEEK -> R.string.my_reports_sent_this_week
+        TimeBand.THIS_MONTH -> R.string.my_reports_sent_this_month
+        TimeBand.EARLIER -> R.string.my_reports_sent_earlier
     }
 }
 

@@ -3,8 +3,6 @@ package com.safesphere.app.feature.social.data.remote
 import com.safesphere.app.feature.social.domain.ConnectResult
 import com.safesphere.app.feature.social.domain.ConnectStatus
 import com.safesphere.app.feature.social.domain.InviteItem
-import com.safesphere.app.feature.social.domain.Interest
-import com.safesphere.app.feature.social.domain.Language
 import com.safesphere.app.feature.social.domain.NewInvite
 import com.safesphere.app.feature.social.domain.OwnProfile
 import com.safesphere.app.feature.social.domain.PersonProfile
@@ -24,20 +22,11 @@ data class AgeConfirmationDto(val dateOfBirth: String) {
     override fun toString() = "AgeConfirmationDto(<hidden>)"
 }
 
-data class ProfileRequestDto(
-    val handle: String,
-    val bio: String?,
-    val languages: List<String>,
-    val interests: List<String>,
-    val city: String?
-) {
+data class ProfileRequestDto(val handle: String, val bio: String?) {
     companion object {
         fun from(input: ProfileInput) = ProfileRequestDto(
             handle = input.handle.trim(),
-            bio = input.bio.trim().ifEmpty { null },
-            languages = input.languages.map { it.code },
-            interests = input.interests.map { it.name },
-            city = input.city.trim().ifEmpty { null }
+            bio = input.bio.trim().ifEmpty { null }
         )
     }
 }
@@ -47,9 +36,9 @@ data class OwnProfileDto(
     val handle: String,
     val displayName: String,
     val bio: String? = null,
-    val languages: List<String>? = null,
-    val interests: List<String>? = null,
-    val city: String? = null,
+    val programme: String? = null,
+    val graduationYear: Int? = null,
+    val newMemberUntil: String? = null,
     val handleChangeAvailableAt: String? = null,
     val photo: String? = null
 ) {
@@ -58,9 +47,9 @@ data class OwnProfileDto(
         handle = handle,
         displayName = displayName,
         bio = bio,
-        languages = languages.orEmpty().mapNotNull(Language::fromCode),
-        interests = interests.orEmpty().mapNotNull(Interest::fromCode),
-        city = city,
+        programme = code(programme),
+        graduationYear = year(graduationYear),
+        newMemberUntil = newMemberUntil?.let { runCatching { Instant.parse(it) }.getOrNull() },
         handleChangeAvailableAt = handleChangeAvailableAt?.let { runCatching { Instant.parse(it) }.getOrNull() },
         photo = photoKey(photo)
     )
@@ -71,9 +60,8 @@ data class PersonProfileDto(
     val handle: String,
     val displayName: String,
     val bio: String? = null,
-    val languages: List<String>? = null,
-    val interests: List<String>? = null,
-    val city: String? = null,
+    val programme: String? = null,
+    val graduationYear: Int? = null,
     val relationship: String? = null,
     val photo: String? = null
 ) {
@@ -82,9 +70,8 @@ data class PersonProfileDto(
         handle = handle,
         displayName = displayName,
         bio = bio,
-        languages = languages.orEmpty().mapNotNull(Language::fromCode),
-        interests = interests.orEmpty().mapNotNull(Interest::fromCode),
-        city = city,
+        programme = code(programme),
+        graduationYear = year(graduationYear),
         relationship = Relationship.entries.firstOrNull { it.name == relationship } ?: Relationship.NONE,
         photo = photoKey(photo)
     )
@@ -129,4 +116,14 @@ data class RedeemDto(val code: String) {
 /** Phase 17E: a photo key is a lower-case UUID; anything else is no photo (never put into a URL). */
 fun photoKey(raw: String?): String? = raw?.takeIf { PHOTO_KEY.matches(it) }
 
+/** A programme code as the server writes it (letters, digits, _ and -), or nothing: never free text. */
+private fun code(raw: String?): String? = raw?.takeIf { PROGRAMME.matches(it) }
+
+/** A plausible graduation year, or nothing. */
+private fun year(raw: Int?): Int? = raw?.takeIf { it in 1990..2100 }
+
+private val PROGRAMME = Regex("^[A-Za-z0-9_-]{1,40}$")
 private val PHOTO_KEY = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+/** A closed-list code of the server as its enum, or null when this app does not know it (never guessed). */
+inline fun <reified T : Enum<T>> enumOrNull(raw: String?): T? = enumValues<T>().firstOrNull { it.name == raw }

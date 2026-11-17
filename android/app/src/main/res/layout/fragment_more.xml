@@ -16,33 +16,6 @@
         android:paddingEnd="@dimen/screen_padding"
         android:paddingBottom="@dimen/space_xl">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/privacyList"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:nestedScrollingEnabled="false"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
-        <TextView
-            style="@style/SocialSectionTitle"
-            android:text="@string/you_section_reading" />
-
-        <!-- Phase 13E (E20): a choice about the viewer only, kept on this phone. -->
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/strongLanguageSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xs"
-            android:minHeight="@dimen/min_touch_target"
-            android:text="@string/settings_strong_language_title"
-            android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/settings_strong_language_summary"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
-
         <TextView
             style="@style/SocialSectionTitle"
             android:text="@string/you_section_community" />

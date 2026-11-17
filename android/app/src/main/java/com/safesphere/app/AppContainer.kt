@@ -34,26 +34,14 @@ import com.safesphere.app.feature.safewalk.session.AndroidSafeWalkAlerts
 import com.safesphere.app.feature.safewalk.session.SafeWalkSession
 import com.safesphere.app.core.textcheck.HashedLexicon
 import com.safesphere.app.core.textcheck.TextCheck
-import com.safesphere.app.feature.social.data.DataStoreViewerPreferences
 import com.safesphere.app.feature.social.data.RemoteSocialRepository
 import com.safesphere.app.feature.social.data.remote.SocialApi
 import com.safesphere.app.feature.social.domain.SocialRepository
-import com.safesphere.app.feature.social.domain.ViewerPreferences
 import coil.ImageLoader
 import coil.memory.MemoryCache
-import com.safesphere.app.feature.social.data.EncryptedPlacesStore
 import com.safesphere.app.feature.social.data.AndroidMediaSource
 import com.safesphere.app.feature.social.data.MediaSource
 import com.safesphere.app.feature.social.data.PhotoPreparer
-import com.safesphere.app.feature.social.data.VideoPreparer
-import com.safesphere.app.feature.social.data.PlaceMemory
-import com.safesphere.app.feature.social.data.PlacesStore
-import com.safesphere.app.feature.social.data.RemoteExperienceRepository
-import com.safesphere.app.feature.social.data.RemoteDiscoverRepository
-import com.safesphere.app.feature.social.data.remote.DiscoverApi
-import com.safesphere.app.feature.social.data.remote.ExperienceApi
-import com.safesphere.app.feature.social.domain.DiscoverRepository
-import com.safesphere.app.feature.social.domain.ExperienceRepository
 import com.safesphere.app.feature.social.data.RemoteReportRepository
 import com.safesphere.app.feature.social.data.remote.ReportApi
 import com.safesphere.app.feature.social.domain.ReportRepository
@@ -104,6 +92,7 @@ import com.safesphere.app.feature.circlealert.session.CircleAlertCoordinator
 import com.safesphere.app.feature.safetycircle.data.remote.SafetyContactApi
 import com.safesphere.app.feature.safetycircle.domain.SafetyCircleRepository
 import com.safesphere.app.core.crypto.AndroidKeystoreKeyWrapper
+import com.safesphere.app.core.retired.OldSocialRetirement
 import com.safesphere.app.feature.moderation.data.RemoteModerationRepository
 import com.safesphere.app.feature.moderation.data.remote.ModerationApi
 import com.safesphere.app.feature.moderation.domain.ModerationRepository
@@ -119,7 +108,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import com.safesphere.app.core.network.BackendOrigin
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -140,7 +128,7 @@ class AppContainer(context: Context) {
 
     private val sessionStorage: SessionStorage by lazy { DataStoreSessionStorage(appContext) }
 
-    // Phase 17J: the one origin that may receive the sign-in token (AuthInterceptor, videoHeaders).
+    // Phase 17J: the one origin that may receive the sign-in token (AuthInterceptor).
     private val backendHttpUrl: HttpUrl by lazy { backendBaseUrl().toHttpUrl() }
 
     // No logging interceptor on purpose: request bodies contain sign-in codes, tickets and refresh secrets, so they must never be logged.
@@ -150,7 +138,7 @@ class AppContainer(context: Context) {
             .readTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .addInterceptor(AuthInterceptor(sessionStorage, backendHttpUrl))
-            // Only photo / video / poster uploads (marked on their calls) get 120 s read and write timeouts.
+            // Only photo uploads (marked on their calls) get 120 s read and write timeouts.
             .addInterceptor(UploadTimeoutInterceptor())
             .build()
     }
@@ -205,28 +193,12 @@ class AppContainer(context: Context) {
         activeEmergencyStore.clearAll()
         activeJourneyStore.clear()
         circleAlertStore.clear()
-        placeMemory.clearAll() // Phase 13B (Q9): private and recent places belong to the account that marked them
     }
 
     // ---- Phase 13A: profiles and connections (nothing stored on the phone) -----------------------------
 
     val socialRepository: SocialRepository by lazy {
         RemoteSocialRepository(retrofit.create(SocialApi::class.java), apiCallHandler)
-    }
-
-    // ---- Phase 13B: experiences (places, posts, photos, perspectives) --------------------------------------
-
-    val experienceRepository: ExperienceRepository by lazy {
-        RemoteExperienceRepository(retrofit.create(ExperienceApi::class.java), apiCallHandler, backendBaseUrl())
-    }
-
-    /** IRL redesign (R1): "my own posts changed" (memory only), so the feed reads again when it is shown next. */
-    val feedFreshness = com.safesphere.app.feature.social.domain.FeedFreshness()
-
-    // ---- Phase 13C: Discover (nothing stored on the phone) ---------------------------------------------------
-
-    val discoverRepository: DiscoverRepository by lazy {
-        RemoteDiscoverRepository(retrofit.create(DiscoverApi::class.java), apiCallHandler)
     }
 
     // ---- Phase N4: moments (Today, a moment, the person's own; nothing stored on the phone) -----------------------
@@ -262,42 +234,8 @@ class AppContainer(context: Context) {
         }.getOrNull()
     }
 
-    /** E20: "Collapse strong language", a choice about the viewer only, kept on this phone. */
-    val viewerPreferences: ViewerPreferences by lazy { DataStoreViewerPreferences(appContext) }
-
-    /** IRL redesign (R6): the signed-in account's own Home city, remembered on this phone. */
-    val homeCityChoice: com.safesphere.app.feature.social.domain.HomeCityChoice by lazy {
-        com.safesphere.app.feature.social.domain.HomeCityChoice(viewerPreferences) { currentSession.value?.user?.id }
-    }
-
-    /** Q9: private places, recently used places and the last audience, encrypted on this phone, never uploaded. */
-    private val placesStore: PlacesStore by lazy {
-        EncryptedPlacesStore(java.io.File(appContext.filesDir, "places"), AndroidKeystoreKeyWrapper())
-    }
-
-    val placeMemory: PlaceMemory by lazy {
-        PlaceMemory(placesStore, { currentSession.value?.user?.id }, Dispatchers.IO)
-    }
-
-    /**
-     * Photos are made smaller and re-encoded without metadata on the phone before upload (the server does it again).
-     * Phase 17C: videos are re-packed without metadata in the app's cache ("video-upload"); work files a previous run
-     * left behind are deleted the first time this is used (none of this run can exist yet).
-     */
-    val mediaSource: MediaSource by lazy {
-        val workDir = java.io.File(appContext.cacheDir, "video-upload")
-        VideoPreparer.sweep(workDir)
-        AndroidMediaSource(PhotoPreparer(appContext.contentResolver), VideoPreparer(appContext, workDir), Dispatchers.IO)
-    }
-
-    /**
-     * Phase 17C: the platform video player streams through its own connection (not the shared client), so it is given
-     * the current sign-in header for one playback; nothing is stored. Empty when signed out.
-     */
-    fun videoHeaders(url: String): Map<String, String> =
-        if (!BackendOrigin.isSame(backendHttpUrl, url)) emptyMap()   // Phase 17J: never to another origin
-        else currentSession.value?.token?.takeIf { it.isNotEmpty() }
-            ?.let { mapOf("Authorization" to "Bearer $it") } ?: emptyMap()
+    /** Photos are made smaller and re-encoded without metadata on the phone before upload (the server does it again). */
+    val mediaSource: MediaSource by lazy { AndroidMediaSource(PhotoPreparer(appContext.contentResolver), Dispatchers.IO) }
 
     /**
      * Q3: ONE image loader on the shared client (so AuthInterceptor attaches the JWT), memory cache only: nothing about
@@ -495,6 +433,13 @@ class AppContainer(context: Context) {
 
     val vaultRetirement: VaultRetirement by lazy { VaultRetirement(appContext.filesDir, appContext.cacheDir) }
 
+    // ---- Phase N4: places, cities and video are retired; what they kept on this phone is deleted once (no notice:
+    //      private places only served the old composer) ---------------------------------------------------------
+
+    val oldSocialRetirement: OldSocialRetirement by lazy {
+        OldSocialRetirement(appContext.filesDir, appContext.cacheDir, AndroidKeystoreKeyWrapper::forgetRetiredKey)
+    }
+
     /** Phase 13F (F11): set only by the non-exported SosEntryActivity (shortcut, tile); memory only. */
     val sosLaunchRequest: SosLaunchRequest = SosLaunchRequest()
 
@@ -545,6 +490,7 @@ class AppContainer(context: Context) {
     init {
         applicationScope.launch(Dispatchers.IO) { riseRetirement.retire() }
         applicationScope.launch(Dispatchers.IO) { vaultRetirement.retire() }
+        applicationScope.launch(Dispatchers.IO) { oldSocialRetirement.retire() }
         currentSession // Phase 11 C1: start following the session now, so the dialog never reads a stale "null"
         circleAlerts // start watching walks and emergencies right away (e.g. after a restart into a walk)
         sosRecorder // record an SOS that started or ended offline as soon as the server can be reached
@@ -560,7 +506,6 @@ class AppContainer(context: Context) {
                     if (signedOut) {
                         activeEmergencyStore.clearAll() // incl. SOS endings not told to the server yet
                         activeJourneyStore.clear()
-                        placeMemory.clearAll() // Phase 13B (Q9): private and recent places
                     }
                 }
         }

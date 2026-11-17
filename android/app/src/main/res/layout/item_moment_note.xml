@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase N4: one quiet line in a list of someone's moments (nothing here yet; how keeping works). -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/noteText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/space_xs"
+    android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+    tools:text="Nothing on Today right now." />

@@ -8,23 +8,17 @@ package com.safesphere.app.feature.social.domain
 object ProfileInputPolicy {
 
     const val BIO_MAX = 160
-    const val CITY_MAX = 60
 
     private val LINK = Regex(
         "(?i)(https?://|www\\.|\\b[a-z0-9-]+\\.(com|in|net|org|io|me|app|co|xyz|link|ly|info|biz|site|online|top)\\b)"
     )
-    private val CITY = Regex("^[\\p{L}\\p{M}][\\p{L}\\p{M} .'-]*$")
 
     enum class Problem {
-        HANDLE_FORMAT, HANDLE_UNAVAILABLE, BIO_TOO_LONG, CITY_INVALID, LINK
+        HANDLE_FORMAT, HANDLE_UNAVAILABLE, BIO_TOO_LONG, LINK
     }
 
-    data class Problems(
-        val handle: Problem? = null,
-        val bio: Problem? = null,
-        val city: Problem? = null
-    ) {
-        val any: Boolean get() = handle != null || bio != null || city != null
+    data class Problems(val handle: Problem? = null, val bio: Problem? = null) {
+        val any: Boolean get() = handle != null || bio != null
     }
 
     fun check(input: ProfileInput): Problems {
@@ -39,10 +33,7 @@ object ProfileInputPolicy {
             LINK.containsMatchIn(bioText) -> Problem.LINK
             else -> null
         }
-        val cityText = input.city.trim().replace(Regex("\\s+"), " ")
-        val city = if (cityText.isEmpty() || (length(cityText) <= CITY_MAX && CITY.matches(cityText))) null
-        else Problem.CITY_INVALID
-        return Problems(handle, bio, city)
+        return Problems(handle, bio)
     }
 
     private fun length(text: String): Int = text.codePointCount(0, text.length)

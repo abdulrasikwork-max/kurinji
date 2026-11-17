@@ -2,8 +2,6 @@ package com.safesphere.app.feature.social
 
 import com.safesphere.app.feature.social.domain.AgePolicy
 import com.safesphere.app.feature.social.domain.HandlePolicy
-import com.safesphere.app.feature.social.domain.Interest
-import com.safesphere.app.feature.social.domain.Language
 import com.safesphere.app.feature.social.domain.ProfileInput
 import com.safesphere.app.feature.social.domain.ProfileInputPolicy
 import com.safesphere.app.feature.social.domain.ProfileInputPolicy.Problem
@@ -67,25 +65,23 @@ class SocialPolicyTest {
 
     @Test
     fun `profile form - every field checked, Tamil text measured in characters`() {
-        val good = ProfileInput("asha_k", "கடற்கரை நடை", setOf(Language.TA), setOf(Interest.CITY_LIFE), "சென்னை")
+        val good = ProfileInput("asha_k", "கடற்கரை நடை")
         assertFalse(ProfileInputPolicy.check(good).any)
 
         val bad = ProfileInputPolicy.check(
-            ProfileInput("1asha", "x".repeat(161), emptySet(), emptySet(), "Chennai 600001")
+            ProfileInput("1asha", "x".repeat(161))
         )
         assertEquals(Problem.HANDLE_FORMAT, bad.handle)
         assertEquals(Problem.BIO_TOO_LONG, bad.bio)
-        assertEquals(Problem.CITY_INVALID, bad.city)
         assertTrue(bad.any)
     }
 
     @Test
     fun `profile form - links and reserved handles, N2 - no name of its own any more`() {
         val problems = ProfileInputPolicy.check(
-            ProfileInput("admin", "see https://example.org", emptySet(), emptySet(), "")
+            ProfileInput("admin", "see https://example.org")
         )
         assertEquals(Problem.HANDLE_UNAVAILABLE, problems.handle)
         assertEquals(Problem.LINK, problems.bio)
-        assertNull(problems.city)
     }
 }

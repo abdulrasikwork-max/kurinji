@@ -7,25 +7,6 @@ import java.time.Instant
  * requests, look-ups): the platform shows no numbers about people.
  */
 
-/** Languages a profile can list (closed list, same codes as the server). */
-enum class Language(val code: String) {
-    TA("ta"), EN("en"), HI("hi"), ML("ml"), TE("te"), KN("kn");
-
-    companion object {
-        fun fromCode(code: String): Language? = entries.firstOrNull { it.code == code }
-    }
-}
-
-/** The experience categories a profile can list as interests (closed list, same codes as the server). */
-enum class Interest {
-    FOOD_CAFES, NATURE_OUTDOORS, CULTURE_HERITAGE, MUSIC_NIGHTLIFE, STUDY_WORK, DAY_TRIPS, ACTIVITIES_SPORT,
-    HOBBIES_MAKING, CITY_LIFE, HIDDEN_GEMS;
-
-    companion object {
-        fun fromCode(code: String): Interest? = entries.firstOrNull { it.name == code }
-    }
-}
-
 /** How the viewer stands with someone. A request the viewer declined shows as NONE; its sender still sees REQUESTED. */
 enum class Relationship { SELF, NONE, REQUESTED, REQUEST_RECEIVED, CONNECTED }
 
@@ -34,9 +15,11 @@ data class OwnProfile(
     val handle: String,
     val displayName: String,
     val bio: String?,
-    val languages: List<Language>,
-    val interests: List<Interest>,
-    val city: String?,
+    /** N4 (N-51): the programme (its code) and graduation year of the verified membership; null without one. */
+    val programme: String?,
+    val graduationYear: Int?,
+    /** The end of the 7-day new-member period; null once established (or without a membership). */
+    val newMemberUntil: Instant?,
     /** Set while the handle cannot change yet (once per 30 days). */
     val handleChangeAvailableAt: Instant?,
     /** Phase 17E: the profile photo's key (null = none). */
@@ -48,15 +31,15 @@ data class PersonProfile(
     val handle: String,
     val displayName: String,
     val bio: String?,
-    val languages: List<Language>,
-    val interests: List<Interest>,
-    val city: String?,
+    /** N4 (N-51): from the verified membership, shown to other members. */
+    val programme: String?,
+    val graduationYear: Int?,
     val relationship: Relationship,
     /** Phase 17E: the profile photo's key (null = none). */
     val photo: String? = null
 )
 
-/** A person in a list (connections, requests, blocks, mutes) or the author of a post. Phase 17E: [photo] key or null. */
+/** A person in a list (connections, requests, blocks, mutes) or the author of a moment. Phase 17E: [photo] key or null. */
 data class PersonSummary(
     val publicId: String,
     val handle: String,
@@ -78,10 +61,4 @@ data class NewInvite(val id: String, val code: String, val expiresAt: Instant) {
 data class InviteItem(val id: String, val expiresAt: Instant)
 
 /** What the person typed on the profile screen. */
-data class ProfileInput(
-    val handle: String,
-    val bio: String,
-    val languages: Set<Language>,
-    val interests: Set<Interest>,
-    val city: String
-)
+data class ProfileInput(val handle: String, val bio: String)

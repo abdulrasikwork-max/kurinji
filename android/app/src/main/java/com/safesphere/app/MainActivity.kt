@@ -68,13 +68,6 @@ class MainActivity : AppCompatActivity() {
             (navHost.childFragmentManager.primaryNavigationFragment as? com.safesphere.app.navigation.TabReselect)
                 ?.onTabReselected()
         }
-        // R1: on the composer the toolbar arrow asks the same "discard?" question as the back button (it has a draft
-        // to lose); everywhere else the arrow keeps its normal behaviour.
-        binding.toolbar.setNavigationOnClickListener {
-            if (navController.currentDestination?.id == R.id.composeFragment) onBackPressedDispatcher.onBackPressed()
-            else androidx.navigation.ui.NavigationUI.navigateUp(navController, appBarConfiguration)
-        }
-
         navController.addOnDestinationChangedListener { _, destination, _ ->
             updateChrome(destination)
         }

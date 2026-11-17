@@ -75,11 +75,11 @@ class SocialViewModelsTest {
         vm.onPrefilled()
         assertNull(vm.uiState.value.prefill)
 
-        vm.onSave(ProfileInput("1x", "", emptySet(), emptySet(), ""))
+        vm.onSave(ProfileInput("1x", ""))
         assertEquals(ProfileInputPolicy.Problem.HANDLE_FORMAT, vm.uiState.value.problems.handle)
         assertFalse(repository.calls.contains("saveProfile"))
 
-        vm.onSave(ProfileInput("asha_new", "", emptySet(), emptySet(), ""))
+        vm.onSave(ProfileInput("asha_new", ""))
         advanceUntilIdle()
         assertTrue(vm.uiState.value.saved)
         assertEquals("asha_new", vm.uiState.value.profile?.handle)
@@ -91,7 +91,7 @@ class SocialViewModelsTest {
         repository.saveResult = ApiResult.Failure(ApiError.CONFLICT, "That handle is not available")
         val vm = ProfileSetupViewModel(repository, clock)
         advanceUntilIdle()
-        vm.onSave(ProfileInput("taken_one", "", emptySet(), emptySet(), ""))
+        vm.onSave(ProfileInput("taken_one", ""))
         advanceUntilIdle()
         assertEquals("That handle is not available", vm.uiState.value.failure?.message)
         assertTrue(vm.uiState.value.formReady)
@@ -194,7 +194,7 @@ class SocialViewModelsTest {
 
     @Test
     fun `person - connect, then remove, follow what the server says`() = runTest {
-        val vm = PersonProfileViewModel(repository, handle = "bala_r", profileId = null)
+        val vm = PersonProfileViewModel(repository, com.safesphere.app.testing.FakeMomentRepository(), handle = "bala_r", profileId = null)
         advanceUntilIdle()
         assertEquals("bala_r", repository.lookedUpHandle)
         assertEquals(Relationship.NONE, vm.uiState.value.person?.relationship)
@@ -213,7 +213,7 @@ class SocialViewModelsTest {
     @Test
     fun `person - not found and not visible look the same`() = runTest {
         repository.personResult = ApiResult.Failure(ApiError.NOT_FOUND)
-        val vm = PersonProfileViewModel(repository, handle = "nobody_here", profileId = null)
+        val vm = PersonProfileViewModel(repository, com.safesphere.app.testing.FakeMomentRepository(), handle = "nobody_here", profileId = null)
         advanceUntilIdle()
         assertTrue(vm.uiState.value.notFound)
         assertNull(vm.uiState.value.person)
@@ -222,7 +222,7 @@ class SocialViewModelsTest {
 
     @Test
     fun `person - blocking closes the screen`() = runTest {
-        val vm = PersonProfileViewModel(repository, handle = null, profileId = "bala-id")
+        val vm = PersonProfileViewModel(repository, com.safesphere.app.testing.FakeMomentRepository(), handle = null, profileId = "bala-id")
         advanceUntilIdle()
         vm.onBlockConfirmed()
         advanceUntilIdle()
@@ -237,7 +237,7 @@ class SocialViewModelsTest {
 
     @Test
     fun `person - a failed action keeps the person and shows the failure`() = runTest {
-        val vm = PersonProfileViewModel(repository, handle = null, profileId = "bala-id")
+        val vm = PersonProfileViewModel(repository, com.safesphere.app.testing.FakeMomentRepository(), handle = null, profileId = "bala-id")
         advanceUntilIdle()
         repository.actionFailure = ApiResult.Failure(ApiError.NO_CONNECTION)
         vm.onMute()

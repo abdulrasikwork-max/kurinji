@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase N4: a section title in a list of someone's moments ("On Today now", "Kept"). -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/sectionTitle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/space_lg"
+    android:layout_marginBottom="@dimen/space_xs"
+    android:accessibilityHeading="true"
+    android:textAppearance="@style/TextAppearance.SafeSphere.SectionTitle"
+    tools:text="On Today now" />

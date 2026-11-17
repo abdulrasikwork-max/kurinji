@@ -32,7 +32,7 @@ interface ReportApi {
     @POST("api/social-standing/decisions/{id}/appeal")
     suspend fun appeal(@Path("id") decisionId: String): ReportReceivedDto
 
-    /** Phase 13E: "Ask for a review" of one's own post or perspective that the automatic check collapsed. */
+    /** N4: "Ask for a review" of one's own moment that a rule collapsed or held. */
     @POST("api/content-checks/review")
     suspend fun reviewCheck(@Body body: ReviewRequestDto): ReportReceivedDto
 }
@@ -47,7 +47,7 @@ data class ReportRequestDto(val targetKind: String, val targetId: String, val re
 
 data class ReportReceivedDto(val status: String? = null)
 
-/** Phase 13E: [targetKind] POST or COMMENT (one's own). */
+/** [targetKind] MOMENT (one's own). */
 data class ReviewRequestDto(val targetKind: String, val targetId: String)
 
 data class MyReportDto(

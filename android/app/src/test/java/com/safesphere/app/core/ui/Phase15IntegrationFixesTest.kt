@@ -32,19 +32,6 @@ class Phase15IntegrationFixesTest {
     }
 
     /**
-     * 15-2 and 15-3: wiring checks for the post screen (UI code without a ViewModel rule to test). Phase 17E: the 13C
-     * "You went" invitation (15-3) is replaced by "I went", which opens the composer with the post's place, from the
-     * post page and from Saved.
-     */
-    @Test
-    fun postScreen_bringsNewFailuresIntoView_andIWentOpensTheComposerWithThePlace() {
-        val post = File("src/main/java/com/safesphere/app/feature/social/ui/PostFragment.kt").readText(Charsets.UTF_8)
-        assertTrue(post.contains("binding.scroll.smoothScrollTo(0, 0)")) // Phase 16: the notice is at the top of the scroll
-        assertTrue(post.contains("binding.errorNotice.announceForAccessibility(message)"))
-        assertTrue(post.contains("ComposeFragment.ARG_PLACE_ID to placeId"))
-    }
-
-    /**
      * 15-5: the banner row's visibility was only recomputed when the banner STATE changed, so a deletion asked for (or a
      * Safe Walk started) on a screen without banners stayed hidden on every tab until the next change or restart.
      */

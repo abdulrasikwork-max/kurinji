@@ -23,8 +23,7 @@ interface LocalKeyWrapper {
 }
 
 /**
- * Android Keystore AES-256-GCM key (alias [ALIAS]; the name is from the retired Evidence Vault and stays, because the
- * private places file on existing phones is sealed with it). Created on first use, in StrongBox when the phone
+ * Android Keystore AES-256-GCM key (the session's: alias [SESSION_ALIAS]). Created on first use, in StrongBox when the phone
  * has one, otherwise in the TEE / software Keystore. It is non-exportable: even with root access the raw key bytes
  * cannot be copied out on hardware-backed phones.
  *
@@ -32,8 +31,8 @@ interface LocalKeyWrapper {
  * during an emergency. Wrapped value = 12-byte IV | ciphertext+tag.
  */
 class AndroidKeystoreKeyWrapper(
-    /** Phase 11 C1: a separate key (alias [SESSION_ALIAS]) protects the session; the places file keeps [ALIAS]. */
-    private val alias: String = ALIAS
+    /** Phase 11 C1: the session's own key. N4: the only one left (the places file and its key are retired). */
+    private val alias: String = SESSION_ALIAS
 ) : LocalKeyWrapper {
 
     override fun wrap(itemKey: ByteArray): ByteArray {
@@ -82,10 +81,17 @@ class AndroidKeystoreKeyWrapper(
 
     companion object {
         private const val KEYSTORE = "AndroidKeyStore"
-        private const val ALIAS = "safesphere_evidence_vault_v1"
+        /** The key of the retired Evidence Vault (N1) and private places file (N4): only ever deleted now. */
+        private const val RETIRED_ALIAS = "safesphere_evidence_vault_v1"
         const val SESSION_ALIAS = "safesphere_session_v1"
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val IV_BYTES = 12
+
+        /** N4: removes the retired key from the Keystore (nothing is sealed with it any more). */
+        fun forgetRetiredKey() {
+            val store = KeyStore.getInstance(KEYSTORE).apply { load(null) }
+            if (store.containsAlias(RETIRED_ALIAS)) store.deleteEntry(RETIRED_ALIAS)
+        }
     }
 }
 

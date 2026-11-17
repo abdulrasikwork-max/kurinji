@@ -145,61 +145,6 @@
                     android:minLines="2" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/cityLayout"
-                style="@style/Widget.SafeSphere.TextInputLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:hint="@string/social_city_label">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/cityInput"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:importantForAutofill="no"
-                    android:inputType="textCapWords"
-                    android:maxLength="60"
-                    android:maxLines="1" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <!-- Phase 17E (D-5): choose from the catalog (searched on the phone); the name is written into the field. -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/cityPickButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/profile_city_choose"
-                app:icon="@drawable/ic_city" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_lg"
-                android:accessibilityHeading="true"
-                android:text="@string/social_languages_title"
-                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/languageChips"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_lg"
-                android:accessibilityHeading="true"
-                android:text="@string/social_interests_title"
-                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/interestChips"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs" />
-
             <com.safesphere.app.core.ui.components.NoticeView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
