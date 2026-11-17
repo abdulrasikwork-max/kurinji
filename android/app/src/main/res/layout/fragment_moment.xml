@@ -159,6 +159,25 @@
                 android:layout_marginTop="@dimen/space_sm"
                 android:text="@string/response_action_add_more" />
 
+            <!-- N5 (A2): a private reply (start one, or open one's own) and the plan's conversation. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/replyButton"
+                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/response_action_reply"
+                app:icon="@drawable/ic_message" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/planButton"
+                style="@style/Widget.Kurinji.Button.Tonal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:text="@string/response_action_open_plan"
+                app:icon="@drawable/ic_group" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

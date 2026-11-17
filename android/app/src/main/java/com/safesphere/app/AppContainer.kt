@@ -215,6 +215,17 @@ class AppContainer(context: Context) {
             retrofit.create(com.safesphere.app.feature.moments.data.remote.ResponseApi::class.java), apiCallHandler)
     }
 
+    /** Phase N5 (A2): Replies, plans, private replies and the Private replies setting. */
+    val repliesRepository: com.safesphere.app.feature.replies.domain.RepliesRepository by lazy {
+        com.safesphere.app.feature.replies.data.RemoteRepliesRepository(
+            retrofit.create(com.safesphere.app.feature.replies.data.RepliesApi::class.java), apiCallHandler)
+    }
+
+    /** Phase N5 (D19): the dot on the Replies tab, one holder in application scope (no number, no push). */
+    val repliesMarker: com.safesphere.app.feature.replies.ui.RepliesMarker by lazy {
+        com.safesphere.app.feature.replies.ui.RepliesMarker(repliesRepository)
+    }
+
     /** A2: the camera app's target for a moment's photo, its preparation and deletion. */
     val momentPhotoFiles: com.safesphere.app.feature.moments.data.MomentPhotoFiles by lazy {
         com.safesphere.app.feature.moments.data.MomentPhotoFiles(appContext)

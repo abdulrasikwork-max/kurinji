@@ -7,18 +7,18 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Where the chrome shows. N4 (docs/PHASE_N4.md §10): Today · ✚ Create (an action) · You; Replies in N5. */
+/** Where the chrome shows. N4 (docs/PHASE_N4.md §10): Today · ✚ Create (an action) · Replies · You (N5). */
 class NavigationRulesTest {
 
     @Test
-    fun `two tabs, and the app opens on Today`() {
-        assertEquals(setOf(R.id.todayFragment, R.id.youFragment), NavigationRules.tabDestinations)
+    fun `three tabs (Today, Replies, You), and the app opens on Today`() {
+        assertEquals(setOf(R.id.todayFragment, R.id.repliesFragment, R.id.youFragment), NavigationRules.tabDestinations)
         assertEquals(R.id.todayFragment, NavigationRules.START)
 
         val menu = File("src/main/res/menu/bottom_navigation.xml").readText(Charsets.UTF_8)
         val ids = Regex("android:id=\"@\\+id/([A-Za-z]+)\"").findAll(menu).map { it.groupValues[1] }.toList()
         // A2: Create sits between the tabs as an action (never a tab, never selected), opening the Create screen.
-        assertEquals(listOf("todayFragment", "navCreate", "youFragment"), ids)
+        assertEquals(listOf("todayFragment", "navCreate", "repliesFragment", "youFragment"), ids)
         assertEquals(R.id.navCreate, NavigationRules.CREATE_ITEM)
         assertFalse(R.id.navCreate in NavigationRules.tabDestinations)
         val rules = File("src/main/java/com/safesphere/app/navigation/NavigationRules.kt").readText(Charsets.UTF_8)
@@ -38,7 +38,7 @@ class NavigationRulesTest {
     fun `reading screens keep the bar, task and safety screens do not`() {
         val reading = setOf(R.id.momentFragment, R.id.personProfileFragment)
         assertTrue(NavigationRules.bottomBarDestinations.containsAll(reading))
-        for (task in listOf(R.id.createFragment, R.id.moreFragment,R.id.connectionsFragment, R.id.emergencyFragment, R.id.safeWalkFragment,
+        for (task in listOf(R.id.createFragment, R.id.conversationFragment, R.id.moreFragment,R.id.connectionsFragment, R.id.emergencyFragment, R.id.safeWalkFragment,
                 R.id.safetyFragment, R.id.settingsFragment, R.id.accountFragment)) {
             assertFalse("$task", task in NavigationRules.bottomBarDestinations)
         }

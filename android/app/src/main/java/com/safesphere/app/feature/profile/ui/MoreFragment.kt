@@ -15,6 +15,11 @@ import com.safesphere.app.core.ui.components.FeatureListAdapter
 import com.safesphere.app.databinding.FragmentMoreBinding
 import com.safesphere.app.feature.membership.ui.MembershipViewModel
 import com.safesphere.app.feature.membership.ui.staff.StaffListFragment
+import com.safesphere.app.feature.replies.ui.PrivateRepliesDialog
+import com.safesphere.app.feature.replies.ui.PrivateRepliesViewModel
+import com.safesphere.app.core.ui.showSessionExpiredDialog
+import com.safesphere.app.core.ui.toMessage
+import android.widget.Toast
 
 /**
  * "Settings and more", reached from You: community (guidelines, your reports, blocked and muted), moderation and
@@ -24,6 +29,7 @@ class MoreFragment : ViewBindingFragment<FragmentMoreBinding>(FragmentMoreBindin
 
     private val account by viewModels<ProfileViewModel> { ProfileViewModel.factory(appContainer) }
     private val membership by viewModels<MembershipViewModel> { MembershipViewModel.factory(appContainer) }
+    private val privateReplies by viewModels<PrivateRepliesViewModel> { PrivateRepliesViewModel.factory(appContainer) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -37,6 +43,10 @@ class MoreFragment : ViewBindingFragment<FragmentMoreBinding>(FragmentMoreBindin
             },
             FeatureItem(R.drawable.ic_person_outline, R.string.title_blocked_muted, R.string.you_blocked_description) {
                 nav.navigate(R.id.blockedMutedFragment)
+            },
+            // N5 (D17): who may reply privately to my moments.
+            FeatureItem(R.drawable.ic_message, R.string.private_replies_title, R.string.private_replies_description) {
+                privateReplies.onChoose()
             }
         ))
         binding.moderationList.adapter = FeatureListAdapter(listOf(
@@ -97,6 +107,25 @@ class MoreFragment : ViewBindingFragment<FragmentMoreBinding>(FragmentMoreBindin
                     list(StaffListFragment.Mode.LOG, R.string.staff_log_title)
                 }.takeIf { admin }
             ))
+        }
+        collectWhenStarted(privateReplies.uiState) { state ->
+            val current = state.value
+            if (state.choose && current != null) {
+                privateReplies.onChooseShown()
+                PrivateRepliesDialog.show(this, current, privateReplies::onChosen)
+            }
+            if (state.saved) {
+                privateReplies.onSavedShown()
+                Toast.makeText(requireContext(), R.string.private_replies_saved, Toast.LENGTH_SHORT).show()
+            }
+            state.failure?.let {
+                Toast.makeText(requireContext(), it.toMessage(requireContext()), Toast.LENGTH_LONG).show()
+                privateReplies.onFailureShown()
+            }
+            if (state.sessionExpired) {
+                privateReplies.onSessionExpiredHandled()
+                showSessionExpiredDialog()
+            }
         }
         collectWhenStarted(account.isLoggedOut) { loggedOut ->
             if (loggedOut) nav.navigate(R.id.action_global_to_login)

@@ -52,7 +52,20 @@ data class NoticeDto(
     val by: String? = null,
     val reviewable: Boolean? = null,
     val decisionId: String? = null
-)
+) {
+    /** An unknown state reads as the most cautious one (HELD). N5: messages use the same notice. */
+    fun toDomain() = MomentNotice(
+        state = NoticeState.entries.firstOrNull { it.name == state } ?: NoticeState.HELD,
+        reason = reason?.takeIf { CODE.matches(it) },
+        byPerson = when (by) {
+            "MODERATOR" -> true
+            "SYSTEM" -> false
+            else -> null
+        },
+        reviewable = reviewable == true,
+        decisionId = uuid(decisionId)
+    )
+}
 
 data class MomentDto(
     val id: String? = null,
@@ -109,19 +122,7 @@ data class MomentDto(
             status = status,
             kept = kept == true,
             collapsed = collapsed == true,
-            notice = notice?.let { n ->
-                MomentNotice(
-                    state = NoticeState.entries.firstOrNull { it.name == n.state } ?: NoticeState.HELD,
-                    reason = n.reason?.takeIf { CODE.matches(it) },
-                    byPerson = when (n.by) {
-                        "MODERATOR" -> true
-                        "SYSTEM" -> false
-                        else -> null
-                    },
-                    reviewable = n.reviewable == true,
-                    decisionId = uuid(n.decisionId)
-                )
-            },
+            notice = notice?.toDomain(),
             supportSuggested = supportSuggested == true,
             visibleAt = instant(visibleAt),
             expiresAt = instant(expiresAt),

@@ -33,9 +33,13 @@ data class ResponseActions(
     val addMore: Boolean,
     /** The author's lists (who feels the same, wants more, wants in, is in). */
     val people: Boolean,
-    val callOff: Boolean
+    val callOff: Boolean,
+    /** D17: start a private reply, or open one's own (never on one's own moment). */
+    val reply: Boolean = false,
+    /** D18: the plan's conversation, for its author and the people in it once it opened. */
+    val openPlan: Boolean = false
 ) {
-    val any: Boolean get() = same || sayMore || askIn || withdraw || addMore || people || callOff
+    val any: Boolean get() = same || sayMore || askIn || withdraw || addMore || people || callOff || reply || openPlan
 
     companion object {
         val NONE = ResponseActions(false, false, false, false, false, false, false)
@@ -138,7 +142,8 @@ object ResponseLabels {
                 addMore = moment.kind == MomentKind.SAY && shown && r.more == null && r.author?.hasSayMore == true,
                 people = r.author?.let { it.hasSame || it.hasSayMore || it.hasAsking || it.hasIn } == true,
                 callOff = moment.kind == MomentKind.WHOS_IN && plan != null && !plan.calledOff &&
-                    moment.status != MomentStatus.WAITING && (plan.open || plan.planId != null)
+                    moment.status != MomentStatus.WAITING && (plan.open || plan.planId != null),
+                openPlan = plan?.planId != null
             )
         } else {
             ResponseActions(
@@ -153,7 +158,10 @@ object ResponseLabels {
                 addMore = false,
                 // Someone in the plan sees who else is in it (the server answers them that list only).
                 people = plan?.you == PlanStanding.IN && !plan.calledOff,
-                callOff = false
+                callOff = false,
+                // The server says when a reply may start (the author's setting, Today); one's own reply always opens.
+                reply = r.replyId != null || r.canReply,
+                openPlan = plan?.you == PlanStanding.IN && plan.planId != null
             )
         }
     }

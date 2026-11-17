@@ -17,7 +17,7 @@ object SocialPalette {
     private const val FEATURES = "com.safesphere.app.feature."
 
     /** The feature packages on the social side. Anything not listed keeps the base (safety) colours. */
-    val socialFeatures = setOf("social", "profile", "settings", "account", "auth", "onboarding", "membership", "moments")
+    val socialFeatures = setOf("social", "profile", "settings", "account", "auth", "onboarding", "membership", "moments", "replies")
 
     /** True for a fragment class of the social side. Null or an unknown class keeps the base colours. */
     fun appliesTo(className: String?): Boolean {

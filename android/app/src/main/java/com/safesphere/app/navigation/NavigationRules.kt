@@ -18,9 +18,13 @@ import com.safesphere.app.R
  */
 object NavigationRules {
 
-    /** The two tabs (N4: Today, You). Create sits between them in the bar but is an action ([CREATE_ITEM]), never a tab. */
+    /**
+     * The tabs (N4: Today, You; N5: Replies). Create sits between Today and Replies in the bar but is an action
+     * ([CREATE_ITEM]), never a tab.
+     */
     val tabDestinations = setOf(
         R.id.todayFragment,
+        R.id.repliesFragment,
         R.id.youFragment
     )
 
@@ -68,6 +72,9 @@ object NavigationRules {
      * Phase 13F (F11): the SOS shortcut and tile open the SOS screen from ANY signed-in screen (found on the emulator:
      * from the Safe Walk screen nothing happened). Not before sign-in, and not when the SOS screen is already open.
      */
+    /** N5 (D19): the Replies dot is read only on signed-in screens (never before sign-in, never on the SOS screen). */
+    fun checksReplies(destinationId: Int?): Boolean = opensSosFrom(destinationId)
+
     fun opensSosFrom(destinationId: Int?): Boolean =
         destinationId != null && destinationId !in signedOutDestinations && destinationId != R.id.emergencyFragment
 

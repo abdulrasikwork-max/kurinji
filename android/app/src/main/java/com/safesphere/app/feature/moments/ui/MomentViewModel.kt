@@ -90,6 +90,19 @@ class MomentViewModel(
         load(momentId)
     }
 
+    /**
+     * N5: the page comes back (from a plan or a private reply): read the moment again quietly, so a reply just started
+     * opens as one's own and a standing is current. A failure keeps what is shown.
+     */
+    fun onShownAgain() {
+        val momentId = _uiState.value.moment?.id ?: return
+        if (_uiState.value.busy || _uiState.value.loading) return
+        viewModelScope.launch {
+            val result = repository.moment(momentId)
+            if (result is ApiResult.Success && !_uiState.value.busy) _uiState.update { it.copy(moment = result.data) }
+        }
+    }
+
     fun onUncover() = _uiState.update { it.copy(open = true) }
 
     fun onKeep() = change { momentId ->

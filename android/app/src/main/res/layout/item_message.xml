@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase N5: one message of a plan or a private reply: the writer's name (for others), the words in a bubble (the
+     reader's own on the right), the exact time (members only), and for the writer only the state of their own message
+     (amber, never red). A quiet line (someone is in, can't make it, called off, happened, ended) is a centred caption.
+     Nothing says whether anyone read it. One TalkBack item. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/row"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/space_xs"
+    android:paddingBottom="@dimen/space_xs">
+
+    <TextView
+        android:id="@+id/systemLine"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:layout_marginBottom="@dimen/space_xs"
+        android:gravity="center"
+        android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+        android:visibility="gone"
+        tools:text="Ravi is in" />
+
+    <LinearLayout
+        android:id="@+id/textBlock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/writer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+            tools:text="Ravi" />
+
+        <TextView
+            android:id="@+id/bubble"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_message_theirs"
+            android:maxWidth="300dp"
+            android:minHeight="@dimen/min_touch_target"
+            android:paddingStart="14dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="10dp"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="Bringing the frisbee." />
+
+        <TextView
+            android:id="@+id/time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+            tools:text="5:04 pm" />
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/notice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:visibility="gone"
+            app:noticeText="@string/conversation_notice_held"
+            app:noticeType="warning" />
+    </LinearLayout>
+</LinearLayout>

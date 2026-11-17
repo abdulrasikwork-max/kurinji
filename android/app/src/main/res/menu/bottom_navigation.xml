@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- N4: Today, ✚ Create, You. Tab ids match the destination ids in nav_graph.xml; Create is an action (it opens the
-     Create screen and never becomes the selected item). Replies arrives in N5. No placeholder items. -->
+<!-- N4: Today, ✚ Create, You; N5: Replies before You. Tab ids match the destination ids in nav_graph.xml; Create is an
+     action (it opens the Create screen and never becomes the selected item). Replies shows a dot (never a number) when
+     something arrived since it was last opened (D19). No placeholder items. -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/todayFragment"
@@ -10,6 +11,10 @@
         android:id="@+id/navCreate"
         android:icon="@drawable/ic_nav_share"
         android:title="@string/nav_create" />
+    <item
+        android:id="@+id/repliesFragment"
+        android:icon="@drawable/ic_message"
+        android:title="@string/nav_replies" />
     <item
         android:id="@+id/youFragment"
         android:icon="@drawable/ic_nav_you"

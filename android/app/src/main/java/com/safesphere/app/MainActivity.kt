@@ -76,6 +76,27 @@ class MainActivity : AppCompatActivity() {
         }
         navController.addOnDestinationChangedListener { _, destination, _ ->
             updateChrome(destination)
+            // N5 (D19): a tab change reads the Replies dot (at most every 15 s); before sign-in it is cleared.
+            val marker = appContainer.repliesMarker
+            if (NavigationRules.checksReplies(destination.id)) {
+                if (destination.id in NavigationRules.tabDestinations) lifecycleScope.launch { marker.check() }
+            } else if (destination.id in NavigationRules.signedOutDestinations) {
+                marker.opened()
+            }
+        }
+
+        // N5 (D19): the Replies dot, never a number: read when IRL comes to the front and every 2 minutes while it is
+        // on the screen (push arrives in N7). Nothing is stored.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { appContainer.repliesMarker.fresh.collect(::showRepliesDot) }
+                while (true) {
+                    if (NavigationRules.checksReplies(navController.currentDestination?.id)) {
+                        appContainer.repliesMarker.check(force = true)
+                    }
+                    kotlinx.coroutines.delay(com.safesphere.app.feature.replies.ui.RepliesMarker.POLL_MS)
+                }
+            }
         }
 
         // Phase 17F (D-4): the opted-in shake gesture while IRL is on the screen opens the SOS screen with its normal
@@ -92,6 +113,20 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    /** D19: a dot on the Replies tab (no number), spoken as "something new". */
+    private fun showRepliesDot(fresh: Boolean) {
+        val bar = binding.bottomNavigation
+        if (!fresh) {
+            bar.getBadge(R.id.repliesFragment)?.isVisible = false
+            return
+        }
+        bar.getOrCreateBadge(R.id.repliesFragment).apply {
+            clearNumber()
+            setContentDescriptionNumberless(getString(R.string.cd_replies_new))
+            isVisible = true
         }
     }
 

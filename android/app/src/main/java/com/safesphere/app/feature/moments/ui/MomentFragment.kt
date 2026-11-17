@@ -24,6 +24,7 @@ import com.safesphere.app.feature.moments.domain.Moment
 import com.safesphere.app.feature.moments.domain.MomentStatus
 import com.safesphere.app.feature.moments.domain.PlanPerson
 import com.safesphere.app.feature.social.domain.ReportTarget
+import com.safesphere.app.feature.replies.ui.ConversationFragment
 import com.safesphere.app.feature.social.ui.DraftNudgeDialogs
 import com.safesphere.app.feature.social.ui.ModerationLabels
 import com.safesphere.app.feature.social.ui.ReportDialogs
@@ -67,6 +68,17 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
         binding.withdrawButton.setOnClickListener { viewModel.onWithdraw() }
         binding.addMoreButton.setOnClickListener { askMore() }
         binding.callOffButton.setOnClickListener { confirmCallOff() }
+        // N5 (A2): one's own private reply opens; otherwise a new one starts on the conversation screen.
+        binding.replyButton.setOnClickListener {
+            val moment = viewModel.uiState.value.moment ?: return@setOnClickListener
+            val own = moment.responses.replyId
+            findNavController().navigate(R.id.conversationFragment, if (own != null) bundleOf(ConversationFragment.ARG_ID to own)
+                else bundleOf(ConversationFragment.ARG_MOMENT to moment.id, ConversationFragment.ARG_NAME to moment.author.name))
+        }
+        binding.planButton.setOnClickListener {
+            val plan = viewModel.uiState.value.moment?.responses?.plan?.planId ?: return@setOnClickListener
+            findNavController().navigate(R.id.conversationFragment, bundleOf(ConversationFragment.ARG_ID to plan))
+        }
         peopleSheet = MomentPeopleSheet(this, momentImages(), ::onPersonAction) { viewModel.onPeopleClosed() }
         binding.peopleButton.setOnClickListener {
             peopleSheet?.show()
@@ -81,6 +93,7 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
     override fun onResume() {
         super.onResume()
         secure(true)
+        viewModel.onShownAgain()
     }
 
     override fun onPause() {
@@ -175,6 +188,9 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
         binding.addMoreButton.isVisible = actions.addMore
         binding.peopleButton.isVisible = actions.people
         binding.callOffButton.isVisible = actions.callOff
+        binding.replyButton.isVisible = actions.reply
+        binding.replyButton.setText(if (responses.replyId != null) R.string.response_action_your_reply else R.string.response_action_reply)
+        binding.planButton.isVisible = actions.openPlan
         for (button in listOf(binding.sameButton, binding.sayMoreButton, binding.inButton, binding.withdrawButton,
                 binding.addMoreButton, binding.peopleButton, binding.callOffButton)) {
             button.isEnabled = !state.busy

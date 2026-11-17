@@ -191,3 +191,38 @@ NOT manually verified.** Decision N-100.
   `MomentViewModel(repository, responses)`; Today re-reads only an answered card (`RESULT_CHANGED`, `onUpdated`).
 - **Tests:** `ResponsesTest` (22: parsing, words, matrix, sheet, view model, Today, guards: no digit / "declined" / "seen"
   in `response_*` words, nothing stored); `MomentUiTest` constructors; `SocialTextsTest` covers the new sheet.
+
+### A2 (2026-11-18): Replies tab and dot, plans and private replies, the setting — Android
+
+Status: **implemented, compiled, tested (Android 797 / 0, `gradlew --offline clean testDebugUnitTest assembleDebug`);
+NOT manually verified.** Decision N-101.
+
+- **Package `feature/replies`** (social palette; never imports safety or membership): `domain/Replies.kt`
+  (`Conversation`, `Message`, `You`, `Turn`, `ReplyItem`, `RepliesPage`, `PrivateReplies`, `RepliesRepository`),
+  `data/RepliesDtos.kt` (fail-closed: unknown conversation kind or unreadable moment = error; unknown turn = CLOSED;
+  WAITING, CLOSED, ENDED or not open never offer sending; unknown message kind / event and unknown Replies lines
+  dropped; a line in the wrong section dropped; SAME never fresh; someone else's notice and support line never kept;
+  at most 3 names; unknown setting = MY_PEOPLE), `RemoteRepliesRepository` + `RepliesApi` (the one Retrofit; non-UUID ids
+  never reach a URL). `AppContainer.repliesRepository`, `repliesMarker`.
+- **Bar:** Today · ✚ Create · Replies · You (`repliesFragment` is a tab). **Dot (D19):** `RepliesMarker` (app scope;
+  `BadgeDrawable` with `clearNumber()`, spoken "Replies, something new"): read on coming to the front and every 2 min
+  while STARTED (`MainActivity`), on tab changes (at most every 15 s), one call at a time; a lost connection keeps the
+  dot, a refusal clears it; cleared before sign-in. Opening Replies reads it, then `PUT /opened`, then clears the dot.
+- **Replies (`RepliesFragment`, FLAG_SECURE):** Needs you · Plans · Private replies · Feel the same, empty ones left out,
+  then an end line; names only (`RepliesLabels.title`), whose turn (never "seen"), exact time on plan / reply lines,
+  "New" on fresh lines. A line opens its conversation, else the moment. 403 `MEMBERSHIP_NEEDED` → "Get verified".
+- **Conversation (`ConversationFragment`, task screen, FLAG_SECURE):** what it is about (moment words, plan time and
+  where, called off), who is in it, "Open until …", See the moment, End this conversation (a private reply, either
+  person, confirm). Messages oldest first: own on the right, writer's name for others, exact time, quiet lines (in, can't
+  make it, called off, happened, ended), collapsed ones behind a tap, the writer's own notice (held / behind a tap /
+  taken down, amber). Writing box only when sending is allowed; otherwise one line (wait for an answer / closed / ended /
+  paused). Every message passes `DraftNudgeDialogs` first; support line when the server suggests it. Read again on
+  return and every 30 s while on screen (no push until N7). **Reply sheet = the same screen in start mode** (moment id
+  + author name): the first message creates the private reply (`POST /private-replies`); a refusal (setting, pause) shows
+  the server's words and keeps the words.
+- **Moment page:** "Reply privately" when the server allows (`canReply`), "Your private reply" when one exists, "Open the
+  plan" for its author and the people in it; the page re-reads itself quietly when it comes back.
+- **Setting:** "Private replies" row in Settings and more (read first, then My people / Anyone at MIET / Nobody, saved
+  only when changed).
+- **Tests:** `RepliesTest` (17); `NavigationRulesTest` (three tabs, conversation is a task screen); `SocialTextsTest`
+  scans `feature/replies` and the four new layouts; `SocialPalette` covers `replies`.

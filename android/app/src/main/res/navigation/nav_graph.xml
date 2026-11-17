@@ -163,6 +163,36 @@
         android:label="@string/today_title"
         tools:layout="@layout/fragment_today" />
 
+    <!-- Phase N5 (D19): Replies, a tab. -->
+    <fragment
+        android:id="@+id/repliesFragment"
+        android:name="com.safesphere.app.feature.replies.ui.RepliesFragment"
+        android:label="@string/title_replies"
+        tools:layout="@layout/fragment_replies" />
+
+    <!-- Phase N5 (D17, D18): a plan or a private reply (a task screen); a new private reply starts here too. -->
+    <fragment
+        android:id="@+id/conversationFragment"
+        android:name="com.safesphere.app.feature.replies.ui.ConversationFragment"
+        android:label="@string/conversation_title"
+        tools:layout="@layout/fragment_conversation">
+        <argument
+            android:name="conversationId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="replyToMoment"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="replyToName"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+
     <!-- Phase N4: one moment on its own page (a reading screen). -->
     <fragment
         android:id="@+id/momentFragment"
