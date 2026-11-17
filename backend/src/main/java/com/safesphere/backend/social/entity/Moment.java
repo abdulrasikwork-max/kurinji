@@ -77,6 +77,21 @@ public class Moment {
     @Column(name = "question_id")
     private Long questionId;
 
+    /** N-89: the author's ONE follow-up to "Say more" (null until then). Not an edit: [body] never changes. */
+    @Column(name = "more_text", length = 500)
+    private String moreText;
+
+    @Column(name = "more_at")
+    private LocalDateTime moreAt;
+
+    /** N-90: a Who's in? its author called off (asks close, the plan closes, everyone who can see it is told). */
+    @Column(name = "called_off_at")
+    private LocalDateTime calledOffAt;
+
+    /** N-92: a "This happened" Say names the Who's in? it came from (cleared if that one is gone). */
+    @Column(name = "happened_of")
+    private Long happenedOf;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -207,6 +222,49 @@ public class Moment {
         this.moderationDecision = null;
         this.moderationSource = state == ModerationState.NONE ? null : ModerationSource.SYSTEM;
         this.moderationSpans = state == ModerationState.NONE ? null : spans;
+    }
+
+    /** N-89: the follow-up, once (checked by the caller: after an ask, while it is on Today). */
+    public void addMore(String text, LocalDateTime now) {
+        if (moreText != null) throw new IllegalStateException("only one follow-up");
+        if (visibleAt == null) throw new IllegalStateException("never visible");
+        LocalDateTime at = now.truncatedTo(ChronoUnit.MICROS);
+        this.moreText = text;
+        this.moreAt = at.isBefore(visibleAt) ? visibleAt : at;
+    }
+
+    /** N-90: call a Who's in? off (once). */
+    public void callOff(LocalDateTime now) {
+        if (kind != Kind.WHOS_IN) throw new IllegalStateException("only a plan can be called off");
+        if (calledOffAt != null || visibleAt == null) return;
+        LocalDateTime at = now.truncatedTo(ChronoUnit.MICROS);
+        this.calledOffAt = at.isBefore(visibleAt) ? visibleAt : at;
+    }
+
+    /** N-92: this Say is the "This happened" of the plan [planId]. */
+    public void happenedOf(long planId) {
+        if (kind != Kind.SAY) throw new IllegalStateException("This happened is a Say");
+        this.happenedOf = planId;
+    }
+
+    public boolean isCalledOff() {
+        return calledOffAt != null;
+    }
+
+    public String getMoreText() {
+        return moreText;
+    }
+
+    public LocalDateTime getMoreAt() {
+        return moreAt;
+    }
+
+    public LocalDateTime getCalledOffAt() {
+        return calledOffAt;
+    }
+
+    public Long getHappenedOf() {
+        return happenedOf;
     }
 
     public void setStrongLanguage(boolean strongLanguage) {

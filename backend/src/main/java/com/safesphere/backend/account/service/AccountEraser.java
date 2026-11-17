@@ -52,6 +52,10 @@ public class AccountEraser {
             // Phase N4 (V35): the person's moments, their photos (attached or not), and the daily questions they wrote
             // as an admin (the question stays; its writer is cleared, as the database's ON DELETE SET NULL does).
             "moments.author_id", "moment_media.owner_id", "daily_questions.created_by",
+            // Phase N5 (V36): their Same and Say more, their asks and plan places, the private replies they started, every
+            // message they wrote, their settings and their Replies marker.
+            "moment_signals.user_id", "plan_people.user_id", "conversations.replier_id", "messages.author_id",
+            "social_settings.user_id", "replies_opened.user_id",
             // Phase 13D (V23): reports by or about the person, cases about them, their strikes and pause.
             "content_reports.reporter_id", "content_reports.person_id", "content_cases.person_id",
             "social_strikes.user_id", "social_standing.user_id",
@@ -101,6 +105,17 @@ public class AccountEraser {
             "DELETE FROM social_standing WHERE user_id = ?",
             // Phase N4: the person's moment photos (files already deleted in step 2), their moments (live, ended and
             // kept alike), and their name on the daily questions they wrote.
+            // Phase N5: what they said and what was said under their moments (children first); This happened Says of
+            // others lose the link to their plans (the database's ON DELETE SET NULL).
+            "DELETE FROM messages WHERE author_id = ? OR conversation_id IN (SELECT id FROM conversations"
+                    + " WHERE replier_id = ? OR moment_id IN (SELECT id FROM moments WHERE author_id = ?))",
+            "DELETE FROM conversations WHERE replier_id = ? OR moment_id IN (SELECT id FROM moments WHERE author_id = ?)",
+            "DELETE FROM plan_people WHERE user_id = ? OR moment_id IN (SELECT id FROM moments WHERE author_id = ?)",
+            "DELETE FROM moment_signals WHERE user_id = ? OR moment_id IN (SELECT id FROM moments WHERE author_id = ?)",
+            "DELETE FROM social_settings WHERE user_id = ?",
+            "DELETE FROM replies_opened WHERE user_id = ?",
+            "UPDATE moments SET happened_of = NULL WHERE happened_of IN (SELECT id FROM (SELECT id FROM moments"
+                    + " WHERE author_id = ?) own)",
             "DELETE FROM moment_media WHERE owner_id = ?"
                     + " OR moment_id IN (SELECT id FROM moments WHERE author_id = ?)",
             "DELETE FROM moments WHERE author_id = ?",

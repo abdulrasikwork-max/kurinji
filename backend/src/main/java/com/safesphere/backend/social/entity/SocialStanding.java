@@ -21,9 +21,9 @@ public class SocialStanding {
 
     /** What a pause stops. Each level includes the ones before it. */
     public enum Restriction {
-        /** No new perspectives. */
+        /** No new responses (N-95: Same, Say more, follow-ups, I'm in, private replies, messages). */
         COMMENTS_PAUSED,
-        /** Also no new posts and no new places. */
+        /** Also no new moments. */
         POSTING_PAUSED,
         /** Also no connection requests, invite codes or profile changes. */
         SUSPENDED;

@@ -37,6 +37,9 @@ public class SocialAccess {
 
     static final String POSTING_PAUSED = "A moderator has paused your sharing for now. "
             + "You shows until when, and you can ask for a review there.";
+    /** N-95: a moderator paused this person's responses (COMMENTS_PAUSED and every stronger level). */
+    static final String RESPONSES_PAUSED = "A moderator has paused your responses for now. "
+            + "You shows until when, and you can ask for a review there.";
     static final String SUSPENDED = "A moderator has paused this for your account for now. "
             + "You shows until when, and you can ask for a review there.";
 
@@ -116,6 +119,17 @@ public class SocialAccess {
     public User requireCanPost(long userId) {
         User user = requireMember(userId);
         refuseIf(userId, SocialStanding.Restriction::stopsPosting, POSTING_PAUSED);
+        return user;
+    }
+
+    /**
+     * Phase N5 (N-95): a member who may respond now: Same, Say more, a follow-up, I'm in, starting a private reply and
+     * sending a message. A responses pause (and every stronger one) stops these; leaving, ending, calling off, blocking
+     * and reporting never ask this.
+     */
+    public User requireCanRespond(long userId) {
+        User user = requireMember(userId);
+        refuseIf(userId, SocialStanding.Restriction::stopsComments, RESPONSES_PAUSED);
         return user;
     }
 

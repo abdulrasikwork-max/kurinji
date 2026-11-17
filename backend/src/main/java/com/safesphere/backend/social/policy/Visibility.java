@@ -65,6 +65,26 @@ public final class Visibility {
     }
 
     /**
+     * Phase N5 (N-94): whether a viewer may respond to a moment now (Same, Say more, I'm in, start a private reply): it
+     * is someone else's, they may see it, and it is on Today (live and visible to others). The kind-specific rules are
+     * ResponsePolicy's.
+     */
+    public static boolean canRespond(MomentFacts facts) {
+        return !facts.people().self() && facts.live() && canSeeMoment(facts);
+    }
+
+    /**
+     * Phase N5: whether someone may see a space under a moment (a plan or a private reply) that they belong to. The author
+     * always; another member while they can see the author's profile ([people]: active, same community, no block either
+     * way) and the moment is not held or removed. Unlike [canSeeMoment] this does not need the moment to be live: a plan
+     * and a conversation run to their own close after the moment leaves Today.
+     */
+    public static boolean canSeeSpace(MomentFacts facts, boolean member) {
+        if (facts.people().self()) return true;
+        return member && canSeeProfile(facts.people()) && facts.started() && facts.moderation().visibleToOthers();
+    }
+
+    /**
      * A profile is visible to its owner; to anyone else only while the owner's account is active (not disabled, not
      * erased), the owner is an active member of the viewer's community (Phase N3: nobody outside it, nobody not verified,
      * graduated or banned) and neither has blocked the other. Signed-out people never get here (every social endpoint

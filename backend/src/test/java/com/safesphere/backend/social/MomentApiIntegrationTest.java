@@ -128,7 +128,16 @@ class MomentApiIntegrationTest {
         seen.fieldNames().forEachRemaining(names::add);
         assertThat(names).containsExactlyInAnyOrder("id", "kind", "audience", "author", "mine", "text", "photo", "plan",
                 "question", "when", "status", "kept", "collapsed", "notice", "supportSuggested", "createdAt",
-                "visibleAt", "expiresAt");
+                "visibleAt", "expiresAt", "responses", "happenedOf");
+        // N5: the responses part names no count either; the author's lines are never sent to anyone else.
+        List<String> responses = new ArrayList<>();
+        seen.get("responses").fieldNames().forEachRemaining(responses::add);
+        assertThat(responses).containsExactlyInAnyOrder("same", "sayMore", "more", "plan", "canReply", "replyId",
+                "author");
+        assertThat(seen.get("responses").get("author").isNull()).isTrue();
+        List<String> same = new ArrayList<>();
+        seen.get("responses").get("same").fieldNames().forEachRemaining(same::add);
+        assertThat(same).containsExactlyInAnyOrder("mine", "band");
         // Nobody but the author is told anything about a moment's moderation, and support is never repeated.
         assertThat(seen.get("notice").isNull()).isTrue();
         assertThat(seen.get("supportSuggested").isNull()).isTrue();

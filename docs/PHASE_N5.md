@@ -67,3 +67,25 @@ comments, no numbers, no "seen", no endless chats.
 | C | Full tests, lint, security / privacy review, emulator walk, documents |
 
 ## As built
+
+### B1 (2026-11-17): V36 written, Same, Say more and its follow-up, I'm in, Call it off — backend
+
+Status: **implemented, compiled, tested** (backend 483 + guard updates, full clean run green). V36 is written and
+applied NOWHERE: `spring.flyway.target=35` holds Flyway until B4 (N-99). **Do not run the backend against the
+development MySQL before B4**: the entities already name V36 columns.
+
+- Schema `V36__responses_and_plans.sql`: `moments` + `more_text`, `more_at`, `called_off_at`, `happened_of`;
+  `moment_signals`, `plan_people`, `conversations`, `messages`, `social_settings`, `replies_opened`; moderation tables
+  learn `message_id` / `MESSAGE`.
+- Entities `MomentSignal`, `PlanPerson`, `Conversation`, `Message`, `SocialSettings`, `RepliesOpened`, `ResponseEnums`;
+  `Moment.addMore / callOff / happenedOf`.
+- Pure `ResponsePolicy` (bands 1 / 2–5 / 6+, asks window, plan and reply close times, This happened window);
+  `Visibility.canRespond` and `canSeeSpace`.
+- `ResponseService` (Same / Say more toggles in their own transaction, the follow-up + `MomentMoreAdded` event, ask,
+  withdraw, add, set aside, remove, call off, people lists), `ResponseViews` (the `responses` block per page, batched),
+  `PeopleLookup` (only people the viewer may see), `ResponseLimits` + `ResponseProperties` (`app.responses.*`),
+  `SocialAccess.requireCanRespond` (the responses pause, N-95), `ResponseController`. `PlanSpaces` and `PlanEvents` are
+  filled by B2 (conversations).
+- Moment answers gain `responses` and `happenedOf` (B4). `AccountEraser` covers the six new user references.
+- Tests: `ResponsePolicyTest`, `ResponseApiTest` (10), `ResponseBoundariesTest`; `MomentApiIntegrationTest` field
+  guard extended on purpose.

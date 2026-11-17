@@ -96,11 +96,19 @@ public class MomentService {
     private final MediaStorage storage;
     private final ApplicationEventPublisher events;
     private final Clock clock;
+    private final ResponseViews responseViews;
+    private final com.safesphere.backend.social.repository.MomentSignalRepository signals;
+    private final com.safesphere.backend.social.repository.PlanPersonRepository planPeople;
 
     public MomentService(MomentRepository moments, MomentMediaRepository mediaRows, DailyQuestionRepository questions,
                          ProfileRepository profiles, UserRepository users, Relationships relationships,
                          SocialAccess access, MomentLimits limits, MediaStorage storage,
-                         ApplicationEventPublisher events, Clock clock) {
+                         ApplicationEventPublisher events, Clock clock, ResponseViews responseViews,
+                         com.safesphere.backend.social.repository.MomentSignalRepository signals,
+                         com.safesphere.backend.social.repository.PlanPersonRepository planPeople) {
+        this.responseViews = responseViews;
+        this.signals = signals;
+        this.planPeople = planPeople;
         this.events = events;
         this.moments = moments;
         this.mediaRows = mediaRows;
@@ -292,6 +300,9 @@ public class MomentService {
         List<MomentMedia> media = mediaRows.findByMomentIdIn(List.of(moment.getId()));
         List<String> keys = media.stream().map(MomentMedia::getStorageKey).toList();
         mediaRows.deleteAll(media);
+        // N5 (N-98): everything under the moment goes with it (MySQL cascades; done here so the rule does not depend on it).
+        signals.deleteByMomentIdIn(List.of(moment.getId()));
+        planPeople.deleteByMomentIdIn(List.of(moment.getId()));
         moments.delete(moment);
         moments.flush();
         deleteFilesAfterCommit(keys);
@@ -354,6 +365,7 @@ public class MomentService {
         Map<Long, DailyQuestion> questionOf = questionIds.isEmpty() ? Map.of() : questions.findByIdIn(questionIds)
                 .stream().collect(Collectors.toMap(DailyQuestion::getId, Function.identity()));
 
+        Map<Long, com.safesphere.backend.social.dto.MomentDtos.Responses> responsesOf = responseViews.of(viewerId, list, now);
         Map<Long, MomentMedia> photoOf = mediaRows.findByMomentIdIn(list.stream().map(Moment::getId).toList()).stream()
                 .collect(Collectors.toMap(MomentMedia::getMomentId, Function.identity()));
 
@@ -381,7 +393,8 @@ public class MomentService {
                     !mine && m.getModeration() == ModerationState.COLLAPSED, mine ? notice(m) : null, null,
                     mine ? m.getCreatedAt().toInstant(ZoneOffset.UTC) : null,
                     mine && m.getVisibleAt() != null ? m.getVisibleAt().toInstant(ZoneOffset.UTC) : null,
-                    mine && m.getExpiresAt() != null ? m.getExpiresAt().toInstant(ZoneOffset.UTC) : null));
+                    mine && m.getExpiresAt() != null ? m.getExpiresAt().toInstant(ZoneOffset.UTC) : null,
+                    responsesOf.get(m.getId()), null));
         }
         return out;
     }

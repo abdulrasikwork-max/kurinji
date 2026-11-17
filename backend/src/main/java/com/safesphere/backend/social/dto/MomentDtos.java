@@ -69,13 +69,73 @@ public final class MomentDtos {
     public record MomentResponse(String id, String kind, String audience, MomentAuthor author, boolean mine,
                                  String text, Photo photo, Plan plan, QuestionRef question, When when, String status, boolean kept,
                                  boolean collapsed, Notice notice, Boolean supportSuggested,
-                                 Instant createdAt, Instant visibleAt, Instant expiresAt) {
+                                 Instant createdAt, Instant visibleAt, Instant expiresAt, Responses responses,
+                                 HappenedRef happenedOf) {
 
         /** The author's own answer to sharing it, with one calm support line (never stored). */
         public MomentResponse withSupport() {
             return new MomentResponse(id, kind, audience, author, mine, text, photo, plan, question, when, status,
-                    kept, collapsed, notice, Boolean.TRUE, createdAt, visibleAt, expiresAt);
+                    kept, collapsed, notice, Boolean.TRUE, createdAt, visibleAt, expiresAt, responses, happenedOf);
         }
+    }
+
+    /**
+     * Phase N5: what a viewer may do and know about the responses to one moment. Every part is null when it does not apply.
+     * [same] / [sayMore] on a Say; [more] = the author's follow-up; [plan] on a Who's in?; [canReply] = the viewer may
+     * start a private reply; [replyId] = their private reply with the author, once it exists; [author] = the names only the
+     * author gets. No number anywhere (N-88).
+     */
+    public record Responses(SameView same, SayMoreView sayMore, More more, PlanView plan, Boolean canReply,
+                            String replyId, ForAuthor author) {
+    }
+
+    /** N-88: [mine] = the viewer said Same; [band] SOMEONE | A_FEW | MANY = the OTHER people who did (null: nobody). */
+    public record SameView(boolean mine, String band) {
+    }
+
+    /** N-89: [mine] = the viewer asked the author to say more. */
+    public record SayMoreView(boolean mine) {
+    }
+
+    /** N-89: the author's one follow-up: its words, a rough time for others, the exact time for the author only. */
+    public record More(String text, When when, Instant at) {
+    }
+
+    /**
+     * N-90: the viewer and a Who's in?. [you] AUTHOR | NONE | ASKED | IN | REMOVED; [open] = it takes new people now;
+     * [calledOff]; [planId] = the plan's conversation, for its members once it has opened (B2).
+     */
+    public record PlanView(String you, boolean open, boolean calledOff, String planId) {
+    }
+
+    /**
+     * The author's own lines (never sent to anyone else): up to three names each of who feels the same, who wants to
+     * hear more, who asks to join (not set aside) and who is in; the "other" flags say more names are behind a tap.
+     */
+    public record ForAuthor(List<String> same, boolean otherSame, List<String> sayMore, boolean otherSayMore,
+                            List<String> asking, boolean otherAsking, List<String> in, boolean otherIn) {
+    }
+
+    /** N-92: the Who's in? a "This happened" Say came from: its id and its words (at most 120 characters). */
+    public record HappenedRef(String id, String text) {
+    }
+
+    /** GET /api/moments/{id}/people: the people of a moment. The author gets every list; a plan member only [in]. */
+    public record People(List<Person> same, List<Person> sayMore, List<Person> asking, List<Person> setAside,
+                         List<Person> in) {
+    }
+
+    /**
+     * Someone in a list of a moment's people. [ref] = what the author acts on (an ask's id; null in other lists);
+     * [name] the real name; [profileId] / [photo] when they have a profile; [programme] / [year] from the membership;
+     * [myPeople] = a mutual connection of the viewer.
+     */
+    public record Person(String ref, String name, String profileId, String photo, String programme, Integer year,
+                         boolean myPeople) {
+    }
+
+    /** Body of POST /api/moments/{id}/more: the follow-up, up to 500 characters. */
+    public record MoreRequest(@Size(max = 4000, message = "A follow-up has at most 500 characters") String text) {
     }
 
     /**
