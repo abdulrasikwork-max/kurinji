@@ -89,3 +89,25 @@ development MySQL before B4**: the entities already name V36 columns.
 - Moment answers gain `responses` and `happenedOf` (B4). `AccountEraser` covers the six new user references.
 - Tests: `ResponsePolicyTest`, `ResponseApiTest` (10), `ResponseBoundariesTest`; `MomentApiIntegrationTest` field
   guard extended on purpose.
+
+### B2 (2026-11-17): private replies and plans — backend
+
+Status: **implemented, compiled, tested** (backend 495 / 0 failures / 2 skipped, full clean run). V36 still held.
+
+- Pure `ConversationPolicy`: the author's setting (My people by default, Anyone at MIET, Nobody), strict turns in a
+  private reply (nobody sends twice in a row; a plan has no turns), CLOSED / ENDED.
+- `ConversationService`: start a private reply (on Today, not one's own, one per moment and person, the setting, a new
+  member's links rule, `ResponseLimits.startReply`), send (row-locked turn check), get (members only, else 404 like a
+  missing one; a REPLY also needs the two people to see each other: a block ends it for both, silently), End (either
+  person; read-only for both; never stopped by a pause), the private-replies setting. Members get exact times; others'
+  held or removed messages are left out, collapsed ones are behind a tap; the writer sees a notice about their own.
+- `PlanSpaces` (planId for the author and the people in; `canReply`; the viewer's `replyId`), `PlanEvents` (the plan
+  opens at the first Add with "… is in"; leaving writes "… can't make it"; removal writes no line; Call it off writes
+  its line and closes the plan; This happened writes its line, B4).
+- `MessageSent` event (published inside the write before anyone else can read the message; listened to in B3).
+- `ResponseData.deleteFor` (messages, conversations, plan places, taps) with a `MessageCleanup` port for the
+  moderation rows (B3); used by moment delete and by `SocialMediaCleanupJob`, which now also clears response data
+  7 days after a moment's end even when it is kept, never while a message or the moment is in review (N-98).
+- `ConversationController`: `POST /api/moments/{id}/private-replies`, `GET /api/conversations/{id}`,
+  `POST /api/conversations/{id}/messages`, `POST /api/conversations/{id}/end`, `GET|PUT /api/social-settings`.
+- Tests: `ConversationApiTest` (11).

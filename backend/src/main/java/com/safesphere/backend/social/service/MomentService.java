@@ -97,6 +97,7 @@ public class MomentService {
     private final ApplicationEventPublisher events;
     private final Clock clock;
     private final ResponseViews responseViews;
+    private final ResponseData responseData;
     private final com.safesphere.backend.social.repository.MomentSignalRepository signals;
     private final com.safesphere.backend.social.repository.PlanPersonRepository planPeople;
 
@@ -105,7 +106,9 @@ public class MomentService {
                          SocialAccess access, MomentLimits limits, MediaStorage storage,
                          ApplicationEventPublisher events, Clock clock, ResponseViews responseViews,
                          com.safesphere.backend.social.repository.MomentSignalRepository signals,
-                         com.safesphere.backend.social.repository.PlanPersonRepository planPeople) {
+                         com.safesphere.backend.social.repository.PlanPersonRepository planPeople,
+                         ResponseData responseData) {
+        this.responseData = responseData;
         this.responseViews = responseViews;
         this.signals = signals;
         this.planPeople = planPeople;
@@ -301,8 +304,7 @@ public class MomentService {
         List<String> keys = media.stream().map(MomentMedia::getStorageKey).toList();
         mediaRows.deleteAll(media);
         // N5 (N-98): everything under the moment goes with it (MySQL cascades; done here so the rule does not depend on it).
-        signals.deleteByMomentIdIn(List.of(moment.getId()));
-        planPeople.deleteByMomentIdIn(List.of(moment.getId()));
+        responseData.deleteFor(List.of(moment.getId()));
         moments.delete(moment);
         moments.flush();
         deleteFilesAfterCommit(keys);

@@ -67,17 +67,27 @@ public class PeopleLookup {
      * empty. Callers pass only ids from [visible].
      */
     public List<Person> people(Relationships.Viewer viewer, List<Long> ids, Map<Long, String> refs) {
-        if (ids.isEmpty()) return List.of();
+        Map<Long, Person> byId = byId(viewer, ids, refs);
+        return ids.stream().map(byId::get).filter(p -> p != null).toList();
+    }
+
+    /** As [people], keyed by user id (ids without an account are left out). */
+    public Map<Long, Person> byId(Relationships.Viewer viewer, List<Long> ids) {
+        return byId(viewer, ids, Map.of());
+    }
+
+    private Map<Long, Person> byId(Relationships.Viewer viewer, List<Long> ids, Map<Long, String> refs) {
+        if (ids.isEmpty()) return Map.of();
         Map<Long, User> byId = users.findAllById(ids).stream().collect(Collectors.toMap(User::getId, Function.identity()));
         Map<Long, Profile> profileOf = profiles.findByUserIdIn(ids).stream()
                 .collect(Collectors.toMap(Profile::getUserId, Function.identity()));
-        List<Person> out = new ArrayList<>();
+        Map<Long, Person> out = new java.util.LinkedHashMap<>();
         for (Long id : ids) {
             User user = byId.get(id);
             if (user == null) continue;
             Profile profile = profileOf.get(id);
             MembershipGate.Member member = access.memberOf(id).orElse(null);
-            out.add(new Person(refs.get(id), user.getName(), profile == null ? null : profile.getPublicId(),
+            out.put(id, new Person(refs.get(id), user.getName(), profile == null ? null : profile.getPublicId(),
                     profile == null ? null : profile.getPhotoKey(), member == null ? null : member.programme(),
                     member == null ? null : member.graduationYear(), viewer.connected().contains(id)));
         }

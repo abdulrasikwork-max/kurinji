@@ -23,7 +23,21 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
     String BEFORE_CURSOR = "(m.visibleAt < :cursorAt OR (m.visibleAt = :cursorAt AND m.id < :cursorId))";
     String NEWEST_FIRST = " ORDER BY m.visibleAt DESC, m.id DESC";
 
+    /** Phase N5: no message under the moment is needed by an open moderation case. */
+    String NO_MESSAGE_IN_REVIEW = "NOT EXISTS (SELECT 1 FROM Message msg, Conversation cv WHERE cv.momentId = m.id"
+            + " AND msg.conversationId = cv.id AND msg.inReview = true)";
+
     Optional<Moment> findByPublicId(String publicId);
+
+    /**
+     * Phase N5 (N-98): moments whose 24 hours ended before [endedBefore] (7 days ago), kept or not, that still have
+     * response data, and no open case needs (neither the moment nor any message under it).
+     */
+    @Query("SELECT m.id FROM Moment m WHERE m.expiresAt < :endedBefore AND m.inReview = false AND " + NO_MESSAGE_IN_REVIEW
+            + " AND (EXISTS (SELECT 1 FROM MomentSignal s WHERE s.momentId = m.id)"
+            + " OR EXISTS (SELECT 1 FROM PlanPerson p WHERE p.momentId = m.id)"
+            + " OR EXISTS (SELECT 1 FROM Conversation c WHERE c.momentId = m.id)) ORDER BY m.expiresAt")
+    List<Long> withResponsesEndedBefore(@Param("endedBefore") LocalDateTime endedBefore, Pageable page);
 
     /** Locks one moment for a report or a decision about it, so two of them run one after the other. */
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
@@ -72,6 +86,7 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
      */
     @Query("SELECT m FROM Moment m WHERE m.expiresAt < :endedBefore AND m.keptAt IS NULL AND m.inReview = false"
             + " AND m.moderation <> com.safesphere.backend.social.entity.ContentModeration.ModerationState.REMOVED"
+            + " AND " + NO_MESSAGE_IN_REVIEW
             + " ORDER BY m.expiresAt")
     List<Moment> purgeable(@Param("endedBefore") LocalDateTime endedBefore, Pageable page);
 

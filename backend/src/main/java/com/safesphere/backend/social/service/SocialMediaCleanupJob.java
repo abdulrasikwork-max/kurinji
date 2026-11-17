@@ -56,12 +56,15 @@ public class SocialMediaCleanupJob {
     private final Clock clock;
     private final TransactionTemplate tx;
     private final boolean enabled;
+    private final ResponseData responseData;
 
     public SocialMediaCleanupJob(MomentRepository moments,
                                  MomentMediaRepository momentMedia,
                                  com.safesphere.backend.social.repository.ProfileRepository profiles, MediaStorage storage, SocialProperties properties,
                                  Clock clock, PlatformTransactionManager transactions,
-                                 @Value("${app.social.media-cleanup-enabled:true}") boolean enabled) {
+                                 @Value("${app.social.media-cleanup-enabled:true}") boolean enabled,
+                                 ResponseData responseData) {
+        this.responseData = responseData;
         this.moments = moments;
         this.momentMedia = momentMedia;
         this.profiles = profiles;
@@ -88,6 +91,15 @@ public class SocialMediaCleanupJob {
             // N4: ended moments whose 7 days are over (rows first, then their photo files).
             LocalDateTime endedBefore = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC)
                     .minus(MomentPolicy.PURGE_AFTER);
+            // N5 (N-98): what people said under moments whose 7 days are over, also under kept ones.
+            for (int batch = 0; batch < PURGE_BATCHES_PER_RUN; batch++) {
+                int cleared = tx.execute(status -> {
+                    List<Long> due = moments.withResponsesEndedBefore(endedBefore, PageRequest.of(0, PURGE_BATCH));
+                    responseData.deleteFor(due);
+                    return due.size();
+                });
+                if (cleared < PURGE_BATCH) break;
+            }
             for (int batch = 0; batch < PURGE_BATCHES_PER_RUN; batch++) {
                 List<String> keys = new ArrayList<>();
                 int gone = tx.execute(status -> {
@@ -96,6 +108,7 @@ public class SocialMediaCleanupJob {
                     List<MomentMedia> media = momentMedia.findByMomentIdIn(due.stream().map(Moment::getId).toList());
                     media.forEach(m -> keys.add(m.getStorageKey()));
                     momentMedia.deleteAll(media);
+                    responseData.deleteFor(due.stream().map(Moment::getId).toList());
                     moments.deleteAll(due);
                     return due.size();
                 });
