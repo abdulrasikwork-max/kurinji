@@ -24,6 +24,8 @@ public interface MomentSignalRepository extends JpaRepository<MomentSignal, Long
     /** All signals of one kind on a list of moments (bands and the author's lines for a page). */
     List<MomentSignal> findByKindAndMomentIdIn(SignalKind kind, Collection<Long> momentIds);
 
+    List<MomentSignal> findByUserIdAndKind(long userId, SignalKind kind);
+
     boolean existsByMomentIdAndKind(long momentId, SignalKind kind);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

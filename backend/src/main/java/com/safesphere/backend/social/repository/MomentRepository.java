@@ -70,6 +70,20 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
             + " ORDER BY m.createdAt DESC, m.id DESC")
     List<Moment> ownCurrent(@Param("author") long author, @Param("now") LocalDateTime now);
 
+    /** Phase N5 (Replies): the author's moments that started and ended after [since] (or have not ended), newest first. */
+    @Query("SELECT m FROM Moment m WHERE m.authorId = :author AND m.visibleAt IS NOT NULL AND m.expiresAt > :since"
+            + " ORDER BY m.visibleAt DESC, m.id DESC")
+    List<Moment> authoredEndingAfter(@Param("author") long author, @Param("since") LocalDateTime since);
+
+    /** Phase N5 (N-92): links from This happened Says to a plan that is going (MySQL: ON DELETE SET NULL). */
+    // No clearing: the moments of the caller stay managed (a cleared context would merge stale rows back).
+    @Modifying(flushAutomatically = true)
+    @Query("UPDATE Moment m SET m.happenedOf = NULL WHERE m.happenedOf IN :ids")
+    int clearHappenedOf(@Param("ids") Collection<Long> ids);
+
+    /** Phase N5 (N-92): whether a plan already has its This happened. */
+    boolean existsByHappenedOf(Long happenedOf);
+
     /** The moments [author] keeps on their profile, most recently kept first (at most MomentPolicy.MAX_KEPT). */
     @Query("SELECT m FROM Moment m WHERE m.authorId = :author AND m.keptAt IS NOT NULL"
             + " ORDER BY m.keptAt DESC, m.id DESC")

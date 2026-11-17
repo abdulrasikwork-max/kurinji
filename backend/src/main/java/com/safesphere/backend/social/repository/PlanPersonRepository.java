@@ -31,6 +31,8 @@ public interface PlanPersonRepository extends JpaRepository<PlanPerson, Long> {
     /** [userId]'s rows in a state (their plans in Replies). */
     List<PlanPerson> findByUserIdAndState(long userId, PlanState state);
 
+    List<PlanPerson> findByUserId(long userId);
+
     boolean existsByMomentIdAndUserIdAndState(long momentId, long userId, PlanState state);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

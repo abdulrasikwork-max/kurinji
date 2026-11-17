@@ -108,6 +108,7 @@ public class SocialMediaCleanupJob {
                     List<MomentMedia> media = momentMedia.findByMomentIdIn(due.stream().map(Moment::getId).toList());
                     media.forEach(m -> keys.add(m.getStorageKey()));
                     momentMedia.deleteAll(media);
+                    moments.clearHappenedOf(due.stream().map(Moment::getId).toList());
                     responseData.deleteFor(due.stream().map(Moment::getId).toList());
                     moments.deleteAll(due);
                     return due.size();

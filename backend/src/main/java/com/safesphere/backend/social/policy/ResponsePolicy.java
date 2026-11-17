@@ -78,6 +78,12 @@ public final class ResponsePolicy {
      * N-92: whether "This happened" can be shared for a plan at [now]: the plan is open (not closed, not called off)
      * and its time has come (a plan without a time: any time while it is open).
      */
+    public static final String HAPPENED_NEEDS_PHOTO = "This happened is a photo taken now, with words if you like";
+    public static final String HAPPENED_NOT_OPEN = "This happened can be shared after the plan's time, while the plan is open";
+    public static final String HAPPENED_ONCE = "Someone in this plan already shared that it happened";
+    public static final String HAPPENED_AUTHOR_ONLY = "Only the person who made a My people plan can share that it happened";
+    public static final String HAPPENED_AUDIENCE = "This happened is shared with the plan's audience";
+
     public static boolean happenedOpen(LocalDateTime planAt, LocalDateTime closesAt, boolean calledOff,
                                        LocalDateTime now) {
         if (calledOff || !closesAt.isAfter(now)) return false;

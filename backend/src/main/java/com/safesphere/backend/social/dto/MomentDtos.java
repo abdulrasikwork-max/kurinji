@@ -27,7 +27,8 @@ public final class MomentDtos {
             @Size(max = 40, message = "Choose a time within the next 24 hours") String planAt,
             @Size(max = 400, message = "Where has at most 60 characters") String planWhere,
             @Size(max = 40, message = "That photo is not available") String mediaId,
-            @Size(max = 40, message = "That question is not available") String questionId) {
+            @Size(max = 40, message = "That question is not available") String questionId,
+            @Size(max = 40, message = "That plan is not available") String happenedOf) {
     }
 
     /**

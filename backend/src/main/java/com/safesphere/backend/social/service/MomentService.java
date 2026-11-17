@@ -3,6 +3,7 @@ package com.safesphere.backend.social.service;
 import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.common.exception.ResourceNotFoundException;
+import com.safesphere.backend.social.dto.MomentDtos.HappenedRef;
 import com.safesphere.backend.social.dto.MomentDtos.MineResponse;
 import com.safesphere.backend.social.dto.MomentDtos.MomentAuthor;
 import com.safesphere.backend.social.dto.MomentDtos.MomentRequest;
@@ -23,6 +24,8 @@ import com.safesphere.backend.social.entity.Profile;
 import com.safesphere.backend.social.media.MediaStorage;
 import com.safesphere.backend.social.policy.MomentPolicy;
 import com.safesphere.backend.social.policy.MomentTimes;
+import com.safesphere.backend.social.policy.ResponsePolicy;
+import com.safesphere.backend.social.entity.ResponseEnums.PlanState;
 import com.safesphere.backend.social.policy.Visibility;
 import com.safesphere.backend.social.repository.DailyQuestionRepository;
 import com.safesphere.backend.social.repository.MomentMediaRepository;
@@ -37,6 +40,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -98,6 +102,7 @@ public class MomentService {
     private final Clock clock;
     private final ResponseViews responseViews;
     private final ResponseData responseData;
+    private final PlanEvents planEvents;
     private final com.safesphere.backend.social.repository.MomentSignalRepository signals;
     private final com.safesphere.backend.social.repository.PlanPersonRepository planPeople;
 
@@ -107,7 +112,8 @@ public class MomentService {
                          ApplicationEventPublisher events, Clock clock, ResponseViews responseViews,
                          com.safesphere.backend.social.repository.MomentSignalRepository signals,
                          com.safesphere.backend.social.repository.PlanPersonRepository planPeople,
-                         ResponseData responseData) {
+                         ResponseData responseData, PlanEvents planEvents) {
+        this.planEvents = planEvents;
         this.responseData = responseData;
         this.responseViews = responseViews;
         this.signals = signals;
@@ -132,7 +138,13 @@ public class MomentService {
         LocalDateTime now = now();
 
         Kind kind = parse(Kind.class, request.kind(), "Choose Say or Who's in?");
-        Audience audience = parse(Audience.class, request.audience(), "Choose who can see this");
+        // N-92: "This happened" is a Say with a photo taken now, for one plan, with the plan's audience.
+        Moment plan = blank(request.happenedOf()) ? null : happenedPlan(userId, request, kind, now);
+        Audience audience = plan != null && blank(request.audience()) ? plan.getAudience()
+                : parse(Audience.class, request.audience(), "Choose who can see this");
+        if (plan != null && audience != plan.getAudience()) {
+            throw new InvalidRequestException(ResponsePolicy.HAPPENED_AUDIENCE);
+        }
         String text = MomentPolicy.cleanText(request.text());
         LocalDateTime planAt = planAt(request.planAt());
         String planWhere = MomentPolicy.cleanLine(request.planWhere());
@@ -155,6 +167,7 @@ public class MomentService {
         Moment moment = new Moment(userId, member.communityId(), kind, audience, text, now);
         moment.plan(planAt, planWhere);
         if (question != null) moment.answer(question.getId());
+        if (plan != null) moment.happenedOf(plan.getId());
         boolean photoHeld = MomentPolicy.holdsPhoto(newMember, audience, photo != null);
         if (photoHeld) {
             // N-56, N-57: a new member's photo for all of MIET waits for a person. This rule is social's own: it needs
@@ -174,6 +187,8 @@ public class MomentService {
         events.publishEvent(shared);
         if (moment.getModeration() != ModerationState.HELD) moment.publish(now, MomentPolicy.LIFE);
         moments.saveAndFlush(moment);
+        // The plan says so only once the Say can be seen (a held one is announced by nobody).
+        if (plan != null && moment.getModeration() != ModerationState.HELD) planEvents.happened(plan, userId, now);
         MomentResponse answer = respond(userId, List.of(moment), now).get(0);
         return shared.supportSuggested() ? answer.withSupport() : answer;
     }
@@ -304,6 +319,7 @@ public class MomentService {
         List<String> keys = media.stream().map(MomentMedia::getStorageKey).toList();
         mediaRows.deleteAll(media);
         // N5 (N-98): everything under the moment goes with it (MySQL cascades; done here so the rule does not depend on it).
+        moments.clearHappenedOf(List.of(moment.getId())); // This happened Says keep their words, lose the link
         responseData.deleteFor(List.of(moment.getId()));
         moments.delete(moment);
         moments.flush();
@@ -368,6 +384,7 @@ public class MomentService {
                 .stream().collect(Collectors.toMap(DailyQuestion::getId, Function.identity()));
 
         Map<Long, com.safesphere.backend.social.dto.MomentDtos.Responses> responsesOf = responseViews.of(viewerId, list, now);
+        Map<Long, HappenedRef> happenedOf = happenedRefs(viewerId, list);
         Map<Long, MomentMedia> photoOf = mediaRows.findByMomentIdIn(list.stream().map(Moment::getId).toList()).stream()
                 .collect(Collectors.toMap(MomentMedia::getMomentId, Function.identity()));
 
@@ -396,12 +413,61 @@ public class MomentService {
                     mine ? m.getCreatedAt().toInstant(ZoneOffset.UTC) : null,
                     mine && m.getVisibleAt() != null ? m.getVisibleAt().toInstant(ZoneOffset.UTC) : null,
                     mine && m.getExpiresAt() != null ? m.getExpiresAt().toInstant(ZoneOffset.UTC) : null,
-                    responsesOf.get(m.getId()), null));
+                    responsesOf.get(m.getId()), m.getHappenedOf() == null ? null : happenedOf.get(m.getHappenedOf())));
         }
         return out;
     }
 
     // ---- helpers ----
+
+    /**
+     * N-92 (D18): the plan a "This happened" Say is for, locked for the rest of the write (one per plan). The caller must
+     * belong to it (its author, or added); it must have opened (someone was added), its time must have come and it must
+     * still be open; a My people plan only by its author. A Say with a photo, nothing else. A plan the caller cannot see
+     * or is not part of is not found.
+     */
+    private Moment happenedPlan(long userId, MomentRequest request, Kind kind, LocalDateTime now) {
+        Moment seen = moments.findByPublicId(request.happenedOf().trim()).orElse(null);
+        boolean member = seen != null && (seen.getAuthorId() == userId
+                || planPeople.existsByMomentIdAndUserIdAndState(seen.getId(), userId, PlanState.IN));
+        if (seen == null || seen.getKind() != Kind.WHOS_IN || !member
+                || !Visibility.canSeeSpace(relationships.momentFacts(userId, seen, now), true)) {
+            throw new ResourceNotFoundException("Plan not found");
+        }
+        if (kind != Kind.SAY || blank(request.mediaId()) || !blank(request.questionId())) {
+            throw new InvalidRequestException(ResponsePolicy.HAPPENED_NEEDS_PHOTO);
+        }
+        Moment plan = moments.lockById(seen.getId()).orElseThrow();
+        if (plan.getAudience() == Audience.MY_PEOPLE && plan.getAuthorId() != userId) {
+            throw new ConflictException(ResponsePolicy.HAPPENED_AUTHOR_ONLY);
+        }
+        com.safesphere.backend.social.entity.Conversation space = planEvents.planOf(plan).orElse(null);
+        if (space == null || !ResponsePolicy.happenedOpen(plan.getPlanAt(), space.getClosesAt(), plan.isCalledOff(), now)) {
+            throw new ConflictException(ResponsePolicy.HAPPENED_NOT_OPEN);
+        }
+        if (moments.existsByHappenedOf(plan.getId())) throw new ConflictException(ResponsePolicy.HAPPENED_ONCE);
+        return plan;
+    }
+
+    /**
+     * N-92: the plan each This happened Say came from, for [viewerId]: its id and its words (120 characters at most),
+     * unless the plan is gone or its author and the viewer cannot see each other.
+     */
+    private Map<Long, HappenedRef> happenedRefs(long viewerId, List<Moment> list) {
+        Set<Long> planIds = list.stream().map(Moment::getHappenedOf).filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (planIds.isEmpty()) return Map.of();
+        Map<Long, HappenedRef> out = new HashMap<>();
+        for (Moment p : moments.findAllById(planIds)) {
+            if (p.getAuthorId() != viewerId && !relationships.canSeeProfile(viewerId, p.getAuthorId())) continue;
+            String text = p.getBody();
+            if (text != null && text.codePointCount(0, text.length()) > 120) {
+                text = text.substring(0, text.offsetByCodePoints(0, 119)) + "…";
+            }
+            out.put(p.getId(), new HappenedRef(p.getPublicId(), text));
+        }
+        return out;
+    }
 
     /** The caller's own upload that no moment uses yet, locked; anything else is refused without saying why. */
     private MomentMedia ownUnattached(long userId, String mediaId) {

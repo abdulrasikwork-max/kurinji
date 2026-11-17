@@ -32,6 +32,7 @@ ALTER TABLE moments
     ADD COLUMN called_off_at DATETIME(6)  NULL AFTER more_at,
     ADD COLUMN happened_of   BIGINT       NULL AFTER called_off_at,
     ADD CONSTRAINT fk_moments_happened_of FOREIGN KEY (happened_of) REFERENCES moments (id) ON DELETE SET NULL,
+    ADD CONSTRAINT uk_moments_happened_of UNIQUE (happened_of),                 -- one This happened per plan
     ADD CONSTRAINT ck_moments_more CHECK ((more_text IS NULL) = (more_at IS NULL)
         AND (more_text IS NULL OR (CHAR_LENGTH(more_text) BETWEEN 1 AND 500
             AND CHAR_LENGTH(TRIM(more_text)) = CHAR_LENGTH(more_text)))

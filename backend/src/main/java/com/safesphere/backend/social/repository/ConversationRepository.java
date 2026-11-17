@@ -30,6 +30,12 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     /** The private replies [replierId] started (their side of Replies). */
     List<Conversation> findByReplierId(long replierId);
 
+    /** Phase N5 (Replies): the private replies [userId] takes part in, as replier or as the moment's author. */
+    @Query("SELECT c FROM Conversation c WHERE c.kind = com.safesphere.backend.social.entity.ResponseEnums"
+            + ".ConversationKind.REPLY AND (c.replierId = :u OR c.momentId IN"
+            + " (SELECT m.id FROM Moment m WHERE m.authorId = :u))")
+    List<Conversation> repliesOf(@Param("u") long userId);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM Conversation c WHERE c.momentId IN :momentIds")
     int deleteByMomentIdIn(@Param("momentIds") Collection<Long> momentIds);

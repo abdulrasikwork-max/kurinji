@@ -2,7 +2,9 @@ package com.safesphere.backend.social;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.safesphere.backend.social.dto.ConversationDtos;
 import com.safesphere.backend.social.dto.MomentDtos;
+import com.safesphere.backend.social.dto.RepliesDtos;
 import java.io.IOException;
 import java.lang.reflect.RecordComponent;
 import java.nio.charset.StandardCharsets;
@@ -60,7 +62,11 @@ class ResponseBoundariesTest {
     void noResponseAnswer_hasAFieldForACountOrForReading() {
         Pattern field = Pattern.compile("(?i)(count|total|number|views?$|viewer|seen|read|online|rank|score|likes?$)");
         List<String> violations = new ArrayList<>();
-        for (Class<?> dto : MomentDtos.class.getDeclaredClasses()) {
+        List<Class<?>> all = new ArrayList<>();
+        for (Class<?> holder : List.of(MomentDtos.class, ConversationDtos.class, RepliesDtos.class)) {
+            all.addAll(List.of(holder.getDeclaredClasses()));
+        }
+        for (Class<?> dto : all) {
             if (!dto.isRecord()) continue;
             for (RecordComponent component : dto.getRecordComponents()) {
                 if (field.matcher(component.getName()).find()) violations.add(dto.getSimpleName() + "." + component.getName());
