@@ -1581,11 +1581,77 @@ call `POST /api/content-checks/review`; `decisionId` = a moderator's decision, a
 `photos-per-day` (20). The product rules (24 h, purge after 7 days, 6 kept, the 7-day new-member period, 500 / 60
 characters) are constants. `app.social.*` keeps profiles, connections and the photo folder only.
 
+# Phase N5: responses, plans, private replies, Replies (`docs/PHASE_N5.md`, V36)
+
+**Status: built and tested (backend B1 to B4); V36 applied on the development MySQL only (2026-11-17).** Every route
+needs an active MIET membership (403 `MEMBERSHIP_NEEDED`). Taps, asks, follow-ups, new replies and messages are
+stopped by a responses pause (`COMMENTS_PAUSED` or stronger): **403** with our message; leaving, ending, calling off,
+reading and reporting never are (N-95). A moment the caller cannot see, or a conversation they are not part of, is
+**404** (exactly like one that does not exist). No answer carries a count, a "seen", a read state or a location.
+
+**Moment answers** gain `responses` and `happenedOf`:
+- `responses.same {mine, band}`: `band` = `SOMEONE` (1) | `A_FEW` (2–5) | `MANY` (6+) of the OTHER people, null when
+  none (D14); `null` for the author. `responses.sayMore {mine}`. `responses.more {text, when{day, part}, at}` (the
+  follow-up; `at` only for the author). `responses.plan {you: AUTHOR|NONE|ASKED|IN|REMOVED, open, calledOff, planId}`
+  (Who's in? only; `planId` for the author and the people in, once the plan opened). `responses.canReply`,
+  `responses.replyId` (the viewer's own private reply). `responses.author {same, otherSame, sayMore, otherSayMore,
+  asking, otherAsking, in, otherIn}`: up to 3 names each + "and others", the author only.
+- `happenedOf {id, text}`: the plan a This happened Say came from (≤ 120 characters), null when gone or not visible.
+
+**Responses** (only while the moment is on Today, never on one's own: 400; ended: 409)
+- `PUT|DELETE /api/moments/{id}/same`, `PUT|DELETE /api/moments/{id}/say-more` → the moment (200). Same / Say more on a
+  Say only (400). Taking back an answered Say more changes nothing.
+- `POST /api/moments/{id}/more {text}` → **201** the moment. The author only (404 otherwise), once (409), after at least
+  one Say more (409), 1–500 characters, no links for a new member (400).
+- `PUT /api/moments/{id}/in` → the moment; **409** when asks are closed (plan time, Today over, called off) or the
+  author removed the caller. `DELETE /api/moments/{id}/in` → **204** (leaving; "… can't make it" in the plan).
+- `GET /api/moments/{id}/people` → `{same, sayMore, asking, setAside, in}` lists of `{ref, name, profileId, photo,
+  programme, year, myPeople}` for the author; `{in}` (with the author) for someone in; 404 for anyone else.
+- `POST /api/moments/{id}/people/{ref}/add`, `POST|DELETE /api/moments/{id}/people/{ref}/set-aside`,
+  `DELETE /api/moments/{id}/people/{ref}` (remove someone added) → the people lists. The author only. The first Add
+  opens the plan. No decline exists.
+- `POST /api/moments/{id}/call-off` → the moment; closes the plan at once.
+
+**Private replies and plans**
+- `POST /api/moments/{id}/private-replies {text}` → **201** `ConversationView`. **403** when the author's setting does
+  not allow the caller; **409** a second one on the same moment.
+- `GET /api/conversations/{id}` → `{id, kind: PLAN|REPLY, moment {id, kind, text, plan, calledOff, mine, authorName},
+  people, messages [{id, kind: TEXT|SYSTEM, text, event: IN|LEFT|CALLED_OFF|HAPPENED|ENDED, by, mine, at, collapsed,
+  notice, supportSuggested}], you {turn: YOUR_TURN|WAITING|OPEN|CLOSED|ENDED, canSend, paused}, closesAt, open}`.
+  Exact times for members only. Someone else's held or removed message is left out; a collapsed one is behind a tap;
+  `notice` is the writer's own only.
+- `POST /api/conversations/{id}/messages {text}` → **201** `MessageView`. **409** "Wait for an answer before you write
+  again" (a private reply takes turns) or "This conversation has closed".
+- `POST /api/conversations/{id}/end` → **204** (a private reply; either person; read-only for both).
+- `GET|PUT /api/social-settings {privateReplies: MY_PEOPLE|COMMUNITY|NOBODY}` (no row = MY_PEOPLE).
+
+**Replies** (D19)
+- `GET /api/replies` → `{needsYou, plans, conversations, same, fresh}`; each line `{type, moment {id, kind, text, plan,
+  calledOff, mine, authorName, live}, conversationId, people (≤ 3), morePeople, turn, open, at, fresh}`. Types:
+  needsYou `ASKS | SAY_MORE | YOUR_TURN | MORE`; plans `PLAN | WAITING | NOT_IN | CLOSED | CALLED_OFF`; conversations
+  `REPLY`; same `SAME` (never fresh). `at` only on PLAN / REPLY lines.
+- `GET /api/replies/marker` → `{fresh}`; `PUT /api/replies/opened` → **204** (the person's own time, never per message).
+
+**This happened** (N-92): `POST /api/moments` takes `happenedOf` = a Who's in? id. A Say with a photo (400 otherwise),
+by its author or someone in it (404 otherwise), after the plan time while the plan is open (409), once per plan (409),
+with the plan's audience (`audience` may be left out; another one is 400); a My people plan only by its author (409).
+
+**Moderation of messages:** `POST /api/reports {targetKind: "MESSAGE", targetId, reason, note?}` (a message the caller
+can see; 400 on one's own); `POST /api/content-checks/review {targetKind: "MESSAGE"}`; case `targetKind MESSAGE`,
+`content.kind MESSAGE`, `content.conversation {kind, messages [{ref, text, reported}], connected}` (N-97);
+`content.more` = a moment's follow-up; standing decisions about a message carry the conversation id as `targetId`.
+
+**Config:** `app.responses.signals-per-day` (200), `asks-per-day` (20), `new-member-asks-per-day` (10),
+`replies-per-day` (10 new private replies), `new-member-replies-per-day` (3), `messages-per-day` (300),
+`messages-per-minute` (10), `replies-reads-per-hour` (600). In memory.
+
 # Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
 
 > **N1 (2026-11-15):** the lines of Phases 5 to 9, 17G and 18A in this index are history; what was removed is listed at the top of this file.
 
 A compact list of every phase's endpoints and config keys; the sections above have the details. Keep it in step.
+
+- **Phase N5** (V36, `API.md` "Phase N5"): `PUT|DELETE /api/moments/{id}/same|say-more`, `POST /api/moments/{id}/more`, `PUT|DELETE /api/moments/{id}/in`, `GET /api/moments/{id}/people`, `POST /api/moments/{id}/people/{ref}/add`, `POST|DELETE …/set-aside`, `DELETE /api/moments/{id}/people/{ref}`, `POST /api/moments/{id}/call-off`, `POST /api/moments/{id}/private-replies`, `GET /api/conversations/{id}`, `POST /api/conversations/{id}/messages|end`, `GET|PUT /api/social-settings`, `GET /api/replies`, `GET /api/replies/marker`, `PUT /api/replies/opened`; `POST /api/moments` + `happenedOf`; moment fields `responses`, `happenedOf`; report / review target `MESSAGE`; case `content.conversation`, `content.more`. Config `app.responses.*`.
 
 - **Phase N4-B1 to B3** (V35, `API.md` "Phase N4"): `POST /api/moments/media` 201 `{mediaId, width, height}`, `DELETE /api/moments/media/{id}`, `POST /api/moments {kind, audience, text?, mediaId?, planAt?, planWhere?, questionId?}` 201, `GET /api/moments/{id}/media`, `GET /api/moments/today?people=ALL|MINE&cursor=` → `{question, moments, nextCursor}`, `GET /api/moments/mine` → `{current, kept, keptMax}`, `GET|DELETE /api/moments/{id}`, `PUT|DELETE /api/moments/{id}/kept` (409 at 6 or when not live), `GET /api/profiles/{id}/moments` → `{live, kept}`, `POST /api/moments/{id}/about-me` 202, `POST /api/reports` (targets MOMENT, PERSON), `POST /api/content-checks/review` (MOMENT), `GET /api/moderation/content-cases/{id}/media`, admins `GET|POST /api/admin/questions`, `DELETE /api/admin/questions/{id}`. Moment fields `photo`, `collapsed`, `notice`, `supportSuggested`; profile fields `programme`, `graduationYear`, `newMemberUntil`; case fields `waitingHours`, `openedBy ABOUT_ME`, `author.newMemberUntil`. REMOVED: `/api/posts`, `/api/places`, `/api/discover`, `/api/media`, perspectives, `/api/moderation/places`, the case video route, profile `city` / `languages` / `interests`. Config `app.moments.*`.
 - **Phase N2** (V33, `API.md` "Phase N2"): `POST /api/auth/phone/start {phone}` (same answer for every number), `/phone/verify` → `SIGNED_IN` + session | `SIGN_UP_NEEDED` + ticket, `POST /api/auth/sign-up {ticket, name, dateOfBirth}` 201, `POST /api/users/me/confirmation`, `POST /api/users/me/sessions/sign-out-others {challenge, code}`, `PUT /api/users/me/name {name}`; `{challenge, code}` on deletion / cancel / SOS end from another sign-in; `PUT /api/admin/roles {phone, role}`; `user.phoneHint` replaces `email`. Removed: `/api/auth/register`, `/api/auth/login`, `PUT /api/users/me/password`. Config `app.otp.ticket-lifetime`, `app.account.code-failures|code-failure-window`.

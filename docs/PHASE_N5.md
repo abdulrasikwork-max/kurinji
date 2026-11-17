@@ -135,3 +135,34 @@ Status: **implemented, compiled, tested** (backend 504 / 0 failures / 2 skipped,
 - `MessageModerationCleanup` implements social's `ResponseData.MessageCleanup` port; `AccountEraser` removes reports,
   cases and checks of the messages it erases (`ERASED_MESSAGES`).
 - Tests: `MessageModerationApiTest` (4), `MessageAssessmentIntegrationTest` (5, stub service, own H2).
+
+### B4 (2026-11-17): Replies, This happened, V36 on the DEVELOPMENT MySQL
+
+Status: **implemented, compiled, tested (backend 510 / 0 failures / 2 skipped, full clean run); V36 applied on the
+development MySQL 8.0.46 only; curl walk on real MySQL.** The pilot is untouched (old jar, V30).
+
+- `RepliesService` + `RepliesController`: `GET /api/replies` (needs you: ASKS, SAY_MORE, YOUR_TURN, MORE; plans: PLAN,
+  WAITING, NOT_IN, CLOSED, CALLED_OFF; conversations: REPLY; same: SAME), names (≤ 3 + "and others"), never a number;
+  `fresh` per line and the tab dot against the person's own `replies_opened` time (`GET /api/replies/marker`,
+  `PUT /api/replies/opened`); Same never lights it; a closed ask is quiet; a block removes the lines.
+- This happened (N-92): `POST /api/moments` + `happenedOf` (a photo Say; author or someone in; after the plan time
+  while the plan is open; once per plan, plan row locked + `uk_moments_happened_of`; the plan's audience; a My people
+  plan by its author only); the plan's HAPPENED line (not for a held Say); `happenedOf {id, text}` in answers; deleting
+  or purging the plan clears the link (`MomentRepository.clearHappenedOf`).
+- V36 gained `uk_moments_happened_of` before it was applied (N-99). `spring.flyway.target=35` removed.
+- **Applying V36:** backup `db-backups\safesphere-dev-before-v36-20261117.sql` (32 tables, complete; V36 touches no
+  files). Pre-check: Flyway at 35; the 5 names V36 drops exist once each; the new audit CHECK is the old one + MESSAGE
+  (all 9 audit rows pass); 0 moments, cases, reports, assessments. **Rehearsal of the whole migration on a `zz_` copy
+  of the schema** (all tables, foreign keys and CHECKs renamed; real audit rows, MIET, 4 users copied): no error, 38
+  tables. **Dry run: 83 cases (30 accepted + 53 refused), each by the intended constraint, 0 findings**; cascades: a
+  deleted plan keeps its This happened Say with `happened_of` NULL; a deleted moment takes its conversations,
+  messages and their cases, reports, checks; a deleted account takes its taps, asks, replies, messages, setting and
+  marker. Scratch tables dropped (0 left). Applied by Flyway at start-up in 0.68 s: version 36, 38 tables, audit rows 9.
+- **curl walk on the development backend (8090, real MySQL):** 46 checks: 41 as written; 5 were mistakes in the walk's
+  own expectations (JSON booleans printed as `true`/`false`; the author's name lists are plain strings; "needs you"
+  was correctly empty because everything had been answered). Covered: Same band, no number anywhere, names for the
+  author, the follow-up (once, rough time for others), private reply with turns, a stranger 404, signed out 401,
+  I'm in / Add / Not this time (the asker still "waiting"), the plan (members only, no turns), Replies sections, the
+  dot and "opened", a report about a message, Call it off (closed, line), and deleting both moments left 0 signals,
+  plan rows, conversations, messages, message cases and reports. Not manually verified on a phone (Android is next).
+- Tests: `RepliesApiTest` (6); `ResponseBoundariesTest` checks every N5 DTO.

@@ -1,11 +1,11 @@
-# CHECKPOINT 2026-11-17 (fourteenth session, N5 in progress): N5 design APPROVED (D14–D19 locked, `docs/PHASE_N5.md`, N-88 to N-99). Done: B1. Next: B2, B3, B4, A1, A2, A3, C (order in `PHASE_N5.md` §4). Nothing pushed, nothing deployed.
+# CHECKPOINT 2026-11-17 (fourteenth session, N5 in progress): N5 design APPROVED (D14–D19 locked, `docs/PHASE_N5.md`, N-88 to N-99). Done: backend B1–B4 (V36 applied on the DEVELOPMENT MySQL). Next: Android A1, A2, A3, then C. Nothing pushed, nothing deployed.
 
 **Standing instructions:** the owner approved N5 and asked to build it autonomously (full creative freedom inside the direction and D14–D19); never push, never deploy; one local commit per coherent step; update this file before a session can end. The pilot stays on V30.
 
-- **Git:** branch `irl-next`; this session's N5 commits: `3a4b8ca` (design recorded), `ab24f69` N5-B1 (`git log`).
-- **Database:** V36 is WRITTEN, applied nowhere; `spring.flyway.target=35` holds Flyway until B4 (N-99). Do NOT run the backend against the development MySQL before B4 (the entities name V36 columns).
-- **Tests:** backend full clean run green after B1 (483 + guards; `mvn -o clean test`). Android unchanged since N4 (758).
-- **Next exact step:** B2 = conversations: fill `PlanSpaces` (planId / canReply / replyId) and `PlanEvents` (plan opens at the first Add, system lines, call off closes), `ConversationService` (private replies with the author's setting, strict turns, End, close times; plan messages), `SocialSettings` endpoint, `MessageSent` event, purge of response data (also under kept moments), eraser already covers the tables.
+- **Git:** branch `irl-next`; N5 commits `3a4b8ca` (design), `ab24f69` B1, `76fb9e4` B2, `1b8d1c7` B3, `06a4b96` + the B4 docs commit (`git log`).
+- **Database:** V36 APPLIED on the development MySQL (38 tables; backup `db-backups\safesphere-dev-before-v36-20261117.sql`). Next migration V37. Pilot untouched.
+- **Tests:** backend 510 / 0 / 2 skipped (`mvn -o clean test`; always `clean`: an IDE-compiled class once hid a compile error). Android unchanged since N4 (758).
+- **Next exact step:** A1 = Android data layer (DTOs fail-closed for `responses`, `happenedOf`, conversations, Replies), the response row on Today cards and the moment page, author tools (names, people sheet with Add / Not this time / Remove, follow-up, Call it off). Then A2 (Replies tab + dot, conversation and plan screens, reply sheet, Private replies setting), A3 (message moderation, moderator message cases, This happened capture, wording), C (lint, review, emulator walk, docs).
 
 ---
 
