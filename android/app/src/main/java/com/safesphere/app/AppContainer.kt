@@ -229,6 +229,14 @@ class AppContainer(context: Context) {
         RemoteDiscoverRepository(retrofit.create(DiscoverApi::class.java), apiCallHandler)
     }
 
+    // ---- Phase N4: moments (Today, a moment, the person's own; nothing stored on the phone) -----------------------
+
+    val momentRepository: com.safesphere.app.feature.moments.domain.MomentRepository by lazy {
+        com.safesphere.app.feature.moments.data.RemoteMomentRepository(
+            retrofit.create(com.safesphere.app.feature.moments.data.remote.MomentApi::class.java), apiCallHandler,
+            backendBaseUrl())
+    }
+
     // ---- Phase 13D: reports, own standing and appeals; moderators' content queue (nothing stored) ---------------
 
     val reportRepository: ReportRepository by lazy {
