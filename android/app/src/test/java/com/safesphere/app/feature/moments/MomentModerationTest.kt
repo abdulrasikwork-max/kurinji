@@ -383,6 +383,18 @@ class MomentModerationTest {
         }
     }
 
+    /** N4-C walk finding: the moderator screens and the Settings row still spoke of posts, places, comments, signals. */
+    @Test
+    fun `moderator texts speak of moments, never of the retired posts, places, comments or signals`() {
+        val xml = File("src/main/res/values/strings.xml").readText(Charsets.UTF_8)
+        val names = Regex("<string name=\"((?:moderation_intro|content_cases_title|content_action_[a-z_]+|profile_moderation_description|you_more_description))\"")
+            .findAll(xml).map { it.groupValues[1] }.toList()
+        assertTrue(names.size >= 10)
+        val retired = Regex("\\b(posts?|places?|comments?|signals?|perspectives?|posting)\\b")
+        val problems = names.filter { retired.containsMatchIn(string(it).lowercase()) }
+        assertTrue("retired words in: $problems", problems.isEmpty())
+    }
+
     @Test
     fun `the moderator's moment photo shows only after a tap, the case stays screenshot-protected, the admin row only for admins`() {
         val case = source("feature/moderation/ui/ContentCaseFragment.kt")

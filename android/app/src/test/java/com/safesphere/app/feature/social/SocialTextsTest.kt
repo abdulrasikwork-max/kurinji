@@ -73,6 +73,13 @@ class SocialTextsTest {
         assertTrue("retired ideas in: $retired", retired.isEmpty())
     }
 
+    /** N4-C walk finding: the "Settings and more" row still offered the private places removed in A1. */
+    @Test
+    fun `no text anywhere offers the removed private places`() {
+        val problems = allStrings().filter { (_, text) -> Regex("\\bprivate places?\\b").containsMatchIn(text.lowercase()) }.keys
+        assertTrue("private places in: $problems", problems.isEmpty())
+    }
+
     private fun allStrings(): Map<String, String> {
         val xml = File("src/main/res/values/strings.xml").readText(Charsets.UTF_8)
         return STRING.findAll(xml).associate { it.groupValues[1] to it.groupValues[2] }

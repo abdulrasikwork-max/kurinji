@@ -163,21 +163,32 @@ public class ReportService {
             // Someone who already reported or asked about this moment gets the same answer again, also when their own
             // request has hidden it from them meanwhile (no "already reported" oracle, no 404 after a 202).
             Moment known = targetId == null ? null : moments.findByPublicId(targetId).orElse(null);
-            if (known != null && reports.existsByReporterIdAndMomentId(reporterId, known.getId())) return received();
+            boolean aboutMe = reason == ModerationReason.ABOUT_ME;
+            ContentReport earlier = known == null ? null
+                    : reports.findByReporterIdAndMomentId(reporterId, known.getId()).orElse(null);
+            // N4-C (N-85): an earlier OPEN report by the same person does not swallow "This is about me": it becomes
+            // their about-me request below. Anything else already sent gets the same answer again.
+            if (earlier != null && !(aboutMe && canBecomeAboutMe(earlier))) return received();
             Moment seen = momentService.requireVisible(reporterId, targetId, now);
             if (seen.getAuthorId() == reporterId) throw new InvalidRequestException(OWN_CONTENT);
             Moment moment = moments.lockById(seen.getId()).orElseThrow();
-            if (reports.existsByReporterIdAndMomentId(reporterId, moment.getId())) return received();
+            ContentReport mine = reports.findByReporterIdAndMomentId(reporterId, moment.getId()).orElse(null);
+            if (mine != null) {
+                if (!aboutMe || !canBecomeAboutMe(mine)) return received();
+                limit(reporterId);
+                mine.becomeAboutMe();
+                reports.saveAndFlush(mine);
+                hideForAboutMe(moment);
+                moment.setInReview(true);
+                moments.save(moment);
+                return received();
+            }
             limit(reporterId);
-            boolean aboutMe = reason == ModerationReason.ABOUT_ME;
             open = cases.findByMomentIdAndStatus(moment.getId(), CaseStatus.OPEN).orElseGet(() -> cases.saveAndFlush(
                     ContentCase.aboutMoment(moment.getId(), now)
                             .openedBy(aboutMe ? CaseOpenedBy.ABOUT_ME : CaseOpenedBy.REPORTS)));
             moment.setInReview(true); // N-47: not purged while a case needs it
-            if (aboutMe && moment.getModerationSource() != ModerationSource.MODERATOR
-                    && moment.getModeration() != ModerationState.HELD) {
-                moment.moderateBySystem(ModerationState.HELD, ModerationReason.ABOUT_ME, null);
-            }
+            if (aboutMe) hideForAboutMe(moment);
             moments.save(moment);
         } else {
             Profile profile = profileService.requireVisible(reporterId, targetId);
@@ -193,6 +204,18 @@ public class ReportService {
                 access.countsFrom(reporterId, now)));
         evaluateCollapse(open, now);
         return received();
+    }
+
+    /** N-52: hidden from everyone but its author at once, unless a moderator already decided or it is held already. */
+    private static void hideForAboutMe(Moment moment) {
+        if (moment.getModerationSource() != ModerationSource.MODERATOR && moment.getModeration() != ModerationState.HELD) {
+            moment.moderateBySystem(ModerationState.HELD, ModerationReason.ABOUT_ME, null);
+        }
+    }
+
+    /** N-85: only a report still waiting for a decision can become an about-me request (a decided one stays as it is). */
+    private static boolean canBecomeAboutMe(ContentReport report) {
+        return !report.isResolved() && report.getReason() != ModerationReason.ABOUT_ME;
     }
 
     /** The caller's own reports, newest first (at most 50). */

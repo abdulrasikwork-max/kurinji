@@ -18,6 +18,9 @@ public interface ContentReportRepository extends JpaRepository<ContentReport, Lo
 
     boolean existsByReporterIdAndMomentId(long reporterId, long momentId);
 
+    /** N4-C: the reporter's one report about a moment (unique: `uk_content_reports_moment`). */
+    java.util.Optional<ContentReport> findByReporterIdAndMomentId(long reporterId, long momentId);
+
     boolean existsByReporterIdAndPersonId(long reporterId, long personId);
 
     /** The reporter's own list, newest first. */

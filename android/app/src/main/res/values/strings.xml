@@ -167,8 +167,8 @@
     <!-- Phase 7: moderator screens (people appear only as case pseudonyms; no names, e-mails or ids) -->
     <string name="title_moderation">Moderation</string>
     <string name="profile_moderation_title">Moderation</string>
-    <string name="profile_moderation_description">Review flagged signals and appeals</string>
-    <string name="moderation_intro">Cases about places, posts, comments and people\'s behaviour. Everyone in a case appears only under a name valid for that case. Every decision is recorded.</string>
+    <string name="profile_moderation_description">Review reported moments and people, and appeals</string>
+    <string name="moderation_intro">Cases about moments and people\'s behaviour. Everyone in a case appears only under a name valid for that case. Every decision is recorded.</string>
     <string name="moderation_not_allowed">This account cannot moderate. If you were a moderator, an administrator has changed your role.</string>
     <string name="action_record">Record</string>
 
@@ -762,7 +762,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="guidelines_new_accounts">New members can share links after their first week. In that week a moderator looks at photos for all of MIET before they appear.</string>
 
     <!-- Phase 13D: moderators (posts, perspectives and people). Case pseudonyms, reason codes, no accusations. -->
-    <string name="content_cases_title">Posts, comments and people</string>
+    <string name="content_cases_title">Moments and people</string>
     <string name="content_cases_empty">No reports waiting.</string>
     <string name="content_appeals_title">Requests to look again at a decision</string>
     <string name="content_appeals_empty">No review requests waiting.</string>
@@ -801,9 +801,9 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="content_action_remove">Remove it</string>
     <string name="content_action_person_keep">No action: no guideline broken</string>
     <string name="content_action_warn">Remind of the guidelines</string>
-    <string name="content_action_pause_comments">Pause their comments for 3 days</string>
-    <string name="content_action_pause_posting">Pause their posting for 7 days</string>
-    <string name="content_action_suspend">Pause posting, comments and new connections for 30 days</string>
+    <string name="content_action_pause_comments">Pause their responses for 3 days</string>
+    <string name="content_action_pause_posting">Pause their sharing for 7 days</string>
+    <string name="content_action_suspend">Pause sharing, responses and new connections for 30 days</string>
     <string name="standing_photo_removed">A moderator removed your profile photo (%1$s). You can add another one that follows the community guidelines.</string>
     <string name="content_action_remove_photo">Remove their profile photo (the case stays open)</string>
     <string name="content_case_show_person_photo">Show their profile photo</string>
@@ -992,7 +992,7 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- IRL redesign (R1, R2): the short composer and the draft guard. -->
     <!-- IRL redesign (R4): You as a profile; the rest one tap away. -->
     <string name="title_more">Settings and more</string>
-    <string name="you_more_description">Private places, community, account, log out</string>
+    <string name="you_more_description">Guidelines, your reports, community, account, log out</string>
     <string name="you_safety_description">SOS, Safe Walk and your trusted people</string>
 
     <!-- Phase N3: the MIET community membership (applicant side). Never a claim that anyone is safe; amber, never red. -->

@@ -448,6 +448,10 @@ class CreateTest {
         }
         assertTrue("the button is hidden without a camera app", fragment.contains("isVisible = appContainer.momentPhotoFiles.hasCameraApp()"))
         assertTrue(fragment.contains("DraftNudgeDialogs.beforeSharing("))
+        assertTrue("Today reads again wherever Create was opened from (N4-C walk finding)",
+            fragment.contains("nav.getBackStackEntry(R.id.todayFragment) }.getOrNull()?.savedStateHandle?.set(RESULT_SHARED"))
+        assertFalse(fragment.contains("previousBackStackEntry"))
+        assertTrue("Create leaves once, never popping the screen below it", fragment.contains("if (view == null || closed) return"))
         assertFalse("D12: Create is the person's own words", fragment.contains("secure(true)") || fragment.contains("FLAG_SECURE"))
         val activity = source("MainActivity.kt")
         assertTrue("the toolbar arrow asks before a draft is lost",

@@ -260,6 +260,50 @@ class MomentModerationApiTest {
         assertThat(jdbc.queryForObject("SELECT in_review FROM moments WHERE public_id = ?", Boolean.class, id)).isFalse();
     }
 
+    /**
+     * N4-C (N-85), found in the walk on the development backend: someone who first reported a moment and then said
+     * "This is about me" got 202 and nothing happened (one report row per person per moment). Their open report now
+     * becomes the about-me request: the moment is hidden at once and the case goes to the top.
+     */
+    @Test
+    void aboutMe_afterOwnReport_stillHidesAtOnce_andTheReportBecomesTheRequest() throws Exception {
+        String other = moments.say(bala, "COMMUNITY", "A moment with a reported threat");
+        social.report(chitra, "MOMENT", other, "THREAT", null).andExpect(status().isAccepted());
+        String id = moments.say(asha, "COMMUNITY", "Chitra cried in the lab again");
+        social.report(chitra, "MOMENT", id, "OTHER", "This is about me, please").andExpect(status().isAccepted());
+        moments.get_(bala, id).andExpect(status().isOk()); // a report alone hides nothing
+
+        social.aboutMe(chitra, id).andExpect(status().isAccepted()).andExpect(jsonPath("$.status").value("RECEIVED"));
+        for (Person p : List.of(chitra, bala, mod)) moments.get_(p, id).andExpect(status().isNotFound());
+        JsonNode own = moments.json(moments.get_(asha, id));
+        assertThat(own.get("notice").get("state").asText()).isEqualTo("HELD");
+        assertThat(own.get("notice").get("reason").asText()).isEqualTo("NEEDS_REVIEW");
+        assertThat(own.toString()).doesNotContain("ABOUT_ME").doesNotContain(chitra.handle());
+        // Still ONE row for that person, now the about-me request, without the note (V35's CHECK allows none).
+        assertThat(jdbc.queryForList("SELECT r.reason, r.note FROM content_reports r JOIN moments m ON m.id = r.moment_id"
+                + " WHERE m.public_id = ?", id)).singleElement()
+                .satisfies(row -> {
+                    assertThat(row.get("REASON").toString()).isEqualTo("ABOUT_ME");
+                    assertThat(row.get("NOTE")).isNull();
+                });
+        List<String> order = queue(mod);
+        assertThat(order.indexOf(caseOf(id))).isLessThan(order.indexOf(caseOf(other)));
+        JsonNode detail = social.json(social.contentCase(mod, caseOf(id)).andExpect(status().isOk()));
+        assertThat(detail.get("participants").toString()).contains("ABOUT_ME");
+
+        // Asked again: the same answer, nothing changes.
+        social.aboutMe(chitra, id).andExpect(status().isAccepted());
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM content_reports r JOIN moments m ON m.id = r.moment_id"
+                + " WHERE m.public_id = ?", Integer.class, id)).isEqualTo(1);
+
+        // A report a moderator already decided stays as it is: a kept moment is not hidden again by that person.
+        String kept = moments.say(asha, "COMMUNITY", "Something ordinary");
+        social.report(bala, "MOMENT", kept, "SPAM", null).andExpect(status().isAccepted());
+        social.act(mod, caseOf(kept), "CONTENT_KEEP", "NO_VIOLATION").andExpect(status().isOk());
+        social.aboutMe(bala, kept).andExpect(status().isAccepted());
+        moments.get_(chitra, kept).andExpect(status().isOk());
+    }
+
     @Test
     void aboutMe_keptByAModerator_isBackForEveryone_andWhoMayNotAsk() throws Exception {
         String id = moments.say(asha, "COMMUNITY", "Nothing about anyone");

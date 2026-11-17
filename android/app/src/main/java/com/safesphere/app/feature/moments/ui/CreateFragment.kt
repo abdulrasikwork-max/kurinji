@@ -224,7 +224,10 @@ class CreateFragment : ViewBindingFragment<FragmentCreateBinding>(FragmentCreate
 
     /** Today reads again; the person is told what happened (live, waiting for a moderator, or a support line). */
     private fun onShared(moment: Moment) {
-        findNavController().previousBackStackEntry?.savedStateHandle?.set(RESULT_SHARED, moment.id)
+        // Today reads again wherever Create was opened from (the bar works on a moment's page and on You too; found in
+        // the N4-C walk: a share from a moment's page told only that page). Today is the start, so it is on the stack.
+        val nav = findNavController()
+        runCatching { nav.getBackStackEntry(R.id.todayFragment) }.getOrNull()?.savedStateHandle?.set(RESULT_SHARED, moment.id)
         val context = requireContext()
         when {
             moment.supportSuggested -> resultDialog = MaterialAlertDialogBuilder(context)
@@ -267,8 +270,12 @@ class CreateFragment : ViewBindingFragment<FragmentCreateBinding>(FragmentCreate
             .show()
     }
 
+    /** Leaves Create once (a second render after sharing must not pop the screen below it: N4-C walk finding). */
+    private var closed = false
+
     private fun close() {
-        if (view == null) return
+        if (view == null || closed) return
+        closed = true
         resultDialog = null
         leaveGuard.isEnabled = false
         hideKeyboard()

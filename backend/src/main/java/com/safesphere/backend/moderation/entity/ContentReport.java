@@ -42,10 +42,11 @@ public class ContentReport {
     private Long personId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, updatable = false, length = 20)
+    // Updatable ONLY through [becomeAboutMe] (N4-C): a report is otherwise never changed.
+    @Column(nullable = false, length = 20)
     private ModerationReason reason;
 
-    @Column(updatable = false, length = 200)
+    @Column(length = 200)
     private String note;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -76,6 +77,18 @@ public class ContentReport {
 
     public void resolve() {
         this.resolved = true;
+    }
+
+    /**
+     * N4-C (N-85): the reporter says the moment is about them. Their open report (one per person per moment,
+     * `uk_content_reports_moment`) becomes their "This is about me" request: reason ABOUT_ME and no note (the
+     * V35 CHECK allows no note on ABOUT_ME). False when the report is resolved or already an about-me request.
+     */
+    public boolean becomeAboutMe() {
+        if (resolved || reason == ModerationReason.ABOUT_ME) return false;
+        this.reason = ModerationReason.ABOUT_ME;
+        this.note = null;
+        return true;
     }
 
     public Long getId() {
