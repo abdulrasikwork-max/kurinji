@@ -114,11 +114,17 @@ class Phase17FGuardsTest {
         val receiver = Regex("<receiver\\s+android:name=\"\\.feature\\.emergency\\.trigger\\.ShakeCountdownCancelReceiver\"\\s+android:exported=\"false\"")
         assertTrue("the Cancel receiver is not exported", receiver.containsMatchIn(manifest))
         assertTrue("the one service has the location type only", manifest.contains("android:foregroundServiceType=\"location\""))
-        // N3 (A1): ONE file provider, for the ID photo the camera app writes into the cache (no CAMERA permission);
-        // not exported, one cache folder (MembershipTextsTest checks its paths).
+        // N3 (A1), N4 (A2): ONE file provider, for the photos the camera app writes into the cache (the ID photo and a
+        // moment's photo; no CAMERA permission); not exported, two cache folders (MembershipTextsTest checks its paths).
         val providers = Regex("<provider\\s+android:name=\"([^\"]+)\"\\s+android:authorities=\"([^\"]+)\"\\s+android:exported=\"false\"")
             .findAll(manifest).map { it.groupValues[1] to it.groupValues[2] }.toList()
-        assertEquals("only the ID-photo provider", listOf("androidx.core.content.FileProvider" to "\${applicationId}.idphoto"), providers)
+        assertEquals("only the camera-photo provider", listOf("androidx.core.content.FileProvider" to "\${applicationId}.camera"), providers)
+        // A2: package visibility for the camera intent only (to hide the button without a camera app), nothing else.
+        val queries = manifest.substringAfter("<queries>", "").substringBefore("</queries>")
+        assertEquals(listOf("android.media.action.IMAGE_CAPTURE"),
+            Regex("<action android:name=\"([^\"]+)\"").findAll(queries).map { it.groupValues[1] }.toList())
+        assertFalse(manifest.contains("QUERY_ALL_PACKAGES"))
+        assertEquals(1, Regex("<queries>").findAll(manifest).count())
         assertEquals(1, Regex("<provider").findAll(manifest).count())
     }
 

@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Phase N3: the ONLY folder the camera app may write into: the ID photo, in the app's cache, deleted after upload. -->
-<paths>
-    <cache-path
-        name="id_photo"
-        path="id-photo/" />
-</paths>

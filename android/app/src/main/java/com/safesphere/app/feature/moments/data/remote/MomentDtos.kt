@@ -5,6 +5,7 @@ import com.safesphere.app.feature.moments.domain.DayPart
 import com.safesphere.app.feature.moments.domain.Moment
 import com.safesphere.app.feature.moments.domain.MomentAudience
 import com.safesphere.app.feature.moments.domain.MomentAuthor
+import com.safesphere.app.feature.moments.domain.MomentDraft
 import com.safesphere.app.feature.moments.domain.MomentKind
 import com.safesphere.app.feature.moments.domain.MomentNotice
 import com.safesphere.app.feature.moments.domain.MomentPhoto
@@ -16,6 +17,7 @@ import com.safesphere.app.feature.moments.domain.ProfileMoments
 import com.safesphere.app.feature.moments.domain.RoughDay
 import com.safesphere.app.feature.moments.domain.RoughTime
 import com.safesphere.app.feature.moments.domain.TodayPage
+import com.safesphere.app.feature.moments.domain.UploadedPhoto
 import java.time.Instant
 
 // Phase N4: these classes mirror the JSON of the backend (docs/API.md, "Phase N4"). A moment whose id, kind, audience
@@ -159,3 +161,38 @@ private fun instant(raw: String?): Instant? = raw?.let { runCatching { Instant.p
 
 private val UUID = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 private val CODE = Regex("^[A-Z_]{1,30}$")
+
+/** A2: the body of POST /api/moments. Gson leaves null fields out, so a Say never sends plan fields. */
+data class MomentRequestDto(
+    val kind: String,
+    val audience: String,
+    val text: String?,
+    val mediaId: String?,
+    val planAt: String?,
+    val planWhere: String?,
+    val questionId: String?
+) {
+    override fun toString() = "MomentRequestDto(kind=$kind, audience=$audience, <words hidden>)"
+
+    companion object {
+        fun from(draft: MomentDraft) = MomentRequestDto(
+            kind = draft.kind.name,
+            audience = draft.audience.name,
+            text = draft.text.trim().ifEmpty { null },
+            mediaId = uuid(draft.mediaId),
+            planAt = if (draft.kind == MomentKind.WHOS_IN) draft.planAt?.toString() else null,
+            planWhere = if (draft.kind == MomentKind.WHOS_IN) draft.planWhere?.trim()?.ifEmpty { null } else null,
+            questionId = uuid(draft.questionId)
+        )
+    }
+}
+
+/** A2: the answer to a photo upload. An id that is not a UUID or a missing size means the upload is not usable. */
+data class UploadedPhotoDto(val mediaId: String? = null, val width: Int? = null, val height: Int? = null) {
+    fun toDomain(): UploadedPhoto? {
+        val id = uuid(mediaId) ?: return null
+        val w = width ?: 0
+        val h = height ?: 0
+        return if (w > 0 && h > 0) UploadedPhoto(id, w, h) else null
+    }
+}

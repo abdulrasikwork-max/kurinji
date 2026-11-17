@@ -25,6 +25,15 @@ interface MomentRepository {
 
     suspend fun unkeep(id: String): ApiResult<Unit>
 
+    /** A2: a JPEG re-encoded on the phone; the server re-encodes it again and keeps it until a moment uses it (24 h). */
+    suspend fun uploadPhoto(jpeg: ByteArray): ApiResult<UploadedPhoto>
+
+    /** A2: an upload no moment uses (discarded or replaced). Best effort: the server deletes it after 24 h anyway. */
+    suspend fun discardPhoto(mediaId: String): ApiResult<Unit>
+
+    /** A2: shares a moment; the answer says what happened to it (live, waiting, collapsed). */
+    suspend fun share(draft: MomentDraft): ApiResult<Moment>
+
     /** The address of a moment's photo, or null when [momentId] is not an id (never put anything else into a URL). */
     fun photoUrl(momentId: String): String?
 

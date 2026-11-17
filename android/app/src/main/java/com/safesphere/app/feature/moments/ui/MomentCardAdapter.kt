@@ -65,7 +65,9 @@ object TodayWall {
 class MomentCardAdapter(
     private val images: MomentImages,
     private val onOpen: (Moment) -> Unit,
-    private val onUncover: (Moment) -> Unit
+    private val onUncover: (Moment) -> Unit,
+    /** A2: "Answer" on today's question opens Create with it. */
+    private val onAnswer: (DailyQuestion) -> Unit = {}
 ) : ListAdapter<TodayRow, RecyclerView.ViewHolder>(Diff) {
 
     private class CardHolder(val binding: ItemMomentCardBinding) : RecyclerView.ViewHolder(binding.root)
@@ -96,7 +98,11 @@ class MomentCardAdapter(
                     if (MomentCardBinder.covered(row.moment, row.open)) onUncover(row.moment) else onOpen(row.moment)
                 }
             }
-            is TodayRow.Question -> (holder as QuestionHolder).binding.questionText.text = row.question.text
+            is TodayRow.Question -> {
+                val b = (holder as QuestionHolder).binding
+                b.questionText.text = row.question.text
+                b.answerButton.setOnClickListener { onAnswer(row.question) }
+            }
             is TodayRow.Loading -> message(holder, loading = true, R.string.today_loading, null)
             is TodayRow.Empty -> message(holder, false, R.string.today_empty_title,
                 if (row.people == People.MINE) R.string.today_empty_message_mine else R.string.today_empty_message)

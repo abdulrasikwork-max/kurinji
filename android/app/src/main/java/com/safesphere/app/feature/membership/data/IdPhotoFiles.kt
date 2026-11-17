@@ -3,6 +3,7 @@ package com.safesphere.app.feature.membership.data
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.safesphere.app.core.media.CameraFiles
 import com.safesphere.app.feature.social.data.PhotoPreparer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -23,7 +24,7 @@ interface IdPhotoSource {
 
 /**
  * Phase N3 (A1): the ID photo is taken by the phone's camera app (`ActivityResultContracts.TakePicture`), written into
- * `cache/id-photo/` through a [FileProvider] limited to that one folder (`res/xml/id_photo_paths.xml`), so the app
+ * `cache/id-photo/` through the app's one [FileProvider] (`res/xml/camera_paths.xml`, which names only this folder and the moment-photo folder), so the app
  * needs NO camera permission and the photo never reaches the gallery. It is re-encoded by [PhotoPreparer] (no
  * location, time or device in it) and the file is deleted right after (sent or not); [sweep] removes leftovers of a
  * closed app. Only without a camera app is the Photo Picker offered instead (then nothing is written by the app).
@@ -46,7 +47,7 @@ class IdPhotoFiles(private val context: Context) : IdPhotoSource {
     fun newCapture(): Capture? = runCatching {
         val dir = folder.apply { mkdirs() }
         val file = File(dir, "${UUID.randomUUID()}.jpg")
-        Capture(file, FileProvider.getUriForFile(context, authority(context), file))
+        Capture(file, FileProvider.getUriForFile(context, CameraFiles.authority(context), file))
     }.getOrNull()
 
     override suspend fun prepare(shot: IdPhotoShot): ByteArray? = withContext(Dispatchers.IO) {
@@ -69,6 +70,5 @@ class IdPhotoFiles(private val context: Context) : IdPhotoSource {
 
     companion object {
         const val FOLDER = "id-photo"
-        fun authority(context: Context) = "${context.packageName}.idphoto"
     }
 }

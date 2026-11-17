@@ -13,7 +13,7 @@ import com.safesphere.app.core.textcheck.TextSpans
 import com.safesphere.app.feature.social.domain.ReportReason
 
 /**
- * Phase 13E: the private nudge before a post or a perspective is shared (design §6.2: "Edit / Post anyway"). The draft
+ * Phase 13E: the private nudge before something is shared (N4: a moment, from Create) (design §6.2: "Edit / Post anyway"). The draft
  * is checked on the phone only; nothing is sent or stored for it, and the person can always share. A self-harm signal
  * shows a support line instead (never a block). [onlyMe]: a private note is never nudged about others' feelings.
  */
@@ -57,7 +57,7 @@ object DraftNudgeDialogs {
         ModerationLabels.of(ReportReason.entries.firstOrNull { it.name == category } ?: ReportReason.OTHER)
 
     /** The phone's dialler with the national helpline filled in; the person decides whether to call (no CALL_PHONE). */
-    private fun dialHelpline(fragment: Fragment) {
+    fun dialHelpline(fragment: Fragment) {
         try {
             fragment.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + HELPLINE)))
         } catch (e: ActivityNotFoundException) {

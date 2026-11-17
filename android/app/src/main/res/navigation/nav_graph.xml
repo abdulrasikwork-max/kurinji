@@ -174,6 +174,24 @@
             app:argType="string" />
     </fragment>
 
+    <!-- Phase N4 (A2): Create, opened by the ✚ in the bar (an action, never a tab) or by "Answer" on today's question. -->
+    <fragment
+        android:id="@+id/createFragment"
+        android:name="com.safesphere.app.feature.moments.ui.CreateFragment"
+        android:label="@string/title_create"
+        tools:layout="@layout/fragment_create">
+        <argument
+            android:name="questionId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="questionText"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+
     <fragment
         android:id="@+id/youFragment"
         android:name="com.safesphere.app.feature.profile.ui.YouFragment"

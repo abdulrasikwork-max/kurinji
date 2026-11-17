@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Phase N4: today's question, pinned at the top of Today (one per India day, written by an admin). Answers are
-     ordinary moments; nothing is counted. -->
+     ordinary moments; nothing is counted. "Answer" opens Create with the question (A2). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -30,4 +30,12 @@
         android:accessibilityHeading="true"
         android:textAppearance="@style/TextAppearance.Kurinji.Headline.Small"
         tools:text="What made you smile on campus today?" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/answerButton"
+        style="@style/Widget.SafeSphere.Button.Text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="-12dp"
+        android:text="@string/today_question_answer" />
 </LinearLayout>

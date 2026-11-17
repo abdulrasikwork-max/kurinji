@@ -6,6 +6,7 @@ import com.safesphere.app.feature.moments.domain.DayPart
 import com.safesphere.app.feature.moments.domain.Moment
 import com.safesphere.app.feature.moments.domain.MomentAudience
 import com.safesphere.app.feature.moments.domain.MomentAuthor
+import com.safesphere.app.feature.moments.domain.MomentDraft
 import com.safesphere.app.feature.moments.domain.MomentKind
 import com.safesphere.app.feature.moments.domain.MomentNotice
 import com.safesphere.app.feature.moments.domain.MomentPhoto
@@ -18,6 +19,7 @@ import com.safesphere.app.feature.moments.domain.ProfileMoments
 import com.safesphere.app.feature.moments.domain.RoughDay
 import com.safesphere.app.feature.moments.domain.RoughTime
 import com.safesphere.app.feature.moments.domain.TodayPage
+import com.safesphere.app.feature.moments.domain.UploadedPhoto
 import com.safesphere.app.feature.social.data.MediaPick
 import com.safesphere.app.feature.social.data.MediaSource
 
@@ -101,6 +103,34 @@ class FakeMomentRepository : MomentRepository {
     override suspend fun unkeep(id: String): ApiResult<Unit> {
         unkeptIds += id
         return unkeepResult
+    }
+
+    // A2: Create
+    val uploads = ArrayList<ByteArray>()
+    val uploadResults = ArrayDeque<ApiResult<UploadedPhoto>>()
+    val discardedPhotos = ArrayList<String>()
+    val shared = ArrayList<MomentDraft>()
+    var shareResult: ApiResult<Moment> = ApiResult.Success(moment("44444444-4444-4444-4444-444444444444", mine = true))
+    /** When set, uploads wait for it (to test a photo replaced while its upload runs). */
+    var uploadGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
+    override suspend fun uploadPhoto(jpeg: ByteArray): ApiResult<UploadedPhoto> {
+        uploads += jpeg
+        // The id is fixed when the upload starts, so two uploads in flight get different ids.
+        val id = "55555555-5555-5555-5555-5555555555" + (uploads.size % 100).toString().padStart(2, '0')
+        val queued = uploadResults.removeFirstOrNull()
+        uploadGate?.await()
+        return queued ?: ApiResult.Success(UploadedPhoto(id, 1200, 900))
+    }
+
+    override suspend fun discardPhoto(mediaId: String): ApiResult<Unit> {
+        discardedPhotos += mediaId
+        return ApiResult.Success(Unit)
+    }
+
+    override suspend fun share(draft: MomentDraft): ApiResult<Moment> {
+        shared += draft
+        return shareResult
     }
 
     override fun photoUrl(momentId: String): String? = "https://test.invalid/api/moments/$momentId/media"

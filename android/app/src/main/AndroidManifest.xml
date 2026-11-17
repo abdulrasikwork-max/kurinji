@@ -38,6 +38,14 @@
         android:name="android.hardware.telephony"
         android:required="false" />
 
+    <!-- N4 (A2): Create asks whether ANY camera app exists, so its button can be hidden on a phone without one (no
+         gallery fallback). Package visibility for this one intent only; no app list is read. -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+    </queries>
+
     <application
         android:name=".SafeSphereApp"
         android:allowBackup="false"
@@ -108,16 +116,17 @@
             android:name=".core.sms.SmsResultReceiver"
             android:exported="false" />
 
-        <!-- Phase N3: the camera app writes the ID photo into cache/id-photo/ (the only path offered, xml/id_photo_paths).
-             Not exported; access is granted per photo by the TakePicture intent. No CAMERA permission is declared. -->
+        <!-- The ONE file provider: the camera app writes the ID photo (N3) into cache/id-photo/ and a moment's photo (N4)
+             into cache/moment-photo/ (the only paths offered, xml/camera_paths). Not exported; access is granted per
+             photo by the TakePicture intent. No CAMERA permission is declared. -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.idphoto"
+            android:authorities="${applicationId}.camera"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/id_photo_paths" />
+                android:resource="@xml/camera_paths" />
         </provider>
 
     </application>

@@ -18,11 +18,14 @@ import com.safesphere.app.R
  */
 object NavigationRules {
 
-    /** The two tabs (N4: Today, You). */
+    /** The two tabs (N4: Today, You). Create sits between them in the bar but is an action ([CREATE_ITEM]), never a tab. */
     val tabDestinations = setOf(
         R.id.todayFragment,
         R.id.youFragment
     )
+
+    /** The bar item that opens Create (A2). */
+    val CREATE_ITEM = R.id.navCreate
 
     /** Where the app opens once signed in, and where every tab switch pops back to. */
     val START = R.id.todayFragment
@@ -79,11 +82,18 @@ object NavigationRules {
  * Connects the bottom bar to the NavController.
  *
  * We do this ourselves instead of using NavigationUI because the graph's start destination is the splash screen,
- * which is removed from the back stack after startup. Every tab switch pops back to Discover, and each tab keeps its
- * own state. The Share item opens the composer and leaves the selection where it was.
+ * which is removed from the back stack after startup. Every tab switch pops back to Today, and each tab keeps its
+ * own state. The Create item (A2) opens the Create screen and leaves the selection where it was.
  */
 fun BottomNavigationView.setUpWithTabs(navController: NavController, onReselect: () -> Unit = {}) {
+    // The Create disc keeps its own colours (it is an action, not a tab), so the bar's tint is kept off it.
+    menu.findItem(NavigationRules.CREATE_ITEM)?.let { item -> item.icon = item.icon?.let(::Untinted) }
+
     setOnItemSelectedListener { item ->
+        if (item.itemId == NavigationRules.CREATE_ITEM) {
+            if (navController.currentDestination?.id != R.id.createFragment) navController.navigate(R.id.createFragment)
+            return@setOnItemSelectedListener false
+        }
         val options = navOptions {
             launchSingleTop = true
             restoreState = true

@@ -69,15 +69,19 @@ class MembershipTextsTest {
     }
 
     @Test
-    fun `the camera app is used without the CAMERA permission and only into one cache folder`() {
+    fun `the camera app is used without the CAMERA permission and only into its own cache folders`() {
         val manifest = File("src/main/AndroidManifest.xml").readText(Charsets.UTF_8)
         assertFalse(manifest.contains("android.permission.CAMERA\""))
-        assertTrue(manifest.contains("\${applicationId}.idphoto"))
+        assertTrue(manifest.contains("\${applicationId}.camera"))
         val provider = manifest.substringAfter("androidx.core.content.FileProvider").substringBefore("</provider>")
         assertTrue(provider.contains("android:exported=\"false\""))
-        val paths = File("src/main/res/xml/id_photo_paths.xml").readText(Charsets.UTF_8)
-        assertEquals("one shared folder only", 1, Regex("<[a-z-]+-path\\b").findAll(paths).count())
-        assertTrue(paths.contains("<cache-path") && paths.contains("path=\"id-photo/\""))
+        assertTrue(provider.contains("@xml/camera_paths"))
+        // N4 (A2): exactly two cache folders: the ID photo (N3) and a moment's photo. Nothing else is shared.
+        val paths = File("src/main/res/xml/camera_paths.xml").readText(Charsets.UTF_8)
+        assertEquals("two cache folders only", 2, Regex("<[a-z-]+-path\\b").findAll(paths).count())
+        assertEquals(2, Regex("<cache-path\\b").findAll(paths).count())
+        assertTrue(paths.contains("path=\"id-photo/\"") && paths.contains("path=\"moment-photo/\""))
+        assertFalse(File("src/main/res/xml/id_photo_paths.xml").exists())
         val files = source("feature/membership/data/IdPhotoFiles.kt")
         assertTrue(files.contains("TakePicture") && files.contains("fun sweep()"))
         val viewModel = source("feature/membership/ui/MembershipViewModel.kt")

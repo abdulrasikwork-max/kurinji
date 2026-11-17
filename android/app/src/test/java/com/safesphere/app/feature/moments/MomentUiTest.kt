@@ -388,11 +388,24 @@ class MomentUiTest {
 
     @Test
     fun `nothing about moments is stored on the phone and no gallery is opened`() {
-        val moments = File("src/main/java/com/safesphere/app/feature/moments").walkTopDown().filter { it.extension == "kt" }
+        // A2: the two allowed exceptions are checked on their own below: the person's OWN last audience (D5) and the
+        // camera-app intent (no MediaStore read anywhere).
+        val allowed = setOf("DataStoreAudienceMemory.kt", "MomentPhotoFiles.kt")
+        val moments = File("src/main/java/com/safesphere/app/feature/moments").walkTopDown()
+            .filter { it.extension == "kt" && it.name !in allowed }
             .joinToString("\n") { it.readText(Charsets.UTF_8) }
         for (writer in listOf("DataStore", "SharedPreferences", "FileOutputStream", "openFileOutput", "filesDir",
                 "MediaStore", "PickVisualMedia", "ACTION_GET_CONTENT", "ACTION_PICK", "diskCache")) {
             assertFalse("moments use $writer", moments.contains(writer))
+        }
+        val memory = source("feature/moments/data/DataStoreAudienceMemory.kt")
+        assertEquals("one key per account: the audience only", listOf("audience_"),
+            Regex("PreferencesKey\\(\"([a-z_]+)").findAll(memory).map { it.groupValues[1] }.toList())
+        val camera = source("feature/moments/data/MomentPhotoFiles.kt")
+        assertEquals("MediaStore only names the camera intent", listOf("MediaStore.ACTION_IMAGE_CAPTURE"),
+            Regex("MediaStore\\.[A-Za-z_]+").findAll(camera).map { it.value }.toList())
+        for (writer in listOf("PickVisualMedia", "ACTION_GET_CONTENT", "ACTION_PICK", "filesDir", "FileOutputStream")) {
+            assertFalse("the camera files use $writer", camera.contains(writer))
         }
         val layouts = listOf("fragment_today.xml", "fragment_moment.xml", "item_moment_card.xml")
             .joinToString("\n") { File("src/main/res/layout/$it").readText(Charsets.UTF_8) }

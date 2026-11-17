@@ -39,6 +39,9 @@ class TodayFragment : ViewBindingFragment<FragmentTodayBinding>(FragmentTodayBin
         adapter = MomentCardAdapter(momentImages(), onOpen = ::open, onUncover = { moment ->
             opened += moment.id
             render(viewModel.uiState.value)
+        }, onAnswer = { question ->
+            findNavController().navigate(R.id.createFragment, bundleOf(CreateFragment.ARG_QUESTION_ID to question.id,
+                CreateFragment.ARG_QUESTION_TEXT to question.text))
         })
         binding.wall.adapter = adapter
         binding.wall.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -57,6 +60,16 @@ class TodayFragment : ViewBindingFragment<FragmentTodayBinding>(FragmentTodayBin
         // A moment was deleted on its own page: it leaves the wall at once.
         findNavController().currentBackStackEntry?.savedStateHandle?.getLiveData<String>(MomentFragment.RESULT_REMOVED)
             ?.observe(viewLifecycleOwner) { id -> viewModel.onRemoved(id) }
+        // A2: a moment was just shared from Create: read the wall again from the top.
+        findNavController().currentBackStackEntry?.savedStateHandle?.let { handle ->
+            handle.getLiveData<String>(CreateFragment.RESULT_SHARED).observe(viewLifecycleOwner) { id ->
+                if (id != null) {
+                    handle.remove<String>(CreateFragment.RESULT_SHARED)
+                    binding.wall.scrollToPosition(0)
+                    viewModel.refresh()
+                }
+            }
+        }
         collectWhenStarted(viewModel.uiState, ::render)
         viewModel.start()
     }

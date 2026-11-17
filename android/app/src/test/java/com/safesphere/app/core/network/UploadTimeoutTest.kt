@@ -127,10 +127,12 @@ class UploadTimeoutTest {
     private fun main(path: String) = File("src/main/java/com/safesphere/app/$path").readText()
 
     @Test
-    fun `only the photo uploads are marked - the profile photo (a moment's photo joins with Create)`() {
+    fun `only the photo uploads are marked - the profile photo and a moment's photo`() {
         val social = main("feature/social/data/remote/SocialApi.kt")
         val marker = Regex.escape("@Headers(UploadTimeoutInterceptor.HEADER_LINE)")
         assertTrue(Regex("""$marker[^\n]*\n\s*@PUT\("api/profiles/me/photo"\)""").containsMatchIn(social))
+        val moments = main("feature/moments/data/remote/MomentApi.kt")
+        assertTrue(Regex("""$marker[^\n]*\n\s*@POST\("api/moments/media"\)""").containsMatchIn(moments))
         val everywhere = File("src/main/java").walkTopDown().filter { it.extension == "kt" }
             .sumOf { Regex(Regex.escape("@Headers(UploadTimeoutInterceptor.HEADER_LINE)")).findAll(it.readText()).count() }
         assertEquals("no other call may carry the long timeout", UPLOAD_CALLS, everywhere)
@@ -149,6 +151,6 @@ class UploadTimeoutTest {
 
     private companion object {
         /** N4: the profile photo. Raise it only together with a new, real upload call. */
-        const val UPLOAD_CALLS = 1
+        const val UPLOAD_CALLS = 2
     }
 }

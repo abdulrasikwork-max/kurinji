@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The ONLY folders the camera app may write into, both in the app's cache and deleted after preparing:
+     N3: the ID photo; N4 (A2): a moment's photo. No CAMERA permission; never the gallery. -->
+<paths>
+    <cache-path
+        name="id_photo"
+        path="id-photo/" />
+    <cache-path
+        name="moment_photo"
+        path="moment-photo/" />
+</paths>

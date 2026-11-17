@@ -64,6 +64,12 @@ class MainActivity : AppCompatActivity() {
         // Tab screens have no "up" arrow; every other screen with a toolbar does.
         val appBarConfiguration = AppBarConfiguration(NavigationRules.tabDestinations)
         binding.toolbar.setupWithNavController(navController, appBarConfiguration)
+        // R1 (back with A2): on Create the toolbar arrow asks the same "discard?" question as the back button (it has a
+        // draft to lose); everywhere else the arrow keeps its normal behaviour.
+        binding.toolbar.setNavigationOnClickListener {
+            if (navController.currentDestination?.id == R.id.createFragment) onBackPressedDispatcher.onBackPressed()
+            else androidx.navigation.ui.NavigationUI.navigateUp(navController, appBarConfiguration)
+        }
         binding.bottomNavigation.setUpWithTabs(navController) {
             (navHost.childFragmentManager.primaryNavigationFragment as? com.safesphere.app.navigation.TabReselect)
                 ?.onTabReselected()

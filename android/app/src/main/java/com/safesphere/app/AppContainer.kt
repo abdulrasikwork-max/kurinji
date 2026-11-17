@@ -209,6 +209,29 @@ class AppContainer(context: Context) {
             backendBaseUrl())
     }
 
+    /** A2: the camera app's target for a moment's photo, its preparation and deletion. */
+    val momentPhotoFiles: com.safesphere.app.feature.moments.data.MomentPhotoFiles by lazy {
+        com.safesphere.app.feature.moments.data.MomentPhotoFiles(appContext)
+    }
+
+    /** A2 (D5): the last audience chosen on this phone, per account. */
+    val audienceMemory: com.safesphere.app.feature.moments.data.DataStoreAudienceMemory by lazy {
+        com.safesphere.app.feature.moments.data.DataStoreAudienceMemory(appContext) { sessionStorage.session.first()?.user?.id }
+    }
+
+    /**
+     * A2: what Create needs from the membership (social never imports membership: the mapping lives here). The end of
+     * the new-member period is the approval time + 7 days (M2); the server computes its own and decides.
+     */
+    suspend fun sharingStatus(): ApiResult<com.safesphere.app.feature.moments.domain.SharingStatus> =
+        when (val status = membershipRepository.status()) {
+            is ApiResult.Success -> ApiResult.Success(com.safesphere.app.feature.moments.domain.SharingStatus(
+                member = status.data.state == com.safesphere.app.feature.membership.domain.MembershipState.MEMBER,
+                newMemberUntil = com.safesphere.app.feature.moments.domain.DraftRules.newMemberUntil(
+                    status.data.membership?.verifiedAt, java.time.Instant.now())))
+            is ApiResult.Failure -> status
+        }
+
     // ---- Phase 13D: reports, own standing and appeals; moderators' content queue (nothing stored) ---------------
 
     val reportRepository: ReportRepository by lazy {
@@ -285,7 +308,9 @@ class AppContainer(context: Context) {
         AccountDataWiper(
             parts = listOf(
                 // Phase 17F: the deleted account's shake choice
-                { userId -> sosOptionsStore.forget(userId) }
+                { userId -> sosOptionsStore.forget(userId) },
+                // N4 (A2): the deleted account's last chosen audience
+                { userId -> audienceMemory.forget(userId) }
             ),
             pendingDeletion = pendingDeletion
         )
@@ -309,6 +334,9 @@ class AppContainer(context: Context) {
      * Work that must survive leaving a screen (location saving during an emergency) runs here.
      */
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    /** The same process-long scope, for small work a screen starts but must not cut off when it closes (A2: deleting an unused upload). */
+    val backgroundScope: CoroutineScope get() = applicationScope
 
     private val locationProvider: LocationProvider by lazy { FusedLocationProvider(appContext) }
 
