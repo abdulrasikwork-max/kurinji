@@ -1,3 +1,38 @@
+# CHECKPOINT 2026-11-17 (fourteenth session, end): **N4 IS COMPLETE** (B1-B4, A1-A3, C). Implemented, compiled, tested, manually verified on the emulator against the development backend; NOT verified on a physical phone. Nothing pushed, nothing deployed.
+
+**Standing instructions, unchanged:** the product direction is decided and is not reopened; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). Each new phase (N5 next) needs its own plan and the owner's approval first: N5's decisions D14-D19 are still open (`PHASE_N4.md` §9).
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). This session, oldest first: `4058b60` N4-A2 · `98b3526` A2 documents · `ac7d4fb` N4-A3 · `a0a01cd` N4-C fixes found in the walk · then "N4-C: documents" (`git log -1`). `git status` clean afterwards.
+- `android/local.properties` was pointed at `10.0.2.2:8090` for the walk and restored byte for byte (it points at the pilot again). `backend/.env` read for the database password only. `moderation-service/` untouched.
+
+## What N4-C did (details: `PHASE_N4.md` "C"; decisions N-85, N-86; A3: N-87)
+- Full API walk (curl) and app walk (emulator `irl_api33`, cold boot) against the development backend on port 8090: Today, a moment, Create (Say, Who's in?, audience, remembered audience, camera app, upload, discard, new-member hold), Answer, report, "This is about me", the author's notices / review / appeal, moderator queue and cases, admin daily questions, membership boundaries, offline and refusal states, FLAG_SECURE, EXIF / GPS stripping, logs.
+- **Found and fixed:** (1) backend: "This is about me" after one's own report on the same moment answered 202 and hid nothing (N-85, regression test); (2) Android: Create closed twice after sharing (from a moment's page it landed on Today and Today never re-read); (3) retired words ("Private places", "flagged signals", "places, posts, comments", "posting") in Settings and moderator texts, with guards.
+- Previous N4 work changed: the B3 `ReportService` / `ContentReport` (fix 1), the A2 `CreateFragment` (fix 2), A1-era strings (fix 3). Nothing else.
+
+## Build / test status (final)
+- Android: `.\gradlew.bat --offline testDebugUnitTest --rerun-tasks` **758 run, 0 failures**; `assembleDebug` OK; `lintDebug` **0 errors, 101 warnings** (accessibilityHeading on minSdk 26 as everywhere; 26 unused resources left over from the old social screens).
+- Backend: `mvn -o clean test` **468 run, 0 failures, 0 errors, 2 skipped**.
+- Python: untouched (38, N1).
+
+## Database
+- Development MySQL: **V35, 32 tables**; backup before the walk `db-backups/safesphere-dev-before-n4c-20261117.sql`. Everything the walk wrote was deleted except: the admin (user 400) is now an active MIET member (N-86; verified in person by 397, whose verifier flag was removed again), and the walk's sign-in sessions. Pilot: V30, untouched. Next NEW migration file: **V36**.
+
+## Remaining limits (not blockers for N4)
+1. No physical phone: camera quality, OEM camera apps (some save their own gallery copy) and real-device timing are untested.
+2. The Python text check was not running: the author's "Ask a moderator to look" button could not appear in the walk (unit-tested; API walked in B3).
+3. One moderator on the development database: an appeal decided by a second moderator is API-tested only.
+4. Daily limits are in memory (a restart resets them); a closed system-opened case shows "A guideline" as its headline; the server accepts a review request on a new-member photo hold (the app never offers it).
+5. `CLAUDE.md` is at about 39 700 characters (limit 40 000).
+
+## Next step
+- N5 (Same, Say more, I'm in, private replies, plan threads, Replies tab; V36): plan it and get the owner's decisions D14-D19 first. Do not start without approval.
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, `COMMUNITY_SECRET` before any real roll number, the pilot's own move to the new jar and schema, the N2 observations for N6.
+
+---
+
 # CHECKPOINT 2026-11-17 (fourteenth session): N4-A2 is DONE (Android Create: implemented, compiled, tested; NOT manually verified). A3 and C NOT started. Nothing pushed, nothing deployed.
 
 **Standing instructions, unchanged:** the product direction is decided and is not reopened; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N4 plan and decisions are LOCKED (`docs/PHASE_N4.md`); continue them, do not re-plan. **Owner: continue the remaining N4 units autonomously; stop only for a real conflict, a security / privacy problem, a destructive step without its documented backup, or a missing requirement. Android UI / UX: full creative freedom inside the IRL direction. Commit each coherent step and update this file before a session can end.**

@@ -1,7 +1,7 @@
 # Phase N4: Moments and Today
 
 Status: **decisions LOCKED by the owner on 2026-11-16; units B1, B2, B3 and B4 DONE (implemented, compiled, tested;
-"As built" at the end); A1 and A2 DONE (2026-11-17); A3, C NOT started: see "As built" and the top of `HANDOFF.md`.** The plan below was presented on
+"As built" at the end); A1, A2, A3 and C DONE (2026-11-17): N4 COMPLETE (emulator-verified, no physical phone): see "As built" and the top of `HANDOFF.md`.** The plan below was presented on
 2026-11-16 and approved with the owner's changes (voice deferred, new-member period 7 days, no learned model). Units B1,
 B2, B3, B4, A1, A2, A3, C; one local commit each; never pushed, never deployed. Each unit starts only when the owner says
 so. Android UI and UX: the owner gave full creative freedom on 2026-11-16 (simple and clean, not bland; a polished,
@@ -149,7 +149,7 @@ thresholds), D15 (Say more), D16 (no explicit decline), D17 (private reply rules
   wording guard (no counts, ranking, location or safety claims; Create never touches the gallery), nothing about other
   people stored on the phone.
 
-## 11. Units (approved order; B1 done, the rest NOT started)
+## 11. Units (approved order; ALL DONE 2026-11-17, see "As built")
 
 | Unit | Content |
 |---|---|
@@ -607,3 +607,119 @@ server's 24-hour clean-up removes it).
 
 **Not in A2 (by the plan):** reporting a moment, "This is about me", "Ask a moderator to look" on the author's notice,
 the moderator's moment case on the phone, the admin daily questions screen (A3); the emulator walk (C).
+
+### A3 (2026-11-17): reports, "This is about me", the author's review, the moderator's moment case, admin daily questions — Android
+
+Status: **implemented, compiled, tested** (Android 756 at the A3 commit `ac7d4fb`: 736 + `MomentModerationTest` 20).
+Manually verified in C (below). Decision N-87.
+
+- **A moment's page, someone else's moment:** "Report this moment" (the existing `ReportDialogs`: every reason but
+  impersonation, a note for "Something else") and "This is about me" (asks first: hidden from everyone at once, a
+  moderator looks, the person who shared it is not told who asked; then the page closes and the moment leaves the
+  wall). `ReportApi.aboutMe` / `ReportRepository.aboutMe` (only a UUID reaches the URL) / `ReportViewModel.aboutMe`.
+- **The author's own moment:** "Our system got it wrong? Ask a moderator to look" when the notice is `reviewable`
+  (`POST /api/content-checks/review`); "Think we got it wrong? Ask for a review" when the notice names a moderator's
+  decision that can be appealed (read from `GET /api/social-standing`); the review line ("A review is waiting for
+  another moderator.") afterwards.
+- **Moderators:** `ContentModerationModels` / `ContentModerationApi` retargeted to moments (`CaseContent` kind,
+  audience, body, `planAt`, `planWhere`, question, `CasePhoto`; `PersonInfo` programme + year; summary `topReasonCode`
+  and `waitingHours`, origin `ABOUT_ME`; participant `aboutMe`; author `newMemberUntil`); `MomentCaseText` (pure: the
+  text the check read = words, a new line, the "where", as the server's `MomentShared.words`; the headline reason);
+  `ContentModerationTexts.reasonCode`; the case photo at `/api/moderation/content-cases/{id}/media` after a tap; the
+  queue rows show "Opened by This is about me" and the waiting hours. Removed from the phone: post / place /
+  perspective fields, revisions, the media list and video.
+- **Admins:** `QuestionsAdminFragment` / `QuestionsAdminViewModel`, pure `QuestionRules`, `QuestionAdminRepository`
+  (`/api/admin/questions`), a row "Daily questions" under Community staff in Settings and more (admins only).
+
+### C (2026-11-17): close — full tests, security / privacy review, the walk on the development backend
+
+Status: **N4 is implemented, compiled, tested and manually verified on the emulator against the development backend.
+Not verified on a physical phone** (none was connected). Commit `a0a01cd` (fixes found in the walk) and the documents
+commit after it. Decisions N-85, N-86.
+
+**Tests and builds (final):** Android `testDebugUnitTest --rerun-tasks` **758 run, 0 failures** (756 + 2 wording
+guards); `assembleDebug` OK; `lintDebug` **0 errors, 101 warnings** (35 `accessibilityHeading` on minSdk 26 as in the
+rest of the app; 26 unused resources left over from the A1 removal: video badge, city / place / play / search icons,
+the `feed_comments` plurals, some styles; none in a new screen and no accessibility warning in an N4 screen). Backend
+`mvn -o clean test` **468 run, 0 failures, 0 errors, 2 skipped** (467 + the N-85 regression test). Python untouched.
+
+**Walk set-up:** the development backend (V35, no migration) on port 8090 from the working tree, codes from the
+development file sink; the emulator `irl_api33` (API 33, headless, cold boot: a quick-boot snapshot had no network;
+`Medium_Phone_API_37.0` stayed "offline" for adb and was not used); `android/local.properties` pointed at
+`10.0.2.2:8090` for the walk and restored byte for byte afterwards. Backup first:
+`db-backups/safesphere-dev-before-n4c-20261117.sql`. Accounts: 401 (author, new member), 397 (reader, new member),
+400 (the admin, made a member through the real in-person flow, N-86).
+
+**API walk (curl; every check passed unless said):**
+- Boundaries: an admin who is not a member gets 403 `MEMBERSHIP_NEEDED` on Today and on the questions; no token 401;
+  a plain member 403 on the admin questions and on the moderation queue; safety works without membership. N3 in
+  person: the admin makes 397 a verifier, asks with a code, 397 looks it up and approves, the admin becomes a member.
+- Daily question: scheduled for today 201; a second for the same day 409 with the server's words; 61 days ahead 400;
+  2 characters 400; pinned on Today; a Say answering it carries it.
+- Sharing: a Who's in? for My people with an exact time and a "where"; refusals with the server's own words: a Say
+  with a "where", a time 25 h ahead, no audience, a link from a new member, the 4th moment of a new member (429).
+- Photo: upload 201 (re-encoded 720 x 720), discard 204, attaching a discarded or someone else's upload 400, deleting
+  someone else's 404, a text file as JPEG 400, a GIF 415; a new member's photo for MIET gives `WAITING` + `HELD /
+  NEW_MEMBER_PHOTO`; for My people it is not held. **An EXIF / GPS block injected into the JPEG was gone from the
+  served photo and from the stored file.** The photo answers `private, no-store` and `nosniff`.
+- Visibility and privacy: another member sees the Say on Today with a rough time only (`createdAt`, `visibleAt`,
+  `expiresAt` null) and no notice; the held photo, its picture, a My people moment of a non-connection and an unknown
+  id are all the same 404; no location, count, viewer, phone or roll-number field in any answer.
+- Reports: a moment 202, the same report again the same answer, one's own 400, impersonation on a moment 400; the
+  author is never told.
+- **"This is about me" (FOUND and FIXED, N-85):** after the same person's own report it answered 202 and hid nothing.
+  After the fix: hidden from the person who asked and from everyone else, the author sees `HELD / NEEDS_REVIEW /
+  SYSTEM` with no trace of who asked, the case is first in the queue (tier 1), the participant shows `ABOUT_ME`.
+- Moderators: the queue order; the photo-hold case content (kind, audience, photo size, `newMemberUntil`, no name or
+  handle, pseudonyms only); the case photo 200 `no-store` for the moderator and 403 for a plain member; Keep with a
+  violation reason 400; Keep releases the held photo (its 24 h start at the release: `visibleAt` = the decision
+  time), another member then sees it and its picture; keep on the profile 200 (someone else 404); no edit route
+  (405); Remove with a reason, and the author sees `REMOVED / HARASSMENT / MODERATOR` with a `decisionId`; the
+  author's appeal 202; the deciding moderator cannot decide the appeal (403); the reporter's own list shows the outcome.
+- Observed, not changed: the server answers 202 to a review request on a new-member photo hold whose notice says
+  `reviewable: false` (the app never offers it there; the hold already waits for a person).
+
+**App walk (emulator, against the same backend):** onboarding, sign-in with the texted code, "Skip for now" for the
+profile (sharing needs none); Today (the question with Answer, cards, "That's today."). **FLAG_SECURE confirmed** on
+Today, a moment's page, the moderation queue and a case (window flag `SECURE`, screencap empty); **not** on Create or
+You (screenshots taken). Create: opens with the keyboard up, no audience the first time, the new-member line with the
+right end (approval + 7 days, India time), the last audience remembered per account, My people hides the line; Answer
+opens Create with the question; a Who's in? at "9:00 AM" reads "Tomorrow, 9:00 AM" and was stored as 03:30Z. **The
+camera app** (`com.android.camera2`, `CaptureActivity`, through the `.camera` provider, no permission): Done gives
+"Photo added…", the cache file is deleted at once, nothing appears in DCIM or Pictures, and the upload waits
+unattached on the server until shared; the hold dialog "Shared, not shown yet" with the notice; Discard asks first and
+deletes the upload on the server (1 to 0). Offline: Today keeps its cards and offers Try again; Create keeps the draft
+and says it cannot connect; Share works after reconnecting. You lists the waiting moment with its notice. As the
+admin: Daily questions (next free day suggested, schedule, delete with a confirmation, each checked on the server), the
+queue, a photo-hold case (photo only after a tap, pseudonym, new-member end), Keep and the moment is LIVE, a reported
+case with the reporter's note and "does not count now" (a new member). As a member: Report this moment, then "This is
+about me": hidden, the page closes, the moment leaves Today. As the author: "Only you can see this while a moderator
+looks at it." and, on the removed one, "A review is waiting for another moderator." with no second appeal button.
+
+**Found and fixed in the walk (`a0a01cd`):** (1) N-85 above (backend). (2) Create, after sharing, closed twice: opened
+from a moment's page it landed on Today and Today never read again; `close()` now acts once and the shared signal
+goes to Today's own entry. (3) Retired words: "Settings and more" still offered "Private places", the Moderation row
+spoke of "flagged signals", the queue of "places, posts, comments", the pause actions of "comments" and "posting";
+fixed, with guards.
+
+**Security and privacy review of A1 to A3 (and the C fixes):** no permission added (still no `CAMERA`, `RECORD_AUDIO`
+or media read); one FileProvider, not exported, two cache folders, and a `<queries>` entry for `IMAGE_CAPTURE` only;
+the camera file lives only until it is prepared, the prepared copy only in Create's memory; uploads are re-encoded on
+the phone and again on the server (EXIF / GPS gone, measured); only UUIDs ever reach a URL (moments, uploads,
+about-me, questions); no exact time, count, viewer, location, phone or roll number reaches anyone but the author; the
+person who said "about me" is never named to the author (also not as a code); FLAG_SECURE on every screen with other
+people's words; the only moments data kept on the phone is the person's own last audience; no token, code, phone
+number or moment text in the backend log or the app's logcat (checked); moderators see pseudonyms only, a case photo
+only after a tap and only through the case (403 for anyone else, also for a moderator who took part); a decided report
+can never be turned into a hide (N-85).
+
+**Clean-up after the walk:** every moment, photo row and file, the question, the reports and the cases the walk made
+were deleted; 397's verifier flag was removed; the admin stays a member (N-86). The backend and the emulator were
+stopped.
+
+**Honest limits (still true after N4):** no physical phone was used (camera quality, OEM camera apps and their own
+gallery copies are untested); the automatic text check (Python service) was not running, so "Ask a moderator to look"
+could not appear in the walk (it is unit-tested and its API was walked in B3); only one moderator exists on the
+development database, so an appeal could not be decided by a second one (API-tested); the daily limits are in memory
+(a backend restart resets them, seen in the walk); a closed case that the system opened shows "A guideline" as its
+headline (no report reason exists); 26 lint "unused resources" are left over from the old social screens.

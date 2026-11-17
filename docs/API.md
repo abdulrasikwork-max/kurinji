@@ -1547,7 +1547,9 @@ call `POST /api/content-checks/review`; `decisionId` = a moderator's decision, a
   report reaches moderators at once and counts toward that collapse from the end of their 7 days.
 - `POST /api/moments/{id}/about-me` (no body) → **202** `{status: RECEIVED}`. The moment is hidden from everyone but
   its author at once (unless a moderator already decided) and a priority case opens; a human decides. Uses the daily
-  report limit; 404 when the caller cannot see the moment; 400 on one's own.
+  report limit; 404 when the caller cannot see the moment; 400 on one's own. N4-C (N-85): when the caller already has an
+  OPEN report about that moment, that report becomes the about-me request (reason `ABOUT_ME`, its note dropped) and
+  the moment is hidden the same way; a report a moderator already decided stays as it is (same 202, nothing changes).
 - `GET /api/reports/mine`, `GET /api/social-standing`, `POST /api/social-standing/decisions/{decisionId}/appeal`:
   unchanged shapes; `targetKind` is `MOMENT` or `PERSON`.
 - `POST /api/content-checks/review {targetKind: "MOMENT", targetId}` → **202**: the author asks a moderator to look at
