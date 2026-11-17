@@ -1455,13 +1455,14 @@ read from the database per request; 403 otherwise)
   `relink-lifetime` 1h, `requests-per-day` 3, `approvals-per-day` 50, `wrong-codes` 10 / `wrong-code-window` 15m,
   `job-enabled`, `job-interval` PT1H (first run 3 minutes after start).
 
-# Phase N4: moments and Today (`docs/PHASE_N4.md`, V35) — unit B1 only
+# Phase N4: moments and Today (`docs/PHASE_N4.md`, V35) — backend units B1 to B3
 
-**Status: built and tested in N4-B1 (backend). V35 is applied nowhere yet (Flyway is held at V34 until N4-B4), so these
-routes do not work against a MySQL database before B4.** Photos (`mediaId`, `POST /api/moments/media`,
-`GET /api/moments/{id}/media`) arrive in B2; reports of moments, `POST /api/moments/{id}/about-me`,
-`GET /api/profiles/{id}/moments` and the removal of `/api/posts`, `/api/places`, `/api/discover` and the post-media
-routes in B3. Until then the old routes above are still served.
+**Status: built and tested (backend, N4-B1 to B3). V35 is applied by N4-B4 on the development MySQL only.**
+
+**Removed in N4-B3 (the sections "Phase 13B", "13C", "17C", "17E" above and the post / place parts of "13D" / "13E" are
+history):** `/api/posts/**`, `/api/places/**`, `/api/discover/**`, `/api/media/**` (post photos and video),
+perspectives (`/api/posts/{id}/comments`, `/api/comments/**`), `/api/moderation/places/**`, the moderator's case video
+route, the profile fields `city`, `languages`, `interests`. Reports and cases know two targets: `MOMENT` and `PERSON`.
 
 Every route needs an active MIET membership (403 `MEMBERSHIP_NEEDED`). A moment the caller may not see answers **404**
 (as if it did not exist). No answer has a count, a location, a viewer list or a ranking. Times: only the author gets
@@ -1471,26 +1472,50 @@ Every route needs an active MIET membership (403 `MEMBERSHIP_NEEDED`). A moment 
 ```
 { id, kind: SAY|WHOS_IN, audience: COMMUNITY|MY_PEOPLE,
   author: { profileId|null, handle|null, name, photo|null },      // name = the account's real name; no profile needed
-  mine: bool, text,
+  mine: bool, text|null,                                          // text is null only next to a photo
+  photo: null | { width, height },                                // the picture: GET /api/moments/{id}/media
   plan: null | { at: instant|null, where: string|null },          // WHOS_IN only; `at` is exact, for everyone
   question: null | { id, text },                                  // the daily question it answers
   when: null | { day: TODAY|YESTERDAY|THIS_WEEK|THIS_MONTH|EARLIER, part: MORNING|AFTERNOON|EVENING|NIGHT|null },
   status: LIVE|ENDED|WAITING,                                     // WAITING: only its author ever gets one
   kept: bool,
+  collapsed: bool,                                                // others: show it behind a tap
+  notice: null | { state: COLLAPSED|HELD|REMOVED, reason|null, by: SYSTEM|MODERATOR|null,
+                   reviewable: bool, decisionId|null },           // the AUTHOR only (no shadow states)
+  supportSuggested: true|null,                                    // only in the author's own answer to POST
   createdAt, visibleAt, expiresAt }                               // instants for the author; null for everyone else
 ```
 `when.part` is set for TODAY and YESTERDAY only (morning 05:00-11:59, afternoon 12:00-16:59, evening 17:00-20:59, night
 21:00-04:59, India time), counted from when others could first see the moment. `when` is null while it is WAITING.
 
+`notice` (author only): `reason` is a guideline code (`HARASSMENT`, `SEXUAL_HARASSMENT`, `HATE`, `THREAT`, `DOXXING`,
+`SPAM`, `NUDITY_OR_VIOLENCE`, `IMPERSONATION`, `OTHER`) or `NEEDS_REVIEW` (a person is looking; also what "This is
+about me" reads as: the author never learns that someone asked, or who), `AWAITING_CHECK` (a new member's words wait
+for the automatic check, at most 2 hours) or `NEW_MEMBER_PHOTO` (a new member's photo for all of MIET waits for a
+moderator). A collapse by reports alone is `{state: COLLAPSED, reason: null, by: null}`. `reviewable` = the author may
+call `POST /api/content-checks/review`; `decisionId` = a moderator's decision, appealable through
+`GET /api/social-standing`.
+
 **Members**
-- `POST /api/moments {kind, audience, text, planAt?, planWhere?, questionId?}` → **201** the moment (live at once in B1).
-  `kind` and `audience` are required (no default audience). `text`: 1 to 500 characters after cleaning. `planAt` (ISO
-  instant, kept to the minute, after now and at most 24 h ahead) and `planWhere` (one line, ≤ 60 characters) only on
-  `WHOS_IN`. `questionId` must be the question pinned on Today right now. **400** with our message for each rule
-  ("Choose who can see this", "A moment has at most 500 characters", "Choose a time within the next 24 hours", "Only a
-  Who's in? has a time and a place", "That question is no longer today's question", and for a new member with a link:
-  "New members can share links after their first week. Please remove the link."). **403** while a moderator's pause
-  stops posting. **429** over the daily limit (3 in the first 7 days after approval, then 10; our message shown).
+- `POST /api/moments/media` (body = the image, `image/jpeg` or `image/png`, ≤ 5 MB) → **201** `{mediaId, width, height}`.
+  Re-encoded without metadata before it is stored. 415 another type, 400 not a readable image / too large, 403 paused,
+  429 over 20 a day. `DELETE /api/moments/media/{mediaId}` → **204** (own, not attached; else 404). An upload not
+  attached within 24 h is deleted.
+- `POST /api/moments {kind, audience, text?, mediaId?, planAt?, planWhere?, questionId?}` → **201** the moment.
+  `kind` and `audience` are required (no default audience). `text`: 1 to 500 characters after cleaning; optional next
+  to a photo. `mediaId` = the caller's own unattached upload (400 "That photo is no longer available. Please take it
+  again."). `planAt` (ISO instant, kept to the minute, after now and at most 24 h ahead) and `planWhere` (one line,
+  ≤ 60 characters) only on `WHOS_IN`. `questionId` must be the question pinned on Today right now. **400** with our
+  message for each rule ("Choose who can see this", "A moment has at most 500 characters", "Choose a time within the
+  next 24 hours", "Only a Who's in? has a time and a place", "That question is no longer today's question", and for a
+  new member with a link: "New members can share links after their first week. Please remove the link."). **403** while
+  a moderator's pause stops posting. **429** over the daily limit (3 in the first 7 days after approval, then 10).
+  The answer already shows what happened to it: `status: WAITING` + `notice` when it is held (a new member's photo for
+  `COMMUNITY`; words the automatic check holds; a new member's words while the check is unavailable), `notice
+  {COLLAPSED}` when the check collapsed it, `supportSuggested: true` once when the words suggest the author may need
+  support (never stored).
+- `GET /api/moments/{id}/media` → the photo (`image/jpeg`, `Cache-Control: private, no-store`, `nosniff`) for exactly the
+  people who may see the moment; 404 otherwise or when it has none.
 - `GET /api/moments/today?people=ALL|MINE&cursor=` → `{question: {id, text}|null, moments: [moment], nextCursor|null}`.
   Live moments the caller may see, newest first (by first visibility), 20 per page; `nextCursor` null = the wall ends.
   `ALL` (default): the community's moments, the caller's connections' "my people" moments and the caller's own live
@@ -1499,10 +1524,49 @@ Every route needs an active MIET membership (403 `MEMBERSHIP_NEEDED`). A moment 
 - `GET /api/moments/mine` → `{current: [moment], kept: [moment], keptMax: 6}`: the caller's moments that have not ended
   (WAITING or LIVE, whatever their moderation state), newest first, and the ones they keep.
 - `GET /api/moments/{id}` → the moment; 404 not visible (ended and not kept, wrong audience, blocked, held, …).
-- `DELETE /api/moments/{id}` → **204** (own; always allowed). There is no edit route (N-54).
+- `GET /api/profiles/{publicId}/moments` → `{live: [moment], kept: [moment]}`: that person's moments the caller may
+  see (the one visibility rule); 404 when the profile is not visible.
+- `DELETE /api/moments/{id}` → **204** (own; always allowed, also under review). There is no edit route (N-54).
 - `PUT /api/moments/{id}/kept` → **200** the moment with `kept: true` (own; idempotent). **409** "Only a moment that is
   live on Today can be kept" / "You can keep 6 moments. Un-keep one first."
 - `DELETE /api/moments/{id}/kept` → **204** (own; any time).
+
+**Profiles (N-51)**
+- `PUT /api/profiles/me {handle, bio?}` (no city, languages or interests any more).
+- `GET /api/profiles/me` → `{publicId, handle, displayName, bio, programme|null, graduationYear|null,
+  newMemberUntil|null, handleChangeAvailableAt|null, photo|null}`. `programme` (its code) and `graduationYear` come
+  from the verified membership; `newMemberUntil` = the end of the 7-day new-member period, null once established.
+- `GET /api/profiles/{publicId}` and `/by-handle/{handle}` → `{publicId, handle, displayName, bio, programme,
+  graduationYear, relationship, photo}`.
+
+**Reports and "This is about me"**
+- `POST /api/reports {targetKind: MOMENT|PERSON, targetId, reason, note?}` → **202** `{status: RECEIVED}` (the same
+  answer when repeated). Only something the caller can see, never their own (400). `reason`: the nine guideline codes
+  (`IMPERSONATION` only on a person; `OTHER` needs a note of 1 to 200 characters). One report changes nothing its
+  subject can observe; three independent counting reports collapse a moment while a moderator looks. A new member's
+  report reaches moderators at once and counts toward that collapse from the end of their 7 days.
+- `POST /api/moments/{id}/about-me` (no body) → **202** `{status: RECEIVED}`. The moment is hidden from everyone but
+  its author at once (unless a moderator already decided) and a priority case opens; a human decides. Uses the daily
+  report limit; 404 when the caller cannot see the moment; 400 on one's own.
+- `GET /api/reports/mine`, `GET /api/social-standing`, `POST /api/social-standing/decisions/{decisionId}/appeal`:
+  unchanged shapes; `targetKind` is `MOMENT` or `PERSON`.
+- `POST /api/content-checks/review {targetKind: "MOMENT", targetId}` → **202**: the author asks a moderator to look at
+  their own moment that a rule collapsed or held (404 otherwise).
+
+**Moderators** (`/api/moderation/**`, MODERATOR or ADMIN)
+- `GET /api/moderation/content-cases?status=OPEN|CLOSED` → `[CaseSummary]`, highest tier first, then oldest:
+  `{caseId, targetKind, status, outcome, openedOn, topReason, reasons, counting, independent, contentState, priority,
+  youTookPart, openedBy: REPORTS|SYSTEM|AUTHOR_REQUEST|ABOUT_ME, contentSource, waitingHours}`. Tiers (N-69): 1 =
+  "This is about me" and content a rule held for a severe finding; 2 = reported content; 3 = new-member photo holds and
+  authors' review requests; more than 12 hours waiting moves a case up one tier.
+- `GET /api/moderation/content-cases/{id}` → `{summary, content: {kind, audience, body, planAt, planWhere, question,
+  photo: {width, height}|null, person|null}, participants, author: {ref, strikePoints, suggestedStep, restriction,
+  restrictedUntil, newMemberUntil}, possibleActions, decisions, assessment}`.
+- `GET /api/moderation/content-cases/{id}/media` → the case's moment photo (`private, no-store`); 403 for a moderator
+  who took part (the author, a reporter, the person who said "about me").
+- `POST /api/moderation/content-cases/{id}/actions {action, reason}`: `CONTENT_KEEP` (releases; a never-visible
+  moment's 24 hours start then), `CONTENT_HOLD`, `CONTENT_COLLAPSE`, `CONTENT_REMOVE`, the `PERSON_*` steps. Appeals:
+  `GET /api/moderation/content-appeals`, `POST /api/moderation/content-appeals/{id}/decision` (never the decider).
 
 **Admins** (`/api/admin/**` = ADMIN from the database; the admin must also be an active member: 403 `MEMBERSHIP_NEEDED`)
 - `GET /api/admin/questions` → `[{id, day, text, createdAt}]` from 7 days ago onwards, oldest first.
@@ -1511,9 +1575,9 @@ Every route needs an active MIET membership (403 `MEMBERSHIP_NEEDED`). A moment 
   another." 400 otherwise.
 - `DELETE /api/admin/questions/{id}` → **204**; its answers stay as plain moments. 404 unknown.
 
-**Config:** `app.moments.per-day` (10), `new-member-per-day` (3), `today-reads-per-hour` (600), `questions-ahead` (60).
-The product rules (24 h, purge after 7 days, 6 kept, the 7-day new-member period, 500 / 60 characters) are constants.
-`spring.flyway.target=34` holds V35 back until N4-B4.
+**Config:** `app.moments.per-day` (10), `new-member-per-day` (3), `today-reads-per-hour` (600), `questions-ahead` (60),
+`photos-per-day` (20). The product rules (24 h, purge after 7 days, 6 kept, the 7-day new-member period, 500 / 60
+characters) are constants. `app.social.*` keeps profiles, connections and the photo folder only.
 
 # Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
 
@@ -1521,7 +1585,7 @@ The product rules (24 h, purge after 7 days, 6 kept, the 7-day new-member period
 
 A compact list of every phase's endpoints and config keys; the sections above have the details. Keep it in step.
 
-- **Phase N4-B1** (V35 written, applied nowhere until B4; `API.md` "Phase N4"): `POST /api/moments {kind, audience, text, planAt?, planWhere?, questionId?}` 201, `GET /api/moments/today?people=ALL|MINE&cursor=` → `{question, moments, nextCursor}`, `GET /api/moments/mine` → `{current, kept, keptMax}`, `GET|DELETE /api/moments/{id}`, `PUT|DELETE /api/moments/{id}/kept` (409 at 6 or when not live), admins `GET|POST /api/admin/questions`, `DELETE /api/admin/questions/{id}`. Not yet: photos (B2), reports / about-me / profile moments / removal of the old post, place and discover routes (B3). Config `app.moments.*`, `spring.flyway.target=34` (until B4).
+- **Phase N4-B1 to B3** (V35, `API.md` "Phase N4"): `POST /api/moments/media` 201 `{mediaId, width, height}`, `DELETE /api/moments/media/{id}`, `POST /api/moments {kind, audience, text?, mediaId?, planAt?, planWhere?, questionId?}` 201, `GET /api/moments/{id}/media`, `GET /api/moments/today?people=ALL|MINE&cursor=` → `{question, moments, nextCursor}`, `GET /api/moments/mine` → `{current, kept, keptMax}`, `GET|DELETE /api/moments/{id}`, `PUT|DELETE /api/moments/{id}/kept` (409 at 6 or when not live), `GET /api/profiles/{id}/moments` → `{live, kept}`, `POST /api/moments/{id}/about-me` 202, `POST /api/reports` (targets MOMENT, PERSON), `POST /api/content-checks/review` (MOMENT), `GET /api/moderation/content-cases/{id}/media`, admins `GET|POST /api/admin/questions`, `DELETE /api/admin/questions/{id}`. Moment fields `photo`, `collapsed`, `notice`, `supportSuggested`; profile fields `programme`, `graduationYear`, `newMemberUntil`; case fields `waitingHours`, `openedBy ABOUT_ME`, `author.newMemberUntil`. REMOVED: `/api/posts`, `/api/places`, `/api/discover`, `/api/media`, perspectives, `/api/moderation/places`, the case video route, profile `city` / `languages` / `interests`. Config `app.moments.*`.
 - **Phase N2** (V33, `API.md` "Phase N2"): `POST /api/auth/phone/start {phone}` (same answer for every number), `/phone/verify` → `SIGNED_IN` + session | `SIGN_UP_NEEDED` + ticket, `POST /api/auth/sign-up {ticket, name, dateOfBirth}` 201, `POST /api/users/me/confirmation`, `POST /api/users/me/sessions/sign-out-others {challenge, code}`, `PUT /api/users/me/name {name}`; `{challenge, code}` on deletion / cancel / SOS end from another sign-in; `PUT /api/admin/roles {phone, role}`; `user.phoneHint` replaces `email`. Removed: `/api/auth/register`, `/api/auth/login`, `PUT /api/users/me/password`. Config `app.otp.ticket-lifetime`, `app.account.code-failures|code-failure-window`.
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/users/me`
 - Phase 17F (`API.md` "Phase 17F"): `POST /api/emergencies` accepts `triggerType` `SHAKE` (MANUAL default; VOICE and

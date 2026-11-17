@@ -79,6 +79,27 @@ class MomentBoundariesTest {
         assertThat(MomentDtos.class.getDeclaredClasses()).hasSizeGreaterThanOrEqualTo(8);
     }
 
+    /** N4-B3: the old social surface is gone from the backend and no route of it is served any more (N-58). */
+    @Test
+    void theOldSocialSurface_isGone() throws IOException {
+        Pattern oldFile = Pattern.compile("^(Post|Comment|Place|Discover|City|Cities|Mp4|TimeBands|EditionPolicy).*\\.java$");
+        Pattern oldRoute = Pattern.compile("\"/api/(posts|places|discover|media|comments|explore)\\b");
+        List<String> violations = new ArrayList<>();
+        try (Stream<Path> files = Files.walk(MAIN)) {
+            for (Path file : files.filter(f -> f.getFileName().toString().endsWith(".java")).toList()) {
+                String name = file.getFileName().toString();
+                if (oldFile.matcher(name).find()) violations.add(name);
+                List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+                for (int i = 0; i < lines.size(); i++) {
+                    String line = lines.get(i).trim();
+                    if (line.startsWith("//") || line.startsWith("*") || line.startsWith("/*")) continue;
+                    if (oldRoute.matcher(line).find()) violations.add(name + ":" + (i + 1));
+                }
+            }
+        }
+        assertThat(violations).as("old social files or routes").isEmpty();
+    }
+
     private static boolean isMomentSource(Path file) {
         String name = file.getFileName().toString();
         return name.endsWith(".java") && (name.startsWith("Moment") || name.startsWith("DailyQuestion"));

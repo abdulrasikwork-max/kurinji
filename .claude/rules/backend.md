@@ -60,6 +60,30 @@ paths:
 > `MomentLimitsApiTest` has its own database; test properties lift `app.moments.*` (every test account is a new member).
 > `MomentBoundariesTest` guards the "never reintroduce" list (N-58). Decisions N-59 to N-68.
 
+> **N4-B2 / B3 (2026-11-17, `docs/PHASE_N4.md` "As built"): the OLD social code is GONE from the backend; read with
+> care.** Removed: posts, perspectives (comments), places, cities, Discover, post media, video (`Post*`, `Comment*`,
+> `Place*`, `Discover*`, `MediaService` / `MediaController`, `PostPolicy`, `PostDelay`, `EditionPolicy`,
+> `PlaceNamePolicy`, `CityCatalog`, `ProfileLists`, `TimeBands`, `Mp4Sanitizer`, `Mp4FastStart`, `event/ContentWritten`,
+> `cities-v1.tsv`) and the `app.social.*` settings for them, including the 72-hour `probation` (N-74). Every paragraph
+> below about them is history. **What exists:** B2 `MomentMediaService` (upload → `ImageSanitizer` → `MediaStorage`,
+> serving by the MOMENT's id through `requireVisible`, `private, no-store`), the new-member photo hold
+> `MomentPolicy.holdsPhoto` (HELD / SYSTEM / `NEW_MEMBER_PHOTO`, social's own rule, N-57). B3: enums in
+> `social/entity/ContentModeration` (was `PostEnums`; reasons + `NEW_MEMBER_PHOTO`, `ABOUT_ME`, `reportable()`);
+> `social/event/MomentShared` published by `MomentService.create` BEFORE the moment is published (N-73);
+> `MomentResponse.collapsed` / `notice` (author only) / `supportSuggested`; `MomentService.ofProfile`
+> (`GET /api/profiles/{id}/moments`); `Profile` without city / languages / interests, `MembershipGate.Member` carries
+> programme, year and `verifiedAt`; `SocialAccess.memberOf` / `isNewMember` / `countsFrom`. `moderation`: cases, reports
+> and assessments point at `moment_id` (`TargetKind` MOMENT / PERSON; POST, COMMENT, PLACE only in old audit rows);
+> `ReportService` (`report`, `aboutMe` = a report row with reason `ABOUT_ME` that holds the moment at once, N-70);
+> `ContentModerationService` (moment cases, `media(caseId)`, Keep / an overturned appeal publish a never-visible
+> moment, sets and clears `moments.in_review`); pure `QueuePolicy` (three tiers, N-69) and `Periods`;
+> `AssessmentService` listens to `MomentShared` (opens the case for a held photo even when the check is off; never
+> changes a `NEW_MEMBER_PHOTO` or `ABOUT_ME` hold, N-75; `KIND` sent to the service is `"POST"`; `maintain` retries,
+> releases a new member's `AWAITING_CHECK` words after 2 h). Tests: `MomentPhotoApiTest`, `MomentModerationApiTest`,
+> `QueuePolicyTest`, `MomentAssessmentIntegrationTest` (stub service, its own H2 URL), `MomentBoundariesTest`
+> (+ "the old social surface is gone"). Use `mvn -o clean test`: without `clean` Maven reports a false success after
+> files were deleted. Decisions N-69 to N-75.
+
 Loaded when working on files under `backend/`. Conventions and invariants also stay in `CLAUDE.md` §6; migrations in
 `database.md`; endpoints in `docs/API.md`.
 

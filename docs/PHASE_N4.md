@@ -1,7 +1,7 @@
 # Phase N4: Moments and Today
 
-Status: **decisions LOCKED by the owner on 2026-11-16; units B1 and B2 DONE; B3 PARTIAL (see "As built" B3 and the top of `HANDOFF.md`) (implemented, compiled, tested;
-"As built" at the end); B2, B3, B4, A1, A2, A3, C NOT started.** The plan below was presented on
+Status: **decisions LOCKED by the owner on 2026-11-16; units B1, B2 and B3 DONE (implemented, compiled, tested;
+"As built" at the end); B4, A1, A2, A3, C: see "As built" and the top of `HANDOFF.md`.** The plan below was presented on
 2026-11-16 and approved with the owner's changes (voice deferred, new-member period 7 days, no learned model). Units B1,
 B2, B3, B4, A1, A2, A3, C; one local commit each; never pushed, never deployed. Each unit starts only when the owner says
 so. Android UI and UX: the owner gave full creative freedom on 2026-11-16 (simple and clean, not bland; a polished,
@@ -281,9 +281,9 @@ Status: **implemented, compiled, tested** (backend **593 run, 0 failures, 0 erro
 - **Not tightened:** the server accepts up to 4096 px a side (the phone sends at most 3072 px), so V35's
   `ck_moment_media_size` stays as written.
 
-### B3 (2026-11-16, PARTIAL: stopped at the usage limit): moderation of moments, "This is about me", profiles, old social removal — backend only
+### B3 (2026-11-16 and 2026-11-17, DONE; the first session stopped at the usage limit, see "B3 close"): moderation of moments, "This is about me", profiles, old social removal — backend only
 
-Status: **partly implemented; what is in is compiled and tested** (backend **456 run, 0 failures, 0 errors, 2 skipped**,
+Status at the interruption (superseded by "B3 close" below: B3 is implemented, compiled, tested, 467): partly implemented (backend **456 run, 0 failures, 0 errors, 2 skipped**,
 `mvn -o clean test`). **Not finished:** the tests of the automatic text check on moments, V35 in step with the code,
 `API.md` / `DECISIONS.md` / rules files, the security review (list: top of `HANDOFF.md`). Not manually verified. One
 local checkpoint commit, not pushed.
@@ -323,7 +323,7 @@ local checkpoint commit, not pushed.
   requests; more than 12 hours waiting moves a case up one tier, once; `CaseSummary.waitingHours`.
 - **Who may not decide:** the author, a reporter, the person who said "about me" (403 on the case, its actions and its
   photo); the decider never decides the appeal.
-- **Automatic text check on moments: implemented, compiled, NOT TESTED.** Intended behaviour (PHASE_N4 §6): established
+- **Automatic text check on moments** (tested in the B3 close, `MomentAssessmentIntegrationTest`). Behaviour (PHASE_N4 §6): established
   members publish when the service is down and are rechecked for 24 h; a new member's words wait (`AWAITING_CHECK`) at
   most 2 hours, then publish with the 24 hours starting then; a `PUBLISH` on a fresh write leaves publishing to
   `MomentService`; a retry publishes itself.
@@ -343,3 +343,48 @@ old 72-hour account probation is replaced everywhere by the 7-day new-member per
 4. Trim `SocialProperties` / `application.properties` (dead post, place, comment, video, probation settings).
 5. The author's notice carries no flagged phrases yet (posts had `flagged` spans); decide in A3 whether the app needs them.
 6. `KIND` sent to the text service is `"POST"` (the service knows POST and COMMENT only).
+
+**B3 close (2026-11-17, the session after the usage limit).** The interrupted session had left the B3 work
+uncommitted (110 files, nothing staged consistently); it was inspected, rebuilt from clean and found green (456), then
+committed as a recovery checkpoint before anything else was changed. Finished afterwards:
+
+- **Tests of the automatic text check on moments:** `MomentAssessmentIntegrationTest` (10, stub service, its own H2
+  database): clean words publish and the assessment keeps no text (the service is sent `kind` and `text` only); a
+  targeted insult collapses (author: `notice {COLLAPSED, HARASSMENT, SYSTEM, reviewable}`, others: `collapsed`, no case
+  until the author asks; the review request is the author's only, the same 202 twice, one case with origin
+  `AUTHOR_REQUEST`); a severe threat is held (`WAITING`, never visible, case `SYSTEM`, the moderator sees the evidence,
+  Keep starts its 24 hours, no strike); the `where` of a plan is checked with the text; during an outage an established
+  member is published and rechecked later (a later hold does not move `expires_at`, N-60); a new member's words wait
+  (`AWAITING_CHECK`, no case), are still waiting at 119 minutes, are published after 2 hours with the service still
+  down, and their 24 hours start at that release; a new member's held photo is never released by a clean answer, by an
+  outage, by the 2-hour rule, by the check giving up after a day or by the clean-up job (N-57); "This is about me" is
+  not released by a later clean check (N-75); self-harm sets `supportSuggested` in the author's own create answer only
+  and nothing about it is stored; quoted words and strong language publish. **The path is now implemented, compiled,
+  tested.**
+- **V35 in step with the code:** `ABOUT_ME` added to `ck_moments_moderation_reason`; `ck_content_reports_reason`
+  dropped and re-created with `ABOUT_ME` (`ck_content_reports_note` unchanged: a note only and always for `OTHER`).
+  `MOMENT` fits `target_kind VARCHAR(7)`, `ABOUT_ME` fits `origin VARCHAR(14)`, `NEW_MEMBER_PHOTO` fits
+  `moderation_reason VARCHAR(20)`. Moderators' decisions use `ActionReason` (unchanged), so the audit and strike lists
+  need no new code.
+- **Dead settings removed (N-74):** `SocialProperties` keeps profiles, connections and the photo folder; the post,
+  place, perspective, Discover, video and `probation` settings left `application.properties` and the test properties.
+- **Guard:** `MomentBoundariesTest.theOldSocialSurface_isGone` (no `Post*` / `Comment*` / `Place*` / `Discover*` /
+  `City*` / `Mp4*` source file, no mapping of `/api/posts|places|discover|media|comments|explore`). `MomentShared` is
+  inside the scans of `SocialIsolationTest` and `MomentBoundariesTest` by its package and name.
+- **Documents:** `API.md` ("Phase N4" rewritten, index line), `DECISIONS.md` N-69 to N-75, `.claude/rules/backend.md`.
+- **Result:** backend **467 run, 0 failures, 0 errors, 2 skipped** (`mvn -o clean test`; 456 + 10 + 1).
+
+**Security and privacy review of B2 + B3 (2026-11-17)**
+
+| Question | Finding |
+|---|---|
+| Can a photo be read by someone who may not see the moment? | No: a photo has no address of its own; `GET /api/moments/{id}/media` goes through `requireVisible` (the one rule), 404 otherwise; `private, no-store`, `nosniff`; an unattached upload is served to nobody. Moderators read a case photo only through the case, and not when they took part |
+| Does an upload keep metadata or reach the disk as sent? | No: decoded and re-encoded by `ImageSanitizer` first; only the re-encoded JPEG is stored under a random name |
+| Can the reported person learn of a report or of who said "about me"? | No: one or two reports change nothing they can observe; a collapse by reports has no reason and no source; "about me" reads as `NEEDS_REVIEW`; delete is never refused; `GET /api/social-standing` lists only decisions that found a violation |
+| Can a moderator decide their own matter? | No: the author, every reporter and the person who said "about me" are refused on the case, its actions and its photo (403); the decider never decides the appeal |
+| Can an automatic rule silence or punish a person? | No: rules only collapse or hold content (reversible), never remove, never strike or pause; an outage publishes (new members wait at most 2 hours); only humans restrict |
+| Can "This is about me" be used to hide other people's moments at will? | **Residual risk, accepted with the locked decision D11:** any member who can see a moment can hide it until a moderator looks. Bounds: the daily report limit per person, one request per person per moment, a tier-1 case (looked at first), Keep restores it, the request is a report row so the audit shows who asked (to moderators as a pseudonym). Moderator coverage (M5, N8) decides how long such a hide lasts in practice: to watch in the pilot |
+| What does the text service receive? | `{kind, text}` only: no person, no moment id (tested). Nothing about self-harm is stored |
+| Does anything new touch safety? | No: `SocialIsolationTest`, `CommunityIsolationTest` unchanged and green; a posting pause refuses sharing and uploads only |
+| Does anything reintroduce a retired concept? | No: `MomentBoundariesTest` (source, V35 tables, answer fields, old routes) |
+| Limits | In memory (reset by a restart): documented, unchanged |

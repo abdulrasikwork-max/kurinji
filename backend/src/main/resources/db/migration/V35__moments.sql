@@ -1,10 +1,9 @@
 -- Phase N4 (docs/PHASE_N4.md, decisions N-42 to N-58): moments, Today, keep and the daily question replace the old
 -- social surface (posts, perspectives, places, cities).
 --
--- STATUS: written in N4-B1 and applied NOWHERE yet. Until unit B4 applies it on the development MySQL (backup, dry run
--- of every CHECK, then apply), application.properties holds Flyway at V34 (spring.flyway.target=34), because sections 4
--- and 5 delete data that the old social code still reads until unit B3 removes that code. Units B2 and B3 may still
--- change THIS file (photo limits, moderation lists); after B4 it is never edited again.
+-- STATUS: written in N4-B1, changed in B2 (reason NEW_MEMBER_PHOTO) and B3 (reason ABOUT_ME on moments and on reports).
+-- Applied by unit B4 on the development MySQL (backup, dry run of every CHECK, then apply). Once applied anywhere this
+-- file is never edited again.
 --
 -- * daily_questions  one question per community per India calendar day, written by an admin (N-49).
 -- * moments          a Say or a Who's in? (N-45): text up to 500 characters and at most one photo. No location column
@@ -93,7 +92,7 @@ CREATE TABLE moments (
     CONSTRAINT ck_moments_moderation CHECK (moderation IN ('NONE', 'COLLAPSED', 'HELD', 'REMOVED')),
     CONSTRAINT ck_moments_moderation_reason CHECK (moderation_reason IS NULL OR moderation_reason IN ('HARASSMENT',
         'SEXUAL_HARASSMENT', 'HATE', 'THREAT', 'DOXXING', 'SPAM', 'NUDITY_OR_VIOLENCE', 'IMPERSONATION', 'OTHER',
-        'NEEDS_REVIEW', 'AWAITING_CHECK', 'NEW_MEMBER_PHOTO')),
+        'NEEDS_REVIEW', 'AWAITING_CHECK', 'NEW_MEMBER_PHOTO', 'ABOUT_ME')),
     CONSTRAINT ck_moments_moderation_decision CHECK (moderation_decision IS NULL OR
         REGEXP_LIKE(moderation_decision, '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', 'c')),
     CONSTRAINT ck_moments_moderation_source CHECK (moderation_source IS NULL
@@ -163,6 +162,12 @@ ALTER TABLE content_reports
     ADD COLUMN moment_id BIGINT NULL AFTER reporter_id,          -- the case's target again, for the UNIQUE rule
     ADD CONSTRAINT uk_content_reports_moment UNIQUE (reporter_id, moment_id),
     ADD CONSTRAINT fk_content_reports_moment FOREIGN KEY (moment_id) REFERENCES moments (id) ON DELETE CASCADE;
+-- "This is about me" (N-52) is stored as a report row with its own reason, so the person who asked is a party of the
+-- case and can never decide it. It has no note (ck_content_reports_note is unchanged: a note only and always for OTHER).
+ALTER TABLE content_reports DROP CHECK ck_content_reports_reason;
+ALTER TABLE content_reports
+    ADD CONSTRAINT ck_content_reports_reason CHECK (reason IN ('HARASSMENT', 'SEXUAL_HARASSMENT', 'HATE', 'THREAT',
+        'DOXXING', 'SPAM', 'NUDITY_OR_VIOLENCE', 'IMPERSONATION', 'OTHER', 'ABOUT_ME'));
 
 ALTER TABLE content_cases DROP FOREIGN KEY fk_content_cases_post;
 ALTER TABLE content_cases DROP FOREIGN KEY fk_content_cases_comment;

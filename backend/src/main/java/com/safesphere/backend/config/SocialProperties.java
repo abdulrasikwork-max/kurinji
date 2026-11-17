@@ -5,9 +5,10 @@ import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * The app.social.* settings (Phase 13A: profiles and connections; Phase 13B: places, posts, photos, comments). Every
- * value has a safe default. The limits are kept in memory per person (AttemptLimiter), like every other limit in this
- * backend.
+ * The app.social.* settings: profiles, connections and the photo files (profile photos and the photos of moments).
+ * Every value has a safe default. The limits are kept in memory per person (AttemptLimiter), like every other limit in
+ * this backend. The limits of moments are in MomentProperties (app.moments.*). The settings of posts, places,
+ * perspectives, Discover, video and the 72-hour account probation left with that code in Phase N4-B3.
  *
  * @param lookupsPerHour       profile look-ups (by handle or id) per person per hour (stops scraping the member list)
  * @param handleChangeCooldown a handle can change at most once in this period
@@ -20,41 +21,17 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param inviteLifetime       how long an invite code works
  * @param redeemsPerHour       invite redemption attempts per person per hour (codes are 128-bit; this stops noise)
  * @param maxTrackedKeys       most people the in-memory limiters remember at once (memory bound)
- * @param placesPerDay         13B: places a person may create per day
- * @param placeLookupsPerHour  13B: nearby-place look-ups per person per hour
- * @param postsPerDay          13B: posts a person may share per day
- * @param mediaPerDay          13B: photos a person may upload per day
- * @param commentsPerDay       13B: perspectives a person may write per day
- * @param exactDelayMin        13B (Q1): shortest random delay before an exact-place post is shown to others
- * @param exactDelayMax        13B (Q1): longest such delay
- * @param mediaDir             13B: folder of the photo files (never served statically)
- * @param maxMediaBytes        13B: largest photo upload accepted
- * @param unattachedMediaLifetime 13B: an uploaded photo never attached to a post is deleted after this
- * @param discoverReadsPerHour 13C: Edition, connections, place and category pages a person may load per hour
- * @param placeSearchesPerHour 13C: place-name searches per person per hour
- * @param probation            13D (M16): how long a new account is on probation (its reports do not count yet, lower
- *                             limits, no links)
- * @param probationPostsPerDay 13D: posts a person on probation may share per day
- * @param probationCommentsPerDay 13D: perspectives a person on probation may write per day
- * @param maxVideoBytes        17C (D-6): largest video upload accepted (at most 50 MiB)
- * @param videosPerDay         17C: videos a person may upload per day (separate from photos: a video is up to 10 times
- *                             larger, so this bounds the disk one account can fill before the 24 h clean-up)
+ * @param mediaPerDay          profile photos a person may upload per day
+ * @param mediaDir             folder of the photo files (never served statically)
+ * @param maxMediaBytes        largest photo upload accepted (profile photo, moment photo)
+ * @param unattachedMediaLifetime a moment photo that was uploaded and never attached is deleted after this
  */
 @ConfigurationProperties(prefix = "app.social")
 public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCooldown, Duration handleReservation,
                                Integer requestsPerDay, Integer maxPendingOutgoing, Integer maxConnections,
                                Integer invitesPerDay, Integer maxActiveInvites, Duration inviteLifetime,
-                               Integer redeemsPerHour, Integer maxTrackedKeys,
-                               Integer placesPerDay, Integer placeLookupsPerHour, Integer postsPerDay,
-                               Integer mediaPerDay, Integer commentsPerDay, Duration exactDelayMin,
-                               Duration exactDelayMax, Path mediaDir, Integer maxMediaBytes,
-                               Duration unattachedMediaLifetime,
-                               Integer discoverReadsPerHour, Integer placeSearchesPerHour, Duration probation,
-                               Integer probationPostsPerDay, Integer probationCommentsPerDay, Integer maxVideoBytes,
-                               Integer videosPerDay) {
-
-    /** Decision D-6: a video is at most 50 MiB. */
-    public static final int VIDEO_BYTES_LIMIT = 50 * 1024 * 1024;
+                               Integer redeemsPerHour, Integer maxTrackedKeys, Integer mediaPerDay, Path mediaDir,
+                               Integer maxMediaBytes, Duration unattachedMediaLifetime) {
 
     public SocialProperties {
         if (lookupsPerHour == null) lookupsPerHour = 120;
@@ -68,39 +45,16 @@ public record SocialProperties(Integer lookupsPerHour, Duration handleChangeCool
         if (inviteLifetime == null) inviteLifetime = Duration.ofDays(7);
         if (redeemsPerHour == null) redeemsPerHour = 10;
         if (maxTrackedKeys == null) maxTrackedKeys = 100_000;
-        if (placesPerDay == null) placesPerDay = 10;
-        if (placeLookupsPerHour == null) placeLookupsPerHour = 60;
-        if (postsPerDay == null) postsPerDay = 20;
         if (mediaPerDay == null) mediaPerDay = 30;
-        if (commentsPerDay == null) commentsPerDay = 100;
-        if (exactDelayMin == null) exactDelayMin = Duration.ofHours(1);
-        if (exactDelayMax == null) exactDelayMax = Duration.ofHours(3);
         if (mediaDir == null) mediaDir = Path.of("social-media-store");
         if (maxMediaBytes == null) maxMediaBytes = 5 * 1024 * 1024;
         if (unattachedMediaLifetime == null) unattachedMediaLifetime = Duration.ofHours(24);
-        if (discoverReadsPerHour == null) discoverReadsPerHour = 240;
-        if (placeSearchesPerHour == null) placeSearchesPerHour = 120;
-        if (probation == null) probation = Duration.ofHours(72);
-        if (probationPostsPerDay == null) probationPostsPerDay = 3;
-        if (probationCommentsPerDay == null) probationCommentsPerDay = 10;
-        if (maxVideoBytes == null) maxVideoBytes = VIDEO_BYTES_LIMIT;
-        if (videosPerDay == null) videosPerDay = 10;
-        if (maxVideoBytes < 1024 || maxVideoBytes > VIDEO_BYTES_LIMIT || videosPerDay < 1) {
-            throw new IllegalStateException("app.social.* values are invalid");
-        }
-
-        if (probation.isNegative() || probationPostsPerDay < 1 || probationCommentsPerDay < 1) {
-            throw new IllegalStateException("app.social.* values are invalid");
-        }
         if (lookupsPerHour < 1 || requestsPerDay < 1 || maxPendingOutgoing < 1 || maxConnections < 1
                 || invitesPerDay < 1 || maxActiveInvites < 1 || redeemsPerHour < 1 || maxTrackedKeys < 1
                 || handleChangeCooldown.isNegative() || handleReservation.isNegative()
                 || inviteLifetime.compareTo(Duration.ofMinutes(1)) < 0 || inviteLifetime.compareTo(Duration.ofDays(30)) > 0
-                || placesPerDay < 1 || placeLookupsPerHour < 1 || postsPerDay < 1 || mediaPerDay < 1 || commentsPerDay < 1
-                || exactDelayMin.isNegative() || exactDelayMax.compareTo(exactDelayMin) < 0
-                || maxMediaBytes < 1024 || maxMediaBytes > 5 * 1024 * 1024
-                || unattachedMediaLifetime.compareTo(Duration.ofMinutes(1)) < 0
-                || discoverReadsPerHour < 1 || placeSearchesPerHour < 1) {
+                || mediaPerDay < 1 || maxMediaBytes < 1024 || maxMediaBytes > 5 * 1024 * 1024
+                || unattachedMediaLifetime.compareTo(Duration.ofMinutes(1)) < 0) {
             throw new IllegalStateException("app.social.* values are invalid");
         }
     }
