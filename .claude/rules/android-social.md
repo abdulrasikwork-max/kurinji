@@ -9,6 +9,19 @@ paths:
 ---
 # Android social features (moved verbatim from CLAUDE.md §5 on 2026-11-03)
 
+> **N5 (2026-11-18, `docs/PHASE_N5.md` "A1" to "A3", N-100 to N-102): responses, plans, private replies, Replies.**
+> Bar: Today · ✚ Create · Replies · You. `feature/moments`: `ResponseRepository` / `RemoteResponseRepository`
+> (`ResponseApi`), fail-closed `ResponseDtos`; pure `ResponseLabels` (D14 bands, D16 standing, author name lines,
+> `cardLine`, `actions` = the response matrix) and `PeopleSections`; `MomentPeopleSheet` (bottom sheet); the moment
+> page's response block; Create's This happened mode (`ARG_HAPPENED_OF`, no audience sent). New `feature/replies`
+> (social palette; never imports safety or membership): `RepliesRepository` / `RemoteRepliesRepository` (`RepliesApi`),
+> fail-closed `RepliesDtos`; `RepliesMarker` (app scope, the dot, polled by `MainActivity`); `RepliesFragment` /
+> `RepliesViewModel`; `ConversationFragment` / `ConversationViewModel` (plans and private replies; start mode creates a
+> private reply; report by touch and hold; This happened); `PrivateRepliesViewModel` + dialog (row in Settings and more);
+> pure `RepliesLabels`. Moderation: `ReportTarget.MESSAGE`, `ContentTarget.MESSAGE` with `CaseConversation`. FLAG_SECURE
+> on Replies and conversations. Guards: `ResponsesTest`, `RepliesTest`, `MessageModerationTest`, `SocialTextsTest`
+> (scans `replies`), `NavigationRulesTest`. Nothing stored on the phone; no number, no read state anywhere.
+
 > **N4 (2026-11-17, `docs/PHASE_N4.md` "A1 close", "A2"): read with care.** The old social screens (feed, composer,
 > post, place, private places, cities, video) are GONE. New `feature/moments`: Today (`TodayFragment` / `TodayViewModel`,
 > `MomentCardAdapter`, pure `TodayWall`, `MomentLabels`), a moment (`MomentFragment`), Create (`CreateFragment` /
