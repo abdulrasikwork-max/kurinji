@@ -38,7 +38,7 @@ public final class CircleAlertDtos {
     ) {
     }
 
-    /** Body of POST /api/emergencies/{id}/circle-alerts and /api/journeys/{id}/circle-alerts: 1 to 20 reports. */
+    /** Body of POST /api/emergencies/{id}/circle-alerts: 1 to 20 reports. */
     public record ReportBatch(
             @NotNull(message = "Reports are required")
             @Size(min = 1, max = 20, message = "Send between 1 and 20 reports")

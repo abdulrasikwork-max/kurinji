@@ -8,13 +8,13 @@ public final class CircleAlertEnums {
 
     /** What the Safety Circle contact was told. */
     public enum Kind {
-        /** A Safe Walk check-in got no answer (level 2). Journey only. */
+        /** A Safe Walk check-in got no answer (level 2). Journey only. Old rows only: N6-B1 removed the walk report. */
         WALK_NO_RESPONSE,
         /** An SOS started (level 3). Emergency only. */
         SOS_STARTED,
         /** Follow-up with the first location, when the first SOS message had none. Emergency only. */
         SOS_LOCATION,
-        /** The person answered after a WALK_NO_RESPONSE alert. Journey only. */
+        /** The person answered after a WALK_NO_RESPONSE alert. Journey only. Old rows only (N6-B1). */
         ALL_CLEAR,
         /** The person marked the SOS as resolved ("I'm safe"). Emergency only. */
         SOS_RESOLVED,

@@ -197,4 +197,18 @@ anyone).
 
 ## As built
 
-Nothing yet (implementation deferred, 2026-11-18).
+### B1 (2026-11-18): backend walk trim. Implemented, compiled, tested.
+- `journey`: `StartJourneyRequest` = label + interval only (old coordinate fields ignored by Jackson, never stored);
+  `JourneyResponse` without `destination` / `lastLocation`; `SafeJourney` no longer maps the destination or last-location
+  columns (V37 drops the first and clears the second); `JourneyService` = start, history, get, check-in, complete,
+  cancel, `linkActiveJourney` (`escalate`, `updateLocation` and their DTOs `EscalationRequest`,
+  `JourneyLocationRequest` removed). A check-in still brings a walk an older phone left on level 1 / 2 back to 0.
+- `circlealert`: `POST /api/journeys/{id}/circle-alerts`, `uploadForJourney`, `CircleAlert.forJourney`,
+  `countByJourneyId` removed; walk kinds and the 4C escalation reasons stay as enum values for old rows (the owner's
+  context packet still lists them).
+- Tests: `JourneyApiIntegrationTest` 22 → 13 (route / stop / location / ladder tests removed; new: the removed
+  endpoints answer 404, a walk answer has exactly the allowed fields, old coordinates are ignored, an old level is
+  reset by a check-in); `CommunicationApiIntegrationTest` 12 → 11 (walk report paths removed; an old walk alert row is
+  inserted with SQL to keep the context-packet coverage). `mvn -o clean test`: **501 run / 0 failures / 0 errors / 2
+  skipped** (511 before; the difference is the removed walk tests).
+- `API.md`: section "Phase N6", a note on Phase 4B, appendix line.

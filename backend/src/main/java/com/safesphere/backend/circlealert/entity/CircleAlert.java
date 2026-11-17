@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 
 /**
  * One reported attempt to tell a Safety Circle contact something (Phase 4D, migration V8). Belongs to an
- * emergency or a journey (the factory guarantees one of them). Holds no phone number and no message text.
+ * emergency or (before N6) a journey; new rows only for emergencies. Holds no phone number and no message text.
  */
 @Entity
 @Table(name = "circle_alerts")
@@ -83,11 +83,6 @@ public class CircleAlert {
     public static CircleAlert forEmergency(long emergencyId, Long contactId, Kind kind, Channel channel, Status status,
                                            String clientRef, LocalDateTime occurredAt, LocalDateTime now) {
         return new CircleAlert(emergencyId, null, contactId, kind, channel, status, clientRef, occurredAt, now);
-    }
-
-    public static CircleAlert forJourney(long journeyId, Long contactId, Kind kind, Channel channel, Status status,
-                                         String clientRef, LocalDateTime occurredAt, LocalDateTime now) {
-        return new CircleAlert(null, journeyId, contactId, kind, channel, status, clientRef, occurredAt, now);
     }
 
     /** Status only moves forward (e.g. SENT -> DELIVERED). Returns true when it changed. */

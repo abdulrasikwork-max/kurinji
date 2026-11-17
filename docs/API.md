@@ -289,6 +289,9 @@ Point returned by the GET endpoints:
 
 # Phase 4B endpoints
 
+> **N6-B1 (2026-11-18):** the walk has no location, destination, escalation or alert endpoints any more; the current
+> walk API is under "Phase N6" near the end of this file. The text below is history where it differs.
+
 ## Safe Walk: `/api/journeys`
 
 A journey is a period during which the person checks in regularly. **The server computes every deadline with its own
@@ -1645,6 +1648,25 @@ can see; 400 on one's own); `POST /api/content-checks/review {targetKind: "MESSA
 `replies-per-day` (10 new private replies), `new-member-replies-per-day` (3), `messages-per-day` (300),
 `messages-per-minute` (10), `replies-reads-per-hour` (600). In memory.
 
+# Phase N6: safety trim and automatic SOS alerts (`docs/PHASE_N6.md`, V37)
+
+**Status: B1 built and tested (2026-11-18).** The walk is "On my way" (D22): a reminder, no tracking.
+
+**Walk (`/api/journeys`) after N6-B1:**
+- `POST /api/journeys {"destinationLabel"? (≤ 100, the person's own words), "checkInIntervalMinutes": 2..60}` → `201`.
+  `destinationLatitude` / `destinationLongitude` are no longer read (an old client that sends them is not refused;
+  nothing is stored).
+- Every walk answer is exactly `id, status, destinationLabel, checkInIntervalMinutes, escalationLevel, startedAt,
+  endedAt, nextCheckInDueAt, serverTime`: no `destination`, no `lastLocation`. `escalationLevel` is 0 while the walk
+  runs and 3 when an SOS ended it.
+- Kept unchanged: `GET /api/journeys`, `GET /api/journeys/{id}`, `POST …/check-ins` ("More time"; a walk an older phone
+  left on level 1 / 2 goes back to 0 and that is recorded), `PUT …/complete` ("I'm there"), `PUT …/cancel`, the SOS
+  link (`POST /api/emergencies` ends the caller's ACTIVE walk as `EMERGENCY`, level 3).
+- **Gone (404):** `PUT /api/journeys/{id}/location`, `POST /api/journeys/{id}/escalations`,
+  `POST /api/journeys/{id}/circle-alerts`. Walk alert kinds `WALK_NO_RESPONSE` / `ALL_CLEAR` and escalation reasons
+  `ROUTE_DEVIATION` / `UNEXPECTED_STOP` exist only in old rows (still shown in the owner's Emergency Context Packet).
+- `POST /api/emergencies/{id}/circle-alerts` (the phone's own report) is unchanged in B1.
+
 # Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
 
 > **N1 (2026-11-15):** the lines of Phases 5 to 9, 17G and 18A in this index are history; what was removed is listed at the top of this file.
@@ -1846,3 +1868,6 @@ A compact list of every phase's endpoints and config keys; the sections above ha
   /api/admin/community/members/name`, `GET|POST /api/admin/community/bans`, `POST /api/admin/community/bans/{id}/lift`,
   `POST /api/admin/community/members/end`, `POST /api/admin/community/relinks`, `GET /api/admin/community/log`. Config
   `app.community.*` (secret = env `COMMUNITY_SECRET`).
+- Phase N6 (`docs/PHASE_N6.md`): B1 walk trim: `POST /api/journeys {destinationLabel?, checkInIntervalMinutes}` (no
+  coordinates; answers without `destination` / `lastLocation`); `PUT /api/journeys/{id}/location`,
+  `POST /api/journeys/{id}/escalations`, `POST /api/journeys/{id}/circle-alerts` removed (404).

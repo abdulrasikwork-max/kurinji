@@ -1,7 +1,5 @@
 package com.safesphere.backend.journey.controller;
 
-import com.safesphere.backend.journey.dto.EscalationRequest;
-import com.safesphere.backend.journey.dto.JourneyLocationRequest;
 import com.safesphere.backend.journey.dto.JourneyResponse;
 import com.safesphere.backend.journey.dto.StartJourneyRequest;
 import com.safesphere.backend.journey.service.JourneyService;
@@ -20,7 +18,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** /api/journeys: the caller's own Safe Walks (JWT required, owner only; another user's id answers 404). */
+/**
+ * /api/journeys: the caller's own walks ("On my way", N6 D22). JWT required, owner only; another user's id answers 404.
+ * N6-B1: no location upload and no escalation reports (removed with the route / stop checks).
+ */
 @RestController
 @RequestMapping("/api/journeys")
 public class JourneyController {
@@ -60,18 +61,5 @@ public class JourneyController {
     @PutMapping("/{id}/cancel")
     public JourneyResponse cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable long id) {
         return service.cancel(CurrentUser.id(jwt), id);
-    }
-
-    @PostMapping("/{id}/escalations")
-    public JourneyResponse escalate(@AuthenticationPrincipal Jwt jwt, @PathVariable long id,
-                                    @Valid @RequestBody EscalationRequest request) {
-        return service.escalate(CurrentUser.id(jwt), id, request.level(), request.reason());
-    }
-
-    @PutMapping("/{id}/location")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateLocation(@AuthenticationPrincipal Jwt jwt, @PathVariable long id,
-                               @Valid @RequestBody JourneyLocationRequest request) {
-        service.updateLocation(CurrentUser.id(jwt), id, request);
     }
 }

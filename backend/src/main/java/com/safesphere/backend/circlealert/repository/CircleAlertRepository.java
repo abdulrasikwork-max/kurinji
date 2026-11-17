@@ -18,6 +18,4 @@ public interface CircleAlertRepository extends JpaRepository<CircleAlert, Long> 
     List<CircleAlert> findByJourneyIdOrderByOccurredAtAscIdAsc(Long journeyId);
 
     long countByEmergencyId(Long emergencyId);
-
-    long countByJourneyId(Long journeyId);
 }

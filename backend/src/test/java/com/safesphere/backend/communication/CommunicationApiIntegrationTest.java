@@ -24,6 +24,8 @@ import com.safesphere.backend.journey.repository.SafeJourneyRepository;
 import com.safesphere.backend.safetycontact.repository.SafetyContactRepository;
 import com.safesphere.backend.user.repository.UserRepository;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -40,6 +42,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -61,6 +64,7 @@ class CommunicationApiIntegrationTest {
     @Autowired private JourneyEventRepository journeyEventRepository;
     @Autowired private EscalationEventRepository escalationRepository;
     @Autowired private CircleAlertRepository alertRepository;
+    @Autowired private JdbcTemplate jdbcTemplate;
 
     private String tokenA;
     private String tokenB;
@@ -118,13 +122,9 @@ class CommunicationApiIntegrationTest {
                 Instant.now().minus(1, ChronoUnit.HOURS)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Alert time is before the start"));
-
-        long journey = startJourney(tokenB);
-        reportJourney(tokenB, journey, report(UUID.randomUUID().toString(), null, "SOS_STARTED", "SMS_AUTO", "SENT", Instant.now()))
-                .andExpect(status().isBadRequest());
-        reportJourney(tokenB, journey, report(UUID.randomUUID().toString(), null, "WALK_NO_RESPONSE", "SMS_COMPOSER",
+        reportEmergency(tokenA, emergency, report(UUID.randomUUID().toString(), null, "ALL_CLEAR", "SMS_COMPOSER",
                 "COMPOSER_OPENED", Instant.now()))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.stored").value(1));
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -162,19 +162,17 @@ class CommunicationApiIntegrationTest {
     }
 
     @Test
-    void userB_cannotReportOnUserAsEmergencyOrWalk_andReferencesCannotMoveBetweenTargets() throws Exception {
+    void userB_cannotReportOnUserAsEmergency_andReferencesCannotMoveBetweenEmergencies() throws Exception {
         long emergencyOfA = startEmergency(tokenA);
-        long journeyOfB = startJourney(tokenB);
+        long emergencyOfB = startEmergency(tokenB);
         String ref = UUID.randomUUID().toString();
 
         reportEmergency(tokenB, emergencyOfA, report(ref, null, "SOS_STARTED", "SMS_AUTO", "SENT", Instant.now()))
                 .andExpect(status().isNotFound());
-        reportJourney(tokenA, journeyOfB, report(ref, null, "WALK_NO_RESPONSE", "SMS_AUTO", "SENT", Instant.now()))
-                .andExpect(status().isNotFound());
 
         reportEmergency(tokenA, emergencyOfA, report(ref, null, "SOS_STARTED", "SMS_AUTO", "SENT", Instant.now()))
                 .andExpect(status().isOk());
-        reportJourney(tokenB, journeyOfB, report(ref, null, "WALK_NO_RESPONSE", "SMS_AUTO", "DELIVERED", Instant.now()))
+        reportEmergency(tokenB, emergencyOfB, report(ref, null, "SOS_STARTED", "SMS_AUTO", "DELIVERED", Instant.now()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("This alert reference is already used"));
     }
@@ -212,23 +210,17 @@ class CommunicationApiIntegrationTest {
         dialPrompt(tokenA, emergency).andExpect(status().isConflict());
     }
 
-    @Test
-    void aSafeWalkStillCannotJumpToLevel4() throws Exception {
-        long journey = startJourney(tokenA);
-        postJson("/api/journeys/" + journey + "/escalations", tokenA, Map.of("level", 4))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Level 4 is the emergency pathway: start SOS first"));
-    }
-
     // ---- Emergency Context Packet --------------------------------------------------------------
 
     @Test
     void ownerContext_assemblesTheWalkTheSosTheLocationAndTheAlerts() throws Exception {
         long journey = json(postJson("/api/journeys", tokenA, Map.of(
-                "destinationLabel", "Station", "checkInIntervalMinutes", 30,
-                "destinationLatitude", 12.97, "destinationLongitude", 77.59))).get("id").asLong();
-        reportJourney(tokenA, journey, report(UUID.randomUUID().toString(), null, "WALK_NO_RESPONSE", "SMS_AUTO", "SENT", Instant.now()))
-                .andExpect(status().isOk());
+                "destinationLabel", "Station", "checkInIntervalMinutes", 30))).get("id").asLong();
+        // A walk alert from a phone before N6 (the endpoint is gone since N6-B1): old rows are still shown.
+        jdbcTemplate.update("insert into circle_alerts (journey_id, kind, channel, status, client_ref, occurred_at,"
+                        + " received_at, updated_at) values (?, 'WALK_NO_RESPONSE', 'SMS_AUTO', 'SENT', ?, ?, ?, ?)",
+                journey, UUID.randomUUID().toString(), LocalDateTime.now(ZoneOffset.UTC).minusSeconds(5),
+                LocalDateTime.now(ZoneOffset.UTC), LocalDateTime.now(ZoneOffset.UTC));
         long emergency = startEmergency(tokenA); // links the walk, records level 3
         uploadLocation(tokenA, emergency, 12.9716, 77.5946);
         reportEmergency(tokenA, emergency, report(UUID.randomUUID().toString(), null, "SOS_STARTED", "SMS_AUTO", "SENT", Instant.now()))
@@ -282,7 +274,6 @@ class CommunicationApiIntegrationTest {
     @Test
     void everyNewEndpointRequiresAToken() throws Exception {
         mockMvc.perform(post("/api/emergencies/1/circle-alerts")).andExpect(status().isUnauthorized());
-        mockMvc.perform(post("/api/journeys/1/circle-alerts")).andExpect(status().isUnauthorized());
         mockMvc.perform(post("/api/emergencies/1/dial-prompts")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/emergencies/1/context")).andExpect(status().isUnauthorized());
     }
@@ -304,10 +295,6 @@ class CommunicationApiIntegrationTest {
         return postJson("/api/emergencies/" + id + "/circle-alerts", token, Map.of("reports", List.of(report)));
     }
 
-    private ResultActions reportJourney(String token, long id, Map<String, Object> report) throws Exception {
-        return postJson("/api/journeys/" + id + "/circle-alerts", token, Map.of("reports", List.of(report)));
-    }
-
     private ResultActions dialPrompt(String token, long id) throws Exception {
         return mockMvc.perform(post("/api/emergencies/" + id + "/dial-prompts").header(HttpHeaders.AUTHORIZATION, bearer(token)));
     }
@@ -321,11 +308,6 @@ class CommunicationApiIntegrationTest {
     private long startEmergency(String token) throws Exception {
         return json(mockMvc.perform(post("/api/emergencies").header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isCreated())).get("id").asLong();
-    }
-
-    private long startJourney(String token) throws Exception {
-        return json(postJson("/api/journeys", token, Map.of("checkInIntervalMinutes", 30)).andExpect(status().isCreated()))
-                .get("id").asLong();
     }
 
     private long createContact(String token, String name, String phone) throws Exception {

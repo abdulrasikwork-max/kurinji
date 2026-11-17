@@ -9,8 +9,6 @@ import com.safesphere.backend.common.exception.InvalidRequestException;
 import com.safesphere.backend.common.exception.ResourceNotFoundException;
 import com.safesphere.backend.emergency.entity.EmergencyEvent;
 import com.safesphere.backend.emergency.repository.EmergencyEventRepository;
-import com.safesphere.backend.journey.entity.SafeJourney;
-import com.safesphere.backend.journey.repository.SafeJourneyRepository;
 import com.safesphere.backend.safetycontact.repository.SafetyContactRepository;
 import java.time.Clock;
 import java.time.Duration;
@@ -30,10 +28,10 @@ import org.springframework.transaction.annotation.Transactional;
  * Phase 4D: records what the PHONE reports about telling the Safety Circle. The server sends nothing itself (there is
  * no SMS gateway); it keeps an honest log for the person and the Emergency Context Packet.
  *
- * Rules: the emergency / journey must belong to the caller (else 404); the kind must fit the target (SOS kinds for an
- * emergency, walk kinds for a journey); times are checked against the SERVER clock with a 5-minute tolerance; a
- * contact id that is not the caller's is stored as "unknown" (never linked, never revealed); a batch is
- * all-or-nothing; re-sending a report is harmless and a status only moves forward; at most [MAX_PER_TARGET] per target.
+ * Rules: the emergency must belong to the caller (else 404); only SOS kinds (N6-B1: walks no longer report alerts);
+ * times are checked against the SERVER clock with a 5-minute tolerance; a contact id that is not the caller's is
+ * stored as "unknown" (never linked, never revealed); a batch is all-or-nothing; re-sending a report is harmless and a
+ * status only moves forward; at most [MAX_PER_TARGET] per emergency.
  */
 @Service
 public class CircleAlertService {
@@ -43,16 +41,13 @@ public class CircleAlertService {
 
     private final CircleAlertRepository alertRepository;
     private final EmergencyEventRepository emergencyRepository;
-    private final SafeJourneyRepository journeyRepository;
     private final SafetyContactRepository contactRepository;
     private final Clock clock;
 
     public CircleAlertService(CircleAlertRepository alertRepository, EmergencyEventRepository emergencyRepository,
-                              SafeJourneyRepository journeyRepository, SafetyContactRepository contactRepository,
-                              Clock clock) {
+                              SafetyContactRepository contactRepository, Clock clock) {
         this.alertRepository = alertRepository;
         this.emergencyRepository = emergencyRepository;
-        this.journeyRepository = journeyRepository;
         this.contactRepository = contactRepository;
         this.clock = clock;
     }
@@ -62,19 +57,9 @@ public class CircleAlertService {
         // Locked: two uploads for one emergency are stored one after the other (limit stays correct).
         EmergencyEvent emergency = emergencyRepository.findByIdAndUserIdForUpdate(emergencyId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Emergency not found"));
-        return upload(userId, reports, false, emergency.getStartedAt(), alertRepository.countByEmergencyId(emergencyId),
+        return upload(reports, emergency.getStartedAt(), alertRepository.countByEmergencyId(emergencyId),
                 existing -> emergencyId == existingId(existing.getEmergencyId()),
                 (report, at, now) -> CircleAlert.forEmergency(emergencyId, ownContact(userId, report.contactId()),
-                        report.kind(), report.channel(), report.status(), report.clientRef(), at, now));
-    }
-
-    @Transactional
-    public UploadResult uploadForJourney(long userId, long journeyId, List<Report> reports) {
-        SafeJourney journey = journeyRepository.findByIdAndUserIdForUpdate(journeyId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Safe Walk not found"));
-        return upload(userId, reports, true, journey.getStartedAt(), alertRepository.countByJourneyId(journeyId),
-                existing -> journeyId == existingId(existing.getJourneyId()),
-                (report, at, now) -> CircleAlert.forJourney(journeyId, ownContact(userId, report.contactId()),
                         report.kind(), report.channel(), report.status(), report.clientRef(), at, now));
     }
 
@@ -83,7 +68,7 @@ public class CircleAlertService {
         CircleAlert create(Report report, LocalDateTime occurredAt, LocalDateTime now);
     }
 
-    private UploadResult upload(long userId, List<Report> reports, boolean journeyTarget, LocalDateTime startedAt,
+    private UploadResult upload(List<Report> reports, LocalDateTime startedAt,
                                 long alreadyStored, java.util.function.Predicate<CircleAlert> sameTarget,
                                 AlertFactory factory) {
         LocalDateTime now = LocalDateTime.ofInstant(Instant.now(clock), ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS);
@@ -92,10 +77,8 @@ public class CircleAlertService {
         Map<String, Report> byRef = new LinkedHashMap<>();
         Map<String, LocalDateTime> times = new LinkedHashMap<>();
         for (Report report : reports) {
-            if (report.kind().isForJourney() != journeyTarget) {
-                throw new InvalidRequestException(journeyTarget
-                        ? "This alert kind belongs to an emergency, not a Safe Walk"
-                        : "This alert kind belongs to a Safe Walk, not an emergency");
+            if (report.kind().isForJourney()) {
+                throw new InvalidRequestException("This alert kind belongs to a Safe Walk, not an emergency");
             }
             LocalDateTime at = LocalDateTime.ofInstant(report.occurredAt().truncatedTo(ChronoUnit.MICROS), ZoneOffset.UTC);
             if (at.isAfter(now.plus(CLOCK_TOLERANCE))) {
@@ -122,7 +105,7 @@ public class CircleAlertService {
         }
         long newOnes = byRef.keySet().stream().filter(ref -> !existing.containsKey(ref)).count();
         if (alreadyStored + newOnes > MAX_PER_TARGET) {
-            throw new ConflictException("Too many alerts are recorded for this " + (journeyTarget ? "Safe Walk" : "emergency"));
+            throw new ConflictException("Too many alerts are recorded for this emergency");
         }
 
         // 3. Write.
@@ -162,10 +145,5 @@ public class CircleAlertService {
     @Transactional(readOnly = true)
     public List<CircleAlert> forEmergency(long emergencyId) {
         return alertRepository.findByEmergencyIdOrderByOccurredAtAscIdAsc(emergencyId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<CircleAlert> forJourney(long journeyId) {
-        return alertRepository.findByJourneyIdOrderByOccurredAtAscIdAsc(journeyId);
     }
 }

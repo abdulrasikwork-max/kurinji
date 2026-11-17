@@ -4,7 +4,6 @@ import static com.safesphere.backend.support.TestAccounts.bearer;
 import static com.safesphere.backend.support.TestAccounts.registerAndGetToken;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -29,10 +28,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,8 +45,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 /**
- * End-to-end tests of /api/journeys (Phase 4B): Safe Walk start/complete/cancel, server-computed check-in
- * deadlines, the Escalation Ladder rules, last-known location only, SOS linking and two-user ownership.
+ * End-to-end tests of /api/journeys ("On my way", Phase 4B, trimmed in N6-B1): start / complete / cancel,
+ * server-computed reminder deadlines, check-ins, SOS linking, no location of any kind, two-user ownership.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -171,74 +171,21 @@ class JourneyApiIntegrationTest {
         assertEquals(List.of(JourneyEventType.STARTED, JourneyEventType.CHECKED_IN), eventTypes(id));
     }
 
-    // ---- escalation ladder ---------------------------------------------------------------------
-
     @Test
-    void missedCheckIn_cannotBeReportedBeforeTheServersOwnDeadline() throws Exception {
-        long id = startId(tokenA, 30);
-        escalate(tokenA, id, 1).andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("The check-in is not due yet"));
-
-        // Shortest interval (found in the live test): only 30 s of network delay is tolerated, not minutes.
-        long shortWalk = startId(tokenB, 2);
-        escalate(tokenB, shortWalk, 1).andExpect(status().isConflict());
-        setDeadline(shortWalk, LocalDateTime.now(ZoneOffset.UTC).plusSeconds(10));
-        escalate(tokenB, shortWalk, 1).andExpect(status().isOk());
-    }
-
-    @Test
-    void escalation_goesOneStepAtATime_andRepeatsAreHarmless() throws Exception {
+    void checkIn_bringsAWalkLeftOnAnOldLevelBackToNormal_andRecordsIt() throws Exception {
+        // A phone from before N6 could leave a walk on level 1 or 2; "More time" still brings it back.
         long id = startId(tokenA, 10);
-        setDeadline(id, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1));
-
-        escalate(tokenA, id, 2).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Escalation levels cannot be skipped"));
-        escalate(tokenA, id, 1).andExpect(status().isOk()).andExpect(jsonPath("$.escalationLevel").value(1));
-        escalate(tokenA, id, 1).andExpect(status().isOk()).andExpect(jsonPath("$.escalationLevel").value(1));
-        escalate(tokenA, id, 2).andExpect(status().isOk()).andExpect(jsonPath("$.escalationLevel").value(2));
-        escalate(tokenA, id, 1).andExpect(status().isOk()).andExpect(jsonPath("$.escalationLevel").value(2));
-
-        List<EscalationEvent> events = escalationRepository.findByJourneyIdOrderByCreatedAtAscIdAsc(id);
-        assertEquals(List.of(EscalationLevel.CHECK_IN_MISSED, EscalationLevel.NO_RESPONSE),
-                events.stream().map(EscalationEvent::getLevel).toList());
-        assertEquals(List.of(EscalationReason.CHECK_IN_MISSED, EscalationReason.NO_RESPONSE),
-                events.stream().map(EscalationEvent::getReason).toList());
-    }
-
-    @Test
-    void levels3To5_andUnknownLevels_areRejected() throws Exception {
-        long id = startId(tokenA, 10);
-        setDeadline(id, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5));
-
-        escalate(tokenA, id, 3).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Level 3 is an emergency: start SOS to escalate"));
-        escalate(tokenA, id, 4).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Level 4 is the emergency pathway: start SOS first"));
-        escalate(tokenA, id, 5).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Verified Nearby Assistance is reserved and not available"));
-        escalate(tokenA, id, 9).andExpect(status().isBadRequest());
-        escalate(tokenA, id, -1).andExpect(status().isBadRequest());
-        mockMvc.perform(post("/api/journeys/" + id + "/escalations").header(HttpHeaders.AUTHORIZATION, bearer(tokenA))
-                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void imSafe_afterAnEscalation_returnsToNormal_andIsRecorded() throws Exception {
-        long id = startId(tokenA, 10);
-        setDeadline(id, LocalDateTime.now(ZoneOffset.UTC).minusMinutes(3));
-        escalate(tokenA, id, 1).andExpect(status().isOk());
-        escalate(tokenA, id, 2).andExpect(status().isOk());
+        jdbcTemplate.update("update safe_journeys set escalation_level = 2 where id = ?", id);
 
         checkIn(tokenA, id).andExpect(status().isOk()).andExpect(jsonPath("$.escalationLevel").value(0));
 
         List<EscalationEvent> events = escalationRepository.findByJourneyIdOrderByCreatedAtAscIdAsc(id);
-        EscalationEvent last = events.get(events.size() - 1);
-        assertEquals(EscalationLevel.NORMAL, last.getLevel());
-        assertEquals(EscalationReason.CHECKED_IN, last.getReason());
-        // Back at level 0 with a fresh deadline: a new "missed" report is refused until it passes again.
-        escalate(tokenA, id, 1).andExpect(status().isConflict());
+        assertEquals(1, events.size());
+        assertEquals(EscalationLevel.NORMAL, events.get(0).getLevel());
+        assertEquals(EscalationReason.CHECKED_IN, events.get(0).getReason());
     }
+
+    // ---- SOS during a walk ---------------------------------------------------------------------
 
     @Test
     void sosDuringAWalk_linksTheEmergency_endsTheWalk_andRecordsLevel3() throws Exception {
@@ -267,138 +214,44 @@ class JourneyApiIntegrationTest {
                 .andExpect(jsonPath("$.journeyId").doesNotExist());
     }
 
-    // ---- last known location only --------------------------------------------------------------
+    // ---- N6-B1: no location of any kind ----------------------------------------------------------
 
     @Test
-    void location_onlyTheLatestIsKept_andOlderFixesAreIgnored() throws Exception {
+    void oldDestinationCoordinates_areIgnored_andNoAnswerCarriesACoordinate() throws Exception {
+        Map<String, Object> old = new LinkedHashMap<>();
+        old.put("destinationLabel", "Station");
+        old.put("checkInIntervalMinutes", 30);
+        old.put("destinationLatitude", 12.97);
+        old.put("destinationLongitude", 77.59);
+        long id = json(mockMvc.perform(post("/api/journeys").header(HttpHeaders.AUTHORIZATION, bearer(tokenA))
+                        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(old)))
+                .andExpect(status().isCreated())).get("id").asLong();
+
+        JsonNode walk = json(mockMvc.perform(get("/api/journeys/" + id).header(HttpHeaders.AUTHORIZATION, bearer(tokenA)))
+                .andExpect(status().isOk()));
+        Set<String> fields = new TreeSet<>();
+        walk.fieldNames().forEachRemaining(fields::add);
+        assertEquals(new TreeSet<>(List.of("id", "status", "destinationLabel", "checkInIntervalMinutes",
+                "escalationLevel", "startedAt", "endedAt", "nextCheckInDueAt", "serverTime")), fields);
+        assertEquals("Station", walk.get("destinationLabel").asText());
+    }
+
+    @Test
+    void theWalksLocationEscalationAndAlertEndpoints_areGone() throws Exception {
         long id = startId(tokenA, 10);
-        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-
-        location(tokenA, id, 12.9716, 77.5946, now).andExpect(status().isNoContent());
-        location(tokenA, id, 13.0, 78.0, now.minusSeconds(30)).andExpect(status().isNoContent()); // late, older: ignored
-        location(tokenA, id, 12.98, 77.60, now.plusSeconds(30)).andExpect(status().isNoContent());
-
+        mockMvc.perform(put("/api/journeys/" + id + "/location").header(HttpHeaders.AUTHORIZATION, bearer(tokenA))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"latitude\":1,\"longitude\":1,\"recordedAt\":\"" + Instant.now() + "\"}"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/journeys/" + id + "/escalations").header(HttpHeaders.AUTHORIZATION, bearer(tokenA))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"level\":1}"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/journeys/" + id + "/circle-alerts").header(HttpHeaders.AUTHORIZATION, bearer(tokenA))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"reports\":[]}"))
+                .andExpect(status().isNotFound());
+        assertTrue(escalationRepository.findByJourneyIdOrderByCreatedAtAscIdAsc(id).isEmpty());
         mockMvc.perform(get("/api/journeys/" + id).header(HttpHeaders.AUTHORIZATION, bearer(tokenA)))
-                .andExpect(jsonPath("$.lastLocation.latitude").value(12.98))
-                .andExpect(jsonPath("$.lastLocation.longitude").value(77.6))
-                .andExpect(jsonPath("$.lastLocation.recordedAt").value(now.plusSeconds(30).toString()));
-    }
-
-    @Test
-    void location_isValidated_andRefusedAfterTheWalkEnded() throws Exception {
-        long id = startId(tokenA, 10);
-        Instant now = Instant.now();
-
-        location(tokenA, id, 91, 0, now).andExpect(status().isBadRequest());
-        location(tokenA, id, 0, 181, now).andExpect(status().isBadRequest());
-        location(tokenA, id, 1, 1, now.plus(1, ChronoUnit.HOURS)).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Location time cannot be in the future"));
-        location(tokenA, id, 1, 1, now.minus(1, ChronoUnit.HOURS)).andExpect(status().isBadRequest());
-
-        mockMvc.perform(put("/api/journeys/" + id + "/complete").header(HttpHeaders.AUTHORIZATION, bearer(tokenA)));
-        location(tokenA, id, 1, 1, now).andExpect(status().isConflict());
-        assertNull(journeyRepository.findById(id).orElseThrow().getLastLocationAt());
-    }
-
-    // ---- Phase 4C: destination and phone-detected concerns --------------------------------------
-
-    @Test
-    void start_withADestination_returnsItRounded_andHalfADestinationIsRejected() throws Exception {
-        startWithDestination(tokenA, 12.97159949, 77.5946).andExpect(status().isCreated())
-                .andExpect(jsonPath("$.destination.latitude").value(12.971599))
-                .andExpect(jsonPath("$.destination.longitude").value(77.5946));
-
-        Map<String, Object> half = new LinkedHashMap<>();
-        half.put("checkInIntervalMinutes", 10);
-        half.put("destinationLatitude", 12.97);
-        mockMvc.perform(post("/api/journeys").header(HttpHeaders.AUTHORIZATION, bearer(tokenB))
-                        .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(half)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Destination latitude and longitude must be sent together"));
-        startWithDestination(tokenB, 91, 0).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fieldErrors.destinationLatitude").exists());
-        startWithDestination(tokenB, 0, -181).andExpect(status().isBadRequest());
-        // A walk without a destination has none.
-        start(tokenB, "Home", 10).andExpect(status().isCreated()).andExpect(jsonPath("$.destination").doesNotExist());
-    }
-
-    @Test
-    void anUnexpectedStop_isLevel1BeforeTheDeadline_andNoResponseStillFollowsTheLadder() throws Exception {
-        long id = startId(tokenA, 30); // deadline far away
-
-        escalate(tokenA, id, 1, "UNEXPECTED_STOP").andExpect(status().isOk()).andExpect(jsonPath("$.escalationLevel").value(1));
-        escalate(tokenA, id, 1, "UNEXPECTED_STOP").andExpect(status().isOk()); // re-send: harmless
-        escalate(tokenA, id, 2, null).andExpect(status().isOk()).andExpect(jsonPath("$.escalationLevel").value(2));
-        escalate(tokenA, id, 3, null).andExpect(status().isBadRequest()); // never to an emergency without SOS
-
-        List<EscalationEvent> events = escalationRepository.findByJourneyIdOrderByCreatedAtAscIdAsc(id);
-        assertEquals(List.of(EscalationReason.UNEXPECTED_STOP, EscalationReason.NO_RESPONSE),
-                events.stream().map(EscalationEvent::getReason).toList());
-        checkIn(tokenA, id).andExpect(jsonPath("$.escalationLevel").value(0));
-    }
-
-    @Test
-    void aRouteDeviation_needsAWalkWithADestination() throws Exception {
-        long withoutDestination = startId(tokenA, 30);
-        escalate(tokenA, withoutDestination, 1, "ROUTE_DEVIATION").andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("A route check needs a Safe Walk with a destination"));
-
-        long withDestination = json(startWithDestination(tokenB, 12.97, 77.59).andExpect(status().isCreated())).get("id").asLong();
-        escalate(tokenB, withDestination, 1, "ROUTE_DEVIATION").andExpect(status().isOk())
-                .andExpect(jsonPath("$.escalationLevel").value(1));
-        assertEquals(EscalationReason.ROUTE_DEVIATION,
-                escalationRepository.findByJourneyIdOrderByCreatedAtAscIdAsc(withDestination).get(0).getReason());
-    }
-
-    @Test
-    void reasonsMustMatchTheirLevel_andUnknownReasonsAreRejected() throws Exception {
-        long id = json(startWithDestination(tokenA, 12.97, 77.59)).get("id").asLong();
-
-        escalate(tokenA, id, 1, "NO_RESPONSE").andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("This reason does not match the escalation level"));
-        escalate(tokenA, id, 1, "CHECKED_IN").andExpect(status().isBadRequest());
-        escalate(tokenA, id, 1, "SOS_CONFIRMED").andExpect(status().isBadRequest());
-        escalate(tokenA, id, 1, "BOGUS").andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Unknown escalation reason"));
-        // An explicit "missed" still waits for the server's own deadline.
-        escalate(tokenA, id, 1, "CHECK_IN_MISSED").andExpect(status().isConflict());
-        escalate(tokenA, id, 1, "ROUTE_DEVIATION").andExpect(status().isOk());
-        escalate(tokenA, id, 2, "ROUTE_DEVIATION").andExpect(status().isBadRequest());
-        escalate(tokenA, id, 2, "NO_RESPONSE").andExpect(status().isOk());
-        assertTrue(escalationRepository.findByJourneyIdOrderByCreatedAtAscIdAsc(id).size() == 2);
-    }
-
-    @Test
-    void aFinishedWalk_forgetsItsCoordinates_butAnEmergencyWalkKeepsThem() throws Exception {
-        long finished = json(startWithDestination(tokenA, 12.97, 77.59)).get("id").asLong();
-        location(tokenA, finished, 12.96, 77.58, Instant.now()).andExpect(status().isNoContent());
-        mockMvc.perform(put("/api/journeys/" + finished + "/complete").header(HttpHeaders.AUTHORIZATION, bearer(tokenA)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.destination").doesNotExist())
-                .andExpect(jsonPath("$.lastLocation").doesNotExist())
-                .andExpect(jsonPath("$.destinationLabel").value("Station")); // the text the person typed stays
-        assertNull(journeyRepository.findById(finished).orElseThrow().getDestinationLatitude());
-
-        long emergencyWalk = json(startWithDestination(tokenA, 12.97, 77.59)).get("id").asLong();
-        location(tokenA, emergencyWalk, 12.96, 77.58, Instant.now()).andExpect(status().isNoContent());
-        mockMvc.perform(post("/api/emergencies").header(HttpHeaders.AUTHORIZATION, bearer(tokenA)))
-                .andExpect(status().isCreated());
-        mockMvc.perform(get("/api/journeys/" + emergencyWalk).header(HttpHeaders.AUTHORIZATION, bearer(tokenA)))
-                .andExpect(jsonPath("$.status").value("EMERGENCY"))
-                .andExpect(jsonPath("$.destination.latitude").value(12.97))
-                .andExpect(jsonPath("$.lastLocation.latitude").value(12.96));
-    }
-
-    @Test
-    void userB_cannotReportAConcernOnUserAsWalk_orSeeItsDestination() throws Exception {
-        long idOfA = json(startWithDestination(tokenA, 12.97, 77.59)).get("id").asLong();
-
-        escalate(tokenB, idOfA, 1, "ROUTE_DEVIATION").andExpect(status().isNotFound());
-        escalate(tokenB, idOfA, 1, "UNEXPECTED_STOP").andExpect(status().isNotFound());
-        mockMvc.perform(get("/api/journeys/" + idOfA).header(HttpHeaders.AUTHORIZATION, bearer(tokenB)))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.destination").doesNotExist());
-        mockMvc.perform(get("/api/journeys/" + idOfA).header(HttpHeaders.AUTHORIZATION, bearer(tokenA)))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.escalationLevel").value(0));
     }
 
@@ -413,8 +266,6 @@ class JourneyApiIntegrationTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Safe Walk not found"));
         checkIn(tokenB, idOfA).andExpect(status().isNotFound());
-        escalate(tokenB, idOfA, 1).andExpect(status().isNotFound());
-        location(tokenB, idOfA, 1, 1, Instant.now()).andExpect(status().isNotFound());
         mockMvc.perform(put("/api/journeys/" + idOfA + "/complete").header(HttpHeaders.AUTHORIZATION, bearer(tokenB)))
                 .andExpect(status().isNotFound());
         mockMvc.perform(put("/api/journeys/" + idOfA + "/cancel").header(HttpHeaders.AUTHORIZATION, bearer(tokenB)))
@@ -436,8 +287,6 @@ class JourneyApiIntegrationTest {
         mockMvc.perform(get("/api/journeys")).andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/journeys/1")).andExpect(status().isUnauthorized());
         mockMvc.perform(post("/api/journeys/1/check-ins")).andExpect(status().isUnauthorized());
-        mockMvc.perform(post("/api/journeys/1/escalations")).andExpect(status().isUnauthorized());
-        mockMvc.perform(put("/api/journeys/1/location")).andExpect(status().isUnauthorized());
         mockMvc.perform(put("/api/journeys/1/complete")).andExpect(status().isUnauthorized());
         mockMvc.perform(put("/api/journeys/1/cancel")).andExpect(status().isUnauthorized());
     }
@@ -458,35 +307,6 @@ class JourneyApiIntegrationTest {
 
     private ResultActions checkIn(String token, long id) throws Exception {
         return mockMvc.perform(post("/api/journeys/" + id + "/check-ins").header(HttpHeaders.AUTHORIZATION, bearer(token)));
-    }
-
-    private ResultActions escalate(String token, long id, int level) throws Exception {
-        return mockMvc.perform(post("/api/journeys/" + id + "/escalations").header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .contentType(MediaType.APPLICATION_JSON).content("{\"level\":" + level + "}"));
-    }
-
-    private ResultActions escalate(String token, long id, int level, String reason) throws Exception {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("level", level);
-        body.put("reason", reason);
-        return mockMvc.perform(post("/api/journeys/" + id + "/escalations").header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(body)));
-    }
-
-    private ResultActions startWithDestination(String token, double lat, double lng) throws Exception {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("destinationLabel", "Station");
-        body.put("checkInIntervalMinutes", 30);
-        body.put("destinationLatitude", lat);
-        body.put("destinationLongitude", lng);
-        return mockMvc.perform(post("/api/journeys").header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(body)));
-    }
-
-    private ResultActions location(String token, long id, double lat, double lng, Instant at) throws Exception {
-        Map<String, Object> body = Map.of("latitude", lat, "longitude", lng, "accuracyMeters", 9.0, "recordedAt", at.toString());
-        return mockMvc.perform(put("/api/journeys/" + id + "/location").header(HttpHeaders.AUTHORIZATION, bearer(token))
-                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(body)));
     }
 
     private JsonNode json(ResultActions actions) throws Exception {
