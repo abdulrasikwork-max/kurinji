@@ -5,8 +5,18 @@ paths:
   - "android/app/src/**/feature/going/**"
   - "android/app/src/**/feature/moderation/**"
   - "android/app/src/**/core/textcheck/**"
+  - "android/app/src/**/feature/moments/**"
 ---
 # Android social features (moved verbatim from CLAUDE.md §5 on 2026-11-03)
+
+> **N4 (2026-11-17, `docs/PHASE_N4.md` "A1 close", "A2"): read with care.** The old social screens (feed, composer,
+> post, place, private places, cities, video) are GONE. New `feature/moments`: Today (`TodayFragment` / `TodayViewModel`,
+> `MomentCardAdapter`, pure `TodayWall`, `MomentLabels`), a moment (`MomentFragment`), Create (`CreateFragment` /
+> `CreateViewModel`, pure `DraftRules`, `MomentPhotoFiles`: camera app into `cache/moment-photo/` through the ONE
+> FileProvider `${applicationId}.camera` (`xml/camera_paths.xml`, two cache folders; was `.idphoto`), no `CAMERA`, no
+> gallery; `DataStoreAudienceMemory`: the last audience per account, the only thing moments store). Bar: Today · ✚
+> Create (an action) · You. FLAG_SECURE on Today, a moment, others' profiles (D12), never on Create or You. Guards:
+> `MomentUiTest`, `CreateTest`, `SocialTextsTest`. Moments never import membership (`AppContainer.sharingStatus`).
 
 > **N1 (2026-11-15, `docs/PHASE_N1.md`): read with care.** Removed: Explore (tab, on-phone understanding, smart
 > understanding), "Good for" tags, "Been here" + the rating sheet + the presence check, the place average, the

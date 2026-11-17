@@ -23,7 +23,7 @@ paths:
 > **N3 (2026-11-16, `docs/PHASE_N3.md`): read with care.** New `feature/membership` (NOT `feature/community`, which
 > was Nearby): applicant side (`MembershipFragment` "Get verified": ONE way, in person with an 8-character code held in
 > the view model only, or an ID photo via the camera app into `cache/id-photo/` through the ONE FileProvider
-> `${applicationId}.idphoto` (no `CAMERA` permission; file deleted right after preparing; `IdPhotoFiles.sweep`);
+> `${applicationId}.idphoto` (N4-A2: renamed `.camera`, + `cache/moment-photo/`; no `CAMERA` permission; file deleted right after preparing; `IdPhotoFiles.sweep`);
 > `RelinkFragment` "I'm moving from another number" from "About you", a signed-out destination) and staff side
 > (`ui/staff`: `DecideFragment`, `StaffListFragment` by mode, `StaffActionsFragment`; rows under "Community staff" in
 > Settings and more, shown from `/api/community/me` staff flags). All of them FLAG_SECURE. You shows a membership card;

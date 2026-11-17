@@ -1,3 +1,42 @@
+# CHECKPOINT 2026-11-17 (fourteenth session): N4-A2 is DONE (Android Create: implemented, compiled, tested; NOT manually verified). A3 and C NOT started. Nothing pushed, nothing deployed.
+
+**Standing instructions, unchanged:** the product direction is decided and is not reopened; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N4 plan and decisions are LOCKED (`docs/PHASE_N4.md`); continue them, do not re-plan. **Owner: continue the remaining N4 units autonomously; stop only for a real conflict, a security / privacy problem, a destructive step without its documented backup, or a missing requirement. Android UI / UX: full creative freedom inside the IRL direction. Commit each coherent step and update this file before a session can end.**
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). This session: `4058b60` N4-A2 (Android code + tests), then "N4-A2: documents" (`git log -1`). `git status` clean afterwards.
+- Backend, `moderation-service/`, `android/local.properties`, `backend/.env` not touched.
+
+## What was verified first
+- `367b5c7` was clean; an UNCACHED Android run (`--rerun-tasks`) gave **709 run, 0 failures**, as the checkpoint said.
+
+## Completed: N4-A2 (details: `PHASE_N4.md` "A2"; decisions N-80 to N-84)
+- The bar is Today · ✚ Create · You (Create = an action, never selected). `CreateFragment` / `CreateViewModel`: opens ready to type; Say / Who's in? (a time within the next 24 h, a plain-text "where" ≤ 60); audience All of MIET / My people (no default the first time, then the last choice per account on this phone, `DataStoreAudienceMemory`); one photo taken now with the camera app (`MomentPhotoFiles`, `cache/moment-photo/`, no `CAMERA`, never a gallery, button hidden without a camera app), prepared on the phone, uploaded at once, deleted on the server when removed / replaced / abandoned; the on-phone nudge; the new-member line; the room left from 100; the server's own 400 words on Create; after sharing a dialog for a held moment or the support line, else "Shared"; Today reads again. Today's question has "Answer" (opens Create with it).
+- **Manifest changed (reviewed):** the one FileProvider is now `${applicationId}.camera` with `xml/camera_paths.xml` (two cache folders: `id-photo/`, `moment-photo/`; was `.idphoto` / `id_photo_paths.xml`); `<queries>` for `IMAGE_CAPTURE` only. Permissions unchanged.
+
+## Build / test status
+- Android: `.\gradlew.bat --offline testDebugUnitTest` **736 run, 0 failures, 0 errors** (709 + `CreateTest` 27); `assembleDebug` OK. Lint not run.
+- Backend: unchanged since `c2b90f5` (467 / 0 / 0 / 2 skipped); not re-run (no backend change).
+- Python: untouched (38, N1).
+
+## Database
+- Development MySQL: **V35, 32 tables** (unchanged). Pilot: V30. Next NEW migration file: **V36**. No migration is needed for A3.
+
+## Manual verification
+- **Nothing of N4 has been checked on an emulator or a phone yet.** Unit C does the walk on the development backend. Add to the C walk for A2: the camera app round trip (a real camera app on the emulator), cancel, retake, remove (the upload disappears from `moment_media`), a new member sharing a photo with MIET (dialog + WAITING), My people (no line), the remembered audience after a restart, a Who's in? across midnight, a link from a new member (the server's words), answering today's question, back / toolbar arrow with a draft, rotation after sharing.
+
+## Remaining N4 units (in this order)
+1. **A3:** report a moment (`ReportTarget.MOMENT`), "This is about me" (`POST /api/moments/{id}/about-me`), "Ask a moderator to look" on the author's notice (`check_review_ask`), the moderator's case on moments (photo through the case, the about-me origin, tiers / waiting hours), admin daily questions screen.
+2. **C:** documents, the security / privacy review of A1–A3, the emulator walk against the development backend (two members, photo hold, keep, delete, report, about-me, question, the A2 list above), `CLAUDE.md` / `STATUS.md` close.
+
+## Risks and warnings
+1. "This is about me" can hide someone's moment until a moderator looks (D11; bounds: daily report limit, tier 1, Keep restores).
+2. Some camera apps save every photo to the gallery themselves; IRL never reads the gallery but cannot stop that (documented in `PHASE_N4.md` "A2", honest limits).
+3. `CLAUDE.md` is at about 39 900 characters (limit 40 000): move text out before adding any.
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, `COMMUNITY_SECRET` before any real roll number, the pilot's own move to the new jar and schema, the N2 observations for N6.
+
+---
+
 # CHECKPOINT 2026-11-17 (thirteenth session; Fable reached its limit mid-session, Opus continued from the repository): N4-A1 is DONE (Android: implemented, compiled, tested; NOT manually verified). A2, A3, C NOT started. Nothing pushed, nothing deployed.
 
 **Standing instructions, unchanged:** the product direction is decided and is not reopened; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N4 plan and decisions are LOCKED (`docs/PHASE_N4.md`); continue them, do not re-plan. **Owner: continue the remaining N4 units autonomously; stop only for a real conflict, a security / privacy problem, a destructive step without its documented backup, or a missing requirement. Android UI / UX: full creative freedom inside the IRL direction. Commit each coherent step and update this file before a session can end.**

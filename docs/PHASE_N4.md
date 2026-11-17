@@ -1,7 +1,7 @@
 # Phase N4: Moments and Today
 
 Status: **decisions LOCKED by the owner on 2026-11-16; units B1, B2, B3 and B4 DONE (implemented, compiled, tested;
-"As built" at the end); A1 DONE (2026-11-17); A2, A3, C NOT started: see "As built" and the top of `HANDOFF.md`.** The plan below was presented on
+"As built" at the end); A1 and A2 DONE (2026-11-17); A3, C NOT started: see "As built" and the top of `HANDOFF.md`.** The plan below was presented on
 2026-11-16 and approved with the owner's changes (voice deferred, new-member period 7 days, no learned model). Units B1,
 B2, B3, B4, A1, A2, A3, C; one local commit each; never pushed, never deployed. Each unit starts only when the owner says
 so. Android UI and UX: the owner gave full creative freedom on 2026-11-16 (simple and clean, not bland; a polished,
@@ -547,3 +547,63 @@ Status: **implemented, compiled, tested** (Android **709 run, 0 failures**; `ass
   `MyPostsPageTest`, `PostListLayoutTest`, `UploadTimedOutComposerTest`, `EncryptedPlacesStoreTest`, `IrlRedesignTest`.
 - **Not in A1 (by the plan):** Create (A2), reporting a moment, "This is about me", review requests and the moderator's
   moment case on the phone (A3; the moderator screens compile against MOMENT but are not walked), the emulator walk (C).
+
+### A2 (2026-11-17, the session after A1 close): Create — Android
+
+Status: **implemented, compiled, tested** (Android **736 run, 0 failures, 0 errors**: 709 + `CreateTest` 27;
+`assembleDebug` OK; lint not run). **Not manually verified** (no emulator or phone run: unit C). Commit `4058b60`;
+decisions N-80 to N-84. Checkpoint `367b5c7` was verified first (clean; uncached run 709 / 0).
+
+| Part | Classes / files |
+|---|---|
+| Domain | `domain/MomentDraft.kt`: `MomentDraft`, `UploadedPhoto`, `SharingStatus`, `AudienceMemory`, pure `DraftRules` (500 code points after trimming, room shown from 100 left, words optional next to a photo, "where" one line ≤ 60, `nextPlanTime`, `newMemberUntil` = approval + 7 days) |
+| Data | `MomentApi`: `POST api/moments/media` (the long upload timeout: now the 2nd marked call), `DELETE api/moments/media/{id}`, `POST api/moments`; `MomentRequestDto.from` (a Say never sends plan fields; only UUIDs reach the server), `UploadedPhotoDto`; `RemoteMomentRepository.uploadPhoto / discardPhoto / share`; `MomentPhotoFiles` (camera-app target in `cache/moment-photo/`, `PhotoPreparer` re-encode, file deleted right after, `sweep`, `hasCameraApp`, `shotNamed` after a process death); `DataStoreAudienceMemory` (`moment_choices`, key `audience_<accountId>`); `core/media/CameraFiles` (the one provider's authority) |
+| UI | `CreateViewModel` (+ `CreateUiState`, `DraftPhoto`), `CreateFragment`, `fragment_create.xml`; Today's question card gets "Answer" (opens Create with the question); Today reads again from the top after a share (`CreateFragment.RESULT_SHARED`) |
+| Navigation | the bar is Today · ✚ Create · You (`navCreate` is an action: it opens `createFragment` and is never selected; the disc keeps its own colours); Create is a task screen (toolbar + back, no bar); the toolbar arrow asks the same "Discard this moment?" as back (`MainActivity`) |
+| Manifest | the one FileProvider is `${applicationId}.camera` (`xml/camera_paths.xml`: `id-photo/`, `moment-photo/`); `<queries>` for `IMAGE_CAPTURE` only. Permissions unchanged (no `CAMERA`, no `RECORD_AUDIO`, no media read) |
+
+**The screen (UI freedom, inside the direction):** it opens with the keyboard up and the cursor in the words, which sit
+on the page in the large serif headline style with no box ("What's on your mind?" / for a Who's in? "What's the plan?").
+Above them a two-part switch Say | Who's in?; under them the room left (only near the end), the photo (the phone's own
+prepared copy, rounded like a card, with "Adding the photo…" / "Photo added. Location and camera details were removed
+on your phone." / "The photo wasn't added." + Try again, and Remove photo), "Take a photo" (hidden without a camera
+app), for a Who's in? a quiet panel with the accent rule: "Add a time" (the system time picker; shown as "Today, 5:00
+pm" / "Tomorrow, 9:15 am", clearable) and "Where (optional)" in the person's words; then "Who can see this": All of MIET
+| My people (nothing chosen the first time, with "Choose who can see this before you share."; My people explains "the
+connections you made with each other"); the new-member line ("As a new member, your photo goes to a moderator before
+MIET sees it, until <date, time>.") while MIET or nothing is chosen; one Share button. A non-member sees one line and
+"Get verified" instead.
+
+**Flow:** Share → the on-phone nudge over the words and the "where" (`DraftNudgeDialogs`; nothing is sent for it; the
+person can always share) → `POST /api/moments` → the audience is remembered → Create closes: a moment that waits for a
+person says so in a dialog with its notice; `supportSuggested` shows the support line once (Tele-MANAS 14416, call or
+close); otherwise "Shared. It's on Today for 24 hours." A refusal keeps the draft and shows the server's words for a 400
+(N-81), "Get verified" for 403 `MEMBERSHIP_NEEDED`, the app's text otherwise. A photo is uploaded as soon as it is
+prepared; removed, replaced or abandoned uploads are deleted on the server (N-84).
+
+**Tests (`CreateTest`, 27):** counting (Tamil, emoji, trimming), room left, words / photo / "where" rules, plan time
+(later today, tomorrow, the current minute, every 7th minute of a day inside (now, now + 24 h], whole minutes), the
+new-member end one microsecond before / at / after 7 days; the request mapping (a Say drops plan fields, blanks dropped,
+non-ids never sent, words hidden in `toString`); the upload answer; the view model: no default audience then the
+remembered one, non-member, the new-member line per audience, unknown membership, a Who's in? with time / where /
+question, a Say after switching drops the plan, too many words, the photo's whole life (prepare, delete the file,
+upload, share by id, nothing deleted after sharing, Create finished), sharing waits for the upload, camera cancelled,
+unreadable photo, failed upload + retry, remove = server delete, a photo replaced during its upload (the late one is
+deleted, never attached), discard deletes the upload, a refusal keeps the draft and the server's words, a lost
+membership; the camera shot found again after a process death; source guards (camera app only, never a picker, the
+nudge, no FLAG_SECURE, the toolbar arrow rule, no camera / audio / media-read permission; the room text used only by
+Create; the remembered audience forgotten on account deletion). **Updated guards:** `Phase17FGuardsTest` (the `.camera`
+provider; `<queries>` = `IMAGE_CAPTURE` only, no `QUERY_ALL_PACKAGES`), `MembershipTextsTest` (two cache folders
+exactly), `UploadTimeoutTest` (two marked uploads: profile photo and moment photo), `NavigationRulesTest` (Today ·
+navCreate · You, Create is a task screen), `MomentUiTest` (the storage / gallery scan allows exactly the audience key and
+`MediaStore.ACTION_IMAGE_CAPTURE`), `SocialTextsTest` (scans `fragment_create.xml`).
+
+**Honest limits:** the camera app decides the photo's quality and may itself keep a copy (some camera apps save every
+photo to the gallery anyway; IRL cannot stop that, it only never reads it). A process death while the camera is open
+keeps the photo (the shot's name is in the saved state) but the audience and kind fall back to the remembered / default
+values; the words are restored by the text field itself. The new-member end shown on Create is computed on the phone
+from the approval time; the server's clock decides. The upload of a removed photo is deleted best effort (otherwise the
+server's 24-hour clean-up removes it).
+
+**Not in A2 (by the plan):** reporting a moment, "This is about me", "Ask a moderator to look" on the author's notice,
+the moderator's moment case on the phone, the admin daily questions screen (A3); the emulator walk (C).
