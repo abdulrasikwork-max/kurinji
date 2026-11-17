@@ -38,14 +38,18 @@ data class MomentRefDto(
     fun toDomain(): MomentBrief? {
         val safeId = uuid(id) ?: return null
         val kind = MomentKind.entries.firstOrNull { it.name == kind } ?: return null
-        val name = authorName?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        // Someone else's moment needs its author's name; one's own comes without it (`authorName: null` for `mine`).
+        // Requiring it for both dropped every line about one's own moments (found in the N5-C walk).
+        val own = mine == true
+        val name = authorName?.trim()?.takeIf { it.isNotEmpty() }
+        if (name == null && !own) return null
         return MomentBrief(safeId, kind, text?.trim()?.takeIf { it.isNotEmpty() },
             if (kind == MomentKind.WHOS_IN) plan?.let { p ->
                 val at = instant(p.at)
                 val where = p.where?.trim()?.takeIf { it.isNotEmpty() }
                 if (at == null && where == null) null else MomentPlan(at, where)
             } else null,
-            calledOff = calledOff == true, mine = mine == true, authorName = name, live = live == true)
+            calledOff = calledOff == true, mine = own, authorName = if (own) null else name, live = live == true)
     }
 }
 
@@ -118,10 +122,18 @@ data class ReplyItemDto(
     fun toDomain(): ReplyItem? {
         val type = ReplyType.entries.firstOrNull { it.name == type } ?: return null
         val about = moment?.toDomain() ?: return null
-        return ReplyItem(type, about, uuid(conversationId), people.orEmpty().mapNotNull { it?.toDomain() }.take(3),
+        val who = people.orEmpty().mapNotNull { it?.toDomain() }.take(3)
+        // A line that names someone must have a name to say: the people, or else the author (never one's own blank).
+        if (who.isEmpty() && about.authorName == null && type !in NAMELESS) return null
+        return ReplyItem(type, about, uuid(conversationId), who,
             morePeople == true, Turn.entries.firstOrNull { it.name == turn }, open == true, instant(at),
             // Same never lights anything (D19).
             fresh = type != ReplyType.SAME && fresh == true)
+    }
+
+    private companion object {
+        /** Lines whose words name nobody (your own plan, where you stand in someone's plan). */
+        val NAMELESS = setOf(ReplyType.PLAN, ReplyType.NOT_IN, ReplyType.CLOSED, ReplyType.CALLED_OFF)
     }
 }
 

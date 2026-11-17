@@ -34,7 +34,8 @@ data class MomentBrief(
     val plan: MomentPlan?,
     val calledOff: Boolean,
     val mine: Boolean,
-    val authorName: String,
+    /** Someone else's moment: always set. The reader's own: null (the server never sends one's own name back). */
+    val authorName: String?,
     val live: Boolean
 )
 

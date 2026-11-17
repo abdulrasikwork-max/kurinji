@@ -89,6 +89,31 @@ class RepliesTest {
         assertTrue(mine.you.canSend)
     }
 
+    /** Found in the N5-C walk: the server sends one's own moments with `authorName: null`; they must still show. */
+    @Test
+    fun `lines about my own moments come without my name and are kept, a nameless line about someone is dropped`() {
+        val own = MomentRefDto(m, "SAY", "Canteen at four?", null, false, mine = true, authorName = null, live = true)
+        val ownPlan = MomentRefDto(m, "WHOS_IN", "Study?", null, true, mine = true, authorName = null, live = true)
+        val bala = listOf(PersonDto(name = "Bala"))
+        val page = RepliesDto(
+            needsYou = listOf(ReplyItemDto("YOUR_TURN", own, c, people = bala, turn = "YOUR_TURN"),
+                ReplyItemDto("ASKS", ownPlan, people = bala), ReplyItemDto("SAY_MORE", own)),
+            plans = listOf(ReplyItemDto("PLAN", ownPlan, c, turn = "CLOSED")),
+            conversations = listOf(ReplyItemDto("REPLY", own, c, people = bala))
+        ).toDomain()
+        assertEquals(listOf(ReplyType.YOUR_TURN, ReplyType.ASKS), page.needsYou.map { it.type })
+        assertNull(page.needsYou.first().moment.authorName)
+        assertEquals("Bala", RepliesLabels.title(page.needsYou.first()).arg)
+        assertEquals(ReplyType.PLAN, page.plans.single().type)
+        assertEquals(1, page.conversations.size)
+        // One's own name is never taken from the answer, even if one was sent.
+        assertNull(MomentRefDto(m, "SAY", mine = true, authorName = "Me").toDomain()!!.authorName)
+        // Someone else's moment still needs its author's name.
+        assertNull(MomentRefDto(m, "SAY", mine = false, authorName = null).toDomain())
+        val reply = ConversationDto(c, "REPLY", own, you = YouDto("YOUR_TURN", canSend = true), open = true).toDomain()
+        assertTrue("a private reply to my own moment opens", reply != null && reply.moment.mine)
+    }
+
     @Test
     fun `messages - words or a known quiet line, the notice and the support line only for the writer`() {
         assertNull(MessageDto(msg, "TEXT", text = "  ").toDomain())

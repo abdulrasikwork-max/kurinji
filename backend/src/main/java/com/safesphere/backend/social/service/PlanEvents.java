@@ -59,6 +59,18 @@ public class PlanEvents {
                 messages.saveAndFlush(Message.system(c.getId(), userId, MessageEvent.HAPPENED, now)));
     }
 
+    /**
+     * N-92, N-103 (found in the N5-C walk): a This happened Say that waited (for a moderator, or for the automatic check) is
+     * announced when it can first be seen, never while it waits. [say] has just become visible for the first time;
+     * any other moment is ignored. Without this the plan never said it happened and still offered This happened.
+     */
+    public void becameVisible(Moment say, LocalDateTime now) {
+        if (say.getHappenedOf() == null) return;
+        conversations.findByMomentIdAndKind(say.getHappenedOf(), ConversationKind.PLAN).filter(c -> c.isOpen(now))
+                .ifPresent(c -> messages.saveAndFlush(
+                        Message.system(c.getId(), say.getAuthorId(), MessageEvent.HAPPENED, now)));
+    }
+
     public Optional<Conversation> planOf(Moment plan) {
         return conversations.findByMomentIdAndKind(plan.getId(), ConversationKind.PLAN);
     }

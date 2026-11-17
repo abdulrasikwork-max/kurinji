@@ -15,7 +15,7 @@ import com.safesphere.app.feature.replies.domain.Turn
 import com.safesphere.app.feature.replies.domain.You
 
 fun brief(id: String = "m1", mine: Boolean = false, kind: MomentKind = MomentKind.SAY) =
-    MomentBrief(id, kind, "Canteen at four?", null, calledOff = false, mine = mine, authorName = "Asha", live = true)
+    MomentBrief(id, kind, "Canteen at four?", null, calledOff = false, mine = mine, authorName = if (mine) null else "Asha", live = true) // as the server sends it
 
 fun conversation(
     id: String = "c1",

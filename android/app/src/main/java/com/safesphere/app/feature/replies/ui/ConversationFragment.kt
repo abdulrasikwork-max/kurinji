@@ -240,7 +240,7 @@ class ConversationFragment : ViewBindingFragment<FragmentConversationBinding>(Fr
         val context = requireContext()
         val moment = conversation.moment
         binding.heading.text = if (conversation.kind == ConversationKind.REPLY && !moment.mine)
-            getString(RepliesLabels.heading(conversation), moment.authorName) else getString(RepliesLabels.heading(conversation))
+            getString(RepliesLabels.heading(conversation), moment.authorName.orEmpty()) else getString(RepliesLabels.heading(conversation))
         binding.about.text = moment.text ?: getString(RepliesLabels.momentFallback(moment.kind))
         val plan = moment.plan
         val planWords = listOfNotNull(plan?.at?.let { MomentCardBinder.planTime(context, it) }, plan?.where,

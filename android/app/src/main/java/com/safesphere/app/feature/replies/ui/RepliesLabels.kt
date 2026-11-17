@@ -49,21 +49,21 @@ object RepliesLabels {
     /** The line's first words: who, and what they did or where the reader stands. */
     fun title(item: ReplyItem): ResponseWords {
         val names = item.people.map { it.name }
-        fun named(@StringRes one: Int, @StringRes many: Int) = if (names.isEmpty()) ResponseWords(many, listOf(item.moment.authorName))
+        fun named(@StringRes one: Int, @StringRes many: Int) = if (names.isEmpty()) ResponseWords(many, listOf(item.moment.authorName.orEmpty()))
             else ResponseWords(if (names.size == 1 && !item.morePeople) one else many, names, item.morePeople)
         return when (item.type) {
             ReplyType.ASKS -> named(R.string.response_author_asking_one, R.string.response_author_asking_many)
             ReplyType.SAY_MORE -> named(R.string.response_author_say_more_one, R.string.response_author_say_more_many)
             ReplyType.SAME -> named(R.string.response_author_same_one, R.string.response_author_same_many)
-            ReplyType.YOUR_TURN -> ResponseWords(R.string.replies_line_your_turn, arg = names.firstOrNull() ?: item.moment.authorName)
-            ReplyType.MORE -> ResponseWords(R.string.replies_line_more, arg = item.moment.authorName)
+            ReplyType.YOUR_TURN -> ResponseWords(R.string.replies_line_your_turn, arg = names.firstOrNull() ?: item.moment.authorName.orEmpty())
+            ReplyType.MORE -> ResponseWords(R.string.replies_line_more, arg = item.moment.authorName.orEmpty())
             ReplyType.PLAN -> if (item.moment.mine) ResponseWords(R.string.replies_line_plan_mine)
-                else ResponseWords(R.string.replies_line_plan, arg = item.moment.authorName)
-            ReplyType.WAITING -> ResponseWords(R.string.response_plan_waiting, arg = item.moment.authorName)
+                else ResponseWords(R.string.replies_line_plan, arg = item.moment.authorName.orEmpty())
+            ReplyType.WAITING -> ResponseWords(R.string.response_plan_waiting, arg = item.moment.authorName.orEmpty())
             ReplyType.NOT_IN -> ResponseWords(R.string.response_plan_removed)
             ReplyType.CLOSED -> ResponseWords(R.string.response_plan_closed)
             ReplyType.CALLED_OFF -> ResponseWords(R.string.response_plan_called_off)
-            ReplyType.REPLY -> ResponseWords(R.string.replies_line_reply, arg = names.firstOrNull() ?: item.moment.authorName)
+            ReplyType.REPLY -> ResponseWords(R.string.replies_line_reply, arg = names.firstOrNull() ?: item.moment.authorName.orEmpty())
         }
     }
 

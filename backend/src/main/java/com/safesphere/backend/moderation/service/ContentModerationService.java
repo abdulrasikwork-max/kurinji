@@ -150,6 +150,7 @@ public class ContentModerationService {
     private final MessageRepository messages;
     private final ConversationRepository conversations;
     private final Relationships relationships;
+    private final com.safesphere.backend.social.service.PlanEvents planEvents;
     private final Clock clock;
 
     public ContentModerationService(ModerationService moderation, ReportService reportService,
@@ -164,7 +165,9 @@ public class ContentModerationService {
                                     com.safesphere.backend.social.service.ProfilePhotoService photos,
                                     Clock clock,
                                     MessageRepository messages, ConversationRepository conversations,
-                                    Relationships relationships) {
+                                    Relationships relationships,
+                                    com.safesphere.backend.social.service.PlanEvents planEvents) {
+        this.planEvents = planEvents;
         this.messages = messages;
         this.conversations = conversations;
         this.relationships = relationships;
@@ -685,8 +688,10 @@ public class ContentModerationService {
     /** A moment nobody holds any more starts its 24 hours if it was never visible (N-47). Otherwise nothing. */
     private void release(Moment moment, LocalDateTime now) {
         if (moment == null) return;
+        boolean first = moment.getVisibleAt() == null;
         moment.publish(now, MomentPolicy.LIFE);
         moments.save(moment);
+        if (first) planEvents.becameVisible(moment, now);
     }
 
     /** Closes a case: its reports are resolved and its moment is no longer kept from the purge (N-47). */

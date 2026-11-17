@@ -145,7 +145,7 @@ private class RepliesAdapter(
         val context = b.root.context
         val first = item.people.firstOrNull()
         val photo = if (first?.profileId != null && first.photo != null) images.personPhotoUrl(first.profileId, first.photo) else null
-        val face = first?.name ?: item.moment.authorName
+        val face = first?.name ?: item.moment.authorName.orEmpty()
         b.avatar.set(face, face, photo, images.loader)
         b.title.text = ResponseLabels.text(context, RepliesLabels.title(item))
         b.about.text = item.moment.text ?: context.getString(RepliesLabels.momentFallback(item.moment.kind))

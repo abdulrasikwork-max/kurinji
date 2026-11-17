@@ -206,6 +206,34 @@ class RepliesApiTest {
         assertThat(moments.json(moments.get_(bala, say.get("id").asText())).get("happenedOf").isNull()).isTrue();
     }
 
+    /** Found in the N5-C emulator walk: a new member's This happened waits for a moderator; the plan says so on release. */
+    @Test
+    void thisHappened_thatWaitsForAModerator_isAnnouncedWhenReleased_neverBefore() throws Exception {
+        String plan = whosIn(asha, Instant.now(clock).plus(Duration.ofHours(1)));
+        social.perform(chitra, put("/api/moments/" + plan + "/in")).andExpect(status().isOk());
+        add(asha, plan, "Chitra Test");
+        clock.advance(Duration.ofMinutes(61));
+
+        JsonNode say = moments.json(happened(chitra, plan, null, "We played").andExpect(status().isCreated()));
+        assertThat(say.get("status").asText()).isEqualTo("WAITING");           // a new member's photo for all of MIET
+        String planId = moments.json(moments.get_(asha, plan)).get("responses").get("plan").get("planId").asText();
+        assertThat(events(asha, planId)).doesNotContain("HAPPENED");              // a held Say is announced by nobody
+        happened(asha, plan, null, "Me too").andExpect(status().isConflict());    // still one per plan
+
+        Person mod = named("Mod");
+        social.makeModerator(mod);
+        String caseId = jdbc.queryForObject("SELECT c.public_id FROM content_cases c JOIN moments m ON m.id ="
+                + " c.moment_id WHERE m.public_id = ?", String.class, say.get("id").asText());
+        social.act(mod, caseId, "CONTENT_KEEP", "NO_VIOLATION").andExpect(status().isOk());
+
+        List<String> after = events(asha, planId);
+        assertThat(after).containsOnlyOnce("HAPPENED");
+        JsonNode lines = social.json(social.perform(chitra, get("/api/conversations/" + planId)));
+        JsonNode last = lines.get("messages").get(lines.get("messages").size() - 1);
+        assertThat(last.get("event").asText()).isEqualTo("HAPPENED");
+        assertThat(last.get("mine").asBoolean()).isTrue();                       // by the person who shared it
+    }
+
     @Test
     void thisHappened_forAMyPeoplePlan_isItsAuthorsAlone() throws Exception {
         Map<String, Object> body = MomentClient.body("WHOS_IN", "MY_PEOPLE", "Study group?");
@@ -269,6 +297,14 @@ class RepliesApiTest {
                 .andExpect(status().isOk()));
         for (JsonNode n : people.get(list)) if (n.get("name").asText().equals(name)) return n.get("ref").asText();
         throw new AssertionError("no " + name);
+    }
+
+    private List<String> events(Person who, String conversationId) throws Exception {
+        JsonNode view = social.json(social.perform(who, get("/api/conversations/" + conversationId))
+                .andExpect(status().isOk()));
+        List<String> out = new ArrayList<>();
+        view.get("messages").forEach(m -> { if (m.hasNonNull("event")) out.add(m.get("event").asText()); });
+        return out;
     }
 
     private static List<String> types(JsonNode section) {

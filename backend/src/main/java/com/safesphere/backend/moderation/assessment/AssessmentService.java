@@ -27,6 +27,7 @@ import com.safesphere.backend.social.event.MomentShared;
 import com.safesphere.backend.social.policy.MomentPolicy;
 import com.safesphere.backend.social.repository.MessageRepository;
 import com.safesphere.backend.social.repository.MomentRepository;
+import com.safesphere.backend.social.service.PlanEvents;
 import com.safesphere.backend.social.service.SocialAccess;
 import java.time.Clock;
 import java.time.Duration;
@@ -89,12 +90,14 @@ public class AssessmentService {
     private final ModerationAiProperties properties;
     private final TransactionTemplate ownTransaction;
     private final Clock clock;
+    private final PlanEvents planEvents;
 
     public AssessmentService(ModerationServiceClient client, ContentAssessmentRepository assessments,
                              MomentRepository moments, MessageRepository messages, ContentCaseRepository cases,
                              SocialAccess access,
                              ModerationAiProperties properties,
-                             PlatformTransactionManager transactions, Clock clock) {
+                             PlatformTransactionManager transactions, Clock clock, PlanEvents planEvents) {
+        this.planEvents = planEvents;
         this.client = client;
         this.assessments = assessments;
         this.moments = moments;
@@ -458,7 +461,11 @@ public class AssessmentService {
             moment.moderateBySystem(state, reason, spans);
         }
 
-        @Override void publish(LocalDateTime now) { moment.publish(now, MomentPolicy.LIFE); }
+        @Override void publish(LocalDateTime now) {
+            boolean first = moment.getVisibleAt() == null;
+            moment.publish(now, MomentPolicy.LIFE);
+            if (first) planEvents.becameVisible(moment, now); // a waiting This happened is announced now (N-103)
+        }
 
         @Override void strongLanguage(boolean value) { moment.setStrongLanguage(value); }
 

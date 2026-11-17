@@ -110,6 +110,8 @@ class CreateFragment : ViewBindingFragment<FragmentCreateBinding>(FragmentCreate
         if (happened != null) binding.happenedText.text = happened.text ?: getString(R.string.moment_kind_whos_in)
         binding.kindToggle.isVisible = happened == null
         binding.audienceToggle.isVisible = happened == null
+        // The heading goes with its chooser: the happened block already says who sees it (found in the N5-C walk).
+        binding.audienceLabel.isVisible = happened == null
 
         val whosIn = state.kind == MomentKind.WHOS_IN
         binding.textInput.setHint(if (whosIn) R.string.create_hint_whos_in else R.string.create_hint_say)
