@@ -1,4 +1,62 @@
-# CHECKPOINT 2026-11-17 (twelfth session): the N4 BACKEND is DONE (B1, B2, B3, B4). V35 is applied on the DEVELOPMENT MySQL. Android units A1, A2, A3 and the close C are NOT started. Nothing pushed, nothing deployed.
+# CHECKPOINT 2026-11-17 (twelfth session, stopped ON PURPOSE before the usage limit): the N4 BACKEND is DONE (B1 to B4, V35 on the DEVELOPMENT MySQL). N4-A1 (Android) is PARTIAL: additive files only, the app still opens on the OLD Home. A2, A3, C NOT started. Nothing pushed, nothing deployed.
+
+**Standing instructions, unchanged:** the product direction is decided and is not reopened; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N4 plan and decisions are LOCKED (`docs/PHASE_N4.md`); continue them, do not re-plan. **Owner, 2026-11-16 and 2026-11-17: continue the remaining N4 units autonomously without asking between normal units; stop only for a real conflict, a security / privacy problem, a destructive step without its documented backup, or a missing requirement. Android UI / UX: full creative freedom inside the IRL direction. Never leave the repository without a recovery point: commit each coherent step and update this file before a session can end.**
+
+## Exact git state
+- Branch `irl-next` (no upstream, never pushed). Commits of this session, oldest first: `adf0732` recovered B3 checkpoint · `d191bc6` N4-B3 · `c2b90f5` N4-B4 · `e9d1b84` N4-A1 part 1 (data layer) · then "N4 checkpoint before usage limit" = A1 part 2 (`git log -1`). `git status` clean afterwards.
+- `moderation-service/` not touched. `android/local.properties` and `backend/.env` not touched (`.env` was read for the database password only).
+
+## Completed N4 units
+- **B1, B2, B3, B4: implemented, compiled, tested** (`PHASE_N4.md` "As built", "B3 close", "Security and privacy review of B2 + B3", "B4"). What the eleventh session left uncommitted was recovered unchanged first (`adf0732`).
+
+## Partially implemented: N4-A1 (Android). EXACTLY what is in, and what is not
+**In (compiles, tested, NOT reachable in the app, NOT manually verified):**
+- `feature/moments/domain`: `MomentModels.kt` (no count, place, viewer or exact share time in any model), `MomentRepository`.
+- `feature/moments/data`: `remote/MomentApi` (today, mine, one, of a profile, delete, keep, un-keep), `remote/MomentDtos` (anything not understood is dropped; ids are lower-case UUIDs or nothing), `RemoteMomentRepository`; `AppContainer.momentRepository`; `SocialPalette.socialFeatures` + `"moments"`.
+- `feature/moments/ui`: `TodayViewModel` (pages, ends, MIET / My people, stale refresh, 403 `MEMBERSHIP_NEEDED`), `TodayFragment` (+ `secure()` = FLAG_SECURE while shown, `momentImages()`), `MomentCardAdapter` (`TodayRow`, pure `TodayWall.rows`, `MomentCardBinder`), `MomentLabels` (pure: rough time, author notice, plan time), `MomentViewModel` + `MomentFragment` (own page: keep / un-keep / delete, result `moment_removed`).
+- Layouts `fragment_today`, `fragment_moment`, `item_moment_card`, `item_today_question`, `item_today_message`; about 60 strings (`nav_today` … `moment_open_author`) at the end of `strings.xml`.
+- `nav_graph.xml`: destinations `todayFragment` and `momentFragment` ADDED but nothing navigates to them; the start is still `discoverFragment`.
+- Test: `MomentDtosTest` (10). `Phase17ETest`: the byte comparison with the server's city catalog was dropped (B3 deleted that file; the earlier "795 / 0" after B3 was a cached Gradle result).
+
+**NOT done in A1 (do these next, in this order):**
+1. **Switch the navigation to Today.** In `nav_graph.xml` the three `app:destination="@id/discoverFragment"` (splash, login / phone verify, profile set-up) become `todayFragment`; `menu/bottom_navigation.xml` = Today (`@+id/todayFragment`, `nav_today`) · You (the ✚ comes with A2: no placeholder item); `NavigationRules`: `tabDestinations` / `START` = `todayFragment`, `momentFragment` in `readingDestinations`, the `SHARE_ITEM` / composer branch out of `setUpWithTabs`; `MainActivity` line "R1: on the composer the toolbar arrow…" goes with the composer. A ready script for exactly this is described in `PHASE_N4.md` "A1 (partial)" (it stopped only because it expected four `discoverFragment` destinations and there are three).
+2. **Tests for the new UI code** (none yet): `TodayViewModel` (first page, next page, end, switch of view, 400 cursor restart, membership, stale refresh), `TodayWall.rows`, `MomentLabels` (every rough time, every notice, plan today / tomorrow across midnight), `MomentViewModel` (gone = 404, keep refused with the server's words, delete of an already deleted one), a fake `MomentRepository` in `src/test/.../testing/`.
+3. **You and other people's profiles on the new API:** `SocialDtos` / `SocialModels` / `ProfileSetup*` lose city, languages, interests; `OwnProfile` / `PersonProfile` gain `programme`, `graduationYear` (+ `newMemberUntil` for the own one); You lists the person's own current and kept moments (`mine()`), a person's profile lists `ofProfile()`; FLAG_SECURE on the person's profile (D12).
+4. **Remove the old social screens and everything only they use** (list in `PHASE_N4.md` §10 and "A1 (partial)"), their layouts, strings, tests and fakes; the one-time deletion of the private-places file and key and of the saved Home city in `core/retired`; update `NavigationRulesTest`, `SocialTextsTest`, `IrlRedesignTest`, `Phase17FGuardsTest` and add a moments wording guard (no counts, ranking, place or presence words; Create never touches the gallery).
+5. Emulator walk of Today against the development backend comes in C (or earlier, once 1 is done).
+
+**⚠ Until step 1 and 4 are done the installed app is NOT usable for social features against this backend:** its old Home, composer, post and place screens call routes that answer 404. Safety (SOS, Safe Walk, Safety Circle), sign-in, membership and account are untouched and keep working.
+
+## Remaining N4 units
+A1 (rest, above) · A2 (Create: text, audience, Who's in?, camera app through the FileProvider, upload, the text-check nudge, the new-member line) · A3 (report, "This is about me", author notices with review / appeal, the moderator's case on moments, admin daily questions) · C (full tests, documents, emulator walk).
+
+## Build / test status (this checkpoint)
+- Backend: `mvn -o clean test` **467 run, 0 failures, 0 errors, 2 skipped** (unchanged since `c2b90f5`; not re-run after the Android-only commits). Command: `cd backend`, `JAVA_TOOL_OPTIONS=-Djdk.net.unixdomain.tmpdir=C:/Users/Public mvn -o clean test`. **Use `clean`.**
+- Android: `.\gradlew.bat --offline testDebugUnitTest` **805 run, 0 failures, 0 errors** (795 + 10). `assembleDebug` and lint were NOT run in this session.
+- Python: not touched (38, N1).
+
+## Database
+- Development MySQL: **V35, 32 tables** (applied 2026-11-17 in B4). Backup before it: `Desktop\SafeSphere-Phase3\db-backups\safesphere-dev-before-v35-20261117.sql` + `db-backups\social-media-store-before-v35-20261117\`. `spring.flyway.target` is removed. The pilot: V30, untouched. Next NEW migration file: **V36**.
+
+## Manual verification
+- Backend: curl walk on real MySQL (B4). Not exercised there: the daily question, a moderator's decision / appeal, the automatic text check.
+- Android: **nothing of N4 was manually verified** (no emulator run in this session).
+
+## The exact first step for the next session
+Read this section and `docs/PHASE_N4.md` "A1 (partial)". Run `git status` (expect clean) and the Android tests (expect 805 / 0). Then continue **N4-A1 at step 1 above** (switch the navigation to Today), then steps 2 to 4, commit "N4-A1", and go on to A2, A3, C.
+
+## Risks and warnings
+1. The Android app and the backend are out of step until A1 / A2 are finished (see the ⚠ above). Do not hand the current APK to anyone for social features.
+2. **"This is about me" can hide someone's moment until a moderator looks** (locked decision D11; bounds: daily report limit, tier 1, Keep restores). Moderator coverage is M5 / N8.
+3. M4 (the three-tier queue) was "to confirm before B3" and is built as planned (N-69). Say so if it should change.
+4. `CLAUDE.md` is at 39 978 characters (limit 40 000): move text out before adding any.
+5. The 5 files of the old posts are still in `backend/social-media-store` (in the backup; the clean-up job removes them).
+
+**Open from before, unchanged:** the push to the remote (the owner's), encrypted off-laptop backups, trademark search, `COMMUNITY_SECRET` before any real roll number, the pilot's own move to the new jar and schema (its own approved step with a fresh `restore-rehearsal.sh` PASS first), the N2 observations for N6.
+
+---
+
+# CHECKPOINT 2026-11-17 (twelfth session, EARLIER in the session; superseded by the checkpoint above: A1 is partial): the N4 BACKEND is DONE (B1, B2, B3, B4). V35 is applied on the DEVELOPMENT MySQL. Android units A1, A2, A3 and the close C are NOT started. Nothing pushed, nothing deployed.
 
 **Standing instructions, unchanged:** the product direction is decided and is not reopened; never push; never deploy; the laptop pilot stays as it is (old jar, schema V30). The N4 plan and decisions are LOCKED (`docs/PHASE_N4.md`); continue them, do not re-plan. **Owner, 2026-11-16 and again 2026-11-17: continue the remaining N4 units autonomously without asking between normal units; stop only for a real conflict, a security / privacy problem, a destructive step without its documented backup, or a missing requirement. Android UI / UX: full creative freedom inside the IRL direction. Never leave the repository without a recovery point: commit each finished unit and update this file before the session can end.**
 

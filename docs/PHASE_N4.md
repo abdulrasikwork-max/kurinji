@@ -1,7 +1,7 @@
 # Phase N4: Moments and Today
 
-Status: **decisions LOCKED by the owner on 2026-11-16; units B1, B2 and B3 DONE (implemented, compiled, tested;
-"As built" at the end); B4, A1, A2, A3, C: see "As built" and the top of `HANDOFF.md`.** The plan below was presented on
+Status: **decisions LOCKED by the owner on 2026-11-16; units B1, B2, B3 and B4 DONE (implemented, compiled, tested;
+"As built" at the end); A1 PARTIAL (2026-11-17); A2, A3, C NOT started: see "As built" and the top of `HANDOFF.md`.** The plan below was presented on
 2026-11-16 and approved with the owner's changes (voice deferred, new-member period 7 days, no learned model). Units B1,
 B2, B3, B4, A1, A2, A3, C; one local commit each; never pushed, never deployed. Each unit starts only when the owner says
 so. Android UI and UX: the owner gave full creative freedom on 2026-11-16 (simple and clean, not bland; a polished,
@@ -457,3 +457,46 @@ emulator walk: there is no Android side yet).**
   unit C repeats them on MySQL.
 - **Left as it is:** the 5 files of the old posts are still in `backend/social-media-store`; the hourly clean-up job
   removes them as files without a row the next time the backend runs for an hour (they are in the backup).
+
+### A1 (2026-11-17, PARTIAL: stopped on purpose before the usage limit) — Android
+
+Status: **partly implemented; what is in is compiled and tested at the data layer only** (Android **805 run, 0
+failures, 0 errors**: 795 + `MomentDtosTest` 10). **Not reachable in the app, not manually verified.** Two local
+commits (`e9d1b84` data layer; then the checkpoint commit with the screens).
+
+**What is in**
+
+| Part | Classes / files |
+|---|---|
+| Domain | `feature/moments/domain/MomentModels.kt` (`Moment`, `MomentAuthor`, `MomentPhoto` with a clamped ratio, `MomentPlan`, `DailyQuestion`, `MomentNotice`, `RoughTime`, `TodayPage`, `MyMoments`, `ProfileMoments`, `People`), `MomentRepository` |
+| Data | `data/remote/MomentApi`, `MomentDtos` (a moment with an unknown id / kind / audience / status, no author name or neither words nor photo is DROPPED; an unknown notice state reads as HELD; ids and cursors are lower-case UUIDs or nothing, so nothing else can reach a URL), `data/RemoteMomentRepository` (`photoUrl`, `personPhotoUrl`); `AppContainer.momentRepository` |
+| Today | `ui/TodayViewModel` + `TodayUiState`, `TodayFragment` (FLAG_SECURE while shown, D12; tab re-tap = top + read again; no pull-to-refresh library was added), `MomentCardAdapter` (`TodayRow`, pure `TodayWall.rows`: question, cards, then exactly one of loading / empty / end), `MomentCardBinder` (covered moments behind a tap; the author's notice in amber; one TalkBack sentence), pure `MomentLabels` |
+| A moment's page | `ui/MomentViewModel` (404 = "This moment isn't here" for gone, ended and not-for-you alike; keep / un-keep / delete; a delete of an already deleted moment counts as done), `MomentFragment` (the author's exact end time, keep hint "up to 6", delete with a confirmation; others get a button to the author's profile) |
+| Resources | `fragment_today`, `fragment_moment`, `item_moment_card`, `item_today_question`, `item_today_message`; strings `nav_today` … `moment_open_author`; `nav_graph.xml` destinations `todayFragment`, `momentFragment` (nothing navigates to them yet) |
+
+**Design choices made (UI freedom, inside the direction):** Today's head is the mark and the word "Today" in the serif
+wordmark style with one two-part switch "MIET | My people"; a card is the person first (photo or initial, real name,
+rough time, "My people" when it is the smaller audience), a "Who's in?" tag, the words in the large body style, the
+photo rounded and laid out from its size before it loads, the plan on a quiet panel with the accent rule (time exactly
+as written, in the reader's zone and 12 / 24-hour style; "where" in the author's words); the wall ends with "That's
+today." and the line "The rest is out there." No count, no reaction row, no viewer line anywhere.
+
+**Not done in A1** (order and details: top of `HANDOFF.md`): the navigation switch to Today; tests of the new view
+models, `TodayWall` and `MomentLabels`; You and people's profiles on the new API (programme, year, own and kept
+moments; city / languages / interests out); removal of the old social screens with their layouts, strings, tests and
+fakes (`DiscoverFragment`, `ComposeFragment`, `PostFragment`, `PlacePickerFragment`, `PrivatePlacesFragment`,
+`PostCollectionFragment`, `MyPostsFragment`, `VideoPlayerFragment`, `JournalViewModel`'s post parts, `Experience*`,
+`Discover*`, `Cities`, `HomeCityChoice`, `EncryptedPlacesStore`, `PlaceMemory`, `VideoPreparer`, `Mp4Scrubber`,
+`VideoRules`, `FeedFreshness`, `cities-v1.tsv`); the one-time deletion of the private-places file and key and the
+saved Home city; the guards.
+
+**The navigation switch, exactly** (prepared, not applied): `nav_graph.xml`: the three
+`app:destination="@id/discoverFragment"` → `@id/todayFragment`. `menu/bottom_navigation.xml`: two items,
+`@+id/todayFragment` (`ic_nav_home`, `nav_today`) and `@+id/youFragment`. `navigation/NavigationRules.kt`:
+`tabDestinations = setOf(R.id.todayFragment, R.id.youFragment)`, remove `SHARE_ITEM`, `START = R.id.todayFragment`,
+add `R.id.momentFragment` to `readingDestinations`, and in `setUpWithTabs` remove the `Untinted` line for the Share
+item and the `if (item.itemId == NavigationRules.SHARE_ITEM)` branch (A2 brings the ✚ back as Create). Then fix
+`NavigationRulesTest` and whatever else names `discoverFragment` / `navShare`.
+
+**Found while stopping:** `Phase17ETest` compared the app's city catalog with the server's file, which B3 deleted; the
+"795 / 0" measured after B3 was a cached Gradle result. The comparison was removed (the app's catalog goes in A1).

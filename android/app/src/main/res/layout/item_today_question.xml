@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase N4: today's question, pinned at the top of Today (one per India day, written by an admin). Answers are
+     ordinary moments; nothing is counted. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/space_md"
+    android:layout_marginEnd="@dimen/space_md"
+    android:layout_marginBottom="@dimen/space_md"
+    android:background="@drawable/bg_quote_rule"
+    android:orientation="vertical"
+    android:paddingStart="28dp"
+    android:paddingTop="@dimen/space_md"
+    android:paddingEnd="@dimen/space_md"
+    android:paddingBottom="@dimen/space_md">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/today_question_label"
+        android:textAppearance="@style/TextAppearance.Kurinji.Overline"
+        android:textColor="?attr/colorAccentText" />
+
+    <TextView
+        android:id="@+id/questionText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:accessibilityHeading="true"
+        android:textAppearance="@style/TextAppearance.Kurinji.Headline.Small"
+        tools:text="What made you smile on campus today?" />
+</LinearLayout>

@@ -54,10 +54,9 @@ class Phase17ETest {
     // ---- Cities (D-5) ---------------------------------------------------------------------------------------------
 
     @Test
-    fun `the app bundles exactly the server's catalog`() {
-        val app = File("src/main/resources/cities/cities-v1.tsv").readBytes()
-        val server = File("../../backend/src/main/resources/cities/cities-v1.tsv").readBytes()
-        assertArrayEquals(server, app)
+    fun `the bundled city catalog is well formed`() {
+        // N4-B3 removed the server's city catalog (cities are retired, N-58), so there is nothing left to compare
+        // byte for byte; the app's own copy goes with the old social screens in N4-A1.
         assertTrue(Cities.all.size >= 60)
         assertEquals("CHENNAI", Cities.all.first().code)
         assertEquals(Cities.all.size, Cities.all.map { it.code }.toSet().size)

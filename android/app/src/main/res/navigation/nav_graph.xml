@@ -157,6 +157,25 @@
     </fragment>
 
     <!-- Phase 13F: the tabs. Discover · (Share = an action, opens composeFragment) · Cocoon · You -->
+    <!-- Phase N4-A1 (in progress): Today, the community's wall of the last 24 hours. NOT reachable yet: the app still
+         opens on the old Home until the navigation is switched (see docs/HANDOFF.md). -->
+    <fragment
+        android:id="@+id/todayFragment"
+        android:name="com.safesphere.app.feature.moments.ui.TodayFragment"
+        android:label="@string/today_title"
+        tools:layout="@layout/fragment_today" />
+
+    <!-- Phase N4-A1 (in progress): one moment on its own page. -->
+    <fragment
+        android:id="@+id/momentFragment"
+        android:name="com.safesphere.app.feature.moments.ui.MomentFragment"
+        android:label="@string/title_moment"
+        tools:layout="@layout/fragment_moment">
+        <argument
+            android:name="momentId"
+            app:argType="string" />
+    </fragment>
+
     <fragment
         android:id="@+id/discoverFragment"
         android:name="com.safesphere.app.feature.social.ui.DiscoverFragment"
