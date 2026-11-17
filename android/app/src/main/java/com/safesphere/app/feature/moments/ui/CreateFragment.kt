@@ -66,7 +66,7 @@ class CreateFragment : ViewBindingFragment<FragmentCreateBinding>(FragmentCreate
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, leaveGuard)
-        viewModel.start(questionArgument())
+        viewModel.start(questionArgument(), happenedArgument())
         // Leftover photo files of a closed app (never while the camera app is writing one for this screen).
         if (viewModel.pendingShot == null) appContainer.momentPhotoFiles.sweep()
 
@@ -104,6 +104,12 @@ class CreateFragment : ViewBindingFragment<FragmentCreateBinding>(FragmentCreate
 
         binding.questionBlock.isVisible = state.question != null
         state.question?.let { binding.questionText.text = it.text }
+        // N5 (N-92): This happened from a plan: a Say with a photo, the plan's audience (no choosers).
+        val happened = state.happened
+        binding.happenedBlock.isVisible = happened != null
+        if (happened != null) binding.happenedText.text = happened.text ?: getString(R.string.moment_kind_whos_in)
+        binding.kindToggle.isVisible = happened == null
+        binding.audienceToggle.isVisible = happened == null
 
         val whosIn = state.kind == MomentKind.WHOS_IN
         binding.textInput.setHint(if (whosIn) R.string.create_hint_whos_in else R.string.create_hint_say)
@@ -128,7 +134,7 @@ class CreateFragment : ViewBindingFragment<FragmentCreateBinding>(FragmentCreate
             null -> View.NO_ID
         }
         if (binding.audienceToggle.checkedButtonId != audienceId && audienceId != View.NO_ID) binding.audienceToggle.check(audienceId)
-        binding.audienceHelp.isVisible = state.audience != MomentAudience.COMMUNITY
+        binding.audienceHelp.isVisible = state.audience != MomentAudience.COMMUNITY && happened == null
         binding.audienceHelp.setText(
             if (state.audience == null) R.string.create_audience_needed else R.string.create_audience_mine_help
         )
@@ -295,6 +301,11 @@ class CreateFragment : ViewBindingFragment<FragmentCreateBinding>(FragmentCreate
         QuestionDto(args.getString(ARG_QUESTION_ID), args.getString(ARG_QUESTION_TEXT)).toDomain()
     }
 
+    /** N5: opened from a plan's "This happened" (its id and words). */
+    private fun happenedArgument() = arguments?.let { args ->
+        com.safesphere.app.feature.moments.data.remote.HappenedRefDto(args.getString(ARG_HAPPENED_OF), args.getString(ARG_HAPPENED_TEXT)).toDomain()
+    }
+
     private fun openKeyboard() {
         binding.textInput.requestFocus()
         binding.textInput.post {
@@ -329,6 +340,9 @@ class CreateFragment : ViewBindingFragment<FragmentCreateBinding>(FragmentCreate
     companion object {
         const val ARG_QUESTION_ID = "questionId"
         const val ARG_QUESTION_TEXT = "questionText"
+        /** N5 (N-92): "This happened" from a plan. */
+        const val ARG_HAPPENED_OF = "happenedOf"
+        const val ARG_HAPPENED_TEXT = "happenedText"
 
         /** Set on the screen Create was opened from: the id of the moment just shared (Today reads again). */
         const val RESULT_SHARED = "moment_shared"

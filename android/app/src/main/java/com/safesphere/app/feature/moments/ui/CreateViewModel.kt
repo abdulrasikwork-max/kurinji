@@ -15,6 +15,7 @@ import com.safesphere.app.feature.moments.data.MomentPhotoSource
 import com.safesphere.app.feature.moments.domain.AudienceMemory
 import com.safesphere.app.feature.moments.domain.DailyQuestion
 import com.safesphere.app.feature.moments.domain.DraftRules
+import com.safesphere.app.feature.moments.domain.HappenedRef
 import com.safesphere.app.feature.moments.domain.Moment
 import com.safesphere.app.feature.moments.domain.MomentAudience
 import com.safesphere.app.feature.moments.domain.MomentDraft
@@ -54,6 +55,8 @@ data class CreateUiState(
     val planTime: LocalTime? = null,
     /** Today's question, when this moment answers it. */
     val question: DailyQuestion? = null,
+    /** N5 (N-92): "This happened" from this plan: a Say with a photo taken now, with the plan's audience. */
+    val happened: HappenedRef? = null,
     val newMemberUntil: Instant? = null,
     val photo: DraftPhoto? = null,
     val preparingPhoto: Boolean = false,
@@ -71,13 +74,14 @@ data class CreateUiState(
     val roomLeft: Int? get() = DraftRules.roomLeft(text)
 
     /** M2: told before sharing that a photo for all of MIET goes to a moderator first (not for My people). */
-    val showsNewMemberLine: Boolean get() = newMemberUntil != null && audience != MomentAudience.MY_PEOPLE
+    val showsNewMemberLine: Boolean get() = newMemberUntil != null && audience != MomentAudience.MY_PEOPLE && happened == null
 
     val hasDraft: Boolean get() = !finished && (text.isNotBlank() || photo != null || where.isNotBlank() || planTime != null)
 
     val canShare: Boolean
-        get() = !loading && !finished && !needsMembership && audience != null && !sharing && !preparingPhoto &&
-            (photo == null || photo.uploaded != null) && DraftRules.wordsFit(text, photo != null) &&
+        get() = !loading && !finished && !needsMembership && (audience != null || happened != null) && !sharing &&
+            !preparingPhoto && (photo == null || photo.uploaded != null) && DraftRules.wordsFit(text, photo != null) &&
+            (happened == null || photo?.uploaded != null) &&
             (kind == MomentKind.SAY || DraftRules.whereFits(where))
 }
 
@@ -112,10 +116,11 @@ class CreateViewModel(
     var pendingShot: MomentShot? = null
         private set
 
-    fun start(question: DailyQuestion?) {
+    fun start(question: DailyQuestion?, happened: HappenedRef? = null) {
         if (started) return
         started = true
-        _uiState.update { it.copy(question = question) }
+        // This happened is always a Say and answers no question (N-92).
+        _uiState.update { if (happened != null) it.copy(happened = happened, kind = MomentKind.SAY) else it.copy(question = question) }
         viewModelScope.launch {
             val remembered = runCatching { audienceMemory.last() }.getOrNull()
             when (val status = sharingStatus()) {
@@ -133,7 +138,7 @@ class CreateViewModel(
         savedState.get<String>(KEY_SHOT)?.let { name -> pendingShot = photos.shotNamed(name) }
     }
 
-    fun onKind(kind: MomentKind) = _uiState.update { it.copy(kind = kind) }
+    fun onKind(kind: MomentKind) = _uiState.update { if (it.happened != null) it else it.copy(kind = kind) }
 
     fun onAudience(audience: MomentAudience) = _uiState.update { it.copy(audience = audience) }
 
@@ -198,7 +203,9 @@ class CreateViewModel(
     fun onShare() {
         val state = _uiState.value
         if (!state.canShare) return
-        val audience = state.audience ?: return
+        val happened = state.happened
+        // This happened sends no audience (the server uses the plan's); the draft field is then unused.
+        val audience = state.audience ?: if (happened != null) MomentAudience.COMMUNITY else return
         val whosIn = state.kind == MomentKind.WHOS_IN
         val draft = MomentDraft(
             kind = state.kind,
@@ -207,13 +214,14 @@ class CreateViewModel(
             mediaId = state.photo?.uploaded?.mediaId,
             planAt = if (whosIn) planAt() else null,
             planWhere = if (whosIn) state.where.trim().ifEmpty { null } else null,
-            questionId = state.question?.id
+            questionId = state.question?.id,
+            happenedOf = happened?.id
         )
         _uiState.update { it.copy(sharing = true, failure = null) }
         viewModelScope.launch {
             when (val result = repository.share(draft)) {
                 is ApiResult.Success -> {
-                    runCatching { audienceMemory.remember(audience) }
+                    if (happened == null) runCatching { audienceMemory.remember(audience) }
                     // The photo is part of the moment now: nothing to clean up when the screen closes.
                     _uiState.update { it.copy(sharing = false, photo = null, shared = result.data, finished = true) }
                 }

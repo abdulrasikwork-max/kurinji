@@ -112,6 +112,42 @@
                     app:tint="?attr/colorOnSurfaceVariant" />
             </LinearLayout>
 
+            <!-- N5 (N-92): This happened, from a plan: a photo taken now, shared with the plan's audience -->
+            <LinearLayout
+                android:id="@+id/happenedBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/space_md"
+                android:background="@drawable/bg_quote_rule"
+                android:orientation="vertical"
+                android:paddingStart="28dp"
+                android:paddingTop="@dimen/space_sm"
+                android:paddingEnd="@dimen/space_sm"
+                android:paddingBottom="@dimen/space_sm"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/create_happened_label"
+                    android:textAppearance="@style/TextAppearance.Kurinji.Overline"
+                    android:textColor="?attr/colorAccentText" />
+
+                <TextView
+                    android:id="@+id/happenedText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:textAppearance="@style/TextAppearance.Kurinji.Title.Medium" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:text="@string/create_happened_help"
+                    android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+            </LinearLayout>
+
             <com.google.android.material.button.MaterialButtonToggleGroup
                 android:id="@+id/kindToggle"
                 android:layout_width="match_parent"

@@ -10,7 +10,8 @@ import java.time.Instant
  */
 
 /** What can be reported (N4: a moment or a person). */
-enum class ReportTarget { MOMENT, PERSON }
+/** N5: MESSAGE = a message in a plan or a private reply (one the reporter can see; never one's own). */
+enum class ReportTarget { MOMENT, PERSON, MESSAGE }
 
 /** Roughly when one of the caller's own reports or a decision about them happened (never an exact time). */
 enum class TimeBand { THIS_WEEK, THIS_MONTH, EARLIER }

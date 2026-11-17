@@ -14,6 +14,8 @@ import com.safesphere.app.feature.moderation.domain.ContentCaseDetail
 import com.safesphere.app.feature.moderation.domain.ContentCaseSummary
 import com.safesphere.app.feature.moderation.domain.ContentDecisionReason
 import com.safesphere.app.feature.moderation.domain.ContentTarget
+import com.safesphere.app.feature.moderation.domain.CaseConversation
+import com.safesphere.app.feature.moderation.domain.CaseLine
 import com.safesphere.app.feature.moderation.domain.PersonInfo
 import java.time.Instant
 import java.time.LocalDate
@@ -158,10 +160,12 @@ data class ContentViewDto(
     val planWhere: String? = null,
     val question: String? = null,
     val photo: CasePhotoDto? = null,
-    val person: PersonInfoDto? = null
+    val person: PersonInfoDto? = null,
+    val more: String? = null,
+    val conversation: ConversationContextDto? = null
 ) {
     fun toDomain() = CaseContent(
-        kind = kind?.takeIf { it in setOf("SAY", "WHOS_IN") },
+        kind = kind?.takeIf { it in setOf("SAY", "WHOS_IN", "MESSAGE") },
         audience = audience?.takeIf { it in setOf("COMMUNITY", "MY_PEOPLE") },
         body = body,
         planAt = planAt?.let { runCatching { Instant.parse(it) }.getOrNull() },
@@ -175,9 +179,24 @@ data class ContentViewDto(
         person = person?.let { p ->
             PersonInfo(p.displayName.orEmpty(), p.handle.orEmpty(), p.bio, p.programme?.takeIf { PROGRAMME.matches(it) },
                 p.graduationYear?.takeIf { it in 1990..2100 }, p.hasPhoto == true)
-        }
+        },
+        more = more?.takeIf { it.isNotBlank() },
+        conversation = conversation?.toDomain()
     )
 }
+
+/** N5 (N-97): a message case's context; lines without a pseudonym or words are dropped, an unknown kind reads as none. */
+data class ConversationContextDto(val kind: String? = null, val messages: List<ContextMessageDto?>? = null,
+                                  val connected: Boolean? = null) {
+    fun toDomain() = CaseConversation(kind?.takeIf { it in setOf("PLAN", "REPLY") },
+        messages.orEmpty().mapNotNull { m ->
+            val ref = m?.ref?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            val text = m.text?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            CaseLine(ref, text, m.reported == true)
+        }, connected)
+}
+
+data class ContextMessageDto(val ref: String? = null, val text: String? = null, val reported: Boolean? = null)
 
 private val PROGRAMME = Regex("^[A-Z0-9_]{1,40}$")
 

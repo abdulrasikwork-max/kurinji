@@ -168,17 +168,24 @@ private val CODE = Regex("^[A-Z_]{1,30}$")
 /** A2: the body of POST /api/moments. Gson leaves null fields out, so a Say never sends plan fields. */
 data class MomentRequestDto(
     val kind: String,
-    val audience: String,
+    /** N5: left out for "This happened" (the server uses the plan's audience). */
+    val audience: String?,
     val text: String?,
     val mediaId: String?,
     val planAt: String?,
     val planWhere: String?,
-    val questionId: String?
+    val questionId: String?,
+    val happenedOf: String? = null
 ) {
-    override fun toString() = "MomentRequestDto(kind=$kind, audience=$audience, <words hidden>)"
+    override fun toString() = "MomentRequestDto(kind=$kind, audience=$audience, happened=${happenedOf != null}, <words hidden>)"
 
     companion object {
-        fun from(draft: MomentDraft) = MomentRequestDto(
+        fun from(draft: MomentDraft): MomentRequestDto {
+            val happened = uuid(draft.happenedOf)
+            return if (happened != null) MomentRequestDto(
+                kind = MomentKind.SAY.name, audience = null, text = draft.text.trim().ifEmpty { null },
+                mediaId = uuid(draft.mediaId), planAt = null, planWhere = null, questionId = null, happenedOf = happened
+            ) else MomentRequestDto(
             kind = draft.kind.name,
             audience = draft.audience.name,
             text = draft.text.trim().ifEmpty { null },
@@ -186,7 +193,8 @@ data class MomentRequestDto(
             planAt = if (draft.kind == MomentKind.WHOS_IN) draft.planAt?.toString() else null,
             planWhere = if (draft.kind == MomentKind.WHOS_IN) draft.planWhere?.trim()?.ifEmpty { null } else null,
             questionId = uuid(draft.questionId)
-        )
+            )
+        }
     }
 }
 

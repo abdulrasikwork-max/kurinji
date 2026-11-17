@@ -17,9 +17,11 @@ data class MomentDraft(
     val mediaId: String?,
     val planAt: Instant?,
     val planWhere: String?,
-    val questionId: String?
+    val questionId: String?,
+    /** N5 (N-92): "This happened": the Who's in? it comes from (a Say with a photo, the plan's audience). */
+    val happenedOf: String? = null
 ) {
-    override fun toString() = "MomentDraft(kind=$kind, audience=$audience, photo=${mediaId != null}, <words hidden>)"
+    override fun toString() = "MomentDraft(kind=$kind, audience=$audience, photo=${mediaId != null}, happened=${happenedOf != null}, <words hidden>)"
 }
 
 /** A photo the server has taken in (re-encoded, without metadata), not yet part of a moment. */

@@ -131,11 +131,18 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
                     com.safesphere.app.feature.social.ui.CommunityLine.of(p.programme, p.graduationYear),
                     p.bio).joinToString("\n")
             }.orEmpty()
+            // N5 (N-97): the message, and where it was written (earlier messages of a reported one; pseudonyms only).
+            ContentTarget.MESSAGE -> listOfNotNull(
+                content.body,
+                content.conversation?.let { conversationLines(it) }
+            ).joinToString("\n\n")
             else -> listOfNotNull(
                 if (content.kind == "WHOS_IN") getString(R.string.moment_kind_whos_in) else null,
                 content.question?.let { getString(R.string.moment_question_line, it) },
                 content.body,
-                planLine(content)
+                planLine(content),
+                // N5: the author's one follow-up is part of the moment's words.
+                content.more?.let { getString(R.string.content_case_more, it) }
             ).joinToString("\n\n")
         }
 
@@ -218,6 +225,17 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
         }
     }
 
+    /** N5 (N-97): the context of a message case, one line per message ("Person 3f9a…: words"), the case's marked. */
+    private fun conversationLines(c: com.safesphere.app.feature.moderation.domain.CaseConversation): String {
+        val lines = ArrayList<String>()
+        lines += getString(if (c.kind == "PLAN") R.string.content_case_in_plan else R.string.content_case_in_reply)
+        c.lines.forEach { line ->
+            lines += getString(if (line.reported) R.string.content_case_line_this else R.string.content_case_line, line.ref, line.text)
+        }
+        c.connected?.let { lines += getString(if (it) R.string.content_case_connected else R.string.content_case_not_connected) }
+        return lines.joinToString(separator = LINE_BREAK)
+    }
+
     /** A Who's in?'s plan as the moderator reads it: the exact time in their zone and the "where" in the author's words. */
     private fun planLine(content: com.safesphere.app.feature.moderation.domain.CaseContent): String? {
         if (content.kind != "WHOS_IN") return null
@@ -271,6 +289,7 @@ class ContentCaseFragment : ViewBindingFragment<FragmentContentCaseBinding>(Frag
         }
 
     private companion object {
+        const val LINE_BREAK = "\n"
         /** Phase 17E: the key of the person photo among the "shown after a tap" items. */
         const val PERSON_PHOTO = "person-photo"
 

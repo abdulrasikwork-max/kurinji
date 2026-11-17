@@ -10,7 +10,8 @@ import java.time.LocalDate
  * part of. Nothing is stored on the phone.
  */
 
-enum class ContentTarget { MOMENT, PERSON }
+/** N5: MESSAGE = a message in a plan or a private reply (seen with its context only, never browsed). */
+enum class ContentTarget { MOMENT, PERSON, MESSAGE }
 
 /** The decisions of the server, in the order a moderator reads them. */
 enum class ContentAction {
@@ -82,8 +83,21 @@ data class CaseContent(
     val planWhere: String? = null,
     val question: String? = null,
     val photo: CasePhoto? = null,
-    val person: PersonInfo? = null
+    val person: PersonInfo? = null,
+    /** N5: a moment's follow-up ("say more"), part of its words. */
+    val more: String? = null,
+    /** N5 (N-97): where a MESSAGE was written. */
+    val conversation: CaseConversation? = null
 )
+
+/**
+ * N5 (N-97): a message case's context. [kind] PLAN / REPLY; [lines] up to 10 earlier messages and the reported one
+ * (pseudonyms, oldest first), or the held message alone; [connected] for a held private reply: whether the two are
+ * connected (null otherwise).
+ */
+data class CaseConversation(val kind: String?, val lines: List<CaseLine>, val connected: Boolean?)
+
+data class CaseLine(val ref: String, val text: String, val reported: Boolean)
 
 enum class CaseRole { AUTHOR, SUBJECT, REPORTER }
 

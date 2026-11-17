@@ -164,11 +164,41 @@ class CreateTest {
     private val memory = FakeMemory()
     private var status: ApiResult<SharingStatus> = ApiResult.Success(SharingStatus(member = true, newMemberUntil = null))
 
-    private fun TestScope.viewModel(saved: SavedStateHandle = SavedStateHandle(), question: DailyQuestion? = null) =
+    private fun TestScope.viewModel(saved: SavedStateHandle = SavedStateHandle(), question: DailyQuestion? = null,
+                                    happened: com.safesphere.app.feature.moments.domain.HappenedRef? = null) =
         CreateViewModel(repository, photos, memory, { status }, this, saved, now = { now }, zone = { india }).also {
-            it.start(question)
+            it.start(question, happened)
             advanceUntilIdle()
         }
+
+    @Test
+    fun `This happened - a Say with a photo taken now, no audience chosen or remembered, no question`() = runTest {
+        val plan = "0a1b2c3d-0000-4000-8000-0000000000aa"
+        val q = DailyQuestion("0a1b2c3d-0000-4000-8000-0000000000ab", "What made you smile?")
+        val vm = viewModel(question = q, happened = com.safesphere.app.feature.moments.domain.HappenedRef(plan, "Frisbee at five"))
+        assertNull(vm.uiState.value.question)
+        vm.onKind(MomentKind.WHOS_IN)
+        assertEquals(MomentKind.SAY, vm.uiState.value.kind)
+        vm.onText("We actually did it")
+        assertFalse("a photo is needed", vm.uiState.value.canShare)
+        vm.onCameraOpening(Shot("h.jpg"))
+        vm.onCameraResult(true)
+        advanceUntilIdle()
+        assertTrue("no audience chooser: the plan's audience", vm.uiState.value.canShare)
+        assertFalse(vm.uiState.value.showsNewMemberLine)
+        vm.onShare()
+        advanceUntilIdle()
+        val draft = repository.shared.single()
+        assertEquals(plan, draft.happenedOf)
+        val request = MomentRequestDto.from(draft)
+        assertNull("the server uses the plan's audience", request.audience)
+        assertEquals("SAY", request.kind)
+        assertEquals(plan, request.happenedOf)
+        assertNull(request.questionId)
+        assertNull(request.planAt)
+        assertNull("nothing remembered for the next moment", memory.saved)
+        assertNull(MomentRequestDto.from(draft.copy(happenedOf = "not-an-id")).happenedOf)
+    }
 
     @Test
     fun `the first time no audience is chosen, and sharing waits for one`() = runTest {

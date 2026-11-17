@@ -226,3 +226,28 @@ NOT manually verified.** Decision N-101.
   only when changed).
 - **Tests:** `RepliesTest` (17); `NavigationRulesTest` (three tabs, conversation is a task screen); `SocialTextsTest`
   scans `feature/replies` and the four new layouts; `SocialPalette` covers `replies`.
+
+### A3 (2026-11-18): message moderation on the phone, moderator message cases, This happened, guidelines — Android
+
+Status: **implemented, compiled, tested (Android 803 / 0, `gradlew --offline clean testDebugUnitTest assembleDebug`);
+NOT manually verified.** Decision N-102.
+
+- **Members:** `ReportTarget.MESSAGE` (the moment reasons; impersonation stays for people). On a conversation, touch and
+  hold someone else's message → "Report this message" (the reporter is told only that a moderator will look; the writer
+  is never told). The writer's own held / covered message shows its state in the moment words (`MomentCardBinder.
+  noticeText`: the reason when there is one, the automatic check speaking as "our system") and a tap offers "Ask a
+  moderator to look" (`POST /api/content-checks/review {MESSAGE}`) and, when the decision can still be appealed (read
+  from "Your standing"), "Ask for a review". "Your reports" names "A message".
+- **Moderators:** `ContentTarget.MESSAGE`; the case shows the message, then where it was written ("Written in a plan /
+  private reply. Earlier messages, oldest first:" with case pseudonyms, the case's own line marked) and, for a held
+  private reply, whether the two are connected (N-97). Moment cases show the follow-up ("More (the author's one
+  addition)"). DTOs fail closed (lines without a pseudonym or words dropped; unknown kinds none).
+- **This happened (N-92):** "This happened" on a plan's conversation when it is open, not called off, after its time
+  (or without one) and nobody shared it yet (`RepliesLabels.canShareHappened`, the server's rule mirrored). It opens
+  Create in its own mode (`ARG_HAPPENED_OF`): a Say, the plan's words shown, no kind or audience chooser, a photo taken
+  now required, words optional; the request carries `happenedOf` and NO audience (the server uses the plan's), no
+  question, nothing remembered as the next audience. The server's refusals (a My people plan by someone else, once per
+  plan) show its words.
+- **Guidelines:** a section "Private replies and plans" (turns, no read state, messages checked before delivery, how
+  reporting works and what a moderator reads, nobody told they were turned down).
+- **Tests:** `MessageModerationTest` (5), one This happened test in `CreateTest`.

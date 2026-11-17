@@ -759,6 +759,8 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="guidelines_not_allowed">• Harassment, insults and bullying\n• Hate, including caste, religion, gender, sexuality, region or language\n• Threats\n• Sexual content involving others without their consent\n• Sharing where someone lives or is, or who they are (doxxing)\n• Posting where someone else is right now\n• Spam and scams\n• Pretending to be someone else</string>
     <string name="guidelines_how_title">How moderation works</string>
     <string name="guidelines_how">• Anyone can report a moment or a person. Nobody is told who reported.\n• When several people report something on their own, it is shown collapsed, behind a tap, until a moderator from the team looks at it.\n• Only a moderator can hide or remove something, or pause someone, and always with a reason you can see.\n• You can ask for a review of a decision. Another moderator looks at it.\n• Moderation never touches your SOS or your other safety tools: walks with check-ins and the Safety Circle.</string>
+    <string name="guidelines_replies_title">Private replies and plans</string>
+    <string name="guidelines_replies">• A private reply takes turns: one message each, then wait for an answer. Either of you can end it.\n• Nobody is shown whether or when you read anything.\n• Every message is checked the same way as a moment. One that may break these guidelines waits for a moderator before it is delivered; one that may hurt is shown behind a tap. You are always told.\n• You can report a message in a plan or a private reply: touch and hold it. A moderator then reads that message and up to ten before it, never the whole conversation.\n• The person who made a plan decides who is in. Nobody is ever told they were turned down.</string>
     <string name="guidelines_new_accounts">New members can share links after their first week. In that week a moderator looks at photos for all of MIET before they appear.</string>
 
     <!-- Phase 13D: moderators (posts, perspectives and people). Case pseudonyms, reason codes, no accusations. -->
@@ -767,6 +769,14 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="content_appeals_title">Requests to look again at a decision</string>
     <string name="content_appeals_empty">No review requests waiting.</string>
     <string name="content_target_moment">Moment</string>
+    <string name="content_target_message">Message</string>
+    <string name="content_case_more">More (the author\'s one addition): %1$s</string>
+    <string name="content_case_in_plan">Written in a plan. Earlier messages, oldest first:</string>
+    <string name="content_case_in_reply">Written in a private reply. Earlier messages, oldest first:</string>
+    <string name="content_case_line">%1$s: %2$s</string>
+    <string name="content_case_line_this">▶ %1$s (this case): %2$s</string>
+    <string name="content_case_connected">The two people are connected.</string>
+    <string name="content_case_not_connected">The two people are not connected.</string>
     <string name="content_target_person">Person</string>
     <string name="content_case_row">%1$s · %2$s</string>
     <string name="content_case_counts">Reports that count, from different people: %1$s</string>
@@ -1375,9 +1385,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="conversation_someone">Someone</string>
     <string name="conversation_you">You</string>
     <string name="conversation_cover">Covered while it is being looked at. Tap to read it.</string>
-    <string name="conversation_notice_held">Only you can see this message while a moderator looks at it.</string>
-    <string name="conversation_notice_collapsed">The other person sees this behind a tap while it is being looked at.</string>
-    <string name="conversation_notice_removed">A moderator took this message down. Only you can see it.</string>
     <string name="conversation_message_spoken">%1$s: %2$s</string>
     <string name="response_action_reply">Reply privately</string>
     <string name="response_action_your_reply">Your private reply</string>
@@ -1392,6 +1399,12 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="private_replies_community">Anyone at MIET</string>
     <string name="private_replies_nobody">Nobody</string>
     <string name="private_replies_saved">Saved</string>
+    <string name="create_happened_label">This happened</string>
+    <string name="create_happened_help">Take a photo now, with words if you want. It goes to the people who could see the plan, and names nobody.</string>
+    <string name="conversation_happened">This happened</string>
+    <string name="message_report">Report this message</string>
+    <string name="message_actions_title">This message</string>
+    <string name="message_hold_hint">Touch and hold a message to report it.</string>
 
     <!-- Phase N4: a person's moments on You and on a profile -->
     <string name="you_moments_now">On Today now</string>
@@ -1404,6 +1417,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="profile_moments_kept">Kept</string>
     <string name="profile_moments_empty">Nothing to show here right now.</string>
     <string name="my_reports_moment">A moment</string>
+    <string name="my_reports_message">A message</string>
 
     <!-- N4: the author asks a moderator to look at a moment a rule covered or held -->
     <string name="check_review_ask">Our system got it wrong? Ask a moderator to look</string>

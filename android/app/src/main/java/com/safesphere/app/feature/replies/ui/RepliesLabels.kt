@@ -112,6 +112,16 @@ object RepliesLabels {
         conversation.kind == ConversationKind.REPLY && conversation.open && conversation.you.turn != Turn.ENDED &&
             conversation.you.turn != Turn.CLOSED
 
+    /**
+     * N-92: "This happened" is offered in a plan that is open, not called off, after its time (or without one), once per
+     * plan (a HAPPENED line means someone already shared it). The server decides again (a My people plan: only its
+     * author; it answers with its own words).
+     */
+    fun canShareHappened(conversation: Conversation, now: java.time.Instant): Boolean =
+        conversation.kind == ConversationKind.PLAN && conversation.open && !conversation.moment.calledOff &&
+            conversation.moment.plan?.at?.let { !it.isAfter(now) } != false &&
+            conversation.messages.none { it.event == MessageEvent.HAPPENED }
+
     /** A moment named in a line: its words, or that it is a photo or a plan. */
     @StringRes
     fun momentFallback(kind: MomentKind): Int = if (kind == MomentKind.WHOS_IN) R.string.moment_kind_whos_in else R.string.moment_photo

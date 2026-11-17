@@ -51,6 +51,7 @@ class MyReportsFragment : ViewBindingFragment<FragmentMyReportsBinding>(Fragment
         val what = getString(when (report.target) {
             ReportTarget.MOMENT -> R.string.my_reports_moment
             ReportTarget.PERSON -> R.string.my_reports_person
+            ReportTarget.MESSAGE -> R.string.my_reports_message
         })
         val status = getString(when {
             !report.reviewed -> R.string.my_reports_received

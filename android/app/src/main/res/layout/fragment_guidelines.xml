@@ -38,6 +38,17 @@
             android:text="@string/guidelines_how"
             android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
+        <!-- N5 (A3): private replies, plans and messages -->
+        <TextView
+            style="@style/SocialSectionTitle"
+            android:text="@string/guidelines_replies_title" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/guidelines_replies"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

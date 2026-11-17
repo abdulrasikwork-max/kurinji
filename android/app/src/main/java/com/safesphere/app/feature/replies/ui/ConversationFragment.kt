@@ -27,7 +27,6 @@ import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentConversationBinding
 import com.safesphere.app.databinding.ItemMessageBinding
-import com.safesphere.app.feature.moments.domain.NoticeState
 import com.safesphere.app.feature.moments.ui.MomentCardBinder
 import com.safesphere.app.feature.moments.ui.MomentFragment
 import com.safesphere.app.feature.moments.ui.ResponseLabels
@@ -37,6 +36,12 @@ import com.safesphere.app.feature.replies.domain.ConversationKind
 import com.safesphere.app.feature.replies.domain.Message
 import com.safesphere.app.feature.replies.domain.MessageKind
 import com.safesphere.app.feature.social.ui.DraftNudgeDialogs
+import com.safesphere.app.feature.social.domain.ReportTarget
+import com.safesphere.app.feature.social.ui.ModerationLabels
+import com.safesphere.app.feature.social.ui.ReportDialogs
+import com.safesphere.app.feature.social.ui.ReportMessage
+import com.safesphere.app.feature.social.ui.ReportUiState
+import com.safesphere.app.feature.social.ui.ReportViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -48,21 +53,30 @@ import kotlinx.coroutines.launch
 class ConversationFragment : ViewBindingFragment<FragmentConversationBinding>(FragmentConversationBinding::inflate) {
 
     private val viewModel by viewModels<ConversationViewModel> { ConversationViewModel.factory(appContainer) }
+    private val reports by viewModels<ReportViewModel> { ReportViewModel.factory(appContainer) }
     private lateinit var adapter: MessageAdapter
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        adapter = MessageAdapter { viewModel.onUncover(it.id) }
+        adapter = MessageAdapter(onUncover = { viewModel.onUncover(it.id) }, onOwn = ::ownMessage, onReport = ::reportMessage)
         binding.messages.layoutManager = LinearLayoutManager(requireContext()).apply { stackFromEnd = true }
         binding.messages.adapter = adapter
         binding.retryButton.setOnClickListener { viewModel.retry() }
         binding.sendButton.setOnClickListener { send() }
         binding.endButton.setOnClickListener { confirmEnd() }
+        // N-92: This happened opens Create in its own mode (a photo taken now, the plan's audience).
+        binding.happenedButton.setOnClickListener {
+            val moment = viewModel.uiState.value.conversation?.moment ?: return@setOnClickListener
+            findNavController().navigate(R.id.createFragment, bundleOf(
+                com.safesphere.app.feature.moments.ui.CreateFragment.ARG_HAPPENED_OF to moment.id,
+                com.safesphere.app.feature.moments.ui.CreateFragment.ARG_HAPPENED_TEXT to moment.text))
+        }
         binding.openMomentButton.setOnClickListener {
             val momentId = viewModel.uiState.value.conversation?.moment?.id ?: viewModel.uiState.value.startFor ?: return@setOnClickListener
             findNavController().navigate(R.id.momentFragment, bundleOf(MomentFragment.ARG_ID to momentId))
         }
         collectWhenStarted(viewModel.uiState, ::render)
+        collectWhenStarted(reports.uiState, ::renderReports)
 
         val args = requireArguments()
         val conversationId = args.getString(ARG_ID)
@@ -95,6 +109,62 @@ class ConversationFragment : ViewBindingFragment<FragmentConversationBinding>(Fr
         if (words.isEmpty()) return
         DraftNudgeDialogs.beforeSharing(this, words, onlyMe = false) { viewModel.send(words) }
     }
+
+    /** Phase 13D for messages (N5-A3): the reporter is told only that a moderator will look; the writer is never told. */
+    private fun reportMessage(message: Message) {
+        if (message.mine || message.kind != MessageKind.TEXT) return
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.message_actions_title)
+            .setItems(arrayOf(getString(R.string.message_report))) { _, _ ->
+                ReportDialogs.show(this, ReportTarget.MESSAGE) { reason, note -> reports.report(ReportTarget.MESSAGE, message.id, reason, note) }
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
+    /**
+     * The writer's own held or covered message: ask a moderator to look at what a rule did, or ask for a review of a
+     * moderator's decision (only when the decision can still be appealed). No shadow states: the notice already says it.
+     */
+    private fun ownMessage(message: Message) {
+        val notice = message.notice ?: return
+        val options = ArrayList<Pair<String, () -> Unit>>()
+        val state = reports.uiState.value
+        if (notice.reviewable && message.id !in state.checkReviewAsked) {
+            options += getString(R.string.check_review_ask) to { reports.askCheckReview(ReportTarget.MESSAGE, message.id) }
+        }
+        val decision = state.standing?.decisionFor(notice.decisionId)
+        if (decision?.canAppeal == true) options += getString(R.string.review_ask) to { reports.appeal(decision.decisionId) }
+        val line = decision?.let { ModerationLabels.appealLine(it.appeal) }?.let(::getString)
+            ?: if (message.id in state.checkReviewAsked) getString(R.string.check_review_asked) else null
+        val builder = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.message_actions_title)
+            .setNegativeButton(R.string.action_cancel, null)
+        if (options.isEmpty()) builder.setMessage(line ?: MomentCardBinder.noticeText(requireContext(), notice))
+        else builder.setItems(options.map { it.first }.toTypedArray()) { _, which -> options[which].second() }
+        builder.show()
+    }
+
+    private fun renderReports(state: ReportUiState) {
+        if (view == null) return
+        when (state.message) {
+            ReportMessage.REPORT_SENT -> toast(R.string.report_sent)
+            ReportMessage.CHECK_REVIEW_ASKED -> toast(R.string.check_review_asked)
+            ReportMessage.REVIEW_ASKED -> toast(R.string.review_asked)
+            else -> Unit
+        }
+        if (state.message != null) reports.onMessageShown()
+        state.failure?.let {
+            Toast.makeText(requireContext(), it.toMessage(requireContext()), Toast.LENGTH_LONG).show()
+            reports.onFailureShown()
+        }
+        if (state.sessionExpired) {
+            reports.onSessionExpiredHandled()
+            showSessionExpiredDialog()
+        }
+    }
+
+    private fun toast(text: Int) = Toast.makeText(requireContext(), text, Toast.LENGTH_LONG).show()
 
     private fun confirmEnd() {
         MaterialAlertDialogBuilder(requireContext())
@@ -186,6 +256,11 @@ class ConversationFragment : ViewBindingFragment<FragmentConversationBinding>(Fr
         binding.closesLine.isVisible = closes != null && conversation.open
         if (closes != null) binding.closesLine.text = getString(R.string.conversation_closes, ConversationTime.short(context, closes))
         binding.endButton.isVisible = RepliesLabels.canEnd(conversation)
+        binding.happenedButton.isVisible = RepliesLabels.canShareHappened(conversation, java.time.Instant.now())
+        // The decision behind a moderator's notice on one's own message, to know whether a review can be asked (read once).
+        if (conversation.messages.any { it.mine && it.notice?.decisionId != null } && reports.uiState.value.standing == null &&
+            !reports.uiState.value.isBusy) reports.loadStanding()
+        binding.holdHint.isVisible = conversation.messages.any { !it.mine && it.kind == MessageKind.TEXT }
     }
 
     companion object {
@@ -198,7 +273,11 @@ class ConversationFragment : ViewBindingFragment<FragmentConversationBinding>(Fr
 }
 
 /** The messages, oldest first. A collapsed message waits behind a tap; the writer's own notice says its state. */
-private class MessageAdapter(private val onUncover: (Message) -> Unit) :
+private class MessageAdapter(
+    private val onUncover: (Message) -> Unit,
+    private val onOwn: (Message) -> Unit,
+    private val onReport: (Message) -> Unit
+) :
     ListAdapter<Message, MessageAdapter.Holder>(Diff) {
 
     var uncovered: Set<String> = emptySet()
@@ -242,21 +321,28 @@ private class MessageAdapter(private val onUncover: (Message) -> Unit) :
         b.bubble.text = if (covered) context.getString(R.string.conversation_cover) else message.text
         b.time.isVisible = time != null
         b.time.text = time.orEmpty()
+        // The writer's own message: its state in the same words as a moment (amber; the reason when there is one).
         val notice = message.notice
-        val noticeText = notice?.let {
-            context.getString(when (it.state) {
-                NoticeState.HELD -> R.string.conversation_notice_held
-                NoticeState.COLLAPSED -> R.string.conversation_notice_collapsed
-                NoticeState.REMOVED -> R.string.conversation_notice_removed
-            })
-        }
+        val noticeText = notice?.let { MomentCardBinder.noticeText(context, it) }
         b.notice.isVisible = noticeText != null
         if (noticeText != null) b.notice.setMessage(noticeText)
         b.row.contentDescription = context.getString(R.string.conversation_message_spoken,
             if (message.mine) context.getString(R.string.conversation_you) else name,
             listOfNotNull(b.bubble.text.toString(), time, noticeText).joinToString(". "))
-        if (covered) b.row.setOnClickListener { onUncover(message) } else b.row.setOnClickListener(null)
-        b.row.isClickable = covered
+        // A covered message opens on a tap; one's own with a notice offers a review; someone else's can be reported
+        // (touch and hold, also a TalkBack action).
+        when {
+            covered -> b.row.setOnClickListener { onUncover(message) }
+            message.mine && notice != null -> b.row.setOnClickListener { onOwn(message) }
+            else -> b.row.setOnClickListener(null)
+        }
+        b.row.isClickable = covered || (message.mine && notice != null)
+        if (!message.mine) {
+            b.row.setOnLongClickListener { onReport(message); true }
+        } else {
+            b.row.setOnLongClickListener(null)
+            b.row.isLongClickable = false
+        }
     }
 
     private object Diff : DiffUtil.ItemCallback<Message>() {

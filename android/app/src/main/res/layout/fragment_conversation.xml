@@ -132,6 +132,16 @@
                 android:text="@string/conversation_end"
                 android:visibility="gone" />
         </LinearLayout>
+
+        <!-- N5 (N-92): after the plan's time, while it is open: share a photo that it happened (once per plan). -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/happenedButton"
+            style="@style/Widget.Kurinji.Button.Tonal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/conversation_happened"
+            android:visibility="gone"
+            app:icon="@drawable/ic_camera" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
@@ -144,6 +154,17 @@
         android:paddingTop="@dimen/space_sm"
         android:paddingEnd="@dimen/screen_padding"
         android:paddingBottom="@dimen/space_sm" />
+
+    <TextView
+        android:id="@+id/holdHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/screen_padding"
+        android:paddingEnd="@dimen/screen_padding"
+        android:paddingBottom="@dimen/space_xs"
+        android:text="@string/message_hold_hint"
+        android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/statusLine"
