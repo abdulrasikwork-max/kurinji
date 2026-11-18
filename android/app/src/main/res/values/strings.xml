@@ -130,7 +130,7 @@
 
     <!-- Features (shared by Home, Safety Center and Profile) -->
     <string name="feature_sos_title">SOS</string>
-    <string name="feature_safe_walk_title">Safe Walk</string>
+    <string name="feature_safe_walk_title">On my way</string>
     <string name="feature_safety_circle_title">Safety Circle</string>
     <string name="feature_safety_circle_description">People you choose to keep in the loop</string>
     <string name="feature_emergency_history_title">Emergency History</string>
@@ -148,12 +148,12 @@
     <string name="status_idle_label">Nothing running</string>
     <string name="status_idle_headline">No SOS or Safe Walk is running on this phone.</string>
     <string name="status_idle_detail">This screen does not check your surroundings. Start a Safe Walk or SOS whenever you need it.</string>
-    <string name="status_walk_label">Safe Walk on</string>
-    <string name="status_walk_headline">Your check-ins are running.</string>
-    <string name="status_walk_detail">If you miss a check-in, IRL first asks whether you are OK.</string>
-    <string name="status_missed_label">Check-in missed</string>
-    <string name="status_missed_headline">Open Safe Walk to answer.</string>
-    <string name="status_missed_detail">Tell IRL you are OK, or start SOS if you need help.</string>
+    <string name="status_walk_label">On my way on</string>
+    <string name="status_walk_headline">IRL will remind you at the time you chose.</string>
+    <string name="status_walk_detail">No tracking: IRL only asks you whether you got there.</string>
+    <string name="status_missed_label">There yet?</string>
+    <string name="status_missed_headline">Open On my way to answer.</string>
+    <string name="status_missed_detail">Tap I\'m there or More time, or start SOS if you need help.</string>
     <string name="sos_subtitle">Emergency help</string>
     <string name="sos_badge_countdown">5 s to cancel</string>
     <!-- Phase 10A.3: Home banner while an account deletion is pending (opens Account) -->
@@ -247,19 +247,17 @@ Who can see your data: you, and the people who run the IRL server (the project t
 
 Account: you sign in with your mobile number and a 6-digit code texted to it; there is no password and no e-mail. The server stores your real name, your number and when you confirmed that you are 18 or older (your date of birth is checked once and never stored). Codes are kept on the server only as a one-way hash for a few minutes; wrong codes and requests are counted in the server\'s memory only. This device stores your name, the last 4 digits of your number and a sign-in token, sealed with a key held by your phone\'s secure hardware. Deleting your account, cancelling that, signing out your other phones and ending an SOS from another phone are confirmed with a fresh code texted to your number. Asking to delete your account starts a 7-day wait; after it, everything your account holds on the server is deleted (see the end of this notice).
 
-Location: only while an emergency is active, and only if you allow it, your phone\'s location (with its accuracy and the battery level) is saved to your own emergency record on the IRL server. Only you can see the saved points; the only place your location goes beyond that is a map link in the Safety Circle SMS, and only if you switch on automatic SMS or send it yourself (see below). Points that are waiting to be uploaded are kept in memory, not stored on the phone. Location points are deleted together with the emergency record and your account.
+Location: only while an emergency is active, and only if you allow it, your phone\'s location (with its accuracy and the battery level) is saved to your own emergency record on the IRL server. Only you can see the saved points; the only place your location goes beyond that is a map link in the Safety Circle texts of that SOS (see below). On my way never uses your location. Points that are waiting to be uploaded are kept in memory, not stored on the phone. Location points are deleted together with the emergency record and your account.
 
 SOS without internet: an SOS starts on your phone at once, even without a connection, and is recorded on the server as soon as it can be reached. Until then the phone keeps only a random reference for the SOS, its start and end times and whether you tapped Call 112 (no location, no number); the server stores the reference and marks the times as your phone\'s. Signing out deletes what is still waiting.
 
-Safe Walk: the server stores the walk (optional destination text you type, check-in times, missed check-ins) and only the LATEST location of your phone during the walk, which replaces the previous one. No route or track is kept. Nobody is contacted unless you switch on automatic SMS (see below).
+On my way: the server stores the walk (the optional text you type, such as "Library", the reminder time, when you tapped More time and how it ended). No location, no route and no track: it is a reminder on your own phone, by the phone\'s alarm. Nobody is contacted. "Let someone know" opens your phone\'s share menu with a note you can edit; IRL does not see who you send it to.
 
-Stop and route checks (if switched on): the destination text you type is looked up with your phone\'s map service (Google on most phones) and its coordinates are stored with the walk. Your phone compares its position with the direct route in memory only; no movement history is stored on the phone or the server. When a walk ends normally, its destination coordinates and last location are deleted from the server; if it ended in an emergency they are kept with that walk.
-
-Safety Circle SMS (only if you switch on automatic SMS, or when you tap Text yourself): your phone sends an SMS to your enabled contacts with your name, the time, what happened and a map link to your last location. To work without internet, your enabled contacts\' names and numbers are kept on this phone (deleted when you log out). The server records only that a message was sent, to which contact and its status; never the number or the text. Tapping Call 112 opens your phone\'s dialer; IRL records that it was opened, not whether you called.
+Safety Circle texts (only if you choose "Yes, text them for me"): when your SOS reaches the IRL server, the server texts up to 5 of your enabled contacts with Indian mobile numbers, through the SMS provider Fast2SMS (fast2sms.com), with exactly this: your name, your number, the time, that you pressed SOS, a map link to your latest location, and later one text when you end the SOS. The provider sees these texts to deliver them. The server keeps for each text only the contact, the kind, the status and a one-way key of the number (never the text, never a readable number); they are deleted with the emergency and your account. Nothing is sent for an SOS ended from another phone, or one the server receives more than 30 minutes after it started. Without internet IRL cannot text anyone: you can always tap Text to send a ready message yourself from your SMS app (your contacts\' names and numbers are kept on this phone for that, deleted when you log out). "Test my alerts" texts your own number. A number can ask IRL to stop all IRL texts to it. Tapping Call 112 opens your phone\'s dialer; IRL records that it was opened, not whether you called.
 
 Account deletion: you confirm it with a code texted to your number; it is refused during an emergency and for 24 hours after one, and it waits 7 days (cancel with a code; signing in does not cancel it). Then the server deletes your account and everything it holds: emergencies and their locations, walks and Safety Circle. If you ever acted as a moderator, your account row stays as an anonymous, switched-off record so that the moderation log keeps who decided what; your name, number and safety data are still deleted. After the deletion, this phone removes the settings it kept for the account the next time it learns of it, or when you tap the button on the login screen.
 
-Retention in short: emergency locations and walks stay until you delete them or your account; walk destinations and last locations are deleted when a walk ends normally; moderation log 365 days.
+Retention in short: emergency locations and walks stay until you delete them or your account; walks keep no location; moderation log 365 days.
 
 A complete privacy policy will be written and reviewed before any public release.</string>
 
@@ -404,7 +402,42 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="action_turn_on_location">Turn on location</string>
 
     <!-- ===== Phase 4B: Safe Walk ===== -->
-    <string name="title_safe_walk">Safe Walk</string>
+    <!-- N6 (D22, D25): "On my way", a reminder (code name Safe Walk). No location, nobody is told by IRL. -->
+    <string name="omw_title">On my way</string>
+    <string name="omw_setup_body">IRL reminds you when you should be there. Nothing is tracked, and nobody is told unless you tell them.</string>
+    <string name="omw_label_hint">Where to? (optional)</string>
+    <string name="omw_minutes_label">Remind me in</string>
+    <string name="omw_minutes">%1$d min</string>
+    <string name="omw_setup_honest">The reminder uses your phone\'s alarm and may come a few minutes late. On my way doesn\'t use your location and IRL texts nobody for it.</string>
+    <string name="omw_start">Start</string>
+    <string name="omw_active_title">On my way</string>
+    <string name="omw_active_to">On my way to %1$s</string>
+    <string name="omw_reminder_at">IRL will ask “There yet?” at about %1$s (it may be a few minutes late).</string>
+    <string name="omw_there_yet">There yet? Tap I\'m there, or More time.</string>
+    <string name="omw_not_synced">Saved on this phone; IRL\'s server is told when you\'re online.</string>
+    <string name="omw_notifications_off">Notifications are off, so the reminder can\'t reach you while IRL is closed. Allow them in You → Safety → Before you need it.</string>
+    <string name="omw_action_there">I\'m there</string>
+    <string name="omw_action_more_time">More time</string>
+    <string name="omw_action_sos">SOS</string>
+    <string name="omw_action_call">Call 112</string>
+    <string name="omw_let_someone_know">Let someone know</string>
+    <string name="omw_cancel">Stop On my way</string>
+    <string name="omw_cancel_title">Stop the reminder?</string>
+    <string name="omw_active_honest">Only you see this. If you need help now, use SOS.</string>
+    <string name="omw_ended_there">You\'re there.</string>
+    <string name="omw_ended_cancelled">On my way stopped.</string>
+    <string name="omw_ended_sos">Your SOS ended On my way.</string>
+    <string name="omw_note_going_to">I\'m on my way to %1$s. I should be there by about %2$s.</string>
+    <string name="omw_note_going">I\'m on my way. I should be there by about %1$s.</string>
+    <string name="omw_note_there_to">I got to %1$s.</string>
+    <string name="omw_note_there">I got there.</string>
+    <string name="omw_reminder_title">There yet?</string>
+    <string name="omw_reminder_text">Your On my way time is up. Tap I\'m there, or More time.</string>
+    <string name="omw_nudge_title">Still on your way?</string>
+    <string name="omw_nudge_text">If you need help, start SOS or call 112. Otherwise tap I\'m there or More time. IRL won\'t ask again.</string>
+    <string name="omw_public_title">IRL reminder</string>
+    <string name="omw_keep">Keep it</string>
+    <string name="title_safe_walk">On my way</string>
     <string name="safe_walk_setup_title">Start a Safe Walk</string>
     <string name="safe_walk_setup_body">IRL asks you to check in at regular times while you are on your way. Tap “I\'m OK” each time, and “I\'ve arrived” when you get there. Using support is a choice, not a weakness.</string>
     <string name="safe_walk_destination_hint">Where are you going? (optional)</string>
@@ -458,8 +491,8 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="safe_walk_ended_emergency_message">Your Safe Walk ended because an emergency was started. Open SOS to see it.</string>
     <string name="home_emergency_banner">Emergency active. Tap to open it.</string>
     <string name="cd_home_emergency_banner">Emergency active. Opens the emergency screen.</string>
-    <string name="home_walk_banner">Safe Walk active. Tap to open it.</string>
-    <string name="home_walk_banner_overdue">Safe Walk: check-in missed. Tap to check in.</string>
+    <string name="home_walk_banner">On my way is on. Tap to open it.</string>
+    <string name="home_walk_banner_overdue">On my way: there yet? Tap to answer.</string>
 
     <!-- Safe Walk notifications: generic text only (no destination, no location) -->
     <string name="notification_channel_alerts_name">Safe Walk check-ins</string>
@@ -898,7 +931,7 @@ A complete privacy policy will be written and reviewed before any public release
 
     <!-- You → Safety -->
     <string name="safety_hub_section_tools">Tools</string>
-    <string name="safety_hub_walk_description">Check-ins while you travel, and checks for unusual stops</string>
+    <string name="safety_hub_walk_description">A reminder when you should be there. No tracking.</string>
 
     <!-- Discover (F14) -->
 

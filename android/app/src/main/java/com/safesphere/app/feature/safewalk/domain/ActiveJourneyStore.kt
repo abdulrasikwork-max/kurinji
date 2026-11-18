@@ -3,13 +3,11 @@ package com.safesphere.app.feature.safewalk.domain
 import java.time.Instant
 
 /**
- * What the phone remembers about the active walk so it survives a restart, even offline. No location and no
- * destination (the destination's coordinates come back from the server).
+ * What the phone remembers about the active walk so it survives a restart (even offline) and so the reminder alarm
+ * can find it after the process died. Ids and times only: no label, no location (N6, D22).
  *
- * @param localDueAt     the next check-in deadline in PHONE time (already converted from the server's)
- * @param pendingEnd     the person ended the walk but the server has not confirmed it yet
- * @param movementChecks the person's choice for stop / route checks (Phase 4C)
- * @param concern        an open "Are you OK?" prompt raised by a movement check (kind + time only, Phase 4C)
+ * @param localDueAt the reminder time in PHONE time (already converted from the server's)
+ * @param pendingEnd the person ended the walk but the server has not confirmed it yet
  */
 data class ActiveJourneyRecord(
     val userId: Long,
@@ -17,9 +15,7 @@ data class ActiveJourneyRecord(
     val checkInIntervalMinutes: Int,
     val startedAt: Instant,
     val localDueAt: Instant,
-    val pendingEnd: JourneyStatus? = null,
-    val movementChecks: Boolean = true,
-    val concern: Concern? = null
+    val pendingEnd: JourneyStatus? = null
 )
 
 interface ActiveJourneyStore {

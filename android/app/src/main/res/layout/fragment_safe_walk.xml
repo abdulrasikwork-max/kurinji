@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Four panels; SafeWalkFragment shows exactly one of them for the current SafeWalkUiState. -->
+<!-- N6 (D22): "On my way". Four panels; SafeWalkFragment shows exactly one of them for the current SafeWalkUiState. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Loading (checking for an active walk) -->
+    <!-- Loading (checking for a running walk) -->
     <FrameLayout
         android:id="@+id/loadingPanel"
         android:layout_width="match_parent"
@@ -32,134 +32,75 @@
             android:orientation="vertical"
             android:padding="@dimen/screen_padding">
 
-            <ImageView
-                android:layout_width="@dimen/illustration_size"
-                android:layout_height="@dimen/illustration_size"
-                android:layout_gravity="center_horizontal"
-                android:importantForAccessibility="no"
-                android:src="@drawable/ic_route"
-                app:tint="?attr/colorPrimary" />
-
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
                 android:accessibilityHeading="true"
-                android:gravity="center"
-                android:text="@string/safe_walk_setup_title"
+                android:text="@string/omw_title"
                 android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_sm"
-                android:gravity="center"
-                android:text="@string/safe_walk_setup_body"
+                android:text="@string/omw_setup_body"
                 android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/destinationLayout"
+                android:id="@+id/labelLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_lg"
-                android:hint="@string/safe_walk_destination_hint"
+                android:hint="@string/omw_label_hint"
                 app:counterEnabled="true"
                 app:counterMaxLength="100">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/destinationInput"
+                    android:id="@+id/labelInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:imeOptions="actionDone"
                     android:inputType="textCapSentences"
                     android:maxLength="100"
                     android:maxLines="1" />
             </com.google.android.material.textfield.TextInputLayout>
 
-
             <TextView
-                android:id="@+id/intervalLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_md"
-                android:text="@string/safe_walk_interval_label"
-                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+                android:text="@string/omw_minutes_label"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
 
             <com.google.android.material.chip.ChipGroup
-                android:id="@+id/intervalChips"
+                android:id="@+id/minutesGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_xs"
                 app:selectionRequired="true"
                 app:singleSelection="true" />
 
-            <!-- Phase 4C: stop and route checks (Safety Bubble). On by default; the person can switch them off. -->
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/movementChecksSwitch"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:checked="true"
-                android:minHeight="48dp"
-                android:text="@string/safe_walk_movement_checks_label"
-                android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
-
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs"
-                android:text="@string/safe_walk_movement_checks_body"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-
-            <!-- Phase 17D: what location can do for this walk right now, and the one tap that improves it -->
-            <TextView
-                android:id="@+id/setupLocationLine"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:accessibilityLiveRegion="polite"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/setupLocationButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minHeight="@dimen/min_touch_target"
-                android:visibility="gone" />
+                android:layout_marginTop="@dimen/space_md"
+                android:text="@string/omw_setup_honest"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
 
             <com.safesphere.app.core.ui.components.NoticeView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_lg"
-                app:noticeText="@string/safe_walk_limits_notice"
-                app:noticeType="warning" />
-
-            <com.safesphere.app.core.ui.components.NoticeView
-                android:id="@+id/setupErrorNotice"
+                android:id="@+id/setupError"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_md"
-                android:accessibilityLiveRegion="polite"
                 android:visibility="gone"
-                app:noticeText="@string/error_unknown"
                 app:noticeType="warning" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/startWalkButton"
+                android:id="@+id/startButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_lg"
-                android:minHeight="64dp"
-                android:text="@string/action_start_safe_walk" />
-
-            <com.google.android.material.progressindicator.LinearProgressIndicator
-                android:id="@+id/startProgress"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_sm"
-                android:indeterminate="true"
-                android:visibility="gone" />
+                android:minHeight="56dp"
+                android:text="@string/omw_start" />
         </LinearLayout>
     </ScrollView>
 
@@ -178,206 +119,77 @@
             android:padding="@dimen/screen_padding">
 
             <TextView
+                android:id="@+id/activeTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:accessibilityHeading="true"
-                android:text="@string/safe_walk_active_title"
                 android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle" />
 
             <TextView
-                android:id="@+id/activeDestination"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_xs"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-
-            <!-- Phase 17F: start, destination and you on the app-drawn straight line (no map tiles; not a route) -->
-            <LinearLayout
-                android:id="@+id/walkLineBlock"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <com.safesphere.app.feature.safewalk.ui.WalkLineView
-                    android:id="@+id/walkLine"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/walkLineCaption"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_xs"
-                    android:importantForAccessibility="no"
-                    android:text="@string/walk_line_caption"
-                    android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
-            </LinearLayout>
-
-            <!-- Level 2: no response. Emergency treatment (Phase 16, U4): black, red ring, siren, words. -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/noResponseCard"
-                style="@style/Widget.SafeSphere.Card.Emergency"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:visibility="gone">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="@dimen/space_lg">
-
-                    <TextView
-                        android:id="@+id/noResponseTitle"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:accessibilityHeading="true"
-                        android:accessibilityLiveRegion="assertive"
-                        android:drawablePadding="@dimen/space_sm"
-                        android:gravity="center_vertical"
-                        android:text="@string/safe_walk_no_response_title"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle"
-                        android:textColor="?attr/colorOnError"
-                        app:drawableStartCompat="@drawable/ic_siren"
-                        app:drawableTint="?attr/colorOnError" />
-
-                    <TextView
-                        android:id="@+id/noResponseBody"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_xs"
-                        android:text="@string/safe_walk_no_response_body"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-                        android:textColor="?attr/colorOnError" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Phase 4D: what the Safety Circle has been told about this walk, and the manual fallback -->
-            <TextView
-                android:id="@+id/walkCircleStatus"
+                android:id="@+id/reminderLine"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_sm"
                 android:accessibilityLiveRegion="polite"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body"
-                android:visibility="gone" />
+                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/textCircleButton"
-                style="@style/Widget.SafeSphere.Button.Secondary"
+            <TextView
+                android:id="@+id/syncLine"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_xs"
-                android:minHeight="56dp"
-                android:text="@string/action_text_my_circle"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
                 android:visibility="gone" />
 
-            <!-- Due soon / missed -->
             <com.safesphere.app.core.ui.components.NoticeView
-                android:id="@+id/phaseNotice"
+                android:id="@+id/notificationsNotice"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_md"
-                android:accessibilityLiveRegion="polite"
                 android:visibility="gone"
-                app:noticeText="@string/safe_walk_due_soon"
-                app:noticeType="info" />
+                app:noticeText="@string/omw_notifications_off"
+                app:noticeType="warning" />
 
-            <!-- Phase 4C: arrival hint. Never ends the walk by itself. -->
-            <com.safesphere.app.core.ui.components.NoticeView
-                android:id="@+id/arrivalNotice"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_md"
-                android:accessibilityLiveRegion="polite"
-                android:visibility="gone"
-                app:noticeText="@string/safe_walk_arrived_hint"
-                app:noticeType="info" />
-
-            <TextView
-                android:id="@+id/countdownText"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/thereButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_lg"
-                android:gravity="center"
-                android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle"
-                android:textSize="56sp" />
-
-            <TextView
-                android:id="@+id/countdownLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="@string/safe_walk_until_check_in"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+                android:minHeight="56dp"
+                android:text="@string/omw_action_there" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/checkInButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_lg"
-                android:minHeight="72dp"
-                android:text="@string/action_check_in" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/arrivedButton"
-                style="@style/Widget.SafeSphere.Button.Secondary"
+                android:id="@+id/moreTimeButton"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_sm"
-                android:minHeight="56dp"
-                android:text="@string/action_arrived" />
+                android:minHeight="48dp"
+                android:text="@string/omw_action_more_time" />
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/walkSosButton"
-                style="@style/Widget.SafeSphere.Button.Emergency"
+                android:id="@+id/tellButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:minHeight="48dp"
+                android:text="@string/omw_let_someone_know" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/cancelButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/omw_cancel" />
+
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_md"
-                android:text="@string/action_walk_sos" />
-
-            <!-- Phase 4C: what the stop / route checks and the battery policy are doing -->
-            <TextView
-                android:id="@+id/movementLines"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_lg"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/movementChecksButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/action_movement_checks_off" />
-
-            <TextView
-                android:id="@+id/walkStatusLines"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_lg"
-                android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/walkLocationButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/action_allow_location"
-                android:visibility="gone" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/cancelWalkButton"
-                style="@style/Widget.SafeSphere.Button.Text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="@dimen/space_md"
-                android:text="@string/action_cancel_walk" />
+                android:text="@string/omw_active_honest"
+                android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
         </LinearLayout>
     </ScrollView>
 
@@ -391,36 +203,28 @@
         android:padding="@dimen/screen_padding"
         android:visibility="gone">
 
-        <ImageView
-            android:id="@+id/endedIcon"
-            android:layout_width="@dimen/illustration_size"
-            android:layout_height="@dimen/illustration_size"
-            android:importantForAccessibility="no"
-            android:src="@drawable/ic_check_circle"
-            app:tint="?attr/colorSafe" />
-
         <TextView
             android:id="@+id/endedTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
             android:accessibilityHeading="true"
             android:gravity="center"
             android:textAppearance="@style/TextAppearance.SafeSphere.ScreenTitle" />
 
-        <TextView
-            android:id="@+id/endedMessage"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/endedTellButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_sm"
-            android:gravity="center"
-            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+            android:layout_marginTop="@dimen/space_lg"
+            android:minHeight="48dp"
+            android:text="@string/omw_let_someone_know" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/walkDoneButton"
+            android:id="@+id/doneButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xl"
+            android:layout_marginTop="@dimen/space_md"
             android:text="@string/action_done" />
     </LinearLayout>
 </FrameLayout>

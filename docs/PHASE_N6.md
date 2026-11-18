@@ -309,5 +309,40 @@ anyone).
   asks nothing; the SMS app is the only phone path); `Phase17FGuardsTest`, `RuntimePermissionAskTest`, `HonestyTextsTest`
   trimmed to what still exists. Tests rewritten: `CircleAlertCoordinatorTest` (11), `CommunicationScreenTest` (server lines
   fail-closed, the choice card, SOS polling and the 15 s fallback), `ReadyCheckTest`; new `SafetyTrimRetirementTest`.
-- `gradlew --offline testDebugUnitTest`: **757 run / 0 failures** (804 before A1: about 50 tests of the removed shake,
-  phone SMS and policy went, new ones came); `assembleDebug` OK. Not yet on a device or emulator (step C).
+- `gradlew --offline testDebugUnitTest`: **756 run / 0 failures** in the full run (804 before A1: about 50 tests of the
+  removed shake, phone SMS and policy went, new ones came), then `SafetyTrimRetirementTest` (1) run on its own;
+  `assembleDebug` OK. Not yet on a device or emulator (step C).
+
+### A2 (2026-11-18): Android "On my way" (D22, D25). Implemented, compiled, tested. NOT manually verified.
+- **The walk is a reminder:** `feature/safewalk` rewritten. Pure `CheckInPolicy` (ON_TRACK until the chosen time, MISSED =
+  "There yet?", NO_RESPONSE = the one nudge 5 min later, then nothing; `alarms`, `CHOICES` 10 / 20 / 30 / 45 / 60;
+  `localDeadline` kept). `SafeWalkSession` = start (label + minutes), recover, More time (`checkIn`), I'm there
+  (`complete`), cancel, SOS link, sign-out; ordered offline queue (More time, the end); `onAlarm`,
+  `checkInFromNotification`, `completeFromNotification` (work after the process died). No location provider, no battery
+  reader, no tracking notice, no escalation.
+- **Alarms:** `ReminderScheduler` → `AndroidReminderScheduler` (`AlarmManager.setAndAllowWhileIdle`, RTC_WAKEUP, two
+  alarms: the reminder and the nudge; no exact-alarm or boot permission, so it may be a few minutes late and a reboot
+  drops it until IRL is opened: said on screen and in the code) → non-exported `OnMyWayAlarmReceiver` → `onAlarm`.
+  `AndroidSafeWalkAlerts`: "There yet?" [I'm there] [More time]; the nudge also [SOS] (the SOS shortcut's own
+  non-exported path: the cancellable countdown) and [Call 112] (the dialer); private on the lock screen.
+  `CheckInActionReceiver` handles I'm there / More time.
+- **Screen:** `SafeWalkFragment` + layout rewritten: optional "Where to?", chips 10–60 min, Start; running: "IRL will ask
+  There yet? at about …", I'm there / More time / Let someone know / Stop On my way; ended: "You're there" + Let someone
+  know. "Let someone know" = the share sheet with a plain note (the label and the time; no location, no link, nobody
+  else's name). The `destinationLabel` argument (Going there?, plans in A3) prefills the label.
+- **Removed:** `MovementPolicy`, `WalkLineGeometry`, `WalkLineLabels`, `WalkLineView`, `WalkHints`, `BatteryPolicy`
+  (`BatteryMonitor` stays for SOS), `DestinationResolver` + `GeocoderDestinationResolver`, `GeoHash`, `PreciseFix` (+
+  `LocationStreamPolicy`), the walk's tracking notice (`trackingNoticeSource` = the SOS only), the walk's location /
+  escalation API calls and DTO fields, the 4C store fields (cleared from the old record on the next save), the concern
+  wording of the hand-sent walk text.
+- **Words:** "On my way" everywhere the person sees the feature (D25: no "safe" claim); banners "On my way is on" /
+  "There yet?"; the privacy notice: On my way (no location, the share note), the Safety Circle texts (what, when, to whom,
+  through Fast2SMS, what the server keeps, the stop list, Test my alerts), retention.
+- **Tests:** `SafeWalkSessionTest` (11: alarms, the reminder and the one nudge, More time, I'm there, offline end, alarm
+  after process death, stale alarms, notification actions after process death, SOS, offline recovery, sign-out),
+  `CheckInPolicyTest` (3), `SafeWalkScreenTest` (7, incl. guards: no exact alarm / boot receiver, receivers not exported,
+  notes without location or link, honest words), `Phase17DLocationTest` (no location stream outside the SOS holder; no
+  location, Geocoder or map link in On my way, plans, moments, replies; no Geocoder anywhere). Removed with their code:
+  movement, walk-line, battery, GeoHash, precise-fix tests.
+- `gradlew --offline testDebugUnitTest assembleDebug`: **652 run / 0 failures**, `assembleDebug` OK (757 before A2: about
+  100 tests of the removed walk tracking went). Not yet on a device (step C: the reminder with the app killed).

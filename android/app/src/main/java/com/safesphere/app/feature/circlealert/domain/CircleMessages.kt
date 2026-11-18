@@ -1,7 +1,6 @@
 package com.safesphere.app.feature.circlealert.domain
 
 import com.safesphere.app.core.location.GeoPoint
-import com.safesphere.app.feature.safewalk.domain.ConcernKind
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -28,7 +27,6 @@ object CircleMessages {
         zone: ZoneId,
         location: GeoPoint?,
         locationAt: Instant?,
-        concern: ConcernKind? = null,
         automatic: Boolean
     ): String {
         val name = personName.trim().ifBlank { "An IRL user" }.take(MAX_NAME_LENGTH)
@@ -41,7 +39,7 @@ object CircleMessages {
         }
         val body = when (kind) {
             CircleMessageKind.WALK_NO_RESPONSE ->
-                "IRL alert: $name did not answer a Safe Walk safety check at $time${reason(concern)}. " +
+                "IRL alert: $name did not answer a Safe Walk safety check at $time. " +
                     "This is not a confirmed emergency. $place Please try to call $name. " +
                     "If you cannot reach them and are worried, call 112."
             CircleMessageKind.SOS_STARTED ->
@@ -63,12 +61,6 @@ object CircleMessages {
     fun mapLink(point: GeoPoint): String =
         "https://www.google.com/maps/search/?api=1&query=" +
             String.format(Locale.ROOT, "%.5f,%.5f", point.latitude, point.longitude)
-
-    private fun reason(concern: ConcernKind?): String = when (concern) {
-        ConcernKind.ROUTE_DEVIATION -> " after leaving the planned route"
-        ConcernKind.UNEXPECTED_STOP -> " after not moving for a while"
-        null -> ""
-    }
 
     private const val MAX_NAME_LENGTH = 40
 }

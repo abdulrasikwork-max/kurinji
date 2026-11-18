@@ -3,7 +3,6 @@ package com.safesphere.app.feature.circlealert
 import com.safesphere.app.core.location.GeoPoint
 import com.safesphere.app.feature.circlealert.domain.CircleMessageKind
 import com.safesphere.app.feature.circlealert.domain.CircleMessages
-import com.safesphere.app.feature.safewalk.domain.ConcernKind
 import java.time.Instant
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
@@ -18,8 +17,8 @@ class CircleMessagesTest {
     private val at = Instant.parse("2026-10-20T13:31:00Z") // 19:01 IST
     private val place = GeoPoint(12.9716, 77.5946)
 
-    private fun compose(kind: CircleMessageKind, concern: ConcernKind? = null, location: GeoPoint? = place, automatic: Boolean = true) =
-        CircleMessages.compose(kind, "Asha", at, zone, location, at, concern, automatic)
+    private fun compose(kind: CircleMessageKind, location: GeoPoint? = place, automatic: Boolean = true) =
+        CircleMessages.compose(kind, "Asha", at, zone, location, at, automatic)
 
     @Test
     fun `SOS message - name, local time, what happened and a map link, nothing else`() {
@@ -32,12 +31,10 @@ class CircleMessagesTest {
     }
 
     @Test
-    fun `a Safe Walk alert says it is not a confirmed emergency, and why it was sent`() {
-        val text = compose(CircleMessageKind.WALK_NO_RESPONSE, ConcernKind.ROUTE_DEVIATION)
-
-        assertTrue(text.contains("did not answer a Safe Walk safety check at 19:01, 20 Oct after leaving the planned route"))
+    fun `a walk text (old records only since N6) says it is not a confirmed emergency`() {
+        val text = compose(CircleMessageKind.WALK_NO_RESPONSE)
+        assertTrue(text.contains("did not answer a Safe Walk safety check at 19:01, 20 Oct."))
         assertTrue(text.contains("This is not a confirmed emergency."))
-        assertTrue(compose(CircleMessageKind.WALK_NO_RESPONSE, ConcernKind.UNEXPECTED_STOP).contains("after not moving for a while"))
     }
 
     @Test
@@ -64,7 +61,7 @@ class CircleMessagesTest {
     @Test
     fun `allow-list - no accuracy, battery, coordinates beyond the link, or email ever appear`() {
         CircleMessageKind.entries.forEach { kind ->
-            val text = compose(kind, ConcernKind.ROUTE_DEVIATION)
+            val text = compose(kind)
             listOf("accuracy", "battery", "%", "@", "destination", "±").forEach { forbidden ->
                 assertFalse("$kind contains $forbidden", text.contains(forbidden, ignoreCase = true))
             }

@@ -99,7 +99,7 @@ class SessionStatusViewModelTest {
     @Test
     fun `an active walk shows the walk banner, with its check-in phase`() = runTest {
         val viewModel = viewModel()
-        safeWalk.state.value = SafeWalkState(journey = journey, checkIn = CheckInStatus(CheckInPhase.MISSED, EscalationLevel.CHECK_IN_MISSED, due, null))
+        safeWalk.state.value = SafeWalkState(journey = journey, checkIn = CheckInStatus(CheckInPhase.MISSED, due, null))
         advanceUntilIdle()
 
         assertEquals(ActiveSessionBanner.SafeWalk(CheckInPhase.MISSED), viewModel.activeSession.value)
@@ -158,10 +158,10 @@ class SessionStatusViewModelTest {
     fun `a check-in due soon is still a running walk, a missed or unanswered one is the missed status`() = runTest {
         val viewModel = viewModel()
         val cases = listOf(
-            CheckInStatus(CheckInPhase.ON_TRACK, EscalationLevel.NORMAL, due, null) to SessionStatus.SAFE_WALK,
-            CheckInStatus(CheckInPhase.DUE_SOON, EscalationLevel.NORMAL, due, null) to SessionStatus.SAFE_WALK,
-            CheckInStatus(CheckInPhase.MISSED, EscalationLevel.CHECK_IN_MISSED, due, null) to SessionStatus.CHECK_IN_MISSED,
-            CheckInStatus(CheckInPhase.NO_RESPONSE, EscalationLevel.NO_RESPONSE, due, null) to SessionStatus.CHECK_IN_MISSED
+            CheckInStatus(CheckInPhase.ON_TRACK, due, null) to SessionStatus.SAFE_WALK,
+            CheckInStatus(CheckInPhase.DUE_SOON, due, null) to SessionStatus.SAFE_WALK,
+            CheckInStatus(CheckInPhase.MISSED, due, null) to SessionStatus.CHECK_IN_MISSED,
+            CheckInStatus(CheckInPhase.NO_RESPONSE, due, null) to SessionStatus.CHECK_IN_MISSED
         )
         for ((checkIn, expected) in cases) {
             safeWalk.state.value = SafeWalkState(journey = journey, checkIn = checkIn)

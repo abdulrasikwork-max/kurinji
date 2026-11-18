@@ -1,51 +1,28 @@
 package com.safesphere.app.feature.safewalk
 
-import com.safesphere.app.core.device.BatteryLevel
-import com.safesphere.app.core.device.BatteryStatus
 import com.safesphere.app.core.escalation.EscalationLevel
-import com.safesphere.app.core.location.GeoPoint
-import com.safesphere.app.core.location.LocationAccess
-import com.safesphere.app.core.location.LocationStreamStatus
-import com.safesphere.app.feature.safewalk.domain.ArrivalState
-import com.safesphere.app.feature.safewalk.domain.CheckInPhase
-import com.safesphere.app.feature.safewalk.domain.CheckInStatus
-import com.safesphere.app.feature.safewalk.domain.GpsQuality
-import com.safesphere.app.feature.safewalk.domain.MovementState
-import com.safesphere.app.feature.safewalk.session.DestinationSearch
-import com.safesphere.app.feature.safewalk.ui.DistanceText
-import com.safesphere.app.feature.safewalk.ui.MovementLine
-import com.safesphere.app.feature.safewalk.ui.distanceText
-import com.safesphere.app.feature.safewalk.ui.movementLinesFor
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
-import com.safesphere.app.core.tracking.CompositeTrackingNoticeSource
-import com.safesphere.app.core.tracking.TrackingNotice
-import com.safesphere.app.core.tracking.TrackingNoticeSource
 import com.safesphere.app.feature.safewalk.domain.Journey
 import com.safesphere.app.feature.safewalk.domain.JourneyStatus
 import com.safesphere.app.feature.safewalk.session.SafeWalkState
 import com.safesphere.app.feature.safewalk.ui.SafeWalkUiState
 import com.safesphere.app.feature.safewalk.ui.SafeWalkViewModel
-import com.safesphere.app.feature.safewalk.ui.WalkHint
-import com.safesphere.app.feature.safewalk.ui.formatCountdown
-import com.safesphere.app.feature.safewalk.ui.walkHintsFor
 import com.safesphere.app.testing.FakeSafeWalkController
 import com.safesphere.app.testing.MainDispatcherRule
+import java.io.File
 import java.time.Instant
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-/** The Safe Walk screen's ViewModel, its pure text helpers, and the shared tracking notice. */
+/** N6 (D22, D25): the "On my way" screen's view model, its words, and the guards of what it may never do. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SafeWalkScreenTest {
 
@@ -53,241 +30,103 @@ class SafeWalkScreenTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val controller = FakeSafeWalkController()
-    private fun viewModel(serviceRunning: Boolean = true) = SafeWalkViewModel(controller, MutableStateFlow(serviceRunning))
+    private fun viewModel() = SafeWalkViewModel(controller)
 
     private val journey = Journey(
-        1, JourneyStatus.ACTIVE, "Home", 10, EscalationLevel.NORMAL,
-        Instant.parse("2026-10-20T18:00:00Z"), null, Instant.parse("2026-10-20T18:10:00Z"), Instant.parse("2026-10-20T18:00:00Z")
+        1, JourneyStatus.ACTIVE, "Library", 20, EscalationLevel.NORMAL,
+        Instant.parse("2026-10-20T18:00:00Z"), null, Instant.parse("2026-10-20T18:20:00Z"), Instant.parse("2026-10-20T18:00:00Z")
     )
-    private val active = SafeWalkState(journey = journey, localDueAt = journey.nextCheckInDueAt, access = LocationAccess.PRECISE)
 
     @Test
     fun `the screen recovers first, then offers the setup`() = runTest {
-        val viewModel = viewModel()
+        controller.recoverGate = CompletableDeferred()
+        val vm = viewModel()
         advanceUntilIdle()
-
-        assertEquals("recover", controller.calls.first())
-        assertEquals(SafeWalkUiState.Setup(), viewModel.uiState.value)
+        assertEquals(SafeWalkUiState.Loading, vm.uiState.value)
+        controller.recoverGate!!.complete(Unit)
+        advanceUntilIdle()
+        assertTrue(vm.uiState.value is SafeWalkUiState.Setup)
     }
 
     @Test
-    fun `an active walk is shown, and an ended one shows its result once`() = runTest {
-        controller.state.value = active
-        val viewModel = viewModel()
+    fun `starting sends only the label and one of the design's times, and twice quickly starts one walk`() = runTest {
+        controller.startResult = ApiResult.Success(journey)
+        val vm = viewModel()
         advanceUntilIdle()
-        assertTrue(viewModel.uiState.value is SafeWalkUiState.Active)
-
-        controller.state.value = active.copy(endedStatus = JourneyStatus.COMPLETED)
+        vm.onStartClicked("Library", 7) // not a choice on the screen: refused here
+        vm.onStartClicked("Library", 20)
+        vm.onStartClicked("Library", 20)
         advanceUntilIdle()
-        assertEquals(SafeWalkUiState.Ended(JourneyStatus.COMPLETED), viewModel.uiState.value)
+        assertEquals(listOf("recover", "start:20:Library"), controller.calls)
+    }
 
-        viewModel.onDoneClicked()
+    @Test
+    fun `a refused start shows the reason, an active walk and an ended one are shown`() = runTest {
+        controller.startResult = ApiResult.Failure(ApiError.CONFLICT, "A Safe Walk is already active")
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.onStartClicked(null, 10)
+        advanceUntilIdle()
+        assertEquals(ApiError.CONFLICT, (vm.uiState.value as SafeWalkUiState.Setup).failure?.error)
+
+        controller.state.value = SafeWalkState(journey = journey, localDueAt = journey.nextCheckInDueAt)
+        advanceUntilIdle()
+        assertTrue(vm.uiState.value is SafeWalkUiState.Active)
+        assertEquals("Library", vm.lastLabel)
+        controller.state.value = controller.state.value.copy(endedStatus = JourneyStatus.COMPLETED)
+        advanceUntilIdle()
+        assertEquals(SafeWalkUiState.Ended(JourneyStatus.COMPLETED), vm.uiState.value)
+        vm.onDoneClicked()
         assertTrue("acknowledge" in controller.calls)
     }
 
     @Test
-    fun `a refused start shows the server's reason and can be retried`() = runTest {
-        controller.startResult = ApiResult.Failure(ApiError.CONFLICT, "An emergency is active. End it before starting a Safe Walk")
-        val viewModel = viewModel()
+    fun `More time, I'm there and stop reach the holder`() = runTest {
+        val vm = viewModel()
         advanceUntilIdle()
+        vm.onMoreTimeClicked()
+        vm.onThereClicked()
+        vm.onCancelConfirmed()
+        assertEquals(listOf("recover", "checkIn", "complete", "cancel"), controller.calls)
+    }
 
-        viewModel.onStartClicked("Home", 10)
-        advanceUntilIdle()
+    private val strings = File("src/main/res/values/strings.xml").readText(Charsets.UTF_8)
+    private fun string(name: String) =
+        Regex("<string name=\"$name\">(.*?)</string>", RegexOption.DOT_MATCHES_ALL).find(strings)?.groupValues?.get(1)
+            ?: error("string $name not found")
 
-        val setup = viewModel.uiState.value as SafeWalkUiState.Setup
-        assertFalse(setup.isStarting)
-        assertEquals("An emergency is active. End it before starting a Safe Walk", setup.failure?.message)
+    @Test
+    fun `the words are honest - a reminder that may be late, no tracking, no safe claim, the name On my way`() {
+        assertEquals("On my way", string("title_safe_walk"))
+        assertEquals("On my way", string("feature_safe_walk_title"))
+        assertTrue(string("omw_setup_honest").contains("may come a few minutes late"))
+        assertTrue(string("omw_setup_honest").contains("doesn\\'t use your location"))
+        val all = Regex("<string name=\"(omw_[a-z_]+)\">(.*?)</string>").findAll(strings).map { it.groupValues[2].lowercase() }.toList()
+        assertTrue(all.size >= 30)
+        for (text in all) {
+            assertFalse(text, Regex("\\b(is|are|you're|you\\\\'re) safe\\b|\\bsafe walk\\b|protected|guarantee").containsMatchIn(text))
+        }
     }
 
     @Test
-    fun `starting twice quickly starts one walk`() = runTest {
-        controller.startResult = ApiResult.Success(journey)
-        val viewModel = viewModel()
-        advanceUntilIdle()
-
-        viewModel.onStartClicked(null, 5)
-        viewModel.onStartClicked(null, 5)
-        advanceUntilIdle()
-
-        assertEquals(1, controller.calls.count { it.startsWith("start") })
+    fun `the notes hold only the label and the time - no location, no link, nobody else's name`() {
+        for (name in listOf("omw_note_going_to", "omw_note_going", "omw_note_there_to", "omw_note_there")) {
+            val text = string(name)
+            assertFalse(name, text.contains("http") || text.contains("maps") || text.contains("location", ignoreCase = true))
+        }
+        val fragment = File("src/main/java/com/safesphere/app/feature/safewalk/ui/SafeWalkFragment.kt").readText()
+        assertTrue(fragment.contains("Intent.ACTION_SEND"))
+        assertFalse(fragment.contains("LocationAsk") || fragment.contains("TrackingServiceStarter"))
     }
 
     @Test
-    fun `the permission prompts are offered once each`() = runTest {
-        val viewModel = viewModel()
-        assertTrue(viewModel.consumeLocationPrompt())
-        assertFalse(viewModel.consumeLocationPrompt())
-        assertTrue(viewModel.consumeNotificationPrompt())
-        assertFalse(viewModel.consumeNotificationPrompt())
-    }
-
-    @Test
-    fun `an expired session is reported`() = runTest {
-        controller.state.value = SafeWalkState(signedOut = true)
-        val viewModel = viewModel()
-        advanceUntilIdle()
-
-        assertTrue(viewModel.sessionExpired.value)
-    }
-
-    // ---- hints and countdown ---------------------------------------------------------------------
-
-    @Test
-    fun `hints explain missing location, notifications, the service and offline sync honestly`() {
-        assertEquals(emptyList<WalkHint>(), walkHintsFor(active, serviceRunning = true, notificationsGranted = true))
-
-        val hints = walkHintsFor(
-            active.copy(access = LocationAccess.NONE, pendingSync = 2, isOnline = false, restoredOffline = true),
-            serviceRunning = false, notificationsGranted = false
-        )
-        assertEquals(
-            listOf(WalkHint.LOCATION_NOT_SHARED, WalkHint.KEEP_APP_OPEN, WalkHint.NOTIFICATIONS_OFF,
-                WalkHint.OFFLINE_PENDING, WalkHint.RESTORED_OFFLINE),
-            hints
-        )
-        assertTrue(walkHintsFor(SafeWalkState(), serviceRunning = false, notificationsGranted = false).isEmpty())
-    }
-
-    // ---- Phase 4C: movement lines -----------------------------------------------------------------
-
-    @Test
-    fun `movement lines say honestly what the stop and route checks are doing`() {
-        val withRoute = active.copy(
-            movementChecks = true,
-            journey = journey.copy(destination = GeoPoint(12.98, 77.59)),
-            destinationDescription = "Station Road",
-            movement = MovementState(metersToDestination = 1_437.0)
-        )
-        assertEquals(
-            listOf(MovementLine.Destination("Station Road"), MovementLine.RouteOn(DistanceText(true, 1.4))),
-            movementLinesFor(withRoute, GpsQuality.GOOD)
-        )
-        assertEquals(
-            listOf(MovementLine.StopsOnly, MovementLine.WeakGps),
-            movementLinesFor(active.copy(movementChecks = true), GpsQuality.WEAK)
-        )
-        assertEquals(
-            listOf(MovementLine.DestinationNotFound, MovementLine.WaitingForGps),
-            movementLinesFor(active.copy(movementChecks = true, destinationSearch = DestinationSearch.NOT_FOUND), GpsQuality.WAITING)
-        )
-        assertEquals(listOf(MovementLine.Off), movementLinesFor(active, GpsQuality.GOOD))
-        assertEquals(
-            listOf(MovementLine.NeedsLocation),
-            movementLinesFor(active.copy(movementChecks = true, access = LocationAccess.NONE), GpsQuality.WAITING)
-        )
-        assertTrue(movementLinesFor(SafeWalkState(), GpsQuality.GOOD).isEmpty())
-    }
-
-    // ---- Phase 17D ---------------------------------------------------------------------------------
-
-    @Test
-    fun `17D - hints say why no position arrives, and check-ins are never blamed on it`() {
-        fun hints(status: LocationStreamStatus, access: LocationAccess = LocationAccess.PRECISE) =
-            walkHintsFor(active.copy(access = access, locationStatus = status), serviceRunning = true, notificationsGranted = true)
-        assertEquals(listOf(WalkHint.LOCATION_OFF), hints(LocationStreamStatus.LOCATION_OFF))
-        assertEquals(listOf(WalkHint.NO_SIGNAL), hints(LocationStreamStatus.NO_SIGNAL))
-        assertEquals(listOf(WalkHint.LOCATION_UNSUPPORTED), hints(LocationStreamStatus.SERVICES_UNAVAILABLE))
-        assertEquals(emptyList<WalkHint>(), hints(LocationStreamStatus.SEARCHING))
-        assertEquals(emptyList<WalkHint>(), hints(LocationStreamStatus.AVAILABLE))
-        // With no permission the one existing line is enough (not a second one about the switch).
-        assertEquals(listOf(WalkHint.LOCATION_NOT_SHARED), hints(LocationStreamStatus.NEEDS_PERMISSION, LocationAccess.NONE))
-    }
-
-    @Test
-    fun `17D - approximate permission says the checks are paused instead of waiting for GPS forever`() {
-        val approximate = active.copy(movementChecks = true, access = LocationAccess.APPROXIMATE)
-        assertEquals(listOf(MovementLine.StopsOnly, MovementLine.NeedsPreciseLocation),
-            movementLinesFor(approximate, GpsQuality.WEAK))
-        assertEquals(listOf(MovementLine.StopsOnly, MovementLine.NeedsPreciseLocation),
-            movementLinesFor(approximate, GpsQuality.WAITING))
-        assertEquals("location off pauses them, with its own words",
-            listOf(MovementLine.StopsOnly, MovementLine.PausedLocationOff),
-            movementLinesFor(active.copy(movementChecks = true, locationStatus = LocationStreamStatus.LOCATION_OFF), GpsQuality.WAITING))
-        assertEquals("a weak signal keeps the GPS wording", listOf(MovementLine.StopsOnly, MovementLine.WeakGps),
-            movementLinesFor(active.copy(movementChecks = true, locationStatus = LocationStreamStatus.NO_SIGNAL), GpsQuality.WEAK))
-    }
-
-    @Test
-    fun `battery lines appear when low or critical`() {
-        assertEquals(
-            listOf(MovementLine.Off, MovementLine.BatteryLow(18)),
-            movementLinesFor(active.copy(battery = BatteryStatus(18, false, BatteryLevel.LOW)), GpsQuality.GOOD)
-        )
-        assertEquals(
-            MovementLine.BatteryCritical(7),
-            movementLinesFor(active.copy(battery = BatteryStatus(7, false, BatteryLevel.CRITICAL)), GpsQuality.GOOD).last()
-        )
-    }
-
-    @Test
-    fun `distances - metres rounded to 10 below 1 km, then kilometres with one decimal`() {
-        assertEquals(DistanceText(false, 350.0), distanceText(347.0))
-        assertEquals(DistanceText(false, 990.0), distanceText(994.0))
-        assertEquals(DistanceText(true, 1.0), distanceText(1_000.0))
-        assertEquals(DistanceText(true, 12.3), distanceText(12_345.0))
-    }
-
-    @Test
-    fun `the arrival hint shows only while nothing else needs an answer`() {
-        val arrived = active.copy(
-            movementChecks = true,
-            movement = MovementState(arrival = ArrivalState(2, arrived = true)),
-            checkIn = CheckInStatus(CheckInPhase.ON_TRACK, EscalationLevel.NORMAL, journey.nextCheckInDueAt!!, null)
-        )
-        assertTrue(arrived.looksArrived)
-        assertFalse(arrived.copy(checkIn = arrived.checkIn!!.copy(phase = CheckInPhase.MISSED)).looksArrived)
-        assertFalse(arrived.copy(movementChecks = false).looksArrived)
-    }
-
-    @Test
-    fun `start passes the movement checks choice, and the toggle flips it`() = runTest {
-        controller.startResult = ApiResult.Success(journey)
-        controller.state.value = active.copy(movementChecks = true)
-        val viewModel = viewModel()
-        advanceUntilIdle()
-
-        viewModel.onMovementChecksToggled()
-        assertTrue("movementChecks:false" in controller.calls)
-
-        controller.state.value = SafeWalkState()
-        advanceUntilIdle()
-        viewModel.onStartClicked("Station", 10, movementChecks = false)
-        advanceUntilIdle()
-        assertTrue("start:10:false" in controller.calls)
-    }
-
-    @Test
-    fun `countdown text, including overdue`() {
-        assertEquals("07:42", formatCountdown(462))
-        assertEquals("00:00", formatCountdown(0))
-        assertEquals("+01:05", formatCountdown(-65))
-    }
-
-    // ---- one service, two sources -----------------------------------------------------------------
-
-    @Test
-    fun `the tracking service shows the emergency first, then the walk, and stops when both are gone`() = runTest {
-        val emergency = FakeNoticeSource()
-        val walk = FakeNoticeSource()
-        val composite = CompositeTrackingNoticeSource(listOf(emergency, walk))
-        val walkNotice = TrackingNotice(1, 2)
-        val emergencyNotice = TrackingNotice(3, 4)
-
-        assertNull(composite.currentNotice())
-        walk.flow.value = walkNotice
-        assertEquals(walkNotice, composite.currentNotice())
-        assertEquals(walkNotice, composite.notices.first())
-        emergency.flow.value = emergencyNotice
-        assertEquals(emergencyNotice, composite.currentNotice())
-        assertEquals(emergencyNotice, composite.notices.first())
-        emergency.flow.value = null
-        walk.flow.value = null
-        assertNull(composite.notices.first())
-    }
-
-    private class FakeNoticeSource : TrackingNoticeSource {
-        val flow = MutableStateFlow<TrackingNotice?>(null)
-        override fun currentNotice() = flow.value
-        override val notices: Flow<TrackingNotice?> = flow
+    fun `the reminder needs no permission - no exact alarm, no boot receiver, receivers not exported`() {
+        val manifest = File("src/main/AndroidManifest.xml").readText()
+        assertFalse(manifest.contains("SCHEDULE_EXACT_ALARM") || manifest.contains("USE_EXACT_ALARM"))
+        assertFalse(manifest.contains("RECEIVE_BOOT_COMPLETED") || manifest.contains("BOOT_COMPLETED"))
+        assertTrue(Regex("""OnMyWayAlarmReceiver"\s+android:exported="false"""").containsMatchIn(manifest))
+        val scheduler = File("src/main/java/com/safesphere/app/feature/safewalk/session/AndroidReminderScheduler.kt").readText()
+        assertTrue(scheduler.contains("setAndAllowWhileIdle"))
+        assertFalse(scheduler.contains("setExact"))
     }
 }

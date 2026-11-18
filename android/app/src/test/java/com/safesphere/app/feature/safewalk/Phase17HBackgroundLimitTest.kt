@@ -2,15 +2,7 @@ package com.safesphere.app.feature.safewalk
 
 import com.safesphere.app.core.device.BackgroundLimit
 import com.safesphere.app.core.device.BackgroundLimits
-import com.safesphere.app.core.escalation.EscalationLevel
-import com.safesphere.app.core.location.LocationAccess
-import com.safesphere.app.feature.safewalk.domain.Journey
-import com.safesphere.app.feature.safewalk.domain.JourneyStatus
-import com.safesphere.app.feature.safewalk.session.SafeWalkState
-import com.safesphere.app.feature.safewalk.ui.WalkHint
-import com.safesphere.app.feature.safewalk.ui.walkHintsFor
 import java.io.File
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -22,15 +14,10 @@ import org.junit.Test
  *    45 s after IRL was swiped away from Recents, and nothing told the person; an SOS survived the same swipe;
  *  - "Restricted": the walk and the SOS lost their location as soon as IRL left the screen;
  *  - "Unrestricted": both kept running.
- * The app cannot change this, so it now says it, once, only when the phone really limits it.
+ * The app cannot change this, so it now says it, once, only when the phone really limits it. N6: "On my way" has no service any
+ * more (an alarm reminds), so only the SOS screen speaks.
  */
 class Phase17HBackgroundLimitTest {
-
-    private val journey = Journey(
-        1, JourneyStatus.ACTIVE, "Home", 10, EscalationLevel.NORMAL,
-        Instant.parse("2026-10-20T18:00:00Z"), null, Instant.parse("2026-10-20T18:10:00Z"), Instant.parse("2026-10-20T18:00:00Z")
-    )
-    private val active = SafeWalkState(journey = journey, localDueAt = journey.nextCheckInDueAt, access = LocationAccess.PRECISE)
 
     private val strings = File("src/main/res/values/strings.xml").readText(Charsets.UTF_8)
     private val emergencyFragment = File(
@@ -51,28 +38,8 @@ class Phase17HBackgroundLimitTest {
     }
 
     @Test
-    fun `a walk says what the phone does, once, and says nothing when Unrestricted`() {
-        val none = walkHintsFor(active, serviceRunning = true, notificationsGranted = true, backgroundLimit = BackgroundLimit.NONE)
-        assertEquals(emptyList<WalkHint>(), none)
-        assertEquals(
-            listOf(WalkHint.BATTERY_OPTIMIZED),
-            walkHintsFor(active, serviceRunning = true, notificationsGranted = true, backgroundLimit = BackgroundLimit.OPTIMIZED)
-        )
-        assertEquals(
-            listOf(WalkHint.BATTERY_RESTRICTED),
-            walkHintsFor(active, serviceRunning = true, notificationsGranted = true, backgroundLimit = BackgroundLimit.RESTRICTED)
-        )
-    }
-
-    @Test
-    fun `no walk, no note, and the old call without the new argument still compiles and says nothing extra`() {
-        assertTrue(walkHintsFor(SafeWalkState(), serviceRunning = true, notificationsGranted = true, backgroundLimit = BackgroundLimit.RESTRICTED).isEmpty())
-        assertEquals(emptyList<WalkHint>(), walkHintsFor(active, serviceRunning = true, notificationsGranted = true))
-    }
-
-    @Test
     fun `the words are plain, name the fix and promise nothing`() {
-        listOf("safe_walk_hint_battery_optimized", "safe_walk_hint_battery_restricted", "sos_hint_battery_restricted").forEach { name ->
+        listOf("sos_hint_battery_restricted").forEach { name ->
             val text = string(name)
             assertTrue("$name names the fix", text.contains("Unrestricted") && text.contains("App info"))
             assertTrue("$name offers to keep IRL open", text.contains("keep IRL open") || text.contains("Leave IRL open"))

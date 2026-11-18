@@ -56,7 +56,7 @@ class Phase17HTrackingStarterTest {
     @Test
     fun `the question is asked at most once per screen session and not at all for the walk`() {
         val walk = File("src/main/java/com/safesphere/app/feature/safewalk/ui/SafeWalkFragment.kt").readText(Charsets.UTF_8)
-        assertTrue("the walk never asks from the starter", walk.contains("TrackingServiceStarter(this) { false }"))
+        assertTrue("N6: On my way starts no service at all", !walk.contains("TrackingServiceStarter"))
         val sos = File("src/main/java/com/safesphere/app/feature/emergency/ui/EmergencyFragment.kt").readText(Charsets.UTF_8)
         assertTrue("the SOS asks through its one-shot view model flag", sos.contains("TrackingServiceStarter(this) { viewModel.consumeNotificationPrompt() }"))
     }

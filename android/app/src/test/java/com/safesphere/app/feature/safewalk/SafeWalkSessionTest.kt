@@ -1,26 +1,15 @@
 package com.safesphere.app.feature.safewalk
 
-import com.safesphere.app.R
-import com.safesphere.app.core.escalation.EscalationLevel
-import com.safesphere.app.core.location.LocationAccess
-import com.safesphere.app.core.location.LocationStreamPolicy
-import com.safesphere.app.core.location.LocationStreamStatus
-import com.safesphere.app.core.location.LocationUnavailableReason
-import com.safesphere.app.core.location.LocationUpdate
 import com.safesphere.app.core.network.ApiResult
 import com.safesphere.app.feature.auth.domain.AuthSession
 import com.safesphere.app.feature.auth.domain.AuthUser
-import com.safesphere.app.feature.safewalk.domain.ActiveJourneyRecord
 import com.safesphere.app.feature.safewalk.domain.CheckInPhase
 import com.safesphere.app.feature.safewalk.domain.JourneyStatus
 import com.safesphere.app.feature.safewalk.session.SafeWalkSession
 import com.safesphere.app.testing.FakeActiveJourneyStore
-import com.safesphere.app.testing.FakeBatteryMonitor
 import com.safesphere.app.testing.FakeConnectivityMonitor
-import com.safesphere.app.testing.FakeDestinationResolver
 import com.safesphere.app.testing.FakeJourneyRepository
-import com.safesphere.app.testing.FakeLocationProvider
-import com.safesphere.app.testing.FakeLocationProvider.Companion.fix
+import com.safesphere.app.testing.FakeReminderScheduler
 import com.safesphere.app.testing.FakeSafeWalkAlerts
 import com.safesphere.app.testing.FakeSessionStorage
 import java.time.Duration
@@ -38,16 +27,17 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Phase 4B: the Safe Walk holder (timer, escalation, offline sync, recovery). Virtual time only; the fake
- * server computes deadlines with its own clock like the real backend.
+ * N6 (D22): "On my way", the reminder holder: the alarms it schedules, the reminder and the one nudge, More time,
+ * I'm there, the notification actions after the process died, offline sync and recovery. Virtual time only; the fake
+ * server computes the reminder time with its own clock like the real backend. Nothing here reads a location.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SafeWalkSessionTest {
 
     private val base = Instant.parse("2026-10-20T18:00:00Z")
-    private val provider = FakeLocationProvider(access = LocationAccess.PRECISE)
     private val connectivity = FakeConnectivityMonitor(online = true)
     private val alerts = FakeSafeWalkAlerts()
+    private val reminders = FakeReminderScheduler()
     private val store = FakeActiveJourneyStore()
     private val sessionStorage = FakeSessionStorage(AuthSession("token", AuthUser(USER_ID, "Asha", "••••••3210")))
     private lateinit var server: FakeJourneyRepository
@@ -61,21 +51,18 @@ class SafeWalkSessionTest {
             scope = backgroundScope,
             repository = server,
             store = store,
-            locationProvider = provider,
             connectivityMonitor = connectivity,
             alerts = alerts,
+            reminders = reminders,
             session = sessionStorage.session,
             currentUserId = { userId },
-            batteryMonitor = FakeBatteryMonitor(),
-            destinationResolver = FakeDestinationResolver(),
             now = { phoneNow() }
         ).also { runCurrent() }
     }
 
-    /** Phase 4B behaviour: movement checks (4C, see SafeWalkMovementTest) are off here. */
-    private suspend fun TestScope.walking(intervalMinutes: Int = 10): SafeWalkSession {
+    private suspend fun TestScope.walking(minutes: Int = 20, label: String? = "Library"): SafeWalkSession {
         val session = newSession()
-        assertTrue(session.start("Home", intervalMinutes, movementChecks = false) is ApiResult.Success)
+        assertTrue(session.start(label, minutes) is ApiResult.Success)
         runCurrent()
         return session
     }
@@ -85,511 +72,145 @@ class SafeWalkSessionTest {
         runCurrent()
     }
 
-    // ---- Phase 11 C1: sign in to sync -------------------------------------------------------------
+    @Test
+    fun `starting schedules the reminder and the one nudge 5 minutes later, and keeps only ids and times`() = runTest {
+        val session = walking(20, "  Library  ")
+        val due = base.plus(Duration.ofMinutes(20))
+        assertEquals(Triple(1L, due, due.plus(Duration.ofMinutes(5))), reminders.scheduled)
+        assertEquals("Library", server.journey?.destinationLabel)
+        assertEquals(CheckInPhase.ON_TRACK, session.state.value.phase)
+        assertEquals(due, store.record?.localDueAt)
+        assertNull("nothing shown yet", alerts.showing)
+    }
 
     @Test
-    fun `C1 - sign in to sync keeps the walk, its check-ins and its record, and sends them after a new token`() = runTest {
-        val session = walking(intervalMinutes = 10)
-        server.unauthorized = true
-        sessionStorage.save(sessionStorage.savedSession!!.copy(needsSignIn = true))
-        runCurrent()
+    fun `at the time - There yet, 5 minutes later one nudge, then nothing more, and nobody is told`() = runTest {
+        val session = walking(10)
+        advance(Duration.ofMinutes(10))
+        assertEquals(CheckInPhase.MISSED, session.state.value.phase)
+        assertEquals(CheckInPhase.MISSED, alerts.showing)
+        advance(Duration.ofMinutes(5))
+        assertEquals(CheckInPhase.NO_RESPONSE, alerts.showing)
+        advance(Duration.ofHours(2))
+        assertEquals(listOf(CheckInPhase.MISSED, CheckInPhase.NO_RESPONSE), alerts.shown)
+        assertEquals("only the start reached the server", listOf("start"), server.calls)
+    }
 
+    @Test
+    fun `More time moves the reminder one interval from now, on the phone at once and on the server`() = runTest {
+        val session = walking(10)
+        advance(Duration.ofMinutes(11))
         session.checkIn()
-        advance(Duration.ofMinutes(3))
-        assertTrue(session.state.value.isActive)
-        assertFalse(session.state.value.signedOut)
-        assertEquals(1L, store.record?.journeyId) // the phone's record of the walk stays
-        assertTrue(session.state.value.pendingSync >= 1)
+        runCurrent()
+        val due = base.plus(Duration.ofMinutes(21))
+        assertEquals(CheckInPhase.ON_TRACK, session.state.value.phase)
+        assertNull(alerts.showing)
+        assertEquals(due, reminders.scheduled?.second)
+        assertTrue("checkIn" in server.calls)
+    }
 
-        // A restart while signed-in-to-sync recovers the walk from the phone.
+    @Test
+    fun `I'm there ends it, cancels the alarms and the server is told`() = runTest {
+        val session = walking()
+        session.complete()
+        runCurrent()
+        assertEquals(JourneyStatus.COMPLETED, session.state.value.endedStatus)
+        assertNull(reminders.scheduled)
+        assertEquals(JourneyStatus.COMPLETED, server.journey?.status)
+        assertNull("the record goes once the server confirmed", store.record)
+    }
+
+    @Test
+    fun `offline - the end is kept and sent later, and the alarms stop at once`() = runTest {
+        val session = walking()
+        server.offline = true
+        session.cancel()
+        runCurrent()
+        assertNull(reminders.scheduled)
+        assertEquals(JourneyStatus.CANCELLED, store.record?.pendingEnd)
+        server.offline = false
+        advance(Duration.ofSeconds(10))
+        assertEquals(JourneyStatus.CANCELLED, server.journey?.status)
+        assertNull(store.record)
+    }
+
+    @Test
+    fun `an alarm after the process died recovers the walk and shows the reminder once`() = runTest {
+        walking(10)
+        advance(Duration.ofMinutes(10))
+        val fresh = newSession() // the process was started just for the alarm
+        var done = false
+        fresh.onAlarm(1) { done = true }
+        runCurrent()
+        assertTrue(done)
+        assertEquals(CheckInPhase.MISSED, fresh.state.value.phase)
+        assertEquals(CheckInPhase.MISSED, alerts.showing)
+    }
+
+    @Test
+    fun `a stale alarm (walk ended, or another walk) shows nothing`() = runTest {
+        val session = walking(10)
+        session.complete()
+        advance(Duration.ofMinutes(15))
+        val before = alerts.shown.size
+        var done = false
+        session.onAlarm(1) { done = true }
+        runCurrent()
+        assertTrue(done)
+        assertEquals(before, alerts.shown.size)
+        session.onAlarm(99) {}
+        runCurrent()
+        assertEquals(before, alerts.shown.size)
+    }
+
+    @Test
+    fun `More time and I'm there from the notification work after the process died`() = runTest {
+        walking(10)
+        advance(Duration.ofMinutes(12))
+        val fresh = newSession()
+        var done = false
+        fresh.checkInFromNotification { done = true }
+        advance(Duration.ofSeconds(1))
+        assertTrue(done)
+        assertEquals(base.plus(Duration.ofMinutes(22)), fresh.state.value.localDueAt)
+        fresh.completeFromNotification {}
+        advance(Duration.ofSeconds(1))
+        assertEquals(JourneyStatus.COMPLETED, server.journey?.status)
+    }
+
+    @Test
+    fun `an SOS ends it here without telling the server again, and stops the alarms`() = runTest {
+        val session = walking()
+        session.onEmergencyStarted()
+        runCurrent()
+        assertEquals(JourneyStatus.EMERGENCY, session.state.value.endedStatus)
+        assertNull(reminders.scheduled)
+        assertFalse("complete" in server.calls || "cancel" in server.calls)
+    }
+
+    @Test
+    fun `recovery offline uses the phone's record, and More time tapped offline is sent later`() = runTest {
+        walking(10)
+        server.offline = true
         val restarted = newSession()
         restarted.recover()
         runCurrent()
-        assertTrue(restarted.state.value.isActive)
-
-        // A new token (refresh or signing in again): the waiting check-in reaches the server.
-        server.unauthorized = false
-        val checkInsBefore = server.calls.count { it == "checkIn" }
-        sessionStorage.save(AuthSession("new-token", AuthUser(USER_ID, "Asha", "••••••3210")))
-        runCurrent()
-        assertTrue(server.calls.count { it == "checkIn" } > checkInsBefore)
-        assertEquals(0, restarted.state.value.pendingSync)
-    }
-
-    @Test
-    fun `C1 - another account signing in on this phone ends the previous account's walk on the phone`() = runTest {
-        val session = walking()
-        sessionStorage.save(AuthSession("other", AuthUser(USER_ID + 1, "Bina", "••••••3210")))
-        runCurrent()
-        assertFalse(session.state.value.isActive)
-    }
-
-    // ---- start / complete / cancel ---------------------------------------------------------------
-
-    @Test
-    fun `Safe Walk start - the server deadline becomes the phone's countdown and is remembered`() = runTest {
-        val session = walking(intervalMinutes = 10)
-
-        val state = session.state.value
-        assertTrue(state.isActive)
-        assertEquals(phoneNow().plus(Duration.ofMinutes(10)), state.localDueAt)
-        assertEquals(CheckInPhase.ON_TRACK, state.phase)
-        assertEquals(1L, store.record?.journeyId)
-        assertNull(alerts.showing)
-    }
-
-    @Test
-    fun `phone clock off by ten minutes still counts down the server's interval`() = runTest {
-        server = FakeJourneyRepository { phoneNow().plus(Duration.ofMinutes(10)) } // server ahead of the phone
-        val session = walking(intervalMinutes = 5)
-
-        assertEquals(phoneNow().plus(Duration.ofMinutes(5)), session.state.value.localDueAt)
-    }
-
-    @Test
-    fun `Safe Walk complete - ends at once, tells the server and forgets the walk`() = runTest {
-        val session = walking()
-
-        session.complete()
-        runCurrent()
-
-        assertEquals(JourneyStatus.COMPLETED, session.state.value.endedStatus)
-        assertFalse(session.state.value.isActive)
-        assertEquals(JourneyStatus.COMPLETED, server.journey?.status)
-        assertNull(store.record)
-        assertNull(session.notice())
-        // No more alerts after the end.
-        advance(Duration.ofHours(1))
-        assertNull(alerts.showing)
-        assertFalse(server.calls.any { it.startsWith("escalate") })
-    }
-
-    @Test
-    fun `Safe Walk cancel - ends as cancelled`() = runTest {
-        val session = walking()
-
-        session.cancel()
-        runCurrent()
-
-        assertEquals(JourneyStatus.CANCELLED, session.state.value.endedStatus)
-        assertEquals(JourneyStatus.CANCELLED, server.journey?.status)
-        session.acknowledgeEnded()
-        assertNull(session.state.value.journey)
-    }
-
-    // ---- check-ins and the ladder ---------------------------------------------------------------
-
-    @Test
-    fun `check-in success - the timer restarts and the server's deadline is adopted`() = runTest {
-        val session = walking(intervalMinutes = 10)
-        advance(Duration.ofMinutes(7))
-
-        session.checkIn()
-        runCurrent()
-
-        assertTrue("checkIn" in server.calls)
-        assertEquals(phoneNow().plus(Duration.ofMinutes(10)), session.state.value.localDueAt)
-        assertEquals(CheckInPhase.ON_TRACK, session.state.value.phase)
-    }
-
-    @Test
-    fun `warning - a reminder shows one minute before the deadline, without escalating`() = runTest {
-        val session = walking(intervalMinutes = 10)
-
-        advance(Duration.ofMinutes(9))
-
-        assertEquals(CheckInPhase.DUE_SOON, session.state.value.phase)
-        assertEquals(CheckInPhase.DUE_SOON, alerts.showing)
-        assertFalse(server.calls.any { it.startsWith("escalate") })
-    }
-
-    @Test
-    fun `check-in missed - level 1, the person is prompted and the server is told`() = runTest {
-        val session = walking(intervalMinutes = 10)
-
-        advance(Duration.ofMinutes(10))
-
-        assertEquals(CheckInPhase.MISSED, session.state.value.phase)
-        assertEquals(CheckInPhase.MISSED, alerts.showing)
-        assertEquals(EscalationLevel.CHECK_IN_MISSED, server.journey?.escalationLevel)
-        assertEquals(R.string.safe_walk_notification_missed, session.notice()?.text)
-    }
-
-    @Test
-    fun `escalation - no answer reaches level 2 one step at a time and never goes higher by itself`() = runTest {
-        val session = walking(intervalMinutes = 10)
-
-        advance(Duration.ofMinutes(12))
-        assertEquals(CheckInPhase.NO_RESPONSE, session.state.value.phase)
-        assertEquals(CheckInPhase.NO_RESPONSE, alerts.showing)
-        assertEquals(listOf("escalate:1", "escalate:2"), server.calls.filter { it.startsWith("escalate") })
-
-        advance(Duration.ofHours(2))
-        assertEquals(listOf("escalate:1", "escalate:2"), server.calls.filter { it.startsWith("escalate") })
-        assertEquals(EscalationLevel.NO_RESPONSE, server.journey?.escalationLevel)
-    }
-
-    @Test
-    fun `I'm Safe prevents escalation - checking in before every deadline means no alert and no report`() = runTest {
-        val session = walking(intervalMinutes = 10)
-
-        repeat(3) {
-            advance(Duration.ofMinutes(8))
-            session.checkIn()
-            runCurrent()
-        }
-
-        assertEquals(CheckInPhase.ON_TRACK, session.state.value.phase)
-        assertTrue(alerts.shown.isEmpty())
-        assertFalse(server.calls.any { it.startsWith("escalate") })
-    }
-
-    @Test
-    fun `I'm Safe after a missed check-in returns to normal and clears the alert`() = runTest {
-        val session = walking(intervalMinutes = 10)
-        advance(Duration.ofMinutes(13))
-        assertEquals(CheckInPhase.NO_RESPONSE, alerts.showing)
-
-        session.checkIn()
-        runCurrent()
-
-        assertNull(alerts.showing)
-        assertEquals(CheckInPhase.ON_TRACK, session.state.value.phase)
-        assertEquals(EscalationLevel.NORMAL, server.journey?.escalationLevel)
-        // The ladder starts again from 0 for the next deadline.
-        advance(Duration.ofMinutes(10))
-        assertEquals(listOf("escalate:1", "escalate:2", "escalate:1"), server.calls.filter { it.startsWith("escalate") })
-    }
-
-    // ---- offline -------------------------------------------------------------------------------
-
-    @Test
-    fun `network unavailable - check-ins count on the phone and are sent later`() = runTest {
-        val session = walking(intervalMinutes = 10)
-        server.offline = true
-        connectivity.isOnline.value = false
-        advance(Duration.ofMinutes(9) + Duration.ofSeconds(30))
-
-        session.checkIn()
-        runCurrent()
-        advance(Duration.ofMinutes(5))
-
-        assertEquals(CheckInPhase.ON_TRACK, session.state.value.phase) // no escalation although the server was not told
-        assertTrue(session.state.value.pendingSync > 0)
-        assertEquals(EscalationLevel.NORMAL, server.journey?.escalationLevel)
-
+        assertTrue(restarted.state.value.restoredOffline)
+        restarted.checkIn()
         server.offline = false
-        connectivity.isOnline.value = true
-        runCurrent()
-
-        assertEquals(0, session.state.value.pendingSync)
-        assertTrue(server.calls.count { it == "checkIn" } >= 1)
-        assertEquals(EscalationLevel.NORMAL, server.journey?.escalationLevel)
+        advance(Duration.ofSeconds(10))
+        assertNotNull(restarted.state.value.journey?.destinationLabel)
+        assertFalse(restarted.state.value.restoredOffline)
     }
 
     @Test
-    fun `ended while offline - the end is remembered and sent after a restart`() = runTest {
+    fun `a sign-out forgets the walk on this phone`() = runTest {
         val session = walking()
-        server.offline = true
-
-        session.complete()
-        runCurrent()
-        assertEquals(JourneyStatus.COMPLETED, store.record?.pendingEnd)
-
-        server.offline = false
-        val afterRestart = newSession()
-        afterRestart.recover()
-        runCurrent()
-
-        assertEquals(JourneyStatus.COMPLETED, server.journey?.status)
-        assertNull(store.record)
-        assertFalse(afterRestart.state.value.isActive)
-    }
-
-    // ---- recovery --------------------------------------------------------------------------------
-
-    @Test
-    fun `walk recoverable after restart - resumed from the server, overdue walks alert at once`() = runTest {
-        walking(intervalMinutes = 10)
-        advance(Duration.ofMinutes(11)) // the app was killed and the deadline passed meanwhile
-        alerts.clear()
-
-        val afterRestart = newSession()
-        afterRestart.recover()
-        runCurrent()
-
-        assertTrue(afterRestart.state.value.isActive)
-        assertEquals(CheckInPhase.MISSED, afterRestart.state.value.phase)
-        assertEquals(CheckInPhase.MISSED, alerts.showing)
-    }
-
-    @Test
-    fun `walk recoverable after restart while offline - from the phone's record`() = runTest {
-        walking(intervalMinutes = 10)
-        server.offline = true
-
-        val afterRestart = newSession()
-        afterRestart.recover()
-        runCurrent()
-
-        val state = afterRestart.state.value
-        assertTrue(state.isActive)
-        assertTrue(state.restoredOffline)
-        assertEquals(base.plus(Duration.ofMinutes(10)), state.localDueAt)
-    }
-
-    @Test
-    fun `an offline check-in that the server never heard is kept and resent after a restart`() = runTest {
-        val session = walking(intervalMinutes = 10)
-        server.offline = true
-        advance(Duration.ofMinutes(8))
-        session.checkIn()
-        runCurrent()
-        server.offline = false
-
-        val afterRestart = newSession()
-        afterRestart.recover()
-        runCurrent()
-
-        assertTrue(server.calls.count { it == "checkIn" } >= 1)
-        assertEquals(CheckInPhase.ON_TRACK, afterRestart.state.value.phase)
-    }
-
-    @Test
-    fun `another user's walk record on this phone is ignored`() = runTest {
-        store.record = ActiveJourneyRecord(999, 5, 10, base, base.plus(Duration.ofMinutes(10)))
-        server = FakeJourneyRepository { phoneNow() }
-        server.offline = true
-
-        val session = newSession()
-        session.recover()
-        runCurrent()
-
-        assertFalse(session.state.value.isActive)
-    }
-
-    @Test
-    fun `the notification button checks in even when the process was restarted for it`() = runTest {
-        walking(intervalMinutes = 10)
-        advance(Duration.ofMinutes(10))
-        val afterRestart = newSession() // not recovered yet: nothing in memory
-        var done = false
-
-        afterRestart.checkInFromNotification { done = true }
-        advance(Duration.ofSeconds(1))
-
-        assertTrue(done)
-        assertTrue(afterRestart.state.value.isActive)
-        assertEquals(CheckInPhase.ON_TRACK, afterRestart.state.value.phase)
-        assertEquals(EscalationLevel.NORMAL, server.journey?.escalationLevel)
-    }
-
-    // ---- location ------------------------------------------------------------------------------
-
-    @Test
-    fun `location permission denied - the walk still runs, without location or the location service`() = runTest {
-        provider.access = LocationAccess.NONE
-        val session = walking()
-
-        assertTrue(session.state.value.isActive)
-        assertFalse(session.state.value.isTracking)
-        assertNull(session.notice())
-        assertEquals(0, provider.subscriptions)
-        advance(Duration.ofMinutes(10))
-        assertEquals(CheckInPhase.MISSED, session.state.value.phase) // check-ins work regardless
-    }
-
-    @Test
-    fun `granting location during the walk starts sharing the last known location`() = runTest {
-        provider.access = LocationAccess.NONE
-        val session = walking()
-
-        provider.access = LocationAccess.APPROXIMATE
-        session.refreshLocationAccess()
-        runCurrent()
-        provider.emitFix(fix(at = phoneNow()))
-        runCurrent()
-
-        assertTrue(session.state.value.isTracking)
-        assertEquals(1, server.locations.size)
-    }
-
-    @Test
-    fun `only the latest location is sent - a queue of old positions is never uploaded`() = runTest {
-        val session = walking()
-        server.offline = true
-        connectivity.isOnline.value = false
-        repeat(3) { i ->
-            advance(Duration.ofMinutes(3))
-            provider.emitFix(fix(latitude = 12.9 + i, at = phoneNow()))
-            runCurrent()
-        }
-        server.offline = false
-        connectivity.isOnline.value = true
-        runCurrent()
-
-        assertEquals(1, server.locations.size)
-        assertEquals(14.9, server.locations.single().latitude, 0.0001)
-        assertNotNull(session.state.value.lastLocationSavedAt)
-    }
-
-    // ---- other endings ---------------------------------------------------------------------------
-
-    @Test
-    fun `signed out - the walk stops at once and alerts are cleared`() = runTest {
-        val session = walking()
-        advance(Duration.ofMinutes(10))
-
         sessionStorage.clear()
         runCurrent()
-
         assertTrue(session.state.value.signedOut)
-        assertFalse(session.state.value.isActive)
-        assertNull(alerts.showing)
+        assertNull(reminders.scheduled)
     }
-
-    @Test
-    fun `an SOS ends the walk on the phone (the server already linked it)`() = runTest {
-        val session = walking()
-
-        session.onEmergencyStarted()
-        runCurrent()
-
-        assertEquals(JourneyStatus.EMERGENCY, session.state.value.endedStatus)
-        assertNull(store.record)
-        advance(Duration.ofHours(1))
-        assertTrue(alerts.shown.isEmpty())
-    }
-
-    @Test
-    fun `a walk ended on another device is ended here too`() = runTest {
-        val session = walking()
-        server.endOnServer(JourneyStatus.COMPLETED)
-
-        session.checkIn()
-        runCurrent()
-
-        assertEquals(JourneyStatus.COMPLETED, session.state.value.endedStatus)
-        assertNull(store.record)
-    }
-
-    // ---- Phase 17D: location problems explain themselves and never touch the check-ins ---------------------------
-
-    @Test
-    fun `17D - the location stream is searching, then available, and a minute of silence is reported as no signal`() = runTest {
-        val session = walking()
-        assertEquals(LocationStreamStatus.SEARCHING, session.state.value.locationStatus)
-
-        // "No position right now" is routine while GPS warms up: not a problem yet.
-        provider.emit(LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX))
-        advance(Duration.ofSeconds(30))
-        assertEquals(LocationStreamStatus.SEARCHING, session.state.value.locationStatus)
-
-        provider.emitFix(fix(accuracy = 12f))
-        runCurrent()
-        assertEquals(LocationStreamStatus.AVAILABLE, session.state.value.locationStatus)
-
-        // Silence for longer than the grace: said once, plainly.
-        advance(Duration.ofMillis(LocationStreamPolicy.graceMillis(SafeWalkSession.LOCATION_INTERVAL_MILLIS) + 1_000))
-        assertEquals(LocationStreamStatus.NO_SIGNAL, session.state.value.locationStatus)
-
-        // The next position clears it.
-        provider.emitFix(fix(accuracy = 12f))
-        runCurrent()
-        assertEquals(LocationStreamStatus.AVAILABLE, session.state.value.locationStatus)
-    }
-
-    @Test
-    fun `17D - location switched off during the walk is told at once, and on again moves to searching then available`() = runTest {
-        val session = walking()
-        provider.emitFix(fix(accuracy = 12f))
-        runCurrent()
-
-        provider.locationEnabled = false
-        provider.emit(LocationUpdate.Unavailable(LocationUnavailableReason.LOCATION_DISABLED))
-        runCurrent()
-        assertEquals(LocationStreamStatus.LOCATION_OFF, session.state.value.locationStatus)
-        advance(Duration.ofMinutes(3)) // silence does not turn "off" into anything else
-        assertEquals(LocationStreamStatus.LOCATION_OFF, session.state.value.locationStatus)
-
-        provider.locationEnabled = true
-        provider.emit(LocationUpdate.Unavailable(LocationUnavailableReason.NO_FIX)) // switched back on, nothing yet
-        runCurrent()
-        assertEquals(LocationStreamStatus.SEARCHING, session.state.value.locationStatus)
-        provider.emitFix(fix(accuracy = 12f))
-        runCurrent()
-        assertEquals(LocationStreamStatus.AVAILABLE, session.state.value.locationStatus)
-    }
-
-    @Test
-    fun `17D - no location problem ever changes the check-in phase, a concern or the escalation level`() = runTest {
-        val session = walking(intervalMinutes = 10)
-        val phaseBefore = session.state.value.phase
-
-        for (reason in LocationUnavailableReason.entries) {
-            provider.emit(LocationUpdate.Unavailable(reason))
-            runCurrent()
-        }
-        advance(Duration.ofMinutes(3)) // location silent for a long time
-        assertEquals(phaseBefore, session.state.value.phase)
-        assertEquals(CheckInPhase.ON_TRACK, session.state.value.phase)
-        assertNull(session.state.value.concern)
-        assertNull(alerts.showing)
-        assertEquals(0, server.calls.count { it.startsWith("escalate") })
-
-        // The countdown itself still works exactly as before: missed at the deadline, then level 2 after 2 minutes.
-        advance(Duration.ofMinutes(8))
-        assertEquals(CheckInPhase.MISSED, session.state.value.phase)
-        advance(Duration.ofMinutes(2))
-        assertEquals(CheckInPhase.NO_RESPONSE, session.state.value.phase)
-    }
-
-    @Test
-    fun `17D - starting a walk with location switched off is not delayed by waiting for a position`() = runTest {
-        provider.locationEnabled = false
-        val session = newSession()
-        val started = session.start("Station", 10, movementChecks = true)
-        runCurrent()
-        assertTrue(started is ApiResult.Success)
-        assertEquals("no 3 second wait for a position that cannot come", 0L, testScheduler.currentTime)
-        assertTrue(session.state.value.isActive)
-    }
-
-    @Test
-    fun `17D - the location switch is looked at by the walk itself, when no platform callback says so`() = runTest {
-        val session = walking()
-        provider.emitFix(fix(accuracy = 12f))
-        runCurrent()
-        assertEquals(LocationStreamStatus.AVAILABLE, session.state.value.locationStatus)
-
-        provider.locationEnabled = false // no update is emitted at all
-        advance(Duration.ofMillis(LocationStreamPolicy.SWITCH_CHECK_MILLIS + 1))
-        assertEquals(LocationStreamStatus.LOCATION_OFF, session.state.value.locationStatus)
-        assertEquals(CheckInPhase.ON_TRACK, session.state.value.phase)
-
-        provider.locationEnabled = true
-        advance(Duration.ofMillis(LocationStreamPolicy.SWITCH_CHECK_MILLIS + 1))
-        assertEquals(LocationStreamStatus.SEARCHING, session.state.value.locationStatus)
-        // The silence watchdog started over: a minute and a half later, still nothing = no signal (not before).
-        advance(Duration.ofMillis(LocationStreamPolicy.graceMillis(SafeWalkSession.LOCATION_INTERVAL_MILLIS) + 1_000))
-        assertEquals(LocationStreamStatus.NO_SIGNAL, session.state.value.locationStatus)
-    }
-
-    @Test
-    fun `17D - a permission granted during the walk restarts the stream`() = runTest {
-        provider.access = LocationAccess.NONE
-        val session = walking()
-        assertEquals(LocationStreamStatus.NEEDS_PERMISSION, session.state.value.locationStatus)
-        provider.access = LocationAccess.PRECISE
-        session.refreshLocationAccess()
-        runCurrent()
-        assertEquals(LocationStreamStatus.SEARCHING, session.state.value.locationStatus)
-        provider.emitFix(fix(accuracy = 9f))
-        runCurrent()
-        assertEquals(LocationStreamStatus.AVAILABLE, session.state.value.locationStatus)
-    }
-
-    private fun SafeWalkSession.notice() = currentNotice()
 
     private companion object {
         const val USER_ID = 7L

@@ -5,8 +5,6 @@ import androidx.fragment.app.Fragment
 import com.safesphere.app.core.device.AndroidBatteryMonitor
 import com.safesphere.app.core.device.AndroidConnectivityMonitor
 import com.safesphere.app.core.location.FusedLocationProvider
-import com.safesphere.app.core.location.DestinationResolver
-import com.safesphere.app.core.location.GeocoderDestinationResolver
 import com.safesphere.app.core.location.LocationProvider
 import com.safesphere.app.core.network.AgeGate
 import com.safesphere.app.feature.auth.domain.PendingVerification
@@ -24,7 +22,6 @@ import com.safesphere.app.feature.account.domain.PendingDeletionStore
 import com.safesphere.app.feature.account.session.AccountDataWiper
 import com.safesphere.app.feature.account.session.SessionRenewer
 import kotlinx.coroutines.flow.combine
-import com.safesphere.app.core.tracking.CompositeTrackingNoticeSource
 import com.safesphere.app.core.tracking.TrackingNoticeSource
 import com.safesphere.app.feature.safewalk.data.DataStoreActiveJourneyStore
 import com.safesphere.app.feature.safewalk.data.RemoteJourneyRepository
@@ -403,33 +400,28 @@ class AppContainer(context: Context) {
 
     private val activeJourneyStore: ActiveJourneyStore by lazy { DataStoreActiveJourneyStore(appContext) }
 
-    /** The one Safe Walk holder (screen, Home, notification action, tracking service). */
+    /**
+     * The one "On my way" holder (N6, D22: the screen, the banners, the reminder alarm and its notification buttons).
+     * A reminder, not tracking: no location provider, no battery reader, no tracking service.
+     */
     val safeWalk: SafeWalkSession by lazy {
         SafeWalkSession(
             scope = applicationScope,
             repository = RemoteJourneyRepository(journeyApi, apiCallHandler),
             store = activeJourneyStore,
-            locationProvider = locationProvider,
             connectivityMonitor = AndroidConnectivityMonitor(appContext),
             alerts = AndroidSafeWalkAlerts(appContext),
+            reminders = com.safesphere.app.feature.safewalk.session.AndroidReminderScheduler(appContext),
             session = sessionStorage.session,
-            currentUserId = { sessionStorage.session.first()?.user?.id },
-            batteryMonitor = AndroidBatteryMonitor(appContext),
-            destinationResolver = destinationResolver
+            currentUserId = { sessionStorage.session.first()?.user?.id }
         )
     }
 
-    /** Destination text -> place (platform Geocoder). Shared by Safe Walk and "Check the way" (Phase 8D). */
-    val destinationResolver: DestinationResolver by lazy { GeocoderDestinationResolver(appContext) }
+    /** What the ONE tracking foreground service shows: only an active emergency since N6 (On my way tracks nothing). */
+    val trackingNoticeSource: TrackingNoticeSource get() = emergencyLocationSharing
 
-    /** What the ONE tracking foreground service shows: an active emergency first, then a Safe Walk. */
-    val trackingNoticeSource: TrackingNoticeSource by lazy {
-        CompositeTrackingNoticeSource(listOf(emergencyLocationSharing, safeWalk))
-    }
-
-    /** True while an emergency or a walk wants the location service type (used by SafetyTrackingService). */
-    fun locationTrackingNeeded(): Boolean =
-        emergencyLocationSharing.currentNotice() != null || safeWalk.currentNotice() != null
+    /** True while an emergency wants the location service type (used by SafetyTrackingService). */
+    fun locationTrackingNeeded(): Boolean = emergencyLocationSharing.currentNotice() != null
 
     // ---- Phase 4D: Safety Circle communication ---------------------------------------------------
 

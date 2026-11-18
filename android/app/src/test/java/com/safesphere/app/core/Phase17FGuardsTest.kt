@@ -24,7 +24,6 @@ class Phase17FGuardsTest {
         File(main, "java/com/safesphere/app/$dir").walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
 
     private val newStrings = listOf(
-        "walk_line_caption", "walk_line_cd", "walk_line_cd_inside", "walk_line_cd_outside",
         "location_last_known"
     )
 
@@ -56,23 +55,9 @@ class Phase17FGuardsTest {
     }
 
     @Test
-    fun `the Safe Walk line says it is a straight line and not a route`() {
-        val caption = string("walk_line_caption").lowercase()
-        assertTrue(caption.contains("straight line") && caption.contains("not a route"))
-        assertTrue(string("walk_line_cd").lowercase().contains("not a route"))
-    }
-
-    @Test
     fun `an old position is never presented as where the person is now`() {
         assertTrue(string("location_last_known").lowercase().contains("last known"))
         assertTrue(string("location_last_known").lowercase().contains("not necessarily where you are now"))
-    }
-
-    @Test
-    fun `the Safe Walk line places its words with the pure helper, not by pushing them back inside the view`() {
-        val line = File(main, "java/com/safesphere/app/feature/safewalk/ui/WalkLineView.kt").readText(Charsets.UTF_8)
-        assertTrue(line.contains("WalkLineLabels.place("))
-        assertFalse("the old clamp that put a word on its own mark", line.contains("coerceIn(dp(2).toFloat(), width - textWidth"))
     }
 
     @Test
@@ -116,17 +101,6 @@ class Phase17FGuardsTest {
     }
 
     @Test
-    fun `the pure walk-line rules use no Android types`() {
-        val pure = listOf(
-            "feature/safewalk/domain/WalkLineGeometry.kt", "feature/safewalk/domain/WalkLineLabels.kt"
-        )
-        for (path in pure) {
-            val text = File(main, "java/com/safesphere/app/$path").readText(Charsets.UTF_8)
-            assertFalse("$path must stay pure Kotlin", text.contains("import android."))
-        }
-    }
-
-    @Test
     fun `the new SOS and Safe Walk parts stay apart from intelligence and social features`() {
         // (The Safe Walk set-up screen already uses "Check the way" from intelligence since Phase 8D; only the
         // parts added here and the SOS side as a whole are held to the stricter rule.)
@@ -139,11 +113,4 @@ class Phase17FGuardsTest {
         }
     }
 
-    @Test
-    fun `the Safe Walk line reads no location stream and keeps no trail`() {
-        val view = File(main, "java/com/safesphere/app/feature/safewalk/ui/WalkLineView.kt").readText(Charsets.UTF_8)
-        for (forbidden in listOf("LocationProvider", "DataStore", "SharedPreferences", "java.io", "okhttp", "retrofit")) {
-            assertFalse("the line view must not use $forbidden", view.contains(forbidden))
-        }
-    }
 }

@@ -100,9 +100,14 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
-        <!-- Phase 4B: the "I'm OK" button on a Safe Walk check-in notification. Only our own PendingIntent reaches it. -->
+        <!-- N6 (D22): the "I'm there" / "More time" buttons of an On my way reminder. Only our own PendingIntent reaches it. -->
         <receiver
             android:name=".feature.safewalk.session.CheckInActionReceiver"
+            android:exported="false" />
+
+        <!-- N6 (D22): the On my way alarm (setAndAllowWhileIdle, no permission). Only our own PendingIntent reaches it. -->
+        <receiver
+            android:name=".feature.safewalk.session.OnMyWayAlarmReceiver"
             android:exported="false" />
 
         <!-- The ONE file provider: the camera app writes the ID photo (N3) into cache/id-photo/ and a moment's photo (N4)

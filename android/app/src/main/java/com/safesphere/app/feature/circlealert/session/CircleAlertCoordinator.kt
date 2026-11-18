@@ -90,7 +90,7 @@ class CircleAlertCoordinator(
     override fun composerText(target: AlertTarget, kind: CircleMessageKind): String {
         val (point, at) = latestLocation(target)
         val eventTime = (target as? AlertTarget.Emergency)?.let { activeEmergency?.takeIf { e -> e.first == it.id }?.second } ?: now()
-        return CircleMessages.compose(kind, personName, eventTime, zone(), point, at, concern = null, automatic = false)
+        return CircleMessages.compose(kind, personName, eventTime, zone(), point, at, automatic = false)
     }
 
     override fun onComposerOpened(target: AlertTarget, kind: CircleMessageKind, recipient: CircleRecipient) {

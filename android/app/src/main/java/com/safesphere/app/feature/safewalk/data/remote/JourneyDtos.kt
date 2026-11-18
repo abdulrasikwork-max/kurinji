@@ -1,50 +1,21 @@
 package com.safesphere.app.feature.safewalk.data.remote
 
 import com.safesphere.app.core.escalation.EscalationLevel
-import com.safesphere.app.core.location.GeoPoint
-import com.safesphere.app.core.location.LocationFix
 import com.safesphere.app.feature.safewalk.domain.Journey
 import com.safesphere.app.feature.safewalk.domain.JourneyStatus
 import java.time.Instant
 
-// Mirrors the JSON of /api/journeys (see docs/API.md). No user id anywhere: the server uses the token.
+// Mirrors the JSON of /api/journeys (docs/API.md, "Phase N6"). No user id and no location anywhere.
 
-/** Gson leaves out null fields, so a walk without destination coordinates sends none. */
-data class StartJourneyRequestDto(
-    val destinationLabel: String?,
-    val checkInIntervalMinutes: Int,
-    val destinationLatitude: Double? = null,
-    val destinationLongitude: Double? = null
-) {
-    override fun toString(): String = "StartJourneyRequestDto(interval=$checkInIntervalMinutes, destination=<redacted>)"
+data class StartJourneyRequestDto(val destinationLabel: String?, val checkInIntervalMinutes: Int) {
+    /** The label is the person's own words: never in a log line. */
+    override fun toString(): String = "StartJourneyRequestDto(interval=$checkInIntervalMinutes, label=<redacted>)"
 }
 
-/** [reason] only for a level 1 raised by a movement check (Phase 4C); null = the server's default. */
-data class EscalationRequestDto(val level: Int, val reason: String? = null)
-
-data class JourneyLocationDto(
-    val latitude: Double,
-    val longitude: Double,
-    val accuracyMeters: Float?,
-    val recordedAt: String
-) {
-    override fun toString(): String = "JourneyLocationDto(location=<redacted>, recordedAt=$recordedAt)"
-
-    companion object {
-        fun from(fix: LocationFix) = JourneyLocationDto(fix.latitude, fix.longitude, fix.accuracyMeters, fix.recordedAt.toString())
-    }
-}
-
-data class DestinationDto(val latitude: Double, val longitude: Double) {
-    override fun toString(): String = "DestinationDto(<redacted>)"
-}
-
-/** The server also returns lastLocation; the app does not need it back, so it is not mapped. */
 data class JourneyDto(
     val id: Long,
     val status: String,
     val destinationLabel: String?,
-    val destination: DestinationDto?,
     val checkInIntervalMinutes: Int,
     val escalationLevel: Int,
     val startedAt: String,
@@ -52,7 +23,7 @@ data class JourneyDto(
     val nextCheckInDueAt: String?,
     val serverTime: String
 ) {
-    override fun toString(): String = "JourneyDto(id=$id, status=$status, destination=<redacted>)"
+    override fun toString(): String = "JourneyDto(id=$id, status=$status, label=<redacted>)"
 
     fun toDomain() = Journey(
         id = id,
@@ -63,7 +34,6 @@ data class JourneyDto(
         startedAt = Instant.parse(startedAt),
         endedAt = endedAt?.let(Instant::parse),
         nextCheckInDueAt = nextCheckInDueAt?.let(Instant::parse),
-        serverTime = Instant.parse(serverTime),
-        destination = destination?.let { GeoPoint(it.latitude, it.longitude) }
+        serverTime = Instant.parse(serverTime)
     )
 }

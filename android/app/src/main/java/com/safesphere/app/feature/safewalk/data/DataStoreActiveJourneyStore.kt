@@ -12,8 +12,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.safesphere.app.feature.safewalk.domain.ActiveJourneyRecord
 import com.safesphere.app.feature.safewalk.domain.ActiveJourneyStore
-import com.safesphere.app.feature.safewalk.domain.Concern
-import com.safesphere.app.feature.safewalk.domain.ConcernKind
 import com.safesphere.app.feature.safewalk.domain.JourneyStatus
 import java.io.IOException
 import java.time.Instant
@@ -22,7 +20,7 @@ import kotlinx.coroutines.flow.first
 
 private val Context.activeJourneyDataStore: DataStore<Preferences> by preferencesDataStore(name = "active_journey")
 
-/** App-private, excluded from backup and device transfer. Ids and times only; never the destination or a location. */
+/** App-private, excluded from backup and device transfer. Ids and times only; never the label or a location. */
 class DataStoreActiveJourneyStore(context: Context) : ActiveJourneyStore {
 
     private val dataStore = context.applicationContext.activeJourneyDataStore
@@ -37,15 +35,8 @@ class DataStoreActiveJourneyStore(context: Context) : ActiveJourneyStore {
             checkInIntervalMinutes = p[INTERVAL] ?: return null,
             startedAt = Instant.ofEpochMilli(p[STARTED_AT] ?: return null),
             localDueAt = Instant.ofEpochMilli(p[LOCAL_DUE_AT] ?: return null),
-            pendingEnd = p[PENDING_END]?.let(JourneyStatus::fromApi),
-            movementChecks = p[MOVEMENT_CHECKS] ?: true,
-            concern = concernFrom(p[CONCERN_KIND], p[CONCERN_AT])
+            pendingEnd = p[PENDING_END]?.let(JourneyStatus::fromApi)
         )
-    }
-
-    private fun concernFrom(kind: String?, atMillis: Long?): Concern? {
-        val concernKind = ConcernKind.entries.firstOrNull { it.name == kind } ?: return null
-        return Concern(concernKind, Instant.ofEpochMilli(atMillis ?: return null))
     }
 
     override suspend fun save(record: ActiveJourneyRecord) {
@@ -57,15 +48,10 @@ class DataStoreActiveJourneyStore(context: Context) : ActiveJourneyStore {
             p[LOCAL_DUE_AT] = record.localDueAt.toEpochMilli()
             val pendingEnd = record.pendingEnd
             if (pendingEnd != null) p[PENDING_END] = pendingEnd.name else p.remove(PENDING_END)
-            p[MOVEMENT_CHECKS] = record.movementChecks
-            val concern = record.concern
-            if (concern != null) {
-                p[CONCERN_KIND] = concern.kind.name
-                p[CONCERN_AT] = concern.raisedAt.toEpochMilli()
-            } else {
-                p.remove(CONCERN_KIND)
-                p.remove(CONCERN_AT)
-            }
+            // N6: the 4C movement-check switch and concern are gone (removed if an older build left them).
+            p.remove(MOVEMENT_CHECKS)
+            p.remove(CONCERN_KIND)
+            p.remove(CONCERN_AT)
         }
     }
 

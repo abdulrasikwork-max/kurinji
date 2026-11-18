@@ -3,7 +3,7 @@ package com.safesphere.app.core.device
 import android.content.Context
 import android.os.BatteryManager
 
-/** Reads the battery. Only a reader: what to do about it is [BatteryPolicy] (Phase 4C). */
+/** Reads the battery (the SOS location points carry its level). Only a reader. */
 interface BatteryMonitor {
     /** 0..100, or null when the device cannot tell. */
     fun batteryPercent(): Int?

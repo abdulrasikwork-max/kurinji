@@ -3,65 +3,55 @@ package com.safesphere.app.feature.safewalk.session
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.safesphere.app.MainActivity
 import com.safesphere.app.R
 import com.safesphere.app.core.notifications.NotificationChannels
 import com.safesphere.app.core.notifications.NotificationPermission
+import com.safesphere.app.feature.emergency.entry.SosEntryActivity
 import com.safesphere.app.feature.safewalk.domain.CheckInPhase
-import com.safesphere.app.feature.safewalk.domain.CheckInStatus
-import com.safesphere.app.feature.safewalk.domain.ConcernKind
 
 /**
- * Safe Walk notifications on the high-importance channel. Each check-in alert has an "I'm OK" action, so the
- * person can check in without opening the app. Texts are generic (no destination, no location) and the lock
- * screen shows only a neutral public version.
+ * "On my way" reminders (N6, D22) on the high-importance channel. "There yet?" has [I'm there] [More time]; the one
+ * nudge 5 minutes later also offers SOS (the same cancellable countdown, through the non-exported SosEntryActivity) and
+ * Call 112 (the dialer; the person presses call). Texts are generic (no label, no location) and the lock screen shows
+ * only a neutral public version. Nothing here sends anything to anyone.
  */
 class AndroidSafeWalkAlerts(context: Context) : SafeWalkAlerts {
 
     private val appContext = context.applicationContext
 
-    override fun show(status: CheckInStatus) {
-        val (title, text) = when (status.phase) {
-            CheckInPhase.ON_TRACK -> return clear()
-            CheckInPhase.DUE_SOON -> R.string.safe_walk_alert_due_soon_title to R.string.safe_walk_alert_due_soon_text
-            CheckInPhase.MISSED -> when (status.concern) {
-                ConcernKind.ROUTE_DEVIATION -> R.string.safe_walk_alert_concern_title to R.string.safe_walk_alert_off_route_text
-                ConcernKind.UNEXPECTED_STOP -> R.string.safe_walk_alert_concern_title to R.string.safe_walk_alert_stopped_text
-                null -> R.string.safe_walk_alert_missed_title to R.string.safe_walk_alert_missed_text
-            }
-            CheckInPhase.NO_RESPONSE -> R.string.safe_walk_alert_no_response_title to R.string.safe_walk_alert_no_response_text
+    override fun show(phase: CheckInPhase) {
+        val nudge = when (phase) {
+            CheckInPhase.MISSED -> false
+            CheckInPhase.NO_RESPONSE -> true
+            else -> return clear()
         }
-        val notification = builder(title, text)
+        val title = if (nudge) R.string.omw_nudge_title else R.string.omw_reminder_title
+        val text = if (nudge) R.string.omw_nudge_text else R.string.omw_reminder_text
+        val builder = builder(title, text)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .addAction(R.drawable.ic_check_circle, appContext.getString(R.string.action_im_ok), checkInIntent())
-            // A missed check-in must not be silently swiped away.
-            .setOngoing(status.phase != CheckInPhase.DUE_SOON)
-            .build()
-        notify(CHECK_IN_NOTIFICATION_ID, notification)
+            .addAction(R.drawable.ic_check_circle, appContext.getString(R.string.omw_action_there),
+                actionIntent(CheckInActionReceiver.ACTION_THERE, 2))
+            .addAction(R.drawable.ic_history, appContext.getString(R.string.omw_action_more_time),
+                actionIntent(CheckInActionReceiver.ACTION_MORE_TIME, 3))
+        if (nudge) {
+            builder.addAction(R.drawable.ic_shield_alert, appContext.getString(R.string.omw_action_sos), sosIntent())
+            builder.addAction(R.drawable.ic_shield_alert, appContext.getString(R.string.omw_action_call), dialIntent())
+        }
+        notify(builder.build())
     }
 
     override fun clear() {
-        NotificationManagerCompat.from(appContext).cancel(CHECK_IN_NOTIFICATION_ID)
-    }
-
-    override fun showBatteryCritical() {
-        val notification = builder(R.string.safe_walk_alert_battery_title, R.string.safe_walk_alert_battery_text)
-            .setCategory(NotificationCompat.CATEGORY_STATUS)
-            .setOnlyAlertOnce(true)
-            .build()
-        notify(BATTERY_NOTIFICATION_ID, notification)
-    }
-
-    override fun clearBatteryCritical() {
-        NotificationManagerCompat.from(appContext).cancel(BATTERY_NOTIFICATION_ID)
+        NotificationManagerCompat.from(appContext).cancel(REMINDER_NOTIFICATION_ID)
     }
 
     private fun builder(title: Int, text: Int): NotificationCompat.Builder {
         val publicVersion = NotificationCompat.Builder(appContext, NotificationChannels.SAFETY_ALERTS)
             .setSmallIcon(R.drawable.ic_shield)
-            .setContentTitle(appContext.getString(R.string.safe_walk_alert_public_title))
+            .setContentTitle(appContext.getString(R.string.omw_public_title))
             .build()
         return NotificationCompat.Builder(appContext, NotificationChannels.SAFETY_ALERTS)
             .setSmallIcon(R.drawable.ic_shield)
@@ -72,15 +62,15 @@ class AndroidSafeWalkAlerts(context: Context) : SafeWalkAlerts {
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setPublicVersion(publicVersion)
             .setContentIntent(openAppIntent())
-            .setAutoCancel(false)
+            .setAutoCancel(true)
     }
 
-    private fun notify(id: Int, notification: android.app.Notification) {
-        if (!NotificationPermission.isGranted(appContext)) return // the screen warns about this
+    private fun notify(notification: android.app.Notification) {
+        if (!NotificationPermission.isGranted(appContext)) return // "Before you need it" and the screen say so
         try {
-            NotificationManagerCompat.from(appContext).notify(id, notification)
+            NotificationManagerCompat.from(appContext).notify(REMINDER_NOTIFICATION_ID, notification)
         } catch (e: SecurityException) {
-            // Permission revoked meanwhile; the in-app banner still shows the state.
+            // Permission revoked meanwhile; the in-app state still shows the reminder.
         }
     }
 
@@ -93,13 +83,25 @@ class AndroidSafeWalkAlerts(context: Context) : SafeWalkAlerts {
     }
 
     /** Explicit intent to our own non-exported receiver: no other app can trigger or intercept it. */
-    private fun checkInIntent(): PendingIntent {
-        val intent = Intent(appContext, CheckInActionReceiver::class.java).setAction(CheckInActionReceiver.ACTION_CHECK_IN)
-        return PendingIntent.getBroadcast(appContext, 2, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+    private fun actionIntent(action: String, requestCode: Int): PendingIntent {
+        val intent = Intent(appContext, CheckInActionReceiver::class.java).setAction(action)
+        return PendingIntent.getBroadcast(appContext, requestCode, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+    }
+
+    /** The SOS shortcut's own path: the cancellable 5 s countdown, never an SOS by itself. */
+    private fun sosIntent(): PendingIntent {
+        val intent = Intent(appContext, SosEntryActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return PendingIntent.getActivity(appContext, 4, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+    }
+
+    private fun dialIntent(): PendingIntent {
+        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + appContext.getString(R.string.emergency_number)))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return PendingIntent.getActivity(appContext, 5, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
     private companion object {
-        const val CHECK_IN_NOTIFICATION_ID = 4101
-        const val BATTERY_NOTIFICATION_ID = 4102
+        const val REMINDER_NOTIFICATION_ID = 4101
     }
 }
