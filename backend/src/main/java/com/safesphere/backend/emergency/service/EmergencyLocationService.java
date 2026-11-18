@@ -11,6 +11,7 @@ import com.safesphere.backend.emergency.entity.EmergencyEvent;
 import com.safesphere.backend.emergency.entity.EmergencyLocation;
 import com.safesphere.backend.emergency.entity.EmergencyStatus;
 import com.safesphere.backend.emergency.entity.LocationSource;
+import com.safesphere.backend.emergency.event.SosChanged;
 import com.safesphere.backend.emergency.repository.EmergencyEventRepository;
 import com.safesphere.backend.emergency.repository.EmergencyLocationRepository;
 import java.math.RoundingMode;
@@ -25,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +42,8 @@ import org.springframework.transaction.annotation.Transactional;
  *  - points the server already has (same emergency and time) are skipped, so re-sending is safe;
  *  - one emergency stores at most a configurable number of points.
  *
- * Nothing here sends the location to anyone: it is only stored for the owner. Coordinates are never logged.
+ * Nothing here sends the location to anyone: it is stored for the owner, and (N6) the Safety Circle texts of a person
+ * who chose them carry a map link of the latest point. Coordinates are never logged.
  */
 @Service
 public class EmergencyLocationService {
@@ -52,11 +55,13 @@ public class EmergencyLocationService {
     private final EmergencyLocationRepository locationRepository;
     private final EmergencyLocationProperties properties;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
     public EmergencyLocationService(EmergencyEventRepository emergencyRepository,
                                     EmergencyLocationRepository locationRepository,
                                     EmergencyLocationProperties properties,
-                                    Clock clock) {
+                                    Clock clock, ApplicationEventPublisher events) {
+        this.events = events;
         this.emergencyRepository = emergencyRepository;
         this.locationRepository = locationRepository;
         this.properties = properties;
@@ -97,10 +102,13 @@ public class EmergencyLocationService {
             }
         });
 
-        if (locationRepository.countByEmergencyId(emergencyId) + toStore.size() > properties.maxPerEmergency()) {
+        long stored = locationRepository.countByEmergencyId(emergencyId);
+        if (stored + toStore.size() > properties.maxPerEmergency()) {
             throw new ConflictException("Location limit reached for this emergency");
         }
         locationRepository.saveAll(toStore);
+        // N6: the first location lets the first Safety Circle text go at once (or adds the follow-up with the place).
+        if (stored == 0 && !toStore.isEmpty()) events.publishEvent(new SosChanged(emergencyId));
         return new LocationUploadResponse(points.size(), toStore.size());
     }
 

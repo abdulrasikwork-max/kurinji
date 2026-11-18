@@ -12,6 +12,7 @@ import com.safesphere.backend.emergency.dto.EmergencyResponse;
 import com.safesphere.backend.emergency.entity.EmergencyEvent;
 import com.safesphere.backend.emergency.entity.EmergencyStatus;
 import com.safesphere.backend.emergency.entity.TriggerType;
+import com.safesphere.backend.emergency.event.SosChanged;
 import com.safesphere.backend.emergency.repository.EmergencyEventRepository;
 import com.safesphere.backend.escalation.entity.EscalationEvent;
 import com.safesphere.backend.escalation.entity.EscalationLevel;
@@ -26,13 +27,15 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.regex.Pattern;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Records emergency sessions. The SERVER sends nothing (no SMS gateway, push, call or recording); in Phase 4D the
- * PHONE may text the Safety Circle and reports it to CircleAlertService. Location points (Phase 4A) are handled by
+ * Records emergency sessions. N6: the server itself never sends anything from here; it announces each change (SosChanged)
+ * and the Safety Circle alert queue (package circlealert) decides what to text. The phone may still report what it
+ * texted itself (CircleAlertService). Location points (Phase 4A) are handled by
  * EmergencyLocationService. Every method works on the caller's own rows only.
  */
 @Service
@@ -46,10 +49,12 @@ public class EmergencyService {
     private final Clock clock;
     private final UserRepository users;
     private final CodeGuard codes;
+    private final ApplicationEventPublisher events;
 
     public EmergencyService(EmergencyEventRepository repository, JourneyService journeyService,
                             EscalationEventRepository escalationRepository, Clock clock, UserRepository users,
-                            CodeGuard codes) {
+                            CodeGuard codes, ApplicationEventPublisher events) {
+        this.events = events;
         this.repository = repository;
         this.journeyService = journeyService;
         this.escalationRepository = escalationRepository;
@@ -129,7 +134,10 @@ public class EmergencyService {
         }
         // Phase 4B: an SOS during a Safe Walk ends the walk as EMERGENCY and links the two (level 3).
         journeyService.linkActiveJourney(userId, event);
-        return EmergencyResponse.from(repository.saveAndFlush(event));
+        event = repository.saveAndFlush(event);
+        // N6: the Safety Circle alert queue looks at it after the commit (it never delays or undoes the SOS).
+        if (outcome == null) events.publishEvent(new SosChanged(event.getId()));
+        return EmergencyResponse.from(event);
     }
 
     /** Phase 11: how far back a phone may date an SOS it could not record at once (its own record only). */
@@ -202,6 +210,7 @@ public class EmergencyService {
             LocalDateTime now = LocalDateTime.ofInstant(Instant.now(clock), ZoneOffset.UTC);
             event.end(finalStatus, elsewhere, clamp(toUtc(endedAt), event.getStartedAt(), now));
         }
+        events.publishEvent(new SosChanged(event.getId()));
         return EmergencyResponse.from(repository.saveAndFlush(event));
     }
 

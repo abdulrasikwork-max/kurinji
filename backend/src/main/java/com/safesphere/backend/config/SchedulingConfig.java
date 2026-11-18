@@ -4,8 +4,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * Turns on @Scheduled methods. Phase 6: CommunityPurgeJob (data deletion); Phase 10A: AccountDeletionJob (deletes
- * accounts whose grace period is over). Both only delete; nothing scheduled ever sends a message.
+ * Turns on @Scheduled methods (deletions, upkeep). Phase N6: AlertDispatcher is the ONE scheduled task that sends
+ * messages: the Safety Circle texts a person chose, after their own SOS (circlealert, docs/PHASE_N6.md §3).
  */
 @Configuration
 @EnableScheduling

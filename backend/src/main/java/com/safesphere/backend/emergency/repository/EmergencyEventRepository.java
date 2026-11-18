@@ -46,4 +46,7 @@ public interface EmergencyEventRepository extends JpaRepository<EmergencyEvent, 
 
     /** Newest first; capped at 50 entries so the history can never grow into a huge response. */
     List<EmergencyEvent> findTop50ByUserIdOrderByStartedAtDescIdDesc(Long userId);
+
+    /** N6: the SOSes the alert queue looks at (ACTIVE and recorded recently; a handful at most). */
+    List<EmergencyEvent> findByStatusAndCreatedAtAfter(EmergencyStatus status, java.time.LocalDateTime since);
 }

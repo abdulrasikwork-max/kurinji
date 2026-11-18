@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
  *       open both.</li>
  *   <li>a database URL without TLS ({@code useSSL=false}, or no {@code sslMode=REQUIRED|VERIFY_CA|VERIFY_IDENTITY}):
  *       passwords and personal data would cross the network in clear text.</li>
+ *   <li>N6: ALERT_PROVIDER other than FAST2SMS, or an ALERT_SECRET that is empty or equal to another secret.</li>
  *   <li>a relative photo folder: it would follow whatever directory the process was started from, so a
  *       restart elsewhere would silently "lose" every file.</li>
  * </ul>
@@ -35,11 +36,13 @@ public class ProductionGuard {
     private static final Logger log = LoggerFactory.getLogger(ProductionGuard.class);
 
     public ProductionGuard(OtpProperties otp, SocialProperties social, CommunityProperties community, JwtProperties jwt,
+                           AlertProperties alerts,
                            @Value("${spring.datasource.url:}") String databaseUrl,
                            @Value("${app.moderation.ai.key:}") String moderationKey) {
         List<String> problems = problems(otp.providerKind().name(), otp.fast2smsApiKey(), otp.secret(), databaseUrl,
                 social.mediaDir());
         problems.addAll(communityProblems(community.secret(), jwt.secret(), community.photoDir()));
+        problems.addAll(alertProblems(alerts.providerKind().name(), alerts.secret(), jwt.secret(), otp.secret()));
         if (!problems.isEmpty()) {
             throw new IllegalStateException("Refusing to start with the prod profile: " + String.join("; ", problems));
         }
@@ -62,6 +65,23 @@ public class ProductionGuard {
         }
         if (photoDir == null || !photoDir.isAbsolute()) {
             out.add("COMMUNITY_PHOTO_DIR must be an absolute path");
+        }
+        return out;
+    }
+
+    /**
+     * Phase N6: Safety Circle texts must really go out (DEV_FILE only writes them to a file), and the number key must be
+     * its own: derived from JWT_SECRET, rotating the token key would silently empty the stop list.
+     */
+    public static List<String> alertProblems(String alertProvider, String alertSecret, String jwtSecret, String otpSecret) {
+        List<String> out = new ArrayList<>();
+        if (!"FAST2SMS".equalsIgnoreCase(alertProvider)) {
+            out.add("ALERT_PROVIDER must be FAST2SMS (DEV_FILE sends no Safety Circle text and writes them to a file)");
+        }
+        if (alertSecret == null || alertSecret.isBlank()) {
+            out.add("ALERT_SECRET must be set (32+ random characters, backed up apart from the database)");
+        } else if (alertSecret.equals(jwtSecret) || alertSecret.equals(otpSecret)) {
+            out.add("ALERT_SECRET must differ from JWT_SECRET and OTP_SECRET");
         }
         return out;
     }

@@ -50,7 +50,8 @@ class ModelPlacesTest {
 
     /**
      * Every outbound HTTP call of the backend is pinned here. Phase 17B added exactly one more: the SMS provider
-     * adapter (it delivers verification codes; it never talks to the moderation service and never logs). The third
+     * adapter (N6: common/sms/Fast2SmsClient, shared by verification codes and Safety Circle alerts; it never talks to
+     * the moderation service and never logs). The third
      * client of Phase 17G-3 (the optional Explore understanding) was retired in N1, with its provider adapter in the
      * Python service: since then nothing in the product calls an AI provider.
      */
@@ -63,9 +64,9 @@ class ModelPlacesTest {
                 if (outbound.matcher(Files.readString(file)).find()) found.add(file.getFileName().toString());
             }
         }
-        assertThat(found).containsExactlyInAnyOrder("ModerationServiceClient.java", "Fast2SmsOtpSender.java");
-        String sms = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "auth", "phone",
-                "Fast2SmsOtpSender.java")));
+        assertThat(found).containsExactlyInAnyOrder("ModerationServiceClient.java", "Fast2SmsClient.java");
+        String sms = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "common", "sms",
+                "Fast2SmsClient.java")));
         assertThat(sms).doesNotContain("/v1/assess").doesNotContain("/v1/understand").doesNotContain("Logger")
                 .doesNotContain("log.");
         String moderation = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "moderation",

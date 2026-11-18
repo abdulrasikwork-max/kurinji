@@ -1650,7 +1650,8 @@ can see; 400 on one's own); `POST /api/content-checks/review {targetKind: "MESSA
 
 # Phase N6: safety trim and automatic SOS alerts (`docs/PHASE_N6.md`, V37)
 
-**Status: B1 built and tested (2026-11-18).** The walk is "On my way" (D22): a reminder, no tracking.
+**Status: B1 and B2 built and tested (2026-11-18); V37 written, held with `spring.flyway.target=36` until B3.** The walk
+is "On my way" (D22): a reminder, no tracking. The server texts the Safety Circle (D20).
 
 **Walk (`/api/journeys`) after N6-B1:**
 - `POST /api/journeys {"destinationLabel"? (≤ 100, the person's own words), "checkInIntervalMinutes": 2..60}` → `201`.
@@ -1666,6 +1667,50 @@ can see; 400 on one's own); `POST /api/content-checks/review {targetKind: "MESSA
   `POST /api/journeys/{id}/circle-alerts`. Walk alert kinds `WALK_NO_RESPONSE` / `ALL_CLEAR` and escalation reasons
   `ROUTE_DEVIATION` / `UNEXPECTED_STOP` exist only in old rows (still shown in the owner's Emergency Context Packet).
 - `POST /api/emergencies/{id}/circle-alerts` (the phone's own report) is unchanged in B1.
+
+**Automatic Safety Circle texts (N6-B2, D20, `PHASE_N6.md` §3).** JWT required; the caller's own data only; not gated by
+membership (safety never is). No answer carries a contact's number, a text or a location.
+
+| Method and URL | Purpose | Success | Errors |
+|---|---|---|---|
+| `GET /api/safety-alerts` | The choice and what it means | `200` Settings | `401` |
+| `PUT /api/safety-alerts {"on": true\|false}` | The one explicit choice (and later changes) | `200` Settings | `400`, `401` |
+| `POST /api/safety-alerts/test` | "Test my alerts": the server texts the caller's OWN number (works with the choice on or off) | `202` Settings | `401`, `409` no number, `429` once per 24 h (`app.alerts.tests-per-person`) |
+| `GET /api/emergencies/{id}/alerts` | What the server did for each contact in this SOS | `200` | `401`, `404` (another person's SOS too) |
+| `POST /api/admin/alert-stops {"phoneNumber"}` | ADMIN: stop all IRL alerts to a number (kept only as an HMAC) | `204` | `400` not an Indian mobile, `401`, `403` |
+| `POST /api/admin/alert-stops/lift {"phoneNumber"}` | ADMIN: lift it | `204` | `400`, `401`, `403` |
+| `POST /api/admin/alert-stops/check {"phoneNumber"}` | ADMIN: `{"stopped": bool}` | `200` | `400`, `401`, `403` |
+
+```json
+{ "choice": "UNSET|ON|OFF", "decidedAt": "…|null",
+  "preview": "IRL SOS: Asha Devi pressed SOS at 9:41 PM. Location: maps.google.com/?q=(where you are) Call 9876543210 now. No answer? Call 112.",
+  "contacts": [ { "contactId": 3, "name": "Ravi", "automatic": true, "reason": null },
+                { "contactId": 4, "name": "Uncle", "automatic": false, "reason": "NOT_INDIAN_MOBILE" } ],
+  "lastTest": { "status": "SENT", "at": "…", "reason": null }, "testAvailable": false }
+```
+```json
+{ "choice": "ON",
+  "alerts": [ { "contactId": 3, "contactName": "Ravi", "kind": "SOS_STARTED", "status": "SENT", "reason": null,
+                "at": "…", "late": false } ] }
+```
+- `choice` UNSET = never chosen: nothing is sent automatically. `kind` SOS_STARTED / SOS_LOCATION / SOS_RESOLVED /
+  SOS_CANCELLED. `status` QUEUED / SENT (accepted by the provider, **not** delivered: no delivery reports in N6) /
+  DELIVERED (reserved) / FAILED / SKIPPED; the phone reads anything else as "not confirmed". `reason` (SKIPPED only):
+  NOT_INDIAN_MOBILE, NOT_IN_FIRST_FIVE, DUPLICATE_NUMBER, NOT_AVAILABLE (the stop list, never named), NUMBER_LIMIT,
+  PERSON_LIMIT, SERVER_LIMIT, TOO_LATE, ENDED, CONTACT_GONE. `late` = texted as "sent late".
+- Rules: the first text goes at the first location or 20 s after the SOS reached the server; a False alarm before that
+  sends nothing; one follow-up with the location within 10 min; one closing text after I'm safe / False alarm, never
+  for an SOS ended from another sign-in; nothing for an SOS that reached the server more than 30 min after it started
+  (2–30 min: "sent late"); at most 5 contacts by priority, Indian mobiles only, each number once; 3 attempts, then
+  FAILED. Limits counted in the database (24 h windows): 5 rounds per person, 10 texts per number across all senders,
+  100 per server.
+- `POST /api/emergencies/{id}/circle-alerts` (the phone's own reports) now refuses `channel` SERVER_SMS, `status` QUEUED /
+  SKIPPED and `kind` TEST (`400`), and a reference that belongs to a server row (`409`).
+- **Config** `app.alerts.*`: provider (`ALERT_PROVIDER` DEV_FILE | FAST2SMS, the shared Fast2SMS client and key), secret
+  (`ALERT_SECRET`), dev-file (`ALERT_DEV_FILE`), job-enabled, dispatch-interval 5s, send-delay 20s, stale-after 30m,
+  late-after 2m, follow-up-window 10m, closing-window 24h, max-contacts 5, rounds-per-person 5, per-number 10,
+  server-wide 100, tests-per-person 1, max-attempts 3, retry-delay 15s. The prod profile requires FAST2SMS and its own
+  ALERT_SECRET.
 
 # Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
 
@@ -1871,3 +1916,5 @@ A compact list of every phase's endpoints and config keys; the sections above ha
 - Phase N6 (`docs/PHASE_N6.md`): B1 walk trim: `POST /api/journeys {destinationLabel?, checkInIntervalMinutes}` (no
   coordinates; answers without `destination` / `lastLocation`); `PUT /api/journeys/{id}/location`,
   `POST /api/journeys/{id}/escalations`, `POST /api/journeys/{id}/circle-alerts` removed (404).
+  B2: `GET|PUT /api/safety-alerts`, `POST /api/safety-alerts/test`, `GET /api/emergencies/{id}/alerts`,
+  `POST /api/admin/alert-stops`, `…/lift`, `…/check`; config `app.alerts.*` (`ALERT_PROVIDER`, `ALERT_SECRET`, `ALERT_DEV_FILE`).

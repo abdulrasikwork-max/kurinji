@@ -3,6 +3,7 @@ package com.safesphere.backend.circlealert.service;
 import com.safesphere.backend.circlealert.dto.CircleAlertDtos.Report;
 import com.safesphere.backend.circlealert.dto.CircleAlertDtos.UploadResult;
 import com.safesphere.backend.circlealert.entity.CircleAlert;
+import com.safesphere.backend.circlealert.entity.CircleAlertEnums.Kind;
 import com.safesphere.backend.circlealert.repository.CircleAlertRepository;
 import com.safesphere.backend.common.exception.ConflictException;
 import com.safesphere.backend.common.exception.InvalidRequestException;
@@ -80,6 +81,10 @@ public class CircleAlertService {
             if (report.kind().isForJourney()) {
                 throw new InvalidRequestException("This alert kind belongs to a Safe Walk, not an emergency");
             }
+            if (!report.channel().isPhone() || !report.status().isPhone() || report.kind() == Kind.TEST) {
+                // N6: only the server queues, skips or texts through the provider; a phone reports what IT did.
+                throw new InvalidRequestException("A phone can only report what it did itself");
+            }
             LocalDateTime at = LocalDateTime.ofInstant(report.occurredAt().truncatedTo(ChronoUnit.MICROS), ZoneOffset.UTC);
             if (at.isAfter(now.plus(CLOCK_TOLERANCE))) {
                 throw new InvalidRequestException("Alert time cannot be in the future");
@@ -99,7 +104,7 @@ public class CircleAlertService {
         Map<String, CircleAlert> existing = alertRepository.findByClientRefIn(byRef.keySet()).stream()
                 .collect(Collectors.toMap(a -> a.getClientRef().toLowerCase(), Function.identity()));
         for (CircleAlert alert : existing.values()) {
-            if (!sameTarget.test(alert)) {
+            if (!sameTarget.test(alert) || !alert.getChannel().isPhone()) {
                 throw new ConflictException("This alert reference is already used");
             }
         }

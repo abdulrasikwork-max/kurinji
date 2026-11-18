@@ -65,7 +65,10 @@ public class AccountEraser {
             // verification request and its ID photo file, the community log rows ABOUT them, and a claim they held on
             // someone else's request (cleared, as the database's ON DELETE SET NULL does).
             "memberships.user_id", "verification_requests.user_id", "verification_requests.claimed_by",
-            "community_actions.subject_user_id");
+            "community_actions.subject_user_id",
+            // Phase N6 (V37): the server's Safety Circle texts (and "Test my alerts") of the person, their alert choice, and
+            // their name on stop-list entries they added as an admin (the entry stays; cleared, as ON DELETE SET NULL does).
+            "circle_alerts.user_id", "alert_settings.user_id", "alert_stops.added_by");
 
     /** References that keep the account row (anonymised): the moderation audit trail of decisions this person took. */
     public static final Set<String> KEPT_REFERENCES = Set.of("moderation_actions.actor_id", "moderation_appeals.decided_by",
@@ -82,13 +85,16 @@ public class AccountEraser {
             + " WHERE author_id = ?))";
 
     private static final List<String> OWNED_DATA = List.of(
-            "DELETE FROM circle_alerts WHERE emergency_id IN " + EMERGENCIES + " OR journey_id IN " + JOURNEYS,
+            "DELETE FROM circle_alerts WHERE user_id = ? OR emergency_id IN " + EMERGENCIES + " OR journey_id IN " + JOURNEYS,
             "DELETE FROM escalation_events WHERE emergency_id IN " + EMERGENCIES + " OR journey_id IN " + JOURNEYS,
             "DELETE FROM emergency_locations WHERE emergency_id IN " + EMERGENCIES,
             "DELETE FROM emergency_events WHERE user_id = ?",
             "DELETE FROM journey_events WHERE journey_id IN " + JOURNEYS,
             "DELETE FROM safe_journeys WHERE user_id = ?",
             "DELETE FROM safety_contacts WHERE user_id = ?",
+            // Phase N6: the alert choice; stop-list entries they added keep the number key but lose their name.
+            "DELETE FROM alert_settings WHERE user_id = ?",
+            "UPDATE alert_stops SET added_by = NULL WHERE added_by = ?",
             // Phase 11 C1: every sign-in ends (an anonymised tombstone keeps no session either).
             "DELETE FROM device_sessions WHERE user_id = ?",
             // Phase N2: codes in progress for the person or their number (a sign-in code names no account).

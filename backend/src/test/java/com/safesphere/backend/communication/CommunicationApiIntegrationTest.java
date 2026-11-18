@@ -218,7 +218,8 @@ class CommunicationApiIntegrationTest {
                 "destinationLabel", "Station", "checkInIntervalMinutes", 30))).get("id").asLong();
         // A walk alert from a phone before N6 (the endpoint is gone since N6-B1): old rows are still shown.
         jdbcTemplate.update("insert into circle_alerts (journey_id, kind, channel, status, client_ref, occurred_at,"
-                        + " received_at, updated_at) values (?, 'WALK_NO_RESPONSE', 'SMS_AUTO', 'SENT', ?, ?, ?, ?)",
+                        + " received_at, updated_at, attempts, included_location) values (?, 'WALK_NO_RESPONSE', 'SMS_AUTO',"
+                        + " 'SENT', ?, ?, ?, ?, 0, false)",
                 journey, UUID.randomUUID().toString(), LocalDateTime.now(ZoneOffset.UTC).minusSeconds(5),
                 LocalDateTime.now(ZoneOffset.UTC), LocalDateTime.now(ZoneOffset.UTC));
         long emergency = startEmergency(tokenA); // links the walk, records level 3

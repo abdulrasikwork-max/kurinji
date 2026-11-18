@@ -90,4 +90,16 @@ class ProductionGuardTest {
         // secrets never appear in the profile file
         assertThat(p.stringPropertyNames()).noneMatch(k -> k.toLowerCase().contains("password") || k.endsWith(".key"));
     }
+
+    @Test
+    void n6_alerts_mustReallyGoOut_withTheirOwnNumberKey() {
+        String jwt = "j".repeat(40);
+        String otp = "o".repeat(40);
+        assertThat(ProductionGuard.alertProblems("FAST2SMS", "a".repeat(40), jwt, otp)).isEmpty();
+        assertThat(ProductionGuard.alertProblems("DEV_FILE", "a".repeat(40), jwt, otp)).hasSize(1);
+        assertThat(ProductionGuard.alertProblems("FAST2SMS", "", jwt, otp)).hasSize(1);
+        assertThat(ProductionGuard.alertProblems("FAST2SMS", jwt, jwt, otp)).hasSize(1);
+        assertThat(ProductionGuard.alertProblems("FAST2SMS", otp, jwt, otp)).hasSize(1);
+        assertThat(ProductionGuard.alertProblems("DEV_FILE", null, jwt, otp)).hasSize(2);
+    }
 }

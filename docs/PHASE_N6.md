@@ -212,3 +212,40 @@ anyone).
   inserted with SQL to keep the context-packet coverage). `mvn -o clean test`: **501 run / 0 failures / 0 errors / 2
   skipped** (511 before; the difference is the removed walk tests).
 - `API.md`: section "Phase N6", a note on Phase 4B, appendix line.
+
+### B2 (2026-11-18): server-side Safety Circle texts. Implemented, compiled, tested. V37 written, NOT applied.
+- **SMS port:** `common/sms/SmsGateway` (send → provider reference), `Fast2SmsClient` = the ONE Fast2SMS HTTP client
+  (moved out of `Fast2SmsOtpSender`, which now only formats the code; `ModelPlacesTest` pins `ModerationServiceClient` +
+  `Fast2SmsClient`, still two), `DevFileSmsGateway` (texts to a local file with the last 4 digits only; default);
+  `circlealert/service/AlertGatewayConfig` picks it from `app.alerts.provider`. Tests: `support/StubSmsGatewayConfig`.
+- **Rules:** pure `AlertPolicy` (timing, follow-up, closing, too late / late, retries, who is texted, limits order, the
+  allow-listed texts, ASCII names, one 160-character part, the preview). Texts as built:
+  `IRL SOS[ (sent late)]: <name> pressed SOS at 9:41 PM. Location: maps.google.com/?q=<lat>,<lng> | Location not known yet. Call <number> now. No answer? Call 112.`;
+  `IRL SOS update: <name> was here at <time>: <link> Call <number> now.`;
+  `IRL: <name> ended the SOS at <time> and marked it I'm safe. Call <number> if you are worried.`;
+  `IRL: <name> marked the SOS at <time> as a false alarm. Call <number> if you are worried.`;
+  `IRL test, not an emergency: your Safety Circle alerts work. In an SOS each contact gets your name, the time, a map link and your number.`
+- **Queue:** `AlertQueue` (plan / dueIds / claim / result, each its own transaction), `AlertDispatcher` (scheduled every
+  5 s, `kick()` after `SosChanged` = recorded / first location / ended, `@TransactionalEventListener` AFTER_COMMIT in
+  `SosChangedListener`; one run at a time; logs counts and the provider status only), `AlertKeys` (HMAC of numbers),
+  `CircleAlert` factories `queued` / `skipped` / `test` + `claim` / `sent` / `refused` / `skip`; enums `SkipReason`,
+  channel `SERVER_SMS`, statuses `QUEUED` / `SKIPPED`, kind `TEST`. `emergency/event/SosChanged` (emergency never
+  imports circlealert). New repository reads in `CircleAlertRepository`, `EmergencyEventRepository.findByStatusAndCreatedAtAfter`.
+- **Read / choose:** `SafetyAlertService`, `SafetyAlertController` (`/api/safety-alerts`, `/test`,
+  `/api/emergencies/{id}/alerts`), `AlertStopAdminController` (`/api/admin/alert-stops`, `/lift`, `/check`),
+  `AlertDtos`; entities `AlertSetting`, `AlertStop`. Phone reports may no longer use the server's channel / statuses / kind.
+- **V37** (`V37__n6_walk_trim_and_server_alerts.sql`): §1 walk destination columns dropped (CHECKs first), last-location
+  values cleared; §2 `circle_alerts` closed lists to binary + new columns (`user_id` FK cascade, `recipient_key`,
+  `included_location`, `attempts`, `next_attempt_at`, `sent_at`, `provider_ref`, `skip_reason`) and CHECKs (phone row vs
+  server row, QUEUED ⇔ next attempt, SKIPPED ⇔ reason with `COALESCE`, sent time only on SENT / DELIVERED, hex key);
+  §3 `alert_settings`; §4 `alert_stops`. Held with `spring.flyway.target=36` until B3.
+- **Elsewhere:** `AccountEraser` (+ `circle_alerts.user_id`, `alert_settings.user_id`, `alert_stops.added_by` SET NULL),
+  `ProductionGuard.alertProblems` (FAST2SMS + own `ALERT_SECRET`), `config/AlertProperties` (`app.alerts.*`),
+  `SchedulingConfig` note (the one scheduled task that sends messages). Decisions N-110 to N-113.
+- **Not built (honest limits):** delivery reports (SENT = accepted by the provider); the phone side (A1).
+- Tests: `AlertPolicyTest` 12, `ServerAlertApiTest` 16 (choice unset sends nothing; first location / 20 s; foreign
+  number skipped; false alarm before sending; follow-up once; closing once; ended elsewhere; too late / sent late; first
+  five + duplicate number; refusal → retry → FAILED; a claim before a crash is retried from the database; per-number
+  limit across senders; 404 for another person; phone cannot report server states; Test my alerts once a day; stop list
+  (admin only, HMAC only, shown as NOT_AVAILABLE); erasure), `AlertLogsTest` 2, `ProductionGuardTest` +1,
+  `Fast2SmsOtpSenderTest` +1. `mvn -o clean test`: **533 run / 0 failures / 0 errors / 2 skipped**.

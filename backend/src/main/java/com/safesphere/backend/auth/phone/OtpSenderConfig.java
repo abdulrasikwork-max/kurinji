@@ -1,6 +1,7 @@
 package com.safesphere.backend.auth.phone;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.safesphere.backend.common.sms.Fast2SmsClient;
 import java.nio.file.Path;
 import java.time.Clock;
 import org.slf4j.Logger;
@@ -17,7 +18,8 @@ public class OtpSenderConfig {
     @Bean
     public OtpSender otpSender(OtpProperties properties, ObjectMapper objectMapper, Clock clock) {
         OtpSender sender = switch (properties.providerKind()) {
-            case FAST2SMS -> new Fast2SmsOtpSender(properties.fast2smsUrl(), properties.fast2smsApiKey(), objectMapper);
+            case FAST2SMS -> new Fast2SmsOtpSender(
+                    new Fast2SmsClient(properties.fast2smsUrl(), properties.fast2smsApiKey(), objectMapper));
             case DEV_FILE -> new DevFileOtpSender(devFile(properties), clock);
         };
         if (properties.providerKind() == OtpProperties.Provider.DEV_FILE) {

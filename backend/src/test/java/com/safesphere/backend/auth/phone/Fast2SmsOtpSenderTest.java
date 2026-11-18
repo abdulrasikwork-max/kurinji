@@ -1,5 +1,7 @@
 package com.safesphere.backend.auth.phone;
 
+import com.safesphere.backend.common.sms.Fast2SmsClient;
+import com.safesphere.backend.common.sms.SmsGateway.SmsRefusedException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -50,8 +52,11 @@ class Fast2SmsOtpSenderTest {
     }
 
     private Fast2SmsOtpSender sender() {
-        return new Fast2SmsOtpSender("http://127.0.0.1:" + server.getAddress().getPort() + "/dev/bulkV2",
-                "test-key", json);
+        return new Fast2SmsOtpSender(client());
+    }
+
+    private Fast2SmsClient client() {
+        return new Fast2SmsClient("http://127.0.0.1:" + server.getAddress().getPort() + "/dev/bulkV2", "test-key", json);
     }
 
     @Test
@@ -126,10 +131,21 @@ class Fast2SmsOtpSenderTest {
 
     @Test
     void refusesToStartWithoutAKey_orOverPlainHttpToAnotherHost() {
-        assertThatThrownBy(() -> new Fast2SmsOtpSender("https://www.fast2sms.com/dev/bulkV2", " ", json))
+        assertThatThrownBy(() -> new Fast2SmsClient("https://www.fast2sms.com/dev/bulkV2", " ", json))
                 .isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> new Fast2SmsOtpSender("http://www.fast2sms.com/dev/bulkV2", "k", json))
+        assertThatThrownBy(() -> new Fast2SmsClient("http://www.fast2sms.com/dev/bulkV2", "k", json))
                 .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void theSharedClient_returnsTheProvidersReference_andRefusesAForeignNumber() {
+        answer = "{\"return\":true,\"request_id\":\"lwdtp7cjyqxvfe9\",\"message\":[\"SMS sent successfully.\"]}";
+        assertThat(client().send("+919876543210", "IRL test")).isEqualTo("lwdtp7cjyqxvfe9");
+        answer = "{\"return\":true,\"request_id\":\"not a reference 003c003e\"}";
+        assertThat(client().send("+919876543210", "IRL test")).isNull();
+        body.set(null);
+        assertThatThrownBy(() -> client().send("+14155550100", "IRL test")).isInstanceOf(SmsRefusedException.class);
+        assertThat(body.get()).isNull();
     }
 
     @Test
