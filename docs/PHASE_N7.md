@@ -309,3 +309,35 @@ their JSON files outside the repo; give the Android config values for `local.pro
   resources and timing); `KurinjiTextsTest` (new lines and button). `testDebugUnitTest` **660 / 0**, `assembleDebug` OK.
 - **Seen on the emulator (fresh install):** the line written, the dot landed, the motto; first run settles on REAL
   PEOPLE. / REAL PLANS. / REAL LIFE. and I'M IN →; the launcher icon in the app drawer.
+
+### B1 (2026-11-18): push core. Implemented, compiled, tested. V38 written, NOT applied (Flyway held at 37 until B4).
+- **V38** (`V38__n7_push_and_circle_links.sql`): `push_devices` (one token per `device_sessions` row, `token_hash`
+  SHA-256 unique, CHECKs), `push_settings`, `push_messages` (closed type list = `PushType`, status QUEUED / SENT /
+  SKIPPED / FAILED / EXPIRED with the queued / sent / reason pairs as CHECKs, subject `^[A-Za-z0-9-]{1,64}$`, `event_id`
+  shared by every phone of one event; no text, name or place), `circle_links` (public UUID, unique contact, PENDING /
+  ACCEPTED, decided ⇔ ACCEPTED), `circle_link_mutes` (PK member + owner). All FKs cascade. The planned `collapse_key`
+  column is derived instead (`PushPolicy.collapseKey`); `event_id` added for de-duplication and the caps.
+- **`push` package:** `PushType` (the 14 kinds with group, switch, priority, lifetime, thread), entities and
+  repositories, pure `PushPolicy` (switches with defaults, batching, caps, collapse key, retry delay ≤ 10 min, TTL left,
+  subject / token patterns), `PushQueue` (enqueue one row per running sign-in, due ids, claim with a 2-minute lease and
+  the session re-checked, result: an invalid token deletes the phone and its rows), `PushDispatcher` (every 2 s + kick
+  after commit, one run at a time, logs counts and FCM status codes only), `PushService` (THE entry for producers:
+  `notify`, `notifyAt`, `forget`, `toldSince`; NONE = nothing queued), `PushDeviceService` + `PushController`
+  (`/api/push/device`, `/api/push/settings`; the caller and the sign-in only from the JWT; a token moves to the newest
+  sign-in; 10 registrations an hour per sign-in), `PushCleanupJob` (hourly: phones of ended sign-ins, tokens older than
+  60 days, rows older than 7 days).
+- **Sender:** `PushSender` port; `FcmClient` = FCM HTTP v1, data-only, Android priority / TTL / collapse key; the OAuth
+  service-account assertion signed RS256 with Nimbus (no Firebase library on the server); access token cached to near
+  expiry; answers mapped (404 / UNREGISTERED, SENDER_ID_MISMATCH, a 400 about the registration token → delete the phone;
+  any other 400 → FAILED, never deletes tokens; 401/403 → AUTH, token fetched again; 429 / 5xx → retry with Retry-After);
+  https only (a local stub only in tests). `DevFilePushSender` (default; no token in the file). `PushSenderConfig`.
+- **Elsewhere:** `config/PushProperties` (`app.push.*`), `ProductionGuard.pushProblems` (prod refuses DEV_FILE; FCM needs
+  an absolute readable credentials file; NONE allowed), `SchedulingConfig` (two scheduled senders), `AccountEraser` (+ 7
+  references, statements before the sessions and contacts), `CircleLink` / `CircleLinkMute` entities (used from B3),
+  `ModelPlacesTest` (three pinned outbound clients; FCM never logs and sends no notification block).
+- **Tests:** `PushPolicyTest` 5 (the 14 kinds = the V38 CHECK, priorities, switches, anti-noise, the pointer payload),
+  `PushApiTest` 9 (registration bound to the sign-in, settings own, every running sign-in gets the same event, a token
+  moves, batching, invalid token / retries / expiry, signing out stops even queued pushes, On my way scheduling and
+  forgetting, erasure, no token in the logs), `PushCapsTest`, `PushOffTest`, `FcmClientTest` 3 (a local stub of Google's
+  token endpoint and FCM: the RS256 assertion verifies, data-only body, every answer's mapping, token reuse), the guard
+  tests. `mvn -o clean test` **553 run / 0 failures / 0 errors / 2 skipped** (533 before).

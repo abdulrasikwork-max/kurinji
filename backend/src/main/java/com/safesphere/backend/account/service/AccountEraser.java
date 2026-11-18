@@ -68,7 +68,11 @@ public class AccountEraser {
             "community_actions.subject_user_id",
             // Phase N6 (V37): the server's Safety Circle texts (and "Test my alerts") of the person, their alert choice, and
             // their name on stop-list entries they added as an admin (the entry stays; cleared, as ON DELETE SET NULL does).
-            "circle_alerts.user_id", "alert_settings.user_id", "alert_stops.added_by");
+            "circle_alerts.user_id", "alert_settings.user_id", "alert_stops.added_by",
+            // Phase N7 (V38): the person's phones and their push queue, their notification switches, the Safety Circle
+            // links where they are the owner or the member, and their "Don't ask again" choices in both directions.
+            "push_devices.user_id", "push_settings.user_id", "push_messages.user_id", "circle_links.owner_user_id",
+            "circle_links.member_user_id", "circle_link_mutes.member_user_id", "circle_link_mutes.owner_user_id");
 
     /** References that keep the account row (anonymised): the moderation audit trail of decisions this person took. */
     public static final Set<String> KEPT_REFERENCES = Set.of("moderation_actions.actor_id", "moderation_appeals.decided_by",
@@ -85,6 +89,13 @@ public class AccountEraser {
             + " WHERE author_id = ?))";
 
     private static final List<String> OWNED_DATA = List.of(
+            // Phase N7: the push queue and phones (before their sign-ins), the switches, the circle links (before the
+            // contacts they belong to) and the mutes, in both directions.
+            "DELETE FROM push_messages WHERE user_id = ? OR device_id IN (SELECT id FROM push_devices WHERE user_id = ?)",
+            "DELETE FROM push_devices WHERE user_id = ?",
+            "DELETE FROM push_settings WHERE user_id = ?",
+            "DELETE FROM circle_links WHERE owner_user_id = ? OR member_user_id = ?",
+            "DELETE FROM circle_link_mutes WHERE member_user_id = ? OR owner_user_id = ?",
             "DELETE FROM circle_alerts WHERE user_id = ? OR emergency_id IN " + EMERGENCIES + " OR journey_id IN " + JOURNEYS,
             "DELETE FROM escalation_events WHERE emergency_id IN " + EMERGENCIES + " OR journey_id IN " + JOURNEYS,
             "DELETE FROM emergency_locations WHERE emergency_id IN " + EMERGENCIES,

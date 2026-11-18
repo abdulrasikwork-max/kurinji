@@ -102,4 +102,15 @@ class ProductionGuardTest {
         assertThat(ProductionGuard.alertProblems("FAST2SMS", otp, jwt, otp)).hasSize(1);
         assertThat(ProductionGuard.alertProblems("DEV_FILE", null, jwt, otp)).hasSize(2);
     }
+
+    @org.junit.jupiter.api.Test
+    void push_mustReallyGoOutOrBeOffOnPurpose(@org.junit.jupiter.api.io.TempDir java.nio.file.Path dir) throws Exception {
+        java.nio.file.Path file = java.nio.file.Files.writeString(dir.resolve("sa.json"), "{}");
+        assertThat(ProductionGuard.pushProblems("DEV_FILE", "")).hasSize(1);
+        assertThat(ProductionGuard.pushProblems("NONE", "")).as("the kill switch is allowed").isEmpty();
+        assertThat(ProductionGuard.pushProblems("FCM", "")).hasSize(1);
+        assertThat(ProductionGuard.pushProblems("FCM", "relative/sa.json")).hasSize(1);
+        assertThat(ProductionGuard.pushProblems("FCM", dir.resolve("missing.json").toString())).hasSize(1);
+        assertThat(ProductionGuard.pushProblems("FCM", file.toAbsolutePath().toString())).isEmpty();
+    }
 }

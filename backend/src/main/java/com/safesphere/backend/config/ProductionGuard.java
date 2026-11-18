@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
  *   <li>a database URL without TLS ({@code useSSL=false}, or no {@code sslMode=REQUIRED|VERIFY_CA|VERIFY_IDENTITY}):
  *       passwords and personal data would cross the network in clear text.</li>
  *   <li>N6: ALERT_PROVIDER other than FAST2SMS, or an ALERT_SECRET that is empty or equal to another secret.</li>
+ *   <li>N7: PUSH_PROVIDER=DEV_FILE, or FCM without a readable absolute FCM_CREDENTIALS_FILE.</li>
  *   <li>a relative photo folder: it would follow whatever directory the process was started from, so a
  *       restart elsewhere would silently "lose" every file.</li>
  * </ul>
@@ -36,13 +37,14 @@ public class ProductionGuard {
     private static final Logger log = LoggerFactory.getLogger(ProductionGuard.class);
 
     public ProductionGuard(OtpProperties otp, SocialProperties social, CommunityProperties community, JwtProperties jwt,
-                           AlertProperties alerts,
+                           AlertProperties alerts, PushProperties push,
                            @Value("${spring.datasource.url:}") String databaseUrl,
                            @Value("${app.moderation.ai.key:}") String moderationKey) {
         List<String> problems = problems(otp.providerKind().name(), otp.fast2smsApiKey(), otp.secret(), databaseUrl,
                 social.mediaDir());
         problems.addAll(communityProblems(community.secret(), jwt.secret(), community.photoDir()));
         problems.addAll(alertProblems(alerts.providerKind().name(), alerts.secret(), jwt.secret(), otp.secret()));
+        problems.addAll(pushProblems(push.providerKind().name(), push.credentialsFile()));
         if (!problems.isEmpty()) {
             throw new IllegalStateException("Refusing to start with the prod profile: " + String.join("; ", problems));
         }
@@ -65,6 +67,27 @@ public class ProductionGuard {
         }
         if (photoDir == null || !photoDir.isAbsolute()) {
             out.add("COMMUNITY_PHOTO_DIR must be an absolute path");
+        }
+        return out;
+    }
+
+    /**
+     * Phase N7: pushes must really go out or be switched off on purpose. DEV_FILE only writes them to a file; FCM needs a
+     * readable service-account file at an absolute path. NONE (the kill switch) is allowed: IRL works without pushes.
+     */
+    public static List<String> pushProblems(String pushProvider, String credentialsFile) {
+        List<String> out = new ArrayList<>();
+        if ("DEV_FILE".equalsIgnoreCase(pushProvider)) {
+            out.add("PUSH_PROVIDER must be FCM or NONE (DEV_FILE sends no push and writes them to a file)");
+        } else if ("FCM".equalsIgnoreCase(pushProvider)) {
+            if (credentialsFile == null || credentialsFile.isBlank()) {
+                out.add("FCM_CREDENTIALS_FILE must point at the Firebase service-account JSON");
+            } else {
+                Path file = Path.of(credentialsFile.trim());
+                if (!file.isAbsolute() || !java.nio.file.Files.isReadable(file)) {
+                    out.add("FCM_CREDENTIALS_FILE must be an absolute path to a readable file");
+                }
+            }
         }
         return out;
     }

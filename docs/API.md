@@ -1712,6 +1712,24 @@ membership (safety never is). No answer carries a contact's number, a text or a 
   server-wide 100, tests-per-person 1, max-attempts 3, retry-delay 15s. The prod profile requires FAST2SMS and its own
   ALERT_SECRET.
 
+# Phase N7: push notifications and the Safety Circle in the app (`docs/PHASE_N7.md`, V38)
+
+**Push (B1, D26-D35).** Every route needs a sign-in; none needs a community membership.
+- `PUT /api/push/device {token, appVersion?}` → **204**. Binds this phone's FCM token to the CURRENT sign-in (the token's
+  `sid`); a token seen on another sign-in moves here (the old row goes). **400** not a token (`^[A-Za-z0-9_:-]{32,512}$`),
+  **409** "Sign in again to get notifications on this phone" (no `sid`, or the sign-in ended), **429** more than 10 an
+  hour from one sign-in. The token is never returned or logged.
+- `DELETE /api/push/device` → **204** (this sign-in's token; nothing to remove is fine).
+- `GET|PUT /api/push/settings {replies, plans, planMessages, people, staff}` → the caller's own switches (no row = all on
+  except `staff`). Safety and account notices have no switch here (D31).
+- What a phone receives (FCM data-only, nothing else): `{"t": <kind>, "s": <opaque id>, "m": <event id>, "v": "1"}`;
+  kinds `PLAN_ASK | PLAN_ADDED | PLAN_MESSAGE | PLAN_CALLED_OFF | REPLY_TURN | MORE_ADDED | PEOPLE_REQUEST |
+  ACCOUNT_SIGN_IN | MEMBERSHIP_DECIDED | CONTENT_DECIDED | CIRCLE_REQUEST | CIRCLE_SOS | OMW_REMINDER | STAFF_WAITING`.
+  Android priority HIGH only for `CIRCLE_SOS` and `OMW_REMINDER`; collapse key = thread + subject. The phone reads the
+  details through the normal routes.
+- Config `app.push.*`: `PUSH_PROVIDER` = `DEV_FILE` (default) / `FCM` / `NONE`, `FCM_CREDENTIALS_FILE`, `PUSH_DEV_FILE`,
+  caps 6 an hour / 20 a day for social kinds, batch window 2 min, 5 attempts, stale tokens 60 days, retention 7 days.
+
 # Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
 
 > **N1 (2026-11-15):** the lines of Phases 5 to 9, 17G and 18A in this index are history; what was removed is listed at the top of this file.
@@ -1918,3 +1936,4 @@ A compact list of every phase's endpoints and config keys; the sections above ha
   `POST /api/journeys/{id}/escalations`, `POST /api/journeys/{id}/circle-alerts` removed (404).
   B2: `GET|PUT /api/safety-alerts`, `POST /api/safety-alerts/test`, `GET /api/emergencies/{id}/alerts`,
   `POST /api/admin/alert-stops`, `…/lift`, `…/check`; config `app.alerts.*` (`ALERT_PROVIDER`, `ALERT_SECRET`, `ALERT_DEV_FILE`).
+- Phase N7 (`docs/PHASE_N7.md`): B1 `PUT|DELETE /api/push/device`, `GET|PUT /api/push/settings`; FCM data-only pointers `{t, s, m, v}`; config `app.push.*`.

@@ -64,7 +64,13 @@ class ModelPlacesTest {
                 if (outbound.matcher(Files.readString(file)).find()) found.add(file.getFileName().toString());
             }
         }
-        assertThat(found).containsExactlyInAnyOrder("ModerationServiceClient.java", "Fast2SmsClient.java");
+        // N7 (D27 = N-119): the third pinned client is push/service/FcmClient (Firebase Cloud Messaging HTTP v1 and
+        // Google's OAuth token endpoint, nothing else); it sends data-only pointers and never logs.
+        assertThat(found).containsExactlyInAnyOrder("ModerationServiceClient.java", "Fast2SmsClient.java", "FcmClient.java");
+        String fcm = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "push", "service",
+                "FcmClient.java")));
+        assertThat(fcm).doesNotContain("/v1/assess").doesNotContain("/v1/understand").doesNotContain("Logger")
+                .doesNotContain("log.").doesNotContain("\"notification\"");
         String sms = Files.readString(MAIN.resolve(Path.of("java", "com", "safesphere", "backend", "common", "sms",
                 "Fast2SmsClient.java")));
         assertThat(sms).doesNotContain("/v1/assess").doesNotContain("/v1/understand").doesNotContain("Logger")
