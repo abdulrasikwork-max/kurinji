@@ -1,8 +1,10 @@
-# CHECKPOINT 2026-11-18 (seventeenth session, N6 in progress): backend B1–B3 DONE; Android A1 next. Nothing pushed, nothing deployed, pilot untouched.
+# CHECKPOINT 2026-11-18 (seventeenth session, N6 in progress): B1, B2, B3, A1, A2, A3 DONE; only C is left (stopped at the usage limit). Nothing pushed, nothing deployed, pilot untouched.
 
 - **Commits:** `1cbb2ed` B1 walk trim · `8c96038` B2 server alert queue + V37 written · `dd87634` B3 V37 applied (development MySQL only, 40 tables; backups `db-backups/safesphere-dev-before-v37-20261118.sql`, `…-after-v37-before-b3-walk-…`). Details: `PHASE_N6.md` "As built"; decisions N-110 to N-113; `API.md` "Phase N6".
 - **Backend:** `mvn -o clean test` 533 / 0 / 0 / 2 skipped (after B2; B3 changed one property line). Next migration **V38**.
-- **Next:** A1 (Android SOS side: remove phone automatic SMS, shake, SOS options; the choice with preview via `GET|PUT /api/safety-alerts`; per-contact status via `GET /api/emergencies/{id}/alerts`; offline / server-down fallback; Test my alerts; readiness asks; countdown and tile fixes; clean-up; guards), then A2, A3, C (`PHASE_N6.md` §5).
+- **Android:** A1 `ef7a004`, A2 `95292e0`, A3 (newest `git log`); `gradlew --offline testDebugUnitTest assembleDebug` 652 / 0. Details `PHASE_N6.md` "As built"; decisions N-114 to N-116.
+- **Next: C** (`PHASE_N6.md` §5, §7): full runs one at a time, `lintDebug` (+ remove unused `safe_walk_*` / `walk_line_*` strings), security / privacy review, a `canOfferGoing` test, emulator walk (fresh-install SOS, tile on the idle SOS screen, alert states with the dev sink, On my way with the app killed by adb, plan row, upgrade from the N5 build), live SMS tests with the owner, real phone, documents (`STATUS.md`, `CLAUDE.md`, rules files).
+- (old) - **Next:** A1 (Android SOS side: remove phone automatic SMS, shake, SOS options; the choice with preview via `GET|PUT /api/safety-alerts`; per-contact status via `GET /api/emergencies/{id}/alerts`; offline / server-down fallback; Test my alerts; readiness asks; countdown and tile fixes; clean-up; guards), then A2, A3, C (`PHASE_N6.md` §5).
 
 ---
 

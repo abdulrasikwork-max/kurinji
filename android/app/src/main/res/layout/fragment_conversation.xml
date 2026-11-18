@@ -142,6 +142,16 @@
             android:text="@string/conversation_happened"
             android:visibility="gone"
             app:icon="@drawable/ic_camera" />
+
+        <!-- N6 (D24, N-108): members of an open plan that is not called off: a heads-up note or On my way, through the going bridge. -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/goingButton"
+            style="@style/Widget.Kurinji.Button.Tonal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/conversation_going"
+            android:visibility="gone"
+            app:icon="@drawable/ic_route" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView

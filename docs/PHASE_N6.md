@@ -346,3 +346,14 @@ anyone).
   movement, walk-line, battery, GeoHash, precise-fix tests.
 - `gradlew --offline testDebugUnitTest assembleDebug`: **652 run / 0 failures**, `assembleDebug` OK (757 before A2: about
   100 tests of the removed walk tracking went). Not yet on a device (step C: the reminder with the app killed).
+
+### A3 (2026-11-18): plans row, wider isolation guard, wording. Implemented, compiled, tested. NOT manually verified.
+- Plan conversation: "Let someone know · On my way" (`goingButton`, `RepliesLabels.canOfferGoing`: a PLAN, open, not called
+  off) → `GoingThere.show(Target(where, at))`. The note holds the plan's "where" and time at most (`going_heads_up_at`,
+  `going_heads_up_no_place_at`); On my way opens with the "where" prefilled (editable, ≤ 100). The bridge still imports
+  neither side.
+- `GoingThereTest`: social side = `social`, `moments`, `replies`; safety side + `safety`; both directions checked.
+- Wording: SOS tile description, Safety hub notice, Settings row "Safety Circle and automatic texts", Safety Circle notice,
+  SOS limits notice, location card, About (the IRL line, On my way), going rows and footer; no "automatic SMS" left.
+- `gradlew --offline testDebugUnitTest assembleDebug`: **652 run / 0 failures**, `assembleDebug` OK.
+- Not added (left for C): a unit test of `canOfferGoing`; lint; removal of the remaining unused `safe_walk_*` strings.

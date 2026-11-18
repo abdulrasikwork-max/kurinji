@@ -92,7 +92,7 @@ class SafetyHubTextsTest {
         val description = strings.getValue("cd_sos_tile").lowercase()
         val badge = strings.getValue("sos_badge_countdown").lowercase()
         // Phase 4D: the Safety Circle is texted only with automatic SMS switched on.
-        assertTrue(description.contains("only if you switched on automatic sms"))
+        assertTrue(description.contains("only if you chose automatic texts")) // N6: the server texts, after the person's choice
         assertTrue(description.contains("cancel"))
         assertTrue(badge.contains("cancel"))
         for (text in listOf(description, badge)) {

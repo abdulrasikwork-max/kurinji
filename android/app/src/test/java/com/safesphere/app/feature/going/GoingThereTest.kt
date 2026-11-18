@@ -15,7 +15,10 @@ import org.junit.Test
 class GoingThereTest {
 
     private val main = File("src/main/java/com/safesphere/app")
-    private val safety = listOf("emergency", "safewalk", "circlealert", "safetycircle")
+    private val safety = listOf("emergency", "safewalk", "circlealert", "safetycircle", "safety")
+
+    /** N6 (PHASE_N6.md Â§4, guard gap): every social package, not only feature/social. */
+    private val social = listOf("social", "moments", "replies")
 
     private fun sources(pkg: String) = File(main, "feature/$pkg").walkTopDown().filter { it.isFile && it.extension == "kt" }
         .toList().also { assertTrue("no sources in $pkg", it.isNotEmpty()) }
@@ -24,7 +27,7 @@ class GoingThereTest {
     fun `the Going there sheet imports neither social nor safety code`() {
         for (file in sources("going")) {
             val text = file.readText(Charsets.UTF_8)
-            for (pkg in safety + "social" + "moderation") {
+            for (pkg in safety + social + "moderation") {
                 assertFalse("${file.name} imports feature.$pkg", text.contains("com.safesphere.app.feature.$pkg"))
             }
         }
@@ -32,19 +35,20 @@ class GoingThereTest {
 
     @Test
     fun `social code never imports safety code, and safety code never imports social code`() {
-        for (file in sources("social")) {
+        for (side in social) for (file in sources(side)) {
             val text = file.readText(Charsets.UTF_8)
             for (pkg in safety) assertFalse("${file.name} imports feature.$pkg", text.contains("com.safesphere.app.feature.$pkg."))
         }
         for (pkg in safety) for (file in sources(pkg)) {
-            assertFalse("${file.name} imports feature.social", file.readText(Charsets.UTF_8).contains("com.safesphere.app.feature.social"))
+            val text = file.readText(Charsets.UTF_8)
+            for (side in social) assertFalse("${file.name} imports feature.$side", text.contains("com.safesphere.app.feature.$side."))
         }
     }
 
     @Test
     fun `the Heads-up note names at most a place, never a location or a link, and the sheet says so`() {
         val strings = allStrings()
-        for (name in listOf("going_heads_up", "going_heads_up_no_place")) {
+        for (name in listOf("going_heads_up", "going_heads_up_no_place", "going_heads_up_at", "going_heads_up_no_place_at")) {
             val text = strings.getValue(name).lowercase()
             for (word in listOf("http", "maps", "location", "lat", "geo:", "live")) assertFalse("$name: $text", word in text)
             assertTrue(text.contains("message you when"))

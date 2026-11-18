@@ -35,7 +35,7 @@
     <string name="cd_onboarding_page">Page %1$d of %2$d</string>
     <string name="cd_status_card">Right now: %1$s. %2$s %3$s</string>
     <string name="cd_feature_row">%1$s. %2$s. %3$s.</string>
-    <string name="cd_sos_tile">SOS. Emergency help. Starts a five second countdown you can cancel. IRL texts your Safety Circle only if you switched on automatic SMS. Tap to open.</string>
+    <string name="cd_sos_tile">SOS. Emergency help. Starts a five second countdown you can cancel. IRL texts your Safety Circle only if you chose automatic texts. Tap to open.</string>
 
     <!-- Onboarding (Phase 10A: rewritten; it said nothing was available yet). Only what this build really does;
          OnboardingTextsTest forbids "not available", "future", "later" and safety promises. -->
@@ -162,7 +162,7 @@
     <!-- Safety Center -->
     <string name="safety_center_title">Safety Center</string>
     <string name="safety_center_subtitle">Your tools for going out prepared, and for when something goes wrong.</string>
-    <string name="safety_center_notice">IRL never contacts emergency services: in an emergency, call 112 or your local emergency number. Your Safety Circle is texted from your phone only if you switch on automatic SMS. During SOS and Safe Walk your location is saved to your own records, and nobody else can look you up.</string>
+    <string name="safety_center_notice">IRL never contacts emergency services: in an emergency, call 112 or your local emergency number. IRL texts your Safety Circle in an SOS only if you chose it (Safety Circle screen), and you can always text them yourself. During an SOS your location is saved to your own record; On my way uses no location, and nobody else can look you up.</string>
 
     <!-- Phase 7: moderator screens (people appear only as case pseudonyms; no names, e-mails or ids) -->
     <string name="title_moderation">Moderation</string>
@@ -190,7 +190,7 @@
     <string name="settings_section_privacy">Privacy</string>
     <string name="settings_section_application">Application</string>
     <string name="settings_account">Account and security</string>
-    <string name="settings_safety_circle">Safety Circle and automatic SMS</string>
+    <string name="settings_safety_circle">Safety Circle and automatic texts</string>
     <string name="settings_emergency_history">Emergency History</string>
     <string name="settings_app_permissions">App permissions (phone settings)</string>
     <string name="settings_notifications">Notifications (phone settings)</string>
@@ -234,9 +234,9 @@
     <string name="login_remove_deleted_account_confirm">This removes that account\'s settings (its SOS options) from this phone. If the account still exists, you would only have to choose them again.</string>
 
     <!-- Information pages -->
-    <string name="about_body">IRL: safety that expands your world. A privacy-focused safety app designed with women at the centre, built in phases as a final-year B.Tech project. Safe enough to live. Free enough to grow.
+    <string name="about_body">IRL: In Real Life. OUT THERE. TOGETHER. A verified, real-name community for saying what is on your mind to the people who share your place, with a quiet safety layer, designed with women at the centre and built in phases as a final-year B.Tech project.
 
-This build has real accounts (sign-in with your mobile number and a texted code; no password, no e-mail), a Safety Circle, a manual SOS session, Safe Walk with check-ins and movement checks. Nobody can use IRL to track another person. During SOS or a Safe Walk, your location can be saved to your own records. Your Safety Circle is texted from your phone only if you switch on automatic SMS. IRL never contacts emergency services and never records sound, photos or video during an SOS.
+This build has real accounts (sign-in with your mobile number and a texted code; no password, no e-mail), a Safety Circle, an SOS, and On my way (a reminder, no tracking). Nobody can use IRL to track another person. During an SOS, your location can be saved to your own record. IRL texts your Safety Circle in an SOS only if you chose it. IRL never contacts emergency services and never records sound, photos or video during an SOS.
 
 The order of posts on Home uses what a post contains and the interests you chose; \"Talking now\" uses how recently someone commented. It never uses how many people read or commented.</string>
     <string name="about_version_format">Version %1$s</string>
@@ -282,7 +282,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="title_emergency_history">Emergency History</string>
 
     <!-- ===== Safety Circle ===== -->
-    <string name="safety_circle_notice">Your Safety Circle is saved to your IRL account. The people in it are texted only if you switch on automatic SMS below, or when you text them yourself.</string>
+    <string name="safety_circle_notice">Your Safety Circle is saved to your IRL account. IRL texts them in an SOS only if you choose it below; you can always text them yourself.</string>
     <string name="safety_circle_empty_title">Your trusted people</string>
     <string name="safety_circle_empty_message">People you choose to keep in the loop: when something goes wrong, and when you want them to know where you are going.</string>
     <string name="action_add_trusted_contact">Add Trusted Contact</string>
@@ -319,7 +319,7 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- ===== Emergency SOS ===== -->
     <string name="emergency_idle_title">Emergency SOS</string>
     <string name="emergency_idle_body">Starts a five second countdown. If you do not cancel it, your SOS starts on this phone, even without internet, and is recorded on your account as soon as IRL\'s server can be reached.</string>
-    <string name="emergency_limits_notice">During SOS, IRL asks for your location and saves it to your own emergency record. If you switched on automatic SMS (Safety Circle screen), your Safety Circle is texted with a map link; otherwise you can text them yourself. IRL never calls emergency services and never records sound, photos or video. In an emergency, call 112 or your local emergency number.</string>
+    <string name="emergency_limits_notice">During SOS, IRL asks for your location and saves it to your own emergency record. If you chose automatic texts (Safety Circle screen), IRL texts your Safety Circle with a map link when your SOS reaches it; you can always text them yourself too. IRL never calls emergency services and never records sound, photos or video. In an emergency, call 112 or your local emergency number.</string>
     <string name="action_start_sos">Start SOS</string>
     <string name="action_view_emergency_history">View emergency history</string>
     <string name="emergency_countdown_label">Starting emergency in</string>
@@ -381,7 +381,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="location_card_searching">Finding your location…</string>
     <string name="location_card_unavailable">No new position for a minute (indoors or a weak signal). IRL keeps trying; a window or open sky helps.</string>
     <string name="location_card_saving">Saving your location to your emergency record…</string>
-    <string name="location_card_saved">Your location is being saved to your emergency record. Only your Safety Circle\'s SMS (if automatic SMS is on) contains a map link to it.</string>
+    <string name="location_card_saved">Your location is being saved to your emergency record. Only the Safety Circle texts of this SOS (if you chose them) contain a map link to it.</string>
     <string name="location_card_offline">No connection. Your location is kept on this phone for now and saved when you are back online.</string>
     <string name="location_card_uploads_stopped">Your location is no longer being saved for this emergency.</string>
     <string name="location_card_signed_out">You were signed out, so your location is no longer being saved. Sign in again.</string>
@@ -443,7 +443,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="safe_walk_destination_hint">Where are you going? (optional)</string>
     <string name="safe_walk_interval_label">Check in every</string>
     <string name="safe_walk_interval_option">%1$d min</string>
-    <string name="safe_walk_limits_notice">If you miss a check-in, IRL alerts you on this phone. If you switched on automatic SMS (Safety Circle screen) and still do not answer, your Safety Circle is texted. This only works while your phone is on. If you are in danger, use SOS or call 112.</string>
     <string name="action_start_safe_walk">Start Safe Walk</string>
     <string name="safe_walk_active_title">Safe Walk active</string>
     <string name="safe_walk_to">To: %1$s</string>
@@ -451,7 +450,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="safe_walk_due_soon">Check-in due soon. Tap “I\'m OK” to check in.</string>
     <string name="safe_walk_missed">You missed a check-in. Are you OK? Tap “I\'m OK” now.</string>
     <string name="safe_walk_no_response_title">No response to your check-in</string>
-    <string name="safe_walk_no_response_body">Your Safety Circle is not texted automatically (automatic SMS is off). If you need help, tap SOS or call 112. If you are fine, tap “I\'m OK”.</string>
     <string name="safe_walk_until_check_in">until your next check-in</string>
     <string name="safe_walk_overdue">since your check-in was due</string>
     <string name="cd_safe_walk_countdown">Time to your next check-in: %1$d minutes %2$d seconds</string>
@@ -578,7 +576,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="circle_walk_delivered">Your Safety Circle was texted and the network reported delivery (%1$d).</string>
     <string name="circle_walk_failed">The SMS to your Safety Circle failed (%1$d). Tap “Text my Safety Circle” to send it yourself.</string>
     <string name="circle_walk_composer">The SMS app was opened for your Safety Circle. Check that the message was sent.</string>
-    <string name="circle_walk_not_notified">Your Safety Circle will not be told automatically (automatic SMS is off).</string>
+    <string name="circle_walk_not_notified">Your Safety Circle was not told about this walk.</string>
     <string name="safe_walk_no_response_body_auto">Your Safety Circle is being texted that you did not answer. If you need help, tap SOS or call 112. If you are fine, tap “I\'m OK” and they will be told.</string>
     <string name="title_emergency_details">Emergency details</string>
     <string name="section_last_location">Last saved location</string>
@@ -940,10 +938,13 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="going_place_line">%1$s. Use what helps; none of it is needed.</string>
     <string name="going_no_place_line">The post does not show a place. Use what helps; none of it is needed.</string>
     <string name="going_tell">Let someone know</string>
-    <string name="going_walk">Walk with check-ins</string>
-    <string name="going_footer">Let someone know opens your own messages with a note you can change. It has no location and no link, and IRL sends and keeps nothing. Safe Walk opens with the place filled in; nothing starts until you press it.</string>
+    <string name="going_walk">On my way</string>
+    <string name="going_footer">Let someone know opens your own messages with a note you can change: the place and the time at most. It has no location and no link, and IRL sends and keeps nothing. On my way opens with the place filled in; nothing starts until you press Start.</string>
     <string name="going_heads_up">I\'m heading to %1$s. I\'ll message you when I\'m back.</string>
     <string name="going_heads_up_no_place">I\'m heading out to try something new. I\'ll message you when I\'m back.</string>
+    <string name="going_heads_up_at">I\'m heading to %1$s at %2$s. I\'ll message you when I\'m back.</string>
+    <string name="going_heads_up_no_place_at">I\'m heading out at %1$s. I\'ll message you when I\'m back.</string>
+    <string name="conversation_going">Let someone know · On my way</string>
 
     <!-- Cards (F13) -->
 

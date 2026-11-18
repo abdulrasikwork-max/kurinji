@@ -71,6 +71,12 @@ class ConversationFragment : ViewBindingFragment<FragmentConversationBinding>(Fr
                 com.safesphere.app.feature.moments.ui.CreateFragment.ARG_HAPPENED_OF to moment.id,
                 com.safesphere.app.feature.moments.ui.CreateFragment.ARG_HAPPENED_TEXT to moment.text))
         }
+        // N6 (D24): the plan's "where" and time only, through the navigation bridge (replies never imports safety code).
+        binding.goingButton.setOnClickListener {
+            val plan = viewModel.uiState.value.conversation?.moment?.plan
+            com.safesphere.app.feature.going.GoingThere.show(this,
+                com.safesphere.app.feature.going.GoingThere.Target(placeLabel = plan?.where, at = plan?.at))
+        }
         binding.openMomentButton.setOnClickListener {
             val momentId = viewModel.uiState.value.conversation?.moment?.id ?: viewModel.uiState.value.startFor ?: return@setOnClickListener
             findNavController().navigate(R.id.momentFragment, bundleOf(MomentFragment.ARG_ID to momentId))
@@ -257,6 +263,7 @@ class ConversationFragment : ViewBindingFragment<FragmentConversationBinding>(Fr
         if (closes != null) binding.closesLine.text = getString(R.string.conversation_closes, ConversationTime.short(context, closes))
         binding.endButton.isVisible = RepliesLabels.canEnd(conversation)
         binding.happenedButton.isVisible = RepliesLabels.canShareHappened(conversation, java.time.Instant.now())
+        binding.goingButton.isVisible = RepliesLabels.canOfferGoing(conversation)
         // The decision behind a moderator's notice on one's own message, to know whether a review can be asked (read once).
         if (conversation.messages.any { it.mine && it.notice?.decisionId != null } && reports.uiState.value.standing == null &&
             !reports.uiState.value.isBusy) reports.loadStanding()
