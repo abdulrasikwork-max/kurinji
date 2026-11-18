@@ -364,3 +364,35 @@ their JSON files outside the repo; give the Android config values for `local.pro
   moderator's Keep says nothing, a Remove tells the author, the staff summary). `mvn -o clean test` **558 / 0 / 0 / 2**.
 - **Not pushed (as designed):** Same, Say more requests, "set aside", a plan closing by itself, a connection accepted, a
   message released later by a moderator's Keep (it shows in Replies).
+
+### B3 (2026-11-18): the Safety Circle in the app and On my way's second alarm. Implemented, compiled, tested.
+- **Links:** `safetycontact/service/CircleLinkService` (+ `CircleLinkRepository`, `CircleLinkMuteRepository`), called by
+  `SafetyContactService` on create / update / delete; `SafetyContactResponse.inApp`. A link counts only while the
+  member's verified number is still the contact's number and the account is usable (checked on every read: a member
+  moving to another number, or an owner editing the contact, ends it with no hook in `account` or `auth`). Requests are
+  limited to 10 a day per owner, counted when made and in memory (from the rows, deleting and re-adding a contact reset
+  the limit: found by the test and fixed); the owner's answer never changes.
+- **Routes:** `circlealert/controller/CircleController` (`/api/circle/requests|in|alerts`).
+- **The SOS:** `AlertQueue.claim` publishes `CIRCLE_SOS` for the accepted member behind a contact on the FIRST claim of
+  that contact's first text: the text's moment (first location or 20 s), after "still active, contact still there" and
+  the SMS limits, so a false alarm before then and a used-up day of rounds tell nobody, and a provider outage does not
+  stop it (the push does not wait for the provider). **Deviation from §6.1 wording (planner time instead of claim
+  time), same intent:** queuing at planning time would have pushed at 20 s even when the first location made the text
+  go earlier, and a false alarm would have needed a later recall. `AlertQueue.membersTold` (the contact's first text
+  claimed at least once) is the one answer for "who got it in the app", used by the end update and the member's view.
+  `SosChangedListener` → `AlertQueue.sosEnded` (its own transaction: it runs after a commit, where a joined
+  transaction would never fire the hooks of what it publishes; found by the test) sends ONE update when the SOS ends,
+  nothing when it was ended from another sign-in.
+- **The member's view:** `circlealert/service/CircleSosViewService`: 404 unless the caller is in `membersTold`; while
+  active and 24 h after the end; the text's facts plus status; the map link of the last location a text actually carried.
+- **On my way:** `JourneyService.remind` / `stopReminders`: start and More time replace the planned `OMW_REMINDER` rows
+  (due, due + 5 min, `Tell.at`); I'm there, Stop and an SOS during the walk remove them (`Tell.forget`). `Tell` gained
+  `notBefore` and `forget`; `PushProducer` maps them to `notifyAt` / `forget`.
+- **Limits (documented):** a contact IRL cannot text at all (not an Indian mobile, a duplicate, beyond the first five,
+  on the stop list at planning time) is not told in the app either; only people who chose automatic texts (N6) give
+  their members the in-app SOS (the same consent).
+- **Tests:** `CircleInAppApiTest` 6 (request → accept → `inApp`, a stranger 404, leave; no request for a number without
+  IRL, your own number, a changed number, after Don't ask again; the silent daily limit; an SOS tells the member with
+  its first text, the view and its 404s, once per SOS, one end update, gone after 24 h; a false alarm tells nobody,
+  ended elsewhere sends no update; On my way rows at due and due + 5, More time replaces, I'm there and an SOS remove).
+  `mvn -o clean test` **564 / 0 / 0 / 2**.

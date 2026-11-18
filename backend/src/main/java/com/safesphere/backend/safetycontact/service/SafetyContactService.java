@@ -26,21 +26,25 @@ public class SafetyContactService {
     private static final String DUPLICATE_PHONE = "This phone number is already in your Safety Circle";
 
     private final SafetyContactRepository repository;
+    private final CircleLinkService circleLinks;
 
-    public SafetyContactService(SafetyContactRepository repository) {
+    public SafetyContactService(SafetyContactRepository repository, CircleLinkService circleLinks) {
+        this.circleLinks = circleLinks;
         this.repository = repository;
     }
 
     @Transactional(readOnly = true)
     public List<SafetyContactResponse> list(long userId) {
+        java.util.Set<Long> inApp = circleLinks.acceptedContactIds(userId);
         return repository.findByUserIdOrderByPrimaryContactDescPriorityAscNameAsc(userId).stream()
-                .map(SafetyContactResponse::from)
+                .map(c -> SafetyContactResponse.from(c, inApp.contains(c.getId())))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public SafetyContactResponse get(long userId, long contactId) {
-        return SafetyContactResponse.from(findOwned(userId, contactId));
+        SafetyContact contact = findOwned(userId, contactId);
+        return SafetyContactResponse.from(contact, circleLinks.acceptedContactIds(userId).contains(contactId));
     }
 
     @Transactional
@@ -62,7 +66,9 @@ public class SafetyContactService {
         SafetyContact contact = new SafetyContact(userId);
         contact.apply(request.name().trim(), phone, cleanEmail(request.email()),
                 request.relationship(), request.priority(), primary, enabled);
-        return SafetyContactResponse.from(save(contact));
+        SafetyContact saved = save(contact);
+        circleLinks.contactSaved(userId, saved); // N7 (D36): a verified IRL number gets a request; the owner sees nothing yet
+        return SafetyContactResponse.from(saved, circleLinks.acceptedContactIds(userId).contains(saved.getId()));
     }
 
     @Transactional
@@ -82,12 +88,16 @@ public class SafetyContactService {
 
         contact.apply(request.name().trim(), phone, cleanEmail(request.email()),
                 request.relationship(), request.priority(), primary, enabled);
-        return SafetyContactResponse.from(save(contact));
+        SafetyContact saved = save(contact);
+        circleLinks.contactSaved(userId, saved); // N7 (D36): a verified IRL number gets a request; the owner sees nothing yet
+        return SafetyContactResponse.from(saved, circleLinks.acceptedContactIds(userId).contains(saved.getId()));
     }
 
     @Transactional
     public void delete(long userId, long contactId) {
-        repository.delete(findOwned(userId, contactId));
+        SafetyContact contact = findOwned(userId, contactId);
+        circleLinks.contactDeleted(contact.getId());
+        repository.delete(contact);
     }
 
     /** Loads a contact ONLY if it belongs to this user; someone else's contact looks like "not found". */

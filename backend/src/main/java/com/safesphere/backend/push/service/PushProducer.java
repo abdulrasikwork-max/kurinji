@@ -40,7 +40,9 @@ public class PushProducer {
         for (Long recipient : new LinkedHashSet<>(tell.recipients())) {
             try {
                 if (type == PushType.PLAN_MESSAGE && toldSinceRepliesOpened(recipient, tell.subject())) continue;
-                push.notify(recipient, type, tell.subject());
+                if (tell.forget()) push.forget(recipient, type, tell.subject());
+                else if (tell.notBefore() != null) push.notifyAt(recipient, type, tell.subject(), tell.notBefore());
+                else push.notify(recipient, type, tell.subject());
             } catch (RuntimeException e) {
                 log.warn("A push could not be queued ({})", e.getClass().getSimpleName());
             }

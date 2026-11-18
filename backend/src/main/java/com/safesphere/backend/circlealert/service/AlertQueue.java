@@ -1,6 +1,7 @@
 package com.safesphere.backend.circlealert.service;
 
 import com.safesphere.backend.auth.phone.PhoneNumbers;
+import com.safesphere.backend.common.event.Tell;
 import com.safesphere.backend.circlealert.entity.CircleAlert;
 import com.safesphere.backend.circlealert.entity.CircleAlertEnums.Channel;
 import com.safesphere.backend.circlealert.entity.CircleAlertEnums.Kind;
@@ -77,11 +78,17 @@ public class AlertQueue {
     private final UserRepository users;
     private final AlertKeys keys;
     private final AlertProperties properties;
+    private final com.safesphere.backend.safetycontact.service.CircleLinkService circleLinks;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public AlertQueue(CircleAlertRepository alerts, AlertSettingRepository settings, AlertStopRepository stops,
                       EmergencyEventRepository emergencies, EmergencyLocationRepository locations,
                       SafetyContactRepository contacts, UserRepository users, AlertKeys keys,
-                      AlertProperties properties) {
+                      AlertProperties properties,
+                      com.safesphere.backend.safetycontact.service.CircleLinkService circleLinks,
+                      org.springframework.context.ApplicationEventPublisher events) {
+        this.circleLinks = circleLinks;
+        this.events = events;
         this.alerts = alerts;
         this.settings = settings;
         this.stops = stops;
@@ -243,8 +250,10 @@ public class AlertQueue {
             at = utc(sos.getEndedAt() == null ? now : sos.getEndedAt());
         }
         String text = AlertPolicy.text(kind, new Facts(owner.getName(), owner.getPhoneE164(), at, position, late));
+        boolean firstAttempt = row.getAttempts() == 0;
         row.claim(key, position != null, now.plus(CLAIM_HOLD), now);
         alerts.save(row);
+        if (firstAttempt && kind == Kind.SOS_STARTED) tellMember(row); // N7: the text's twin in the app, same moment
         return Optional.of(new Outgoing(row.getId(), number, text));
     }
 
@@ -259,6 +268,45 @@ public class AlertQueue {
                     now), now);
             alerts.save(row);
         });
+    }
+
+    /**
+     * N7 (D36 = N-128): the in-app twin of the first text. When IRL is about to text a contact for the first time (the
+     * row's first claim: after "still active, contact still there" and the SMS limits), an accepted member behind that
+     * contact also gets the SOS in the app: a pointer (the emergency id); they read the same facts as the text. Same
+     * moment (first location or 20 s), same daily rounds, nothing for a false alarm before then; a provider outage does
+     * not stop it (the push is not tied to the text being accepted). Never called for anything else.
+     */
+    private void tellMember(CircleAlert row) {
+        if (row.getContactId() == null || row.getEmergencyId() == null) return;
+        circleLinks.acceptedMemberOf(row.getContactId()).ifPresent(member -> events.publishEvent(
+                Tell.to(Tell.Kind.CIRCLE_SOS, member, String.valueOf(row.getEmergencyId()))));
+    }
+
+    /**
+     * N7: an SOS ended. Members who were told get ONE update (the same pointer; their screen now reads "safe" or "false
+     * alarm"). An SOS ended from another sign-in tells nobody (only the person on the phone can say they are OK).
+     */
+    // Its own transaction: it runs from an after-commit listener, where a joined transaction would never fire the
+    // after-commit hooks of what it publishes.
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW, readOnly = true)
+    public void sosEnded(long emergencyId) {
+        EmergencyEvent sos = emergencies.findById(emergencyId).orElse(null);
+        if (sos == null || sos.getStatus() == EmergencyStatus.ACTIVE || sos.isEndedElsewhere()) return;
+        for (Long member : membersTold(emergencyId)) {
+            events.publishEvent(Tell.to(Tell.Kind.CIRCLE_SOS, member, String.valueOf(emergencyId)));
+        }
+    }
+
+    /** The accepted members whose contact's first text was claimed for this SOS (= who got the in-app SOS). */
+    @Transactional(readOnly = true)
+    public java.util.Set<Long> membersTold(long emergencyId) {
+        java.util.Set<Long> told = new java.util.LinkedHashSet<>();
+        for (CircleAlert row : alerts.findByEmergencyIdAndChannelOrderByIdAsc(emergencyId, Channel.SERVER_SMS)) {
+            if (row.getKind() != Kind.SOS_STARTED || row.getAttempts() < 1 || row.getContactId() == null) continue;
+            circleLinks.acceptedMemberOf(row.getContactId()).ifPresent(told::add);
+        }
+        return told;
     }
 
     // ---- shared ------------------------------------------------------------------------------------------------------

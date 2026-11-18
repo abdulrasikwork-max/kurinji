@@ -17,6 +17,9 @@ import com.safesphere.backend.journey.entity.JourneyStatus;
 import com.safesphere.backend.journey.entity.SafeJourney;
 import com.safesphere.backend.journey.repository.JourneyEventRepository;
 import com.safesphere.backend.journey.repository.SafeJourneyRepository;
+import com.safesphere.backend.common.event.Tell;
+import java.time.Duration;
+import org.springframework.context.ApplicationEventPublisher;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -40,16 +43,20 @@ public class JourneyService {
 
     private static final String NOT_FOUND = "Safe Walk not found";
     private static final String ALREADY_ENDED = "This Safe Walk has already ended";
+    /** The nudge ("Still on your way?") comes this long after the due time, as on the phone. */
+    static final Duration NUDGE_AFTER = Duration.ofMinutes(5);
 
     private final SafeJourneyRepository journeyRepository;
     private final JourneyEventRepository eventRepository;
     private final EscalationEventRepository escalationRepository;
     private final EmergencyEventRepository emergencyRepository;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     public JourneyService(SafeJourneyRepository journeyRepository, JourneyEventRepository eventRepository,
                           EscalationEventRepository escalationRepository, EmergencyEventRepository emergencyRepository,
-                          Clock clock) {
+                          ApplicationEventPublisher events, Clock clock) {
+        this.events = events;
         this.journeyRepository = journeyRepository;
         this.eventRepository = eventRepository;
         this.escalationRepository = escalationRepository;
@@ -75,6 +82,7 @@ public class JourneyService {
             throw new ConflictException("A Safe Walk is already active");
         }
         eventRepository.save(new JourneyEvent(journey.getId(), JourneyEventType.STARTED, now));
+        remind(journey);
         return respond(journey);
     }
 
@@ -106,6 +114,7 @@ public class JourneyService {
         }
         journey.checkIn(now);
         eventRepository.save(new JourneyEvent(journey.getId(), JourneyEventType.CHECKED_IN, now));
+        remind(journey);
         return respond(journeyRepository.saveAndFlush(journey));
     }
 
@@ -138,6 +147,7 @@ public class JourneyService {
             escalationRepository.save(EscalationEvent.forJourneyAndEmergency(
                     journey.getId(), emergency.getId(), EscalationLevel.EMERGENCY, EscalationReason.SOS_CONFIRMED, now));
             emergency.linkJourney(journey.getId());
+            stopReminders(journey);
         });
     }
 
@@ -146,7 +156,26 @@ public class JourneyService {
         LocalDateTime now = now();
         journey.end(finalStatus, now);
         eventRepository.save(new JourneyEvent(journey.getId(), eventType, now));
+        stopReminders(journey);
         return respond(journeyRepository.saveAndFlush(journey));
+    }
+
+    /**
+     * N7 (D37 = N-129): the server's second alarm. Two pushes to the walker's own phones, at "There yet?" (the due time)
+     * and at the nudge (5 min later); the phone shows them exactly like its own alarm (one notification). Nobody else is
+     * told. Every new deadline replaces the planned ones; I'm there / Stop / an SOS remove them.
+     */
+    private void remind(SafeJourney journey) {
+        String subject = String.valueOf(journey.getId());
+        long owner = journey.getUserId();
+        Instant due = journey.getNextCheckInDueAt().toInstant(ZoneOffset.UTC);
+        events.publishEvent(Tell.forget(Tell.Kind.OMW_REMINDER, owner, subject));
+        events.publishEvent(Tell.at(Tell.Kind.OMW_REMINDER, owner, subject, due));
+        events.publishEvent(Tell.at(Tell.Kind.OMW_REMINDER, owner, subject, due.plus(NUDGE_AFTER)));
+    }
+
+    private void stopReminders(SafeJourney journey) {
+        events.publishEvent(Tell.forget(Tell.Kind.OMW_REMINDER, journey.getUserId(), String.valueOf(journey.getId())));
     }
 
     private SafeJourney findActiveForUpdate(long userId, long journeyId) {

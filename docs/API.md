@@ -1730,6 +1730,34 @@ membership (safety never is). No answer carries a contact's number, a text or a 
 - Config `app.push.*`: `PUSH_PROVIDER` = `DEV_FILE` (default) / `FCM` / `NONE`, `FCM_CREDENTIALS_FILE`, `PUSH_DEV_FILE`,
   caps 6 an hour / 20 a day for social kinds, batch window 2 min, 5 attempts, stale tokens 60 days, retention 7 days.
 
+**What makes a push (B2, D29/D30/D38).** No new route: the existing writes queue pushes after they commit. A plan
+(I'm in → the author, batched 2 min; Add → the person added; a plan message → the author and the people in, once until
+that person opens Replies; Call it off → the people in), a private reply (the other person), the follow-up to Say more
+(the people who asked), a connection request, a new sign-in (your other phones), a membership decision, a moderator's
+decision on your own moment or message (a Keep only if you had already seen a notice), and the staff summary (opt-in,
+at most hourly). Never pushed: Same, Say more requests, accepted connections.
+
+**The Safety Circle in the app (B3, D36).** JWT required; never a community membership; a social restriction never
+applies. A foreign id is **404**.
+- Contacts: `GET /api/safety-contacts[/{id}]` and the create / update answers carry `inApp` (true only after the person
+  with that verified number accepted). Saving a contact whose number is a verified IRL account sends THAT person a
+  request; the owner's answer is the same either way (nothing reveals that a number has IRL). At most 10 requests a day
+  per owner (silently), never to yourself, never after "Don't ask again". A changed number, a removed contact, the
+  member leaving or moving to another number ends the link.
+- `GET /api/circle/requests` → `[{id, ownerName}]` (requests to me); `POST /api/circle/requests/{id}/accept` → **204**;
+  `POST /api/circle/requests/{id}/decline {dontAskAgain?}` → **204** (the owner is told nothing either way).
+- `GET /api/circle/in` → `[{id, ownerName}]` (the circles I accepted); `DELETE /api/circle/in/{id}` → **204** (leave).
+- `GET /api/circle/alerts/{emergencyId}` → `{name, phone, startedAt, status: ACTIVE | SAFE | FALSE_ALARM | ENDED,
+  mapLink?, locationAt?, sentLate}`: only for an accepted member whose contact's first SOS text was due (the moment the
+  `CIRCLE_SOS` push went), while the SOS runs and for 24 h after; **404** for anyone else, the owner included. The
+  location is the one the texts carried (never newer, no history). `ENDED` = ended from another sign-in.
+- Pushes: `CIRCLE_REQUEST` (subject = the request id), `CIRCLE_SOS` (subject = the emergency id) with the first text
+  and one more when the SOS ends (not when it was ended elsewhere).
+
+**On my way (B3, D37).** No new route. Starting a walk and every "More time" queue two `OMW_REMINDER` pushes to the
+walker's own phones (subject = the walk id) at the due time and 5 minutes later; I'm there, Stop and an SOS remove them.
+Nobody else is told.
+
 # Appendix: endpoint index by phase (moved verbatim from CLAUDE.md §8 on 2026-11-03)
 
 > **N1 (2026-11-15):** the lines of Phases 5 to 9, 17G and 18A in this index are history; what was removed is listed at the top of this file.
@@ -1936,4 +1964,4 @@ A compact list of every phase's endpoints and config keys; the sections above ha
   `POST /api/journeys/{id}/escalations`, `POST /api/journeys/{id}/circle-alerts` removed (404).
   B2: `GET|PUT /api/safety-alerts`, `POST /api/safety-alerts/test`, `GET /api/emergencies/{id}/alerts`,
   `POST /api/admin/alert-stops`, `…/lift`, `…/check`; config `app.alerts.*` (`ALERT_PROVIDER`, `ALERT_SECRET`, `ALERT_DEV_FILE`).
-- Phase N7 (`docs/PHASE_N7.md`): B1 `PUT|DELETE /api/push/device`, `GET|PUT /api/push/settings`; FCM data-only pointers `{t, s, m, v}`; config `app.push.*`.
+- Phase N7 (`docs/PHASE_N7.md`): B1 `PUT|DELETE /api/push/device`, `GET|PUT /api/push/settings`; FCM data-only pointers `{t, s, m, v}`; config `app.push.*`. B3 `GET /api/circle/requests`, `POST /api/circle/requests/{id}/accept|decline`, `GET /api/circle/in`, `DELETE /api/circle/in/{id}`, `GET /api/circle/alerts/{emergencyId}`; contacts carry `inApp`.

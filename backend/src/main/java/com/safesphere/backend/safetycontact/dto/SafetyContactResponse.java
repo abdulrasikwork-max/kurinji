@@ -16,10 +16,16 @@ public record SafetyContactResponse(
         boolean primary,
         boolean enabled,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        // N7 (D36): this contact accepted to get your SOS in the IRL app too (never shown before they accept).
+        boolean inApp
 ) {
 
     public static SafetyContactResponse from(SafetyContact contact) {
+        return from(contact, false);
+    }
+
+    public static SafetyContactResponse from(SafetyContact contact, boolean inApp) {
         return new SafetyContactResponse(
                 contact.getId(),
                 contact.getName(),
@@ -30,7 +36,8 @@ public record SafetyContactResponse(
                 contact.isPrimaryContact(),
                 contact.isEnabled(),
                 contact.getCreatedAt().toInstant(ZoneOffset.UTC),
-                contact.getUpdatedAt().toInstant(ZoneOffset.UTC)
+                contact.getUpdatedAt().toInstant(ZoneOffset.UTC),
+                inApp
         );
     }
 }
