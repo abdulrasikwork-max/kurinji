@@ -68,6 +68,13 @@
                     android:id="@+id/disabledBadge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
+
+                <!-- N7 (D36): this person accepted to also get your SOS in the IRL app. -->
+                <com.safesphere.app.core.ui.components.StatusBadgeView
+                    android:id="@+id/inAppBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
             </com.google.android.material.chip.ChipGroup>
         </LinearLayout>
 

@@ -41,6 +41,8 @@ class ContactAdapter(
             priorityBadge.setStatus(BadgeStatus.SAMPLE, context.getString(R.string.contact_priority_format, contact.priority))
             disabledBadge.isVisible = !contact.isEnabled
             if (!contact.isEnabled) disabledBadge.setStatus(BadgeStatus.COMING_SOON, context.getString(R.string.badge_disabled))
+            inAppBadge.isVisible = contact.inApp
+            if (contact.inApp) inAppBadge.setStatus(BadgeStatus.AVAILABLE, context.getString(R.string.circle_also_in_app))
 
             // Remove the listener first: setting isChecked in code must not count as a tap.
             enabledSwitch.setOnCheckedChangeListener(null)

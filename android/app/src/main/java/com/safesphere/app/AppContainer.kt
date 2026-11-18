@@ -512,12 +512,21 @@ class AppContainer(context: Context) {
             appVersion = BuildConfig.VERSION_NAME)
     }
 
-    /** The renderers by kind; each feature registers its own (core/push imports no feature). A3 adds the safety ones. */
+    /** N7 (D36): the Safety Circle in the app, from the member's side (requests, circles you're in, an SOS). */
+    val circleInAppRepository by lazy {
+        com.safesphere.app.feature.safetycircle.data.CircleInAppRepository(
+            retrofit.create(com.safesphere.app.feature.safetycircle.data.CircleInAppApi::class.java), apiCallHandler)
+    }
+
+    /** The renderers by kind; each feature registers its own (core/push imports no feature). */
     private val pushRenderers: Map<com.safesphere.app.core.push.PushKind, com.safesphere.app.core.push.PushRenderer> by lazy {
         com.safesphere.app.feature.replies.push.RepliesPushRenderers(appContext, momentRepository, responseRepository,
             repliesRepository, showContent = { pushPreferences.showContent.first() }).all() +
             com.safesphere.app.core.push.AccountPushRenderers(appContext).all() +
+            com.safesphere.app.feature.safetycircle.push.CirclePushRenderers(appContext, circleInAppRepository).all() +
             mapOf(
+                com.safesphere.app.core.push.PushKind.OMW_REMINDER to
+                    com.safesphere.app.feature.safewalk.push.OnMyWayPushRenderer(safeWalk).renderer,
                 com.safesphere.app.core.push.PushKind.PEOPLE_REQUEST to
                     com.safesphere.app.feature.social.push.PeoplePushRenderer(appContext, socialRepository).renderer,
                 com.safesphere.app.core.push.PushKind.MEMBERSHIP_DECIDED to

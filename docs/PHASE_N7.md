@@ -482,3 +482,30 @@ their JSON files outside the repo; give the Android config values for `local.pro
   `gradlew testDebugUnitTest assembleDebug lintDebug`: **689 / 0**, build OK, lint 0 errors (118 warnings: the N7 ones
   are `accessibilityHeading` on API < 28, as elsewhere in the app, and "newer version available" for the deliberately
   older Firebase BOM and DataStore).
+
+### A3 (2026-11-18): Android safety side. Implemented, compiled, tested. Not yet run against Firebase.
+- **Contacts:** `SafetyContact.inApp` (from the server's `inApp`; an older server = false) and the badge "Also in the IRL
+  app" on the contact row (`item_contact.xml` `inAppBadge`).
+- **Data:** `feature/safetycircle/data/CircleInApp.kt`: `CircleInAppApi` (`/api/circle/requests|in|alerts`),
+  fail-closed DTOs (a malformed request row is dropped; an SOS without name or start time is unreadable; an unknown status
+  reads as ENDED, never a made-up emergency; only an Indian mobile gets a Call button; only IRL's own map-link form is
+  shown; `toString` hides the location), `CircleInAppRepository`. Nothing stored on the phone.
+- **Screens (safety palette):** "Safety Circles you're in" (`CirclesFragment` / `CirclesViewModel`, from You → Safety):
+  a request explains what accepting means (Accept / Not now / Don't ask again; accepting offers the D33 notification
+  card), a circle you're in can be left (with a confirmation that says the owner's row changes and texts still come).
+  "SOS from your people" (`CircleSosFragment` / `CircleSosViewModel`): the emergency card (black with a red ring, the
+  siren, the words SOS), who and when, where it stands (active / ended with "I'm safe" / a false alarm / ended), "sent
+  late", the location the texts carried with its time and Open the map, Call them and Call 112 (the dialer); re-read
+  every 15 s while visible and active; "not available any more" for a 404.
+- **Push:** `CirclePushRenderers` (CIRCLE_REQUEST "Asha added you to their Safety Circle · Choose if IRL can also tell
+  you here"; CIRCLE_SOS "Asha pressed SOS" + start time + [Call Asha] [Call 112], then one update "Asha ended the SOS: …";
+  lock screen "SOS from your Safety Circle"; no location in any notification; IRL unreachable → the neutral SOS line that
+  still opens the SOS with Call 112; no longer theirs → nothing). `OnMyWayPushRenderer` hands OMW_REMINDER to
+  `SafeWalkSession.onAlarm` (the same notification as the phone's own alarm, shown once; a stale one shows nothing).
+  Taps: CircleRequests → `circlesFragment`, CircleAlert → `circleSosFragment(emergencyId)`.
+- **Known limit:** a server reminder that arrives a moment before the phone's own idea of the due time (clock drift)
+  shows nothing; the nudge 5 minutes later and the phone's own alarm still come.
+- **Tests:** `CircleInAppTest` 6 (DTOs fail closed, `inApp`, accept offers the card and reloads / a failure says so, the
+  SOS screen follows an active SOS and stops when it ends / 404 = gone, emergency treatment and no location in
+  notifications). `gradlew testDebugUnitTest assembleDebug lintDebug`: **695 / 0**, build OK, lint 0 errors (the new
+  warnings are `accessibilityHeading` on API < 28, as elsewhere).

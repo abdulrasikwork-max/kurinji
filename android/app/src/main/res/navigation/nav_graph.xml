@@ -418,6 +418,22 @@
             app:destination="@id/privacyPolicyFragment" />
     </fragment>
 
+    <!-- N7 (D36): Safety Circles you are in, and an SOS from your people -->
+    <fragment
+        android:id="@+id/circlesFragment"
+        android:name="com.safesphere.app.feature.safetycircle.ui.CirclesFragment"
+        android:label="@string/title_circles"
+        tools:layout="@layout/fragment_circles" />
+    <fragment
+        android:id="@+id/circleSosFragment"
+        android:name="com.safesphere.app.feature.safetycircle.ui.CircleSosFragment"
+        android:label="@string/title_circle_sos"
+        tools:layout="@layout/fragment_circle_sos">
+        <argument
+            android:name="emergencyId"
+            app:argType="long" />
+    </fragment>
+
     <!-- N7 (D31): Settings → Notifications -->
     <fragment
         android:id="@+id/notificationSettingsFragment"

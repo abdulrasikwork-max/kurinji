@@ -47,9 +47,14 @@ object PushNavigation {
                 tab(nav, R.id.youFragment)
                 nav.navigate(R.id.moreFragment)
             }
-            PushTarget.CircleRequests, is PushTarget.CircleAlert -> {
+            PushTarget.CircleRequests -> {
                 tab(nav, R.id.youFragment)
-                nav.navigate(R.id.safetyFragment)
+                nav.navigate(R.id.circlesFragment)
+            }
+            is PushTarget.CircleAlert -> {
+                tab(nav, R.id.youFragment)
+                nav.navigate(R.id.circleSosFragment,
+                    com.safesphere.app.feature.safetycircle.ui.CircleSosFragment.args(target.id!!.toLong()))
             }
             PushTarget.OnMyWay -> {
                 tab(nav, R.id.youFragment)

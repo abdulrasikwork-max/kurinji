@@ -28,7 +28,9 @@ data class SafetyContact(
     val relationship: Relationship,
     val priority: Int,
     val isPrimary: Boolean,
-    val isEnabled: Boolean
+    val isEnabled: Boolean,
+    /** N7 (D36): this person accepted to also get your SOS in the IRL app (false until they accept). Not editable. */
+    val inApp: Boolean = false
 ) {
     /** The editable fields, used to send an update that changes only one thing (e.g. enabled). */
     fun toInput() = ContactInput(name, phoneNumber, email, relationship, priority, isPrimary, isEnabled)

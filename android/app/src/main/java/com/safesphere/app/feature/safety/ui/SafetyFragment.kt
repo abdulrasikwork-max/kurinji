@@ -140,6 +140,10 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
             FeatureItem(R.drawable.ic_group, R.string.feature_safety_circle_title, R.string.feature_safety_circle_description) {
                 nav.navigate(R.id.safetyCircleFragment)
             },
+            // N7 (D36): the circles you were added to (requests and the ones you joined).
+            FeatureItem(R.drawable.ic_group, R.string.feature_circles_title, R.string.feature_circles_description) {
+                nav.navigate(R.id.circlesFragment)
+            },
             FeatureItem(R.drawable.ic_history, R.string.feature_emergency_history_title,
                 R.string.feature_emergency_history_description) { nav.navigate(R.id.emergencyHistoryFragment) },
             FeatureItem(R.drawable.ic_tune, R.string.feature_safety_settings_title, R.string.feature_safety_settings_description) {

@@ -1514,4 +1514,47 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="notification_ask_message">IRL can let you know when someone replies or is in on your plan. Only names, never what they wrote. You can change this any time.</string>
     <string name="notification_ask_yes">Turn on</string>
     <string name="notification_ask_not_now">Not now</string>
+
+    <!-- N7 (D36): the Safety Circle in the app. The owner learns nothing before you accept; the texts always come. -->
+    <string name="circle_also_in_app">Also in the IRL app</string>
+    <string name="feature_circles_title">Safety Circles you\'re in</string>
+    <string name="feature_circles_description">People who added your number, and whether IRL may also tell you here if they press SOS.</string>
+    <string name="title_circles">Safety Circles you\'re in</string>
+    <string name="circles_requests_header">Asking you</string>
+    <string name="circles_request_line">%1$s added you to their Safety Circle. If they press SOS, IRL can also tell you here, as well as by text.</string>
+    <string name="circles_accept">Accept</string>
+    <string name="circles_not_now">Not now</string>
+    <string name="circles_dont_ask">Don\'t ask again</string>
+    <string name="circles_in_header">You\'re in</string>
+    <string name="circles_in_line">If %1$s presses SOS, IRL tells you here as well as by text.</string>
+    <string name="circles_leave">Leave</string>
+    <string name="circles_leave_title">Leave %1$s\'s Safety Circle in IRL?</string>
+    <string name="circles_leave_message">IRL stops telling you here. Their contact row stops saying \"Also in the IRL app\". Texts to your number are their choice and still come.</string>
+    <string name="circles_empty">Nobody is asking you right now. When someone saves your number in their Safety Circle, you can choose here whether IRL may also tell you about their SOS.</string>
+    <string name="circles_load_failed">Could not load this. Check your connection.</string>
+    <string name="circles_action_failed">That did not work. Check your connection and try again.</string>
+
+    <string name="title_circle_sos">SOS from your people</string>
+    <string name="circle_sos_title">%1$s pressed SOS</string>
+    <string name="circle_sos_started">Started %1$s</string>
+    <string name="circle_sos_late">This SOS reached IRL late: it started without internet.</string>
+    <string name="circle_sos_status_active">Their SOS is on.</string>
+    <string name="circle_sos_status_safe">%1$s ended it with \"I\'m safe\".</string>
+    <string name="circle_sos_status_false_alarm">%1$s ended it as a false alarm.</string>
+    <string name="circle_sos_status_ended">The SOS was ended.</string>
+    <string name="circle_sos_location">Where they were at %1$s</string>
+    <string name="circle_sos_open_map">Open the map</string>
+    <string name="circle_sos_no_location">No location was shared.</string>
+    <string name="circle_sos_call">Call %1$s</string>
+    <string name="circle_sos_call_112">Call 112</string>
+    <string name="circle_sos_note">IRL does not track them. This is what IRL texted you, nothing newer.</string>
+    <string name="circle_sos_gone">This SOS is not available any more.</string>
+
+    <string name="push_circle_request_title">%1$s added you to their Safety Circle</string>
+    <string name="push_circle_request_text">Choose if IRL can also tell you here</string>
+    <string name="push_circle_sos_title">%1$s pressed SOS</string>
+    <string name="push_circle_sos_safe">%1$s ended the SOS: \"I\'m safe\"</string>
+    <string name="push_circle_sos_false_alarm">%1$s ended the SOS: false alarm</string>
+    <string name="push_circle_sos_ended">%1$s\'s SOS ended</string>
+    <string name="push_call">Call %1$s</string>
 </resources>

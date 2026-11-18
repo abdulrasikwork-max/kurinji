@@ -37,7 +37,9 @@ data class SafetyContactDto(
     val relationship: String,
     val priority: Int,
     val primary: Boolean,
-    val enabled: Boolean
+    val enabled: Boolean,
+    /** N7 (D36); absent from an older server = false. */
+    val inApp: Boolean? = null
 ) {
     fun toDomain() = SafetyContact(
         id = id,
@@ -47,6 +49,7 @@ data class SafetyContactDto(
         relationship = Relationship.fromApi(relationship),
         priority = priority,
         isPrimary = primary,
-        isEnabled = enabled
+        isEnabled = enabled,
+        inApp = inApp == true
     )
 }
