@@ -162,6 +162,8 @@ class CreateFragment : ViewBindingFragment<FragmentCreateBinding>(FragmentCreate
         val shared = state.shared
         if (shared != null) {
             viewModel.onSharedHandled()
+            // N7 (D33): after sharing a Who's in?, IRL may offer to tell you who is in (once, card first).
+            if (shared.kind == com.safesphere.app.feature.moments.domain.MomentKind.WHOS_IN) appContainer.notificationAsk.offer()
             onShared(shared)
         } else if (state.finished && resultDialog == null) {
             close() // a rotation lost the dialog: never stay on a shared draft

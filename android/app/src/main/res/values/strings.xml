@@ -192,7 +192,6 @@
     <string name="settings_safety_circle">Safety Circle and automatic texts</string>
     <string name="settings_emergency_history">Emergency History</string>
     <string name="settings_app_permissions">App permissions (phone settings)</string>
-    <string name="settings_notifications">Notifications (phone settings)</string>
     <string name="settings_about">About IRL</string>
     <string name="settings_terms">Terms</string>
     <string name="settings_privacy_policy">Privacy notice</string>
@@ -1433,4 +1432,86 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="content_case_show_moment_photo">Show the photo</string>
     <string name="content_case_moment_photo">The moment\'s photo</string>
     <string name="content_case_new_member_until">New member until %1$s</string>
+
+    <!-- N7 (D29 to D34): push notifications. Names and structure only, never what anyone wrote (unless the person turns
+         on "Show what people wrote"); the lock screen shows the neutral public lines; no numbers anywhere. -->
+    <string name="push_channel_replies_name">Replies</string>
+    <string name="push_channel_replies_description">Private replies, and when someone says more on a moment you asked about.</string>
+    <string name="push_channel_plans_name">Plans</string>
+    <string name="push_channel_plans_description">Who\'s in? plans you made or are in.</string>
+    <string name="push_channel_people_name">People and requests</string>
+    <string name="push_channel_people_description">Requests to connect, and to join someone\'s Safety Circle.</string>
+    <string name="push_channel_account_name">Your account</string>
+    <string name="push_channel_account_description">New sign-ins, your verification and decisions about your own moments.</string>
+    <string name="push_channel_circle_sos_name">SOS from your people</string>
+    <string name="push_channel_circle_sos_description">When someone whose Safety Circle you joined presses SOS.</string>
+    <string name="push_channel_staff_name">Community staff</string>
+    <string name="push_channel_staff_description">When verification requests or reports are waiting.</string>
+
+    <string name="push_generic_replies">New activity in Replies</string>
+    <string name="push_generic_people">New activity in People</string>
+    <string name="push_generic_account">An update about your account</string>
+    <string name="push_generic_on_my_way">On my way: there yet?</string>
+    <string name="push_public_replies">IRL · New activity in Replies</string>
+    <string name="push_public_people">IRL · A new request</string>
+    <string name="push_public_account">IRL · An update about your account</string>
+    <string name="push_public_circle_sos">SOS from your Safety Circle</string>
+    <string name="push_staff_waiting">Things are waiting</string>
+
+    <string name="push_plan_ask_one">%1$s is in</string>
+    <string name="push_plan_ask_two">%1$s and %2$s are in</string>
+    <string name="push_plan_ask_more">%1$s, %2$s and others are in</string>
+    <string name="push_plan_ask_text">For your plan · %1$s</string>
+    <string name="push_plan_ask_text_no_time">For your plan</string>
+    <string name="push_plan_added_title">You\'re in</string>
+    <string name="push_plan_added_text">%1$s\'s plan · %2$s</string>
+    <string name="push_plan_added_text_no_time">%1$s\'s plan</string>
+    <string name="push_plan_message_title">New in %1$s\'s plan</string>
+    <string name="push_plan_message_own">New in your plan</string>
+    <string name="push_plan_called_off_title">Plan called off</string>
+    <string name="push_plan_called_off_text">%1$s called off %2$s</string>
+    <string name="push_plan_called_off_text_no_time">%1$s called off their plan</string>
+    <string name="push_reply_first">%1$s sent you a private reply</string>
+    <string name="push_reply_turn">%1$s replied</string>
+    <string name="push_more_added">%1$s said more</string>
+    <string name="push_people_request">%1$s wants to connect</string>
+    <string name="push_sign_in_title">New sign-in</string>
+    <string name="push_sign_in_text">IRL was just signed in on another phone. Not you? Sign out the other phones.</string>
+    <string name="push_verified">You\'re verified</string>
+    <string name="push_verification_again">Your verification needs another look</string>
+    <string name="push_content_moment">An update on your moment</string>
+    <string name="push_content_message">An update on your message</string>
+    <string name="push_content_appeal">An update on your appeal</string>
+
+    <!-- N7 (D31): Settings → Notifications. -->
+    <string name="settings_notifications_in_irl">Notifications</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="notifications_section_send">What IRL sends you</string>
+    <string name="notifications_replies">Replies</string>
+    <string name="notifications_replies_description">Private replies, and when someone says more.</string>
+    <string name="notifications_plans">Plans</string>
+    <string name="notifications_plans_description">Who\'s in, you\'re in, a plan called off.</string>
+    <string name="notifications_plan_messages">Messages in plans</string>
+    <string name="notifications_plan_messages_description">Once per plan until you open Replies.</string>
+    <string name="notifications_people">People</string>
+    <string name="notifications_people_description">Requests to connect.</string>
+    <string name="notifications_staff">Community staff</string>
+    <string name="notifications_staff_description">When requests or reports are waiting (at most once an hour).</string>
+    <string name="notifications_section_phone">On this phone</string>
+    <string name="notifications_show_content">Show what people wrote</string>
+    <string name="notifications_show_content_description">Off: notifications say who, never what. The lock screen never shows it.</string>
+    <string name="notifications_quiet">Quiet at night</string>
+    <string name="notifications_quiet_description">11 pm to 7 am: social notifications come without sound. Safety ones always sound.</string>
+    <string name="notifications_android_settings">Android notification settings</string>
+    <string name="notifications_safety_note">Safety notices (an SOS from your people, On my way) and account notices have no switch here: they come only from something you started or agreed to.</string>
+    <string name="notifications_footer">Notifications can come late or not at all on some phones (battery savers). Replies always has everything.</string>
+    <string name="notifications_unavailable">Notifications are not set up in this version of IRL.</string>
+    <string name="notifications_load_failed">Could not load your choices. Check your connection.</string>
+    <string name="notifications_save_failed">Could not save that. Check your connection.</string>
+
+    <!-- N7 (D33): the card before the system's notification question (Android 13+). -->
+    <string name="notification_ask_title">Get told when it matters?</string>
+    <string name="notification_ask_message">IRL can let you know when someone replies or is in on your plan. Only names, never what they wrote. You can change this any time.</string>
+    <string name="notification_ask_yes">Turn on</string>
+    <string name="notification_ask_not_now">Not now</string>
 </resources>

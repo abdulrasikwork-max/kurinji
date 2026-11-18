@@ -98,6 +98,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -486,6 +487,72 @@ class AppContainer(context: Context) {
     /** Phase 13F (F11): set only by the non-exported SosEntryActivity (shortcut, tile); memory only. */
     val sosLaunchRequest: SosLaunchRequest = SosLaunchRequest()
 
+    // ---- N7 (D26 to D34): push notifications (pointers; the phone renders from IRL's own API) ----------------------
+
+    val pushOpenRequest = com.safesphere.app.core.push.PushOpenRequest()
+    val notificationAsk by lazy {
+        com.safesphere.app.core.push.NotificationAsk(applicationScope, pushPreferences,
+            configured = { pushTokens.configured },
+            runtimePermission = { com.safesphere.app.core.notifications.NotificationPermission.isRuntimePermission() },
+            granted = { com.safesphere.app.core.notifications.NotificationPermission.isGranted(appContext) })
+    }
+    val pushPreferences by lazy { com.safesphere.app.core.push.PushPreferences(appContext) }
+    val pushTray: com.safesphere.app.core.push.PushTray by lazy { com.safesphere.app.core.push.AndroidPushTray(appContext) }
+    private val pushTokens: com.safesphere.app.core.push.PushTokenSource by lazy {
+        com.safesphere.app.core.push.FirebaseTokenSource(appContext)
+    }
+    val pushConfigured: Boolean get() = pushTokens.configured
+    val pushRepository by lazy {
+        com.safesphere.app.core.push.PushRepository(retrofit.create(com.safesphere.app.core.push.PushApi::class.java),
+            apiCallHandler)
+    }
+    val pushRegistration by lazy {
+        com.safesphere.app.core.push.PushRegistration(pushTokens, pushRepository::register, pushTray,
+            allowed = { androidx.core.app.NotificationManagerCompat.from(appContext).areNotificationsEnabled() },
+            appVersion = BuildConfig.VERSION_NAME)
+    }
+
+    /** The renderers by kind; each feature registers its own (core/push imports no feature). A3 adds the safety ones. */
+    private val pushRenderers: Map<com.safesphere.app.core.push.PushKind, com.safesphere.app.core.push.PushRenderer> by lazy {
+        com.safesphere.app.feature.replies.push.RepliesPushRenderers(appContext, momentRepository, responseRepository,
+            repliesRepository, showContent = { pushPreferences.showContent.first() }).all() +
+            com.safesphere.app.core.push.AccountPushRenderers(appContext).all() +
+            mapOf(
+                com.safesphere.app.core.push.PushKind.PEOPLE_REQUEST to
+                    com.safesphere.app.feature.social.push.PeoplePushRenderer(appContext, socialRepository).renderer,
+                com.safesphere.app.core.push.PushKind.MEMBERSHIP_DECIDED to
+                    com.safesphere.app.feature.membership.push.MembershipPushRenderer(appContext, membershipRepository).renderer
+            )
+    }
+
+    val pushRouter by lazy {
+        com.safesphere.app.core.push.PushRouter(
+            renderers = pushRenderers,
+            tray = pushTray,
+            appVisible = { (appContext as? SafeSphereApp)?.appVisibility?.visible?.value == true },
+            quietAtNight = { pushPreferences.quietAtNight.first() }
+        )
+    }
+
+    /**
+     * D31: a channel the person blocked in Android settings switches the matching server switch off (never on), so IRL
+     * stops sending what cannot be shown. Read when IRL comes to the front.
+     */
+    private suspend fun syncBlockedChannels() {
+        if (!pushTokens.configured || sessionStorage.session.first() == null) return
+        val manager = appContext.getSystemService(android.app.NotificationManager::class.java) ?: return
+        fun blocked(id: String) = manager.getNotificationChannel(id)?.importance == android.app.NotificationManager.IMPORTANCE_NONE
+        val current = (pushRepository.switches() as? ApiResult.Success)?.data ?: return
+        val wanted = current.copy(
+            replies = current.replies && !blocked(com.safesphere.app.core.notifications.NotificationChannels.REPLIES),
+            plans = current.plans && !blocked(com.safesphere.app.core.notifications.NotificationChannels.PLANS),
+            planMessages = current.planMessages && !blocked(com.safesphere.app.core.notifications.NotificationChannels.PLANS),
+            people = current.people && !blocked(com.safesphere.app.core.notifications.NotificationChannels.PEOPLE),
+            staff = current.staff && !blocked(com.safesphere.app.core.notifications.NotificationChannels.STAFF)
+        )
+        if (wanted != current) pushRepository.change(wanted)
+    }
+
     init {
         applicationScope.launch(Dispatchers.IO) { riseRetirement.retire() }
         applicationScope.launch(Dispatchers.IO) { vaultRetirement.retire() }
@@ -507,6 +574,22 @@ class AppContainer(context: Context) {
                         activeJourneyStore.clear()
                     }
                 }
+        }
+        // N7 (D28): the push token follows the sign-in ("sign in to sync" keeps what it has: nothing is deleted then).
+        pushRegistration.follow(applicationScope, sessionStorage.session
+            .filter { it == null || !it.needsSignIn }
+            .map { s -> s?.let { it.user.id to com.safesphere.app.core.push.PushRules.sessionIdOf(it.token) } })
+        // N7 (D34): every pointer refreshes the Replies dot; IRL coming to the front re-checks the token and the channels.
+        applicationScope.launch {
+            pushRouter.events.collect { if (it.kind.social) repliesMarker.check(force = true) }
+        }
+        (appContext as? SafeSphereApp)?.appVisibility?.let { visibility ->
+            applicationScope.launch {
+                visibility.visible.filter { it }.collect {
+                    runCatching { pushRegistration.sync() }
+                    runCatching { syncBlockedChannels() }
+                }
+            }
         }
         // Phase 10A.3: the server said the account is deleted: remove what a sign-out keeps (the SOS options).
         applicationScope.launch {

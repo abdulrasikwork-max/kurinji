@@ -40,7 +40,7 @@ class SettingsFragment : ViewBindingFragment<FragmentSettingsBinding>(FragmentSe
             Header(R.string.settings_section_privacy),
             Row(R.string.settings_privacy_policy) { navController.navigate(R.id.action_settings_to_privacy_policy) },
             Row(R.string.settings_app_permissions) { openSystemSettings(appDetailsIntent()) },
-            Row(R.string.settings_notifications) { openSystemSettings(notificationSettingsIntent()) },
+            Row(R.string.settings_notifications_in_irl) { navController.navigate(R.id.notificationSettingsFragment) },
 
             Header(R.string.settings_section_application),
             Row(R.string.settings_about) { navController.navigate(R.id.action_settings_to_about) },
@@ -51,9 +51,6 @@ class SettingsFragment : ViewBindingFragment<FragmentSettingsBinding>(FragmentSe
     /** The phone's own page for this app: which permissions are granted, and switching any of them off. */
     private fun appDetailsIntent() =
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", requireContext().packageName, null))
-
-    private fun notificationSettingsIntent() =
-        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().packageName)
 
     private fun openSystemSettings(intent: Intent) {
         try {

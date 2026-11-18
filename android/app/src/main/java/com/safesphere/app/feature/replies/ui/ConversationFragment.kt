@@ -103,6 +103,8 @@ class ConversationFragment : ViewBindingFragment<FragmentConversationBinding>(Fr
     override fun onResume() {
         super.onResume()
         secure(true)
+        // N7 (D34): opening the conversation removes its notification on this phone (tells nobody anything).
+        arguments?.getString(ARG_ID)?.let { appContainer.pushTray.cancel("conversation-$it") }
     }
 
     override fun onPause() {
@@ -113,7 +115,11 @@ class ConversationFragment : ViewBindingFragment<FragmentConversationBinding>(Fr
     private fun send() {
         val words = binding.input.text?.toString()?.trim().orEmpty()
         if (words.isEmpty()) return
-        DraftNudgeDialogs.beforeSharing(this, words, onlyMe = false) { viewModel.send(words) }
+        DraftNudgeDialogs.beforeSharing(this, words, onlyMe = false) {
+            val first = viewModel.uiState.value.conversation == null
+            viewModel.send(words)
+            if (first) appContainer.notificationAsk.offer() // N7 (D33): after a first private reply
+        }
     }
 
     /** Phase 13D for messages (N5-A3): the reporter is told only that a moderator will look; the writer is never told. */
@@ -243,6 +249,10 @@ class ConversationFragment : ViewBindingFragment<FragmentConversationBinding>(Fr
     }
 
     private fun renderHead(conversation: Conversation) {
+        // N7 (D34): a plan's notifications are per plan: reading it removes them on this phone.
+        if (conversation.kind == com.safesphere.app.feature.replies.domain.ConversationKind.PLAN) {
+            appContainer.pushTray.cancel("plan-${conversation.moment.id}")
+        }
         val context = requireContext()
         val moment = conversation.moment
         binding.heading.text = if (conversation.kind == ConversationKind.REPLY && !moment.mine)

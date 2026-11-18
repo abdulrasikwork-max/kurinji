@@ -23,6 +23,23 @@ object NotificationChannels {
      */
     private const val RETIRED_SOS_COUNTDOWN = "sos_countdown"
 
+    /** N7 push channels (ids = core.push.PushChannel). */
+    const val REPLIES = "irl_replies"
+    const val PLANS = "irl_plans"
+    const val PEOPLE = "irl_people"
+    const val ACCOUNT = "irl_account"
+    const val CIRCLE_SOS = "irl_circle_sos"
+    const val STAFF = "irl_staff"
+
+    /** Community staff (low): only on staff phones, created when the first staff push arrives. */
+    fun createStaff(context: Context) {
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        manager.createNotificationChannel(NotificationChannel(STAFF, context.getString(R.string.push_channel_staff_name),
+            NotificationManager.IMPORTANCE_LOW).apply {
+            description = context.getString(R.string.push_channel_staff_description)
+        })
+    }
+
     fun createAll(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         val alerts = NotificationChannel(
@@ -44,6 +61,21 @@ object NotificationChannels {
             setShowBadge(false)
         }
         manager.createNotificationChannel(tracking)
+        // N7 (D34, design 5.1): the push channels. Community staff is created only when a staff push first arrives.
+        fun push(id: String, name: Int, description: Int, importance: Int) = manager.createNotificationChannel(
+            NotificationChannel(id, context.getString(name), importance).apply {
+                this.description = context.getString(description)
+            })
+        push(REPLIES, R.string.push_channel_replies_name, R.string.push_channel_replies_description,
+            NotificationManager.IMPORTANCE_DEFAULT)
+        push(PLANS, R.string.push_channel_plans_name, R.string.push_channel_plans_description,
+            NotificationManager.IMPORTANCE_DEFAULT)
+        push(PEOPLE, R.string.push_channel_people_name, R.string.push_channel_people_description,
+            NotificationManager.IMPORTANCE_DEFAULT)
+        push(ACCOUNT, R.string.push_channel_account_name, R.string.push_channel_account_description,
+            NotificationManager.IMPORTANCE_DEFAULT)
+        push(CIRCLE_SOS, R.string.push_channel_circle_sos_name, R.string.push_channel_circle_sos_description,
+            NotificationManager.IMPORTANCE_HIGH)
         // A no-op when the channel does not exist (fresh installs).
         manager.deleteNotificationChannel(RETIRED_SOS_COUNTDOWN)
     }

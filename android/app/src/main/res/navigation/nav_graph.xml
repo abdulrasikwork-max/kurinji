@@ -418,6 +418,13 @@
             app:destination="@id/privacyPolicyFragment" />
     </fragment>
 
+    <!-- N7 (D31): Settings → Notifications -->
+    <fragment
+        android:id="@+id/notificationSettingsFragment"
+        android:name="com.safesphere.app.feature.settings.ui.NotificationSettingsFragment"
+        android:label="@string/title_notifications"
+        tools:layout="@layout/fragment_notification_settings" />
+
     <fragment
         android:id="@+id/aboutFragment"
         android:name="com.safesphere.app.feature.settings.ui.info.AboutFragment"

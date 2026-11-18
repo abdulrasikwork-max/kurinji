@@ -20,5 +20,7 @@ class SafeSphereApp : Application() {
         appVisibility = com.safesphere.app.core.lifecycle.AppVisibility(this)
         // Creating channels needs no permission and posts nothing; it only registers them with Android.
         NotificationChannels.createAll(this)
+        // N7 (D27): Firebase from the build's values, before any push can arrive; nothing when the build has none.
+        com.safesphere.app.core.push.FirebaseTokenSource.initialize(this)
     }
 }

@@ -64,7 +64,10 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
         // N5: responses
         binding.sameButton.setOnClickListener { viewModel.onSame() }
         binding.sayMoreButton.setOnClickListener { viewModel.onSayMore() }
-        binding.inButton.setOnClickListener { viewModel.onAskIn() }
+        binding.inButton.setOnClickListener {
+            viewModel.onAskIn()
+            appContainer.notificationAsk.offer() // N7 (D33): after saying I'm in (card first, at most once a month)
+        }
         binding.withdrawButton.setOnClickListener { viewModel.onWithdraw() }
         binding.addMoreButton.setOnClickListener { askMore() }
         binding.callOffButton.setOnClickListener { confirmCallOff() }
@@ -94,6 +97,11 @@ class MomentFragment : ViewBindingFragment<FragmentMomentBinding>(FragmentMoment
         super.onResume()
         secure(true)
         viewModel.onShownAgain()
+        // N7 (D34): opening the moment removes its plan / "said more" notifications on this phone.
+        arguments?.getString(ARG_ID)?.let { id ->
+            appContainer.pushTray.cancel("plan-$id")
+            appContainer.pushTray.cancel("more-$id")
+        }
     }
 
     override fun onPause() {

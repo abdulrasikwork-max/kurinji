@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- N7 (D31): Settings → Notifications. Server switches (off = IRL does not send), two choices kept on this phone,
+     the phone's own notification settings, and an honest footer. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <com.safesphere.app.core.ui.components.NoticeView
+            android:id="@+id/notice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/sendHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:accessibilityHeading="true"
+            android:text="@string/notifications_section_send"
+            android:textAppearance="@style/TextAppearance.SafeSphere.SectionTitle" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/repliesSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/notifications_replies" />
+
+        <TextView
+            android:id="@+id/repliesSwitchDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notifications_replies_description"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/plansSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/notifications_plans" />
+
+        <TextView
+            android:id="@+id/plansSwitchDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notifications_plans_description"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/planMessagesSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/notifications_plan_messages" />
+
+        <TextView
+            android:id="@+id/planMessagesSwitchDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notifications_plan_messages_description"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/peopleSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/notifications_people" />
+
+        <TextView
+            android:id="@+id/peopleSwitchDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notifications_people_description"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/staffSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/notifications_staff" />
+
+        <TextView
+            android:id="@+id/staffSwitchDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notifications_staff_description"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <TextView
+            android:id="@+id/phoneHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:accessibilityHeading="true"
+            android:text="@string/notifications_section_phone"
+            android:textAppearance="@style/TextAppearance.SafeSphere.SectionTitle" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/showContentSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/notifications_show_content" />
+
+        <TextView
+            android:id="@+id/showContentSwitchDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notifications_show_content_description"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/quietSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/notifications_quiet" />
+
+        <TextView
+            android:id="@+id/quietSwitchDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notifications_quiet_description"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/androidSettingsButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:minHeight="@dimen/min_touch_target"
+            android:text="@string/notifications_android_settings" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:text="@string/notifications_safety_note"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:text="@string/notifications_footer"
+            android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
+    </LinearLayout>
+</ScrollView>

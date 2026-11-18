@@ -432,3 +432,53 @@ their JSON files outside the repo; give the Android config values for `local.pro
   on the team account with 2-step sign-in, the Android app `com.safesphere.app`, a development service-account JSON
   outside the repo (`FCM_CREDENTIALS_FILE`), and the Android config values for `local.properties`. Until then
   `PUSH_PROVIDER=FCM` is untested against Google (the client is tested against a local stub: `FcmClientTest`).
+
+### A2 (2026-11-18): Android push. Implemented, compiled, tested. Not yet run against Firebase (no project values yet).
+- **Dependency (D27):** `firebase-messaging` 25.0.1 through the Firebase BOM 34.10.0 (a version older than two weeks;
+  Kotlin stdlib stays 2.0.21). No google-services plugin, no Analytics / Crashlytics / Remote Config / In-App Messaging /
+  Firestore / Auth. Four public values `firebase.app.id|api.key|project.id|sender.id` from `local.properties` (or `-P`)
+  become `BuildConfig.FIREBASE_*` (characters checked); all empty = a build with no push that works as before.
+  Manifest: `firebase_messaging_auto_init_enabled=false`, analytics deactivated, delivery-metrics export off, Firebase's
+  `FirebaseInitProvider` removed (`tools:node="remove"`); `SafeSphereApp.onCreate` sets Firebase up by hand
+  (`FirebaseTokenSource.initialize`, no token). **Side effect found by the tests:** firebase-common 22 needs DataStore
+  1.1.7 (the app declared 1.1.1); the catalog now says 1.1.7. Its Android file storage cannot rename over an existing
+  file on a Windows JVM, which broke `SealedAccessTokenTest` on this PC (phones are not affected: the rename works on
+  Linux); the test now builds its DataStore with `OkioStorage` (same file format, real file), not weaker.
+- **`core/push` (imports no feature, logs nothing):** `PushPayload` (parses exactly `t`, `s`, `m`, `v` = 1; anything else
+  is dropped), `PushKind` (the server's 14, pinned by a test that reads `PushType.java`), `PushChannel`, `PushTarget`
+  (validated ids), `PushNotice` / `Rendered` / `PushRenderer` + `renderOr` (404 / 403 / 401 → nothing, other failures →
+  the generic line), pure `PushRules` (quiet at night 23–07 for social kinds, tray rule while IRL is open, stable ids,
+  the registration decision, the `sid` claim), `PushRouter` (de-duplicates by event id, foreground suppression with a
+  `events` flow for the Replies dot, 8 s render limit → generic line), `PushRegistration` (D28: register per sign-in,
+  again for a new token / sign-in / permission; another account first clears the previous person's notifications; a
+  sign-out deletes the token on the phone and removes IRL's notifications; "sign in to sync" changes nothing),
+  `PushApi` / `PushRepository`, `PushPreferences` (DataStore `push_preferences`: show content, quiet at night, "not now"
+  date), `FirebaseTokenSource`, `IrlMessagingService` (not exported), `NotificationRouterActivity` (not exported,
+  validated extras, in-memory `PushOpenRequest` read by `MainActivity` on signed-in screens, like the SOS shortcut),
+  `AndroidPushTray` (IRL mark / siren for Circle SOS, one id per thread, `setOnlyAlertOnce`, groups with a names
+  summary, neutral public version, private visibility, social `setTimeoutAfter(24 h)`, Call actions open the dialer;
+  removes only its own tagged notifications), `NotificationAsk` (D33 card then the system question; "Not now" 30 days).
+- **Renderers by the feature that owns them:** `feature/replies/push/RepliesPushRenderers` (plan ask / added / message /
+  called off, private reply turn, said more; the words someone wrote only with "Show what people wrote", never
+  collapsed ones), `feature/social/push/PeoplePushRenderer`, `feature/membership/push/MembershipPushRenderer`,
+  `core/push/AccountPushRenderers` (new sign-in, content decided, staff waiting). The safety kinds come in A3 (until then
+  they show the generic line).
+- **Channels (§5.1):** Replies, Plans, People and requests, Your account, SOS from your people (high) created at start;
+  Community staff only when a staff push first arrives; On my way stays `safety_alerts`.
+- **Screens:** Settings → Notifications (`NotificationSettingsFragment` / `ViewModel`: server switches, staff switch for
+  moderators, the two phone choices, Android settings, the honest footer; a failed save puts the switch back); the
+  Settings row now opens it (the old "Notifications (phone settings)" row and string are gone). Taps land through
+  `navigation/PushNavigation` (tab first, then the screen). Opening a conversation, plan or moment removes its
+  notification on this phone. The card is offered after sharing a Who's in?, after I'm in and after a first private
+  reply. Channels blocked in Android settings switch the server switch off when IRL comes to the front (D31).
+- **Guards updated, not weakened:** `Phase17FGuardsTest` (the service list now includes the unexported push receiver;
+  the only other `<provider>` line must be the removal of `FirebaseInitProvider`); new `PushGuardsTest` (the MERGED
+  manifest's permissions are the N6 seven + `WAKE_LOCK` + c2dm `RECEIVE` + androidx's signature-only receiver permission,
+  read from the path Gradle passes to unit tests; IRL's push components unexported; Firebase push-only; core/push imports
+  no feature and does not log; the payload keys; no numbers in notification words; words only behind the switch; lock
+  screen private). `N6SafetyGuardsTest` still pins the source manifest to the N6 list.
+- **Clean-up of A1 leftovers:** the unused `opening_wordmark` dimension (the old typed wordmark) and its stale comment.
+- **Tests:** `PushCoreTest` 11, `PushRouterTest` 7, `PushGuardsTest` 7, `NotificationSettingsViewModelTest` 4.
+  `gradlew testDebugUnitTest assembleDebug lintDebug`: **689 / 0**, build OK, lint 0 errors (118 warnings: the N7 ones
+  are `accessibilityHeading` on API < 28, as elsewhere in the app, and "newer version available" for the deliberately
+  older Firebase BOM and DataStore).

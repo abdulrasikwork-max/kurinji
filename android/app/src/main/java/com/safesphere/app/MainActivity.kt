@@ -42,6 +42,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
 
+    /** N7 (D33): Android's own notification question, asked only after the card (never at launch). */
+    private val notificationPermission = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) lifecycleScope.launch { appContainer.pushRegistration.sync() }
+        else appContainer.notificationAsk.notNow()
+    }
+
     /** Created on the first screen that shows banners (after sign-in), then kept for the activity's life. */
     private val session by viewModels<SessionStatusViewModel> { SessionStatusViewModel.factory(appContainer) }
     private var bannersStarted = false
@@ -85,6 +93,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // N7 (D33): the card before the system question, when a screen offered it.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                appContainer.notificationAsk.requests.collect { showNotificationCard() }
+            }
+        }
+
         // N5 (D19): the Replies dot, never a number: read when IRL comes to the front and every 2 minutes while it is
         // on the screen (push arrives in N7). Nothing is stored.
         lifecycleScope.launch {
@@ -99,6 +114,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    }
+
+    /** N7 (D33): the short card (social palette); "Turn on" asks Android, "Not now" waits 30 days. */
+    private fun showNotificationCard() {
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(com.safesphere.app.core.ui.SocialPalette.wrap(this))
+            .setTitle(R.string.notification_ask_title)
+            .setMessage(R.string.notification_ask_message)
+            .setPositiveButton(R.string.notification_ask_yes) { _, _ ->
+                notificationPermission.launch(com.safesphere.app.core.notifications.NotificationPermission.PERMISSION)
+            }
+            .setNegativeButton(R.string.notification_ask_not_now) { _, _ -> appContainer.notificationAsk.notNow() }
+            .show()
     }
 
     /** D19: a dot on the Replies tab (no number), spoken as "something new". */
@@ -130,6 +157,7 @@ class MainActivity : AppCompatActivity() {
         if (bannersStarted && bannersAllowed) session.onScreenVisible()
         if (bannersAllowed) openAgeScreenIfDue()
         if (NavigationRules.opensSosFrom(destination.id)) openSosIfRequested()
+        if (NavigationRules.opensSosFrom(destination.id)) openPushTargetIfRequested()
         val chrome = chromeContext(destination)
         updateToolbarColours(chrome)
         updateSystemBars(
@@ -145,6 +173,7 @@ class MainActivity : AppCompatActivity() {
         val here = navController.currentDestination?.id
         if (NavigationRules.opensSosFrom(here)) {
             openSosIfRequested()
+            openPushTargetIfRequested()
         } else if (here == R.id.emergencyFragment &&
             appContainer.sosLaunchRequest.consume(android.os.SystemClock.elapsedRealtime())
         ) {
@@ -153,6 +182,15 @@ class MainActivity : AppCompatActivity() {
             (host?.childFragmentManager?.primaryNavigationFragment as?
                 com.safesphere.app.feature.emergency.ui.EmergencyFragment)?.onLaunchRequested()
         }
+    }
+
+    /**
+     * N7 (D34): a tapped notification. Only a request recorded in this process by the non-exported
+     * NotificationRouterActivity opens a screen (ids validated there); signed-in screens only, never over the SOS screen.
+     */
+    private fun openPushTargetIfRequested() {
+        val target = appContainer.pushOpenRequest.consume(android.os.SystemClock.elapsedRealtime()) ?: return
+        com.safesphere.app.navigation.PushNavigation.open(navController, target)
     }
 
     /**

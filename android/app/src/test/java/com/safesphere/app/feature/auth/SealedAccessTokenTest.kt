@@ -1,7 +1,6 @@
 package com.safesphere.app.feature.auth
 
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -33,6 +32,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import okio.Path.Companion.toPath
 
 /**
  * Phase 17J (A14, decision J-8): no token and no refresh secret is ever written to disk in plain text. Runs the real
@@ -56,8 +56,15 @@ class SealedAccessTokenTest {
     private val generationKey = stringPreferencesKey("token_memory_gen")
 
     @Before fun setUp() {
-        file = folder.newFile("session.preferences_pb")
-        dataStore = PreferenceDataStoreFactory.create(scope = scope) { file }
+        // N7: Firebase brings DataStore 1.1.7, which (on Windows) cannot rename onto a pre-created empty file; DataStore
+        // creates the file itself, as on a phone.
+        file = java.io.File(folder.root, "session.preferences_pb")
+        // Okio storage: it replaces the file atomically on Windows too (DataStore 1.1.7's Android file storage renames,
+        // which Windows refuses over an existing file; on a phone that rename works). Same file format.
+        dataStore = androidx.datastore.core.DataStoreFactory.create(
+            storage = androidx.datastore.core.okio.OkioStorage(okio.FileSystem.SYSTEM,
+                androidx.datastore.preferences.core.PreferencesSerializer) { file.absolutePath.toPath() },
+            scope = scope)
     }
 
     @After fun tearDown() {
@@ -69,7 +76,7 @@ class SealedAccessTokenTest {
     private fun raw(): Preferences = runBlocking { dataStore.data.first() }
 
     /** The whole DataStore file as text: a secret must not appear in it, however it is stored. */
-    private fun fileText(): String = String(file.readBytes(), Charsets.ISO_8859_1)
+    private fun fileText(): String = if (file.exists()) String(file.readBytes(), Charsets.ISO_8859_1) else ""
 
     private fun assertNoSecretOnDisk(vararg secrets: String) {
         val text = fileText()

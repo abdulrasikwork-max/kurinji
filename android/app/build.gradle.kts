@@ -18,6 +18,18 @@ val localProperties = Properties().apply {
 val apiBaseUrl: String = localProperties.getProperty("api.base.url")?.takeIf { it.isNotBlank() }
     ?: "http://10.0.2.2:8080/"
 
+// N7 (D27): firebase.app.id, firebase.api.key, firebase.project.id, firebase.sender.id from local.properties (or -P).
+// Only letters, digits and : . _ - are accepted (they end up in generated code).
+val firebaseKeys = mapOf(
+    "firebase.app.id" to "FIREBASE_APP_ID",
+    "firebase.api.key" to "FIREBASE_API_KEY",
+    "firebase.project.id" to "FIREBASE_PROJECT_ID",
+    "firebase.sender.id" to "FIREBASE_SENDER_ID"
+)
+fun firebaseValue(key: String): String =
+    ((project.findProperty(key) as String?) ?: localProperties.getProperty(key))?.trim()
+        ?.takeIf { it.matches(Regex("^[A-Za-z0-9:._-]{1,200}$")) } ?: ""
+
 // Phase 17A (R1): DEBUG builds may use plain http:// only to the development hosts AND the host of api.base.url (for
 // example a PC on the same Wi-Fi, http://192.168.1.20:8080/), so a real phone works without a USB cable and
 // "adb reverse". The file is generated here; release builds get none and require HTTPS.
@@ -87,6 +99,11 @@ android {
         versionName = appVersionName
 
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+        // N7 (D27): the Firebase app's public identifiers (not secrets, but kept out of git like the backend URL).
+        // All four empty = no push in this build.
+        for ((key, field) in firebaseKeys) {
+            buildConfigField("String", field, "\"${firebaseValue(key)}\"")
+        }
     }
 
     signingConfigs {
@@ -189,7 +206,21 @@ dependencies {
 
     implementation(libs.play.services.location)
     implementation(libs.coil)
+    // N7 (D27): push delivery only. A build without the firebase.* values in local.properties has no push.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+}
+
+// N7 (D27): the permission guard reads the MERGED manifest (Firebase adds WAKE_LOCK and the c2dm RECEIVE permission
+// through manifest merge), so unit tests build it first and are told where it is.
+tasks.withType<Test>().configureEach {
+    dependsOn("processDebugMainManifest")
+    systemProperty(
+        "irl.mergedManifest",
+        layout.buildDirectory.file("intermediates/merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml")
+            .get().asFile.absolutePath
+    )
 }

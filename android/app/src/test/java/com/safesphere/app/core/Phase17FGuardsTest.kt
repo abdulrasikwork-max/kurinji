@@ -73,8 +73,9 @@ class Phase17FGuardsTest {
         assertFalse(manifest.contains("BOOT_COMPLETED"))
         val services = Regex("<service\\s+android:name=\"([^\"]+)\"").findAll(manifest).map { it.groupValues[1] }.toSet()
         assertEquals(
-            "the tile and the one tracking service only",
-            setOf(".feature.emergency.entry.SosTileService", ".core.tracking.SafetyTrackingService"),
+            "the tile, the one tracking service and (N7) the unexported push receiver only",
+            setOf(".feature.emergency.entry.SosTileService", ".core.tracking.SafetyTrackingService",
+                ".core.push.IrlMessagingService"),
             services
         )
         assertFalse("N6: the shake Cancel receiver and the SMS result receiver are gone",
@@ -91,7 +92,12 @@ class Phase17FGuardsTest {
             Regex("<action android:name=\"([^\"]+)\"").findAll(queries).map { it.groupValues[1] }.toList())
         assertFalse(manifest.contains("QUERY_ALL_PACKAGES"))
         assertEquals(1, Regex("<queries>").findAll(manifest).count())
-        assertEquals(1, Regex("<provider").findAll(manifest).count())
+        // N7 (D27): the only other <provider> line REMOVES Firebase's automatic start-up provider (manifest merge).
+        val providerTags = Regex("<provider[^>]*>").findAll(manifest).map { it.value }.toList()
+        assertEquals(1, providerTags.count { !it.contains("tools:node=\"remove\"") })
+        assertEquals(listOf("com.google.firebase.provider.FirebaseInitProvider"),
+            providerTags.filter { it.contains("tools:node=\"remove\"") }
+                .map { Regex("android:name=\"([^\"]+)\"").find(it)!!.groupValues[1] })
     }
 
     @Test
