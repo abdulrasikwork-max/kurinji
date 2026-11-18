@@ -1,3 +1,11 @@
+# CHECKPOINT 2026-11-18 (seventeenth session, N6 in progress): backend B1–B3 DONE; Android A1 next. Nothing pushed, nothing deployed, pilot untouched.
+
+- **Commits:** `1cbb2ed` B1 walk trim · `8c96038` B2 server alert queue + V37 written · `dd87634` B3 V37 applied (development MySQL only, 40 tables; backups `db-backups/safesphere-dev-before-v37-20261118.sql`, `…-after-v37-before-b3-walk-…`). Details: `PHASE_N6.md` "As built"; decisions N-110 to N-113; `API.md` "Phase N6".
+- **Backend:** `mvn -o clean test` 533 / 0 / 0 / 2 skipped (after B2; B3 changed one property line). Next migration **V38**.
+- **Next:** A1 (Android SOS side: remove phone automatic SMS, shake, SOS options; the choice with preview via `GET|PUT /api/safety-alerts`; per-contact status via `GET /api/emergencies/{id}/alerts`; offline / server-down fallback; Test my alerts; readiness asks; countdown and tile fixes; clean-up; guards), then A2, A3, C (`PHASE_N6.md` §5).
+
+---
+
 # CHECKPOINT 2026-11-18 (sixteenth session, final): **N6 APPROVED / DESIGN LOCKED / IMPLEMENTATION DEFERRED.** Reason: the Claude usage limit was at about 90 %. Documents only; no code, migration or test changed. Nothing pushed, nothing deployed, pilot untouched.
 
 - **Design:** `docs/PHASE_N6.md` (the complete approved design and validation plan). Decisions D20–D25 = `DECISIONS.md` N-104 to N-109: D20 automatic server-side SOS SMS to enabled Safety Circle contacts (Fast2SMS through the provider port, no `SEND_SMS`) with manual SMS as fallback; D21 remove shake SOS; D22 Safe Walk → "On my way" (reminder, no location); D23 revised V37; D24 "Let someone know · On my way" in Plans; D25 the name "On my way". Automatic On my way timeout alerts are DEFERRED.
