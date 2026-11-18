@@ -249,3 +249,26 @@ anyone).
   limit across senders; 404 for another person; phone cannot report server states; Test my alerts once a day; stop list
   (admin only, HMAC only, shown as NOT_AVAILABLE); erasure), `AlertLogsTest` 2, `ProductionGuardTest` +1,
   `Fast2SmsOtpSenderTest` +1. `mvn -o clean test`: **533 run / 0 failures / 0 errors / 2 skipped**.
+
+### B3 (2026-11-18): V37 on the development MySQL; live run with the development sink. Applied, verified.
+- `spring.flyway.target=36` removed. Backup `db-backups/safesphere-dev-before-v37-20261118.sql` (38 tables).
+- Pre-check: Flyway at 36; every name V37 drops exists once; the 14 alert rows are all phone rows (no row changes meaning).
+- Rehearsal of the whole migration on `zz_` copies of `safe_journeys` / `circle_alerts` with the real rows (constraint
+  names renamed, the walk FK pointed at the copy): no error; 46 walks and 14 alerts kept; destination columns gone; 9
+  old walk locations cleared. Dry run: 44 cases (13 accepted + 31 refused), 0 findings (2 values were refused by an
+  earlier CHECK than the one aimed at: lower-case `sent` by `ck_circle_alerts_server_row` / `ck_circle_alerts_sent`);
+  cascades: deleting a walk takes its alert rows; the FK rules read back as designed (user CASCADE, stop list SET NULL).
+  Scratch tables dropped (0 left).
+- Applied by Flyway at start-up (0.32 s), schema v37, **40 tables**. The two "integer display width is deprecated"
+  warnings come from `TINYINT(1)` (as in V31), harmless.
+- **Live run (backend 8090, real MySQL, `ALERT_PROVIDER=DEV_FILE`), account 401, contacts "Live Test" (an own test
+  number) and a US number:** settings UNSET with the exact preview and "NOT_INDIAN_MOBILE" for the US number; choice
+  ON; SOS; no text for 4 s without a location; the first location → the text written to the dev file at once
+  (`kick` after commit), map link `maps.google.com/?q=10.81234,78.69012`; `GET …/alerts` SENT + SKIPPED; I'm safe → the
+  closing text within 1 s; Test my alerts → the own number (`******5555`), a second one 429; a phone report with
+  `SERVER_SMS` 400; another account reading the alerts 404; no token 401. The backend log holds no number, text, name
+  or coordinate (searched), only "Safety Circle texts: 1 accepted, 0 not accepted".
+- Real-MySQL test `MySqlTimestampStorageTest` (`SAFESPHERE_MYSQL_TESTS=true`): 2 / 0.
+- Database afterwards restored from `db-backups/safesphere-dev-after-v37-before-b3-walk-20261118.sql` (V37, 40 tables,
+  nothing from the walk left: 0 SERVER_SMS rows, 0 alert settings, no contacts on 401). Backend stopped.
+- Not measured here (needs the owner and real SMS, step C): seconds to a real phone, the provider's review and spam rule.

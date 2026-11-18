@@ -89,7 +89,7 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | N7 | Firebase push | planned |
 | N8 | Pilot launch at MIET (backups, SMS provider, policy texts, seeding, moderators) | planned |
 
-Next migration file **V37** (V36 = N5, DEVELOPMENT MySQL only, 2026-11-17). Each phase or sub-phase needs its own plan and the owner's approval first. The pilot still
+Next migration file **V38** (V37 = N6, DEVELOPMENT MySQL only, 2026-11-18). Each phase or sub-phase needs its own plan and the owner's approval first. The pilot still
 runs the old jar on schema V30 (its move to V32 deletes data: its own approved step).
 
 **Never implement early:** other communities / the community request system, multiple memberships, video, iPhone,
@@ -258,7 +258,7 @@ cd android
 
 ## 7. Database (MySQL `safesphere`, Flyway) — per-migration rules in `.claude/rules/database.md`
 
-Conventions: never edit an applied migration; next file is **V37** (V35, V36: development MySQL only); snake_case; `DATETIME(6)` stored in UTC; constraint
+Conventions: never edit an applied migration; next file is **V38** (V35–V37: development MySQL only); snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci. "One active /
 one primary / one open" via a generated marker column + unique index. MySQL forbids CHECKs on cascading-FK columns
 (enforce those rules in code); write NULL cases out with `COALESCE` (a NULL makes `IN` UNKNOWN, which a CHECK lets pass);
