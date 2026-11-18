@@ -341,3 +341,26 @@ their JSON files outside the repo; give the Android config values for `local.pro
   forgetting, erasure, no token in the logs), `PushCapsTest`, `PushOffTest`, `FcmClientTest` 3 (a local stub of Google's
   token endpoint and FCM: the RS256 assertion verifies, data-only body, every answer's mapping, token reuse), the guard
   tests. `mvn -o clean test` **553 run / 0 failures / 0 errors / 2 skipped** (533 before).
+
+### B2 (2026-11-18): producers. Implemented, compiled, tested.
+- **One neutral event:** `common/event/Tell` `{kind, recipients, subject}` (kinds = `PushType` names, pinned by a test),
+  published INSIDE the owner's write; `push/service/PushProducer` listens AFTER COMMIT (a rolled-back write tells nobody),
+  per recipient, never throws back. No publisher imports `push`.
+- **Where:** `ConversationService` (a private reply → REPLY_TURN to the other person; a plan message → PLAN_MESSAGE to the
+  author and the people in, minus the writer and anyone blocked either way; only when the text check let the words
+  through), `ResponseService` (I'm in → PLAN_ASK to the author, batched 2 min; Add → PLAN_ADDED with the plan's
+  conversation id; Call it off → PLAN_CALLED_OFF to the people in; the follow-up to Say more → MORE_ADDED to the people who
+  asked, only when visible), `PlanEvents` (This happened → PLAN_MESSAGE), `ConnectionService` (a new request →
+  PEOPLE_REQUEST, subject `people`), `DeviceSessionService` (a new sign-in → ACCOUNT_SIGN_IN to the person's OTHER running
+  phones, subject `account`), `DecisionService` (MEMBERSHIP_DECIDED, `membership`), `ContentModerationService` (hold /
+  collapse / remove → CONTENT_DECIDED `m-<moment>` or `c-<conversation>`; Keep only when the author had already seen a
+  notice, so a push never reveals a report; an appeal's outcome → `decisions`). Person decisions are not pushed.
+- **"Once per plan until you open Replies":** `PushProducer` skips a plan message when a push about that plan reached the
+  person since their own `replies_opened` time (no per-message read state).
+- **Staff:** `StaffWaitingJob` (every 10 min): moderators and admins with the staff switch on, an open content case (and,
+  for admins, an ID photo waiting); at most once an hour and only when something new arrived since the last one.
+- **Tests:** `PushProducersTest` 5 (Tell kinds = push kinds; a plan end to end incl. batching, the once-per-plan rule
+  and Call it off; private replies, Say more and the replies switch; a connection request and a new sign-in; a
+  moderator's Keep says nothing, a Remove tells the author, the staff summary). `mvn -o clean test` **558 / 0 / 0 / 2**.
+- **Not pushed (as designed):** Same, Say more requests, "set aside", a plan closing by itself, a connection accepted, a
+  message released later by a moderator's Keep (it shows in Replies).

@@ -63,10 +63,13 @@ public class ConnectionService {
     private final SocialLimits limits;
     private final SocialProperties properties;
     private final Clock clock;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public ConnectionService(ConnectionRepository connections, ConnectionInviteRepository invites,
                              ProfileRepository profiles, ProfileService profileService, Relationships relationships,
-                             SocialAccess access, SocialLimits limits, SocialProperties properties, Clock clock) {
+                             SocialAccess access, SocialLimits limits, SocialProperties properties, Clock clock,
+                             org.springframework.context.ApplicationEventPublisher events) {
+        this.events = events;
         this.connections = connections;
         this.invites = invites;
         this.profiles = profiles;
@@ -104,6 +107,9 @@ public class ConnectionService {
             throw new ConflictException(TOO_MANY_PENDING);
         }
         saveNew(Connection.request(userId, targetId, now));
+        // N7: the person asked hears it (one thread "people": the phone reads who from the requests list).
+        events.publishEvent(com.safesphere.backend.common.event.Tell.to(
+                com.safesphere.backend.common.event.Tell.Kind.PEOPLE_REQUEST, targetId, "people"));
         return new ConnectResult(ConnectStatus.REQUESTED, ProfileService.summary(target));
     }
 

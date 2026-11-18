@@ -71,12 +71,15 @@ public class DecisionService {
     private final Clock clock;
     private final TransactionTemplate tx;
     private final AttemptLimiter wrongCodes;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public DecisionService(UserRepository users, MembershipRepository memberships,
                            VerificationRequestRepository requests, CommunityActionRepository actions,
                            CommunityKeys keys, MembershipLookup lookup, VerificationService verification,
                            IdPhotoStore photos, CommunityProperties properties, Clock clock,
-                           PlatformTransactionManager transactions) {
+                           PlatformTransactionManager transactions,
+                           org.springframework.context.ApplicationEventPublisher events) {
+        this.events = events;
         this.users = users;
         this.memberships = memberships;
         this.requests = requests;
@@ -251,6 +254,9 @@ public class DecisionService {
     /** Logs the decision, deletes the request, and the photo file after the commit. */
     private DecisionResult finish(VerificationRequest request, User decider, User applicant, ActionKind kind,
                                   String reason, LocalDateTime now) {
+        // N7 (D38): the applicant hears that their verification was decided (inside this transaction: after commit).
+        events.publishEvent(com.safesphere.backend.common.event.Tell.to(
+                com.safesphere.backend.common.event.Tell.Kind.MEMBERSHIP_DECIDED, applicant.getId(), "membership"));
         actions.save(new CommunityAction(request.getCommunityId(), decider.getId(), applicant.getId(), kind,
                 request.getMethod(), reason, null, now));
         requests.delete(request);

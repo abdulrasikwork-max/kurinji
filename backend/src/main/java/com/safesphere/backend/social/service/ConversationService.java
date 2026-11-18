@@ -24,6 +24,7 @@ import com.safesphere.backend.social.entity.ResponseEnums.MessageKind;
 import com.safesphere.backend.social.entity.ResponseEnums.PlanState;
 import com.safesphere.backend.social.entity.ResponseEnums.PrivateReplies;
 import com.safesphere.backend.social.entity.SocialSettings;
+import com.safesphere.backend.common.event.Tell;
 import com.safesphere.backend.social.event.MessageSent;
 import com.safesphere.backend.social.policy.ConversationPolicy;
 import com.safesphere.backend.social.policy.ConversationPolicy.Turn;
@@ -129,6 +130,7 @@ public class ConversationService {
         MessageSent sent = new MessageSent(message.getId(), userId, newMember && !connected, text);
         events.publishEvent(sent);
         messages.flush();
+        tellAbout(userId, conversation, moment, messages.findById(message.getId()).orElse(message));
         return view(userId, conversation, moment, now, sent.supportSuggested() ? message.getId() : null);
     }
 
@@ -152,8 +154,36 @@ public class ConversationService {
         events.publishEvent(sent);
         messages.flush();
         Message saved = messages.findById(message.getId()).orElse(message);
+        tellAbout(userId, conversation, moment, saved);
         MessageView answer = messageViews(userId, List.of(saved), moment, now).get(0);
         return sent.supportSuggested() ? answer.withSupport() : answer;
+    }
+
+    /**
+     * N7 (D29, D30): who should hear about these words, once the text check let them through (a held or removed message
+     * tells nobody: no push ever precedes visibility). A private reply: the other person (it is their turn). A plan: the
+     * author and everyone in, except the writer and anyone who blocked them or whom they blocked. The push package
+     * listens after commit; social does not know it exists.
+     */
+    private void tellAbout(long writerId, Conversation conversation, Moment moment, Message message) {
+        if (!message.getModeration().visibleToOthers()) return;
+        if (conversation.getKind() == ConversationKind.REPLY) {
+            long other = writerId == conversation.getReplierId() ? moment.getAuthorId() : conversation.getReplierId();
+            events.publishEvent(Tell.to(Tell.Kind.REPLY_TURN, other, conversation.getPublicId()));
+            return;
+        }
+        events.publishEvent(Tell.to(Tell.Kind.PLAN_MESSAGE, planAudience(moment, writerId), conversation.getPublicId()));
+    }
+
+    /** The author and the people in a plan, without [writerId] and without anyone who cannot see them (a block). */
+    List<Long> planAudience(Moment moment, long writerId) {
+        List<Long> out = new ArrayList<>();
+        if (moment.getAuthorId() != writerId) out.add(moment.getAuthorId());
+        for (var row : planPeople.findByMomentIdAndStateOrderByAnsweredAtAscIdAsc(moment.getId(), PlanState.IN)) {
+            if (row.getUserId() != writerId) out.add(row.getUserId());
+        }
+        out.removeIf(id -> !relationships.canSeeProfile(id, writerId));
+        return out;
     }
 
     /** One conversation, for one of its members (else: not found, exactly like one that does not exist). */

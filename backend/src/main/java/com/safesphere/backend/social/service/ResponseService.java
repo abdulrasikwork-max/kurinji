@@ -12,6 +12,7 @@ import com.safesphere.backend.social.entity.MomentSignal;
 import com.safesphere.backend.social.entity.PlanPerson;
 import com.safesphere.backend.social.entity.ResponseEnums.PlanState;
 import com.safesphere.backend.social.entity.ResponseEnums.SignalKind;
+import com.safesphere.backend.common.event.Tell;
 import com.safesphere.backend.social.event.MomentMoreAdded;
 import com.safesphere.backend.social.policy.MomentPolicy;
 import com.safesphere.backend.social.policy.ResponsePolicy;
@@ -137,6 +138,12 @@ public class ResponseService {
         MomentMoreAdded added = new MomentMoreAdded(moment.getId(), userId, newMember, text);
         events.publishEvent(added);
         moments.saveAndFlush(moment);
+        if (moment.getModeration().visibleToOthers()) {
+            // N7: the people who asked for more hear that it is there (never when the check held the words).
+            List<Long> askers = signals.findByMomentIdAndKindOrderByCreatedAtDescIdDesc(moment.getId(), SignalKind.SAY_MORE)
+                    .stream().map(s -> s.getUserId()).filter(id -> id != userId).distinct().toList();
+            if (!askers.isEmpty()) events.publishEvent(Tell.to(Tell.Kind.MORE_ADDED, askers, moment.getPublicId()));
+        }
         MomentResponse response = answer(userId, moment);
         return added.supportSuggested() ? response.withSupport() : response;
     }
@@ -162,6 +169,8 @@ public class ResponseService {
         }
         limits.ask(userId, MomentPolicy.isNewMember(member.verifiedAt(), now));
         planPeople.saveAndFlush(new PlanPerson(moment.getId(), userId, now));
+        // N7: the author hears that someone is in (pushes batch for 2 minutes, so several asks are one notification).
+        events.publishEvent(Tell.to(Tell.Kind.PLAN_ASK, moment.getAuthorId(), moment.getPublicId()));
         return answer(userId, moment);
     }
 
@@ -200,6 +209,9 @@ public class ResponseService {
             row.add(now);
             planPeople.saveAndFlush(row);
             planEvents.added(moment, row.getUserId(), now);
+            // N7: the person added hears "You're in" (the subject is the plan's conversation, which now exists).
+            planEvents.planOf(moment).ifPresent(plan ->
+                    events.publishEvent(Tell.to(Tell.Kind.PLAN_ADDED, row.getUserId(), plan.getPublicId())));
         }
         return peopleOf(authorId, moment, now);
     }
@@ -244,6 +256,11 @@ public class ResponseService {
             moment.callOff(now);
             moments.saveAndFlush(moment);
             planEvents.calledOff(moment, now);
+            // N7: the people who were in hear it is off (those only asking see it in Replies).
+            List<Long> in = planPeople.findByMomentIdAndStateOrderByAnsweredAtAscIdAsc(moment.getId(), PlanState.IN)
+                    .stream().map(PlanPerson::getUserId).toList();
+            planEvents.planOf(moment).filter(plan -> !in.isEmpty()).ifPresent(plan ->
+                    events.publishEvent(Tell.to(Tell.Kind.PLAN_CALLED_OFF, in, plan.getPublicId())));
         }
         return answer(authorId, moment);
     }

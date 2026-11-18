@@ -151,6 +151,7 @@ public class ContentModerationService {
     private final ConversationRepository conversations;
     private final Relationships relationships;
     private final com.safesphere.backend.social.service.PlanEvents planEvents;
+    private final org.springframework.context.ApplicationEventPublisher events;
     private final Clock clock;
 
     public ContentModerationService(ModerationService moderation, ReportService reportService,
@@ -166,7 +167,9 @@ public class ContentModerationService {
                                     Clock clock,
                                     MessageRepository messages, ConversationRepository conversations,
                                     Relationships relationships,
-                                    com.safesphere.backend.social.service.PlanEvents planEvents) {
+                                    com.safesphere.backend.social.service.PlanEvents planEvents,
+                                    org.springframework.context.ApplicationEventPublisher events) {
+        this.events = events;
         this.planEvents = planEvents;
         this.messages = messages;
         this.conversations = conversations;
@@ -237,6 +240,9 @@ public class ContentModerationService {
         requireReason(action, reason);
         ModerationReason why = contentReason(reason);
         ContentCase c = l.c;
+        // N7 (D38): did the author already see a notice on this content? (Then "Keep" is news to them; otherwise a Keep
+        // would reveal that someone reported it, which the author is never told.)
+        boolean authorSawANotice = l.contentState() != null && l.contentState() != ModerationState.NONE;
         Restriction pause = pauseOf(action);
         LocalDateTime until = pause == null ? null : now.plus(stepOf(action).length());
         // Phase 13E (E27): a decision about content the automatic check had collapsed or held is counted.
@@ -272,6 +278,7 @@ public class ContentModerationService {
         actions.saveAndFlush(entry);
         if (strike) strikes.save(new SocialStrike(l.subjectId, why, StrikePolicy.weight(why), decision, now));
         cases.saveAndFlush(c);
+        tellAuthor(l, action, authorSawANotice);
         return detail(load(c), moderatorId, now);
     }
 
@@ -338,7 +345,32 @@ public class ContentModerationService {
                 outcome == AppealStatus.OVERTURNED ? ActionType.APPEAL_OVERTURNED : ActionType.APPEAL_UPHELD,
                 decision.getCaseRef(), decision.getTargetKind(), appeal.getUserId(), now));
         appeals.saveAndFlush(appeal);
+        // N7 (D38): the person who appealed hears that it was decided (the details are in their decisions list).
+        events.publishEvent(com.safesphere.backend.common.event.Tell.to(
+                com.safesphere.backend.common.event.Tell.Kind.CONTENT_DECIDED, appeal.getUserId(), "decisions"));
         return appealView(appeal, decision, moderatorId);
+    }
+
+    /**
+     * N7 (D38): a moderator's decision about a moment or a message reaches its author as "An update on what you shared"
+     * (the phone shows no reason on the lock screen). Hold / collapse / remove always (the author sees the notice
+     * anyway: no shadow states); Keep only when the author had already seen a notice. Person decisions show in the
+     * standing banner and are not pushed. The subject says what to open: m-&lt;moment&gt; or c-&lt;conversation&gt;.
+     */
+    private void tellAuthor(Loaded l, ActionType action, boolean authorSawANotice) {
+        if (l.subjectId == null) return;
+        boolean content = action == ActionType.CONTENT_HOLD || action == ActionType.CONTENT_COLLAPSE
+                || action == ActionType.CONTENT_REMOVE || (action == ActionType.CONTENT_KEEP && authorSawANotice);
+        if (!content) return;
+        String subject = null;
+        if (l.message != null) {
+            subject = conversations.findById(l.message.getConversationId()).map(cv -> "c-" + cv.getPublicId()).orElse(null);
+        } else if (l.moment != null) {
+            subject = "m-" + l.moment.getPublicId();
+        }
+        if (subject == null) return;
+        events.publishEvent(com.safesphere.backend.common.event.Tell.to(
+                com.safesphere.backend.common.event.Tell.Kind.CONTENT_DECIDED, l.subjectId, subject));
     }
 
     // ---- The person concerned ---------------------------------------------------------------------------------------

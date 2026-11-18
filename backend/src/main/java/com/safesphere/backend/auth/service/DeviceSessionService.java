@@ -60,9 +60,12 @@ public class DeviceSessionService {
     private final EmergencyEventRepository emergencies;
     private final AccountProperties properties;
     private final Clock clock;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public DeviceSessionService(DeviceSessionRepository sessions, UserRepository users,
-                                EmergencyEventRepository emergencies, AccountProperties properties, Clock clock) {
+                                EmergencyEventRepository emergencies, AccountProperties properties, Clock clock,
+                                org.springframework.context.ApplicationEventPublisher events) {
+        this.events = events;
         this.sessions = sessions;
         this.emergencies = emergencies;
         this.users = users;
@@ -189,6 +192,9 @@ public class DeviceSessionService {
         DeviceSession session = new DeviceSession(sessionId, userId, RefreshSecrets.hash(secret), authenticatedAt, now,
                 now.plus(properties.refreshIdleTimeout()));
         sessions.saveAndFlush(session);
+        // N7 (D38): the person's OTHER phones hear about a new sign-in (this one has no token yet).
+        events.publishEvent(com.safesphere.backend.common.event.Tell.to(
+                com.safesphere.backend.common.event.Tell.Kind.ACCOUNT_SIGN_IN, userId, "account"));
         return new Started(sessionId, RefreshSecrets.token(sessionId, secret), authenticatedAt.toInstant(ZoneOffset.UTC));
     }
 
