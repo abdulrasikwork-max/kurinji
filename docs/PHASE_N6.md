@@ -1,8 +1,9 @@
 # Phase N6: Safety trim and automatic SOS alerts
 
 **Status (2026-11-18): B1–B3, A1–A3 and C built: implemented, compiled, tested, manually verified on the emulator
-against the development backend (with the development SMS sink). Live Fast2SMS tests and the A23 checks: see "C" at
-the end (they need the owner).** Approved and design-locked by the owner on 2026-11-18 (D20–D25 = N-104 to N-109 in
+against the development backend (with the development SMS sink), checked on the A23, and the live Fast2SMS texts
+VERIFIED with the owner (9 real SMS, see the end of "C"). Not verified: TalkBack on the countdown, delivery reports.**
+Approved and design-locked by the owner on 2026-11-18 (D20–D25 = N-104 to N-109 in
 `DECISIONS.md`); built the same day (N-110 to N-117). Never pushed, never deployed; the pilot stays on the old jar / V30.
 
 ## 1. What N6 is and why
@@ -421,7 +422,30 @@ anyone).
     countdown, so even the accessibility tree could not be read during it).
   - Afterwards: the reverse port removed; the N6 debug build stays on the A23 (signed in to a development session that
     the database restore ended). **To use the pilot again, the owner reinstalls the pilot build** on the A23.
-- **Live Fast2SMS tests: NOT verified, deferred by the owner (2026-11-18).** Open: Test my alerts to the owner's own
-  number, one full SOS to a second own number with the seconds from SOS to SMS measured, airplane mode, backend
-  stopped, the provider's review of Quick SMS, the repeated-SMS spam rule (status 995), whether delivery reports exist.
-  Needs `FAST2SMS_API_KEY` in `backend/.env`, `ALERT_PROVIDER=FAST2SMS`, wallet ≥ Rs 100, about Rs 50–100.
+- **Live Fast2SMS tests (2026-11-18, explicitly authorized by the owner; first deferred, then run the same day):
+  VERIFIED.** Setup: development backend 8090 with `ALERT_PROVIDER=FAST2SMS` (sign-in codes stayed on the dev file);
+  the key was read with `wsl -d Ubuntu-24.04 -u root` from the pilot's `/etc/irl/backend.env` (the owner's choice), put
+  only into the backend process's environment, never printed, logged or written to a file (the pilot unchanged).
+  Emulator, a new account named "IRL Test" (the owner's number; the name makes every text read as a test), contacts
+  = a friend's number (given by the owner) and the owner's own number (on the A23, where arrivals were timed by a
+  narrow inbox query: only texts starting with "IRL" after the start; the A23 clock ran 46 s behind, corrected).
+  A dry run with the dev sink first showed the exact texts.
+
+  | Test | Laptop times | Result |
+  |---|---|---|
+  | Test my alerts (own number) | tap 13:32:33.1 → accepted 34.1 → on the A23 36.7 | **3.6 s** end to end |
+  | Full SOS (friend + own) | tap 13:33:34.6, SOS on the server 39.7 (5 s countdown), first location 43.7, both accepted by 44.6, on the A23 46.7 | **7.0 s** from SOS start to the phone (12 s from the tap); location arrived first, so the first text had the map link |
+  | I'm safe (friend + own) | tap 13:37:00.9 → accepted 01.7 → on the A23 04.1 | about 3 s; the closing text as designed |
+  | Backend stopped (own only; the friend's contact switched off) | server down 13:38:37, SOS 13:38:47; phone said "No connection to IRL..." after ~15 s; server back 13:41:42; the phone's retry reached it 13:42:20; accepted 22.1; on the A23 26.0 | text **"IRL SOS (sent late): IRL Test pressed SOS at 1:38 PM"** (true start time, map link); closing text after I'm safe |
+  | Airplane mode (own only) | SOS 13:43:48 offline, the notice shown; network back 13:44:19; accepted 24.8; on the A23 26.6 | normal text (under 2 min), map link; closing text after I'm safe |
+
+  - **Cost:** wallet Rs 115 → Rs 52 = **Rs 63 for 9 SMS (Rs 7.00 each)**; 2 texts to the friend's number (SOS +
+    closing), 7 to the owner's (incl. the test); 0 refused.
+  - **Provider rules:** no refusal at all; 7 texts to one number within 13 minutes did NOT trigger the repeated-SMS rule
+    (no status 995); Quick SMS sent the allow-listed texts without a review hold. Both can change (provider rules do).
+  - **Not measured:** delivery reports (N-113: not read; the screen keeps "delivery not confirmed"); the friend's phone
+    (not observable; the provider accepted both texts); arrival under bad signal.
+  - **Logs:** both backend logs hold no number, name, text, map link or coordinate (searched); only counts.
+  - **Afterwards:** development MySQL restored from `db-backups/safesphere-dev-before-n6c-live-20261118.sql` (no "IRL
+    Test" account, no alert rows, no friend's number left); the dev OTP file deleted; backend (with the key in memory)
+    and emulator stopped.

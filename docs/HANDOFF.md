@@ -1,3 +1,13 @@
+# CHECKPOINT 2026-11-18 (eighteenth session, addendum): **N6 live Fast2SMS VERIFIED** (the owner authorized it after first deferring it). Nothing pushed, nothing deployed, pilot unchanged (its key was only read).
+
+- **What ran (`PHASE_N6.md` end of "C"):** development backend with `ALERT_PROVIDER=FAST2SMS` (key read from the pilot's `/etc/irl/backend.env` through `wsl -d Ubuntu-24.04 -u root`, in process memory only, never printed or written), emulator account "IRL Test" (the owner's number), contacts = the owner's friend and the owner's own number (A23, arrivals timed).
+- **Results:** 9 real SMS, Rs 63 (Rs 7.00 each; wallet now Rs 52). Test my alerts 3.6 s end to end; SOS start → text on the phone **7.0 s**; closing about 3 s; server stopped → "No connection to IRL" on the phone, catch-up text marked "(sent late)" with the true start time; airplane mode → catch-up text; 0 refusals, no spam-rule (995) hit with 7 texts to one number in 13 min; logs clean.
+- **Still NOT verified:** delivery reports (not read, N-113), TalkBack on the countdown, deep-doze reminder lateness.
+- **State:** development MySQL restored from `db-backups/safesphere-dev-before-n6c-live-20261118.sql`; backend and emulator stopped; `local.properties` points at the pilot. The A23 still has the N6 debug build: reinstall the pilot build to use the pilot. **Top up the Fast2SMS wallet** (Rs 52 = about 7 SMS) before relying on real codes or alerts.
+- **Next:** N7 (push) needs its own plan and the owner's approval.
+
+---
+
 # CHECKPOINT 2026-11-18 (eighteenth session, end): **N6 IS BUILT** (B1–B3, A1–A3, C). Implemented, compiled, tested, manually verified on the emulator against the development backend with the development SMS sink, A23 checks done; **live Fast2SMS NOT verified (deferred by the owner)**; TalkBack on the countdown NOT verified. Nothing pushed, nothing deployed, pilot untouched (old jar, V30).
 
 - **Commits this session (`irl-next`, local):** `90b7bb0` canOfferGoing test + 106 unused walk strings removed (the 10A identity line kept in `omw_setup_body`) · `92c44fb` fixes found in the emulator walk (N-117: the nudge's 4th button Call 112 was never shown → three buttons; 17 strings still said "Safe Walk"; the old shake channel deleted once) · then "N6-C: documents" (`git log -1`).
@@ -6,7 +16,7 @@
 - **Emulator walk:** upgrade N5 → N6 (signed in, contact, shake ON, walk running → still signed in, `sos_options` deleted, `SEND_SMS` gone, the walk back as On my way), On my way with the process killed (There yet? +1.5 min, nudge on time), first SOS on a fresh install, alert states with the dev sink (first text at +23 s without location, one follow-up, closing texts for I'm safe and False alarm), manual Text, tile on the idle SOS screen, offline notice after ~15 s and catch-up, plan row (note = "where" + time only; gone after Call it off), logs clean.
 - **A23 (owner allowed replacing the pilot build):** clean-install SOS (countdown asks nothing), On my way 30 min with the app killed, screen off, light doze: There yet? ~1 min 45 s late, nudge on time, three buttons on One UI. **The A23 now has the N6 debug build; reinstall the pilot build to use the pilot.**
 - **Database / environment:** development MySQL restored from `db-backups/safesphere-dev-before-n6c-20261118.sql` (V37, 40 tables); `android/local.properties` restored (pilot); emulator, backend, text check stopped; `adb reverse` removed. `CLAUDE.md` 39.3k chars (the OLD social rules moved to `docs/history/CLAUDE_2026-11-18.md`). Next migration **V38**.
-- **Open for N6 (needs the owner):** live Fast2SMS (Test my alerts to the owner's number, one full SOS to a second own number with seconds measured, airplane mode, backend stopped, spam rule 995, delivery reports; `FAST2SMS_API_KEY` in `backend/.env`, `ALERT_PROVIDER=FAST2SMS`, Rs 50–100); TalkBack on the countdown (a person listening); deep-doze reminder lateness (longer test). Noted: an N5 app against an N6 server shows its walk as not saved → the pilot moves app and server together (N8).
+- **Open for N6 (needs the owner):** (live Fast2SMS: done, see the addendum above); TalkBack on the countdown (a person listening); deep-doze reminder lateness (longer test). Noted: an N5 app against an N6 server shows its walk as not saved → the pilot moves app and server together (N8).
 - **Next phase:** N7 (Firebase push) needs its own plan and the owner's approval.
 
 ---
