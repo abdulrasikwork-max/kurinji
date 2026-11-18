@@ -26,6 +26,22 @@ paths:
 > service (type `location` only). `EmergencyContext` carries no evidence counts. Paragraphs below about the removed
 > parts are history (code: git tag `pre-n1`).
 
+> **N6 (2026-11-18, `docs/PHASE_N6.md` "As built" A1–A3 and C, N-114 to N-117): read with care.** REMOVED: the phone's
+> automatic SMS (`core/sms`, `CircleAlertPolicy`, `AutoSmsViewModel`, `SEND_SMS`), shake SOS (`feature/emergency/trigger`,
+> the `sos_countdown` channel, deleted once on upgrade) and SOS options (`SosOptionsFragment` / store; the file is deleted
+> once by `core/retired/SafetyTrimRetirement`), route / stop / battery checks (`MovementPolicy`, `WalkLine*`,
+> `BatteryPolicy`, `DestinationResolver`, `GeoHash`, `PreciseFix`), the walk's location stream and tracking notice. The
+> 4C, 4D and 17F paragraphs below are history. **What exists:** server alerts on the phone
+> (`feature/circlealert/domain/ServerAlerts.kt`, every unknown value fails closed; `SafetyAlertApi`,
+> `RemoteSafetyAlertRepository`; the Safety Circle choice card `SafetyAlertsViewModel`; the SOS screen polls
+> `GET /api/emergencies/{id}/alerts` every 5 s while visible and says "No connection to IRL" after about 15 s; manual Text
+> on every row). **On my way** = `feature/safewalk` (code name): pure `CheckInPolicy` (There yet? at the time, one nudge
+> 5 min later, then quiet), `SafeWalkSession` (no location), `AndroidReminderScheduler` (`setAndAllowWhileIdle`, inexact)
+> → non-exported `OnMyWayAlarmReceiver`; `AndroidSafeWalkAlerts` ("There yet?" [I'm there] [More time]; the nudge
+> [I'm there] [SOS] [Call 112]: Android shows at most three buttons); `CheckInActionReceiver`. The SOS screen asks
+> location only at ACTIVE, never in the countdown; the tile / shortcut on the idle SOS screen starts the countdown there.
+> Guards: `N6SafetyGuardsTest`, `SafeWalkScreenTest`, `Phase17DLocationTest`, `GoingThereTest` (all social packages).
+
 SOS (Phase 3 + 11), emergency location (4A), Safe Walk (4B), movement checks (4C), Safety Circle SMS (4D), Evidence
 Vault (5), Nearby place signals (6), trust UI + community moderation (7), safety intelligence (8). Invariants are in
 `CLAUDE.md` §5 and §11.

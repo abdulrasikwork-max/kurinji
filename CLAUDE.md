@@ -52,14 +52,15 @@ quiet supporting layer, never the identity.
 - **Structure:** **Today** (the community wall, 24 h, ends) · **✚ Create** · **Replies** · **You** (real name,
   department, year, live and kept moments; rows My people, Safety, Settings).
 - **Sign-in:** phone number + code only (no e-mail, no password). **Push:** Firebase messaging (approved 2026-11-15).
-- **Safety (kept):** SOS, Safety Circle, basic Safe Walk, under You plus the app shortcut, tile and opt-in shake; banners
-  only while one runs. The Safety Circle message opens the SMS app (no automatic `SEND_SMS`). **Retired from the app
+- **Safety (kept; N6):** SOS, Safety Circle, On my way (a reminder, no location), under You plus the app shortcut and
+  tile (shake removed); banners only while one runs. In an SOS the SERVER texts the enabled Circle contacts if the
+  person chose it (Fast2SMS); the SMS app stays the manual fallback (no `SEND_SMS`). **Retired from the app
   (kept in git tag `pre-n1` and in `docs/` for the viva):** Nearby signals + trust, safety intelligence, route/stop
   checks, the Evidence Vault and SOS audio, the Phase 9 evaluation work, places, ratings, Explore.
 - **Hosting:** the owner's laptop (WSL2, nginx, Cloudflare Tunnel, Spring Boot, MySQL) for development, demo and the
   controlled MIET pilot. No paid cloud without the owner's decision.
 - **Still permanent:** nobody can use IRL to monitor another person (no presence, no "last seen", no viewer lists, no
-  location on request); a social restriction never touches SOS, Safe Walk or the Safety Circle; bright red means only
+  location on request); a social restriction never touches SOS, On my way or the Safety Circle; bright red means only
   emergency; women's realities are an internal design principle; Tamil/Tanglish content from V1.
 - Final-year B.Tech IT team project: the student must be able to explain every important decision in a viva.
 
@@ -73,8 +74,8 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 
 | Phase | Scope | Status |
 |---|---|---|
-| 0–4D, 11, 17F | Foundation, auth, Safety Circle, SOS (also without internet), location, Safe Walk, SMS, shake SOS | Kept. Done and verified as recorded in `docs/STATUS.md` (A23: SOS, offline SOS, 4A/4B core, 4D) |
-| 4C | Safe Walk route / stop / battery checks | To be removed in N6 (never verified on a real phone) |
+| 0–4D, 11, 17F | Foundation, auth, Safety Circle, SOS (also without internet), location, Safe Walk (On my way since N6), SMS + shake SOS (both removed in N6) | Kept. Done and verified as recorded in `docs/STATUS.md` (A23: SOS, offline SOS, 4A/4B core, 4D) |
+| 4C | Safe Walk route / stop / battery checks | Removed in N6 (with shake SOS and the phone's automatic SMS) |
 | 5–9, 12 | Evidence Vault, Nearby, trust, intelligence, evaluation; Verified Nearby Assistance | **Retired from the app in N1** (history: tag `pre-n1`, phase docs); 12 never built |
 | 10, 14, 15, 17A–17D, 17H–17K, D12 + L1 | Account, security audit, acceptance, OTP, media, location UX, device sprint, release readiness, targetSdk 36, laptop pilot | Kept as foundations; status as recorded in `docs/STATUS.md` |
 | 13A–13F, 16, 17E, IRL redesign | Profiles, connections, posts, discovery, moderation v2, text check, navigation | Profiles, connections, blocks, moderation, text check, photo pipeline KEPT; posts / places / feed / comments removed in N4 (moments) |
@@ -85,7 +86,7 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | **N3** | Community, membership, verification, bans, admin screens, migration V34 | implemented, compiled, tested 2026-11-16 (Android 795, backend 532; V34 applied on the DEVELOPMENT MySQL only); decisions N-27 to N-41; results per unit in `docs/PHASE_N3.md`; manually verified on the emulator 2026-11-16 (no real phone) |
 | **N4** | Moments, capture-only Create, Today, keep, daily question | **COMPLETE 2026-11-17**: B1-B4 (V35 on the DEVELOPMENT MySQL only), A1-A3, C; implemented, compiled, tested (Android 758, backend 468), manually verified on the emulator against the development backend (no real phone); decisions N-42 to N-87; results `docs/PHASE_N4.md` "As built": voice deferred, no video, no learned AI model, new-member period 7 days from `memberships.verified_at` |
 | N5 | Same / Say more / I'm in, private replies, plan threads, Replies tab | **COMPLETE 2026-11-18**, emulator-verified, no real phone (Android 804, backend 511; 3 walk fixes, N-103; `PHASE_N5.md` "C") |
-| N6 | Safety trim + automatic server-side SOS SMS, On my way, plan offer (`PHASE_N6.md`, D20–D25) | **APPROVED / DESIGN LOCKED / IMPLEMENTATION DEFERRED** 2026-11-18 |
+| N6 | Safety trim + automatic server-side SOS SMS, On my way, plan offer (`PHASE_N6.md`, D20–D25) | **BUILT 2026-11-18**: B1–B3 (V37 on the DEVELOPMENT MySQL only), A1–A3, C; implemented, compiled, tested (Android 655, backend 533), emulator-verified with the dev SMS sink, A23 checks in `PHASE_N6.md` "C"; live Fast2SMS NOT verified (deferred by the owner); N-110 to N-117 |
 | N7 | Firebase push | planned |
 | N8 | Pilot launch at MIET (backups, SMS provider, policy texts, seeding, moderators) | planned |
 
@@ -205,8 +206,7 @@ cd android
   `SocialTextsTest`, `ModerationV2Test`, `AiModerationTest`, `ContrastTest`, `EmergencyTreatmentTest`,
   `ResourceEncodingTest`, `Phase17FGuardsTest`.
 - **Permissions today (since N1):** `INTERNET`, `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`,
-  `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `ACCESS_NETWORK_STATE`, `SEND_SMS` (asked
-  only on opt-in; leaves in N6). `RECORD_AUDIO` left with the vault and comes back in N4 for voice moments, asked in
+  `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `ACCESS_NETWORK_STATE` (N6: `SEND_SMS` gone; no exact-alarm or boot permission). `RECORD_AUDIO` left with the vault and comes back in N4 for voice moments, asked in
   context. Photo/video via the Photo Picker and camera-app intents — **never declare `CAMERA`**.
   Telephony/microphone/camera features not required. `dataExtractionRules` exclude all data.
 - **Tests:** JUnit4 + kotlinx-coroutines-test, `MainDispatcherRule`, fakes in `src/test/.../testing/`. Background holders
@@ -289,8 +289,6 @@ closed lists use binary collation.
   limits **429** (our message shown).
 - Every authenticated endpoint can answer 401 with `WWW-Authenticate: Bearer error="invalid_token",
   error_description="credentials_changed|account_deleted|account_unavailable|session_revoked"`.
-- (OLD social code, until N4/N5:) social answers never carry coordinates (cells only) or exact times for others (bands only); no counts except U1 and
-  the author-only butterfly count (from 3).
 - Update `docs/API.md` (and its appendix index) with every endpoint change.
 
 ---
@@ -305,16 +303,13 @@ closed lists use binary collation.
 - No microphone or camera before the Evidence/AI phases. Phase 5: only user-started, visible, during an ACTIVE emergency.
   **17F (F17-4):** audio may also start by itself in an SOS, but ONLY after the person agreed in advance (one question,
   default No, changeable in SOS options; the permission is asked then, never during an SOS), from the visible SOS screen,
-  once per SOS, visible and stoppable. Shake SOS (opt-in) only opens the same cancellable 5 s countdown.
+  once per SOS, visible and stoppable. Shake SOS was removed in N6 (D21).
 - Never claim emergency-service integration, SMS delivery, or that contacts were notified unless it happened and was
   confirmed. SMS "sent" ≠ delivered.
 - Document platform limitations honestly (`docs/PLATFORM_CONSTRAINTS.md`).
-- **Social features (Phase 13, built; design doc §4; OLD social code, replaced in N4/N5: the new product uses no location and no delay, see section 1):** no coordinates in any social request or response (cells
-  only); public times as bands, never timestamps; private places stay on the phone; EXIF stripped on the phone and
-  re-encoded on the server; one visibility definition (social `Visibility`) for every read path, tested with
-  author / connection / stranger / blocked users; connection lists, block lists and saves visible only to their
-  owner (butterfly reactions: the author sees a count from 3, never who); social packages never read safety data and safety never depends on social features; a posting restriction
-  never touches SOS, Safe Walk, the Safety Circle or the vault. 18+ at launch, self-declared date of birth at sign-up (D6, decided 2026-10-22).
+- **Social (since N4/N5):** social packages never read safety data and safety never depends on social features; a
+  posting or community restriction never touches SOS, On my way or the Safety Circle; 18+ (D6). The OLD Phase 13 social
+  rules (cells, time bands, private places) moved to `docs/history/CLAUDE_2026-11-18.md`.
 - **Media metadata (Phase 17C, built):** photos are re-encoded on the phone and again on the server; videos are
   re-packed on the phone (first picture + sound track only, no location, muxer `meta` zeroed) and checked + stripped of
   every metadata box and timestamp by the server; data inside the coded stream is not inspected (documented limit);
@@ -361,25 +356,29 @@ closed lists use binary collation.
 
 - Detection logic runs **on the phone in pure Kotlin** (works offline, unit-tested); the **server** stores records,
   validates state transitions, enforces ownership and computes check-in deadlines (phone clocks drift).
-- **One foreground service** (`SafetyTrackingService`) during Safe Walk or an active emergency; persistent notification;
+- **One foreground service** (`SafetyTrackingService`) during an active emergency (SOS only since N6); persistent notification;
   started only while the app is visible (`START_NOT_STICKY`, recovery on next open).
 - **Escalation ladder** (enum + pure policy, never jumps to the top): L0 normal · L1 missed check-in/minor concern →
   prompt the user · L2 no response/anomaly → Safety Circle · L3 confirmed SOS → emergency ACTIVE · L4 **user-tapped dial
   prompt (112)**, no claimed integration, no `CALL_PHONE` · L5 Verified Nearby Assistance = reserved, **rejected by the
-  server**. Movement concerns only warn; never L3 by themselves.
+  server**. Movement concerns only warn; never L3 by themselves. N6: On my way has no levels and alerts nobody.
 - **Emergency Context Packet** = a read model assembled on demand; recipient projections are field **allow-lists**; the
   Safety Circle sees only name, time, type, location link.
-- Safety Circle SMS: automatic only if the person opted in (`SEND_SMS`), otherwise the SMS app opens; SMS "sent" ≠
-  delivered. Journeys store only the last-known location (no track); destination deleted at a normal end.
-- A posting/community restriction **never** touches SOS, Safe Walk, the Safety Circle or the vault. Sign-out and
-  authentication failures never destroy a running SOS or evidence.
-- Not built (documented limitations): server-side dead-man alerts/push, background location, exact alarms, boot receiver.
+- Safety Circle texts (N6, D20): sent by the SERVER (one Fast2SMS client, a queue in the database) to enabled contacts
+  only if the person chose it after seeing the exact text; allow-listed fields only; rows keep no text, numbers only as
+  HMACs; the SMS app is the manual fallback; "texted" = accepted by the provider ≠ delivered. On my way stores no
+  location (walk destination columns dropped in V37).
+- A posting/community restriction **never** touches SOS, On my way or the Safety Circle. Sign-out and
+  authentication failures never destroy a running SOS.
+- Not built (documented limitations): On my way timeout alerts (deferred, `PHASE_N6.md` §6), push, background
+  location, exact alarms, boot receiver.
 
 ---
 
 ## 12. Known limitations and gotchas
 
-- Safe Walk can only escalate while the phone is alive and the process runs; no server-side alert channel exists yet.
+- On my way only reminds (an inexact alarm: may come late; a reboot drops it until IRL is opened). Automatic SOS texts
+  need the phone's internet and the laptop server; without them the SOS screen says "text them yourself" (N6 §8).
 - SOS without internet (Phase 11) needs a signed-in session on the phone; points collected before a process death are
   lost (memory only); evidence recording waits for the server record; sign-out clears endings not yet sent.
 - OEM battery killers (Xiaomi, Oppo, Vivo, Samsung) may stop foreground services; recover on next app open; document it.
@@ -421,8 +420,6 @@ closed lists use binary collation.
 | Content can be hidden automatically (reversible); people are restricted only by a human, with a reason, audited, appealable to another moderator; no shadow bans | Automatic punishment fails unsafely; moderator abuse is auditable |
 | AI produces evidence → a deterministic policy decides → only humans restrict (D2); an outage publishes; self-harm never stored | An AI mistake must not silence anyone; infrastructure failure must not silence people |
 | Safety intelligence = deterministic rules, no score, "unknown" is never "safe"; no text claims a place or person is safe | Explainable, attack-resistant, honest |
-| OLD social code only (until N4/N5; section 1 replaces it: private replies and plan threads exist, no places): no followers, mutual connections only, no DMs, no presence, no counts except U1; cells and time bands only; private places stay on the phone | Following someone's real-world posts is monitoring; public posts must not reveal routines |
-| OLD social code only (until N4): every list of others' posts is ordered by `visible_from`, never `created_at` | The order must not reveal the time the delay hides |
 | Phone OTP (provider-neutral `OtpSender`); since N2 the number + code is the ONLY sign-in, no password, no e-mail (N-21) | Sign-ups were stuck without a mail server; codes and limits stay in tested code |
 | Media: metadata stripped on the phone and again on the server; videos tap to play, never stored on the phone | Location privacy; Q3 (nothing about other people on the phone) |
 | Visible brand IRL; package, applicationId, signing and code names stay SafeSphere | A rebrand must update the installed app in place |

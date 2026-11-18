@@ -1,10 +1,9 @@
 # Phase N6: Safety trim and automatic SOS alerts
 
-**Status: APPROVED / DESIGN LOCKED / IMPLEMENTATION DEFERRED (owner, 2026-11-18).**
-Reason for deferring: the Claude usage limit was already at about 90 % when the design was approved. Nothing of N6 is
-implemented: no code, no migration, no test changed. Decisions D20–D25 are locked here and recorded as N-104 to N-109 in
-`DECISIONS.md`. Units B1–B3, A1–A3, C, one local commit each; never pushed, never deployed; the pilot stays on the old
-jar / V30.
+**Status (2026-11-18): B1–B3, A1–A3 and C built: implemented, compiled, tested, manually verified on the emulator
+against the development backend (with the development SMS sink). Live Fast2SMS tests and the A23 checks: see "C" at
+the end (they need the owner).** Approved and design-locked by the owner on 2026-11-18 (D20–D25 = N-104 to N-109 in
+`DECISIONS.md`); built the same day (N-110 to N-117). Never pushed, never deployed; the pilot stays on the old jar / V30.
 
 ## 1. What N6 is and why
 
@@ -357,3 +356,72 @@ anyone).
   SOS limits notice, location card, About (the IRL line, On my way), going rows and footer; no "automatic SMS" left.
 - `gradlew --offline testDebugUnitTest assembleDebug`: **652 run / 0 failures**, `assembleDebug` OK.
 - Not added (left for C): a unit test of `canOfferGoing`; lint; removal of the remaining unused `safe_walk_*` strings.
+
+### C (2026-11-18): runs, review, emulator walk, upgrade check. Live SMS and real phone: see the end of this section.
+- **Full runs, one at a time:** backend `mvn -o clean test` **533 run / 0 failures / 0 errors / 2 skipped** (backend code
+  unchanged in C); Android `gradlew --offline clean testDebugUnitTest assembleDebug lintDebug` **655 run / 0 failures**,
+  `assembleDebug` OK, lint **0 errors / 94 warnings** (N5: 98; the first C run showed 203 because N6 had left 106 strings
+  unused). Android count: 804 at N5 → 655 (about 150 tests of removed shake, phone SMS, route / stop / battery checks went;
+  new N6 tests came), as §7 expected.
+- **Clean-up (commit `90b7bb0`):** the 106 strings N6 left unused removed (only those the N5 code still used: the 25
+  older social leftovers stay, a separate clean-up); the 10A identity line "Using support is a choice, not a weakness."
+  moved to `omw_setup_body` (`HonestyTextsTest` follows it); a `canOfferGoing` test (open plan only, not after Call it
+  off, not in a private reply; the screen hands the bridge only "where" and time).
+- **Security / privacy review of the whole N6 diff (`adcc98a..HEAD`): no finding.** Every alert route takes the caller
+  from the JWT; another person's emergency answers 404; the stop list is ADMIN-only (`/api/admin/**`, role from the
+  database) and stores only HMACs; `Fast2SmsClient` logs only the provider's status (no key, number or text);
+  `DevFileSmsGateway` keeps the last 4 digits and the prod profile refuses it; the texts are built only from
+  allow-listed fields (ASCII name, own number, time, map link). Android: no logging in changed files; the two receivers
+  are not exported; every PendingIntent is explicit and immutable; the manifest holds exactly the N6 permission list
+  (no `SEND_SMS`, no exact-alarm or boot permission).
+- **Emulator walk (`irl_api33`, cold boot, backend 8090 on the development MySQL, `ALERT_PROVIDER=DEV_FILE`, the Python
+  text check on 8091 with a throwaway key; account 401, a second account 397 over the API):**
+
+  | Check | Result |
+  |---|---|
+  | Upgrade N5 → N6 (`3b6920c` APK, signed in, a contact, shake ON, a Safe Walk "Library" running; then `adb install -r` the N6 APK) | Still signed in; `sos_options.preferences_pb` deleted; `SEND_SMS` gone; the circle record holds only the contact copy; the walk came back as "On my way to Library" with the reminder at its old time; I'm there ended it on the server; both alarms cancelled. The N5 opt-in to phone SMS could not be set on the emulator (no telephony): covered by unit tests only |
+  | On my way, process killed (`am kill`, not force-stop), screen off, 10 min | "There yet?" 11:15:46 for 11:14:15 (the system started the process for it); the nudge 11:19:21 for 11:19:15; I'm there from the notification completed the walk on the server |
+  | Fresh install, first SOS | "Before you need it" asked location and notifications in context; the choice card showed the exact text, nothing preselected; "Tell them in advance" = share sheet with a plain note; Test my alerts → the dev file (`******5555`), then hidden for the day. With location revoked, the system dialog opened at 11:29:39.4 and the SOS reached the server at 11:29:39.8 = at ACTIVE, never during the countdown (N-115) |
+  | Alert states with the dev sink | No location within 20 s (dialog open) → the first text at +23 s "Location not known yet", then ONE follow-up with the map link; the row "Texted by IRL at 11:30 AM · delivery not confirmed"; manual Text opened Messages; I'm safe → the closing text within about 1 s; a second SOS → False alarm → the false-alarm closing text |
+  | Tile on the idle SOS screen | `cmd statusbar click-tile` while the idle SOS screen was open → SosEntryActivity → the countdown ran there and the SOS started |
+  | Offline | Airplane mode: after about 15 s "No connection to IRL: it can't text your Circle. Text them yourself (works without internet) or call 112."; back online the SOS reached the server and the text went out with the map link |
+  | Plan row | 397 made a Who's in? (API), 401 tapped I'm in, 397 added 401 → Replies → the plan → "Let someone know · On my way": the note "I'm heading to Indoor court at 1:36 PM. I'll message you when I'm back." (no words, no names, no link); On my way opened with "Indoor court" and nothing started; after Call it off the row is gone |
+  | Logs | The backend log holds no number, name, text, coordinate or map link (searched); only "Safety Circle texts: 1 accepted, 0 not accepted" |
+
+- **Found and fixed (commit `92c44fb`, N-117, guards in `SafeWalkScreenTest`):** (1) the nudge had four buttons and
+  Android shows three, so Call 112 never appeared: now [I'm there] [SOS] [Call 112]; (2) 17 visible strings still said
+  "Safe Walk" (hub status, "Before you need it" incl. "SOS and Safe Walk can save where you are", You row, membership /
+  ban notices, channel name...): now "On my way", location only for the SOS; (3) the unused shake countdown channel is
+  deleted once on upgraded phones.
+- **Noted, not changed:** an N5 app against an N6 server shows its walk as "Not saved to the server yet" (the walk
+  location endpoint is gone): the pilot must move app and server together (N8). The alarm's delivery window is wide on
+  paper: Android gives an inexact alarm up to 75 % of the delay (dumpsys: `window=+21m44s` for a 28-min reminder), so
+  a 60-min reminder may in theory come about 45 min late; the emulator delivered within 2 min. The wording "may come a
+  few minutes late" stands until the A23 measurement (screen off 30 min) says otherwise.
+- **Database / environment afterwards:** development MySQL restored from `db-backups/safesphere-dev-before-n6c-20261118.sql`
+  (V37, 40 tables, 0 server alert rows, no contacts on 401); `android/local.properties` restored (points at the pilot);
+  emulator, backend and text check stopped.
+- **Physical phone, Samsung A23 (SM-A236E, Android 14), 2026-11-18, with the owner's permission** (the pilot build
+  1.0.0-rc1 on the phone was replaced by the N6 debug build: `uninstall --user 0` + install for a clean start; it pointed
+  at the laptop's development backend through `adb reverse tcp:8090`; development SMS sink; account 401; the phone's
+  clock ran 46 s behind the laptop, all times below corrected or in phone time as marked):
+  - **First SOS on a clean install** (no contacts, no permissions, no choice): the 5 s countdown asked nothing; the
+    location dialog opened 0.1 s after the SOS reached the server (at ACTIVE), then the notification dialog (the
+    tracking service's ongoing notice, still during the active SOS, not the countdown). The screen said IRL is NOT
+    texting anyone (automatic texts not chosen), offered "Turn on location" (the phone's location switch was off) and
+    "You have no enabled contacts". I'm safe ended it on the server.
+  - **On my way, 30 min, process killed (`am kill`), screen off, battery reported as unplugged (`dumpsys battery
+    unplug`), so the phone could doze:** it entered light doze at 12:00 (maintenance window 12:07). "There yet?" came at
+    **12:29:13 for 12:27:28** (phone time; delivered at the next maintenance window, about 1 min 45 s late); the nudge at
+    **12:32:31 for 12:32:28**. The nudge showed all three buttons on One UI (I'm there · SOS · Call 112); I'm there from
+    the notification completed the walk on the server. Deep doze (`mState=IDLE`) was not reached in this run (it needs
+    longer stillness); a longer or overnight test would measure it. The on-screen "may come a few minutes late" holds
+    for this run.
+  - **TalkBack on the countdown: NOT verified** (needs a person listening; the A23's UI dump is slower than the 5 s
+    countdown, so even the accessibility tree could not be read during it).
+  - Afterwards: the reverse port removed; the N6 debug build stays on the A23 (signed in to a development session that
+    the database restore ended). **To use the pilot again, the owner reinstalls the pilot build** on the A23.
+- **Live Fast2SMS tests: NOT verified, deferred by the owner (2026-11-18).** Open: Test my alerts to the owner's own
+  number, one full SOS to a second own number with the seconds from SOS to SMS measured, airplane mode, backend
+  stopped, the provider's review of Quick SMS, the repeated-SMS spam rule (status 995), whether delivery reports exist.
+  Needs `FAST2SMS_API_KEY` in `backend/.env`, `ALERT_PROVIDER=FAST2SMS`, wallet ≥ Rs 100, about Rs 50–100.

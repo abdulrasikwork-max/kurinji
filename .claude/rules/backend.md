@@ -84,6 +84,17 @@ paths:
 > (+ "the old social surface is gone"). Use `mvn -o clean test`: without `clean` Maven reports a false success after
 > files were deleted. Decisions N-69 to N-75.
 
+> **N6 (2026-11-18, `docs/PHASE_N6.md` "As built", V37, N-110 to N-113): safety trim and server-side Safety Circle
+> texts.** `journey`: walks keep label, interval, check-ins, end, SOS link; NO destination or location in requests or
+> answers, the walk location / escalation / circle-alert endpoints are gone (paragraphs below about 4B / 4C walk
+> reports and destinations are history). `common/sms`: `SmsGateway` port, `Fast2SmsClient` = the ONE Fast2SMS client
+> (codes AND alerts; `Fast2SmsOtpSender` only formats the code), `DevFileSmsGateway` (default; prod refuses it).
+> `circlealert`: pure `AlertPolicy`, `AlertQueue` (each step its own transaction), `AlertDispatcher` (every 5 s +
+> `kick()` after `SosChanged` AFTER_COMMIT), `AlertKeys` (HMAC, `ALERT_SECRET`), `SafetyAlertService` /
+> `SafetyAlertController` (`/api/safety-alerts`, `/test`, `/api/emergencies/{id}/alerts`), `AlertStopAdminController`
+> (`/api/admin/alert-stops`), entities `AlertSetting`, `AlertStop`; `emergency/event/SosChanged` (emergency never
+> imports circlealert). Config `app.alerts.*`. Tests: `AlertPolicyTest`, `ServerAlertApiTest`, `AlertLogsTest`.
+
 Loaded when working on files under `backend/`. Conventions and invariants also stay in `CLAUDE.md` §6; migrations in
 `database.md`; endpoints in `docs/API.md`.
 
