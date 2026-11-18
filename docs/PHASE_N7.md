@@ -509,3 +509,39 @@ their JSON files outside the repo; give the Android config values for `local.pro
   SOS screen follows an active SOS and stops when it ends / 404 = gone, emergency treatment and no location in
   notifications). `gradlew testDebugUnitTest assembleDebug lintDebug`: **695 / 0**, build OK, lint 0 errors (the new
   warnings are `accessibilityHeading` on API < 28, as elsewhere).
+
+### C (2026-11-18): STARTED, STOPPED AT A CHECKPOINT (the owner's usage limit). N7 is NOT complete.
+- **Done in C so far:** security scan of the push code and git (no secret in git: the only private-key text is
+  `FcmClient`'s parser and `FcmClientTest`'s fixture; `.env` and `local.properties` git-ignored; push logs hold counts
+  and exception classes only). The last full runs (after A3, nothing changed since): backend `mvn -o clean test`
+  **564 / 0 / 0 / 2 skipped** (after B4), real-MySQL `MySqlTimestampStorageTest` 2 / 0; Android `gradlew testDebugUnitTest
+  assembleDebug lintDebug` **695 / 0**, build OK, lint 0 errors / 121 warnings.
+- **Firebase status:** NOT set up yet as far as this machine shows. The owner chose the live path; the agreed folder is
+  `C:\Users\ABDUL RAFIQ\Desktop\irl-secrets\` holding `google-services.json` and `fcm-dev.json` (never in the repo, never
+  committed, contents never printed). At the checkpoint the folder did not exist and no such files were found under the
+  user folder (names searched only). Nothing Firebase-related is configured: `android/local.properties` has no
+  `firebase.*` values (so the app builds with push OFF) and the backend runs `PUSH_PROVIDER=DEV_FILE` (default).
+- **Exact next steps (C, in order; do NOT redo A1–A3 / B1–B4):**
+  1. Check `Desktop\irl-secrets\` exists with both files. Read ONLY `project_info.project_number` (sender id),
+     `project_info.project_id`, `client[].client_info.mobilesdk_app_id` (app id) and `client[].api_key[0].current_key`
+     from `google-services.json` into git-ignored `android/local.properties` as `firebase.sender.id`,
+     `firebase.project.id`, `firebase.app.id`, `firebase.api.key` (never echo the key). Rebuild.
+  2. Start the development backend (port 8090, real MySQL v38) with `PUSH_PROVIDER=FCM` and
+     `FCM_CREDENTIALS_FILE=C:/Users/ABDUL RAFIQ/Desktop/irl-secrets/fcm-dev.json` in the process environment only.
+     Take a DB backup first (`db-backups/safesphere-dev-before-n7c-*.sql`); restore it afterwards.
+  3. Emulator (Google Play image) + the A23: Firebase end to end for every kind (plan ask/added/message/called off,
+     reply turn, said more, people request, new sign-in, membership, content decided, staff, Circle request, Circle SOS
+     start + end, On my way at due and nudge); taps / deep links land on the right screen; foreground suppression;
+     quiet at night; "Show what people wrote" off/on; lock screen public version; the IRL icon vs the siren.
+  4. Opening / logo check on both devices (signature draws, dot lands, REAL PEOPLE. REAL PLANS. REAL LIFE., I'M IN →,
+     reduced motion), launcher + themed icon, SOS tile icon.
+  5. Failure cases: backend down (generic line after 8 s on the phone; the queue sends later or expires), FCM refused
+     (`FCM_CREDENTIALS_FILE` wrong → the log says so, pushes wait), offline phone, permission denied (the card, Not
+     now = 30 days), multi-device (two sign-ins both get it), token lifecycle (sign-out removes the row at once, another
+     account on the same phone, reinstall = new token).
+  6. Full final runs (one at a time), security / privacy review of `6226ff8..HEAD`, then STATUS / HANDOFF / CLAUDE /
+     rules (`.claude/rules/android*.md`, `backend.md`, `database.md`: N7 paragraphs) and the final N7-C commit.
+- **Known unfinished:** everything in the list above; the rules files have no N7 paragraph yet; the pilot service
+  account (separate key) is a later step; the On my way server reminder can be a moment early against the phone's
+  clock (documented in A3).
+- **No known failing test or build issue.**

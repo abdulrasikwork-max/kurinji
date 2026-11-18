@@ -9,3 +9,10 @@
 # Never put passwords, tokens or API keys that must stay secret into the Android app:
 # anything shipped in an APK can be extracted.
 api.base.url=http://10.0.2.2:8080/
+
+# N7 (D27): push notifications. The Firebase app's four PUBLIC values (from google-services.json, which itself stays
+# outside the repo). Leave them out and the build simply has no push.
+# firebase.app.id=1:000000000000:android:0000000000000000
+# firebase.api.key=YOUR_FIREBASE_ANDROID_API_KEY
+# firebase.project.id=your-project-id
+# firebase.sender.id=000000000000

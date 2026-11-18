@@ -87,10 +87,10 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | **N4** | Moments, capture-only Create, Today, keep, daily question | **COMPLETE 2026-11-17**: B1-B4 (V35 on the DEVELOPMENT MySQL only), A1-A3, C; implemented, compiled, tested (Android 758, backend 468), manually verified on the emulator against the development backend (no real phone); decisions N-42 to N-87; results `docs/PHASE_N4.md` "As built": voice deferred, no video, no learned AI model, new-member period 7 days from `memberships.verified_at` |
 | N5 | Same / Say more / I'm in, private replies, plan threads, Replies tab | **COMPLETE 2026-11-18**, emulator-verified, no real phone (Android 804, backend 511; 3 walk fixes, N-103; `PHASE_N5.md` "C") |
 | N6 | Safety trim + automatic server-side SOS SMS, On my way, plan offer (`PHASE_N6.md`, D20–D25) | **BUILT 2026-11-18**: B1–B3 (V37 on the DEVELOPMENT MySQL only), A1–A3, C; implemented, compiled, tested (Android 655, backend 533), emulator-verified, A23 checked, live Fast2SMS verified (9 SMS; SOS → phone 7 s); TalkBack and delivery reports not; N-110 to N-117 |
-| N7 | Notifications + brand refresh (the IRL signature) (`PHASE_N7.md`, D26–D42) | **PROPOSED 2026-11-18**, waiting for approval (design only) |
+| N7 | Notifications + brand refresh (the IRL signature) (`PHASE_N7.md`, D26–D42 = N-118–N-134) | **A1, B1–B4, A2, A3 built 2026-11-18** (V38 dev MySQL only; backend 564, Android 695); **C stopped at a checkpoint**: no Firebase yet, NOT complete (`HANDOFF.md` top) |
 | N8 | Pilot launch at MIET (backups, SMS provider, policy texts, seeding, moderators) | planned |
 
-Next migration file **V38** (V37 = N6, DEVELOPMENT MySQL only, 2026-11-18). Each phase or sub-phase needs its own plan and the owner's approval first. The pilot still
+Next migration file **V39** (V38 = N7, DEVELOPMENT MySQL only, 2026-11-18). Each phase or sub-phase needs its own plan and the owner's approval first. The pilot still
 runs the old jar on schema V30 (its move to V32 deletes data: its own approved step).
 
 **Never implement early:** other communities / the community request system, multiple memberships, video, iPhone,
@@ -258,7 +258,7 @@ cd android
 
 ## 7. Database (MySQL `safesphere`, Flyway) — per-migration rules in `.claude/rules/database.md`
 
-Conventions: never edit an applied migration; next file is **V38** (V35–V37: development MySQL only); snake_case; `DATETIME(6)` stored in UTC; constraint
+Conventions: never edit an applied migration; next file is **V39** (V35–V38: development MySQL only); snake_case; `DATETIME(6)` stored in UTC; constraint
 prefixes `uk_`, `fk_`, `ck_`, `idx_`; FKs `ON DELETE CASCADE` (no orphans); InnoDB, utf8mb4_unicode_ci. "One active /
 one primary / one open" via a generated marker column + unique index. MySQL forbids CHECKs on cascading-FK columns
 (enforce those rules in code); write NULL cases out with `COALESCE` (a NULL makes `IN` UNKNOWN, which a CHECK lets pass);

@@ -1,3 +1,31 @@
+# CHECKPOINT 2026-11-18 (nineteenth session, end): **N7 IMPLEMENTATION DONE UP TO A3; C STARTED AND STOPPED** (the owner's usage limit). N7 is NOT complete. Nothing pushed, nothing deployed, pilot unchanged (old jar, V30).
+
+- **Commits (`irl-next`, local, unpushed):** `d005557` A1 the IRL signature · `54ef5cd` B1 push core (V38 written) ·
+  `368b7be` B2 producers · `b41a60f` B3 Safety Circle in the app + On my way push · `29cc0e4` B4 V38 on the development
+  MySQL + live run with the dev push sink · `9ca35d3` A2 Android push · `13a6708` A3 Android safety · plus this
+  checkpoint commit. Order followed: A1 → B1 → B2 → B3 → B4 → A2 → A3 → C. **Do not redo any of them.**
+- **Last runs (nothing changed in code since):** backend `mvn -o clean test` **564 / 0 / 0 / 2 skipped**; real-MySQL
+  `MySqlTimestampStorageTest` 2 / 0; Android `gradlew testDebugUnitTest assembleDebug lintDebug` **695 / 0**, build OK,
+  lint 0 errors / 121 warnings. No known failing test or build issue.
+- **Database:** development MySQL at **v38, 45 tables** (backups `db-backups/safesphere-dev-before-v38-20261118.sql` and
+  `...-after-v38-before-b4-walk-20261118.sql`; restored to the latter after the B4 run). Next migration file **V39**.
+- **Two defects found and fixed during B4 (recorded in `PHASE_N7.md` B4):** `high_priority` is a MySQL reserved word
+  (column renamed `urgent` before V38 was ever applied); sign-out left the phone row until the hourly clean-up (now
+  removed at once via `common/event/SessionsEnded`).
+- **Firebase:** NOT set up on this machine yet. Agreed folder (outside the repo, never committed, contents never
+  printed): `C:\Users\ABDUL RAFIQ\Desktop\irl-secrets\` with `google-services.json` and `fcm-dev.json`. At the checkpoint
+  the folder did not exist. `android/local.properties` has no `firebase.*` values (push OFF in builds); the backend
+  defaults to `PUSH_PROVIDER=DEV_FILE`.
+- **Exact next step:** N7-C as listed step by step at the end of `docs/PHASE_N7.md` ("C ... STOPPED AT A CHECKPOINT"):
+  check the secrets folder → the four `firebase.*` values into `local.properties` → backend with `PUSH_PROVIDER=FCM` +
+  `FCM_CREDENTIALS_FILE` (environment only, DB backup first) → Firebase end to end on the emulator and the A23 for every
+  kind, deep links, opening / logo / icons, failure cases, multi-device, token lifecycle → final runs, security review
+  of `6226ff8..HEAD`, docs (STATUS, HANDOFF, CLAUDE, the N7 paragraphs in `.claude/rules/`) → the N7-C commit.
+- **Devices:** the A23 (R5CW42E9RQW) still has an N6 debug build (no N7 yet); the pilot build must be reinstalled by the
+  owner to use the pilot. Emulator and backend are stopped.
+
+---
+
 # CHECKPOINT 2026-11-18 (eighteenth session, end): **N7 PROPOSED, waiting for the owner's approval.** Design only (`docs/PHASE_N7.md`): no code, no migration, no dependency, no deployment. N6 is complete (live Fast2SMS verified). Nothing pushed, pilot untouched.
 
 - **N7 = notifications + brand refresh.** Pointer pushes over FCM (data-only `{t, s, m, v}`, the phone renders from IRL's API, Google never sees content); 14 kinds and a never-list; anti-noise rules (one push per plan until Replies is opened, batching, caps, quiet at night, 24 h auto-dismiss); Safety Circle in the app (consent-based linking, SOS push in addition to SMS); On my way server reminder as a second alarm; account / membership / moderation / staff notices; V38 (5 tables).
