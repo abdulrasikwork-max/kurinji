@@ -15,8 +15,9 @@ import com.safesphere.app.feature.safewalk.domain.CheckInPhase
 
 /**
  * "On my way" reminders (N6, D22) on the high-importance channel. "There yet?" has [I'm there] [More time]; the one
- * nudge 5 minutes later also offers SOS (the same cancellable countdown, through the non-exported SosEntryActivity) and
- * Call 112 (the dialer; the person presses call). Texts are generic (no label, no location) and the lock screen shows
+ * nudge 5 minutes later has [I'm there] [SOS] [Call 112] (at most three buttons fit; More time is inside IRL): SOS = the
+ * same cancellable countdown, through the non-exported SosEntryActivity; Call 112 = the dialer (the person presses
+ * call). Texts are generic (no label, no location) and the lock screen shows
  * only a neutral public version. Nothing here sends anything to anyone.
  */
 class AndroidSafeWalkAlerts(context: Context) : SafeWalkAlerts {
@@ -35,11 +36,14 @@ class AndroidSafeWalkAlerts(context: Context) : SafeWalkAlerts {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .addAction(R.drawable.ic_check_circle, appContext.getString(R.string.omw_action_there),
                 actionIntent(CheckInActionReceiver.ACTION_THERE, 2))
-            .addAction(R.drawable.ic_history, appContext.getString(R.string.omw_action_more_time),
-                actionIntent(CheckInActionReceiver.ACTION_MORE_TIME, 3))
+        // Android shows at most three buttons on a notification (N6-C: a fourth, Call 112, was silently left out). The
+        // nudge keeps I'm there, SOS and Call 112; More time stays one tap away inside IRL (the notification opens it).
         if (nudge) {
             builder.addAction(R.drawable.ic_shield_alert, appContext.getString(R.string.omw_action_sos), sosIntent())
             builder.addAction(R.drawable.ic_shield_alert, appContext.getString(R.string.omw_action_call), dialIntent())
+        } else {
+            builder.addAction(R.drawable.ic_history, appContext.getString(R.string.omw_action_more_time),
+                actionIntent(CheckInActionReceiver.ACTION_MORE_TIME, 3))
         }
         notify(builder.build())
     }

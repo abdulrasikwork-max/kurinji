@@ -109,6 +109,37 @@ class SafeWalkScreenTest {
     }
 
     @Test
+    fun `each reminder has at most three buttons, the nudge keeps SOS and Call 112 (N6-C, found on the emulator)`() {
+        val alerts = File("src/main/java/com/safesphere/app/feature/safewalk/session/AndroidSafeWalkAlerts.kt").readText()
+        val show = alerts.substringAfter("override fun show(").substringBefore("override fun clear(")
+        val shared = show.substringBefore("if (nudge) {")
+        val nudge = show.substringAfter("if (nudge) {").substringBefore("} else {")
+        val reminder = show.substringAfter("} else {").substringBefore("notify(")
+        fun actions(part: String) = Regex("""\.addAction\(""").findAll(part).count()
+        assertTrue("Android shows at most three buttons", actions(shared) + actions(nudge) <= 3)
+        assertTrue(actions(shared) + actions(reminder) <= 3)
+        assertTrue(shared.contains("omw_action_there"))
+        assertTrue(nudge.contains("omw_action_sos") && nudge.contains("omw_action_call"))
+        assertTrue(reminder.contains("omw_action_more_time"))
+        assertFalse("the nudge text names no button it does not have", string("omw_nudge_text").contains("More time"))
+    }
+
+    @Test
+    fun `no visible text calls the feature Safe Walk, and no text says On my way uses location (N6-C)`() {
+        // Only the two lines that describe records of walks started before N6 keep the old name.
+        val history = setOf("detail_walk_destination", "alert_kind_walk_no_response")
+        val named = Regex("<string name=\"([a-z0-9_]+)\">(.*?)</string>", RegexOption.DOT_MATCHES_ALL).findAll(strings)
+            .filter { it.groupValues[1] !in history && it.groupValues[2].contains("Safe Walk", ignoreCase = true) }
+            .map { it.groupValues[1] }.toList()
+        assertEquals(emptyList<String>(), named)
+        assertTrue(string("ready_location_on").contains("an SOS can share where you are"))
+        assertFalse(string("ready_location_off").contains("On my way"))
+        val channels = File("src/main/java/com/safesphere/app/core/notifications/NotificationChannels.kt").readText()
+        assertTrue("the shake countdown channel is deleted once", channels.contains("deleteNotificationChannel(RETIRED_SOS_COUNTDOWN)"))
+        assertFalse(channels.contains("createNotificationChannel(countdown)"))
+    }
+
+    @Test
     fun `the notes hold only the label and the time - no location, no link, nobody else's name`() {
         for (name in listOf("omw_note_going_to", "omw_note_going", "omw_note_there_to", "omw_note_there")) {
             val text = string(name)

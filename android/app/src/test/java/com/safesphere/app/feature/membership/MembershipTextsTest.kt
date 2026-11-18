@@ -38,7 +38,7 @@ class MembershipTextsTest {
     @Test
     fun `a ban and the waiting time say that sign-in and the safety tools keep working`() {
         val unchanged = strings.getValue("membership_safety_unchanged")
-        for (part in listOf("Sign-in", "SOS", "Safe Walk", "Safety Circle")) assertTrue(part, unchanged.contains(part))
+        for (part in listOf("Sign-in", "SOS", "On my way", "Safety Circle")) assertTrue(part, unchanged.contains(part))
         assertTrue(strings.getValue("membership_intro").contains("SOS"))
         val screen = source("feature/membership/ui/MembershipFragment.kt")
         assertTrue(screen.contains("R.string.membership_banned") && screen.contains("R.string.membership_safety_unchanged"))
@@ -117,7 +117,7 @@ class MembershipTextsTest {
         }
         assertTrue(decide.contains("decodeByteArray"))
         val bans = strings.getValue("staff_bans_intro")
-        for (part in listOf("Sign-in", "SOS", "Safe Walk", "Safety Circle", "sees the reason")) assertTrue(part, bans.contains(part))
+        for (part in listOf("Sign-in", "SOS", "On my way", "Safety Circle", "sees the reason")) assertTrue(part, bans.contains(part))
         assertTrue(strings.getValue("staff_verifiers_intro").contains("not listed anywhere else"))
         for ((key, text) in strings.filterKeys { it.startsWith("staff_") }) {
             val rest = text.lowercase().replace("safe walk", "").replace("safety circle", "")
