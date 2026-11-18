@@ -10,7 +10,6 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.safesphere.app.feature.circlealert.domain.AlertChannel
-import com.safesphere.app.feature.circlealert.domain.AlertMemory
 import com.safesphere.app.feature.circlealert.domain.AlertTarget
 import com.safesphere.app.feature.circlealert.domain.CircleAlertSnapshot
 import com.safesphere.app.feature.circlealert.domain.CircleAlertStore
@@ -18,8 +17,6 @@ import com.safesphere.app.feature.circlealert.domain.CircleDelivery
 import com.safesphere.app.feature.circlealert.domain.CircleMessageKind
 import com.safesphere.app.feature.circlealert.domain.CircleRecipient
 import com.safesphere.app.feature.circlealert.domain.DeliveryStatus
-import com.safesphere.app.feature.circlealert.domain.EmergencyAlertMemory
-import com.safesphere.app.feature.circlealert.domain.WalkAlertMemory
 import java.io.IOException
 import java.time.Instant
 import kotlinx.coroutines.flow.catch
@@ -63,28 +60,13 @@ class DataStoreCircleAlertStore(context: Context) : CircleAlertStore {
 
     private class Stored(
         val userId: Long = 0,
-        val autoSms: Boolean = false,
         val recipients: List<StoredRecipient>? = null,
-        val walks: Map<String, StoredWalk>? = null,
-        val emergencies: Map<String, StoredEmergency>? = null,
         val deliveries: List<StoredDelivery>? = null,
         val pending: List<StoredDelivery>? = null
     ) {
         fun toDomain() = CircleAlertSnapshot(
             userId = userId,
-            autoSms = autoSms,
             recipients = recipients.orEmpty().map { CircleRecipient(it.contactId, it.name.orEmpty(), it.phone.orEmpty()) },
-            memory = AlertMemory(
-                walks = walks.orEmpty().mapKeys { it.key.toLong() }.mapValues {
-                    WalkAlertMemory(it.value.alertsSent, it.value.awaitingAllClear, Instant.ofEpochMilli(it.value.updatedAt))
-                },
-                emergencies = emergencies.orEmpty().mapKeys { it.key.toLong() }.mapValues {
-                    EmergencyAlertMemory(
-                        Instant.ofEpochMilli(it.value.startedAt), it.value.startSent, it.value.skipped,
-                        it.value.locationFollowUpPending, it.value.endSent, Instant.ofEpochMilli(it.value.updatedAt)
-                    )
-                }
-            ),
             deliveries = deliveries.orEmpty().mapNotNull { it.toDomain() },
             pendingReports = pending.orEmpty().mapNotNull { it.toDomain() }
         )
@@ -92,17 +74,7 @@ class DataStoreCircleAlertStore(context: Context) : CircleAlertStore {
         companion object {
             fun from(s: CircleAlertSnapshot) = Stored(
                 userId = s.userId,
-                autoSms = s.autoSms,
                 recipients = s.recipients.map { StoredRecipient(it.contactId, it.name, it.phoneNumber) },
-                walks = s.memory.walks.map { (id, w) ->
-                    id.toString() to StoredWalk(w.alertsSent, w.awaitingAllClear, w.updatedAt.toEpochMilli())
-                }.toMap(),
-                emergencies = s.memory.emergencies.map { (id, e) ->
-                    id.toString() to StoredEmergency(
-                        e.startedAt.toEpochMilli(), e.startSent, e.skipped, e.locationFollowUpPending, e.endSent,
-                        e.updatedAt.toEpochMilli()
-                    )
-                }.toMap(),
                 deliveries = s.deliveries.map(StoredDelivery::from),
                 pending = s.pendingReports.map(StoredDelivery::from)
             )
@@ -110,17 +82,6 @@ class DataStoreCircleAlertStore(context: Context) : CircleAlertStore {
     }
 
     private class StoredRecipient(val contactId: Long = 0, val name: String? = null, val phone: String? = null)
-
-    private class StoredWalk(val alertsSent: Int = 0, val awaitingAllClear: Boolean = false, val updatedAt: Long = 0)
-
-    private class StoredEmergency(
-        val startedAt: Long = 0,
-        val startSent: Boolean = false,
-        val skipped: Boolean = false,
-        val locationFollowUpPending: Boolean = false,
-        val endSent: Boolean = false,
-        val updatedAt: Long = 0
-    )
 
     private class StoredDelivery(
         val clientRef: String? = null,

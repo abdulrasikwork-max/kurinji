@@ -26,7 +26,6 @@ import com.safesphere.app.testing.settle
 import com.safesphere.app.testing.sosRecorderForTest
 import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -99,64 +98,6 @@ class Phase17FEmergencyTest {
         assertEquals(EmergencyTrigger.MANUAL, UnsentEndingsCodec.decode(line.substringBeforeLast(";") + ";9")?.trigger)
     }
 
-    @Test
-    fun `the shake gesture opens the same cancellable countdown and the SOS it starts is recorded as SHAKE`() = runTest {
-        val shakes = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-        val viewModel = EmergencyViewModel(
-            emergencyRepository = server,
-            safetyCircleRepository = FakeSafetyCircleRepository(emptyList()),
-            locationSharing = sharing,
-            sos = sosRecorderForTest(server, store, 7L, rebinders = listOf(sharing)),
-            currentUserId = { 7L },
-            trackingServiceRunning = MutableStateFlow(false),
-            shakeEvents = shakes
-        )
-        settle()
-        assertEquals(EmergencyUiState.Idle, viewModel.uiState.value)
-
-        shakes.tryEmit(Unit)
-        runCurrent()
-        assertEquals("a shake shows the normal countdown, nothing has started", EmergencyUiState.Countdown(5), viewModel.uiState.value)
-        assertTrue(server.recordRequests.isEmpty())
-
-        // ... which can be cancelled exactly like the button's countdown.
-        viewModel.onCancelCountdownClicked()
-        runCurrent()
-        assertEquals(EmergencyUiState.Idle, viewModel.uiState.value)
-        advanceTimeBy(10_000)
-        assertTrue(server.recordRequests.isEmpty())
-
-        shakes.tryEmit(Unit)
-        runCurrent()
-        advanceTimeBy(5_100)
-        settle()
-        assertEquals(EmergencyTrigger.SHAKE, server.recordRequests.single().trigger)
-    }
-
-    @Test
-    fun `a shake while a countdown or an SOS is already running changes nothing`() = runTest {
-        val shakes = MutableSharedFlow<Unit>(extraBufferCapacity = 4)
-        val viewModel = EmergencyViewModel(
-            emergencyRepository = server,
-            safetyCircleRepository = FakeSafetyCircleRepository(emptyList()),
-            locationSharing = sharing,
-            sos = sosRecorderForTest(server, store, 7L, rebinders = listOf(sharing)),
-            currentUserId = { 7L },
-            trackingServiceRunning = MutableStateFlow(false),
-            shakeEvents = shakes
-        )
-        settle()
-        viewModel.onStartSosClicked() // the button: MANUAL
-        runCurrent()
-        shakes.tryEmit(Unit)
-        runCurrent()
-        advanceTimeBy(5_100)
-        settle()
-        assertEquals(EmergencyTrigger.MANUAL, server.recordRequests.single().trigger)
-        shakes.tryEmit(Unit)
-        settle()
-        assertEquals(1, server.recordRequests.size)
-    }
 
     // ---- last known position -------------------------------------------------------------------------------
 

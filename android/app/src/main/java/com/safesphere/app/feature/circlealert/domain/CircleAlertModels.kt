@@ -23,7 +23,8 @@ data class CircleRecipient(val contactId: Long, val name: String, val phoneNumbe
     override fun toString(): String = "CircleRecipient(id=$contactId, phone=<redacted>)"
 }
 
-enum class AlertChannel { SMS_AUTO, SMS_COMPOSER }
+/** SMS_AUTO = the phone texted by itself (before N6, old records only); SERVER_SMS = IRL's server texted (N6). */
+enum class AlertChannel { SMS_AUTO, SMS_COMPOSER, SERVER_SMS }
 
 /** Honest per-contact state of one alert. SENDING = handed to the phone, no result yet. */
 enum class DeliveryStatus { SENDING, SENT, DELIVERED, FAILED, COMPOSER_OPENED }

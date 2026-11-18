@@ -2,10 +2,13 @@ package com.safesphere.app.testing
 
 import com.safesphere.app.core.network.ApiError
 import com.safesphere.app.core.network.ApiResult
-import com.safesphere.app.core.sms.SmsAvailability
-import com.safesphere.app.core.sms.SmsResult
-import com.safesphere.app.core.sms.SmsSender
+import com.safesphere.app.feature.circlealert.domain.AlertChoice
+import com.safesphere.app.feature.circlealert.domain.AlertSettings
 import com.safesphere.app.feature.circlealert.domain.AlertTarget
+import com.safesphere.app.feature.circlealert.domain.EmergencyAlerts
+import com.safesphere.app.feature.circlealert.domain.SafetyAlertRepository
+import com.safesphere.app.feature.circlealert.domain.ServerAlertStatus
+import com.safesphere.app.feature.circlealert.domain.TestAlert
 import com.safesphere.app.feature.circlealert.domain.CircleAlertRepository
 import com.safesphere.app.feature.circlealert.domain.CircleAlertSnapshot
 import com.safesphere.app.feature.circlealert.domain.CircleAlertStore
@@ -17,26 +20,49 @@ import com.safesphere.app.feature.circlealert.session.CircleAlertController
 import com.safesphere.app.feature.circlealert.session.CircleAlertState
 import com.safesphere.app.feature.safetycircle.domain.SafetyContact
 import java.time.Instant
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 
-/** Records every message "sent"; [accept] = false makes send() fail at once; results are emitted by the test. */
-class FakeSmsSender(var availability: SmsAvailability = SmsAvailability.AVAILABLE) : SmsSender {
-    data class Sent(val requestId: String, val phoneNumber: String, val text: String)
+/** N6: a tiny "server" for the automatic-text settings: the choice, a test once a day, an SOS's alerts. */
+class FakeSafetyAlertRepository : SafetyAlertRepository {
+    val calls = mutableListOf<String>()
+    val emergencyCalls = mutableListOf<Long>()
+    var offline = false
+    var choice = AlertChoice.UNSET
+    var lastTest: TestAlert? = null
+    var emergency = EmergencyAlerts(AlertChoice.UNSET, emptyList())
 
-    val sent = mutableListOf<Sent>()
-    var accept = true
-    override val results = MutableSharedFlow<SmsResult>(extraBufferCapacity = 64)
+    private fun settingsNow() = AlertSettings(
+        choice = choice,
+        preview = "IRL SOS: Asha pressed SOS at 9:41 PM. Location: maps.google.com/?q=(where you are) Call 9000000000 now.",
+        contacts = emptyList(),
+        lastTest = lastTest,
+        testAvailable = lastTest == null
+    )
 
-    override fun availability(): SmsAvailability = availability
-
-    override fun send(requestId: String, phoneNumber: String, text: String): Boolean {
-        if (!accept || availability != SmsAvailability.AVAILABLE) return false
-        sent += Sent(requestId, phoneNumber, text)
-        return true
+    override suspend fun settings(): ApiResult<AlertSettings> {
+        calls += "settings"
+        return if (offline) ApiResult.Failure(ApiError.NO_CONNECTION) else ApiResult.Success(settingsNow())
     }
 
-    fun emit(result: SmsResult) = check(results.tryEmit(result))
+    override suspend fun choose(on: Boolean): ApiResult<AlertSettings> {
+        calls += "choose:$on"
+        if (offline) return ApiResult.Failure(ApiError.NO_CONNECTION)
+        choice = if (on) AlertChoice.ON else AlertChoice.OFF
+        return ApiResult.Success(settingsNow())
+    }
+
+    override suspend fun test(): ApiResult<AlertSettings> {
+        calls += "test"
+        if (offline) return ApiResult.Failure(ApiError.NO_CONNECTION)
+        if (lastTest != null) return ApiResult.Failure(ApiError.TOO_MANY_ATTEMPTS, "once a day")
+        lastTest = TestAlert(ServerAlertStatus.QUEUED, Instant.parse("2026-11-18T10:00:00Z"))
+        return ApiResult.Success(settingsNow())
+    }
+
+    override suspend fun forEmergency(emergencyId: Long): ApiResult<EmergencyAlerts> {
+        emergencyCalls += emergencyId
+        return if (offline) ApiResult.Failure(ApiError.NO_CONNECTION) else ApiResult.Success(emergency)
+    }
 }
 
 class FakeCircleAlertStore(var snapshot: CircleAlertSnapshot? = null) : CircleAlertStore {
@@ -83,15 +109,6 @@ class FakeCircleAlertRepository : CircleAlertRepository {
 class FakeCircleAlertController : CircleAlertController {
     override val state = MutableStateFlow(CircleAlertState(loaded = true))
     val calls = mutableListOf<String>()
-
-    override fun setAutoSms(enabled: Boolean) {
-        calls += "auto:$enabled"
-        state.value = state.value.copy(autoSms = enabled)
-    }
-
-    override fun refreshAvailability() {
-        calls += "refresh"
-    }
 
     override fun updateRecipients(contacts: List<SafetyContact>) {
         calls += "recipients:${contacts.size}"

@@ -66,12 +66,6 @@ import com.safesphere.app.feature.emergency.session.SosRecorder
 import com.safesphere.app.core.retired.RiseRetirement
 import com.safesphere.app.core.retired.VaultRetirement
 import com.safesphere.app.feature.emergency.entry.SosLaunchRequest
-import com.safesphere.app.feature.emergency.data.DataStoreSosOptionsStore
-import com.safesphere.app.feature.emergency.domain.SosOptionsStore
-import com.safesphere.app.feature.emergency.trigger.AndroidShakeCountdownNotifier
-import com.safesphere.app.feature.emergency.trigger.AndroidShakeSensor
-import com.safesphere.app.feature.emergency.trigger.ShakeSensor
-import com.safesphere.app.feature.emergency.trigger.ShakeSos
 import com.safesphere.app.core.notifications.NotificationPermission
 import com.safesphere.app.feature.emergency.domain.EmergencyLocationRepository
 import com.safesphere.app.feature.emergency.domain.EmergencyRepository
@@ -81,9 +75,11 @@ import com.safesphere.app.feature.onboarding.data.DataStoreOnboardingRepository
 import com.safesphere.app.feature.onboarding.domain.OnboardingRepository
 import com.safesphere.app.feature.safetycircle.data.RecipientSyncingSafetyCircleRepository
 import com.safesphere.app.feature.safetycircle.data.RemoteSafetyCircleRepository
-import com.safesphere.app.core.sms.AndroidSmsSender
 import com.safesphere.app.feature.circlealert.data.DataStoreCircleAlertStore
 import com.safesphere.app.feature.circlealert.data.RemoteCircleAlertRepository
+import com.safesphere.app.feature.circlealert.data.RemoteSafetyAlertRepository
+import com.safesphere.app.feature.circlealert.data.remote.SafetyAlertApi
+import com.safesphere.app.feature.circlealert.domain.SafetyAlertRepository
 import com.safesphere.app.feature.circlealert.data.remote.CircleAlertApi
 import com.safesphere.app.feature.circlealert.domain.CircleAlertRepository
 import com.safesphere.app.feature.circlealert.domain.CircleAlertStore
@@ -330,8 +326,6 @@ class AppContainer(context: Context) {
     val accountDataWiper: AccountDataWiper by lazy {
         AccountDataWiper(
             parts = listOf(
-                // Phase 17F: the deleted account's shake choice
-                { userId -> sosOptionsStore.forget(userId) },
                 // N4 (A2): the deleted account's last chosen audience
                 { userId -> audienceMemory.forget(userId) }
             ),
@@ -439,17 +433,19 @@ class AppContainer(context: Context) {
 
     // ---- Phase 4D: Safety Circle communication ---------------------------------------------------
 
-    /** Sends SMS only for automatic alerts the person opted into. Also reached by SmsResultReceiver. */
-    val smsSender: AndroidSmsSender by lazy { AndroidSmsSender(appContext) }
-
     private val circleAlertApi: CircleAlertApi by lazy { retrofit.create(CircleAlertApi::class.java) }
 
     val circleAlertRepository: CircleAlertRepository by lazy { RemoteCircleAlertRepository(circleAlertApi, apiCallHandler) }
 
-    /** The one holder for Safety Circle communication. Created with the container so it watches every walk. */
+    /** N6 (D20): the server's automatic Safety Circle texts: the choice, the preview, the test, the state in an SOS. */
+    val safetyAlertRepository: SafetyAlertRepository by lazy {
+        RemoteSafetyAlertRepository(retrofit.create(SafetyAlertApi::class.java), apiCallHandler)
+    }
+
+    /** The one holder for what the phone does for the Safety Circle (texting by hand, reports, Call 112). */
     val circleAlerts: CircleAlertController get() = circleAlertCoordinator
 
-    /** Phase 4D store (opt-in, Circle copy for offline SMS, alert memory); cleared by a sign-out or an account switch. */
+    /** Phase 4D store (Circle copy for SMS by hand, reports waiting for the server); cleared by a sign-out or an account switch. */
     private val circleAlertStore: CircleAlertStore by lazy { DataStoreCircleAlertStore(appContext) }
 
     private val circleAlertCoordinator: CircleAlertCoordinator by lazy {
@@ -457,8 +453,6 @@ class AppContainer(context: Context) {
             scope = applicationScope,
             store = circleAlertStore,
             repository = circleAlertRepository,
-            smsSender = smsSender,
-            walkState = safeWalk.state,
             emergencyLocation = emergencyLocationSharing.state,
             session = sessionStorage.session
         )
@@ -487,6 +481,12 @@ class AppContainer(context: Context) {
     // ---- Phase N4: places, cities and video are retired; what they kept on this phone is deleted once (no notice:
     //      private places only served the old composer) ---------------------------------------------------------
 
+    // ---- Phase N6: shake SOS and the SOS options are retired; their stored switch is deleted once (no notice) ----------
+
+    val safetyTrimRetirement: com.safesphere.app.core.retired.SafetyTrimRetirement by lazy {
+        com.safesphere.app.core.retired.SafetyTrimRetirement(appContext.filesDir)
+    }
+
     val oldSocialRetirement: OldSocialRetirement by lazy {
         OldSocialRetirement(appContext.filesDir, appContext.cacheDir, AndroidKeystoreKeyWrapper::forgetRetiredKey)
     }
@@ -494,58 +494,14 @@ class AppContainer(context: Context) {
     /** Phase 13F (F11): set only by the non-exported SosEntryActivity (shortcut, tile); memory only. */
     val sosLaunchRequest: SosLaunchRequest = SosLaunchRequest()
 
-    // ---- Phase 17F: SOS options (shake gesture) ---------------------------------------------------------------
-
-    /** Whether any screen of IRL is on the display (the shake gesture opens the SOS screen itself only then). */
-    val appVisibility: com.safesphere.app.core.lifecycle.AppVisibility
-        get() = (appContext as com.safesphere.app.SafeSphereApp).appVisibility
-
-    /** The person's own SOS choice (shake), per account, on this phone only. */
-    val sosOptionsStore: SosOptionsStore by lazy { DataStoreSosOptionsStore(appContext) }
-
-    /** The shake sensor, shared by the holder and by the options screen (which hides the switch without one). */
-    val shakeSensor: ShakeSensor by lazy { AndroidShakeSensor(appContext) }
-
-    /**
-     * Phase 17F (D-4): the one holder of the shake gesture. A shake only ever opens the cancellable 5 s countdown;
-     * with IRL off the screen (Safe Walk running) that countdown is a notification with a Cancel button, and at zero
-     * the SOS starts on the phone exactly as the SOS screen would have started it.
-     */
-    val shakeSos: ShakeSos by lazy {
-        ShakeSos(
-            scope = applicationScope,
-            sensor = shakeSensor,
-            notifier = AndroidShakeCountdownNotifier(appContext),
-            userId = sessionStorage.session.map { it?.user?.id }.distinctUntilChanged(),
-            options = sosOptionsStore::options,
-            sosRunning = sosRecorder.state.map { it.current != null }.distinctUntilChanged(),
-            walkRunning = safeWalk.state.map { it.isActive }.distinctUntilChanged(),
-            appVisible = appVisibility.visible,
-            notificationsAllowed = { NotificationPermission.isGranted(appContext) },
-            startSos = { trigger ->
-                val userId = sessionStorage.session.first()?.user?.id
-                if (userId == null) {
-                    false
-                } else {
-                    // The same steps the SOS screen takes when its countdown ends (EmergencyViewModel.startEmergency).
-                    val record = sosRecorder.startLocal(userId, trigger)
-                    safeWalk.onEmergencyStarted()
-                    emergencyLocationSharing.start(record.emergencyId, record.startedAt)
-                    circleAlertCoordinator.onEmergencyActive(record.emergencyId, record.startedAt)
-                    true
-                }
-            }
-        )
-    }
-
     init {
         applicationScope.launch(Dispatchers.IO) { riseRetirement.retire() }
         applicationScope.launch(Dispatchers.IO) { vaultRetirement.retire() }
         applicationScope.launch(Dispatchers.IO) { oldSocialRetirement.retire() }
+        applicationScope.launch(Dispatchers.IO) { safetyTrimRetirement.retire() }
         currentSession // Phase 11 C1: start following the session now, so the dialog never reads a stale "null"
         circleAlerts // start watching walks and emergencies right away (e.g. after a restart into a walk)
         sosRecorder // record an SOS that started or ended offline as soon as the server can be reached
-        shakeSos // Phase 17F: starts listening for the shake gesture if (and only if) the person switched it on
         // On a real sign-out (the person's own, the other phones signed out from elsewhere, a deleted or disabled account) forget the active
         // emergency / walk records kept on this phone. Phase 11 C1: an expired token is NOT a sign-out (the session stays,
         // marked "sign in to sync" if the refresh is refused), so this never runs for it.

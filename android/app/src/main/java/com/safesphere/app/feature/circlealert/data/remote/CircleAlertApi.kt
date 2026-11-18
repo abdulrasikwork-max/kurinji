@@ -12,9 +12,6 @@ interface CircleAlertApi {
     @POST("api/emergencies/{id}/circle-alerts")
     suspend fun reportForEmergency(@Path("id") id: Long, @Body body: ReportBatchDto): UploadResultDto
 
-    @POST("api/journeys/{id}/circle-alerts")
-    suspend fun reportForJourney(@Path("id") id: Long, @Body body: ReportBatchDto): UploadResultDto
-
     /** 204 No Content: declared without a return type (see CLAUDE.md gotchas). */
     @POST("api/emergencies/{id}/dial-prompts")
     suspend fun dialPrompt(@Path("id") id: Long)

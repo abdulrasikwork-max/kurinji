@@ -35,7 +35,6 @@ class SettingsFragment : ViewBindingFragment<FragmentSettingsBinding>(FragmentSe
 
             Header(R.string.settings_section_safety),
             Row(R.string.settings_safety_circle) { navController.navigate(R.id.safetyCircleFragment) },
-            Row(R.string.sos_options_title) { navController.navigate(R.id.sosOptionsFragment) },
             Row(R.string.settings_emergency_history) { navController.navigate(R.id.emergencyHistoryFragment) },
 
             Header(R.string.settings_section_privacy),

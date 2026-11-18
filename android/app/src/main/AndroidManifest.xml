@@ -11,7 +11,8 @@
         - POST_NOTIFICATIONS (Android 13+): the ongoing "location is being saved" notification.
         - FOREGROUND_SERVICE(_LOCATION): keeps location updates running with the screen off during an emergency.
         - ACCESS_NETWORK_STATE: knows when the phone is offline, to upload saved points when it is back online.
-        Deliberately NOT requested: ACCESS_BACKGROUND_LOCATION, CAMERA, CALL_PHONE, READ_SMS / RECEIVE_SMS.
+        Deliberately NOT requested: ACCESS_BACKGROUND_LOCATION, CAMERA, CALL_PHONE, SEND_SMS, READ_SMS / RECEIVE_SMS,
+        exact alarms, boot completed.
     -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -21,13 +22,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!--
-        Phase 4D. SEND_SMS is asked ONLY when the person switches on "Text my Safety Circle automatically", with a
-        reason; without it the app opens the SMS app instead (the person sends). Google Play restricts this permission:
-        a release needs the Permissions Declaration with the "Physical safety/emergency alerts to send SMS" use case.
+        N6 (D20, N-104): no SEND_SMS. The phone never texts anyone by itself: the SERVER texts the Safety Circle when the
+        person chose it, and the person can always text them from the SMS app (ACTION_SENDTO, no permission).
         "Call 112" uses ACTION_DIAL (the person presses call), so no calling permission is needed.
         Telephony is optional: tablets without SMS can still install the app.
     -->
-    <uses-permission android:name="android.permission.SEND_SMS" />
 
     <!-- N1: the sound-recording, recording-service and screen-lock permissions left with the Evidence Vault. Never
          declare CAMERA here: an app that declares it but has not been granted it may not use the camera-app intents at all. -->
@@ -104,16 +103,6 @@
         <!-- Phase 4B: the "I'm OK" button on a Safe Walk check-in notification. Only our own PendingIntent reaches it. -->
         <receiver
             android:name=".feature.safewalk.session.CheckInActionReceiver"
-            android:exported="false" />
-
-        <!-- Phase 4D: "sent" / "delivered" results of SMS the app sent itself. Only our own PendingIntents reach it. -->
-        <!-- Phase 17F: the Cancel button of the shake countdown notification. Only our own PendingIntent reaches it. -->
-        <receiver
-            android:name=".feature.emergency.trigger.ShakeCountdownCancelReceiver"
-            android:exported="false" />
-
-        <receiver
-            android:name=".core.sms.SmsResultReceiver"
             android:exported="false" />
 
         <!-- The ONE file provider: the camera app writes the ID photo (N3) into cache/id-photo/ and a moment's photo (N4)

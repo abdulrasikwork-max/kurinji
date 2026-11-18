@@ -99,21 +99,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Phase 17F (D-4): the opted-in shake gesture while IRL is on the screen opens the SOS screen with its normal
-        // cancellable countdown (the gesture only ever asks for that countdown; it starts nothing by itself). On the
-        // SOS screen itself its own view model starts the countdown. Not before sign-in.
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                appContainer.shakeSos.foregroundShakes.collect {
-                    if (NavigationRules.opensSosFrom(navController.currentDestination?.id)) {
-                        navController.navigate(R.id.emergencyFragment, androidx.core.os.bundleOf(
-                            com.safesphere.app.feature.emergency.ui.EmergencyFragment.ARG_AUTO_START to true,
-                            com.safesphere.app.feature.emergency.ui.EmergencyFragment.ARG_TRIGGER to
-                                com.safesphere.app.feature.emergency.domain.EmergencyTrigger.SHAKE.name))
-                    }
-                }
-            }
-        }
     }
 
     /** D19: a dot on the Replies tab (no number), spoken as "something new". */
@@ -157,7 +142,17 @@ class MainActivity : AppCompatActivity() {
     /** The SOS shortcut or tile while the app was already open (SosEntryActivity brings this activity to the front). */
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
-        if (NavigationRules.opensSosFrom(navController.currentDestination?.id)) openSosIfRequested()
+        val here = navController.currentDestination?.id
+        if (NavigationRules.opensSosFrom(here)) {
+            openSosIfRequested()
+        } else if (here == R.id.emergencyFragment &&
+            appContainer.sosLaunchRequest.consume(android.os.SystemClock.elapsedRealtime())
+        ) {
+            // N6 (the N2 note): IRL was left on the idle SOS screen: the shortcut / tile starts its countdown there.
+            val host = supportFragmentManager.findFragmentById(R.id.navHostFragment)
+            (host?.childFragmentManager?.primaryNavigationFragment as?
+                com.safesphere.app.feature.emergency.ui.EmergencyFragment)?.onLaunchRequested()
+        }
     }
 
     /**

@@ -373,7 +373,7 @@ class SafeWalkFragment : ViewBindingFragment<FragmentSafeWalkBinding>(FragmentSa
         val alerts = viewModel.circleAlertState.value
         val alerting = phase == CheckInPhase.MISSED || phase == CheckInPhase.NO_RESPONSE
         binding.noResponseBody.setText(
-            if (alerts.autoActive) R.string.safe_walk_no_response_body_auto else R.string.safe_walk_no_response_body
+            R.string.safe_walk_no_response_body // N6: the phone never texts by itself (A2 replaces this screen)
         )
         val line = walkCircleLineFor(alerts, AlertTarget.Walk(journeyId), alerting)
         binding.walkCircleStatus.isVisible = line != null

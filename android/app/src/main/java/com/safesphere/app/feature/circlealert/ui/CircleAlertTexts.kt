@@ -9,6 +9,7 @@ import com.safesphere.app.R
 import com.safesphere.app.feature.circlealert.domain.AlertTarget
 import com.safesphere.app.feature.circlealert.domain.CircleDelivery
 import com.safesphere.app.feature.circlealert.domain.CircleMessageKind
+import com.safesphere.app.feature.circlealert.domain.ContactAlertLine
 import com.safesphere.app.feature.circlealert.domain.DeliveryStatus
 import com.safesphere.app.feature.circlealert.session.CircleAlertState
 import java.time.Instant
@@ -20,9 +21,26 @@ data class DeliveryLabel(@StringRes val text: Int, val at: Instant? = null)
  * What one contact has been told about [target], in honest words. Pure mapping, unit-tested.
  * "Sent" always says delivery is not confirmed; "SMS app opened" always says we cannot know whether it was sent.
  */
-fun deliveryLabelFor(state: CircleAlertState, target: AlertTarget, contactId: Long): DeliveryLabel {
+fun deliveryLabelFor(
+    state: CircleAlertState,
+    target: AlertTarget,
+    contactId: Long,
+    server: ContactAlertLine? = null
+): DeliveryLabel {
+    // N6: what IRL's server did comes first; only a text the SMS service accepted is ever shown as texted.
+    when (server) {
+        ContactAlertLine.Waiting -> return DeliveryLabel(R.string.circle_status_irl_waiting)
+        is ContactAlertLine.Texted -> return DeliveryLabel(
+            if (server.late) R.string.circle_status_irl_texted_late else R.string.circle_status_irl_texted, server.at)
+        is ContactAlertLine.Delivered -> return DeliveryLabel(R.string.circle_status_irl_delivered, server.at)
+        is ContactAlertLine.TextYourself -> if (state.deliveriesFor(target).none { it.contactId == contactId }) {
+            return DeliveryLabel(R.string.circle_status_irl_cant)
+        }
+        ContactAlertLine.NotConfirmed -> return DeliveryLabel(R.string.circle_status_irl_unknown)
+        null -> Unit
+    }
     val latest = state.deliveriesFor(target).filter { it.contactId == contactId }.maxByOrNull { it.at }
-        ?: return DeliveryLabel(if (state.autoActive) R.string.circle_status_will_text else R.string.circle_status_not_notified)
+        ?: return DeliveryLabel(R.string.circle_status_not_notified)
     return when (latest.status) {
         DeliveryStatus.SENDING -> DeliveryLabel(R.string.circle_status_sending)
         DeliveryStatus.SENT -> DeliveryLabel(R.string.circle_status_sent, latest.at)
@@ -67,7 +85,6 @@ fun walkCircleLineFor(state: CircleAlertState, target: AlertTarget, alerting: Bo
         summary != null && summary.failed > 0 -> SummaryText(R.string.circle_walk_failed, summary.failed)
         summary != null && summary.composer > 0 -> SummaryText(R.string.circle_walk_composer)
         !alerting -> null
-        state.autoActive -> SummaryText(R.string.circle_walk_will_text)
         else -> SummaryText(R.string.circle_walk_not_notified)
     }
 }

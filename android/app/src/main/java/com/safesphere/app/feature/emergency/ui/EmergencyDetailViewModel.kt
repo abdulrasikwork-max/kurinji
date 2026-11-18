@@ -97,7 +97,11 @@ fun alertKindLabel(kind: CircleMessageKind?): Int = when (kind) {
 fun alertStatusLabel(status: DeliveryStatus?, channel: AlertChannel?): Int = when (status) {
     DeliveryStatus.DELIVERED -> R.string.alert_status_delivered
     DeliveryStatus.SENT, DeliveryStatus.SENDING ->
-        if (channel == AlertChannel.SMS_AUTO) R.string.alert_status_sent_auto else R.string.alert_status_sent
+        when (channel) {
+            AlertChannel.SMS_AUTO -> R.string.alert_status_sent_auto
+            AlertChannel.SERVER_SMS -> R.string.alert_status_sent_server
+            else -> R.string.alert_status_sent
+        }
     DeliveryStatus.FAILED -> R.string.alert_status_failed
     DeliveryStatus.COMPOSER_OPENED -> R.string.alert_status_composer
     null -> R.string.reason_other

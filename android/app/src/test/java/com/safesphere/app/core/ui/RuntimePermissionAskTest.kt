@@ -20,11 +20,11 @@ class RuntimePermissionAskTest {
     }
 
     @Test
-    fun `the SOS options buttons take label AND action from the same rule`() {
-        val fragment = File("src/main/java/com/safesphere/app/feature/safety/ui/SosOptionsFragment.kt").readText(Charsets.UTF_8)
+    fun `the Before-you-need-it notification ask uses the same rule, the SOS options screen being gone in N6`() {
+        val fragment = File("src/main/java/com/safesphere/app/feature/safety/ui/SafetyFragment.kt").readText(Charsets.UTF_8)
         assertTrue(fragment.contains("RuntimePermissionAsk.needsSettings"))
         assertFalse("no second, hand-written copy of the rule",
             Regex("asked\\w+ && !shouldShowRequestPermissionRationale").containsMatchIn(fragment))
-        assertTrue("the notification button is relabelled", fragment.contains("shakeNotificationsButton.setText("))
+        assertFalse(File("src/main/java/com/safesphere/app/feature/safety/ui/SosOptionsFragment.kt").exists())
     }
 }

@@ -27,6 +27,10 @@ import com.safesphere.app.feature.circlealert.domain.CircleMessageKind
 import com.safesphere.app.feature.circlealert.domain.CircleRecipient
 import com.safesphere.app.feature.circlealert.session.CircleAlertController
 import com.safesphere.app.feature.circlealert.session.CircleAlertState
+import com.safesphere.app.feature.circlealert.domain.AlertChoice
+import com.safesphere.app.feature.circlealert.domain.SafetyAlertRepository
+import com.safesphere.app.feature.circlealert.domain.ServerAlert
+import com.safesphere.app.feature.circlealert.domain.ServerAlertLines
 import com.safesphere.app.feature.safetycircle.domain.SafetyCircleRepository
 import com.safesphere.app.feature.safetycircle.domain.SafetyContact
 import kotlinx.coroutines.Job
@@ -46,8 +50,9 @@ import kotlinx.coroutines.launch
  * Phase 4A adds: while an emergency is ACTIVE, the phone's location is saved to the person's own emergency
  * record ([LocationSharingController]); the active emergency is also remembered on the phone
  * ([ActiveEmergencyStore]) so it can be shown again when the app is reopened offline.
- * Phase 4D adds: the Safety Circle is texted automatically ONLY if the person opted in ([CircleAlertController]);
- * otherwise the person can open the SMS app per contact. "Call 112" opens the dialer (level 4); the app never calls
+ * Phase 4D adds: the person can open the SMS app per contact ([CircleAlertController]). N6 (D20): IRL's SERVER texts
+ * the Circle when the person chose it; this screen reads what it did per contact ([serverAlerts]) and says plainly
+ * when it cannot reach IRL ("text them yourself"). "Call 112" opens the dialer (level 4); the app never calls
  * by itself. No microphone or camera.
  */
 class EmergencyViewModel(
@@ -60,18 +65,20 @@ class EmergencyViewModel(
     trackingServiceRunning: StateFlow<Boolean>,
     /** Phase 4B: the server ends an active Safe Walk when an SOS starts; this tells the phone's walk to stop. */
     private val onEmergencyStarted: () -> Unit = {},
-    /** Phase 4D: Safety Circle communication (automatic SMS if opted in, SMS app, "Call 112"). */
+    /** Phase 4D: Safety Circle communication by hand (SMS app, "Call 112"). */
     private val circleAlerts: CircleAlertController? = null,
     private val countdownSeconds: Int = DEFAULT_COUNTDOWN_SECONDS,
-    /** Phase 17F: the shake gesture while this screen is in front (starts the same cancellable countdown). */
-    shakeEvents: kotlinx.coroutines.flow.Flow<Unit> = kotlinx.coroutines.flow.emptyFlow(),
+    /** N6: what IRL's server texted (null = not read, as in most tests). */
+    private val alertRepository: SafetyAlertRepository? = null,
+    /** N6: the clock for "no answer from IRL for 15 s" (milliseconds). */
+    private val nowMillis: () -> Long = System::currentTimeMillis,
     /** Phase 17F: the phone's clock every few seconds, so a position that stops being new shows its age (null = off, as in tests). */
     clockTicks: kotlinx.coroutines.flow.Flow<Long?> = kotlinx.coroutines.flow.flowOf(null),
     /** Phase N2: asks for a fresh code (ending an SOS another phone started). The account screen's source in the app. */
     private val confirmationCodes: ConfirmationCodes = NoConfirmationCodes
 ) : ViewModel() {
 
-    /** What the Safety Circle has been told about this emergency (per contact), and whether automatic SMS is on. */
+    /** What the person texted by hand about this emergency (per contact). */
     val circleAlertState: StateFlow<CircleAlertState> = circleAlerts?.state ?: MutableStateFlow(CircleAlertState()).asStateFlow()
 
     private val _uiState = MutableStateFlow<EmergencyUiState>(EmergencyUiState.Loading)
@@ -101,9 +108,6 @@ class EmergencyViewModel(
             }
         }
         viewModelScope.launch { sos.state.collect(::onRecorderChanged) }
-        viewModelScope.launch {
-            shakeEvents.collect { if (_uiState.value == EmergencyUiState.Idle) onStartSosClicked(EmergencyTrigger.SHAKE) }
-        }
     }
 
     /**
@@ -174,8 +178,8 @@ class EmergencyViewModel(
     }
 
     /**
-     * [trigger] is MANUAL for the button, tile and shortcut. Phase 17F: SHAKE when the person's opted-in shake gesture
-     * opened the screen; it goes through this same cancellable 5 s countdown (nothing starts without it).
+     * [trigger] is MANUAL for the button, tile and shortcut (N6, D21: the shake gesture is gone; SHAKE stays only as a
+     * value of older records).
      */
     fun onStartSosClicked(trigger: EmergencyTrigger = EmergencyTrigger.MANUAL) {
         if (_uiState.value != EmergencyUiState.Idle) return
@@ -268,7 +272,111 @@ class EmergencyViewModel(
     fun onScreenVisible() {
         locationSharing.refresh()
         recheckActiveEmergency()
+        startAlertPolling()
     }
+
+    /** N6: the screen left the display: stop asking the server. */
+    fun onScreenHidden() {
+        alertPolling?.cancel()
+        alertPolling = null
+    }
+
+    // ---- N6: what IRL's server texted ----------------------------------------------------------------------------
+
+    /** [unreachable]: no answer from IRL for about 15 s while an SOS runs: the person is told to text them themselves. */
+    data class ServerAlertUi(
+        val choice: AlertChoice? = null,
+        val alerts: List<ServerAlert> = emptyList(),
+        val unreachable: Boolean = false
+    )
+
+    private val _serverAlerts = MutableStateFlow(ServerAlertUi())
+    val serverAlerts: StateFlow<ServerAlertUi> = _serverAlerts.asStateFlow()
+
+    private var alertPolling: Job? = null
+    private var alertKey: Any? = null
+    private var alertSince = 0L
+    private var lastAlertAnswer: Long? = null
+
+    private fun startAlertPolling() {
+        if (alertRepository == null || alertPolling?.isActive == true) return
+        alertPolling = viewModelScope.launch {
+            while (true) {
+                pollAlertsOnce()
+                delay(ALERT_POLL_MILLIS)
+            }
+        }
+    }
+
+    /** One look at the server (also called by tests). While Active, and for 2 min after the end (the closing text). */
+    suspend fun pollAlertsOnce() {
+        val repository = alertRepository ?: return
+        val now = nowMillis()
+        val state = _uiState.value
+        val key: Any
+        val emergencyId: Long
+        val onServer: Boolean
+        when (state) {
+            is EmergencyUiState.Active -> {
+                key = state.clientRef ?: state.event.id
+                emergencyId = state.event.id
+                onServer = !state.notOnServerYet
+            }
+            is EmergencyUiState.Ended -> {
+                key = alertKey ?: state.event.id
+                emergencyId = state.event.id
+                onServer = state.unsent == null
+            }
+            else -> return
+        }
+        if (key != alertKey) {
+            alertKey = key
+            alertSince = now
+            lastAlertAnswer = null
+            _serverAlerts.value = ServerAlertUi()
+        }
+        val ended = state is EmergencyUiState.Ended
+        if (ended && now - (lastAlertAnswer ?: alertSince) > ENDED_POLL_MILLIS) return
+        if (onServer && emergencyId > 0) {
+            val result = repository.forEmergency(emergencyId)
+            if (result is ApiResult.Success) {
+                lastAlertAnswer = now
+                _serverAlerts.value = ServerAlertUi(result.data.choice, result.data.alerts, unreachable = false)
+                return
+            }
+        }
+        if (!ended) {
+            val current = _serverAlerts.value
+            val unreachable = current.choice != AlertChoice.OFF &&
+                ServerAlertLines.unreachable(alertSince, lastAlertAnswer, now)
+            if (unreachable != current.unreachable) _serverAlerts.value = current.copy(unreachable = unreachable)
+        }
+    }
+
+    /** N6: contacts the person texted by hand during this SOS that IRL did not send a closing text to. */
+    fun tellOkContacts(): List<CircleRecipient> {
+        val ended = _uiState.value as? EmergencyUiState.Ended ?: return emptyList()
+        val alerts = circleAlerts ?: return emptyList()
+        val target = AlertTarget.Emergency(ended.event.id)
+        val handTexted = alerts.state.value.deliveriesFor(target)
+            .filter { it.kind == CircleMessageKind.SOS_STARTED }.mapNotNull { it.contactId }.toSet()
+        return alerts.state.value.recipients.filter {
+            it.contactId in handTexted && !ServerAlertLines.closingTexted(it.contactId, _serverAlerts.value.alerts)
+        }
+    }
+
+    fun tellOkText(): String? {
+        val ended = _uiState.value as? EmergencyUiState.Ended ?: return null
+        return circleAlerts?.composerText(AlertTarget.Emergency(ended.event.id), closingKind(ended))
+    }
+
+    fun onTellOkOpened(recipient: CircleRecipient) {
+        val ended = _uiState.value as? EmergencyUiState.Ended ?: return
+        circleAlerts?.onComposerOpened(AlertTarget.Emergency(ended.event.id), closingKind(ended), recipient)
+    }
+
+    private fun closingKind(ended: EmergencyUiState.Ended) =
+        if (ended.event.status == EmergencyStatus.RESOLVED) CircleMessageKind.SOS_RESOLVED else CircleMessageKind.SOS_CANCELLED
 
     // ---- internals ------------------------------------------------------------------------------
 
@@ -473,6 +581,9 @@ class EmergencyViewModel(
         const val DEFAULT_COUNTDOWN_SECONDS = 5
         const val TICK_MILLIS = 1_000L
         private const val CLOCK_TICK_MILLIS = 15_000L
+        const val ALERT_POLL_MILLIS = 5_000L
+        /** After the end, the screen keeps looking for 2 min (the closing text). */
+        const val ENDED_POLL_MILLIS = 120_000L
 
         /** Ending the SOS while these come back is kept on the phone and told to the server later (Phase 11). */
         private val OFFLINE_ERRORS = setOf(ApiError.NO_CONNECTION, ApiError.SERVER, ApiError.UNKNOWN)
@@ -489,7 +600,7 @@ class EmergencyViewModel(
                     trackingServiceRunning = container.trackingServiceRunning,
                     onEmergencyStarted = container.safeWalk::onEmergencyStarted,
                     circleAlerts = container.circleAlerts,
-                    shakeEvents = container.shakeSos.foregroundShakes,
+                    alertRepository = container.safetyAlertRepository,
                     clockTicks = kotlinx.coroutines.flow.flow {
                         while (true) {
                             emit(System.currentTimeMillis())

@@ -381,6 +381,17 @@
             android:gravity="center"
             android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
+        <!-- N6: for contacts the person texted by hand (IRL did not send them a closing text) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tellOkButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_lg"
+            android:minHeight="48dp"
+            android:text="@string/emergency_tell_ok"
+            android:visibility="gone" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/doneButton"
             android:layout_width="match_parent"

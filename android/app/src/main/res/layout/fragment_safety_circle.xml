@@ -23,7 +23,7 @@
                 app:noticeText="@string/safety_circle_notice"
                 app:noticeType="info" />
 
-            <!-- Phase 4D: opt-in for automatic SMS alerts (off by default; SEND_SMS asked only when switched on) -->
+            <!-- N6 (D20): IRL's server texts the Safety Circle in an SOS only after this one explicit choice -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Widget.SafeSphere.Card"
                 android:layout_width="match_parent"
@@ -36,43 +36,93 @@
                     android:orientation="vertical"
                     android:padding="@dimen/space_lg">
 
-                    <com.google.android.material.materialswitch.MaterialSwitch
-                        android:id="@+id/autoSmsSwitch"
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:minHeight="48dp"
-                        android:text="@string/auto_sms_label"
+                        android:accessibilityHeading="true"
+                        android:text="@string/alerts_title"
                         android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_xs"
-                        android:text="@string/auto_sms_body"
+                        android:text="@string/alerts_body"
                         android:textAppearance="@style/TextAppearance.SafeSphere.Body" />
 
                     <TextView
-                        android:id="@+id/autoSmsStatus"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_sm"
-                        android:accessibilityLiveRegion="polite"
-                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
-
-                    <TextView
+                        android:id="@+id/alertsPreviewLabel"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_md"
-                        android:text="@string/auto_sms_preview_label"
+                        android:text="@string/alerts_preview_label"
                         android:textAppearance="@style/TextAppearance.SafeSphere.Caption" />
 
                     <TextView
-                        android:id="@+id/autoSmsPreview"
+                        android:id="@+id/alertsPreview"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_xs"
                         android:textAppearance="@style/TextAppearance.SafeSphere.Body"
                         android:textIsSelectable="true" />
+
+                    <TextView
+                        android:id="@+id/alertsStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:accessibilityLiveRegion="polite"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.CardTitle" />
+
+                    <TextView
+                        android:id="@+id/alertsContacts"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Body"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/alertsOnButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_md"
+                        android:minHeight="48dp"
+                        android:text="@string/alerts_turn_on" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/alertsOffButton"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:minHeight="48dp"
+                        android:text="@string/alerts_turn_off" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/alertsTellButton"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:minHeight="48dp"
+                        android:text="@string/alerts_tell_in_advance" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/alertsTestButton"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/alerts_test" />
+
+                    <TextView
+                        android:id="@+id/alertsTestStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:accessibilityLiveRegion="polite"
+                        android:textAppearance="@style/TextAppearance.SafeSphere.Caption"
+                        android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

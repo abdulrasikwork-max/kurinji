@@ -272,3 +272,42 @@ anyone).
 - Database afterwards restored from `db-backups/safesphere-dev-after-v37-before-b3-walk-20261118.sql` (V37, 40 tables,
   nothing from the walk left: 0 SERVER_SMS rows, 0 alert settings, no contacts on 401). Backend stopped.
 - Not measured here (needs the owner and real SMS, step C): seconds to a real phone, the provider's review and spam rule.
+
+### A1 (2026-11-18): Android SOS side. Implemented, compiled, tested. NOT manually verified.
+- **Removed:** the phone's automatic SMS (`core/sms` = `AndroidSmsSender`, `SmsResultReceiver`, `SmsSender`;
+  `CircleAlertPolicy`; `AutoSmsViewModel`; the automatic parts of `CircleAlertCoordinator`: walk watching, the alert
+  memory, the SMS results), `SEND_SMS` and both receivers in the manifest; shake SOS (`feature/emergency/trigger`, 5
+  files), the SOS options screen (`SosOptionsFragment` / view model / layout / nav destination / Settings and hub rows),
+  `SosOptions` + `DataStoreSosOptionsStore`; `EmergencyViewModel.shakeEvents`, `EmergencyFragment.ARG_TRIGGER`, the
+  MainActivity shake collector. `EmergencyTrigger.SHAKE` stays only as a value of older records.
+- **One-time clean-up:** `core/retired/SafetyTrimRetirement` deletes `files/datastore/sos_options.preferences_pb`; the
+  circle-alert record no longer reads its old opt-in and memory fields and is saved again without them at the first
+  sign-in after the update (`CircleAlertCoordinator.onSession`).
+- **Server alerts:** `feature/circlealert/domain/ServerAlerts.kt` (choice, plans, statuses, kinds, reasons; every unknown
+  value fails closed: UNSET, "not confirmed", OTHER; pure `ServerAlertLines.lineFor` / `closingTexted` /
+  `unreachable` (15 s)), `data/remote/SafetyAlertApi`, `data/RemoteSafetyAlertRepository`, `AppContainer.safetyAlertRepository`.
+- **Safety Circle screen:** the switch card became "Automatic texts from IRL" (`SafetyAlertsViewModel`): the exact first
+  text from the server, the status (not chosen / on / off / could not check), the contacts IRL will not text and why
+  (stop-list numbers only as "IRL can't text this number"), "Yes, text them for me" / "No, I'll text them myself"
+  (nothing preselected), "Tell them in advance" (share sheet, plain note, no location, no link), "Test my alerts" (once a
+  day, its state; the 429 shown as "once a day").
+- **SOS screen:** polls `GET /api/emergencies/{id}/alerts` every 5 s while visible (and 2 min after the end for the closing
+  text); per-contact lines "IRL is about to text them" / "Texted by IRL at … · delivery not confirmed" (+ "sent late") /
+  "Delivered …" / "IRL couldn't text them. Text them yourself." / "Not confirmed"; what the person sent by hand stays
+  "SMS app opened · check that you sent it". The notice says on / off, or after about 15 s without an answer from IRL
+  (local SOS not yet on the server, or the alert call failing): "No connection to IRL: it can't text your Circle. Text
+  them yourself (works without internet) or call 112." "Tell them you're OK" after the end, for the people texted by
+  hand that IRL did not send a closing text to. Manual Text stays on every contact row; Call 112 unchanged.
+- **Fixes from the N1 / N2 notes:** the SOS screen asks for location and starts the tracking service only once the SOS
+  is ACTIVE, never during the 5 s countdown; "Before you need it" asks for location (`LocationAsk`) and notifications
+  (with `RuntimePermissionAsk.needsSettings`) ahead of time; the shortcut / tile used while IRL was left on the idle SOS
+  screen now starts the countdown there (`MainActivity.onNewIntent` → `EmergencyFragment.onLaunchRequested`).
+- **Ready check:** the SMS row became the alert choice row (on / off / not chosen / unknown; only with at least one
+  contact); location and notification rows ask instead of opening Settings.
+- **Details screen:** `AlertChannel.SERVER_SMS` → "texted by IRL (not confirmed)".
+- **Guards:** `N6SafetyGuardsTest` (the exact N6 permission list; no `SmsManager` / `SEND_SMS` / sensor code; the countdown
+  asks nothing; the SMS app is the only phone path); `Phase17FGuardsTest`, `RuntimePermissionAskTest`, `HonestyTextsTest`
+  trimmed to what still exists. Tests rewritten: `CircleAlertCoordinatorTest` (11), `CommunicationScreenTest` (server lines
+  fail-closed, the choice card, SOS polling and the 15 s fallback), `ReadyCheckTest`; new `SafetyTrimRetirementTest`.
+- `gradlew --offline testDebugUnitTest`: **757 run / 0 failures** (804 before A1: about 50 tests of the removed shake,
+  phone SMS and policy went, new ones came); `assembleDebug` OK. Not yet on a device or emulator (step C).

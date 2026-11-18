@@ -28,10 +28,8 @@ class RemoteCircleAlertRepository(
         if (final.isEmpty()) return ApiResult.Success(Unit)
         val body = ReportBatchDto(final.map { it.toDto() })
         return handler.execute {
-            when (target) {
-                is AlertTarget.Emergency -> api.reportForEmergency(target.id, body)
-                is AlertTarget.Walk -> api.reportForJourney(target.id, body)
-            }
+            // N6-B1: walks no longer report alerts (the server route is gone); only an SOS's are recorded.
+            if (target is AlertTarget.Emergency) api.reportForEmergency(target.id, body)
             Unit
         }
     }

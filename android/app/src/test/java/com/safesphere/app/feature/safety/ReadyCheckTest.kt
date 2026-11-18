@@ -1,7 +1,7 @@
 package com.safesphere.app.feature.safety
 
 import com.safesphere.app.R
-import com.safesphere.app.core.sms.SmsAvailability
+import com.safesphere.app.feature.circlealert.domain.AlertChoice
 import com.safesphere.app.feature.safety.ui.ReadyAction
 import com.safesphere.app.feature.safety.ui.ReadyCheck
 import com.safesphere.app.feature.safety.ui.ReadyInputs
@@ -18,13 +18,13 @@ import org.junit.Test
  */
 class ReadyCheckTest {
 
-    private val all = ReadyInputs(circleKnown = true, circlePeople = 2, autoSms = true, sms = SmsAvailability.AVAILABLE,
+    private val all = ReadyInputs(circleKnown = true, circlePeople = 2, alertChoice = AlertChoice.ON,
         locationAllowed = true, notificationsAllowed = true)
 
     @Test
     fun `everything set shows facts, and the only rows with a button open the screen that changes them`() {
         val rows = ReadyCheck.rows(all)
-        assertEquals(listOf(R.plurals.ready_circle_people, R.string.ready_sms_on, R.string.ready_location_on,
+        assertEquals(listOf(R.plurals.ready_circle_people, R.string.ready_alerts_on, R.string.ready_location_on,
             R.string.ready_notifications_on, R.string.ready_shortcut), rows.map { it.fact })
         assertEquals(2, rows.first().count)
         assertTrue(rows.none { it.mark == ReadyMark.NEEDS_ATTENTION })
@@ -32,20 +32,23 @@ class ReadyCheckTest {
 
     @Test
     fun `missing pieces are marked and lead to their screen`() {
-        val rows = ReadyCheck.rows(all.copy(circlePeople = 0, sms = SmsAvailability.PERMISSION_NEEDED,
+        val rows = ReadyCheck.rows(all.copy(circlePeople = 0, alertChoice = AlertChoice.UNSET,
             locationAllowed = false, notificationsAllowed = false))
         val byFact = rows.associateBy { it.fact }
         assertEquals(ReadyMark.NEEDS_ATTENTION, byFact.getValue(R.string.ready_circle_empty).mark)
-        assertEquals(ReadyAction.OPEN_SAFETY_CIRCLE, byFact.getValue(R.string.ready_sms_permission).action)
-        assertEquals(ReadyAction.OPEN_APP_SETTINGS, byFact.getValue(R.string.ready_location_off).action)
-        assertEquals(ReadyAction.OPEN_APP_SETTINGS, byFact.getValue(R.string.ready_notifications_off).action)
+        assertFalse("no alert row without anyone to text", R.string.ready_alerts_unset in byFact)
+        // N6: asked here, ahead of time, so the SOS countdown never has to ask.
+        assertEquals(ReadyAction.ASK_LOCATION, byFact.getValue(R.string.ready_location_off).action)
+        assertEquals(ReadyAction.ASK_NOTIFICATIONS, byFact.getValue(R.string.ready_notifications_off).action)
+        val unset = ReadyCheck.rows(all.copy(alertChoice = AlertChoice.UNSET)).first { it.fact == R.string.ready_alerts_unset }
+        assertEquals(ReadyMark.NEEDS_ATTENTION, unset.mark)
+        assertEquals(ReadyAction.OPEN_SAFETY_CIRCLE, unset.action)
     }
 
     @Test
-    fun `automatic SMS off is a choice, not a problem, and a phone without SMS gets no button`() {
-        assertEquals(ReadyMark.CHOICE, ReadyCheck.rows(all.copy(autoSms = false)).first { it.fact == R.string.ready_sms_off }.mark)
-        val noSms = ReadyCheck.rows(all.copy(sms = SmsAvailability.NOT_SUPPORTED)).first { it.fact == R.string.ready_sms_not_supported }
-        assertEquals(null, noSms.action)
+    fun `automatic texts off is a choice, not a problem, and an unknown choice is said as such`() {
+        assertEquals(ReadyMark.CHOICE, ReadyCheck.rows(all.copy(alertChoice = AlertChoice.OFF)).first { it.fact == R.string.ready_alerts_off }.mark)
+        assertEquals(ReadyMark.CHOICE, ReadyCheck.rows(all.copy(alertChoice = null)).first { it.fact == R.string.ready_alerts_unknown }.mark)
         assertTrue("an unread Circle copy is not reported as empty",
             ReadyCheck.rows(all.copy(circleKnown = false, circlePeople = 0)).any { it.fact == R.string.ready_circle_unknown })
         assertFalse("no notification row where the phone does not ask",

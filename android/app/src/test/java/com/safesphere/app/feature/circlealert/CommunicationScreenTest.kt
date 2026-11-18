@@ -2,7 +2,6 @@ package com.safesphere.app.feature.circlealert
 
 import com.safesphere.app.R
 import com.safesphere.app.core.network.ApiResult
-import com.safesphere.app.core.sms.SmsAvailability
 import com.safesphere.app.feature.circlealert.domain.AlertChannel
 import com.safesphere.app.feature.circlealert.domain.AlertTarget
 import com.safesphere.app.feature.circlealert.domain.CircleDelivery
@@ -26,9 +25,17 @@ import com.safesphere.app.feature.emergency.ui.alertStatusLabel
 import com.safesphere.app.feature.emergency.ui.detailEntriesFor
 import com.safesphere.app.feature.emergency.ui.escalationReasonLabel
 import com.safesphere.app.feature.safetycircle.data.RecipientSyncingSafetyCircleRepository
-import com.safesphere.app.feature.safetycircle.ui.AutoSmsEnableAction
-import com.safesphere.app.feature.safetycircle.ui.AutoSmsViewModel
-import com.safesphere.app.feature.safetycircle.ui.autoSmsStatusFor
+import com.safesphere.app.feature.safetycircle.ui.SafetyAlertsViewModel
+import com.safesphere.app.feature.circlealert.data.RemoteSafetyAlertRepository
+import com.safesphere.app.feature.circlealert.domain.AlertChoice
+import com.safesphere.app.feature.circlealert.domain.ContactAlertLine
+import com.safesphere.app.feature.circlealert.domain.EmergencyAlerts
+import com.safesphere.app.feature.circlealert.domain.ServerAlert
+import com.safesphere.app.feature.circlealert.domain.ServerAlertKind
+import com.safesphere.app.feature.circlealert.domain.ServerAlertLines
+import com.safesphere.app.feature.circlealert.domain.ServerAlertStatus
+import com.safesphere.app.feature.circlealert.domain.SkipCause
+import com.safesphere.app.testing.FakeSafetyAlertRepository
 import com.safesphere.app.testing.FakeActiveEmergencyStore
 import com.safesphere.app.testing.FakeCircleAlertController
 import com.safesphere.app.testing.FakeCircleAlertRepository
@@ -41,10 +48,10 @@ import com.safesphere.app.testing.MainDispatcherRule
 import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -52,7 +59,7 @@ import org.junit.Test
 import com.safesphere.app.testing.settle
 import com.safesphere.app.testing.sosRecorderForTest
 
-/** Phase 4D screens: honest status texts, the opt-in card, the SOS hooks, the details screen, contact sync. */
+/** Phase 4D + N6 screens: honest status texts, the alerts choice card, the SOS hooks and polling, the details screen, contact sync. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class CommunicationScreenTest {
 
@@ -70,68 +77,121 @@ class CommunicationScreenTest {
 
     @Test
     fun `per-contact status never claims more than is known`() {
-        val off = CircleAlertState(recipients = recipients)
-        assertEquals(DeliveryLabel(R.string.circle_status_not_notified), deliveryLabelFor(off, walk, 2))
-        val on = off.copy(autoSms = true, availability = SmsAvailability.AVAILABLE)
-        assertEquals(DeliveryLabel(R.string.circle_status_will_text), deliveryLabelFor(on, walk, 2))
+        val sos = AlertTarget.Emergency(9)
+        val none = CircleAlertState(recipients = recipients)
+        assertEquals(DeliveryLabel(R.string.circle_status_not_notified), deliveryLabelFor(none, sos, 2))
 
-        assertEquals(DeliveryLabel(R.string.circle_status_sent, t0),
-            deliveryLabelFor(on.copy(deliveries = listOf(delivery(DeliveryStatus.SENT))), walk, 2))
+        // N6: what IRL's server did comes first; SENT is always "delivery not confirmed".
+        assertEquals(DeliveryLabel(R.string.circle_status_irl_waiting), deliveryLabelFor(none, sos, 2, ContactAlertLine.Waiting))
+        assertEquals(DeliveryLabel(R.string.circle_status_irl_texted, t0),
+            deliveryLabelFor(none, sos, 2, ContactAlertLine.Texted(t0, late = false)))
+        assertEquals(DeliveryLabel(R.string.circle_status_irl_texted_late, t0),
+            deliveryLabelFor(none, sos, 2, ContactAlertLine.Texted(t0, late = true)))
+        assertEquals(DeliveryLabel(R.string.circle_status_irl_cant),
+            deliveryLabelFor(none, sos, 2, ContactAlertLine.TextYourself(SkipCause.NOT_INDIAN_MOBILE)))
+        assertEquals(DeliveryLabel(R.string.circle_status_irl_unknown), deliveryLabelFor(none, sos, 2, ContactAlertLine.NotConfirmed))
+
+        // What the person sent by hand: "SMS app opened", never "sent"; it replaces "text them yourself" once done.
+        val handSent = none.copy(deliveries = listOf(CircleDelivery("r1", sos, CircleMessageKind.SOS_STARTED, 2, "Meera",
+            AlertChannel.SMS_COMPOSER, DeliveryStatus.COMPOSER_OPENED, t0)))
+        assertEquals(DeliveryLabel(R.string.circle_status_composer, t0), deliveryLabelFor(handSent, sos, 2))
         assertEquals(DeliveryLabel(R.string.circle_status_composer, t0),
-            deliveryLabelFor(on.copy(deliveries = listOf(delivery(DeliveryStatus.COMPOSER_OPENED))), walk, 2))
-        // The latest attempt wins.
-        val later = on.copy(deliveries = listOf(delivery(DeliveryStatus.FAILED), delivery(DeliveryStatus.DELIVERED, at = t0.plusSeconds(5))))
-        assertEquals(R.string.circle_status_delivered, deliveryLabelFor(later, walk, 2).text)
+            deliveryLabelFor(handSent, sos, 2, ContactAlertLine.TextYourself(null)))
     }
 
     @Test
-    fun `the Safe Walk line says whether the circle will be, was, or was not told`() {
+    fun `the server's answer maps fail-closed - unknown statuses are not confirmed, only the first text decides`() {
+        val alerts = listOf(
+            ServerAlert(2, "Meera", ServerAlertKind.SOS_STARTED, ServerAlertStatus.SENT, null, t0, false),
+            ServerAlert(2, "Meera", ServerAlertKind.SOS_RESOLVED, ServerAlertStatus.SENT, null, t0.plusSeconds(60), false),
+            ServerAlert(3, "Ravi", ServerAlertKind.SOS_STARTED, ServerAlertStatus.of("BOUNCED_SOMEHOW"), null, t0, false),
+            ServerAlert(4, "Uncle", ServerAlertKind.SOS_STARTED, ServerAlertStatus.SKIPPED, SkipCause.of("NEW_REASON"), t0, false)
+        )
+        assertEquals(ContactAlertLine.Texted(t0, false), ServerAlertLines.lineFor(2, alerts))
+        assertEquals(ContactAlertLine.NotConfirmed, ServerAlertLines.lineFor(3, alerts))
+        assertEquals(ContactAlertLine.TextYourself(SkipCause.OTHER), ServerAlertLines.lineFor(4, alerts))
+        assertNull(ServerAlertLines.lineFor(5, alerts))
+        assertTrue(ServerAlertLines.closingTexted(2, alerts))
+        assertFalse(ServerAlertLines.closingTexted(3, alerts))
+        assertEquals(ServerAlertKind.OTHER, ServerAlertKind.of(null))
+        assertEquals(AlertChoice.UNSET, RemoteSafetyAlertRepository.choiceOf("MAYBE"))
+        // 15 s without an answer from IRL: "text them yourself".
+        assertFalse(ServerAlertLines.unreachable(since = 0, lastAnswer = null, now = 14_999))
+        assertTrue(ServerAlertLines.unreachable(since = 0, lastAnswer = null, now = 15_000))
+        assertFalse(ServerAlertLines.unreachable(since = 0, lastAnswer = 10_000, now = 20_000))
+    }
+
+    @Test
+    fun `the Safe Walk line says whether the circle was or was not told`() {
         val off = CircleAlertState(recipients = recipients)
         assertNull(walkCircleLineFor(off, walk, alerting = false))
         assertEquals(SummaryText(R.string.circle_walk_not_notified), walkCircleLineFor(off, walk, alerting = true))
-        val on = off.copy(autoSms = true, availability = SmsAvailability.AVAILABLE)
-        assertEquals(SummaryText(R.string.circle_walk_will_text), walkCircleLineFor(on, walk, alerting = true))
         assertEquals(SummaryText(R.string.circle_walk_sent, 1),
-            walkCircleLineFor(on.copy(deliveries = listOf(delivery(DeliveryStatus.SENT))), walk, alerting = true))
-        assertEquals(SummaryText(R.string.circle_walk_delivered, 1),
-            walkCircleLineFor(on.copy(deliveries = listOf(delivery(DeliveryStatus.DELIVERED))), walk, alerting = true))
-        assertEquals(SummaryText(R.string.circle_walk_all_clear), walkCircleLineFor(
-            on.copy(deliveries = listOf(delivery(DeliveryStatus.SENT), delivery(DeliveryStatus.SENT, CircleMessageKind.ALL_CLEAR, t0.plusSeconds(60)))),
-            walk, alerting = false
-        ))
+            walkCircleLineFor(off.copy(deliveries = listOf(delivery(DeliveryStatus.SENT))), walk, alerting = true))
+        assertEquals(SummaryText(R.string.circle_walk_composer),
+            walkCircleLineFor(off.copy(deliveries = listOf(delivery(DeliveryStatus.COMPOSER_OPENED))), walk, alerting = true))
     }
 
-    // ---- opt-in card ------------------------------------------------------------------------------
+    // ---- N6: the choice card ------------------------------------------------------------------------
 
     @Test
-    fun `the opt-in card status is honest about support, permission and contacts`() {
-        assertEquals(R.string.auto_sms_status_not_supported, autoSmsStatusFor(CircleAlertState(availability = SmsAvailability.NOT_SUPPORTED)))
-        assertEquals(R.string.auto_sms_status_off, autoSmsStatusFor(CircleAlertState(availability = SmsAvailability.AVAILABLE)))
-        assertEquals(R.string.auto_sms_status_permission,
-            autoSmsStatusFor(CircleAlertState(autoSms = true, availability = SmsAvailability.PERMISSION_NEEDED)))
-        assertEquals(R.string.auto_sms_status_no_contacts,
-            autoSmsStatusFor(CircleAlertState(autoSms = true, availability = SmsAvailability.AVAILABLE)))
-        assertEquals(R.string.auto_sms_status_on,
-            autoSmsStatusFor(CircleAlertState(autoSms = true, availability = SmsAvailability.AVAILABLE, recipients = recipients)))
-    }
-
-    @Test
-    fun `turning the switch on asks for SEND_SMS first, and only a grant enables it`() = runTest {
-        val controller = FakeCircleAlertController()
-        val viewModel = AutoSmsViewModel(controller, flowOf("Asha"))
-        controller.state.value = controller.state.value.copy(availability = SmsAvailability.PERMISSION_NEEDED)
-
-        assertEquals(AutoSmsEnableAction.ASK_PERMISSION, viewModel.onSwitchOn())
-        assertTrue("auto:true" !in controller.calls)
-        viewModel.onPermissionResult(granted = false)
-        assertTrue("auto:true" !in controller.calls)
-        viewModel.onPermissionResult(granted = true)
-        assertTrue("auto:true" in controller.calls)
-
-        controller.state.value = controller.state.value.copy(availability = SmsAvailability.NOT_SUPPORTED, autoSms = false)
-        assertEquals(AutoSmsEnableAction.NOT_SUPPORTED, viewModel.onSwitchOn())
+    fun `the alerts card - nothing is chosen for the person, a change goes to the server, the test once a day`() = runTest {
+        val repository = FakeSafetyAlertRepository()
+        val viewModel = SafetyAlertsViewModel(repository)
+        viewModel.load()
         advanceUntilIdle()
-        assertTrue(viewModel.ui.value.preview.contains("Asha started an emergency alert"))
+        assertEquals(AlertChoice.UNSET, viewModel.ui.value.settings?.choice)
+        assertTrue(viewModel.ui.value.settings?.preview!!.startsWith("IRL SOS: Asha"))
+
+        viewModel.choose(true)
+        advanceUntilIdle()
+        assertEquals(AlertChoice.ON, viewModel.ui.value.settings?.choice)
+        assertEquals(listOf("settings", "choose:true"), repository.calls)
+
+        viewModel.test()
+        advanceUntilIdle()
+        assertEquals(ServerAlertStatus.QUEUED, viewModel.ui.value.settings?.lastTest?.status)
+        viewModel.test()
+        advanceUntilIdle()
+        assertTrue(viewModel.ui.value.testLimit)
+
+        repository.offline = true
+        viewModel.load()
+        advanceUntilIdle()
+        assertTrue(viewModel.ui.value.failed)
+        assertEquals(AlertChoice.ON, viewModel.ui.value.settings?.choice) // the last answer stays on screen
+    }
+
+    @Test
+    fun `the SOS screen reads what IRL texted, and says so when it cannot reach IRL for 15 s`() = runTest {
+        val emergencies = FakeEmergencyRepository().apply { historyResult = ApiResult.Success(listOf(event(id = 9))) }
+        val alerts = FakeSafetyAlertRepository()
+        var clock = 0L
+        val viewModel = EmergencyViewModel(
+            emergencyRepository = emergencies,
+            safetyCircleRepository = FakeSafetyCircleRepository(listOf(contact(1, "Mum", primary = true))),
+            locationSharing = FakeLocationSharingController(),
+            sos = sosRecorderForTest(emergencies, FakeActiveEmergencyStore()),
+            currentUserId = { 7L },
+            trackingServiceRunning = MutableStateFlow(false),
+            alertRepository = alerts,
+            nowMillis = { clock }
+        )
+        settle()
+        alerts.emergency = EmergencyAlerts(AlertChoice.ON, listOf(
+            ServerAlert(1, "Mum", ServerAlertKind.SOS_STARTED, ServerAlertStatus.SENT, null, t0, false)))
+        viewModel.pollAlertsOnce()
+        assertEquals(ContactAlertLine.Texted(t0, false), ServerAlertLines.lineFor(1, viewModel.serverAlerts.value.alerts))
+        assertFalse(viewModel.serverAlerts.value.unreachable)
+
+        alerts.offline = true
+        clock = 10_000
+        viewModel.pollAlertsOnce()
+        assertFalse(viewModel.serverAlerts.value.unreachable)
+        clock = 15_000
+        viewModel.pollAlertsOnce()
+        assertTrue(viewModel.serverAlerts.value.unreachable)
+        assertEquals(listOf(9L, 9L, 9L), alerts.emergencyCalls)
     }
 
     // ---- SOS screen hooks ------------------------------------------------------------------------

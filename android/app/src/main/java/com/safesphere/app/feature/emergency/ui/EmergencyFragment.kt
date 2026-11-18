@@ -24,10 +24,12 @@ import com.safesphere.app.core.ui.showSessionExpiredDialog
 import com.safesphere.app.core.ui.toMessage
 import com.safesphere.app.databinding.FragmentEmergencyBinding
 import com.safesphere.app.feature.emergency.domain.EmergencyStatus
-import com.safesphere.app.feature.emergency.domain.EmergencyTrigger
 import com.safesphere.app.feature.emergency.location.LocationSharingStatus
 import android.widget.Toast
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.safesphere.app.feature.circlealert.domain.AlertChoice
 import com.safesphere.app.feature.circlealert.domain.AlertTarget
+import com.safesphere.app.feature.circlealert.domain.ServerAlertLines
 import com.safesphere.app.feature.circlealert.ui.deliveryLabelFor
 import com.safesphere.app.feature.circlealert.ui.openEmergencyDialer
 import com.safesphere.app.feature.circlealert.ui.openSmsComposer
@@ -80,19 +82,17 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         // Phase 13F (F11, F3): opened from the SOS shortcut or tile, the countdown starts by itself once the screen knows
         // no SOS is running (Idle). It stays cancellable for 5 s, exactly as after a tap on Start SOS. Once only.
         var autoStart = savedInstanceState == null && arguments?.getBoolean(ARG_AUTO_START) == true
-        val autoTrigger =
-            if (arguments?.getString(ARG_TRIGGER) == EmergencyTrigger.SHAKE.name) EmergencyTrigger.SHAKE else EmergencyTrigger.MANUAL
         collectWhenStarted(viewModel.uiState) { state ->
             if (autoStart && state != EmergencyUiState.Loading) {
                 autoStart = false
-                if (state == EmergencyUiState.Idle) viewModel.onStartSosClicked(autoTrigger)
+                if (state == EmergencyUiState.Idle) viewModel.onStartSosClicked()
             }
             render(state)
             renderLocation(viewModel.locationUi.value)
         }
-        collectWhenStarted(viewModel.circleAlertState) {
-            (viewModel.uiState.value as? EmergencyUiState.Active)?.let(::renderCircle)
-        }
+        collectWhenStarted(viewModel.circleAlertState) { rerenderCircle() }
+        collectWhenStarted(viewModel.serverAlerts) { rerenderCircle() }
+        binding.tellOkButton.setOnClickListener { chooseWhoToTellOk() }
         collectWhenStarted(viewModel.locationUi, ::renderLocation)
         collectWhenStarted(viewModel.sessionExpired) { expired ->
             if (expired) {
@@ -100,6 +100,15 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
                 showSessionExpiredDialog()
             }
         }
+    }
+
+    /**
+     * N6 (the N2 note): the SOS shortcut or tile used while this screen was already open and idle starts the same
+     * cancellable countdown (before, one more tap on Start SOS was needed). Called by MainActivity only after it consumed
+     * an in-memory SosLaunchRequest.
+     */
+    fun onLaunchRequested() {
+        if (viewModel.uiState.value == EmergencyUiState.Idle) viewModel.onStartSosClicked()
     }
 
     override fun onStart() {
@@ -110,6 +119,7 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
 
     override fun onStop() {
         super.onStop()
+        viewModel.onScreenHidden()
         // Next time the screen is visible, make sure the service is (still) running.
         serviceStarter.reset()
     }
@@ -207,16 +217,32 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
             onClosed = { endCodeDialog = null })
     }
 
-    /** Phase 4D: who has been told what, honestly, and "Text" per contact (the person sends it from the SMS app). */
+    private fun rerenderCircle() {
+        when (val state = viewModel.uiState.value) {
+            is EmergencyUiState.Active -> renderCircle(state)
+            is EmergencyUiState.Ended -> renderTellOk()
+            else -> Unit
+        }
+    }
+
+    /**
+     * Phase 4D + N6: who has been told what, honestly (IRL's server texts first, then what the person sent by hand), and
+     * "Text" per contact (the person sends it from the SMS app, which works without internet).
+     */
     private fun renderCircle(state: EmergencyUiState.Active) {
         val alerts = viewModel.circleAlertState.value
+        val server = viewModel.serverAlerts.value
         val target = AlertTarget.Emergency(state.event.id)
-        binding.circleNotice.setMessage(getString(
-            if (alerts.autoActive) R.string.emergency_circle_auto_notice else R.string.emergency_circle_manual_notice
-        ))
+        binding.circleNotice.setMessage(getString(when {
+            server.unreachable -> R.string.emergency_circle_unreachable_notice
+            server.choice == AlertChoice.ON -> R.string.emergency_circle_auto_notice
+            else -> R.string.emergency_circle_manual_notice
+        }))
         binding.circleList.adapter = CircleMemberAdapter(
             members = state.circle,
-            statusFor = { contact -> deliveryLabelFor(alerts, target, contact.id) },
+            statusFor = { contact ->
+                deliveryLabelFor(alerts, target, contact.id, ServerAlertLines.lineFor(contact.id, server.alerts))
+            },
             onText = ::textContact
         )
         binding.circleEmpty.isVisible = state.circle.isEmpty()
@@ -241,7 +267,31 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
     /** Phase 11 C1: the server needs a new sign-in ("sign in to sync"); the SOS works on this phone regardless. */
     private fun signInNeeded(): Boolean = appContainer.currentSession.value?.needsSignIn == true
 
+    /** N6: "Tell them you're OK" for the people texted by hand (IRL sends its own closing text to the ones it texted). */
+    private fun renderTellOk() {
+        binding.tellOkButton.isVisible = viewModel.tellOkContacts().isNotEmpty()
+    }
+
+    private fun chooseWhoToTellOk() {
+        val people = viewModel.tellOkContacts()
+        val text = viewModel.tellOkText() ?: return
+        if (people.isEmpty()) return
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.emergency_tell_ok_title)
+            .setItems(people.map { it.name }.toTypedArray()) { _, which ->
+                val person = people[which]
+                if (openSmsComposer(requireContext(), person.phoneNumber, text)) {
+                    viewModel.onTellOkOpened(person)
+                } else {
+                    Toast.makeText(requireContext(), R.string.sms_app_unavailable, Toast.LENGTH_LONG).show()
+                }
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
     private fun renderEnded(state: EmergencyUiState.Ended) {
+        renderTellOk()
         val resolved = state.event.status == EmergencyStatus.RESOLVED
         binding.endedTitle.setText(if (resolved) R.string.emergency_ended_resolved_title else R.string.emergency_ended_cancelled_title)
         binding.endedMessage.setText(when {
@@ -335,13 +385,16 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
 
         // Ask once automatically, right when the emergency is active: that is the moment of need, and the
         // reason is on screen. Later attempts only happen when the person taps "Allow location".
-        if (ui.sharing.status == LocationSharingStatus.PERMISSION_NEEDED && !ui.permissionBlocked &&
+        // N6 (the N1 note): never while the 5 s countdown runs (a system dialog would cover CANCEL); "Before you need it"
+        // asks ahead of time.
+        val sosRunning = viewModel.uiState.value is EmergencyUiState.Active
+        if (sosRunning && ui.sharing.status == LocationSharingStatus.PERMISSION_NEEDED && !ui.permissionBlocked &&
             !ui.sharing.signedOut && viewModel.consumeAutoLocationRequest()
         ) {
             requestLocationPermission()
         }
         // Only while location is tracked (permission granted) and this screen is in front (Android 12+ rule).
-        serviceStarter.startIfNeeded(ui.sharing.emergencyId, ui.sharing.isTracking, ui.backgroundTrackingActive)
+        if (sosRunning) serviceStarter.startIfNeeded(ui.sharing.emergencyId, ui.sharing.isTracking, ui.backgroundTrackingActive)
     }
 
     /** "3 min ago" / "2 h ago" for a position that is no longer new. */
@@ -378,8 +431,6 @@ class EmergencyFragment : ViewBindingFragment<FragmentEmergencyBinding>(Fragment
         /** Phase 13F (F11): set only by MainActivity after it consumed an in-memory SosLaunchRequest. */
         const val ARG_AUTO_START = "autoStart"
 
-        /** Phase 17F: "SHAKE" when the shake gesture opened the screen (still the same cancellable countdown). */
-        const val ARG_TRIGGER = "trigger"
     }
 
     private fun showOnly(visiblePanel: View) {

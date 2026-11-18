@@ -25,6 +25,9 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.safesphere.app.R
 import com.safesphere.app.appContainer
+import com.safesphere.app.core.notifications.NotificationPermission
+import com.safesphere.app.core.ui.LocationAsk
+import com.safesphere.app.core.ui.RuntimePermissionAsk
 import com.safesphere.app.core.ui.Motion
 import com.safesphere.app.core.ui.ViewBindingFragment
 import com.safesphere.app.core.ui.collectWhenStarted
@@ -34,7 +37,7 @@ import com.safesphere.app.databinding.FragmentSafetyBinding
 
 /**
  * Phase 13F: You → Safety, the hub of the safety tools (docs/PHASE13F_PLAN.md F7): the factual status card and the SOS
- * tile (both from the old Home), then Safe Walk (with check-ins), the Safety Circle, SOS options,
+ * tile (both from the old Home), then Safe Walk (with check-ins), the Safety Circle,
  * emergency history and the safety settings. Every row opens a working screen.
  */
 class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafetyBinding::inflate) {
@@ -43,10 +46,18 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
     private val session by activityViewModels<SessionStatusViewModel> { SessionStatusViewModel.factory(appContainer) }
     private val ready by viewModels<ReadyCheckViewModel> { ReadyCheckViewModel.factory(appContainer) }
 
+    /** N6: "Before you need it" asks for location here, ahead of time, through the one shared path (Phase 17D). */
+    private val locationAsk = LocationAsk(this) { refreshReady() }
+
+    /** N6: and for notifications (Android 13+), so the SOS countdown never has to stop for a system dialog. */
+    private val notificationAsk = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { refreshReady() }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // SOS opens the SOS screen (cancellable countdown); the Safety Circle is texted only with automatic SMS on.
+        // SOS opens the SOS screen (cancellable countdown); IRL texts the Safety Circle only if the person chose it (N6).
         binding.sosTile.setOnClickListener { findNavController().navigate(R.id.emergencyFragment) }
         binding.featureList.adapter = FeatureListAdapter(featureItems())
         collectWhenStarted(session.status) { status ->
@@ -65,6 +76,10 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
         super.onStart()
         session.onScreenVisible()
         // Back from Settings or the Safety Circle: read the answers again.
+        refreshReady()
+    }
+
+    private fun refreshReady() {
         val context = requireContext()
         fun granted(permission: String) =
             ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
@@ -101,13 +116,13 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
             if (action != null) {
                 item.action.setText(when (action) {
                     ReadyAction.OPEN_SAFETY_CIRCLE -> R.string.ready_action_circle
-                    ReadyAction.OPEN_APP_SETTINGS -> R.string.ready_action_settings
+                    ReadyAction.ASK_LOCATION, ReadyAction.ASK_NOTIFICATIONS -> R.string.ready_action_allow
                 })
                 item.action.setOnClickListener {
                     when (action) {
                         ReadyAction.OPEN_SAFETY_CIRCLE -> findNavController().navigate(R.id.safetyCircleFragment)
-                        ReadyAction.OPEN_APP_SETTINGS -> startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            Uri.fromParts("package", requireContext().packageName, null)))
+                        ReadyAction.ASK_LOCATION -> locationAsk.ask()
+                        ReadyAction.ASK_NOTIFICATIONS -> askNotifications()
                     }
                 }
             }
@@ -125,10 +140,6 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
             FeatureItem(R.drawable.ic_group, R.string.feature_safety_circle_title, R.string.feature_safety_circle_description) {
                 nav.navigate(R.id.safetyCircleFragment)
             },
-            // Phase 17F: shake to start SOS - off until the person turns it on.
-            FeatureItem(R.drawable.ic_tune, R.string.sos_options_title, R.string.sos_options_hub_description) {
-                nav.navigate(R.id.sosOptionsFragment)
-            },
             FeatureItem(R.drawable.ic_history, R.string.feature_emergency_history_title,
                 R.string.feature_emergency_history_description) { nav.navigate(R.id.emergencyHistoryFragment) },
             FeatureItem(R.drawable.ic_tune, R.string.feature_safety_settings_title, R.string.feature_safety_settings_description) {
@@ -140,6 +151,23 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
                 R.string.safety_hub_tile_title, R.string.safety_hub_tile_description) { requestSosTile() } else null
         )
     }
+
+    /** Asked once from here; refused before for good, the system shows nothing, so the app's settings page opens. */
+    private fun askNotifications() {
+        if (!NotificationPermission.isRuntimePermission()) return
+        if (NotificationPermission.isGranted(requireContext())) return refreshReady()
+        val settingsNeeded = RuntimePermissionAsk.needsSettings(
+            askedNotifications, shouldShowRequestPermissionRationale(NotificationPermission.PERMISSION))
+        askedNotifications = true
+        if (settingsNeeded) {
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", requireContext().packageName, null)))
+        } else {
+            notificationAsk.launch(NotificationPermission.PERMISSION)
+        }
+    }
+
+    private var askedNotifications = false
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestSosTile() {
