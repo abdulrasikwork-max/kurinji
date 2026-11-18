@@ -28,9 +28,13 @@ public class PushCleanupJob {
     private final PushMessageRepository messages;
     private final PushProperties properties;
     private final Clock clock;
+    private final org.springframework.transaction.support.TransactionTemplate inNewTransaction;
 
     public PushCleanupJob(PushDeviceRepository devices, PushMessageRepository messages, PushProperties properties,
-                          Clock clock) {
+                          Clock clock, org.springframework.transaction.PlatformTransactionManager transactions) {
+        this.inNewTransaction = new org.springframework.transaction.support.TransactionTemplate(transactions);
+        this.inNewTransaction.setPropagationBehavior(
+                org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         this.devices = devices;
         this.messages = messages;
         this.properties = properties;
@@ -44,6 +48,26 @@ public class PushCleanupJob {
             run();
         } catch (RuntimeException e) {
             log.warn("The push clean-up stopped ({}); the next run tries again", e.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * N7 (D28): a sign-in ended: its phone's token and queued pushes go at once (the hourly run would also find them;
+     * the send step already refuses an ended sign-in). Its own transaction: it runs after the auth commit.
+     */
+    @org.springframework.transaction.event.TransactionalEventListener(
+            phase = org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    public void on(com.safesphere.backend.common.event.SessionsEnded event) {
+        try {
+            inNewTransaction.executeWithoutResult(status -> {
+                LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS);
+                List<Long> ended = devices.findEnded(now, now.minus(properties.staleTokenAfter()));
+                if (ended.isEmpty()) return;
+                messages.deleteByDeviceIds(ended);
+                devices.deleteAllByIdInBatch(ended);
+            });
+        } catch (RuntimeException e) {
+            log.warn("Phones of ended sign-ins stay until the next clean-up ({})", e.getClass().getSimpleName());
         }
     }
 

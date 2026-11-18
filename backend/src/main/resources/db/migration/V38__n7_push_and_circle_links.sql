@@ -52,7 +52,7 @@ CREATE TABLE push_messages (
     user_id         BIGINT      NOT NULL,
     type            VARCHAR(24) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
     subject         VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-    high_priority   TINYINT(1)  NOT NULL,
+    urgent          TINYINT(1)  NOT NULL,                   -- Android priority HIGH (not "high_priority": a MySQL reserved word)
     ttl_seconds     INT         NOT NULL,
     not_before      DATETIME(6) NOT NULL,                   -- UTC
     expires_at      DATETIME(6) NOT NULL,                   -- UTC; never sent after this

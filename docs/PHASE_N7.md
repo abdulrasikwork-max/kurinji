@@ -209,7 +209,7 @@ new mark on top and keeps ஐ as history.
 |---|---|
 | `push_devices` | id, user_id → users, session_id → device_sessions (unique), token, token_hash (SHA-256, unique), app_version, created_at, updated_at |
 | `push_settings` | user_id (PK) → users, replies, plans, plan_messages, people, staff, updated_at (no row = defaults) |
-| `push_messages` | id, device_id → push_devices, user_id → users, type (closed list, binary), subject, collapse_key, high_priority, ttl_seconds, not_before, expires_at, status QUEUED/SENT/SKIPPED/FAILED/EXPIRED, attempts, next_attempt_at, sent_at, skip_reason, created_at |
+| `push_messages` | id, device_id → push_devices, user_id → users, type (closed list, binary), subject, collapse_key, urgent, ttl_seconds, not_before, expires_at, status QUEUED/SENT/SKIPPED/FAILED/EXPIRED, attempts, next_attempt_at, sent_at, skip_reason, created_at |
 | `circle_links` | id, contact_id → safety_contacts (unique), owner_user_id → users, member_user_id → users, status PENDING/ACCEPTED, created_at, decided_at |
 | `circle_link_mutes` | member_user_id → users, owner_user_id → users (PK of both), created_at |
 `AccountEraser` and its coverage test take every new reference to users.
@@ -396,3 +396,39 @@ their JSON files outside the repo; give the Android config values for `local.pro
   its first text, the view and its 404s, once per SOS, one end update, gone after 24 h; a false alarm tells nobody,
   ended elsewhere sends no update; On my way rows at due and due + 5, More time replaces, I'm there and an SOS remove).
   `mvn -o clean test` **564 / 0 / 0 / 2**.
+
+### B4 (2026-11-18): V38 on the development MySQL; live run with the development push sink. Applied, verified. Firebase live run NOT done (owner's credentials needed).
+- `spring.flyway.target=37` removed. Backup `db-backups/safesphere-dev-before-v38-20261118.sql` (schema 37, 40 tables).
+- **Rehearsal on `zz_` copies (real `users`, `device_sessions`, `safety_contacts` rows) found a real defect:**
+  `push_messages.high_priority` is a MySQL reserved word (`HIGH_PRIORITY`), a syntax error on MySQL that H2 accepted.
+  V38 had never been applied anywhere, so it was corrected in place: the column is `urgent` (entity `PushMessage`
+  too). Dry run afterwards: 34 cases (10 accepted + 24 refused), 0 findings: hash and event id case (binary regex), token
+  length, one token per sign-in and per hash, unknown and lower-case type / status, QUEUED ⇔ next attempt, SENT ⇔ sent
+  time, a closed row ⇔ a reason, subject characters / length / empty, ttl and attempts ranges, link status and
+  ACCEPTED ⇔ decided, one link per contact and per public id, one mute per pair. Deleting a device took its queue rows;
+  all 10 foreign keys read back CASCADE. Scratch tables dropped (40 tables again).
+- Applied by Flyway at start-up (0.17 s), schema v38, **45 tables** ("integer display width" warnings from `TINYINT(1)`,
+  as in V31 / V37). Real-MySQL test `MySqlTimestampStorageTest` 2 / 0.
+- **Live run (backend 8090, real MySQL, `PUSH_PROVIDER=DEV_FILE`, two fake numbers, nothing sent anywhere):** two
+  sign-ups; device registration 204, a bad token 400, no sign-in 401; settings defaults; a contact with the second
+  account's number → `inApp` false, the member's request `{id, ownerName}`, accept 204, then `inApp` true; SOS → the
+  member's view 404 before the first text; first location → `CIRCLE_SOS` written to the sink at once, the view 200 with
+  the text's facts and `https://maps.google.com/?q=10.81234,78.69012`, the owner's own read 404; I'm safe → one more
+  `CIRCLE_SOS`, the view `SAFE`; a second sign-in → `ACCOUNT_SIGN_IN` to the first phone; a walk → two `OMW_REMINDER`
+  rows (due + 0 s and + 300 s, urgent), Stop → none. The sink lines carry only kind, subject, event id, priority, ttl
+  and collapse key; the backend log holds no token, number, name or coordinate (searched: 0), only "Pushes: 1
+  accepted, ...".
+- **Second defect found by the live run, fixed:** sign-out left the phone's row until the hourly clean-up (pushes had
+  already stopped: the send step checks the sign-in), against D28 "deleted at sign-out". New neutral event
+  `common/event/SessionsEnded`, published by `DeviceSessionService` at every session end (sign-out, the same phone's
+  new sign-in, others signed out, refused refresh: reuse, expiry, disabled); `PushCleanupJob.on` deletes the phones of
+  ended sign-ins and their queue rows after the commit, in its own transaction (`TransactionTemplate`, never throws back
+  into sign-out). `PushApiTest` now asserts the row and its queued push are gone right after sign-out; re-checked live
+  on MySQL (4 phones → 2 after the sign-out: that one and an earlier ended one).
+- `mvn -o clean test` **564 / 0 / 0 / 2**. Database restored afterwards from
+  `db-backups/safesphere-dev-after-v38-before-b4-walk-20261118.sql` (v38, 45 tables, 0 push or link rows, no test
+  accounts). Backend stopped.
+- **Not done here: the live run against a real Firebase project.** It needs the owner's part (§11): the Firebase project
+  on the team account with 2-step sign-in, the Android app `com.safesphere.app`, a development service-account JSON
+  outside the repo (`FCM_CREDENTIALS_FILE`), and the Android config values for `local.properties`. Until then
+  `PUSH_PROVIDER=FCM` is untested against Google (the client is tested against a local stub: `FcmClientTest`).

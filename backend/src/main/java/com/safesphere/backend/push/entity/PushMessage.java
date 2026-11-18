@@ -40,7 +40,7 @@ public class PushMessage {
     @Column(name = "subject", nullable = false, updatable = false, length = 64)
     private String subject;
 
-    @Column(name = "high_priority", nullable = false, updatable = false)
+    @Column(name = "urgent", nullable = false, updatable = false)
     private boolean highPriority;
 
     @Column(name = "ttl_seconds", nullable = false, updatable = false)

@@ -97,16 +97,19 @@ public class DeviceSessionService {
         }
         if (previous && !now.isBefore(session.getRotatedAt().plus(properties.refreshReuseGrace()))) {
             session.revoke(SessionRevocation.REUSE_DETECTED, now);
+            events.publishEvent(new com.safesphere.backend.common.event.SessionsEnded());
             return new RefreshOutcome.Refused(SESSION_REVOKED);
         }
         if (session.isExpired(now)) {
             session.revoke(SessionRevocation.EXPIRED, now);
+            events.publishEvent(new com.safesphere.backend.common.event.SessionsEnded());
             return new RefreshOutcome.Refused(SESSION_REVOKED);
         }
         User user = users.findById(session.getUserId()).orElse(null);
         if (user == null || user.isErased()) return new RefreshOutcome.Refused(ActiveAccountCheck.ACCOUNT_DELETED);
         if (!user.isEnabled()) {
             session.revoke(SessionRevocation.ACCOUNT_DISABLED, now);
+            events.publishEvent(new com.safesphere.backend.common.event.SessionsEnded());
             return new RefreshOutcome.Refused(ActiveAccountCheck.ACCOUNT_UNAVAILABLE);
         }
         // Phase N2 (N-22): an account without a verified number gets no session.
@@ -129,6 +132,7 @@ public class DeviceSessionService {
             if (RefreshSecrets.matches(parsed.secret(), session.getSecretHash())
                     || RefreshSecrets.matches(parsed.secret(), session.getPreviousSecretHash())) {
                 session.revoke(SessionRevocation.SIGNED_OUT, now());
+                events.publishEvent(new com.safesphere.backend.common.event.SessionsEnded());
             }
         });
     }
@@ -150,6 +154,7 @@ public class DeviceSessionService {
             return;
         }
         old.revoke(SessionRevocation.SIGNED_OUT, now());
+        events.publishEvent(new com.safesphere.backend.common.event.SessionsEnded());
         sessions.flush();
         emergencies.moveStartedSession(userId, old.getSessionId(), newSessionId);
     }
@@ -174,6 +179,7 @@ public class DeviceSessionService {
     public void othersSignedOut(long userId, String callerSessionId) {
         LocalDateTime now = now();
         sessions.revokeAllExcept(userId, callerSessionId, SessionRevocation.OTHERS_SIGNED_OUT, now);
+        events.publishEvent(new com.safesphere.backend.common.event.SessionsEnded());
         if (callerSessionId != null) {
             sessions.findBySessionIdForUpdate(callerSessionId)
                     .filter(s -> s.getUserId() == userId && !s.isRevoked())

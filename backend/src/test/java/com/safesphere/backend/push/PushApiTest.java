@@ -255,23 +255,18 @@ class PushApiTest {
     }
 
     @Test
-    void signingOut_stopsPushes_evenOnesAlreadyQueued_andTheCleanUpRemovesThePhone() throws Exception {
+    void signingOut_removesThePhoneAndItsQueuedPushesAtOnce() throws Exception {
         Person p = person();
         register(p, fcmToken());
         push.notify(p.id(), PushType.REPLY_TURN, subject());
         mockMvc.perform(post("/api/auth/sign-out").contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("refreshToken", p.refresh()))))
                 .andExpect(status().isNoContent());
+        assertThat(jdbc.queryForObject("select count(*) from push_devices where user_id = ?", Long.class, p.id()))
+                .as("D28: deleted at sign-out, not at the next clean-up").isZero();
+        assertThat(rows(p.id())).as("its queued push went with it").isEmpty();
         assertThat(dispatcher.runOnce()).isZero();
-        assertThat(rows(p.id()).get(0).getStatus()).isEqualTo(PushMessage.Status.SKIPPED);
-        assertThat(rows(p.id()).get(0).getSkipReason()).isEqualTo("SESSION_ENDED");
         assertThat(push.notify(p.id(), PushType.REPLY_TURN, subject())).isFalse();
-
-        assertThat(cleanup.run()[0]).isGreaterThanOrEqualTo(1);
-        assertThat(jdbc.queryForObject("select count(*) from push_devices where user_id = ?", Long.class, p.id())).isZero();
-        clock.advance(Duration.ofDays(8));
-        cleanup.run();
-        assertThat(rows(p.id())).isEmpty();
     }
 
     @Test
