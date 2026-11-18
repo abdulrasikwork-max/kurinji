@@ -52,7 +52,6 @@
     <string name="register_date_of_birth_helper">You must be 18 or older. It is only used to check your age and is not stored.</string>
 
     <string name="login_subtitle">Sign in or join with your mobile number. No password, no e-mail.</string>
-    <string name="action_continue">Continue</string>
     <string name="action_log_in">Log in</string>
 
     <string name="register_title">About you</string>
@@ -404,7 +403,7 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- ===== Phase 4B: Safe Walk ===== -->
     <!-- N6 (D22, D25): "On my way", a reminder (code name Safe Walk). No location, nobody is told by IRL. -->
     <string name="omw_title">On my way</string>
-    <string name="omw_setup_body">IRL reminds you when you should be there. Nothing is tracked, and nobody is told unless you tell them.</string>
+    <string name="omw_setup_body">IRL reminds you when you should be there. Nothing is tracked, and nobody is told unless you tell them. Using support is a choice, not a weakness.</string>
     <string name="omw_label_hint">Where to? (optional)</string>
     <string name="omw_minutes_label">Remind me in</string>
     <string name="omw_minutes">%1$d min</string>
@@ -438,55 +437,9 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="omw_public_title">IRL reminder</string>
     <string name="omw_keep">Keep it</string>
     <string name="title_safe_walk">On my way</string>
-    <string name="safe_walk_setup_title">Start a Safe Walk</string>
-    <string name="safe_walk_setup_body">IRL asks you to check in at regular times while you are on your way. Tap “I\'m OK” each time, and “I\'ve arrived” when you get there. Using support is a choice, not a weakness.</string>
-    <string name="safe_walk_destination_hint">Where are you going? (optional)</string>
-    <string name="safe_walk_interval_label">Check in every</string>
-    <string name="safe_walk_interval_option">%1$d min</string>
-    <string name="action_start_safe_walk">Start Safe Walk</string>
-    <string name="safe_walk_active_title">Safe Walk active</string>
-    <string name="safe_walk_to">To: %1$s</string>
-    <string name="safe_walk_every">Check-in every %1$d minutes</string>
-    <string name="safe_walk_due_soon">Check-in due soon. Tap “I\'m OK” to check in.</string>
-    <string name="safe_walk_missed">You missed a check-in. Are you OK? Tap “I\'m OK” now.</string>
-    <string name="safe_walk_no_response_title">No response to your check-in</string>
-    <string name="safe_walk_until_check_in">until your next check-in</string>
-    <string name="safe_walk_overdue">since your check-in was due</string>
-    <string name="cd_safe_walk_countdown">Time to your next check-in: %1$d minutes %2$d seconds</string>
-    <string name="cd_safe_walk_overdue">Check-in overdue by %1$d minutes %2$d seconds</string>
-    <string name="action_check_in">I\'m OK — check in</string>
-    <string name="action_arrived">I\'ve arrived</string>
-    <string name="action_walk_sos">SOS</string>
-    <string name="action_cancel_walk">Cancel walk</string>
-    <string name="action_keep_walking">Keep walking</string>
-    <string name="safe_walk_confirm_arrived">End this Safe Walk? You will not be asked to check in any more.</string>
-    <string name="safe_walk_confirm_cancel">Cancel this Safe Walk? You will not be asked to check in any more.</string>
-    <string name="safe_walk_location_saved">Last location saved: %1$s (only the latest one is kept)</string>
-    <string name="safe_walk_hint_no_location">Location is not shared with this walk.</string>
     <!-- Phase 17D: why no position arrives; check-ins never depend on it -->
-    <string name="safe_walk_hint_location_off">Your phone\'s location is switched off, so IRL cannot see where you are. Check-ins still work.</string>
-    <string name="safe_walk_hint_no_signal">No position for a while (indoors or a weak signal). Move outside or wait for a better signal. Check-ins still work.</string>
-    <string name="safe_walk_hint_location_unsupported">Location is not available on this phone (Google Play services are missing or out of date). Check-ins still work.</string>
-    <string name="safe_walk_movement_needs_precise">Stop and route checks need precise location. They are paused until you allow it; check-ins still work.</string>
-    <string name="safe_walk_movement_paused_location_off">Stop and route checks are paused while location is switched off.</string>
-    <string name="safe_walk_setup_location_precise">Location: precise. Stop and route checks can run.</string>
-    <string name="safe_walk_setup_location_approximate">Location: approximate. Check-ins work; stop and route checks need precise location.</string>
-    <string name="safe_walk_setup_location_off">Location is switched off. Check-ins work; stop and route checks need location.</string>
-    <string name="safe_walk_setup_location_not_allowed">Location is not allowed. Check-ins work; stop and route checks need location.</string>
-    <string name="safe_walk_hint_keep_open">Keep IRL open: without its background notification, check-in reminders may not reach you.</string>
     <!-- Real-device sprint E (Galaxy A23): what the phone's battery manager does to a walk or an SOS when IRL is not on screen -->
-    <string name="safe_walk_hint_battery_optimized">On some phones, including Samsung, closing IRL from your recent apps ends this walk\'s check-ins until you open IRL again. Leave IRL open, or in the phone\'s App info set Battery to Unrestricted.</string>
-    <string name="safe_walk_hint_battery_restricted">Battery use is restricted for IRL, so this walk stops checking on you as soon as you leave IRL. In the phone\'s App info set Battery to Unrestricted, or keep IRL open.</string>
     <string name="sos_hint_battery_restricted">Battery use is restricted for IRL, so your location may stop being saved when you leave this screen. In the phone\'s App info set Battery to Unrestricted, or keep IRL open.</string>
-    <string name="safe_walk_hint_notifications_off">Notifications are off, so check-in reminders only appear while IRL is open.</string>
-    <string name="safe_walk_hint_offline">No connection. Your check-ins count on this phone and are sent when you are back online.</string>
-    <string name="safe_walk_hint_restored_offline">You are offline. This walk was restored from this phone.</string>
-    <string name="safe_walk_ended_completed_title">You have arrived</string>
-    <string name="safe_walk_ended_completed_message">Glad you got there. Your Safe Walk has ended.</string>
-    <string name="safe_walk_ended_cancelled_title">Safe Walk cancelled</string>
-    <string name="safe_walk_ended_cancelled_message">You will not be asked to check in any more.</string>
-    <string name="safe_walk_ended_emergency_title">Emergency started</string>
-    <string name="safe_walk_ended_emergency_message">Your Safe Walk ended because an emergency was started. Open SOS to see it.</string>
     <string name="home_emergency_banner">Emergency active. Tap to open it.</string>
     <string name="cd_home_emergency_banner">Emergency active. Opens the emergency screen.</string>
     <string name="home_walk_banner">On my way is on. Tap to open it.</string>
@@ -495,24 +448,6 @@ A complete privacy policy will be written and reviewed before any public release
     <!-- Safe Walk notifications: generic text only (no destination, no location) -->
     <string name="notification_channel_alerts_name">Safe Walk check-ins</string>
     <string name="notification_channel_alerts_description">Reminders and missed check-ins during a Safe Walk.</string>
-    <string name="safe_walk_alert_public_title">IRL needs your attention</string>
-    <string name="safe_walk_alert_due_soon_title">Check-in due soon</string>
-    <string name="safe_walk_alert_due_soon_text">Tap “I\'m OK” to check in.</string>
-    <string name="safe_walk_alert_missed_title">You missed a check-in</string>
-    <string name="safe_walk_alert_missed_text">Are you OK? Tap “I\'m OK” to check in.</string>
-    <string name="safe_walk_alert_no_response_title">No response to your check-in</string>
-    <string name="safe_walk_alert_no_response_text">Tap “I\'m OK” if you are fine. If you need help, open IRL and tap SOS, or call 112.</string>
-    <string name="action_im_ok">I\'m OK</string>
-    <string name="safe_walk_notification_title">Safe Walk active</string>
-    <string name="safe_walk_notification_active">IRL will ask you to check in.</string>
-    <string name="safe_walk_notification_missed">Check-in missed. Open IRL to check in.</string>
-    <string name="safe_walk_notification_concern">IRL asked if you are OK. Open it to answer.</string>
-    <string name="safe_walk_notification_arrived">Looks like you have arrived. Open IRL to finish.</string>
-    <string name="safe_walk_alert_concern_title">Are you OK?</string>
-    <string name="safe_walk_alert_off_route_text">You seem to have left your route. Tap “I\'m OK” if you are fine.</string>
-    <string name="safe_walk_alert_stopped_text">You have not moved for a while. Tap “I\'m OK” if you are fine.</string>
-    <string name="safe_walk_alert_battery_title">Battery very low</string>
-    <string name="safe_walk_alert_battery_text">If your phone switches off, IRL cannot check on you. Charge it if you can, or finish your walk and tell someone where you are.</string>
 
     <!-- Phase 4D: Safety Circle communication, level 4, Emergency Context Packet -->
     <string name="emergency_number" translatable="false">112</string>
@@ -521,8 +456,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="sms_app_unavailable">No SMS app was found on this device.</string>
     <string name="action_text_contact">Text</string>
     <string name="cd_text_contact">Open the SMS app with a message for %1$s</string>
-    <string name="action_text_my_circle">Text my Safety Circle</string>
-    <string name="text_my_circle_title">Who should get the message?</string>
     <!-- N6 (D20): IRL's server texts the Safety Circle in an SOS, only after the person's one explicit choice -->
     <string name="alerts_title">Automatic texts from IRL</string>
     <string name="alerts_body">When your SOS reaches IRL (it needs internet), IRL can text the people below for you, even if you can\'t touch your phone. It texts up to 5 of them, by priority, at your first location or after 20 seconds, and once more when you end the SOS. Each person gets exactly this:</string>
@@ -577,7 +510,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="circle_walk_failed">The SMS to your Safety Circle failed (%1$d). Tap “Text my Safety Circle” to send it yourself.</string>
     <string name="circle_walk_composer">The SMS app was opened for your Safety Circle. Check that the message was sent.</string>
     <string name="circle_walk_not_notified">Your Safety Circle was not told about this walk.</string>
-    <string name="safe_walk_no_response_body_auto">Your Safety Circle is being texted that you did not answer. If you need help, tap SOS or call 112. If you are fine, tap “I\'m OK” and they will be told.</string>
     <string name="title_emergency_details">Emergency details</string>
     <string name="section_last_location">Last saved location</string>
     <string name="section_what_happened">What happened</string>
@@ -617,30 +549,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="alert_status_composer">SMS app opened</string>
 
     <!-- Safe Walk: stop and route checks, battery (Phase 4C) -->
-    <string name="safe_walk_movement_checks_label">Watch for unusual stops and route changes</string>
-    <string name="safe_walk_movement_checks_body">If you stay in one place for a long time, or clearly leave the area around the direct route to your destination, IRL asks “Are you OK?”. No answer counts like a missed check-in. To find your destination, the text you type is looked up with your phone\'s map service.</string>
-    <string name="safe_walk_off_route">You seem to have left the area around your route. Are you OK? Tap “I\'m OK”.</string>
-    <string name="safe_walk_stopped">You have not moved for a while. Are you OK? Tap “I\'m OK”.</string>
-    <string name="safe_walk_no_response_concern_title">No answer to “Are you OK?”</string>
-    <string name="safe_walk_arrived_hint">You seem to be at your destination. Tap “I\'ve arrived” to finish your walk.</string>
-    <string name="safe_walk_movement_off">Stop and route checks are off for this walk.</string>
-    <string name="safe_walk_movement_needs_location">Stop and route checks need location access.</string>
-    <string name="safe_walk_movement_waiting_gps">Waiting for a GPS position…</string>
-    <string name="safe_walk_movement_weak_gps">GPS signal is weak: stop and route checks are paused until it improves.</string>
-    <string name="safe_walk_movement_destination">Destination found: %1$s</string>
-    <string name="safe_walk_movement_route_on">Route check on: the area around the straight line to your destination.</string>
-    <string name="safe_walk_movement_route_on_distance">Route check on · about %1$s to go (straight line).</string>
-    <string name="safe_walk_movement_stops_only">Watching for unusual stops. Type a destination next time to add a route check.</string>
-    <string name="safe_walk_movement_not_found">That destination could not be found on the map, so only stops are watched.</string>
-    <string name="safe_walk_movement_lookup_unavailable">The map lookup was not available, so only stops are watched.</string>
-    <string name="safe_walk_movement_resumes_online">Watching for unusual stops. Any route check resumes when IRL is back online.</string>
-    <string name="safe_walk_battery_low">Battery low (%1$s). Location is checked less often to save power. Charge your phone if you can.</string>
-    <string name="safe_walk_battery_critical">Battery very low (%1$s). If your phone switches off, IRL cannot check on you. Your latest location is saved to this walk if possible.</string>
-    <string name="action_movement_checks_off">Turn off stop and route checks</string>
-    <string name="action_movement_checks_on">Turn on stop and route checks</string>
-    <string name="distance_km">%1$.1f km</string>
-    <string name="distance_m">%1$d m</string>
-    <string name="battery_percent">%1$d%%</string>
 
     <!-- Tracking notification (never contains the location itself) -->
     <string name="notification_channel_tracking_name">Emergency location</string>
@@ -990,10 +898,7 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="opening_cta">Let\'s go →</string>
     <string name="opening_cta_description">Let\'s go: see how IRL works</string>
 
-    <string name="location_action_settings">Open settings</string>
-    <string name="location_action_turn_on">Turn on location</string>
     <string name="location_action_retry">Try again</string>
-    <string name="location_action_precise">Use precise location</string>
 
     <plurals name="feed_comments">
         <item quantity="one">%d comment</item>
@@ -1018,17 +923,6 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="profile_photo_description">Your profile photo</string>
     <!-- Real-device sprint C7: once the visit exists the spoken label must say the state the text shows, not the first-visit prompt -->
 
-    <string name="action_cancel_sos">Cancel</string>
-    <string name="walk_line_start">Start</string>
-    <string name="walk_line_destination">Destination</string>
-    <string name="walk_line_you">You</string>
-    <string name="walk_line_you_outside">You (outside the band)</string>
-    <string name="walk_line_caption">A straight line from where you started to the place you named, with the band the route checks watch. It is not a route and not a recommended way: roads may not follow it.</string>
-    <string name="walk_line_cd">Safe Walk line, north is up: a straight line from your start to your destination, not a route. %1$s%2$s</string>
-    <string name="walk_line_cd_distance">About %1$s to the destination. </string>
-    <string name="walk_line_cd_inside">You are inside the band the route checks watch.</string>
-    <string name="walk_line_cd_outside">You are outside the band the route checks watch.</string>
-    <string name="walk_line_cd_no_position">No recent position, so you are not shown.</string>
     <string name="location_last_known">Last known position (%1$s, %2$s). Not necessarily where you are now.</string>
     <plurals name="location_age_minutes">
         <item quantity="one">%d minute ago</item>

@@ -113,17 +113,17 @@ object RepliesLabels {
             conversation.you.turn != Turn.CLOSED
 
     /**
-     * N-92: "This happened" is offered in a plan that is open, not called off, after its time (or without one), once per
-     * plan (a HAPPENED line means someone already shared it). The server decides again (a My people plan: only its
-     * author; it answers with its own words).
-     */
-    /**
      * N6 (D24, N-108): "Let someone know · On my way" in a plan the reader belongs to, while it is open and not called
      * off. The note carries only the plan's "where" and time; never its words, never anyone's name.
      */
     fun canOfferGoing(conversation: Conversation): Boolean =
         conversation.kind == ConversationKind.PLAN && conversation.open && !conversation.moment.calledOff
 
+    /**
+     * N-92: "This happened" is offered in a plan that is open, not called off, after its time (or without one), once per
+     * plan (a HAPPENED line means someone already shared it). The server decides again (a My people plan: only its
+     * author; it answers with its own words).
+     */
     fun canShareHappened(conversation: Conversation, now: java.time.Instant): Boolean =
         conversation.kind == ConversationKind.PLAN && conversation.open && !conversation.moment.calledOff &&
             conversation.moment.plan?.at?.let { !it.isAfter(now) } != false &&

@@ -87,7 +87,7 @@ class HonestyTextsTest {
         val strings = allStrings()
         assertTrue(strings.getValue("feature_safety_circle_description").contains("choose to keep in the loop"))
         assertTrue(strings.getValue("safety_circle_empty_message").contains("choose to keep in the loop"))
-        assertTrue(strings.getValue("safe_walk_setup_body").contains("Using support is a choice, not a weakness."))
+        assertTrue(strings.getValue("omw_setup_body").contains("Using support is a choice, not a weakness."))
         assertEquals("Out there. Together.", strings["motto"])
         assertEquals("IRL", strings["app_name"])
         assertFalse(strings.values.any { it.contains("Safety, connected") })

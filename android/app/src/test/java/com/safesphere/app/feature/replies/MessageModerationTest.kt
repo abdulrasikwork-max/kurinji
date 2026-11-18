@@ -77,6 +77,23 @@ class MessageModerationTest {
     }
 
     @Test
+    fun `Let someone know - On my way is offered only in an open plan that was not called off (N6, D24)`() {
+        val now = Instant.parse("2026-11-18T12:00:00Z")
+        assertTrue(RepliesLabels.canOfferGoing(happened(now.plusSeconds(3600))))
+        assertTrue("also after its time and without one", RepliesLabels.canOfferGoing(happened(null)))
+        val done = Message("m", MessageKind.SYSTEM, null, MessageEvent.HAPPENED, null, false, null, false, null, false)
+        assertTrue("also after This happened", RepliesLabels.canOfferGoing(happened(null, lines = listOf(done))))
+        assertFalse("not in a closed plan", RepliesLabels.canOfferGoing(happened(null, open = false)))
+        assertFalse("not after Call it off", RepliesLabels.canOfferGoing(happened(null, calledOff = true)))
+        assertFalse("not in a private reply", RepliesLabels.canOfferGoing(conversation()))
+        assertFalse("not in an ended private reply", RepliesLabels.canOfferGoing(conversation(turn = Turn.ENDED, canSend = false)))
+        // The screen hands the bridge only the plan's "where" and time: never its words, never anyone's name.
+        val screen = File("src/main/java/com/safesphere/app/feature/replies/ui/ConversationFragment.kt").readText(Charsets.UTF_8)
+        assertTrue(screen.contains("binding.goingButton.isVisible = RepliesLabels.canOfferGoing(conversation)"))
+        assertTrue(screen.contains("GoingThere.Target(placeLabel = plan?.where, at = plan?.at)"))
+    }
+
+    @Test
     fun `the conversation screen reports others' messages only, and asks for a review of one's own`() {
         val screen = File("src/main/java/com/safesphere/app/feature/replies/ui/ConversationFragment.kt").readText(Charsets.UTF_8)
         assertTrue(screen.contains("if (message.mine || message.kind != MessageKind.TEXT) return"))
