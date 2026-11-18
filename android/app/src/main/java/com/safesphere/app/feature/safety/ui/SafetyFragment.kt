@@ -147,7 +147,7 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
             }
         ) + listOfNotNull(
             // Phase 13F (F11): Android 13+ can ask to add the SOS tile directly; older phones add it by editing Quick Settings.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) FeatureItem(R.drawable.ic_shield_alert,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) FeatureItem(R.drawable.ic_siren,
                 R.string.safety_hub_tile_title, R.string.safety_hub_tile_description) { requestSosTile() } else null
         )
     }
@@ -176,7 +176,7 @@ class SafetyFragment : ViewBindingFragment<FragmentSafetyBinding>(FragmentSafety
         statusBar.requestAddTileService(
             ComponentName(context, SosTileService::class.java),
             getString(R.string.sos_tile_label),
-            Icon.createWithResource(context, R.drawable.ic_shield_alert),
+            Icon.createWithResource(context, R.drawable.ic_stat_sos),
             ContextCompat.getMainExecutor(context)
         ) { result ->
             if (!isAdded) return@requestAddTileService

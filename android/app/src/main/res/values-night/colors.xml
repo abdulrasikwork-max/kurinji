@@ -63,4 +63,6 @@
     <color name="c_panel">#5D0703</color>
     <color name="c_on_panel">#EEDCC8</color>
     <color name="c_on_panel_soft">#D9B9A6</color>
+    <!-- N7: the dot of the in-app IRL signature: blush on the cherry-black page. -->
+    <color name="brand_mark_dot">#E8A48C</color>
 </resources>

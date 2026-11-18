@@ -889,14 +889,14 @@ A complete privacy policy will be written and reviewed before any public release
     <string name="vault_retired_message">The recordings, photos and videos it kept on this phone were deleted. IRL no longer records sound, photos or video during an SOS. SOS, On my way and your Safety Circle work as before.</string>
     <string name="rise_retired_title">Rise has been retired</string>
     <string name="rise_retired_message">Its notes on this phone were deleted. Nothing from Rise was ever on a server. \"Only me\" posts are the place for plans you keep to yourself.</string>
-    <!-- ===== IRL opening screen (2026-11-03, docs/DESIGN_SYSTEM.md "Opening"). Shown in capitals via textAllCaps. ===== -->
+    <!-- ===== IRL opening screen (N7 D41: the IRL signature writes itself; docs/PHASE_N7.md §8.5). Shown in capitals via textAllCaps. ===== -->
     <string name="opening_brand_spoken">IRL, in real life. Out there. Together.</string>
-    <string name="opening_line_world">Your world.</string>
-    <string name="opening_line_people">Your people.</string>
-    <string name="opening_line_freedom">Your freedom.</string>
-    <string name="opening_headline_spoken">Your world. Your people. Your freedom.</string>
-    <string name="opening_cta">Let\'s go →</string>
-    <string name="opening_cta_description">Let\'s go: see how IRL works</string>
+    <string name="opening_line_people">Real people.</string>
+    <string name="opening_line_plans">Real plans.</string>
+    <string name="opening_line_life">Real life.</string>
+    <string name="opening_headline_spoken">Real people. Real plans. Real life.</string>
+    <string name="opening_cta">I\'m in →</string>
+    <string name="opening_cta_description">I\'m in: see how IRL works</string>
 
     <string name="location_action_retry">Try again</string>
 

@@ -86,7 +86,7 @@
         <service
             android:name=".feature.emergency.entry.SosTileService"
             android:exported="true"
-            android:icon="@drawable/ic_shield_alert"
+            android:icon="@drawable/ic_stat_sos"
             android:label="@string/sos_tile_label"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

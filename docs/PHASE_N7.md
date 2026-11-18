@@ -1,8 +1,8 @@
 # Phase N7: Notifications and the IRL signature
 
-**Status: PROPOSED 2026-11-18, waiting for the owner's approval. Design only: no code, no migration, no dependency, no
-deployment.** Decisions D26–D42 become N-118 onward in `DECISIONS.md` when approved (the brand ones also IRL-C11 to
-IRL-C13). Units B1–B4, A1–A3, C, one local commit each; never pushed, never deployed; the pilot stays on the old jar / V30.
+**Status: APPROVED by the owner on 2026-11-18 (D26–D42 = N-118 to N-134 in `DECISIONS.md`); implementation started the same day. See "As built" at the end.** Originally: design only: no code, no migration, no dependency, no
+deployment. Decisions D26–D42 are N-118 onward in `DECISIONS.md` (the brand ones also IRL-C12 to
+IRL-C14). Units B1–B4, A1–A3, C, one local commit each; never pushed, never deployed; the pilot stays on the old jar / V30.
 
 Inspected for this design: `IRL_DIRECTION.md` §2, N-10 (Firebase approved), N5 (D19 Replies marker, `/api/replies` line
 types, N-93, N-101), N6 (§6 "push to Circle members who use IRL", the alert queue, N-110 to N-117), `core/notifications`,
@@ -35,7 +35,7 @@ server), so FCM needs no new backend library; the `irl_api33` emulator is a Goog
 | D32 | **Private on screen.** Default text never contains what anyone wrote, only names and structure ("Asha replied", "You're in Asha's plan · Today 4:00 PM"). Lock screen: a neutral public version ("IRL · New activity in Replies"; SOS: "SOS from your Safety Circle", no name). Nothing about other people is stored on the phone (Q3); opening or dismissing a notification tells nobody anything (no read receipts) |
 | D33 | **Permission in context, never at launch.** Android 13+: a short in-app card first, then the system dialog, at the moments it obviously helps: after sharing a first Who's in?, after saying I'm in, after sending a first private reply, before On my way (exists), when accepting a Safety Circle request. "Not now" waits 30 days. Denied: IRL works exactly as today (the dot) |
 | D34 | **Phone behaviour.** Eight channels (§5.1). While IRL is open no social notification is shown: the dot and the visible screen update instead; safety always shows. Taps go through a new non-exported router activity (ids validated; another app cannot fake one), land on the right screen with its tab underneath. Stable notification ids per thread replace instead of stacking; grouped per channel with a summary that has names, never a count |
-| D35 | **Reliable delivery.** A queue in the database (the N6 pattern: survives restarts, the provider is called outside transactions, every step its own transaction); per-kind priority and lifetime (SOS high / 30 min; On my way high / 10 min; social normal / 24 h); retries with back-off on 429 / 5xx; token deleted on `UNREGISTERED` / `INVALID_ARGUMENT` / `SENDER_ID_MISMATCH`; auth failure stops sending and says so in the log; `PUSH_PROVIDER=FCM|DEV_FILE|NONE` (production refuses `DEV_FILE`; `NONE` is the kill switch); logs hold counts and FCM status codes only |
+| D35 | **Reliable delivery.** A queue in the database (the N6 pattern: survives restarts, the provider is called outside transactions, every step its own transaction); per-kind priority and lifetime (SOS high / 30 min; On my way high / 10 min; social normal / 24 h); retries with back-off on 429 / 5xx; token deleted on `UNREGISTERED` / `INVALID_ARGUMENT` / `SENDER_ID_MISMATCH`; auth failure stops sending and says so in the log; `PUSH_PROVIDER` = `FCM`, `DEV_FILE` or `NONE` (production refuses `DEV_FILE`; `NONE` is the kill switch); logs hold counts and FCM status codes only |
 | D36 | **The Safety Circle in the app (N6 §6).** When you add a number that belongs to a verified IRL account, that person (only) gets a request: "Asha added you to their Safety Circle. If they press SOS, IRL can also tell you here." Accept / Not now / Don't ask again. You learn nothing until they accept; then your contact row says "Also in the IRL app". An SOS then also pushes to them (high priority) at the same moment and under the same limits as the SMS, **never instead of it**; the push holds no location; their screen shows the same facts as the text (name, time, the map link the texts carried, status) while the SOS is active and 24 h after; Call them / Call 112. An SOS ended from another phone sends nothing (N6 rule). Either side can end the link at any time |
 | D37 | **On my way: a server reminder as a second alarm.** The server already knows the due time: it sends a high-priority push at "There yet?" and at the nudge; the phone treats it exactly like its own alarm (same notification id, shown once). If the laptop is down, the alarm still works; if the alarm is late, the push is on time. Nobody else is told (timeout alerts to the Circle stay deferred, N6 §6) |
 | D38 | **Account and community notices.** A new sign-in on another phone ("Not you? Sign out the other phones"); a verification decision; a human moderation decision about your moment or message, or your appeal's outcome (never an automatic collapse, never who reported). Staff: "Things are waiting" for verifiers, moderators and admins who switch it on, at most once an hour |
@@ -285,3 +285,27 @@ their JSON files outside the repo; give the Android config values for `local.pro
 - No push without Google Play services, with notifications blocked, or when a battery saver has put IRL to sleep.
 - A push is not a delivery receipt; IRL never claims anyone saw anything.
 - The Circle push is an extra: the SMS is the alert; both need the phone's internet when the SOS starts (N6 §8).
+
+## As built
+
+### A1 (2026-11-18): brand. Implemented, compiled, tested; seen on the emulator.
+- **Drawings:** the IRL signature (one path, stroke 5.4, round ends, written in hand order) + the blush dot in
+  `ic_launcher_foreground` (cream / blush), `ic_launcher_monochrome`, `ic_brand_mark` (line = `colorOnSurface`, dot =
+  new `brand_mark_dot`: cherry by day, blush at night), `art_opening_signature` (animated: `trimPathEnd` 120-820 ms; the
+  dot group flies in from (+26, -22) and lands with an overshoot at 820-1100 ms; `art_opening_meet` deleted),
+  `ic_stat_irl` (24 dp, white, alpha only), `ic_stat_sos` (the siren, white, no tint). The ஐ path is gone from every
+  resource. Brand decisions recorded as IRL-C12 (mark), IRL-C13 (notification icons), IRL-C14 (opening): IRL-C11 was
+  already the 2026-11-12 opening.
+- **Opening:** the typed "IRL" wordmark is gone (the signature is the name); the motto at 900 ms; the first-run lines
+  `opening_line_people|plans|life` = "Real people. / Real plans. / Real life.", the button "I'm in →" (spoken "I'm in:
+  see how IRL works"); `SPLASH_MINIMUM_DURATION_MS` 1000 → 1100 so the dot has landed before a returning person moves on.
+- **Icons outside the app:** On my way notifications `ic_stat_irl` + Black Cherry accent; the SOS location notice
+  `ic_stat_sos` + `ss_emergency` accent; the SOS / Call 112 actions, the Quick Settings tile and its in-app row: the
+  siren; `ic_shield_alert` deleted. Kept on purpose: the in-app shield glyphs of the Safety hub status card and the
+  "Safety" / "Moderation" rows (functional icons inside the app, not the brand).
+- **Docs:** `design/irl-icon.md` (the signature on top, ஐ as history), `DESIGN_SYSTEM.md` brand block.
+- **Tests:** new `BrandSignatureTest` (one geometry in all five files, safe zone ≤ 33 incl. half the stroke, no ஐ / Meet
+  remnant, small icons alpha-only and only `ic_stat_irl` / `ic_stat_sos`, the siren on SOS surfaces, the opening
+  resources and timing); `KurinjiTextsTest` (new lines and button). `testDebugUnitTest` **660 / 0**, `assembleDebug` OK.
+- **Seen on the emulator (fresh install):** the line written, the dot landed, the motto; first run settles on REAL
+  PEOPLE. / REAL PLANS. / REAL LIFE. and I'M IN →; the launcher icon in the app drawer.

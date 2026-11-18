@@ -15,13 +15,18 @@ system and Phase 16's red brand are retired; decision E17-1 superseded the colou
 >   fill of a given mark = cherry with cream words (10.5:1), tonal `c_soft` #E8C9B5.
 > - **Night:** page #140707, cards #221010, text and actions cream; cherry is only a surface (panel, tonal fill).
 > - **Brand surfaces** (launcher icon, opening screen): `brand_cherry`, `brand_cream`, `brand_blush` #E8A48C, fixed.
-> - **Icon and mark (IRL-C10, approved by the owner on 2026-11-12; the Kolam butterfly, IRL-C9, was rejected the same day):** the
->   Tamil letter ஐ (said like the English "I"; a shout of delight; the old word for wonder), our own one-line drawing,
->   one colour (`docs/design/irl-icon.md`). In-app mark `ic_brand_mark` uses the text colour (theme attribute).
-> - **Opening (IRL-C11, direction approved by the owner on 2026-11-12):** plain cherry launch screen, then ONE centred lockup every time: the mark writes
->   itself (`art_opening_meet`, 560 ms), "IRL" (Fraunces, 60sp) from 300 ms, "OUT THERE. TOGETHER." from 520 ms; a returning
->   person is taken on after 1000 ms. First run only: the lockup moves up (380 ms) and "YOUR WORLD. / YOUR PEOPLE. / YOUR
->   FREEDOM." lands line by line with "LET'S GO". No other words. Sections further down that describe the earlier opening are history.
+> - **Icon and mark (N7: IRL-C12 = N-131, approved by the owner on 2026-11-18; replaces the Tamil letter ஐ, IRL-C10):**
+>   **the IRL signature**, "irl" written by hand in one unbroken line (stroke 5.4 of 108, round ends) and one round
+>   blush dot: the dot is you (`docs/design/irl-icon.md`, `PHASE_N7.md` §8). In-app mark `ic_brand_mark`: the line in
+>   the text colour (theme attribute), the dot `brand_mark_dot` (cherry by day, blush at night).
+> - **Notification icons (IRL-C13 = N-132):** `ic_stat_irl` (the signature, white, alpha only) on every IRL notification;
+>   `ic_stat_sos` (the siren) on anything about an active emergency and on the SOS tile.
+> - **Opening (IRL-C14 = N-133, replaces the IRL-C11 opening of 2026-11-12):** plain cherry launch screen, then ONE
+>   centred lockup every time: the signature writes itself (`art_opening_signature`, 120-820 ms), the dot comes in from
+>   the top right and lands on the i (820-1100 ms), "OUT THERE. TOGETHER." from 900 ms; a returning person is taken on
+>   after 1100 ms. First run only: the lockup moves up (380 ms) and "REAL PEOPLE. / REAL PLANS. / REAL LIFE." lands line
+>   by line with "I'M IN". No typed wordmark: the signature is the name. Sections further down that describe earlier
+>   openings are history.
 > - **Type:** Fraunces SemiBold (`irl_serif`, OFL, `docs/licences/Fraunces-OFL.txt`) for headlines and the wordmark; the
 >   rest Mukta Malar. Safety hero text and the opening capitals stay Mukta Malar.
 > - **Tests:** `SocialPaletteTest` (pairs day and night, safety values pinned, no safety screen can wear the overlay),

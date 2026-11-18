@@ -23,13 +23,13 @@ import com.safesphere.app.feature.social.ui.MarksFit
 import java.util.Locale
 
 /**
- * The IRL opening screen (2026-11-12, third version; docs/DESIGN_SYSTEM.md "Opening"). It continues the plain cherry
- * launch screen with ONE centred lockup, every time: the mark writes itself (560 ms), "IRL" arrives under it, then
- * "OUT THERE. TOGETHER.". A returning person is taken on after that by themselves (about one second in all), so the
- * opening never adds a tap on the way to SOS. On the first run the lockup then moves up and "YOUR WORLD. / YOUR PEOPLE. /
- * YOUR FREEDOM." lands line by line with "LET'S GO", which leads to the onboarding. With the system's animations
- * switched off everything is simply shown. With large text on a narrow screen the decorative mark hides and the
- * headline gets smaller, so the words and the button fit.
+ * The IRL opening screen (N7, D41 / N-133; docs/PHASE_N7.md §8.5). It continues the plain cherry launch screen with ONE
+ * centred lockup, every time: the IRL signature writes itself in one stroke (120-820 ms), the dot comes in from out
+ * there and lands on the i (820-1100 ms), then "OUT THERE. TOGETHER.". A returning person is taken on after that by
+ * themselves (about a second in all), so the opening never adds a tap on the way to SOS. On the first run the lockup then
+ * moves up and "REAL PEOPLE. / REAL PLANS. / REAL LIFE." lands line by line with "I'M IN", which leads to the
+ * onboarding. With the system's animations switched off everything is simply shown. With large text on a narrow screen
+ * the decorative mark hides and the headline gets smaller, so the words and the button fit.
  */
 class SplashFragment : ViewBindingFragment<FragmentSplashBinding>(FragmentSplashBinding::inflate) {
 
@@ -42,12 +42,8 @@ class SplashFragment : ViewBindingFragment<FragmentSplashBinding>(FragmentSplash
         ViewCompat.setAccessibilityHeading(binding.openingHeadline, true)
         (binding.openingArt.drawable as? Animatable)?.start()
         if (savedInstanceState == null) {
-            // The name arrives while the mark is still being written; the line follows it.
-            Motion.revealInSequence(
-                listOf(binding.openingWordmark, binding.openingMotto),
-                startDelayMs = NAME_AFTER_MS,
-                staggerMs = LINE_AFTER_NAME_MS
-            )
+            // The signature is the name: the line follows once the dot is landing.
+            Motion.revealInSequence(listOf(binding.openingMotto), startDelayMs = MOTTO_AFTER_MS, staggerMs = 0L)
         }
         binding.openingStart.setOnClickListener { navigateTo(StartDestination.Onboarding) }
         collectWhenStarted(viewModel.destination) { destination ->
@@ -95,7 +91,7 @@ class SplashFragment : ViewBindingFragment<FragmentSplashBinding>(FragmentSplash
     }
 
     private val headlineLines
-        get() = listOf(binding.openingLineWorld, binding.openingLinePeople, binding.openingLineFreedom)
+        get() = listOf(binding.openingLinePeople, binding.openingLinePlans, binding.openingLineLife)
 
     /** One size for the three lines; the overlap that pulls the lines together scales with it (-16dp at 46sp). */
     private fun setHeadlineSize(sizePx: Float) {
@@ -111,7 +107,7 @@ class SplashFragment : ViewBindingFragment<FragmentSplashBinding>(FragmentSplash
     }
 
     /**
-     * Each headline line stays on one line (a wrapped "YOUR / FREEDOM." collides in this tight display face): when the
+     * Each headline line stays on one line (a wrapped "REAL / PEOPLE." collides in this tight display face): when the
      * widest line does not fit, all three shrink to one shared size that does.
      */
     private fun fitHeadlineToWidth() {
@@ -143,9 +139,8 @@ class SplashFragment : ViewBindingFragment<FragmentSplashBinding>(FragmentSplash
         const val FIT_MARGIN = 0.97f
         const val MARK_SHARE = 0.20f
 
-        /** "IRL" starts to arrive while the mark is still being written (560 ms); the line follows. */
-        const val NAME_AFTER_MS = 300L
-        const val LINE_AFTER_NAME_MS = 220L
+        /** "OUT THERE. TOGETHER." arrives as the dot lands (art_opening_signature: line 120-820 ms, dot 820-1100 ms). */
+        const val MOTTO_AFTER_MS = 900L
 
         /** First run: the lockup makes room, then the three lines and the button land. */
         const val MAKE_ROOM_MS = 380L

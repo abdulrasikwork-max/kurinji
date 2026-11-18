@@ -39,8 +39,8 @@ class AndroidSafeWalkAlerts(context: Context) : SafeWalkAlerts {
         // Android shows at most three buttons on a notification (N6-C: a fourth, Call 112, was silently left out). The
         // nudge keeps I'm there, SOS and Call 112; More time stays one tap away inside IRL (the notification opens it).
         if (nudge) {
-            builder.addAction(R.drawable.ic_shield_alert, appContext.getString(R.string.omw_action_sos), sosIntent())
-            builder.addAction(R.drawable.ic_shield_alert, appContext.getString(R.string.omw_action_call), dialIntent())
+            builder.addAction(R.drawable.ic_stat_sos, appContext.getString(R.string.omw_action_sos), sosIntent())
+            builder.addAction(R.drawable.ic_stat_sos, appContext.getString(R.string.omw_action_call), dialIntent())
         } else {
             builder.addAction(R.drawable.ic_history, appContext.getString(R.string.omw_action_more_time),
                 actionIntent(CheckInActionReceiver.ACTION_MORE_TIME, 3))
@@ -54,11 +54,12 @@ class AndroidSafeWalkAlerts(context: Context) : SafeWalkAlerts {
 
     private fun builder(title: Int, text: Int): NotificationCompat.Builder {
         val publicVersion = NotificationCompat.Builder(appContext, NotificationChannels.SAFETY_ALERTS)
-            .setSmallIcon(R.drawable.ic_shield)
+            .setSmallIcon(R.drawable.ic_stat_irl)
             .setContentTitle(appContext.getString(R.string.omw_public_title))
             .build()
         return NotificationCompat.Builder(appContext, NotificationChannels.SAFETY_ALERTS)
-            .setSmallIcon(R.drawable.ic_shield)
+            .setSmallIcon(R.drawable.ic_stat_irl)
+            .setColor(androidx.core.content.ContextCompat.getColor(appContext, R.color.brand_cherry))
             .setContentTitle(appContext.getString(title))
             .setContentText(appContext.getString(text))
             .setStyle(NotificationCompat.BigTextStyle().bigText(appContext.getString(text)))

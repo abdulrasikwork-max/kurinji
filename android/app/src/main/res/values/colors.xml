@@ -75,6 +75,8 @@
     <color name="brand_cream">#EEDCC8</color>
     <!-- The second path of the mark and small accents on cherry. -->
     <color name="brand_blush">#E8A48C</color>
+    <!-- N7: the dot of the in-app IRL signature (ic_brand_mark): Black Cherry on the cream page by day (blush at night). -->
+    <color name="brand_mark_dot">#5D0703</color>
     <!-- The bottom of the launcher icon: cherry fading darker. -->
     <color name="brand_cherry_deep">#2A0302</color>
     <!-- Soft words on the opening screen (always cherry). -->

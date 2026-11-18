@@ -52,7 +52,7 @@ class SplashViewModelTest {
         assertEquals(StartDestination.Home, viewModel.destination.value)
     }
 
-    /** IRL opening screen: only the first run waits for "Let's go"; a returning person is never held up. */
+    /** IRL opening screen: only the first run waits for "I'm in"; a returning person is never held up. */
     @Test
     fun `only the first run waits for the start button`() {
         assertEquals(true, SplashViewModel.waitsForStart(StartDestination.Onboarding))

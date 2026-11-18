@@ -1,6 +1,24 @@
 # IRL launcher icon: concepts and choice
 
-> **CURRENT MARK (2026-11-12 afternoon, decision IRL-C10): the Tamil letter ஐ, drawn as one line. APPROVED by the owner on
+> **CURRENT MARK (N7, 2026-11-18, decision IRL-C12 = N-131, approved by the owner): the IRL signature.** "irl" written by
+> hand in ONE unbroken line, one weight (stroke 5.4 of the 108-unit canvas), round ends, in the order a hand writes it,
+> and one round blush dot over the i.
+> - **The idea:** handwriting is the most real thing a screen can show (nobody types a signature) and IRL is a real-name
+>   community; "Who's in?" is the old sign-up sheet where you put your name down; joined-up ("running") writing: the
+>   letters hold hands; the dot is you: the i is only an i once you arrive (in the opening it comes in from out there).
+> - **Explored and dropped (sheets `irl/n7-round1-directions.png`, `n7-round2-signature.png`, `n7-round3-final.png`):** a
+>   confluence (a Y), an interrobang (a P), separate typed letters (a font), a swash under the signature (busy, a face).
+> - **Files:** `ic_launcher_foreground` (cream line, blush dot), `ic_launcher_monochrome`, `ic_brand_mark` (line = text
+>   colour, dot = `brand_mark_dot`), `art_opening_signature` (writes itself, the dot lands), `ic_stat_irl` (notification
+>   small icon); `ic_launcher_background` unchanged. `BrandSignatureTest` keeps the geometry identical everywhere.
+> - **Open:** a trademark / similarity search (the defunct US app "IRL" and other "irl" marks) before any store release;
+>   the Play Store 512 px icon (N8).
+
+---
+
+# History: the Tamil letter ஐ (IRL-C10, 2026-11-12 to 2026-11-18, replaced by the IRL signature in N7)
+
+> **(History) MARK FROM 2026-11-12 afternoon TO 2026-11-18 (decision IRL-C10): the Tamil letter ஐ, drawn as one line. APPROVED by the owner on
 > 2026-11-12 ("I approve the new ஐ logo and the new opening direction").** The Kolam butterfly (IRL-C9) was rejected by the owner the same day: "the concept/story is interesting,
 > but the actual logo feels too complicated for an app icon". Earlier drawings are history, below.
 >

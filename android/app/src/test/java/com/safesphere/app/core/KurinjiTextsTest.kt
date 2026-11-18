@@ -55,16 +55,16 @@ class KurinjiTextsTest {
         assertTrue("the installation identity must not change", gradle.contains("applicationId = \"com.safesphere.app\""))
     }
 
-    /** The IRL opening (2026-11-03): the brand line and the opening screen's exact words. */
+    /** The IRL opening (N7, D41 / N-133): the brand line and the opening screen's exact words. */
     @Test
     fun `the lines the identity rests on are there`() {
         assertEquals("Out there. Together.", strings["motto"])
-        assertEquals(listOf("Your world.", "Your people.", "Your freedom."),
-            listOf("opening_line_world", "opening_line_people", "opening_line_freedom").map { strings[it] })
+        assertEquals(listOf("Real people.", "Real plans.", "Real life."),
+            listOf("opening_line_people", "opening_line_plans", "opening_line_life").map { strings[it] })
         // 2026-11-12: the opening says only the name, the line and the three lines; the longer sentence was taken out.
         assertNull(strings["opening_supporting"])
         assertEquals("IRL, in real life. Out there. Together.", strings["opening_brand_spoken"])
-        assertEquals("Let\\'s go →", strings["opening_cta"])
+        assertEquals("I\\'m in →", strings["opening_cta"])
         // N4: the wall ends and says so; the core interaction keeps its name.
         assertEquals("That\\'s today.", strings["today_end_title"])
         assertEquals("Who\\'s in?", strings["moment_kind_whos_in"])
