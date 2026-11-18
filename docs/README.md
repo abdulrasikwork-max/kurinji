@@ -14,6 +14,7 @@ larger phases also have a design or plan doc written and approved before the wor
 - `TIMESTAMPS.md` — UTC storage rules and the one-time fix.
 - `IRL_DIRECTION.md` — **the current product direction (2026-11-15)**: verified community, moments, "Who's in?", verification, safety placement, phases N0–N8.
 - `PHASE_N6.md` — the approved N6 design (safety trim, automatic server-side SOS alerts, On my way; D20–D25 locked 2026-11-18; built 2026-11-18, "As built" B1–C; live SMS verified).
+- `PHASE_N7.md` — the PROPOSED N7 design (notifications and the IRL signature; D26–D42; waiting for approval). Sheets `design/irl/n7-*.png`.
 - `PHASE_N5.md` — the approved N5 design (responses and plans; D14–D19 locked 2026-11-17) and what each unit built.
 - `PHASE_N4.md` — the locked N4 decisions and plan (moments, Today, Create, keep, daily question; voice deferred; 7-day new-member period) and what each unit built ("As built"): B1 done (backend moment core, V35 written but not applied), B2 to C not started.
 - `PHASE_N3.md` — plan, the owner's 10 decisions and results of the verified MIET community (N3: membership, verification, bans, re-link, staff screens, V34).

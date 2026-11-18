@@ -87,7 +87,7 @@ is the product; flag the conflict instead of "fixing" the new work to fit an old
 | **N4** | Moments, capture-only Create, Today, keep, daily question | **COMPLETE 2026-11-17**: B1-B4 (V35 on the DEVELOPMENT MySQL only), A1-A3, C; implemented, compiled, tested (Android 758, backend 468), manually verified on the emulator against the development backend (no real phone); decisions N-42 to N-87; results `docs/PHASE_N4.md` "As built": voice deferred, no video, no learned AI model, new-member period 7 days from `memberships.verified_at` |
 | N5 | Same / Say more / I'm in, private replies, plan threads, Replies tab | **COMPLETE 2026-11-18**, emulator-verified, no real phone (Android 804, backend 511; 3 walk fixes, N-103; `PHASE_N5.md` "C") |
 | N6 | Safety trim + automatic server-side SOS SMS, On my way, plan offer (`PHASE_N6.md`, D20–D25) | **BUILT 2026-11-18**: B1–B3 (V37 on the DEVELOPMENT MySQL only), A1–A3, C; implemented, compiled, tested (Android 655, backend 533), emulator-verified, A23 checked, live Fast2SMS verified (9 SMS; SOS → phone 7 s); TalkBack and delivery reports not; N-110 to N-117 |
-| N7 | Firebase push | planned |
+| N7 | Notifications + brand refresh (the IRL signature) (`PHASE_N7.md`, D26–D42) | **PROPOSED 2026-11-18**, waiting for approval (design only) |
 | N8 | Pilot launch at MIET (backups, SMS provider, policy texts, seeding, moderators) | planned |
 
 Next migration file **V38** (V37 = N6, DEVELOPMENT MySQL only, 2026-11-18). Each phase or sub-phase needs its own plan and the owner's approval first. The pilot still

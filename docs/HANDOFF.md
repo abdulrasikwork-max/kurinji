@@ -1,3 +1,12 @@
+# CHECKPOINT 2026-11-18 (eighteenth session, end): **N7 PROPOSED, waiting for the owner's approval.** Design only (`docs/PHASE_N7.md`): no code, no migration, no dependency, no deployment. N6 is complete (live Fast2SMS verified). Nothing pushed, pilot untouched.
+
+- **N7 = notifications + brand refresh.** Pointer pushes over FCM (data-only `{t, s, m, v}`, the phone renders from IRL's API, Google never sees content); 14 kinds and a never-list; anti-noise rules (one push per plan until Replies is opened, batching, caps, quiet at night, 24 h auto-dismiss); Safety Circle in the app (consent-based linking, SOS push in addition to SMS); On my way server reminder as a second alarm; account / membership / moderation / staff notices; V38 (5 tables).
+- **Brand:** the IRL signature ("irl" written by hand in one line + the blush dot = you) replaces ஐ; the opening writes it and lands the dot, then REAL PEOPLE. REAL PLANS. REAL LIFE. / I'M IN →; notification small icon = the signature (2 dp line), emergencies keep the siren. Sheets: `docs/design/irl/n7-*.png`.
+- **Decisions D26–D42** (§2) become N-118 onward when approved. **Units:** A1 brand first, then B1–B4, A2, A3, C. **Owner's part before B4:** a Firebase project (team account, 2-step), Android app `com.safesphere.app`, two service accounts (pilot, development), Android config values for `local.properties`.
+- **Next:** wait for the owner's decisions on D26–D42 (especially D27 the dependency and its two library permissions, D36 Circle linking, D39 the signature, D41 the opening copy). Do not implement before approval.
+
+---
+
 # CHECKPOINT 2026-11-18 (eighteenth session, addendum): **N6 live Fast2SMS VERIFIED** (the owner authorized it after first deferring it). Nothing pushed, nothing deployed, pilot unchanged (its key was only read).
 
 - **What ran (`PHASE_N6.md` end of "C"):** development backend with `ALERT_PROVIDER=FAST2SMS` (key read from the pilot's `/etc/irl/backend.env` through `wsl -d Ubuntu-24.04 -u root`, in process memory only, never printed or written), emulator account "IRL Test" (the owner's number), contacts = the owner's friend and the owner's own number (A23, arrivals timed).
